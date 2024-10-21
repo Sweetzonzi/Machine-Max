@@ -48,7 +48,7 @@ public class SimpleDynamicsWorld extends DynamicsWorld {
 
 	protected ConstraintSolver constraintSolver;
 	protected boolean ownsConstraintSolver;
-	protected final Vector3f gravity = new Vector3f(0f, 0f, -10f);
+	protected final Vector3f gravity = new Vector3f(0f, 0f, -9.81f);
 	
 	public SimpleDynamicsWorld(Dispatcher dispatcher, BroadphaseInterface pairCache, ConstraintSolver constraintSolver, CollisionConfiguration collisionConfiguration) {
 		super(dispatcher, pairCache, collisionConfiguration);
