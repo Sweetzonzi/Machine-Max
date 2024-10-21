@@ -2,6 +2,14 @@ package io.github.tt432.machinemax.common.entity;
 
 import com.mojang.logging.LogUtils;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.common.phys.PhysThread;
+import io.github.tt432.machinemax.utils.bulletphysics.collision.shapes.BoxShape;
+import io.github.tt432.machinemax.utils.bulletphysics.collision.shapes.CollisionShape;
+import io.github.tt432.machinemax.utils.bulletphysics.dynamics.RigidBody;
+import io.github.tt432.machinemax.utils.bulletphysics.dynamics.RigidBodyConstructionInfo;
+import io.github.tt432.machinemax.utils.bulletphysics.linearmath.DefaultMotionState;
+import io.github.tt432.machinemax.utils.bulletphysics.linearmath.Transform;
+import io.github.tt432.machinemax.utils.bulletphysics.linearmath.TransformUtil;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.ParticleTypes;
@@ -21,6 +29,10 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import javax.vecmath.Quat4f;
+import javax.vecmath.Vector3f;
+
+import static io.github.tt432.machinemax.utils.MMMMath.fromEulerDegrees;
 import static io.github.tt432.machinemax.utils.MMMMath.sigmoidSignum;
 import static java.lang.Math.*;
 
@@ -46,9 +58,11 @@ public class TestCarEntity extends VehicleEntity {
     private double lerpZ;
     private double lerpYRot;
     private double lerpXRot;
-    public float ZRot;
+    private float ZRot;
     //以下为物理引擎相关
-
+    public CollisionShape shape;
+    public DefaultMotionState motionState;
+    public Vector3f inertia;
     public TestCarEntity(EntityType<? extends VehicleEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
         this.input = new Input();
@@ -61,7 +75,25 @@ public class TestCarEntity extends VehicleEntity {
         ZRot=0;
         selfDeltaMovement=new Vec3(0,0,0);
         //以下为物理引擎相关
-
+        shape=new BoxShape(new Vector3f(1,1,1));
+        if(this.level().isClientSide()){
+            PhysThread.serverCollisionShapes.add(shape);
+        }else{
+            PhysThread.rendererCollisionShapes.add(shape);
+        }
+        inertia = new Vector3f(0,0,0);//转动惯量
+        shape.calculateLocalInertia(this.mass,inertia);//转动惯量计算
+        Transform transform = new Transform();//初始位姿
+        transform.origin.x= (float) this.getX();
+        transform.origin.y= (float) this.getY();
+        transform.origin.z= (float) this.getZ();
+        Quat4f q = fromEulerDegrees(this.getXRot(),this.getYRot(),this.getZRot());
+        transform.setRotation(q);
+        motionState = new DefaultMotionState(transform);
+        RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, motionState, shape, inertia);
+        RigidBody body = new RigidBody(rbInfo);
+        body.setActivationState(RigidBody.ISLAND_SLEEPING);
+        PhysThread.world.addRigidBody(body);//将物体加入物理计算
     }
 
     @Override
@@ -72,8 +104,10 @@ public class TestCarEntity extends VehicleEntity {
         rudderControl();
         if((this.getFirstPassenger() instanceof Player)){
             clampRotation(this.getFirstPassenger());}
-        move();
-        MachineMax.LOGGER.info("pos:"+ this.getPosition(0));
+        Vec3 pos =new Vec3(0,0,0);
+
+        //move();
+        MachineMax.LOGGER.info("pos:"+ motionState.toString());
         this.level().addParticle(ParticleTypes.SMOKE,getX(),getY(),getZ(),0,0,0);
         super.tick();
     }
@@ -260,5 +294,13 @@ public class TestCarEntity extends VehicleEntity {
     @Override
     public float lerpTargetYRot() {
         return this.lerpSteps > 0 ? (float)this.lerpYRot : this.getYRot();
+    }
+
+    public float getZRot() {
+        return ZRot;
+    }
+
+    public void setZRot(float ZRot) {
+        this.ZRot = ZRot;
     }
 }

@@ -40,7 +40,7 @@ public class TestCarEntityRenderer extends EntityRenderer {
         pPoseStack.pushPose();
         pPoseStack.mulPose(Axis.YN.rotationDegrees(pEntityYaw));//将模型朝向与实体朝向相匹配
         pPoseStack.mulPose(Axis.XP.rotationDegrees(pEntity.getXRot()));//俯仰
-        pPoseStack.mulPose(Axis.ZP.rotationDegrees(((TestCarEntity)pEntity).ZRot));//滚转
+        pPoseStack.mulPose(Axis.ZP.rotationDegrees(((TestCarEntity)pEntity).getZRot()));//滚转
         RenderType renderType = RenderType.entitySolid(TEST_CAR_TEXTURE);
         AnimationComponent animationComponent = new AnimationComponent();
         animationComponent.setup(TEST_CAR_MODEL, TEST_CAR_MODEL);

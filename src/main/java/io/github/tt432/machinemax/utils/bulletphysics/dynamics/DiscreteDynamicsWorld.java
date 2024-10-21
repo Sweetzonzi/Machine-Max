@@ -71,7 +71,7 @@ public class DiscreteDynamicsWorld extends DynamicsWorld {
 	protected ConstraintSolver constraintSolver;
 	protected SimulationIslandManager islandManager;
 	protected final ObjectArrayList<TypedConstraint> constraints = new ObjectArrayList<TypedConstraint>();
-	protected final Vector3f gravity = new Vector3f(0f, -9.81f, 0f);
+	protected final Vector3f gravity = new Vector3f(0f, 0f, 0f);
 
 	//for variable timesteps
 	protected float localTime = 1f / 60f;

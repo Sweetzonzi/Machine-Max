@@ -44,6 +44,11 @@ public class StaticPlaneShape extends ConcaveShape {
 	protected float planeConstant;
 	protected final Vector3f localScaling = new Vector3f(0f, 0f, 0f);
 
+	/**
+	 * 生成一个无穷大的，静态的碰撞平面
+	 * @param planeNormal 碰撞平面的法向量
+	 * @param planeConstant 碰撞平面与世界原点的距离
+	 */
 	public StaticPlaneShape(Vector3f planeNormal, float planeConstant) {
 		this.planeNormal.normalize(planeNormal);
 		this.planeConstant = planeConstant;
