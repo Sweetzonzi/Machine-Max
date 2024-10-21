@@ -101,7 +101,7 @@ dependencies {
 
     implementation "io.github.tt432:eyelib:21.1.2"//基岩版模型、动画、控制器支持
 
-    //implementation "org.ode4j:core:0.5.3"//物理引擎
+    implementation fileTree('lib')
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

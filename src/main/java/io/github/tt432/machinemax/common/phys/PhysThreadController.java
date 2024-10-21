@@ -1,8 +1,6 @@
 package io.github.tt432.machinemax.common.phys;
 
 import io.github.tt432.machinemax.MachineMax;
-import net.minecraft.world.level.dimension.DimensionType;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.ChunkTicketLevelUpdatedEvent;

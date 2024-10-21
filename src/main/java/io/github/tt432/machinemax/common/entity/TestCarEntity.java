@@ -2,14 +2,6 @@ package io.github.tt432.machinemax.common.entity;
 
 import com.mojang.logging.LogUtils;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.phys.PhysThread;
-import io.github.tt432.machinemax.common.phys.PhysThreadController;
-import io.github.tt432.machinemax.utils.math.DMatrix3;
-import io.github.tt432.machinemax.utils.math.DMatrix3C;
-import io.github.tt432.machinemax.utils.math.DQuaternion;
-import io.github.tt432.machinemax.utils.ode.*;
-import io.github.tt432.machinemax.utils.ode.internal.DxMass;
-import io.github.tt432.machinemax.utils.ode.internal.Rotation;
 import net.minecraft.client.player.Input;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.particles.ParticleTypes;
@@ -27,7 +19,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Matrix3d;
 import org.slf4j.Logger;
 
 import static io.github.tt432.machinemax.utils.MMMMath.sigmoidSignum;
@@ -57,10 +48,6 @@ public class TestCarEntity extends VehicleEntity {
     private double lerpXRot;
     public float ZRot;
     //以下为物理引擎相关
-    public volatile DBody dbody;
-    public volatile DMass dmass;
-    public volatile DJointGroup djointGroup;
-    public volatile DGeom dgeom;
 
     public TestCarEntity(EntityType<? extends VehicleEntity> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
@@ -74,18 +61,7 @@ public class TestCarEntity extends VehicleEntity {
         ZRot=0;
         selfDeltaMovement=new Vec3(0,0,0);
         //以下为物理引擎相关
-        dbody = OdeHelper.createBody(PhysThread.world);//创建车体
-        dmass = OdeHelper.createMass();//创造质量属性
-        dmass.setBoxTotal(mass,2,2,2);//设置质量与转动惯量
-        dbody.setMass(dmass);//将设置好的质量属性赋予车体
-        dbody.setPosition(this.getX(),this.getY(),this.getZ());//将位置同步到物理计算线程
-        DMatrix3 R = new DMatrix3(1,0,0,0,1,0,0,0,1);
-        Rotation.dRFromEulerAngles(R,45,0,0);
-        dbody.setRotation(R);//设置旋转
-        dgeom = OdeHelper.createBox(2,2,2);
-        dgeom.setBody(dbody);//将碰撞体绑定到运动物体
-        dgeom.setOffsetPosition(0,1,0);
-        PhysThread.space.add(dgeom);//将碰撞体加入碰撞空间
+
     }
 
     @Override
@@ -96,8 +72,7 @@ public class TestCarEntity extends VehicleEntity {
         rudderControl();
         if((this.getFirstPassenger() instanceof Player)){
             clampRotation(this.getFirstPassenger());}
-        this.setPos(dbody.getPosition().get0(),dbody.getPosition().get1(),dbody.getPosition().get2());
-        //move();
+        move();
         MachineMax.LOGGER.info("pos:"+ this.getPosition(0));
         this.level().addParticle(ParticleTypes.SMOKE,getX(),getY(),getZ(),0,0,0);
         super.tick();
@@ -203,8 +178,6 @@ public class TestCarEntity extends VehicleEntity {
     }
     @Override
     public void remove(RemovalReason reason) {
-        dbody.destroy();
-        dgeom.destroy();
         super.remove(reason);
     }
     /**
@@ -248,16 +221,6 @@ public class TestCarEntity extends VehicleEntity {
 
     public static boolean canVehicleCollide(Entity pVehicle, Entity pEntity) {
         return (pEntity.canBeCollidedWith() || pEntity.isPushable()) && !pVehicle.isPassengerOfSameVehicle(pEntity);
-    }
-
-    @Override
-    public boolean canBeCollidedWith() {
-        return true;
-    }
-
-    @Override
-    public boolean isPushable() {
-        return true;
     }
 
     private void tickLerp() {
