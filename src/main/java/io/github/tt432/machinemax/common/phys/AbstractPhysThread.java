@@ -158,7 +158,7 @@ abstract public class AbstractPhysThread extends Thread {
         for (int i = 0; i <= numc; i++) {
             DContact contact = contacts.get(i);
             if (b1 != null && b1.getAttachedPart().PART_TYPE == AbstractPart.partTypes.WHEEL) {
-                contact.surface.mode = dContactMu2 | dContactBounce | dContactRolling | dContactApprox1 | dContactFDir1;
+                contact.surface.mode = dContactMu2 | dContactBounce | dContactRolling | dContactApprox1 | dContactFDir1 | dContactSoftCFM;
                 DVector3 vf = new DVector3(0, 0, 1);
                 b1.vectorToWorld(new DVector3(1, 0, 0), vf);
                 vf.cross(contact.geom.normal);
@@ -171,9 +171,10 @@ abstract public class AbstractPhysThread extends Thread {
                 contact.surface.rhoN = 0.01;
                 contact.surface.bounce = 0.0001;
                 contact.surface.bounce_vel = 0.1;
+                contact.surface.soft_cfm = 0.0001;
 
             } else if (b2 != null && b2.getAttachedPart().PART_TYPE == AbstractPart.partTypes.WHEEL) {
-                contact.surface.mode = dContactMu2 | dContactBounce | dContactRolling | dContactApprox1 | dContactFDir1;
+                contact.surface.mode = dContactMu2 | dContactBounce | dContactRolling | dContactApprox1 | dContactFDir1 | dContactSoftCFM;
                 DVector3 vf = new DVector3(0, 0, 1);
                 b2.vectorToWorld(new DVector3(1, 0, 0), vf);
                 vf.cross(contact.geom.normal);
@@ -186,6 +187,7 @@ abstract public class AbstractPhysThread extends Thread {
                 contact.surface.rhoN = 0.01;
                 contact.surface.bounce = 0.0001;
                 contact.surface.bounce_vel = 0.1;
+                contact.surface.soft_cfm = 0.0001;
 
             } else {
                 contact.surface.mode = dContactBounce | dContactRolling;

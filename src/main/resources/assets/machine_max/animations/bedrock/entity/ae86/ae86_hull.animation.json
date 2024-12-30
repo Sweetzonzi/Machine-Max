@@ -4,8 +4,8 @@
 		"hull": {
 			"loop": true,
 			"bones": {
-				"Hull": {
-					"rotation": [0,0,0]
+				"root": {
+					"rotation": [0,180,0]
 				}
 			}
 		}

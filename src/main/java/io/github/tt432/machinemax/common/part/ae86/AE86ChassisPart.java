@@ -26,7 +26,7 @@ public class AE86ChassisPart extends AbstractPart {
     public static final double BASIC_HEALTH = 20;
     public static final double BASIC_ARMOR = 1;
     //物理参数
-    public static final double BASIC_MASS = 400;
+    public static final double BASIC_MASS = 1500;
     public static final DVector3C airDragCentre = new DVector3(0, 0, -0.1);//空气阻力/升力作用点(相对重心位置)
     public static final DVector3C waterDragCentre = new DVector3(0, 0, -0.1);//水阻力/升力作用点(相对重心位置)
 
@@ -45,25 +45,25 @@ public class AE86ChassisPart extends AbstractPart {
                 case 0://右前轮
                     this.childrenPartSlots.set(0, new SteeringWheelPartSlot(this, "right_front_wheel",
                             new DVector3((double) -28 / 16, (double) -14 / 16, (double) 34 / 16),
-                            DQuaternion.fromEulerDegrees(0, 0, 0), 50000, 1000));
+                            DQuaternion.fromEulerDegrees(0, 0, 0), 30000, 1000));
                     this.childrenPartSlots.get(0).attachPart(new AE86WheelPart(this.getAttachedEntity()));
                     break;
                 case 1://左前轮
                     this.childrenPartSlots.set(1, new SteeringWheelPartSlot(this, "left_front_wheel",
                             new DVector3((double) 28 / 16, (double) -14 / 16, (double) 34 / 16),
-                            DQuaternion.fromEulerDegrees(0, 180, 0), 50000, 1000));
+                            DQuaternion.fromEulerDegrees(0, 180, 0), 30000, 1000));
                     this.childrenPartSlots.get(1).attachPart(new AE86WheelPart(this.getAttachedEntity()));
                     break;
                 case 2://左后轮
                     this.childrenPartSlots.set(2, new WheelPartSlot(this, "left_back_wheel",
                             new DVector3((double) 28 / 16, (double) -14 / 16, (double) -40 / 16),
-                            DQuaternion.fromEulerDegrees(0, 180, 0), 50000, 1000));
+                            DQuaternion.fromEulerDegrees(0, 180, 0), 30000, 1000));
                     this.childrenPartSlots.get(2).attachPart(new AE86WheelPart(this.getAttachedEntity()));
                     break;
                 case 3://右后轮
                     this.childrenPartSlots.set(3, new WheelPartSlot(this, "right_back_wheel",
                             new DVector3((double) -28 / 16, (double) -14 / 16, (double) -40 / 16),
-                            DQuaternion.fromEulerDegrees(0, 0, 0), 50000, 1000));
+                            DQuaternion.fromEulerDegrees(0, 0, 0), 30000, 1000));
                     this.childrenPartSlots.get(3).attachPart(new AE86WheelPart(this.getAttachedEntity()));
                     break;
                 case 4://车壳

@@ -72,6 +72,13 @@ repositories {
         }
     }
     maven {
+        url = "https://maven.pkg.github.com/SolarMoonQAQ/Spark-Core"
+        credentials {
+            username = System.getenv("GITMAVEN_USERNAME")
+            password = System.getenv("SolarMoonCore_TOKEN")
+        }
+    }
+    maven {
         url = 'https://maven.azuredoom.com/mods'
     }
     flatDir {
@@ -177,6 +184,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     // 物理库
     implementation files('libs/spark_core-1.21.1-1.0.67.jar')
+    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
     // 其它mod
     runtimeOnly files(fileTree(dir: 'lib', includes: ['*.jar']))
 
