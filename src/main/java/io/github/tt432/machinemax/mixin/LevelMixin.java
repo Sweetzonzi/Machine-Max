@@ -1,6 +1,6 @@
 package io.github.tt432.machinemax.mixin;
 
-import io.github.tt432.machinemax.common.phys.AbstractPhysThread;
+import cn.solarmoon.spark_core.phys.thread.PhysLevel;
 import io.github.tt432.machinemax.mixin_interface.IMixinLevel;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -9,15 +9,15 @@ import org.spongepowered.asm.mixin.Unique;
 @Mixin(Level.class)
 public class LevelMixin implements IMixinLevel {
     @Unique
-    public AbstractPhysThread machine_max$physThread;
+    public PhysLevel machine_max$physThread;
 
     @Override
-    public AbstractPhysThread machine_Max$getPhysThread() {
+    public PhysLevel machine_Max$getPhysLevel() {
         return machine_max$physThread;
     }
 
     @Override
-    public void machine_Max$setPhysThread(AbstractPhysThread thread) {
+    public void machine_Max$setPhysLevel(PhysLevel thread) {
         this.machine_max$physThread = thread;
     }
 }

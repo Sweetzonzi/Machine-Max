@@ -1,9 +1,6 @@
 package io.github.tt432.machinemax.common.phys;
 
-import cn.solarmoon.spark_core.api.phys.PhysWorld;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.entity.entity.PartEntity;
-import io.github.tt432.machinemax.common.part.AbstractPart;
 import io.github.tt432.machinemax.util.data.BodiesSyncData;
 import org.ode4j.math.DVector3;
 import net.minecraft.core.BlockPos;
@@ -14,9 +11,6 @@ import org.ode4j.ode.*;
 
 import java.util.*;
 
-import static org.ode4j.ode.OdeConstants.*;
-import static org.ode4j.ode.OdeHelper.areConnectedExcluding;
-import static org.ode4j.ode.OdeMath.dxSafeNormalize3;
 
 abstract public class AbstractPhysThread extends Thread {
     public final Level level;//物理计算线程与每个维度绑定，即每个维度都有一个物理计算线程
@@ -29,7 +23,6 @@ abstract public class AbstractPhysThread extends Thread {
     public volatile boolean isPaused = false;
     public static final long STEP_SIZE = 20;//物理线程计算步长(毫秒)
     protected volatile int step = 0;//物理运算迭代运行的总次数
-    PhysWorld w = new PhysWorld(2L);
 
     AbstractPhysThread(Level level) {
         this.level = level;
@@ -135,6 +128,8 @@ abstract public class AbstractPhysThread extends Thread {
     protected DGeom.DNearCallback nearCallback = this::nearCallback;
 
     protected void nearCallback(Object data, DGeom o1, DGeom o2) {
+
+        /*
         //MachineMax.LOGGER.info("NearCallback called!");
         //exit without doing anything if the two bodies are connected by a joint
         if (o1 instanceof DTriMesh && o2 instanceof DTriMesh) return;
@@ -203,5 +198,6 @@ abstract public class AbstractPhysThread extends Thread {
                 c.attach(b1, b2);
             }
         }
+        */
     }
 }

@@ -1,175 +1,95 @@
 package io.github.tt432.machinemax.common.part;
 
-import cn.solarmoon.spark_core.api.phys.attached_body.AttachedBody;
+import cn.solarmoon.spark_core.animation.anim.play.AnimData;
+import cn.solarmoon.spark_core.animation.anim.play.AnimPlayData;
+import cn.solarmoon.spark_core.animation.anim.play.ModelType;
+import cn.solarmoon.spark_core.animation.model.part.BonePart;
+import cn.solarmoon.spark_core.phys.thread.PhysLevel;
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.client.PartMolangScope;
-import io.github.tt432.machinemax.common.entity.entity.PartEntity;
-import io.github.tt432.machinemax.common.part.slot.BasicModuleSlot;
-import io.github.tt432.machinemax.common.part.slot.AbstractPartSlot;
+import io.github.tt432.machinemax.common.entity.part.MMPartEntity;
 import io.github.tt432.machinemax.mixin_interface.IMixinLevel;
-import io.github.tt432.machinemax.util.formula.IPartPhysParameters;
-import org.ode4j.math.DVector3;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
-import org.ode4j.ode.DBody;
 import org.ode4j.ode.DGeom;
-import org.ode4j.ode.DMass;
-import org.ode4j.ode.OdeHelper;
 
-import java.util.Iterator;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-public abstract class AbstractPart implements Iterable<AbstractPart>, IPartPhysParameters {
+public abstract class AbstractPart {
     //渲染属性
-    public PartMolangScope molangScope;//用于储存作用域为零部件本身的Molang变量
+    public PartMolangScope molangScope;//用于储存作用域为部件本身的Molang变量
     //基础属性
     @Getter
     @Setter
-    protected PartEntity attachedEntity;//此部件附着的实体
-    @Getter
-    protected static double BASIC_ARMOR = 0;//基础护甲
-    @Getter
-    protected static double BASIC_HEALTH = 1;//基础生命值
-    @Getter
-    @Setter
-    protected double health = 1;//部件生命值
-    protected double maxHealth = 1;//部件生命值上限
-    public partTypes PART_TYPE;//部件类型
+    protected MMPartEntity attachedEntity;//此部件附着的实体
     //模块化属性
-    //TODO:模块脱落的血量阈值
-    public AbstractPart fatherPart;//连接的上级部件
-    public AbstractPartSlot attachedSlot;//此部件被安装于的槽位
-    public DVector3 attachPoint = new DVector3(0, 0, 0);//本部件重心与父节点连接点的相对位置，即坐标原点与被连接点的相对位置
-    protected int PART_SLOT_NUM = 0;//此部件的身体部件及武器装备槽位数
-    protected int MOD_SLOT_NUM = 0;//此部件的主被动模块槽位数
-    public List<AbstractPartSlot> childrenPartSlots;//连接的子代部件槽
-    public List<BasicModuleSlot> moduleSlots;//安装的各类主被动模块槽位
+    public final PartElement rootElement;
+    public final Map<String, PartElement> partElements = new HashMap<>();//部件的组成零件
 
-    public enum partTypes {//部件分类，常用于判断该部件是否能够安装到指定槽位
-        ARMOR,//装甲板
-        CORE,//核心
-        CHASSIS,//车架
-        HULL,//车体
-        WHEEL,//轮胎
-        TRACK,//履带
-        WEAPON,//武器
-        GEAR,//其他装备
-        LEFT_ARM,//左臂
-        RIGHT_ARM,//右臂
-        LEFT_LEG,//左腿
-        RIGHT_LEG,//右腿
-        HEAD,//头部
-        BACKPACK,//背包
-        TURRET//炮塔(不包含武器)
-    }
-
-    ;
-    /*物理运算相关参数*/
-    //流体动力相关系数
-    public DVector3 airDragCentre = new DVector3(0, 0, 0);//空气阻力/升力作用点(相对重心位置)
-    public DVector3 waterDragCentre = new DVector3(0, 0, 0);//水阻力/升力作用点(相对重心位置)
-    //TODO:浮力
-    //TODO:摩擦力
-    //TODO:不强制每个部件都有匹配的运动体，可令其直接附着于父部件的运动体上，减少运动体与约束的数量，提升稳定性
-    public DBody dbody;//部件对应的运动体
-    public DMass dmass;//部件对应的质量与转动惯量
-    public DGeom[] dgeoms;//部件对应的碰撞体组(可用多个碰撞体拼合出一个部件的碰撞体积)
-
-    public AbstractPart(PartEntity attachedEntity) {
+    public AbstractPart(MMPartEntity attachedEntity) {
         this.attachedEntity = attachedEntity;
-        dmass = OdeHelper.createMass();
-        dbody = OdeHelper.createBody(((IMixinLevel) attachedEntity.level()).machine_Max$getPhysThread().world);
-        dbody.setOwner(this);
-        if (attachedEntity.level().isClientSide()) molangScope = new PartMolangScope(this);
+        this.molangScope = new PartMolangScope(this);
+        rootElement = createElementsFromModel();
     }
 
-    @Override
-    public Iterator<AbstractPart> iterator() {
-        return new PartIterator();
-    }
-
-    class PartIterator implements Iterator<AbstractPart> {
-        int index = 0;
-        boolean first = true;
-
-        @Override
-        public boolean hasNext() {
-            if (first) return true;
-            if (PART_SLOT_NUM == 0) {
-                return false;
+    protected PartElement createElementsFromModel() {
+        AnimData data = new AnimData(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, getName()), ModelType.ENTITY, AnimPlayData.getEMPTY());
+        ArrayList<BonePart> bones = data.getModel().getBones();//从模型获取所有骨骼
+        ArrayList<BonePart> collisionBones = new ArrayList<>();//碰撞骨骼
+        ArrayList<BonePart> massBones = new ArrayList<>();//质量骨骼
+        ArrayList<BonePart> jointBones = new ArrayList<>();//关节骨骼
+        for (BonePart bone : bones) {//遍历模型骨骼
+            if (bone.getName().contains("mmElement_")) {
+                String name = bone.getName().replaceFirst("mmElement_", "");
+                partElements.put(name, new PartElement(name, this, bone));//创建零件
             }
-            int index0 = index;
-            if (index0 < PART_SLOT_NUM) {//按顺序读取槽位，检查槽位状态
-                if (AbstractPart.this.childrenPartSlots.get(index0).hasPart()) {
-                    return true;
-                } else {//若槽位是空槽，跳过此槽位检查下一槽位
-                    index++;
-                    return hasNext();
-                }
-            } else {//读取完全部槽位，则肯定无后续
-                return false;
+            else if (bone.getName().contains("mmCollision_")) collisionBones.add(bone);
+            else if (bone.getName().contains("mmMass_")) massBones.add(bone);
+            else if (bone.getName().contains("mmJoint_")) jointBones.add(bone);
+        }
+        for(BonePart collisionBone : collisionBones){//为零件创建碰撞体积
+            BonePart parent = collisionBone.getParent();
+            if(parent!=null &&parent.getName().contains("mmElement_")) partElements.get(parent.getName().replaceFirst("mmElement_", "")).createCollisionShape(collisionBone);
+            else MachineMax.LOGGER.error("碰撞参数骨骼{}没有匹配的零件！", collisionBone.getName());
+        }
+        for(BonePart massBone : massBones){
+            BonePart parent = massBone.getParent();
+            if(parent!=null &&parent.getName().contains("mmElement_")) partElements.get(parent.getName().replaceFirst("mmElement_", "")).createMass(massBone);
+            else MachineMax.LOGGER.error("质量参数骨骼{}没有匹配的零件！", massBone.getName());
+        }
+        for(BonePart jointBone : jointBones){
+            //TODO:处理关节骨骼
+        }
+        //TODO:处理特殊骨骼连接关系，如履带的首位相连
+        return partElements.values().iterator().next();//将表中第一个零件作为部件的根零件
+    }
+
+    public void addAllElementsToLevel(){
+        PhysLevel level = ((IMixinLevel)attachedEntity.level()).machine_Max$getPhysLevel();
+        level.launch(()->{
+            for(PartElement element : partElements.values()){
+                for (DGeom geom : element.geoms) level.getPhysWorld().getSpace().add(geom);//添加碰撞体
+                element.enable();//激活零件
             }
-        }
+            return null;
+        });
+    }
 
-        @Override
-        public AbstractPart next() {
-            if (first) {//首先返回部件本身
-                first = false;
-                return AbstractPart.this;
+    public void removeAllElementsFromLevel(){
+        PhysLevel level = ((IMixinLevel)attachedEntity.level()).machine_Max$getPhysLevel();
+        level.launch(()->{
+            for(PartElement element : partElements.values()){
+                for (DGeom geom : element.geoms) geom.destroy();//销毁碰撞体
+                element.body.destroy();//销毁运动体
             }
-            index++;
-            return AbstractPart.this.childrenPartSlots.get(index - 1).getChildPart();
-        }
+            return null;
+        });
     }
 
-    public void addAllGeomsToSpace() {
-        for (DGeom geom : dgeoms) {
-            ((IMixinLevel) attachedEntity.level()).machine_Max$getPhysThread().space.geomAddEnQueue(geom);
-        }
-    }
-
-    public void removeAllGeomsFromSpace() {
-        for (DGeom geom : dgeoms) {
-            ((IMixinLevel) attachedEntity.level()).machine_Max$getPhysThread().space.geomRemoveEnQueue(geom);
-        }
-    }
-
-    public void removeBodyInWorld() {
-        dbody.getWorld().bodyRemoveEnQueue(this.dbody);
-    }
-
-    /**
-     * 获取部件质量(kg)
-     *
-     * @return 部件质量(kg)
-     */
-    abstract public double getMass();
-
-    /**
-     * 更新部件质量
-     */
-    abstract public void updateMass();
-
-    /**
-     * 获取部件等效护甲(RHA mm)
-     *
-     * @return 部件等效护甲(RHA mm)
-     */
-    abstract public double getArmor();
-
-    /**
-     * 获取部件基础等效护甲(RHA mm)
-     *
-     * @return 部件基础等效护甲(RHA mm)
-     */
-    abstract public double getBasicArmor();
-
-    /**
-     * 获取部件生命值上限
-     *
-     * @return 部件生命值上限
-     */
-    abstract public double getMaxHealth();
+    abstract public String getName();
 
     abstract public ResourceLocation getModel();
 

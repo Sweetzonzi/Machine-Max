@@ -64,14 +64,7 @@ repositories {
         name = 'Kotlin for Forge'
         url = 'https://thedarkcolour.github.io/KotlinForForge/'
     }
-    maven {
-        name = 'GeckoLib'
-        url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
-        content {
-            includeGroup("software.bernie.geckolib")
-        }
-    }
-    maven {
+    maven {//曦月核心 物理库
         url = "https://maven.pkg.github.com/SolarMoonQAQ/Spark-Core"
         credentials {
             username = System.getenv("GITMAVEN_USERNAME")
@@ -171,7 +164,6 @@ dependencies {
     //eyelib 基岩版模型、动画、控制器支持
     implementation "io.github.tt432:eyelib:21.1.5"
     jarJar(group: 'io.github.tt432', name: 'eyelib', version: '[21.1.5,22.0)')
-    implementation "org.openjdk.jmh:jmh-core:1.19"
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -181,14 +173,12 @@ dependencies {
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // core
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+//    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     // 物理库
-    implementation files('libs/spark_core-1.21.1-1.0.67.jar')
+//    implementation files('libs/spark_core-1.21.1-1.0.67.jar')
     implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
     // 其它mod
     runtimeOnly files(fileTree(dir: 'lib', includes: ['*.jar']))
-
-    implementation "org.openjdk.jmh:jmh-generator-annprocess:1.19"
 
 }
 

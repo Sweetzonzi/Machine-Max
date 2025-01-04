@@ -3,7 +3,7 @@ package io.github.tt432.machinemax.client;
 import io.github.tt432.eyelib.molang.MolangScope;
 import io.github.tt432.eyelib.molang.mapping.api.MolangFunction;
 import io.github.tt432.eyelib.molang.mapping.api.MolangMapping;
-import io.github.tt432.machinemax.common.entity.entity.PartEntity;
+import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -20,7 +20,7 @@ public final class MMMolangQuery {
 
     @MolangFunction(value = "roll", description = "roll 角度（z rot）")
     public static float roll(MolangScope scope) {
-        return entityFloat(scope, e -> (e instanceof PartEntity) ? (((PartEntity) e).getZRot()) : (0));
+        return entityFloat(scope, e -> (e instanceof OldPartEntity) ? (((OldPartEntity) e).getZRot()) : (0));
     }
 
     @FunctionalInterface

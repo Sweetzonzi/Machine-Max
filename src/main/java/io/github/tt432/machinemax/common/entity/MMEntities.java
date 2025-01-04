@@ -1,8 +1,10 @@
 package io.github.tt432.machinemax.common.entity;
 
+import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.entity.entity.AE86Entity;
-import io.github.tt432.machinemax.common.entity.entity.TestCarEntity;
+import io.github.tt432.machinemax.common.entity.old.entity.AE86Entity;
+import io.github.tt432.machinemax.common.entity.old.entity.TestCarEntity;
+import io.github.tt432.machinemax.common.entity.part.MMPartEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -30,5 +32,11 @@ public class MMEntities {
                     () -> EntityType.Builder.of(AE86Entity::new, MobCategory.MISC)
                             .sized(2f,2f)
                             .build("ae86"));
+    //测试用实体方块
+    public static final Supplier<EntityType<MMPartEntity>> MM_PART_ENTITY =
+            ENTITIES.register("part",
+                    () -> EntityType.Builder.of(MMPartEntity::new, MobCategory.MISC)
+                            .sized(1f,1f)
+                            .build("part"));
     //以上为注册的实体列表
 }
