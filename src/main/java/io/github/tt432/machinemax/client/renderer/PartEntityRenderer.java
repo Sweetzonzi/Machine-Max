@@ -36,7 +36,7 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
         Quaternionf q = new Quaternionf(dq.get1(), dq.get2(), dq.get3(), dq.get0());
         poseStack.pushPose();//开始渲染
         poseStack.mulPose(q);//旋转
-        RenderType renderType = RenderType.entitySolid(entity.part.getTexture());
+        RenderType renderType = RenderType.entityCutout(entity.part.getTexture());
         AnimationComponent animationComponent = RenderData.getComponent(entity).getAnimationComponent();//获取已有的动画数据
         animationComponent.setup(entity.part.getAniController(), entity.part.getAnimation());
         BoneRenderInfos infos = BrAnimator.tickAnimation(animationComponent,
@@ -47,7 +47,7 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
                 poseStack,
                 renderType,
                 entity.part.getTexture(),
-                true,
+                false,
                 buffer.getBuffer(renderType),
                 packedLight,
                 OverlayTexture.NO_OVERLAY//控制受伤变红与tnt爆炸前闪烁，载具不需要这个

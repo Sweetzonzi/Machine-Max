@@ -1,5 +1,6 @@
 package io.github.tt432.machinemax.common.entity.part;
 
+import cn.solarmoon.spark_core.registry.common.SparkAttachments;
 import io.github.tt432.machinemax.common.part.AbstractPart;
 import io.github.tt432.machinemax.common.part.TestCubePart;
 import lombok.Getter;
@@ -21,6 +22,12 @@ public class MMPartEntity extends Entity {
     @Setter
     @Getter
     private float ZRot;
+    private int lerpSteps;
+    private double lerpX;
+    private double lerpY;
+    private double lerpZ;
+    private double lerpYRot;
+    private double lerpXRot;
 
     public MMPartEntity(EntityType<? extends MMPartEntity> entityType, Level level) {
         super(entityType, level);
@@ -88,4 +95,40 @@ public class MMPartEntity extends Entity {
     protected void addAdditionalSaveData(CompoundTag compound) {
 
     }
+
+    @Override
+    public void lerpTo(double pX, double pY, double pZ, float pYRot, float pXRot, int pSteps) {
+        this.lerpX = pX;
+        this.lerpY = pY;
+        this.lerpZ = pZ;
+        this.lerpYRot = pYRot;
+        this.lerpXRot = pXRot;
+        this.lerpSteps = 10;
+    }
+
+    @Override
+    public double lerpTargetX() {
+        return this.lerpSteps > 0 ? this.lerpX : this.getX();
+    }
+
+    @Override
+    public double lerpTargetY() {
+        return this.lerpSteps > 0 ? this.lerpY : this.getY();
+    }
+
+    @Override
+    public double lerpTargetZ() {
+        return this.lerpSteps > 0 ? this.lerpZ : this.getZ();
+    }
+
+    @Override
+    public float lerpTargetXRot() {
+        return this.lerpSteps > 0 ? (float) this.lerpXRot : this.getXRot();
+    }
+
+    @Override
+    public float lerpTargetYRot() {
+        return this.lerpSteps > 0 ? (float) this.lerpYRot : this.getYRot();
+    }
+
 }

@@ -129,7 +129,7 @@ abstract public class AbstractPhysThread extends Thread {
 
     protected void nearCallback(Object data, DGeom o1, DGeom o2) {
 
-        /*
+/*
         //MachineMax.LOGGER.info("NearCallback called!");
         //exit without doing anything if the two bodies are connected by a joint
         if (o1 instanceof DTriMesh && o2 instanceof DTriMesh) return;
@@ -198,6 +198,6 @@ abstract public class AbstractPhysThread extends Thread {
                 c.attach(b1, b2);
             }
         }
-        */
+ */
     }
 }

@@ -4,6 +4,9 @@ plugins {
     id 'idea'
     id 'maven-publish'
     id 'net.neoforged.gradle.userdev' version '7.0.165'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.0.0'
+    id 'org.jetbrains.dokka' version '1.9.20'
     id "io.freefair.lombok" version "8.6"
 }
 
@@ -173,7 +176,7 @@ dependencies {
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // core
-//    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     // 物理库
 //    implementation files('libs/spark_core-1.21.1-1.0.67.jar')
     implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"

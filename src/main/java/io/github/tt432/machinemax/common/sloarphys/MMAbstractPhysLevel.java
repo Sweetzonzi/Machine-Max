@@ -1,13 +1,13 @@
 package io.github.tt432.machinemax.common.sloarphys;
 
 import cn.solarmoon.spark_core.phys.thread.PhysLevel;
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.util.data.BodiesSyncData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.ode4j.ode.DAABBC;
+import org.ode4j.ode.DBody;
 import org.ode4j.ode.DGeom;
 import org.ode4j.ode.OdeHelper;
 
@@ -15,30 +15,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractPhysLevel extends PhysLevel {
+public abstract class MMAbstractPhysLevel extends PhysLevel {
 
     volatile public Map<Integer, BodiesSyncData> syncData = HashMap.newHashMap(100);//用于同步的线程内所有运动体位姿速度数据
     protected Map<BlockPos, BlockState> terrainCollisionBlocks = HashMap.newHashMap(100);//用于碰撞检测的地形块位置集合
     public ArrayList<DGeom> terrainGeoms = new ArrayList<>();
-    protected int step = 0;//物理运算迭代运行的总次数
-    /**
-     * 初始化物理模拟线程，设置仿真基本参数
-     */
-    public AbstractPhysLevel(@NotNull Level level) {
-        super(level);
-        getPhysWorld().laterConsume(()->{//修改世界设置
-            getPhysWorld().getWorld().setGravity(0, -9.81, 0);//设置重力
-            getPhysWorld().getWorld().setERP(0.3);
-            getPhysWorld().getWorld().setCFM(0.00005);
-            getPhysWorld().getWorld().setAutoDisableFlag(true);//设置静止物体自动休眠以节约性能
-            getPhysWorld().getWorld().setAutoDisableSteps(5);
-            getPhysWorld().getWorld().setQuickStepNumIterations(40);//设定迭代次数以提高物理计算精度
-            getPhysWorld().getWorld().setQuickStepW(1.3);
-            getPhysWorld().getWorld().setContactMaxCorrectingVel(20);
-            //TODO:区分碰撞空间(常规)，命中判定空间(弹头刀刃等放进来)和自体碰撞空间(头发布料等有物理没碰撞的放进来)
-            OdeHelper.createPlane(getPhysWorld().getSpace(), 0, 1, 0, -64);//创造碰撞平面
-            return null;
-        });
+    public int step = 0;//物理运算迭代运行的总次数
+
+    public MMAbstractPhysLevel(@NotNull String id, @NotNull String name, @NotNull Level level, long tickStep) {
+        super(id, name, level, tickStep);
+        init(this);
     }
 
     @Override
@@ -46,6 +32,21 @@ public abstract class AbstractPhysLevel extends PhysLevel {
         step++;
         addTerrainCollisionBoxes();
         super.physTick();
+    }
+
+    public void init(PhysLevel level){
+        level.getPhysWorld().laterConsume(()->{//修改世界设置
+            level.getPhysWorld().getWorld().setGravity(0, -0.81, 0);//设置重力
+            level.getPhysWorld().getWorld().setERP(0.3);
+            level.getPhysWorld().getWorld().setCFM(0.00005);
+            level.getPhysWorld().getWorld().setAutoDisableFlag(true);//设置静止物体自动休眠以节约性能
+            level.getPhysWorld().getWorld().setAutoDisableSteps(5);
+            level.getPhysWorld().getWorld().setQuickStepNumIterations(40);//设定迭代次数以提高物理计算精度
+            level.getPhysWorld().getWorld().setQuickStepW(1.3);
+            level.getPhysWorld().getWorld().setContactMaxCorrectingVel(20);
+            //TODO:区分碰撞空间(常规)，命中判定空间(弹头刀刃等放进来)和自体碰撞空间(头发布料等有物理没碰撞的放进来)
+            return null;
+        });
     }
 
     /**
@@ -84,6 +85,9 @@ public abstract class AbstractPhysLevel extends PhysLevel {
                 DGeom[] geoms = new DGeom[i];
                 for (int j = 0; j < i; j++) {
                     geoms[j] = OdeHelper.createBox(getPhysWorld().getSpace(), 1, 1, 1);
+                    DBody body = OdeHelper.createBody(getPhysWorld().getWorld());
+                    body.setKinematic();
+                    geoms[j].setBody(body);
                     geoms[j].setPosition(0, -512, 0);
                     terrainGeoms.add(geoms[j]);
                 }

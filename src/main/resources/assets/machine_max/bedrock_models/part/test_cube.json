@@ -47,7 +47,7 @@
 					]
 				},
 				{
-					"name": "mmMass_box_1000_Root",
+					"name": "mmMass_Box_1000_Root",
 					"parent": "mmElement_Root",
 					"pivot": [0, 0, 0],
 					"cubes": [
@@ -56,7 +56,10 @@
 							"size": [16, 16, 16],
 							"uv": {}
 						}
-					]
+					],
+					"locators": {
+						"mass_1000": [0, 0, 0]
+					}
 				}
 			]
 		}

@@ -1,25 +1,14 @@
 package io.github.tt432.machinemax.common.sloarphys;
 
-import io.github.tt432.machinemax.network.payload.PhysSyncPayload;
-import io.github.tt432.machinemax.util.data.BodiesSyncData;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
-import org.ode4j.ode.DBody;
-import org.ode4j.ode.internal.DxBody;
 
-import java.util.Iterator;
-
-public class ClientPhysLevel extends AbstractPhysLevel{
+public class MMClientPhysLevel extends MMAbstractPhysLevel {
     public volatile boolean needSync = false;
-    /**
-     * 初始化物理模拟线程，设置仿真基本参数
-     *
-     * @param level
-     */
-    public ClientPhysLevel(@NotNull Level level) {
-        super(level);
+
+    public MMClientPhysLevel(@NotNull String id, @NotNull String name, @NotNull ClientLevel level, long tickStep) {
+        super(id, name, level, tickStep);
     }
 
     @Override

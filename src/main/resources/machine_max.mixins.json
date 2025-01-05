@@ -6,7 +6,8 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "LevelMixin",
-    "BlockStateMixin"
+    "BlockStateMixin",
+    "PhysThreadApplierMixin"
   ],
   "injectors": {
     "defaultRequire": 1
