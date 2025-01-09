@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
-public record PhysSyncPayload(int step, Map<Integer, BodiesSyncData> syncData) implements CustomPacketPayload {
+public record PhysSyncPayload(int step, HashMap<Integer, BodiesSyncData> syncData) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<PhysSyncPayload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "phys_sync_payload"));
     public static final StreamCodec<ByteBuf, PhysSyncPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT,

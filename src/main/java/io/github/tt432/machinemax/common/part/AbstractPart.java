@@ -26,53 +26,73 @@ public abstract class AbstractPart {
     //基础属性
     @Getter
     @Setter
+    volatile int id;
+    @Getter
+    @Setter
     protected MMPartEntity attachedEntity;//此部件附着的实体
     //模块化属性
-    public final PartElement rootElement;
+    public final PartElement rootElement;//部件的核心组成零件
     public final Map<String, PartElement> partElements = new HashMap<>();//部件的组成零件
 
     public AbstractPart(MMPartEntity attachedEntity) {
         this.attachedEntity = attachedEntity;
+        this.id = attachedEntity.getId();
         this.molangScope = new PartMolangScope(this);
         rootElement = createElementsFromModel();
     }
 
     protected PartElement createElementsFromModel() {
+        PartElement rootElement = null;
         AnimData data = new AnimData(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, getName()), ModelType.ENTITY, AnimPlayData.getEMPTY());
         LinkedHashMap<String, BonePart> bones = data.getModel().getBones();//从模型获取所有骨骼
         ArrayList<BonePart> collisionBones = new ArrayList<>();//碰撞骨骼
         ArrayList<BonePart> massBones = new ArrayList<>();//质量骨骼
         ArrayList<BonePart> jointBones = new ArrayList<>();//关节骨骼
         for (BonePart bone : bones.values()) {//遍历模型骨骼
-            if (bone.getName().contains("mmElement_")) {
+            if (bone.getName().startsWith("mmElement_")) {
                 String name = bone.getName().replaceFirst("mmElement_", "");
-                partElements.put(name, new PartElement(name, this, bone));//创建零件
-            }
-            else if (bone.getName().contains("mmCollision_")) collisionBones.add(bone);
-            else if (bone.getName().contains("mmMass_")) massBones.add(bone);
-            else if (bone.getName().contains("mmJoint_")) jointBones.add(bone);
+                var element = new PartElement(name, this, bone);
+                partElements.put(name, element);//创建零件
+                if (bone.getLocators().get("RootElement") != null) {//标记根零件
+                    if (rootElement == null) rootElement = element;
+                    else MachineMax.LOGGER.error("在模型文件{}中检测到了多个根零件标记！", getName());
+                }
+            } else if (bone.getName().startsWith("mmCollision_")) collisionBones.add(bone);
+            else if (bone.getName().startsWith("mmMass_")) massBones.add(bone);
+            else if (bone.getName().startsWith("mmSlot_")) jointBones.add(bone);
         }
-        for(BonePart collisionBone : collisionBones){//为零件创建碰撞体积
+        for (BonePart collisionBone : collisionBones) {//为零件创建碰撞体积
             BonePart parent = collisionBone.getParent();
-            if(parent!=null &&parent.getName().contains("mmElement_")) partElements.get(parent.getName().replaceFirst("mmElement_", "")).createCollisionShape(collisionBone);
-            else MachineMax.LOGGER.error("碰撞参数骨骼{}没有匹配的零件！", collisionBone.getName());
+            if (parent != null && parent.getName().startsWith("mmElement_"))
+                partElements.get(parent.getName().replaceFirst("mmElement_", "")).createCollisionShape(collisionBone);
+            else MachineMax.LOGGER.error("{}的碰撞参数骨骼{}没有匹配的零件！", getName(), collisionBone.getName());
         }
-        for(BonePart massBone : massBones){//为零件添加质量与转动惯量信息
+        for (BonePart massBone : massBones) {//为零件添加质量与转动惯量信息
             BonePart parent = massBone.getParent();
-            if(parent!=null &&parent.getName().contains("mmElement_")) partElements.get(parent.getName().replaceFirst("mmElement_", "")).createMass(massBone);
-            else MachineMax.LOGGER.error("质量参数骨骼{}没有匹配的零件！", massBone.getName());
+            if (parent != null && parent.getName().startsWith("mmElement_"))
+                partElements.get(parent.getName().replaceFirst("mmElement_", "")).createMass(massBone);
+            else MachineMax.LOGGER.error("{}的质量参数骨骼{}没有匹配的零件！", getName(), massBone.getName());
         }
-        for(BonePart jointBone : jointBones){
-            //TODO:处理关节骨骼
+        for (BonePart jointBone : jointBones) {//为零件创建安装槽
+            BonePart parent = jointBone.getParent();
+            if (parent != null && parent.getName().startsWith("mmElement_"))
+                partElements.get(parent.getName().replaceFirst("mmElement_", "")).createElementSlots(jointBone);
+            else MachineMax.LOGGER.error("{}的安装槽骨骼{}没有匹配的零件！", getName(), jointBone.getName());
+            //TODO:连接同一部件内的零件
+                //TODO:调整位置和姿态
+                //TODO:连接关节
         }
         //TODO:处理特殊骨骼连接关系，如履带的首位相连
-        return partElements.values().iterator().next();//将表中第一个零件作为部件的根零件
+        if (!partElements.values().isEmpty() && rootElement == null)
+            rootElement = partElements.values().iterator().next();//将表中第一个零件作为部件的根零件
+        else throw new RuntimeException("部件模型" + getName() + "中没有包含零件标识符(mmElement_)的骨骼！");
+        return rootElement;
     }
 
-    public void addAllElementsToLevel(){
+    public void addAllElementsToLevel() {
         var level = ThreadHelperKt.getPhysLevelById(attachedEntity.level(), MachineMax.MOD_ID);
-        level.getPhysWorld().laterConsume(()->{
-            for(PartElement element : partElements.values()){
+        level.getPhysWorld().laterConsume(() -> {
+            for (PartElement element : partElements.values()) {
                 for (DGeom geom : element.geoms) level.getPhysWorld().getSpace().add(geom);//添加碰撞体
                 element.getBody().setGravityMode(true);
                 element.enable();//激活零件
@@ -81,12 +101,15 @@ public abstract class AbstractPart {
         });
     }
 
-    public void removeAllElementsFromLevel(){
+    public void removeAllElementsFromLevel() {
         var level = ThreadHelperKt.getPhysLevelById(attachedEntity.level(), MachineMax.MOD_ID);
-        level.getPhysWorld().laterConsume(()->{
-            for(PartElement element : partElements.values()){
-                for (DGeom geom : element.geoms) geom.destroy();//移除碰撞体
+        level.getPhysWorld().laterConsume(() -> {
+            for (PartElement element : partElements.values()) {
                 element.body.destroy();//移除运动体
+                for (DGeom geom : element.geoms) {
+                    geom.disable();
+                    geom.destroy();//移除碰撞体
+                }
             }
             return null;
         });

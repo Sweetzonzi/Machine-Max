@@ -38,8 +38,8 @@ public class SteeringWheelPartSlot extends AbstractPartSlot {
         ((DAMotorJoint) joints.get(1)).setAxis(0,1,0,1,0);
         ((DAMotorJoint) joints.get(1)).setParamFMax(500000);
         //设置减震器属性
-        ((DHinge2Joint) joints.getFirst()).setParamSuspensionERP(((double) AbstractPhysThread.STEP_SIZE / 1000 * kp) / (((double) AbstractPhysThread.STEP_SIZE / 1000 * kp) + kd));
-        ((DHinge2Joint) joints.getFirst()).setParamSuspensionCFM(1 / (((double) AbstractPhysThread.STEP_SIZE / 1000 * kp) + kd));
+        ((DHinge2Joint) joints.getFirst()).setParamSuspensionERP(((double) 20 / 1000 * kp) / (((double) 20 / 1000 * kp) + kd));
+        ((DHinge2Joint) joints.getFirst()).setParamSuspensionCFM(1 / (((double) 20 / 1000 * kp) + kd));
     }
 
     @Override

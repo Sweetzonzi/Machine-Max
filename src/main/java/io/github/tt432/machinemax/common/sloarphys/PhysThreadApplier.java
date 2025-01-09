@@ -27,17 +27,18 @@ public class PhysThreadApplier {
         private static void registerPhysThread(PhysLevelRegisterEvent event) {
             var level = event.getLevel();
             if (!level.isClientSide)
-                event.register(new MMServerPhysLevel(MOD_ID, "MachineMax Phys Thread - Server", (ServerLevel) level, 20));
+                event.register(new MMServerPhysLevel(MOD_ID, "MachineMax Phys Thread - Server", (ServerLevel) level, 20, false));
             else
-                event.register(new MMClientPhysLevel(MOD_ID, "MachineMax Phys Thread - Client", (ClientLevel) level, 20));
+                event.register(new MMClientPhysLevel(MOD_ID, "MachineMax Phys Thread - Client", (ClientLevel) level, 20, false));
         }
 
         @SubscribeEvent//加载世界时开启新物理计算线程
         private static void physThreadStart(LevelEvent.Load event) {//每个Level执行一次，因此单机游戏中会有服务端三个维度+玩家所在客户端维度4次
-            if (event.getLevel().isClientSide()) MachineMax.LOGGER.info("Preparing local phys thread...");
-            else MachineMax.LOGGER.info("Preparing server phys thread...");
-            var physLevel = ThreadHelperKt.getPhysLevelById((Level) event.getLevel(), MOD_ID);
-            physLevel.load();
+            //星火核心已经处理了
+//            if (event.getLevel().isClientSide()) MachineMax.LOGGER.info("Preparing local phys thread...");
+//            else MachineMax.LOGGER.info("Preparing server phys thread...");
+//            var physLevel = ThreadHelperKt.getPhysLevelById((Level) event.getLevel(), MOD_ID);
+//            physLevel.load();
         }
 
         @SubscribeEvent//卸载世界时停止物理引擎线程

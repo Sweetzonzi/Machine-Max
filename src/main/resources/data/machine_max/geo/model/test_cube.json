@@ -4,8 +4,8 @@
 		{
 			"description": {
 				"identifier": "geometry.test_cube",
-				"texture_width": 64,
-				"texture_height": 64,
+				"texture_width": 128,
+				"texture_height": 128,
 				"visible_bounds_width": 2,
 				"visible_bounds_height": 1.5,
 				"visible_bounds_offset": [0, 0.25, 0]
@@ -19,11 +19,11 @@
 							"origin": [-8, -8, -8],
 							"size": [16, 16, 16],
 							"uv": {
-								"north": {"uv": [0, 0], "uv_size": [16, 16]},
+								"north": {"uv": [16, 16], "uv_size": [16, 16]},
 								"east": {"uv": [0, 16], "uv_size": [16, 16]},
-								"south": {"uv": [16, 0], "uv_size": [16, 16]},
-								"west": {"uv": [16, 16], "uv_size": [16, 16]},
-								"up": {"uv": [0, 32], "uv_size": [16, 16]},
+								"south": {"uv": [48, 16], "uv_size": [16, 16]},
+								"west": {"uv": [32, 16], "uv_size": [16, 16]},
+								"up": {"uv": [16, 0], "uv_size": [16, 16]},
 								"down": {"uv": [32, 16], "uv_size": [16, -16]}
 							}
 						}
@@ -42,7 +42,14 @@
 						{
 							"origin": [-8, -8, -8],
 							"size": [16, 16, 16],
-							"uv": {}
+							"uv": {
+								"north": {"uv": [16, 48], "uv_size": [16, 16]},
+								"east": {"uv": [0, 48], "uv_size": [16, 16]},
+								"south": {"uv": [48, 48], "uv_size": [16, 16]},
+								"west": {"uv": [32, 48], "uv_size": [16, 16]},
+								"up": {"uv": [16, 32], "uv_size": [16, 16]},
+								"down": {"uv": [32, 48], "uv_size": [16, -16]}
+							}
 						}
 					]
 				},
@@ -54,15 +61,18 @@
 						{
 							"origin": [-8, -8, -8],
 							"size": [16, 16, 16],
-							"uv": {}
+							"uv": {
+								"north": {"uv": [16, 80], "uv_size": [16, 16]},
+								"east": {"uv": [0, 80], "uv_size": [16, 16]},
+								"south": {"uv": [48, 80], "uv_size": [16, 16]},
+								"west": {"uv": [32, 80], "uv_size": [16, 16]},
+								"up": {"uv": [16, 64], "uv_size": [16, 16]},
+								"down": {"uv": [32, 80], "uv_size": [16, -16]}
+							}
 						}
 					],
 					"locators": {
-						"mass_1000": [0, 0, 0],
-						"asd": {
-							"offset": [17.0569, 0.7075, -19.0756],
-							"rotation": [0, 0, 0]
-						}
+						"mass_1000": [0, 0, 0]
 					}
 				}
 			]

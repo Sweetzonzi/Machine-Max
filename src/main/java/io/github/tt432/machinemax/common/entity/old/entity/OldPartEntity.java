@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class OldPartEntity extends Entity implements IEntityWithComplexSpawn {
+public abstract class OldPartEntity extends Entity {
 
     @Setter
     @Getter
@@ -27,12 +27,6 @@ public abstract class OldPartEntity extends Entity implements IEntityWithComplex
     @Setter
     @Getter
     private volatile boolean controllerHandled;//控制器是否已在单帧物理计算中生效
-    private int lerpSteps;
-    private double lerpX;
-    private double lerpY;
-    private double lerpZ;
-    private double lerpYRot;
-    private double lerpXRot;
     @Setter
     @Getter
     private float ZRot;
@@ -61,29 +55,8 @@ public abstract class OldPartEntity extends Entity implements IEntityWithComplex
                 }
             }
         }
-        this.syncPoseToMainThread();//将实体位姿与物理计算结果同步
-        if (!this.level().isClientSide()) {//服务端限定内容
-//            MachineMax.LOGGER.info("Server ID: " + this.getId());
-        } else {//客户端限定内容
-//            MachineMax.LOGGER.debug("rot:" + corePart.childrenPartSlots.get(0).getChildPart().dbody.getQuaternion().toEulerDegreesZYX());
-        }
+//        this.syncPoseToMainThread();//将实体位姿与物理计算结果同步
         super.tick();
-    }
-
-    /***
-     * 将物理计算线程中的实体位姿同步到游戏主线程
-     */
-    public void syncPoseToMainThread() {
-        if (corePart != null) {//将实体位姿与物理计算结果同步
-            DVector3 pos = corePart.dbody.getPosition().copy();
-            this.setPosRaw(pos.get0(), pos.get1(), pos.get2());
-            DQuaternion dq = corePart.dbody.getQuaternion().copy();
-            DVector3 heading = dq.toEulerDegrees();
-            setXRot((float) heading.get0());
-            setYRot(-(float) heading.get1());
-            setZRot((float) heading.get2());
-            this.setBoundingBox(this.makeBoundingBox());
-        }
     }
 
     /**
@@ -122,52 +95,6 @@ public abstract class OldPartEntity extends Entity implements IEntityWithComplex
         setZRot((float) ang.get2());
     }
 
-    /**
-     * 根据各个零部件的位置与质量计算实体的质心位置
-     *
-     * @return 实体的质心位置
-     */
-    public DVector3 getMassCentre() {
-        double totalMass = this.corePart.dmass.getMass();//获取根部件质量
-        DVector3 massCentre = this.corePart.dbody.getPosition().reScale(totalMass);//获取根部件质心位置，并以质量为权重
-        for (AbstractPart part : this.corePart) {
-            if (part != this.corePart) {
-                massCentre.add(part.dbody.getPosition().reScale(part.dmass.getMass()));
-                totalMass += part.dmass.getMass();//计算总重
-            }
-        }
-        massCentre.scale(1 / totalMass);//加权平均求质心位置
-        return massCentre;
-    }
-
-    @Override
-    public void move(@NotNull MoverType type, @NotNull Vec3 pos) {
-        //运动交由物理引擎处理，原版运动留空
-    }
-
-    @Override
-    public boolean isPickable() {//不是是否可拾取而是是否可被选中
-        return !this.isRemoved();
-    }
-
-    @Override
-    public boolean hurt(DamageSource pSource, float pAmount) {
-        this.remove(RemovalReason.KILLED);
-        return true;
-    }
-
-    @Override
-    public void onRemovedFromLevel() {
-        if (this.corePart != null) {
-            for (AbstractPart part : this.corePart) {
-                part.dbody.enable();
-                part.removeAllGeomsFromSpace();
-                part.removeBodyInWorld();
-            }
-        }
-        super.onRemovedFromLevel();
-    }
-
     @Override
     public boolean canCollideWith(Entity pEntity) {
         return canVehicleCollide(this, pEntity);
@@ -175,67 +102,6 @@ public abstract class OldPartEntity extends Entity implements IEntityWithComplex
 
     public static boolean canVehicleCollide(Entity pVehicle, Entity pEntity) {
         return (pEntity.canBeCollidedWith() || pEntity.isPushable()) && !pVehicle.isPassengerOfSameVehicle(pEntity);
-    }
-
-    /**
-     * 将部件运动体ID写入实体生成数据包
-     * @param buffer 实体生成数据包 The packet data stream
-     */
-    @Override
-    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
-//        for(AbstractPart part : corePart){
-//            if(part.dbody!=null){
-//                buffer.writeInt(part.dbody.getId());
-//            }
-//        }
-    }
-
-    /**
-     * 从实体生成数据包读取部件运动体ID并更新
-     * @param additionalData 实体生成数据包 The packet data stream
-     */
-    @Override
-    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
-//        for(AbstractPart part : corePart){
-//            if(part.dbody!=null){
-//                part.dbody.setId(additionalData.readInt());
-//            }
-//        }
-    }
-
-    @Override
-    public void lerpTo(double pX, double pY, double pZ, float pYRot, float pXRot, int pSteps) {
-        this.lerpX = pX;
-        this.lerpY = pY;
-        this.lerpZ = pZ;
-        this.lerpYRot = pYRot;
-        this.lerpXRot = pXRot;
-        this.lerpSteps = 10;
-    }
-
-    @Override
-    public double lerpTargetX() {
-        return this.lerpSteps > 0 ? this.lerpX : this.getX();
-    }
-
-    @Override
-    public double lerpTargetY() {
-        return this.lerpSteps > 0 ? this.lerpY : this.getY();
-    }
-
-    @Override
-    public double lerpTargetZ() {
-        return this.lerpSteps > 0 ? this.lerpZ : this.getZ();
-    }
-
-    @Override
-    public float lerpTargetXRot() {
-        return this.lerpSteps > 0 ? (float) this.lerpXRot : this.getXRot();
-    }
-
-    @Override
-    public float lerpTargetYRot() {
-        return this.lerpSteps > 0 ? (float) this.lerpYRot : this.getYRot();
     }
 
 }

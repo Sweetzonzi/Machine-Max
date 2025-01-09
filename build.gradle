@@ -177,10 +177,11 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // core
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0"
     // 物理库
-//    implementation files('libs/spark_core-1.21.1-1.0.67.jar')
-    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
-    // 其它mod
+    implementation files('libs/spark_core-1.21.1-1.0.125.jar')
+//    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
+    //其它mod
     runtimeOnly files(fileTree(dir: 'lib', includes: ['*.jar']))
 
 }

@@ -31,8 +31,8 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
     public void render(MMPartEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
         if (entity.part == null) return;
-//        DQuaternionC dq = entity.part.partElement.getBody().getQuaternion().copy();
-        DQuaternionC dq = new DQuaternion(1,0,0,0);
+        DQuaternionC dq = entity.part.rootElement.getBody().getQuaternion().copy();
+//        DQuaternionC dq = new DQuaternion(1,0,0,0);
         Quaternionf q = new Quaternionf(dq.get1(), dq.get2(), dq.get3(), dq.get0());
         poseStack.pushPose();//开始渲染
         poseStack.mulPose(q);//旋转
