@@ -1,23 +1,15 @@
-package io.github.tt432.machinemax.common.part;
+package io.github.tt432.machinemax.common.sloarphys.body;
 
 import cn.solarmoon.spark_core.animation.model.part.BonePart;
 import cn.solarmoon.spark_core.animation.model.part.CubePart;
 import cn.solarmoon.spark_core.animation.model.part.Locator;
 import cn.solarmoon.spark_core.phys.SparkMathKt;
-import cn.solarmoon.spark_core.phys.attached_body.AttachedBody;
-import cn.solarmoon.spark_core.phys.thread.PhysLevel;
-import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.part.slot.AbstractElementSlot;
-import io.github.tt432.machinemax.common.part.slot.FixedElementSlot;
+import io.github.tt432.machinemax.common.part.AbstractPart;
+import io.github.tt432.machinemax.common.part.slot.FixedBodySlot;
 import io.github.tt432.machinemax.util.data.PosRot;
-import io.github.tt432.machinemax.util.formula.IPartPhysParameters;
-import lombok.Getter;
-import lombok.Setter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.ode4j.math.DMatrix3;
@@ -27,73 +19,39 @@ import org.ode4j.ode.*;
 import org.ode4j.ode.internal.DxBox;
 import org.ode4j.ode.internal.Rotation;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import static io.github.tt432.machinemax.util.ModelBoneHelper.getLocatorValue;
 import static org.ode4j.ode.OdeConstants.dContactBounce;
 import static org.ode4j.ode.OdeConstants.dContactRolling;
 
-//TODO:设为抽象类，并创建一些变体，如：
-// 1. 直接指定形状、碰撞箱等参数的零件
-// 2. 特殊碰撞功能的零件，如刀刃、引信
-public class PartElement implements AttachedBody, IPartPhysParameters {
+public class ModelPartBody extends AbstractPartBody {
 
-    ArrayList<DGeom> geoms = new ArrayList<>();
-    volatile DMass mass;
-    @Getter
-    DBody body;
-    @Getter
-    final String name;
-    @Getter
-    final Level level;
-    /*模块化相关参数*/
-    @Getter
-    final HashMap<String, PosRot> parentElementAttachPoints = HashMap.newHashMap(2);//可用连接点及其相对零件质心的坐标与旋转
-    @Getter
-    volatile HashMap<String, AbstractElementSlot> parentElementAttachSlots;//本零件安装于的槽位
-    @Getter
-    final HashMap<String, AbstractElementSlot> elementSlots = HashMap.newHashMap(2);//本零件的零件安装槽
-    @Getter
-    final AbstractPart part;//零件所属部件
-    @Getter
-    @Setter
-    volatile PartElement motherElement;//本零件附着于的零件(唯一，遵循骨骼结构)
-    /*物理运算相关参数*/
-    //流体动力相关系数
-    public DVector3 airDragCentre = new DVector3();//空气阻力/升力作用点(相对重心位置)
-    public DVector3 waterDragCentre = new DVector3();//水阻力/升力作用点(相对重心位置)
-
-    //TODO:浮力
-    //TODO:摩擦力
-    public PartElement(String name, AbstractPart part, BonePart bone) {
-        this.name = name;
-        this.level = part.getAttachedEntity().level();
-        this.part = part;
-        mass = OdeHelper.createMass();
-        body = OdeHelper.createBody(name, this, false, getPhysLevel().getPhysWorld().getWorld());
-        body.disable();
-        body.onPhysTick(this::onPhysTick);
-        //创建零件连接点(可以是多个)
-        parentElementAttachPoints.put("MassCenter", new PosRot(new DVector3(), new DQuaternion().setIdentity()));//质心作为默认的公有的连接点
+    public ModelPartBody(String name, AbstractPart part, BonePart bone) {
+        super(name, part);
+        //读取创建零件体连接点
         for(HashMap.Entry<String, Locator> entry : bone.getLocators().entrySet()){
             String locatorName = entry.getKey();
             Locator locator = entry.getValue();
-            if (locatorName.startsWith("mmAttachPoint_")){
-                String AttachPointName = locatorName.replaceFirst("mmAttachPoint_", "");
+            if (locatorName.startsWith("attach_point_")){
+                String AttachPointName = locatorName.replaceFirst("attach_point_", "");
                 DVector3 AttachPointPos = SparkMathKt.toDVector3(locator.getOffset());
                 DQuaternion AttachPointRot = DQuaternion.fromEulerDegrees(SparkMathKt.toDVector3(locator.getRotation()));
-                parentElementAttachPoints.put(AttachPointName, new PosRot(AttachPointPos, AttachPointRot));
+                parentBodyAttachPoints.put(AttachPointName, new PosRot(AttachPointPos, AttachPointRot));
             }
         }
     }
 
+    @Override
+    protected void onTick() {
 
-    private void onCollide(DGeom dGeom, DContactBuffer dContacts) {
+    }
+
+
+    protected void onCollide(DGeom dGeom, DContactBuffer dContacts) {
         var b = dGeom.getBody();
         var o = b.getOwner();
-        if (o instanceof PartElement && ((PartElement) o).part == part) return;//同部件内的碰撞体忽略相互碰撞
+        if (o instanceof ModelPartBody && ((ModelPartBody) o).part == part) return;//同部件内的碰撞体忽略相互碰撞
         for (DContact contact : dContacts) {
             //TODO:读取材料，获取摩擦系数
             contact.surface.mode = dContactBounce | dContactRolling;
@@ -122,7 +80,7 @@ public class PartElement implements AttachedBody, IPartPhysParameters {
      *
      * @param bone
      */
-    protected void createMass(BonePart bone) {
+    public void createMass(BonePart bone) {
         //创建质量体所需的数据
         String name = bone.getName();
         double massValue = 1;
@@ -137,12 +95,8 @@ public class PartElement implements AttachedBody, IPartPhysParameters {
             Locator locator = entry.getValue();
             Object value = getLocatorValue(locatorName, locator);
             if (value == null) continue;
-            if (locatorName.startsWith("mm")) {
-                if (locatorName.startsWith("mmRotation_")) {
-                    rotation = (DVector3) value;
-                } else {
-                    MachineMax.LOGGER.error("未知的Locator关键词: {}", locatorName);
-                }
+            if (locatorName.startsWith("rotation_")) {
+                rotation = (DVector3) value;
             } else if (locatorName.startsWith("mass_")) {
                 massValue = (double) value;
             } else if (locatorName.startsWith("radius_")) {
@@ -187,7 +141,7 @@ public class PartElement implements AttachedBody, IPartPhysParameters {
      *
      * @param bone
      */
-    protected void createCollisionShape(BonePart bone) {
+    public void createCollisionShape(BonePart bone) {
         String name = bone.getName();
         DGeom geom;
         for (CubePart cube : bone.getCubes()) {
@@ -218,7 +172,7 @@ public class PartElement implements AttachedBody, IPartPhysParameters {
      *
      * @param bone
      */
-    protected void createElementSlots(BonePart bone) {
+    public void createPartBodySlots(BonePart bone) {
         //创建安装槽所需的数据
         String name = bone.getName();
         DVector3 childElementAttachPos = SparkMathKt.toDVector3(bone.getPivot());
@@ -238,7 +192,7 @@ public class PartElement implements AttachedBody, IPartPhysParameters {
         //TODO:把安装槽位注册表化后，允许此方法创建任意类型的安装槽
         if (name.startsWith("mmSlot_Fixed_")) {
             name = name.replaceFirst("mmSlot_Fixed_", "");
-            this.getElementSlots().put(name, new FixedElementSlot(name, this, childElementAttachPoint));
+            this.getBodySlots().put(name, new FixedBodySlot(name, this, childElementAttachPoint));
         } else if (name.startsWith("mmSlot_Ball_")) {
 
         } else if (name.startsWith("mmSlot_DoubleBall_")) {
@@ -252,19 +206,4 @@ public class PartElement implements AttachedBody, IPartPhysParameters {
         }
     }
 
-    @Override
-    public void enable() {
-        getBody().enable();
-    }
-
-    @Override
-    public void disable() {
-        getBody().disable();
-    }
-
-    @NotNull
-    @Override
-    public PhysLevel getPhysLevel() {
-        return ThreadHelperKt.getPhysLevelById(level, MachineMax.MOD_ID);
-    }
 }

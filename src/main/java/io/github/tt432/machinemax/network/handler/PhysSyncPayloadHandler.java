@@ -2,8 +2,7 @@ package io.github.tt432.machinemax.network.handler;
 
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.sloarphys.MMClientPhysLevel;
-import io.github.tt432.machinemax.mixin_interface.IMixinLevel;
+import io.github.tt432.machinemax.common.sloarphys.thread.MMClientPhysLevel;
 import io.github.tt432.machinemax.network.payload.PhysSyncPayload;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 

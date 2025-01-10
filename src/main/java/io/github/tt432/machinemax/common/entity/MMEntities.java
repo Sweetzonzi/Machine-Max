@@ -36,7 +36,8 @@ public class MMEntities {
     public static final Supplier<EntityType<MMPartEntity>> MM_PART_ENTITY =
             ENTITIES.register("part",
                     () -> EntityType.Builder.of(MMPartEntity::new, MobCategory.MISC)
-                            .sized(0.2f,0.2f)
+                            .setShouldReceiveVelocityUpdates(false)
+                            .fireImmune()
                             .build("part"));
     //以上为注册的实体列表
 }

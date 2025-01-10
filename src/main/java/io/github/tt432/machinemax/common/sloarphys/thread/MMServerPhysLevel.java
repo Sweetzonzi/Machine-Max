@@ -1,6 +1,5 @@
-package io.github.tt432.machinemax.common.sloarphys;
+package io.github.tt432.machinemax.common.sloarphys.thread;
 
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.part.AbstractPart;
 import io.github.tt432.machinemax.network.payload.PhysSyncPayload;
 import io.github.tt432.machinemax.util.data.BodiesSyncData;

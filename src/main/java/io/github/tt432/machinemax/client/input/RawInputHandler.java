@@ -3,6 +3,8 @@ package io.github.tt432.machinemax.client.input;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
 import io.github.tt432.machinemax.network.payload.MovementInputPayload;
+import io.github.tt432.machinemax.network.payload.RegularInputPayload;
+import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -30,6 +32,8 @@ public class RawInputHandler {
     static int rot_x_input = 0;
     static int rot_y_input = 0;
     static int rot_z_input = 0;
+
+    static int interact_down_ticks = 0;
 
     /**
      * 在每个客户端tick事件后调用，处理按键逻辑。
@@ -100,6 +104,19 @@ public class RawInputHandler {
     public static void handleAimInputs(ClientTickEvent.Post event) {
         if (KeyBinding.generalFreeCamKey.isDown()) {
             //TODO:自由视角键未被按下时，根据相机镜头角度发包视线输入
+        }
+    }
+
+    @SubscribeEvent
+    public static void handleNormalInputs(ClientTickEvent.Post event){
+        if (KeyBinding.generalInteractKey.isDown()){
+            if(interact_down_ticks == 0){
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(), interact_down_ticks));
+            }
+            interact_down_ticks++;
+        } else if (interact_down_ticks > 0) {//按键松开且按下持续至少1tick
+            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(),interact_down_ticks));
+            interact_down_ticks = 0;
         }
     }
 }

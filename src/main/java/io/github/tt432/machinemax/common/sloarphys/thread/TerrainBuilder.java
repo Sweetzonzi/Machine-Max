@@ -1,4 +1,4 @@
-package io.github.tt432.machinemax.common.sloarphys;
+package io.github.tt432.machinemax.common.sloarphys.thread;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

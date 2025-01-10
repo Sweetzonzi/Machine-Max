@@ -14,17 +14,13 @@ public class ModelBoneHelper {
     public static Object getLocatorValue(String locatorName, Locator locator) {
         Object value;
         Object temp;
-        if (locatorName.startsWith("mm")) {
-            if (locatorName.contains("mmOffset")) {//未使用
-                temp = locator.getOffset();
-                value = new DVector3(((Vec3) temp).x, ((Vec3) temp).y, ((Vec3) temp).z);
-            } else if (locatorName.contains("mmRotation")) {//未使用
-                temp = locator.getRotation();
-                value = new DVector3(((Vec3) temp).x, ((Vec3) temp).y, ((Vec3) temp).z);
-            } else {
-                value = null;
-            }
-        } else if (locatorName.startsWith("mass_")) {//质量(kg)
+        if (locatorName.startsWith("offset_")) {//未使用
+            temp = locator.getOffset();
+            value = new DVector3(((Vec3) temp).x, ((Vec3) temp).y, ((Vec3) temp).z);
+        } else if (locatorName.startsWith("rotation_")) {//旋转
+            temp = locator.getRotation();
+            value = new DVector3(((Vec3) temp).x, ((Vec3) temp).y, ((Vec3) temp).z);
+        }  else if (locatorName.startsWith("mass_")) {//质量(kg)
             temp = locatorName.replaceFirst("mass_", "");
             value = Double.parseDouble((String) temp);
         } else if (locatorName.startsWith("radius_")) {//半径(m)

@@ -1,6 +1,6 @@
 package io.github.tt432.machinemax.mixin;
 
-import io.github.tt432.machinemax.common.sloarphys.MMAbstractPhysLevel;
+import io.github.tt432.machinemax.common.sloarphys.thread.MMAbstractPhysLevel;
 import io.github.tt432.machinemax.mixin_interface.IMixinLevel;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;

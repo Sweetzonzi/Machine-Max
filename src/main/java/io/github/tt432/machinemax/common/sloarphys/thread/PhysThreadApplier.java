@@ -1,21 +1,13 @@
-package io.github.tt432.machinemax.common.sloarphys;
+package io.github.tt432.machinemax.common.sloarphys.thread;
 
 import cn.solarmoon.spark_core.event.PhysLevelRegisterEvent;
-import cn.solarmoon.spark_core.phys.thread.ClientPhysLevel;
-import cn.solarmoon.spark_core.phys.thread.PhysLevel;
-import cn.solarmoon.spark_core.phys.thread.ServerPhysLevel;
-import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
-import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.mixin_interface.IMixinLevel;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import org.ode4j.ode.OdeHelper;
 
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 

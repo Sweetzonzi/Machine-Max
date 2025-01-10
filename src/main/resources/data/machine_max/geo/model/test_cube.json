@@ -30,13 +30,13 @@
 					]
 				},
 				{
-					"name": "mmElement_Root",
+					"name": "mmPartBody_Root",
 					"parent": "Root",
 					"pivot": [0, 0, 0]
 				},
 				{
 					"name": "mmCollision_Box_Root",
-					"parent": "mmElement_Root",
+					"parent": "mmPartBody_Root",
 					"pivot": [0, 0, 0],
 					"cubes": [
 						{
@@ -55,7 +55,7 @@
 				},
 				{
 					"name": "mmMass_Box_1000_Root",
-					"parent": "mmElement_Root",
+					"parent": "mmPartBody_Root",
 					"pivot": [0, 0, 0],
 					"cubes": [
 						{

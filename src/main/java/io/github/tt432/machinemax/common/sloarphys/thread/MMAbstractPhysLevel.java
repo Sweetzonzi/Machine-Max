@@ -1,4 +1,4 @@
-package io.github.tt432.machinemax.common.sloarphys;
+package io.github.tt432.machinemax.common.sloarphys.thread;
 
 import cn.solarmoon.spark_core.phys.thread.PhysLevel;
 import io.github.tt432.machinemax.common.part.AbstractPart;
