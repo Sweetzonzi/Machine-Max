@@ -1,7 +1,6 @@
 package io.github.tt432.machinemax.common.part.old.slot;
 
 import io.github.tt432.machinemax.common.part.old.AbstractPart;
-import io.github.tt432.machinemax.common.phys.AbstractPhysThread;
 import org.ode4j.math.DQuaternion;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
@@ -34,8 +33,8 @@ public class WheelPartSlot extends AbstractPartSlot {
         ((DAMotorJoint) joints.get(1)).setAxis(0,1,0,1,0);
         ((DAMotorJoint) joints.get(1)).setParamFMax(500000);
         //设置减震器属性
-        ((DHinge2Joint) joints.getFirst()).setParamSuspensionERP(((double) AbstractPhysThread.STEP_SIZE / 1000 * kp) / (((double) AbstractPhysThread.STEP_SIZE / 1000 * kp) + kd));
-        ((DHinge2Joint) joints.getFirst()).setParamSuspensionCFM(1 / (((double) AbstractPhysThread.STEP_SIZE / 1000 * kp) + kd));
+        ((DHinge2Joint) joints.getFirst()).setParamSuspensionERP(((double) 0.02 / 1000 * kp) / (((double) 0.02 / 1000 * kp) + kd));
+        ((DHinge2Joint) joints.getFirst()).setParamSuspensionCFM(1 / (((double) 0.02 / 1000 * kp) + kd));
     }
 
     @Override

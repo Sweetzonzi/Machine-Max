@@ -1,6 +1,5 @@
 package io.github.tt432.machinemax.common.entity.old.entity;
-
-import io.github.tt432.machinemax.common.entity.old.controller.AE86Controller;
+/*
 import io.github.tt432.machinemax.common.part.old.ae86.AE86ChassisPart;
 import org.ode4j.math.DVector3;
 import net.minecraft.core.particles.ParticleTypes;
@@ -81,3 +80,4 @@ public class AE86Entity extends OldPartEntity {
         return (pEntity.canBeCollidedWith() || pEntity.isPushable()) && !pVehicle.isPassengerOfSameVehicle(pEntity);
     }
 }
+*/

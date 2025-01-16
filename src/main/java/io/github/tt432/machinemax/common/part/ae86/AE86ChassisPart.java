@@ -1,10 +1,9 @@
 package io.github.tt432.machinemax.common.part.ae86;
 
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
-import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.part.AbstractPart;
-import io.github.tt432.machinemax.common.part.PartType;
+import io.github.tt432.machinemax.common.registry.PartType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;

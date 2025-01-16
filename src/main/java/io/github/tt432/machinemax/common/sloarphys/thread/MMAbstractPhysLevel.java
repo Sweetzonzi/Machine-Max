@@ -45,8 +45,7 @@ public abstract class MMAbstractPhysLevel extends PhysLevel {
         addTerrainCollisionBoxes();
         super.physTick();
         end = System.nanoTime();
-        if (getLevel().dimension() == Level.OVERWORLD)
-            System.out.println("level: " + getLevel() + " step: " + step + " time: " + (end - start) / 1000000);
+//        if (getLevel().dimension() == Level.OVERWORLD)System.out.println("level: " + getLevel() + " step: " + step + " time: " + (end - start) / 1000000);
     }
 
     public void init(PhysLevel level) {

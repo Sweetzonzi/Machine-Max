@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
-import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.phys.SparkMathKt;
 import cn.solarmoon.spark_core.phys.thread.PhysLevel;
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
@@ -13,10 +12,13 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.client.PartMolangScope;
 import io.github.tt432.machinemax.common.entity.part.MMPartEntity;
 import io.github.tt432.machinemax.common.part.slot.AbstractBodySlot;
+import io.github.tt432.machinemax.common.registry.PartType;
 import io.github.tt432.machinemax.common.sloarphys.body.ModelPartBody;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +30,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public abstract class AbstractPart implements IAnimatable<AbstractPart> {
+public abstract class AbstractPart implements IAnimatable<AbstractPart>, ItemLike {
     //渲染属性
     public PartMolangScope molangScope;//用于储存作用域为部件本身的Molang变量
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
@@ -183,5 +185,11 @@ public abstract class AbstractPart implements IAnimatable<AbstractPart> {
     @Override
     public void syncMainAnimToClient() {
 
+    }
+
+    @Override
+    public Item asItem() {
+        //TODO:根据nbt/component返回零件对应的物品
+        return null;
     }
 }

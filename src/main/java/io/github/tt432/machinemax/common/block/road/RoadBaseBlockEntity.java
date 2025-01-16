@@ -1,10 +1,7 @@
 package io.github.tt432.machinemax.common.block.road;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.block.MMBlockEntities;
-import io.github.tt432.machinemax.mixin_interface.IMixinBlockState;
-import io.github.tt432.machinemax.mixin_interface.IMixinLevel;
-import org.ode4j.math.DVector3;
+import io.github.tt432.machinemax.common.registry.MMBlockEntities;
 import org.ode4j.ode.DHeightfieldData;
 import org.ode4j.ode.OdeHelper;
 import org.ode4j.ode.internal.DxTrimeshHeightfield;
@@ -13,11 +10,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
-
-import java.util.Objects;
 
 public class RoadBaseBlockEntity extends BlockEntity {
 
@@ -29,7 +22,7 @@ public class RoadBaseBlockEntity extends BlockEntity {
     DxTrimeshHeightfield heightfield;//道路几何形状
 
     public RoadBaseBlockEntity(BlockPos pos, BlockState blockState) {
-        super(MMBlockEntities.ROAD_BASE_BLOCK_ENTITY.get(), pos, blockState);
+        super(MMBlockEntities.getROAD_BASE_BLOCK_ENTITY().get(), pos, blockState);
         for(int i = 0; i < 17; i++){
             for(int j = 0; j < 17; j++){
                 heightData[i*17+j] = (double) j /17/2;

@@ -2,6 +2,7 @@ package io.github.tt432.machinemax.common.part;
 
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.common.registry.PartType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;

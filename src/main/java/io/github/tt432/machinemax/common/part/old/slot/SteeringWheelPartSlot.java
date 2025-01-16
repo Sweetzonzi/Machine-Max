@@ -1,7 +1,6 @@
 package io.github.tt432.machinemax.common.part.old.slot;
 
 import io.github.tt432.machinemax.common.part.old.AbstractPart;
-import io.github.tt432.machinemax.common.phys.AbstractPhysThread;
 import org.ode4j.math.DQuaternion;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.DAMotorJoint;

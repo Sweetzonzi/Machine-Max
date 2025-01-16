@@ -1,16 +1,14 @@
 package io.github.tt432.machinemax.common.entity.part;
 
-import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
-import cn.solarmoon.spark_core.animation.anim.play.Bone;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.entity.MMEntities;
+import io.github.tt432.machinemax.common.registry.MMEntities;
 import io.github.tt432.machinemax.common.part.AbstractPart;
-import io.github.tt432.machinemax.common.part.PartType;
+import io.github.tt432.machinemax.common.registry.PartType;
 import io.github.tt432.machinemax.common.sloarphys.body.ModelPartBody;
 import io.github.tt432.machinemax.common.sloarphys.thread.MMAbstractPhysLevel;
 import io.github.tt432.machinemax.common.sloarphys.thread.MMClientPhysLevel;
@@ -64,7 +62,7 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
      * @param part
      */
     public MMPartEntity(Level level, AbstractPart part) {
-        this(MMEntities.MM_PART_ENTITY.get(), level);
+        this(MMEntities.getPART_ENTITY().get(), level);
         reCreateFromPart = true;
         this.part = part;
         part.setAttachedEntity(this);
@@ -75,7 +73,7 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
     }
 
     public MMPartEntity(PartType type, Level level) {
-        this(MMEntities.MM_PART_ENTITY.get(), level);
+        this(MMEntities.getPART_ENTITY().get(), level);
         this.createPart(this.getId(), type);
     }
 

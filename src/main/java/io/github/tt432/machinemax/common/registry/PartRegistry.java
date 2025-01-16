@@ -1,7 +1,6 @@
 package io.github.tt432.machinemax.common.registry;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.part.PartType;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;

@@ -3,7 +3,6 @@ package io.github.tt432.machinemax.common.entity.old.controller;
 import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
 import io.github.tt432.machinemax.common.part.old.slot.AbstractPartSlot;
 import io.github.tt432.machinemax.common.part.old.slot.WheelPartSlot;
-import io.github.tt432.machinemax.common.phys.AbstractPhysThread;
 import io.github.tt432.machinemax.util.MMMath;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.DAMotorJoint;
@@ -124,10 +123,10 @@ public class CarController extends PhysController {
     }
 
     private void rudderControl() {//转角计算
-        if (rawMoveInput[4] > 0 || (rawMoveInput[4] == 0 && turning_input < -AbstractPhysThread.STEP_SIZE)) {
-            turning_input = clamp(turning_input + AbstractPhysThread.STEP_SIZE / STEER_T, -1, 1);
-        } else if (rawMoveInput[4] < 0 || turning_input > AbstractPhysThread.STEP_SIZE) {
-            turning_input = clamp(turning_input - AbstractPhysThread.STEP_SIZE / STEER_T, -1, 1);
+        if (rawMoveInput[4] > 0 || (rawMoveInput[4] == 0 && turning_input < -0.02)) {
+            turning_input = clamp(turning_input + 0.02 / STEER_T, -1, 1);
+        } else if (rawMoveInput[4] < 0 || turning_input > 0.02) {
+            turning_input = clamp(turning_input - 0.02 / STEER_T, -1, 1);
         } else {
             turning_input = 0F;
         }
