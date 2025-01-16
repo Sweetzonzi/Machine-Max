@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.phys.thread.PhysLevel;
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import io.github.tt432.machinemax.MachineMax;
 import lombok.Getter;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -27,9 +28,9 @@ public abstract class AbstractBody implements AttachedBody {
     @Getter
     final Level level;
 
-    public AbstractBody(String name, Entity entity) {
+    public AbstractBody(String name, Level level) {
         this.name = name;
-        this.level = entity.level();
+        this.level = level;
         mass = OdeHelper.createMass();
         body = OdeHelper.createBody(name, this, false, getPhysLevel().getPhysWorld().getWorld());
         body.disable();
@@ -61,6 +62,6 @@ public abstract class AbstractBody implements AttachedBody {
     @NotNull
     @Override
     public PhysLevel getPhysLevel() {
-        return ThreadHelperKt.getPhysLevelById(level, MachineMax.MOD_ID);
+        return ThreadHelperKt.getPhysLevelById(level, ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "main"));
     }
 }

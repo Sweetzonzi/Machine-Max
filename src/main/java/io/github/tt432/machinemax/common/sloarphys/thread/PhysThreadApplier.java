@@ -1,7 +1,9 @@
 package io.github.tt432.machinemax.common.sloarphys.thread;
 
 import cn.solarmoon.spark_core.event.PhysLevelRegisterEvent;
+import io.github.tt432.machinemax.MachineMax;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -19,30 +21,9 @@ public class PhysThreadApplier {
         private static void registerPhysThread(PhysLevelRegisterEvent event) {
             var level = event.getLevel();
             if (!level.isClientSide)
-                event.register(new MMServerPhysLevel(MOD_ID, "MachineMax Phys Thread - Server", (ServerLevel) level, 20, false));
+                event.register(new MMServerPhysLevel(ResourceLocation.fromNamespaceAndPath(MOD_ID, "main"), "MachineMax Phys Thread - Server", (ServerLevel) level, 20, false));
             else
-                event.register(new MMClientPhysLevel(MOD_ID, "MachineMax Phys Thread - Client", (ClientLevel) level, 20, false));
-        }
-
-        @SubscribeEvent//加载世界时开启新物理计算线程
-        private static void physThreadStart(LevelEvent.Load event) {//每个Level执行一次，因此单机游戏中会有服务端三个维度+玩家所在客户端维度4次
-            //星火核心已经处理了
-//            if (event.getLevel().isClientSide()) MachineMax.LOGGER.info("Preparing local phys thread...");
-//            else MachineMax.LOGGER.info("Preparing server phys thread...");
-//            var physLevel = ThreadHelperKt.getPhysLevelById((Level) event.getLevel(), MOD_ID);
-//            physLevel.load();
-        }
-
-        @SubscribeEvent//卸载世界时停止物理引擎线程
-        private static void physThreadStop(LevelEvent.Unload event) {
-            //星火核心已经处理了
-//            IMixinLevel level = (IMixinLevel) event.getLevel();
-//            level.machine_Max$getPhysLevel().unLoad();//结束线程
-//            if (event.getLevel().isClientSide()) {
-//                MachineMax.LOGGER.info("Local phys thread Stopped.");
-//            } else {
-//                MachineMax.LOGGER.info("Server phys thread Stopped.");
-//            }
+                event.register(new MMClientPhysLevel(ResourceLocation.fromNamespaceAndPath(MOD_ID, "main"), "MachineMax Phys Thread - Client", (ClientLevel) level, 20, false));
         }
 
         @SubscribeEvent//TODO:根据主线程同步物理引擎线程时间

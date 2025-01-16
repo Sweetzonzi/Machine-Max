@@ -1,7 +1,8 @@
 package io.github.tt432.machinemax.common.sloarphys.thread;
 
 import io.github.tt432.machinemax.common.part.AbstractPart;
-import io.github.tt432.machinemax.util.data.BodiesSyncData;
+import io.github.tt432.machinemax.util.data.PosRotVel;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.ode4j.ode.DBody;
@@ -12,7 +13,7 @@ public class MMClientPhysLevel extends MMAbstractPhysLevel {
     public volatile boolean needSync = false;
     public volatile HashMap<Integer, Integer> partNoInfoCount = HashMap.newHashMap(100);
 
-    public MMClientPhysLevel(@NotNull String id, @NotNull String name, @NotNull Level level, long tickStep, boolean customApply) {
+    public MMClientPhysLevel(@NotNull ResourceLocation id, @NotNull String name, @NotNull Level level, long tickStep, boolean customApply) {
         super(id, name, level, tickStep, customApply);
     }
 
@@ -34,8 +35,8 @@ public class MMClientPhysLevel extends MMAbstractPhysLevel {
         for (AbstractPart part : syncParts.values()) {//遍历所有需要同步的部件
             if (syncData.get(part.getId()) != null) {//若同步数据包内包含对应部件的信息
                 partNoInfoCount.put(part.getId(), 0);//重置重发次数
-                DBody b = part.rootElement.getBody();
-                BodiesSyncData data = syncData.get(part.getId());
+                DBody b = part.rootBody.getBody();
+                PosRotVel data = syncData.get(part.getId());
                 b.setPosition(data.pos());//同步位置
                 b.setQuaternion(data.rot());//同步姿态
                 b.setLinearVel(data.lVel());//同步线速度
@@ -44,7 +45,7 @@ public class MMClientPhysLevel extends MMAbstractPhysLevel {
                 if (partNoInfoCount.get(part.getId()) == null) return;
                 partNoInfoCount.put(part.getId(), partNoInfoCount.get(part.getId()) + 1);
                 if (partNoInfoCount.get(part.getId()) > 5)//若超过5次同步都没有收到对应部件的信息，则认为服务端已将其删除
-                    part.removeAllElementsFromLevel();//故删除服务器中不再存在的部件
+                    part.removeAllBodiesFromLevel();//故删除服务器中不再存在的部件
             }
         }
     }

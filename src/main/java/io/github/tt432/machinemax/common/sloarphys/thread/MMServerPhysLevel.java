@@ -2,7 +2,8 @@ package io.github.tt432.machinemax.common.sloarphys.thread;
 
 import io.github.tt432.machinemax.common.part.AbstractPart;
 import io.github.tt432.machinemax.network.payload.PhysSyncPayload;
-import io.github.tt432.machinemax.util.data.BodiesSyncData;
+import io.github.tt432.machinemax.util.data.PosRotVel;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -12,7 +13,8 @@ import org.ode4j.ode.DBody;
 public class MMServerPhysLevel extends MMAbstractPhysLevel {
 
 
-    public MMServerPhysLevel(@NotNull String id, @NotNull String name, @NotNull Level level, long tickStep, boolean customApply) {
+
+    public MMServerPhysLevel(@NotNull ResourceLocation id, @NotNull String name, @NotNull Level level, long tickStep, boolean customApply) {
         super(id, name, level, tickStep, customApply);
     }
 
@@ -27,13 +29,13 @@ public class MMServerPhysLevel extends MMAbstractPhysLevel {
      */
     protected void syncBodies() {
         syncData.clear();
+        DBody b;
         for (AbstractPart part : syncParts.values()) {//记录所有需要同步的部件根零件的位置、姿态、速度和角速度
-            DBody b = part.rootElement.getBody();
-            syncData.put(part.getId(), new BodiesSyncData(b.getPosition().copy(), b.getQuaternion().copy(), b.getLinearVel().copy(), b.getAngularVel().copy()));
+            b = part.rootBody.getBody();
+            syncData.put(part.getId(), new PosRotVel(b.getPosition(), b.getQuaternion(), b.getLinearVel(), b.getAngularVel()));
         }
-        if (!syncData.isEmpty()){//同步给维度内的玩家
+        if (!syncData.isEmpty()) {//同步给维度内的玩家
             PacketDistributor.sendToPlayersInDimension((ServerLevel) getLevel(), new PhysSyncPayload(step, syncData));
         }
-
     }
 }

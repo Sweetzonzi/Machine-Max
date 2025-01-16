@@ -18,7 +18,6 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Quaternionf;
-import org.ode4j.math.DQuaternion;
 import org.ode4j.math.DQuaternionC;
 
 public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
@@ -31,14 +30,13 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
     public void render(MMPartEntity entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
         if (entity.part == null) return;
-        DQuaternionC dq = entity.part.rootElement.getBody().getQuaternion().copy();
-//        DQuaternionC dq = new DQuaternion(1,0,0,0);
+        DQuaternionC dq = entity.part.rootBody.getBody().getQuaternion().copy();
         Quaternionf q = new Quaternionf(dq.get1(), dq.get2(), dq.get3(), dq.get0());
         poseStack.pushPose();//开始渲染
         poseStack.mulPose(q);//旋转
-        RenderType renderType = RenderType.entityCutout(entity.part.getTexture());
+        RenderType renderType = RenderType.entityCutout(ResourceLocation.parse("eyelib:entity_cutout"));
         AnimationComponent animationComponent = RenderData.getComponent(entity).getAnimationComponent();//获取已有的动画数据
-        animationComponent.setup(entity.part.getAniController(), entity.part.getAnimation());
+        animationComponent.setup(null, null);
         BoneRenderInfos infos = BrAnimator.tickAnimation(animationComponent,
                 entity.part.molangScope.getScope(), ClientTickHandler.getTick() + partialTick);
         RenderParams renderParams = new RenderParams(//渲染参数
@@ -46,7 +44,7 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
                 poseStack.last().copy(),
                 poseStack,
                 renderType,
-                entity.part.getTexture(),
+                null,
                 false,
                 buffer.getBuffer(renderType),
                 packedLight,
@@ -55,7 +53,7 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
         RenderHelper renderHelper = Eyelib.getRenderHelper();
         renderHelper.render(//渲染模型
                 renderParams,
-                BrModelLoader.getModel(entity.part.getModel()),
+                BrModelLoader.getModel(null),
                 infos
         );
         poseStack.popPose();//结束渲染
@@ -63,7 +61,7 @@ public class PartEntityRenderer extends EntityRenderer<MMPartEntity> {
 
     @Override
     public ResourceLocation getTextureLocation(MMPartEntity entity) {
-        return entity.part.getTexture();
+        return null;
     }
 
 }

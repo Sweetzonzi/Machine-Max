@@ -1,14 +1,15 @@
 package io.github.tt432.machinemax.common.sloarphys.body;
 
-import cn.solarmoon.spark_core.animation.model.part.BonePart;
-import cn.solarmoon.spark_core.animation.model.part.CubePart;
-import cn.solarmoon.spark_core.animation.model.part.Locator;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
+import cn.solarmoon.spark_core.animation.model.origin.OCube;
+import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.phys.SparkMathKt;
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.part.AbstractPart;
 import io.github.tt432.machinemax.common.part.slot.FixedBodySlot;
 import io.github.tt432.machinemax.util.data.PosRot;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -27,16 +28,16 @@ import static org.ode4j.ode.OdeConstants.dContactRolling;
 
 public class ModelPartBody extends AbstractPartBody {
 
-    public ModelPartBody(String name, AbstractPart part, BonePart bone) {
+    public ModelPartBody(String name, AbstractPart part, OBone bone) {
         super(name, part);
         //读取创建零件体连接点
-        for(HashMap.Entry<String, Locator> entry : bone.getLocators().entrySet()){
-            String locatorName = entry.getKey();
-            Locator locator = entry.getValue();
-            if (locatorName.startsWith("attach_point_")){
-                String AttachPointName = locatorName.replaceFirst("attach_point_", "");
-                DVector3 AttachPointPos = SparkMathKt.toDVector3(locator.getOffset());
-                DQuaternion AttachPointRot = DQuaternion.fromEulerDegrees(SparkMathKt.toDVector3(locator.getRotation()));
+        for(HashMap.Entry<String, OLocator> entry : bone.getLocators().entrySet()){
+            String OLocatorName = entry.getKey();
+            OLocator OLocator = entry.getValue();
+            if (OLocatorName.startsWith("attach_point_")){
+                String AttachPointName = OLocatorName.replaceFirst("attach_point_", "");
+                DVector3 AttachPointPos = SparkMathKt.toDVector3(OLocator.getOffset());
+                DQuaternion AttachPointRot = DQuaternion.fromEuler(SparkMathKt.toDVector3(OLocator.getRotation()));
                 parentBodyAttachPoints.put(AttachPointName, new PosRot(AttachPointPos, AttachPointRot));
             }
         }
@@ -44,23 +45,25 @@ public class ModelPartBody extends AbstractPartBody {
 
     @Override
     protected void onTick() {
-
+        super.onTick();
     }
 
 
     protected void onCollide(DGeom dGeom, DContactBuffer dContacts) {
         var b = dGeom.getBody();
         var o = b.getOwner();
-        if (o instanceof ModelPartBody && ((ModelPartBody) o).part == part) return;//同部件内的碰撞体忽略相互碰撞
-        for (DContact contact : dContacts) {
-            //TODO:读取材料，获取摩擦系数
-            contact.surface.mode = dContactBounce | dContactRolling;
-            contact.surface.mu = 500;
-            contact.surface.rho = 1;
-            contact.surface.bounce = 0.0001;
-            contact.surface.bounce_vel = 0.1;
+        if (o instanceof AbstractPartBody || o instanceof BlockBody){//仅与其他零件或地形碰撞
+            if (b == this.getBody() || o == this.getBody().getOwner()) return;//防止自身碰撞
+            for (DContact contact : dContacts) {
+                //TODO:读取材料，获取摩擦系数
+                contact.surface.mode = dContactBounce | dContactRolling;
+                contact.surface.mu = 500;
+                contact.surface.rho = 1;
+                contact.surface.bounce = 0.0001;
+                contact.surface.bounce_vel = 0.1;
+            }
+            dContacts.createJoint();
         }
-        dContacts.createJoint();
     }
 
     /**
@@ -80,7 +83,7 @@ public class ModelPartBody extends AbstractPartBody {
      *
      * @param bone
      */
-    public void createMass(BonePart bone) {
+    public void createMass(OBone bone) {
         //创建质量体所需的数据
         String name = bone.getName();
         double massValue = 1;
@@ -89,24 +92,24 @@ public class ModelPartBody extends AbstractPartBody {
         Vec3 size = new Vec3(1, 1, 1);
         DVector3 rotation = new DVector3(0, 0, 0);
         int direction = 0;
-        //读取骨骼包含的所有locator，从locator的名字与数据读取创建质量体所需的数据
-        for (HashMap.Entry<String, Locator> entry : bone.getLocators().entrySet()) {
-            String locatorName = entry.getKey();
-            Locator locator = entry.getValue();
-            Object value = getLocatorValue(locatorName, locator);
+        //读取骨骼包含的所有OLocator，从OLocator的名字与数据读取创建质量体所需的数据
+        for (HashMap.Entry<String, OLocator> entry : bone.getLocators().entrySet()) {
+            String OLocatorName = entry.getKey();
+            OLocator OLocator = entry.getValue();
+            Object value = getLocatorValue(OLocatorName, OLocator);
             if (value == null) continue;
-            if (locatorName.startsWith("rotation_")) {
+            if (OLocatorName.startsWith("rotation_")) {
                 rotation = (DVector3) value;
-            } else if (locatorName.startsWith("mass_")) {
+            } else if (OLocatorName.startsWith("mass_")) {
                 massValue = (double) value;
-            } else if (locatorName.startsWith("radius_")) {
+            } else if (OLocatorName.startsWith("radius_")) {
                 radius = (double) value;
-            } else if (locatorName.startsWith("length_")) {
+            } else if (OLocatorName.startsWith("length_")) {
                 length = (double) value;
-            } else if (locatorName.startsWith("direction_")) {
+            } else if (OLocatorName.startsWith("direction_")) {
                 direction = (int) value;
             } else {
-                MachineMax.LOGGER.error("不支持的Locator关键词: {}", locatorName);
+                MachineMax.LOGGER.error("不支持的OLocator关键词: {}", OLocatorName);
             }
         }
         if (!bone.getCubes().isEmpty() && name.startsWith("mmMass_Box_")) {//对于盒装质量体，取bone内第一个cube的尺寸作为质量体的尺寸
@@ -141,10 +144,10 @@ public class ModelPartBody extends AbstractPartBody {
      *
      * @param bone
      */
-    public void createCollisionShape(BonePart bone) {
+    public void createCollisionShape(OBone bone) {
         String name = bone.getName();
         DGeom geom;
-        for (CubePart cube : bone.getCubes()) {
+        for (OCube cube : bone.getCubes()) {
             if (name.startsWith("mmCollision_Box_")) {//创建盒状碰撞体
                 geom = OdeHelper.createBox(SparkMathKt.toDVector3(cube.getSize()));
             } else if (name.startsWith("mmCollision_Sphere_")) {//创建球状碰撞体
@@ -161,7 +164,7 @@ public class ModelPartBody extends AbstractPartBody {
             }
             geom.setBody(body);
             geom.setOffsetPosition(SparkMathKt.toDVector3(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())));
-            geom.setOffsetQuaternion(DQuaternion.fromEulerDegrees(SparkMathKt.toDVector3(bone.getCubes().getFirst().getRotation())));
+            geom.setOffsetQuaternion(DQuaternion.fromEuler(SparkMathKt.toDVector3(cube.getRotation())));
             geom.onCollide(this::onCollide);//设置碰撞回调
             geoms.add(geom);
         }
@@ -172,16 +175,16 @@ public class ModelPartBody extends AbstractPartBody {
      *
      * @param bone
      */
-    public void createPartBodySlots(BonePart bone) {
+    public void createPartBodySlots(OBone bone) {
         //创建安装槽所需的数据
         String name = bone.getName();
         DVector3 childElementAttachPos = SparkMathKt.toDVector3(bone.getPivot());
-        DQuaternion childElementAttachRot = DQuaternion.fromEulerDegrees(SparkMathKt.toDVector3(bone.getRotation()));
+        DQuaternion childElementAttachRot = DQuaternion.fromEuler(SparkMathKt.toDVector3(bone.getRotation()));
         PosRot childElementAttachPoint = new PosRot(childElementAttachPos, childElementAttachRot);
-        //读取骨骼包含的所有locator，从locator的名字与数据读取创建安装槽所需的数据
-        for (HashMap.Entry<String, Locator> entry : bone.getLocators().entrySet()) {
+        //读取骨骼包含的所有OLocator，从OLocator的名字与数据读取创建安装槽所需的数据
+        for (HashMap.Entry<String, OLocator> entry : bone.getLocators().entrySet()) {
             String locatorName = entry.getKey();
-            Locator locator = entry.getValue();
+            OLocator locator = entry.getValue();
             Object value = getLocatorValue(locatorName, locator);
             if (value == null) continue;
             if (locatorName.startsWith("mm")) {

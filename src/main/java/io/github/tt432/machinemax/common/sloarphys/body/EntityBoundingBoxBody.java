@@ -14,7 +14,7 @@ import org.ode4j.ode.OdeHelper;
 public class EntityBoundingBoxBody extends AbstractBody{
     final Entity owner;
     public EntityBoundingBoxBody(Entity entity) {
-        super("BoundingBox", entity);
+        super("BoundingBox", entity.level());
         this.owner = entity;
         DGeom geom = OdeHelper.laterCreateBox(body,getPhysLevel().getPhysWorld(), new DVector3());
         geom.onCollide(this::onCollide);

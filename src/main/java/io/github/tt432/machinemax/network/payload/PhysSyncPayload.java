@@ -1,7 +1,7 @@
 package io.github.tt432.machinemax.network.payload;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.util.data.BodiesSyncData;
+import io.github.tt432.machinemax.util.data.PosRotVel;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -10,9 +10,8 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
-import java.util.Map;
 
-public record PhysSyncPayload(int step, HashMap<Integer, BodiesSyncData> syncData) implements CustomPacketPayload {
+public record PhysSyncPayload(int step, HashMap<Integer, PosRotVel> syncData) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<PhysSyncPayload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "phys_sync_payload"));
     public static final StreamCodec<ByteBuf, PhysSyncPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT,
@@ -20,7 +19,7 @@ public record PhysSyncPayload(int step, HashMap<Integer, BodiesSyncData> syncDat
             ByteBufCodecs.map(
                     HashMap::new,
                     ByteBufCodecs.INT,
-                    BodiesSyncData.DATA_CODEC
+                    PosRotVel.DATA_CODEC
             ),
             PhysSyncPayload::syncData,//同步的所有运动体的位姿速度信息
             PhysSyncPayload::new

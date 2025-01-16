@@ -20,7 +20,7 @@ public class LivingEntityEyesightBody extends AbstractBody {
     volatile private boolean hit;
 
     public LivingEntityEyesightBody(String name, LivingEntity entity) {
-        super(name, entity);
+        super(name, entity.level());
         this.owner = entity;
         this.ray = OdeHelper.createRay(null, entity.getAttributeValue(ENTITY_INTERACTION_RANGE));
         geoms.add(ray);

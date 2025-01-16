@@ -1,9 +1,11 @@
 package io.github.tt432.machinemax.util.data;
 
 import org.ode4j.math.DQuaternion;
+import org.ode4j.math.DQuaternionC;
 import org.ode4j.math.DVector3;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import org.ode4j.math.DVector3C;
 
 /**
  * 存储一个运动体的所有位姿速度信息。
@@ -15,23 +17,23 @@ import net.minecraft.network.codec.StreamCodec;
  * @param lVel 线速度 Liner velocity
  * @param aVel 角速度 Angular velocity
  */
-public record BodiesSyncData(DVector3 pos, DQuaternion rot, DVector3 lVel, DVector3 aVel) {
+public record PosRotVel(DVector3C pos, DQuaternionC rot, DVector3C lVel, DVector3C aVel) {
     /**
      * 用于网络发包传输运动体位姿速度信息的编解码器
      * <p>
      * Stream codec for body phys sync payload delivering.
      */
-    public static final StreamCodec<ByteBuf, BodiesSyncData> DATA_CODEC = new StreamCodec<>() {
-        public BodiesSyncData decode(ByteBuf data) {
+    public static final StreamCodec<ByteBuf, PosRotVel> DATA_CODEC = new StreamCodec<>() {
+        public PosRotVel decode(ByteBuf data) {
             DVector3 pos = new DVector3(data.readDouble(), data.readDouble(), data.readDouble());//解码位置 Decode position
             DQuaternion rot = new DQuaternion(data.readDouble(), data.readDouble(), data.readDouble(), data.readDouble());//解码姿态 Decode rotation
             DVector3 lVel = new DVector3(data.readDouble(), data.readDouble(), data.readDouble());//解码线速度 Decode liner velocity
             DVector3 aVel = new DVector3(data.readDouble(), data.readDouble(), data.readDouble());//解码角速度 Decode angular velocity
-            BodiesSyncData result = new BodiesSyncData(pos, rot, lVel, aVel);
+            PosRotVel result = new PosRotVel(pos, rot, lVel, aVel);
             return result;
         }
 
-        public void encode(ByteBuf buffer, BodiesSyncData data) {
+        public void encode(ByteBuf buffer, PosRotVel data) {
             buffer.writeDouble(data.pos.get0());//编码位置 Encode position
             buffer.writeDouble(data.pos.get1());
             buffer.writeDouble(data.pos.get2());

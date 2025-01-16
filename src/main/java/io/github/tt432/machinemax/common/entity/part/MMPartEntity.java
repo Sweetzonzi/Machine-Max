@@ -1,12 +1,17 @@
 package io.github.tt432.machinemax.common.entity.part;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
+import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.anim.play.AnimController;
+import cn.solarmoon.spark_core.animation.anim.play.Bone;
+import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.entity.AbstractPartEntity;
 import io.github.tt432.machinemax.common.entity.MMEntities;
 import io.github.tt432.machinemax.common.part.AbstractPart;
+import io.github.tt432.machinemax.common.part.PartType;
 import io.github.tt432.machinemax.common.sloarphys.body.ModelPartBody;
-import io.github.tt432.machinemax.common.part.TestCubePart;
 import io.github.tt432.machinemax.common.sloarphys.thread.MMAbstractPhysLevel;
 import io.github.tt432.machinemax.common.sloarphys.thread.MMClientPhysLevel;
 import lombok.Getter;
@@ -14,6 +19,7 @@ import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -29,7 +35,9 @@ import org.ode4j.ode.DAABB;
 import org.ode4j.ode.DAABBC;
 import org.ode4j.ode.DGeom;
 
-public class MMPartEntity extends Entity implements IEntityWithComplexSpawn {
+import java.util.Objects;
+
+public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEntityAnimatable<MMPartEntity> {
     public AbstractPart part;
     @Setter
     @Getter
@@ -40,23 +48,35 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn {
     private double lerpZ;
     private double lerpYRot;
     private double lerpXRot;
-    private boolean fromExistingPart = false;//是否是通过已有部件创建的实体
+    public boolean reCreateFromPart = false;//是否是通过已有部件创建的实体
 
-    public MMPartEntity(Level level){
-        super(MMEntities.MM_PART_ENTITY.get(), level);
-    }
+    final AnimController animController = new AnimController(this);
 
     public MMPartEntity(EntityType<? extends MMPartEntity> entityType, Level level) {
         super(entityType, level);
-        noPhysics = true;
+        this.noPhysics = true;
     }
 
+    /**
+     * 从已有的部件创建部件实体，未完成，请勿使用
+     *
+     * @param level
+     * @param part
+     */
     public MMPartEntity(Level level, AbstractPart part) {
-        super(MMEntities.MM_PART_ENTITY.get(), level);
+        this(MMEntities.MM_PART_ENTITY.get(), level);
+        reCreateFromPart = true;
         this.part = part;
-        DVector3 pos = part.rootElement.getBody().getPosition().copy();
+        part.setAttachedEntity(this);
+        part.createMolangScope();
+        this.setId(part.getId());
+        DVector3 pos = part.rootBody.getBody().getPosition().copy();
         this.setPos(pos.get0(), pos.get1(), pos.get2());
-        fromExistingPart = true;
+    }
+
+    public MMPartEntity(PartType type, Level level) {
+        this(MMEntities.MM_PART_ENTITY.get(), level);
+        this.createPart(this.getId(), type);
     }
 
     @Override
@@ -64,11 +84,10 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn {
         if (firstTick) {
             if (part == null) return;//若部件为空，则不进行初始化
             //将部件加入同步列表
-            part.setId(this.getId());
-            ((MMAbstractPhysLevel) ThreadHelperKt.getPhysLevelById(this.level(), MachineMax.MOD_ID)).syncParts.put(this.getId(), this.part);
+            ((MMAbstractPhysLevel) ThreadHelperKt.getPhysLevelById(this.level(), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "main"))).syncParts.put(this.getId(), this.part);
             //初始化部件运动体位姿
-            part.rootElement.getBody().setPosition(this.getX(), this.getY(), this.getZ());
-            part.addAllElementsToLevel();
+            part.rootBody.getBody().setPosition(this.getX(), this.getY(), this.getZ());
+            part.addAllBodiesToLevel();
         }
         this.syncPoseToMainThread();
         this.updateBoundingBox();
@@ -80,9 +99,9 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn {
      */
     public void syncPoseToMainThread() {
         if (part != null) {//将实体位姿与物理计算结果同步
-            DVector3 pos = part.rootElement.getBody().getPosition().copy();
+            DVector3 pos = part.rootBody.getBody().getPosition().copy();
             this.setPosRaw(pos.get0(), pos.get1(), pos.get2());
-            DQuaternion dq = part.rootElement.getBody().getQuaternion().copy();
+            DQuaternion dq = part.rootBody.getBody().getQuaternion().copy();
             DVector3 heading = dq.toEulerDegrees();
             setXRot((float) heading.get0());
             setYRot(-(float) heading.get1());
@@ -109,12 +128,15 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Override
     public void onRemovedFromLevel() {
-        //将部件从同步列表移除
-        ((MMAbstractPhysLevel) ThreadHelperKt.getPhysLevelById(this.level(), MachineMax.MOD_ID)).syncParts.remove(this.getId());
-        if (this.level().isClientSide())
-            ((MMClientPhysLevel) ThreadHelperKt.getPhysLevelById(this.level(), MachineMax.MOD_ID)).partNoInfoCount.remove(this.getId());
-        //移除部件
-        part.removeAllElementsFromLevel();
+        if (part != null) {
+            part.setAttachedEntity(null);
+            //将部件从同步列表移除
+            ((MMAbstractPhysLevel) ThreadHelperKt.getPhysLevelById(this.level(), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "main"))).syncParts.remove(this.getId());
+            if (this.level().isClientSide())
+                ((MMClientPhysLevel) ThreadHelperKt.getPhysLevelById(this.level(), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "main"))).partNoInfoCount.remove(this.getId());
+            //移除部件
+            part.removeAllBodiesFromLevel();
+        }
         super.onRemovedFromLevel();
     }
 
@@ -123,21 +145,13 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn {
 
     }
 
-    @Override
-    protected void readAdditionalSaveData(CompoundTag compound) {
 
-    }
-
-    @Override
-    protected void addAdditionalSaveData(CompoundTag compound) {
-
-    }
 
     public void updateBoundingBox() {
         if (part != null) {
             DVector3 min = new DVector3(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
             DVector3 max = new DVector3(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE).scale(-1);
-            for (ModelPartBody partElement : part.partElements.values()) {
+            for (ModelPartBody partElement : part.partBody.values()) {
                 for (DGeom geom : partElement.getGeoms()) {
                     DAABBC temp = geom.getAABB();
                     for (int i = 0; i < 3; i++) {
@@ -190,29 +204,110 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn {
         return this.lerpSteps > 0 ? (float) this.lerpYRot : this.getYRot();
     }
 
+    @Override
+    protected void readAdditionalSaveData(CompoundTag compound) {
+        PartType type = PartType.PART_TYPE.getRegistry().get().get(ResourceLocation.parse(compound.getString("part_type")));
+        if (type != null) {
+            createPart(this.getId(), type);//重建部件
+            DVector3 pos = new DVector3(compound.getDouble("part_x"), compound.getDouble("part_y"), compound.getDouble("part_z"));
+            DQuaternion dq = new DQuaternion(compound.getDouble("part_qw"), compound.getDouble("part_qx"), compound.getDouble("part_qy"), compound.getDouble("part_qz"));
+            DVector3 lVel = new DVector3(compound.getDouble("part_lx"), compound.getDouble("part_ly"), compound.getDouble("part_lz"));
+            DVector3 aVel = new DVector3(compound.getDouble("part_ax"), compound.getDouble("part_ay"), compound.getDouble("part_az"));
+            part.rootBody.getBody().setPosition(pos);//读取部件位置
+            part.rootBody.getBody().setQuaternion(dq);//读取部件姿态
+            part.rootBody.getBody().setLinearVel(lVel);//读取部件平移速度
+            part.rootBody.getBody().setAngularVel(aVel);//读取部件角速度
+        }
+    }
+
+    @Override
+    protected void addAdditionalSaveData(CompoundTag compound) {
+        if(part!= null){
+            compound.putString("part_type", part.getType().getRegistryKey().toString());//存储部件类型
+            DVector3 pos = part.rootBody.getBody().getPosition().copy();//存储部件位置
+            compound.putDouble("part_x", pos.get0());
+            compound.putDouble("part_y", pos.get1());
+            compound.putDouble("part_z", pos.get2());
+            DQuaternion dq = part.rootBody.getBody().getQuaternion().copy();//存储部件姿态
+            compound.putDouble("part_qw", dq.get0());
+            compound.putDouble("part_qx", dq.get1());
+            compound.putDouble("part_qy", dq.get2());
+            compound.putDouble("part_qz", dq.get3());
+            DVector3 lVel = part.rootBody.getBody().getLinearVel().copy();//存储部件平移速度
+            compound.putDouble("part_lx", lVel.get0());
+            compound.putDouble("part_ly", lVel.get1());
+            compound.putDouble("part_lz", lVel.get2());
+            DVector3 aVel = part.rootBody.getBody().getAngularVel().copy();//存储部件角速度
+            compound.putDouble("part_ax", aVel.get0());
+            compound.putDouble("part_ay", aVel.get1());
+            compound.putDouble("part_az", aVel.get2());
+        }
+    }
+
+    protected void reCreateFromPart() {
+        //TODO,用来替换第二个构造方法中的内容
+    }
+
+    protected void createPart(int id, PartType type) {
+        this.part = type.createPart(this.level());
+        part.setId(id);
+        part.setAttachedEntity(this);
+        part.createMolangScope();
+    }
+
     /**
-     * 将部件ID写入实体生成数据包
-     *
+     * 将部特殊数据写入实体生成数据包
+     * 实体id
+     * 是否是通过已有部件创建的实体
+     * 部件类型
      * @param buffer 实体生成数据包 The packet data stream
      */
     @Override
     public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
-        //TODO:若是通过已有部件创建的实体，则反过来将部件id同步至实体
-//        buffer.writeInt(this.getId());//写入实体ID
+        buffer.writeInt(this.getId());//写入实体ID
+        buffer.writeBoolean(reCreateFromPart);
+        buffer.writeResourceLocation(part.getType().getRegistryKey());
     }
 
     /**
-     * 从实体生成数据包读取部件ID并更新
+     * 从实体生成数据包读取实体信息并更新
      *
      * @param additionalData 实体生成数据包 The packet data stream
      */
     @Override
     public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
-//        //TODO:若是通过已有部件创建的实体，则反过来将部件id同步至实体
-//        if (part != null) {//设置部件ID
-//            part.setId(additionalData.readInt());
-//        } else {
-//            MachineMax.LOGGER.error("{} Part is null", this);
-//        }
+        int id = additionalData.readInt();
+        boolean reCreate = additionalData.readBoolean();
+        ResourceLocation type = additionalData.readResourceLocation();
+        if (reCreate) {//若是通过已有部件创建的实体，则调用reCreateFromPart方法
+            this.reCreateFromPart();
+        } else {//若是完全新建的实体，则调用createPart方法
+            this.createPart(id, Objects.requireNonNull(PartType.PART_TYPE.getRegistry().get().get(type)));
+            MachineMax.LOGGER.info("type:" +type);
+        }
+    }
+
+    @Override
+    public MMPartEntity getAnimatable() {
+        return this;
+    }
+
+    @NotNull
+    @Override
+    public AnimController getAnimController() {
+        return part.getAnimController();
+    }
+
+    @NotNull
+    @Override
+    public ModelIndex getModelIndex() {
+        //指向零件的modelData
+        return part.getModelIndex();
+    }
+
+    @NotNull
+    @Override
+    public BoneGroup getBones() {
+        return part.getBones();
     }
 }

@@ -18,7 +18,7 @@ import java.util.ArrayList;
 
 public class AE86ChassisPart extends AbstractPart {
     //模型资源参数
-    public static final ResourceLocation PART_TEXTURE = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/entity/ae86.png");
+    public static final ResourceLocation PART_TEXTURE = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/entity/ae86_1.png");
     public static final ResourceLocation PART_MODEL = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "entity/ae86/ae86_chassis");
     public static final ResourceLocation PART_ANIMATION = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "entity/ae86/ae86_chassis.animation");
     public static final ResourceLocation PART_ANI_CONTROLLER = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "entity/ae86/ae86_chassis.animation_controllers");

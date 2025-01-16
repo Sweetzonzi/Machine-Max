@@ -2,29 +2,37 @@ package io.github.tt432.machinemax.common.sloarphys.thread;
 
 import cn.solarmoon.spark_core.phys.thread.PhysLevel;
 import io.github.tt432.machinemax.common.part.AbstractPart;
-import io.github.tt432.machinemax.util.data.BodiesSyncData;
+import io.github.tt432.machinemax.common.sloarphys.body.BlockBody;
+import io.github.tt432.machinemax.util.data.PosRotVel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import org.jetbrains.annotations.NotNull;
 import org.ode4j.ode.DAABBC;
-import org.ode4j.ode.DBody;
 import org.ode4j.ode.DGeom;
-import org.ode4j.ode.OdeHelper;
 import org.ode4j.ode.threading.task.MultiThreadTaskExecutor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 public abstract class MMAbstractPhysLevel extends PhysLevel {
 
-    volatile public HashMap<Integer, BodiesSyncData> syncData = HashMap.newHashMap(100);//用于同步的线程内所有运动体位姿速度数据
+    volatile public HashMap<Integer, PosRotVel> syncData = HashMap.newHashMap(100);//用于同步的线程内所有运动体位姿速度数据
     volatile public HashMap<Integer, AbstractPart> syncParts = HashMap.newHashMap(100);//用于同步的线程内所有部件
     protected HashMap<BlockPos, BlockState> terrainCollisionBlocks = HashMap.newHashMap(100);//用于碰撞检测的地形块位置集合
     public ArrayList<DGeom> terrainGeoms = new ArrayList<>();
+    protected HashMap<Long, ChunkAccess> terrainChunkCache = HashMap.newHashMap(4);//地形碰撞方块所在的区块缓存
+    protected HashMap<Long, Integer> terrainChunkCount = HashMap.newHashMap(4);//地形碰撞方块所在的区块缓存
+    int terrainChunkMaxTick = 50;//地形碰撞方块所在的区块缓存的清理时间，指定次数物理计算未被访问后将被从缓存中清除
     public int step = 0;//物理运算迭代运行的总次数
+    long start;
+    long end;
 
-    public MMAbstractPhysLevel(@NotNull String id, @NotNull String name, @NotNull Level level, long tickStep, boolean customApply) {
+    public MMAbstractPhysLevel(@NotNull ResourceLocation id, @NotNull String name, @NotNull Level level, long tickStep, boolean customApply) {
         super(id, name, level, tickStep, customApply);
         init(this);
     }
@@ -32,9 +40,13 @@ public abstract class MMAbstractPhysLevel extends PhysLevel {
 
     @Override
     public void physTick() {
+        start = System.nanoTime();
         step++;
         addTerrainCollisionBoxes();
         super.physTick();
+        end = System.nanoTime();
+        if (getLevel().dimension() == Level.OVERWORLD)
+            System.out.println("level: " + getLevel() + " step: " + step + " time: " + (end - start) / 1000000);
     }
 
     public void init(PhysLevel level) {
@@ -58,24 +70,44 @@ public abstract class MMAbstractPhysLevel extends PhysLevel {
      */
     protected void addTerrainCollisionBoxes() {
         terrainCollisionBlocks.clear();
+        DAABBC aabb;
+        BlockPos pos;
+        BlockState state;
+        long chunkPos;
+        Iterator<HashMap.Entry<Long, Integer>> iterator = terrainChunkCount.entrySet().iterator();
+        while (iterator.hasNext()) {//清理过期区块缓存
+            HashMap.Entry<Long, Integer> entry = iterator.next();
+            entry.setValue(entry.getValue() - 1);
+            if (entry.getValue() <= 0) {
+                chunkPos = entry.getKey();
+                terrainChunkCache.remove(chunkPos);
+                iterator.remove();
+            }
+        }
         for (DGeom geom : getPhysWorld().getSpace().getGeoms()) {
             if (geom.getBody() != null && !terrainGeoms.contains(geom)) {
-                DAABBC aabb = geom.getAABB();
+                aabb = geom.getAABB();
                 int minX = (int) Math.floor(aabb.getMin0() - 1);
                 int maxX = (int) Math.ceil(aabb.getMax0()) + 1;
                 int minY = (int) Math.floor(aabb.getMin1());
                 int maxY = (int) Math.ceil(aabb.getMax1());
                 int minZ = (int) Math.floor(aabb.getMin2() - 1);
                 int maxZ = (int) Math.ceil(aabb.getMax2() + 1);
-
                 for (int x = minX; x <= maxX; x++) {
                     for (int y = minY; y <= maxY; y++) {
                         for (int z = minZ; z <= maxZ; z++) {
-                            BlockPos pos = new BlockPos(x, y, z);
-                            BlockState state = getLevel().getBlockState(pos);
-                            if (!state.getCollisionShape(getLevel(), pos).isEmpty()) {
-                                // 如果块不是空气或可替换方块，记录方块的状态和坐标
-                                terrainCollisionBlocks.put(pos, state);
+                            pos = new BlockPos(x, y, z);
+                            chunkPos = ChunkPos.asLong(pos);
+                            if (terrainCollisionBlocks.get(pos) == null) {//如果该位置的方块没有记录过，则获取块状态
+                                if (terrainChunkCache.get(chunkPos) == null) {//服务端的getChunk()性能不佳，故如果该位置的区块没有缓存过，则获取区块并缓存
+                                    terrainChunkCache.put(chunkPos, getLevel().getChunk(pos));
+                                    terrainChunkCount.put(chunkPos, terrainChunkMaxTick);
+                                }
+                                state = terrainChunkCache.get(ChunkPos.asLong(pos)).getBlockState(pos);
+                                if (!state.isAir() || !state.getCollisionShape(getLevel(), pos).isEmpty()) {
+                                    // 如果块不是空气或可替换方块，记录方块的状态和坐标
+                                    terrainCollisionBlocks.put(pos, state);
+                                }
                             }
                         }
                     }
@@ -88,17 +120,14 @@ public abstract class MMAbstractPhysLevel extends PhysLevel {
                 int i = blockNum - terrainGeoms.size();
                 DGeom[] geoms = new DGeom[i];
                 for (int j = 0; j < i; j++) {
-                    DBody body = OdeHelper.createBody("terrain", getLevel(), false, getPhysWorld().getWorld());
-                    body.setKinematic();
-                    geoms[j] = OdeHelper.createBox(getPhysWorld().getSpace(), 1.0, 1.0, 1.0);
-                    geoms[j].setBody(body);
-                    geoms[j].setPosition(0, -512, 0);
+                    BlockBody blockBody = new BlockBody("terrain", getLevel(), getPhysWorld().getSpace());
+                    geoms[j] = blockBody.getGeoms().getFirst();
                     terrainGeoms.add(geoms[j]);
                 }
             }
             int i = 0;
-            for (BlockPos pos : terrainCollisionBlocks.keySet()) {
-                terrainGeoms.get(i).setPosition(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+            for (BlockPos blockPos : terrainCollisionBlocks.keySet()) {
+                terrainGeoms.get(i).setPosition(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
                 i++;
             }
         }

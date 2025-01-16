@@ -1,6 +1,6 @@
 package io.github.tt432.machinemax.util;
 
-import cn.solarmoon.spark_core.animation.model.part.Locator;
+import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import net.minecraft.world.phys.Vec3;
 import org.ode4j.math.DVector3;
 
@@ -11,7 +11,7 @@ public class ModelBoneHelper {
      * @param locator
      * @return
      */
-    public static Object getLocatorValue(String locatorName, Locator locator) {
+    public static Object getLocatorValue(String locatorName, OLocator locator) {
         Object value;
         Object temp;
         if (locatorName.startsWith("offset_")) {//未使用
