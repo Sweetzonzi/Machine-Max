@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(Entity.class)
-public class EntityMixin implements IMixinEntity {
+public abstract class EntityMixin implements IMixinEntity {
     @Unique
     private float machine_max$zRot = 0;
     @Override

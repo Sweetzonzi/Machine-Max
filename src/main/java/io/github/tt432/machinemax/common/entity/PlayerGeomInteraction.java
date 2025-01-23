@@ -1,9 +1,8 @@
 package io.github.tt432.machinemax.common.entity;
 
-import cn.solarmoon.spark_core.phys.attached_body.AttachedBody;
-import cn.solarmoon.spark_core.phys.attached_body.AttachedBodyHelperKt;
 import cn.solarmoon.spark_core.registry.common.SparkAttachments;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.sloarphys.body.EntityBoundingBoxBody;
 import io.github.tt432.machinemax.common.sloarphys.body.LivingEntityEyesightBody;
 import net.minecraft.world.entity.player.Player;
@@ -23,41 +22,33 @@ public class PlayerGeomInteraction {
     private static void join(EntityJoinLevelEvent event) {
         if (event.getEntity() instanceof Player player) {
             LivingEntityEyesightBody interactionSight = new LivingEntityEyesightBody("interactionSight", player);
-            AttachedBodyHelperKt.putBody(player, interactionSight);
-            AttachedBodyHelperKt.putBody(player, new EntityBoundingBoxBody(player));
+            player.setData(MMAttachments.getENTITY_EYESIGHT(), interactionSight);
+            //TODO:玩家附加碰撞箱
         }
     }
 
     @SubscribeEvent
     private static void leave(EntityLeaveLevelEvent event) {
         if (event.getEntity() instanceof Player player) {
-            HashMap<String, AttachedBody> attachedBodies = player.getData(SparkAttachments.getBODY().get());
-            var attachedBody = attachedBodies.get("interactionSight");
-            if (attachedBody instanceof LivingEntityEyesightBody) {
-                AttachedBody finalAttachedBody = attachedBody;
-                attachedBody.getPhysLevel().getPhysWorld().laterConsume(() -> {
-                    ((LivingEntityEyesightBody) finalAttachedBody).ray.destroy();
-                    finalAttachedBody.getBody().destroy();
+            LivingEntityEyesightBody attachedBody;
+            if (player.hasData(MMAttachments.getENTITY_EYESIGHT())) {
+                attachedBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
+                attachedBody.getPhysLevel().getWorld().laterConsume(() -> {
+                    attachedBody.ray.destroy();
+                    attachedBody.getBody().destroy();
+                    player.removeData(MMAttachments.getENTITY_EYESIGHT());
                     return null;
                 });
             }
-            attachedBody = attachedBodies.get("BoundingBox");
-            if (attachedBody instanceof EntityBoundingBoxBody) {
-                AttachedBody finalAttachedBody1 = attachedBody;
-                attachedBody.getPhysLevel().getPhysWorld().laterConsume(() -> {
-                    ((EntityBoundingBoxBody) finalAttachedBody1).getGeoms().getFirst().destroy();
-                    finalAttachedBody1.getBody().destroy();
-                    return null;
-                });
-            }
+            //TODO:玩家移除碰撞箱
         }
     }
 
     @SubscribeEvent
     private static void interact(PlayerInteractEvent.EntityInteract event) {
-        MachineMax.LOGGER.info("By Entity Target: "+event.getTarget());
-        LivingEntityEyesightBody ray = (LivingEntityEyesightBody) event.getEntity().getData(SparkAttachments.getBODY().get()).get("interactionSight");
-        if(ray.getTarget()!= null){
+        MachineMax.LOGGER.info("By Entity Target: " + event.getTarget());
+        LivingEntityEyesightBody ray = event.getEntity().getData(MMAttachments.getENTITY_EYESIGHT());
+        if (ray.getTarget() != null) {
             MachineMax.LOGGER.info("By Entity Target: " + ray.getTarget().getBody().getOwner());
 
         }

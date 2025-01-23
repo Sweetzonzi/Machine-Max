@@ -49,16 +49,16 @@ public abstract class MMAbstractPhysLevel extends PhysLevel {
     }
 
     public void init(PhysLevel level) {
-        level.getPhysWorld().laterConsume(() -> {//修改世界设置
-            level.getPhysWorld().getWorld().setGravity(0, -9.81, 0);//设置重力
-            level.getPhysWorld().getWorld().setERP(0.3);
-            level.getPhysWorld().getWorld().setCFM(0.00005);
-            level.getPhysWorld().getWorld().setAutoDisableFlag(false);//设置静止物体自动休眠以节约性能
-//            level.getPhysWorld().getWorld().setAutoDisableSteps(5);
-            level.getPhysWorld().getWorld().setQuickStepNumIterations(40);//设定迭代次数以提高物理计算精度
-            level.getPhysWorld().getWorld().setTaskExecutor(new MultiThreadTaskExecutor(6));//设定线程数以提高物理计算效率
-            level.getPhysWorld().getWorld().setQuickStepW(1.3);
-            level.getPhysWorld().getWorld().setContactMaxCorrectingVel(20);
+        level.getWorld().laterConsume(() -> {//修改世界设置
+            level.getWorld().setGravity(0, -9.81, 0);//设置重力
+            level.getWorld().setERP(0.3);
+            level.getWorld().setCFM(0.00005);
+            level.getWorld().setAutoDisableFlag(false);//设置静止物体自动休眠以节约性能
+//            level.getWorld().setAutoDisableSteps(5);
+            level.getWorld().setQuickStepNumIterations(40);//设定迭代次数以提高物理计算精度
+            level.getWorld().setTaskExecutor(new MultiThreadTaskExecutor(6));//设定线程数以提高物理计算效率
+            level.getWorld().setQuickStepW(1.3);
+            level.getWorld().setContactMaxCorrectingVel(20);
             //TODO:区分碰撞空间(常规)，命中判定空间(弹头刀刃等放进来)和自体碰撞空间(头发布料等有物理没碰撞的放进来)
             return null;
         });
@@ -83,7 +83,7 @@ public abstract class MMAbstractPhysLevel extends PhysLevel {
                 iterator.remove();
             }
         }
-        for (DGeom geom : getPhysWorld().getSpace().getGeoms()) {
+        for (DGeom geom : getWorld().getSpace().getGeoms()) {
             if (geom.getBody() != null && !terrainGeoms.contains(geom)) {
                 aabb = geom.getAABB();
                 int minX = (int) Math.floor(aabb.getMin0() - 1);
@@ -119,7 +119,7 @@ public abstract class MMAbstractPhysLevel extends PhysLevel {
                 int i = blockNum - terrainGeoms.size();
                 DGeom[] geoms = new DGeom[i];
                 for (int j = 0; j < i; j++) {
-                    BlockBody blockBody = new BlockBody("terrain", getLevel(), getPhysWorld().getSpace());
+                    BlockBody blockBody = new BlockBody("terrain", getLevel(), getWorld().getSpace());
                     geoms[j] = blockBody.getGeoms().getFirst();
                     terrainGeoms.add(geoms[j]);
                 }

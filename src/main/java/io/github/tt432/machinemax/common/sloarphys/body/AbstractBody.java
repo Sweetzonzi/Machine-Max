@@ -1,6 +1,5 @@
 package io.github.tt432.machinemax.common.sloarphys.body;
 
-import cn.solarmoon.spark_core.phys.attached_body.AttachedBody;
 import cn.solarmoon.spark_core.phys.thread.PhysLevel;
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import io.github.tt432.machinemax.MachineMax;
@@ -16,27 +15,19 @@ import java.util.ArrayList;
 //TODO:设为抽象类，并创建一些变体，如：
 // 1. 直接指定形状、碰撞箱等参数的零件
 // 2. 特殊碰撞功能的零件，如刀刃、引信
-public abstract class AbstractBody implements AttachedBody {
+public abstract class AbstractBody{
     @Getter
     ArrayList<DGeom> geoms = new ArrayList<>();
     @Getter
     volatile DMass mass;
     @Getter
-    DBody body;
-    @Getter
-    final String name;
+    protected DBody body;
     @Getter
     final Level level;
 
     public AbstractBody(String name, Level level) {
-        this.name = name;
         this.level = level;
         mass = OdeHelper.createMass();
-        body = OdeHelper.createBody(name, this, false, getPhysLevel().getPhysWorld().getWorld());
-        body.disable();
-        body.onTick(this::onTick);
-        body.onPhysTick(this::onPhysTick);
-
     }
 
     protected abstract void onTick();
@@ -49,19 +40,20 @@ public abstract class AbstractBody implements AttachedBody {
      */
     protected abstract void onPhysTick();
 
-    @Override
     public void enable() {
         getBody().enable();
     }
 
-    @Override
     public void disable() {
         getBody().disable();
     }
 
     @NotNull
-    @Override
     public PhysLevel getPhysLevel() {
         return ThreadHelperKt.getPhysLevelById(level, ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "main"));
+    }
+
+    public String getName() {
+        return getBody().getName();
     }
 }

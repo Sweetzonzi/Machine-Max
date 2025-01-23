@@ -1,5 +1,8 @@
 package io.github.tt432.machinemax.common.sloarphys.body;
 
+import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.common.part.slot.AbstractBodySlot;
+import io.github.tt432.machinemax.common.registry.MMBodyTypes;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
@@ -21,6 +24,10 @@ public class LivingEntityEyesightBody extends AbstractBody {
 
     public LivingEntityEyesightBody(String name, LivingEntity entity) {
         super(name, entity.level());
+        body = OdeHelper.createBody(MMBodyTypes.getLIVING_ENTITY_EYESIGHT().get(), entity, name, false, getPhysLevel().getWorld());
+        body.disable();
+        body.onTick(this::onTick);
+        body.onPhysTick(this::onPhysTick);
         this.owner = entity;
         this.ray = OdeHelper.createRay(null, entity.getAttributeValue(ENTITY_INTERACTION_RANGE));
         geoms.add(ray);
@@ -28,12 +35,11 @@ public class LivingEntityEyesightBody extends AbstractBody {
         ray.setPassFromCollide(true);
         this.setPosRotVel();
         ray.onCollide(this::onCollide);
-        getPhysLevel().getPhysWorld().laterConsume(() -> {
-            getPhysLevel().getPhysWorld().getSpace().add(ray);
+        getPhysLevel().getWorld().laterConsume(() -> {
+            getPhysLevel().getWorld().getSpace().add(ray);
             this.enable();
             return null;
         });
-        this.enable();
     }
 
     @Override
@@ -51,6 +57,9 @@ public class LivingEntityEyesightBody extends AbstractBody {
 
     @Override
     protected void onCollide(DGeom dGeom, DContactBuffer dContacts) {
+        if (dGeom.getBody().getOwner() instanceof EntityBoundingBoxBody) {//不检测自身的碰撞箱
+            if (((EntityBoundingBoxBody) dGeom.getBody().getOwner()).owner == this.owner) return;
+        }
         hit = true;
         double range = dContacts.get(0).getContactGeom().depth;
         if (range < this.range) {
@@ -59,8 +68,14 @@ public class LivingEntityEyesightBody extends AbstractBody {
         }
     }
 
+    public AbstractBodySlot getSlot() {
+        if (target != null && target.getBody() != null && target.getBody().getOwner() instanceof AbstractBodySlot) {
+            return (AbstractBodySlot) target.getBody().getOwner();
+        } else return null;
+    }
+
     private void setPosRotVel() {
-        getPhysLevel().getPhysWorld().laterConsume(() -> {
+        getPhysLevel().getWorld().laterConsume(() -> {
             Vec3 rot = owner.getViewVector(1);
             ray.set(new DVector3(owner.getX(), owner.getY() + owner.getEyeHeight(), owner.getZ()), new DVector3(rot.x, rot.y, rot.z));
             Vec3 vel = owner.getDeltaMovement().scale(20);

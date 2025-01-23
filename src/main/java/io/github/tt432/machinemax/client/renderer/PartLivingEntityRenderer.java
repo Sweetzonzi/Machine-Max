@@ -1,27 +1,14 @@
 package io.github.tt432.machinemax.client.renderer;
 
-import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.renderer.GeoEntityRenderer;
-import cn.solarmoon.spark_core.animation.renderer.IGeoRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
-import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer;
-import cn.solarmoon.spark_core.phys.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.tt432.machinemax.common.entity.part.MMPartEntity;
-import io.github.tt432.machinemax.common.part.AbstractPart;
+import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import org.ode4j.math.DQuaternionC;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.joml.Matrix3f;
 
 public class PartLivingEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
 
@@ -40,7 +27,7 @@ public class PartLivingEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         if (entity.part == null || entity.part.rootBody == null || entity.part.modelIndex == null) return;
         poseStack.pushPose();//开始渲染
         ModelRenderHelperKt.render(entity.part,
-                poseStack,
+                new Matrix3f(),
                 bufferSource.getBuffer(getRenderType(entity)),
                 packedLight,
                 getOverlay(entity, partialTick),

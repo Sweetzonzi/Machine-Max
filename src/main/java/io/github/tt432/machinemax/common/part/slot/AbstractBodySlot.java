@@ -2,7 +2,6 @@ package io.github.tt432.machinemax.common.part.slot;
 
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.sloarphys.body.AbstractPartBody;
-import io.github.tt432.machinemax.common.sloarphys.body.ModelPartBody;
 import io.github.tt432.machinemax.common.sloarphys.body.PartSlotAttachPointBody;
 import io.github.tt432.machinemax.util.data.PosRot;
 import lombok.Getter;
@@ -51,11 +50,14 @@ public abstract class AbstractBodySlot {
             MachineMax.LOGGER.error("零件安装失败，零件不符合槽位安装条件！");
         } else {
             this.childBody = body;
-            if (body.getMotherBody() != null) body.setMotherBody(this.slotOwnerBody);
+            if (body.getMotherBody() == null) {
+                body.setMotherBody(this.slotOwnerBody);
+                body.setMotherBodySlot(this.name);
+            }
             body.getParentBodyAttachSlots().put(attachPoint, this);
             //处理安装偏移
             DVector3 pos = new DVector3();
-            this.slotOwnerBody.getBody().vectorToWorld(
+            this.slotOwnerBody.getBody().getRelPointPos(
                     this.childBodyAttachPoint.getPos()
                             .sub(body.getParentBodyAttachPoints().get(attachPoint).getPos()), pos);//获取连接点在世界坐标系下的位置
             body.getBody().setPosition(pos);//子部件指定安装点对齐槽位安装点
@@ -96,7 +98,10 @@ public abstract class AbstractBodySlot {
      */
     public void detachBody() {
         if (hasPart()) {
-            this.childBody.setMotherBody(null);
+            if(this.childBody.getMotherBody() == this.slotOwnerBody) {
+                this.childBody.setMotherBody(null);
+                this.childBody.setMotherBodySlot(null);
+            }
             this.childBody = null;
             detachJoint();
             this.childBodyAttachPointBody.enable();
@@ -130,7 +135,7 @@ public abstract class AbstractBodySlot {
 
     public void destroy() {
         detachBody();
-        childBodyAttachPointBody.getPhysLevel().getPhysWorld().laterConsume(()->{
+        childBodyAttachPointBody.getPhysLevel().getWorld().laterConsume(()->{
             this.childBodyAttachPointBody.getGeoms().getFirst().destroy();
             this.childBodyAttachPointBody.getBody().destroy();
             return null;

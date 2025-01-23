@@ -1,4 +1,4 @@
-package io.github.tt432.machinemax.common.entity.old.entity;
+package io.github.tt432.machinemax.common.entity;
 
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;

@@ -16,5 +16,6 @@ public class MMRenderHandler {
     public static void onEntityRendererRegistry(EntityRenderersEvent.RegisterRenderers event){
         event.registerEntityRenderer(MMEntities.getTEST_CAR_ENTITY().get(), MMOldEntityRenderer::new);
         event.registerEntityRenderer(MMEntities.getPART_ENTITY().get(), PartLivingEntityRenderer::new);
+        event.registerEntityRenderer(MMEntities.getCORE_ENTITY().get(), CoreEntityRenderer::new);
     }
 }

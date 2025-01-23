@@ -24,6 +24,7 @@ public class MachineMax {
         MMBlocks.register();//注册所有方块
         MMEntities.register();//注册所有实体
         MMBlockEntities.register();//注册所有方块实体
+        MMBodyTypes.register();//注册所有运动体类型
         MMDataComponents.register();//注册所有物品数据组件
         MMItems.register();//注册所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏

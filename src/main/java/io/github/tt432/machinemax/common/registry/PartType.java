@@ -1,7 +1,6 @@
 package io.github.tt432.machinemax.common.registry;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.item.prop.MMPartItem;
 import io.github.tt432.machinemax.common.part.AbstractPart;
 import io.github.tt432.machinemax.common.part.TestCubePart;
 import io.github.tt432.machinemax.common.part.ae86.AE86BackSeatPart;
@@ -10,8 +9,6 @@ import io.github.tt432.machinemax.common.part.ae86.AE86SeatPart;
 import io.github.tt432.machinemax.util.PartTypeBuilder;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -19,7 +16,7 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-public class PartType implements ItemLike {
+public class PartType {
 
     public static final DeferredRegister<PartType> PART_TYPE = DeferredRegister.create(PartRegistry.PART_REGISTRY, MachineMax.MOD_ID);
 
@@ -67,8 +64,4 @@ public class PartType implements ItemLike {
         return registryKey.hashCode();
     }
 
-    @Override
-    public Item asItem() {
-        return MMItems.getPART_ITEM().get();
-    }
 }

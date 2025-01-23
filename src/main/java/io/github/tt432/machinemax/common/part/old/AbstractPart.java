@@ -78,8 +78,7 @@ public abstract class AbstractPart implements Iterable<AbstractPart>, IPartPhysP
     public AbstractPart(OldPartEntity attachedEntity) {
         this.attachedEntity = attachedEntity;
         dmass = OdeHelper.createMass();
-        dbody = OdeHelper.createBody(((IMixinLevel) attachedEntity.level()).machine_Max$getPhysLevel().getPhysWorld().getWorld());
-        dbody.setOwner(this);
+
         if (attachedEntity.level().isClientSide()) molangScope = new OldPartMolangScope(this);
     }
 
@@ -123,7 +122,7 @@ public abstract class AbstractPart implements Iterable<AbstractPart>, IPartPhysP
     }
 
     public void addAllGeomsToSpace() {
-        PhysWorld physWorld = ((IMixinLevel) attachedEntity.level()).machine_Max$getPhysLevel().getPhysWorld();
+        PhysWorld physWorld = ((IMixinLevel) attachedEntity.level()).machine_Max$getPhysLevel().getWorld();
         for (DGeom geom : dgeoms) {
             physWorld.laterConsume(()->{
                 physWorld.getSpace().add(geom);
@@ -133,7 +132,7 @@ public abstract class AbstractPart implements Iterable<AbstractPart>, IPartPhysP
     }
 
     public void removeAllGeomsFromSpace() {
-        PhysWorld physWorld = ((IMixinLevel) attachedEntity.level()).machine_Max$getPhysLevel().getPhysWorld();
+        PhysWorld physWorld = ((IMixinLevel) attachedEntity.level()).machine_Max$getPhysLevel().getWorld();
         for (DGeom geom : dgeoms) {
             physWorld.laterConsume(()->{
                 geom.destroy();
@@ -143,7 +142,7 @@ public abstract class AbstractPart implements Iterable<AbstractPart>, IPartPhysP
     }
 
     public void removeBodyInWorld() {
-        PhysWorld physWorld = ((IMixinLevel) attachedEntity.level()).machine_Max$getPhysLevel().getPhysWorld();
+        PhysWorld physWorld = ((IMixinLevel) attachedEntity.level()).machine_Max$getPhysLevel().getWorld();
         physWorld.laterConsume(()->{
             dbody.destroy();
             return null;

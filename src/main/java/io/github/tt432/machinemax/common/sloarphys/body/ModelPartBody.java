@@ -53,7 +53,7 @@ public class ModelPartBody extends AbstractPartBody {
         var b = dGeom.getBody();
         var o = b.getOwner();
         if (o instanceof AbstractPartBody || o instanceof BlockBody){//仅与其他零件或地形碰撞
-            if (b == this.getBody() || o == this.getBody().getOwner()) return;//防止自身碰撞
+            if (b == this.getBody() || o == this.getBody().getOwner() || OdeHelper.areConnected(this.getBody(), b)) return;//防止自身碰撞
             for (DContact contact : dContacts) {
                 //TODO:读取材料，获取摩擦系数
                 contact.surface.mode = dContactBounce | dContactRolling;

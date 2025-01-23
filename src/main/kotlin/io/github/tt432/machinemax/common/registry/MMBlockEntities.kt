@@ -2,7 +2,6 @@ package io.github.tt432.machinemax.common.registry
 
 import io.github.tt432.machinemax.MachineMax
 import io.github.tt432.machinemax.common.block.road.RoadBaseBlockEntity
-import net.minecraft.world.level.block.Block
 
 object MMBlockEntities {
     @JvmStatic

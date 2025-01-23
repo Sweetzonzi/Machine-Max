@@ -10,15 +10,13 @@ import cn.solarmoon.spark_core.phys.thread.PhysLevel;
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.client.PartMolangScope;
-import io.github.tt432.machinemax.common.entity.part.MMPartEntity;
+import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.part.slot.AbstractBodySlot;
 import io.github.tt432.machinemax.common.registry.PartType;
 import io.github.tt432.machinemax.common.sloarphys.body.ModelPartBody;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +28,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public abstract class AbstractPart implements IAnimatable<AbstractPart>, ItemLike {
+public abstract class AbstractPart implements IAnimatable<AbstractPart> {
     //渲染属性
     public PartMolangScope molangScope;//用于储存作用域为部件本身的Molang变量
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
@@ -107,9 +105,9 @@ public abstract class AbstractPart implements IAnimatable<AbstractPart>, ItemLik
 
     public void addAllBodiesToLevel() {
         var level = ThreadHelperKt.getPhysLevelById(getLevel(), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "main"));
-        level.getPhysWorld().laterConsume(() -> {
+        level.getWorld().laterConsume(() -> {
             for (ModelPartBody body : partBody.values()) {
-                for (DGeom geom : body.getGeoms()) level.getPhysWorld().getSpace().add(geom);//添加碰撞体
+                for (DGeom geom : body.getGeoms()) level.getWorld().getSpace().add(geom);//添加碰撞体
                 body.getBody().setGravityMode(true);
                 body.enable();//激活零件
             }
@@ -119,10 +117,13 @@ public abstract class AbstractPart implements IAnimatable<AbstractPart>, ItemLik
 
     public void removeAllBodiesFromLevel() {
         var level = ThreadHelperKt.getPhysLevelById(getLevel(), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "main"));
-        level.getPhysWorld().laterConsume(() -> {
+        level.getWorld().laterConsume(() -> {
             for (ModelPartBody body : partBody.values()) {
                 for(AbstractBodySlot slot : body.getBodySlots().values()){
-                    slot.destroy();
+                    slot.destroy();//销毁子部件槽位并断开连接
+                }
+                for(AbstractBodySlot slot: body.getParentBodyAttachSlots().values()){
+                    slot.detachBody();//移除父级部件槽位的连接
                 }
                 body.getBody().destroy();//移除运动体
                 for (DGeom geom : body.getGeoms()) {
@@ -182,14 +183,4 @@ public abstract class AbstractPart implements IAnimatable<AbstractPart>, ItemLik
         return new Matrix4f().translate(getWorldPosition(partialTick).toVector3f()).rotateZYX(SparkMathKt.toVector3f(rootBody.getBody().getQuaternion().toEuler()));
     }
 
-    @Override
-    public void syncMainAnimToClient() {
-
-    }
-
-    @Override
-    public Item asItem() {
-        //TODO:根据nbt/component返回零件对应的物品
-        return null;
-    }
 }

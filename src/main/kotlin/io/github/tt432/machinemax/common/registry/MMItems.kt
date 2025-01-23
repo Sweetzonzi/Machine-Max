@@ -1,10 +1,8 @@
 package io.github.tt432.machinemax.common.registry
 
 import io.github.tt432.machinemax.MachineMax
-import io.github.tt432.machinemax.common.component.PartTypeComponent
 import io.github.tt432.machinemax.common.item.prop.MMPartItem
 import io.github.tt432.machinemax.common.item.prop.TestCarSpawnerItem
-import net.minecraft.client.renderer.item.ItemProperties
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
 

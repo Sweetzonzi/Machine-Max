@@ -5,14 +5,14 @@
   "package": "io.github.tt432.machinemax.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "LevelMixin",
     "BlockStateMixin",
-    "EntityMixin"
+    "ClientLevelMixin",
+    "EntityMixin",
+    "LevelMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
-
   ]
 }

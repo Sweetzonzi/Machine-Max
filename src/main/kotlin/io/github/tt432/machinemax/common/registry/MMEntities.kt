@@ -2,7 +2,8 @@ package io.github.tt432.machinemax.common.registry
 
 import io.github.tt432.machinemax.MachineMax
 import io.github.tt432.machinemax.common.entity.old.entity.TestCarEntity
-import io.github.tt432.machinemax.common.entity.part.MMPartEntity
+import io.github.tt432.machinemax.common.entity.MMPartEntity
+import io.github.tt432.machinemax.common.entity.CoreEntity
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.MobCategory
 
@@ -21,5 +22,11 @@ object MMEntities {
     @JvmStatic
     val PART_ENTITY = MachineMax.REGISTER.entityType<MMPartEntity>().id("part")
         .builder(EntityType.Builder.of(::MMPartEntity, MobCategory.MISC).fireImmune())
+        .build()
+
+    //载具核心实体
+    @JvmStatic
+    val CORE_ENTITY = MachineMax.REGISTER.entityType<CoreEntity>().id("core")
+        .builder(EntityType.Builder.of(::CoreEntity, MobCategory.MISC).fireImmune())
         .build()
 }

@@ -47,7 +47,7 @@ abstract public class AbstractPartSlot {
             part.fatherPart = this.slotOwnerPart;
             part.attachedSlot = this;
             DVector3 pos = new DVector3();//临时变量
-            this.slotOwnerPart.dbody.vectorToWorld(this.childPartAttachPos, pos);//获取连接点在世界坐标系下的位置
+            this.slotOwnerPart.dbody.getRelPointPos(this.childPartAttachPos, pos);//获取连接点在世界坐标系下的位置
             part.dbody.setPosition(pos);//子部件重心对齐连接点
             part.dbody.setQuaternion(this.childPartAttachRot);//调整姿态
             //TODO:令部件连接点不强制为部件重心位置

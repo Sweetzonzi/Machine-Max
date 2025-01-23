@@ -1,7 +1,7 @@
 package io.github.tt432.machinemax.common.item.prop;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.entity.part.MMPartEntity;
+import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.registry.PartType;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
