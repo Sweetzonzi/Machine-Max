@@ -2,8 +2,9 @@ package io.github.tt432.machinemax.util.data;
 
 public enum KeyInputMapping {
     FREE_CAM(0),
-    INTERACT(1);
+    INTERACT(1),
 
+    CYCLE_PART_ATTACH_POINTS(101);
     private final int value;
 
     KeyInputMapping(int value) {

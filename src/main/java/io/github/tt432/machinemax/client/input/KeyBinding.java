@@ -23,6 +23,7 @@ public class KeyBinding {
     public static final String GROUND_LEFTWARD_KEY = "key.machine_max.ground.leftward";
     public static final String GROUND_RIGHTWARD_KEY = "key.machine_max.ground.rightward";
 
+    public static final String ASSEMBLY_CYCLE_KEY = "key.machine_max.assembly.cycle";
     /**
      * 在此注册所有按键
      */
@@ -41,6 +42,10 @@ public class KeyBinding {
         //飞行器
 
         //机甲
+
+        //部件组装
+        event.register(KeyBinding.assemblyCycleKey);//部件循环选取连接点
+
 
     }
 
@@ -82,4 +87,10 @@ public class KeyBinding {
             KeyCategory.GROUND.getCategory()//键位类型
     );
 
+    public static KeyMapping assemblyCycleKey = new KeyMapping(ASSEMBLY_CYCLE_KEY,//键位名称
+            KeyCategory.ASSEMBLY,//键位冲突类型
+            InputConstants.Type.KEYSYM,//默认为键盘
+            GLFW.GLFW_KEY_KP_5,//默认按键
+            KeyCategory.ASSEMBLY.getCategory()//键位类型
+    );
 }

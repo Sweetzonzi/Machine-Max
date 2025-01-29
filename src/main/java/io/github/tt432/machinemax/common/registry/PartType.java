@@ -8,17 +8,27 @@ import io.github.tt432.machinemax.common.part.ae86.AE86ChassisPart;
 import io.github.tt432.machinemax.common.part.ae86.AE86SeatPart;
 import io.github.tt432.machinemax.util.PartTypeBuilder;
 import lombok.Getter;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.RegistryBuilder;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 public class PartType {
+    //注册器与默认值
+    public static final ResourceKey<Registry<PartType>> PART_REGISTRY_KEY = ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_type"));
+    public static final Registry<PartType> PART_REGISTRY = new RegistryBuilder<>(PART_REGISTRY_KEY)
+            .sync(true)
+            .defaultKey(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "unknown_part_type"))
+            .maxId(4096)
+            .create();
 
-    public static final DeferredRegister<PartType> PART_TYPE = DeferredRegister.create(PartRegistry.PART_REGISTRY, MachineMax.MOD_ID);
+    public static final DeferredRegister<PartType> PART_TYPE = DeferredRegister.create(PART_REGISTRY, MachineMax.MOD_ID);
 
     public static final Supplier<PartType> TEST_CUBE_PART = new PartTypeBuilder<>(MachineMax.MOD_ID, PART_TYPE)
             .id("test_cube_part")

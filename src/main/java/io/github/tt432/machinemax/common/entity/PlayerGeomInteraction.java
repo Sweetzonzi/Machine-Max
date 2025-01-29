@@ -48,8 +48,8 @@ public class PlayerGeomInteraction {
     private static void interact(PlayerInteractEvent.EntityInteract event) {
         MachineMax.LOGGER.info("By Entity Target: " + event.getTarget());
         LivingEntityEyesightBody ray = event.getEntity().getData(MMAttachments.getENTITY_EYESIGHT());
-        if (ray.getTarget() != null) {
-            MachineMax.LOGGER.info("By Entity Target: " + ray.getTarget().getBody().getOwner());
+        if (!ray.getTargets().isEmpty()) {
+            MachineMax.LOGGER.info("By Entity Target: " + ray.getSortedTargets().getFirst().getKey().getBody().getOwner());
 
         }
     }

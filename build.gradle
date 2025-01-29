@@ -55,6 +55,7 @@ repositories {
         url = 'https://maven.tterrag.com/'
     }
     maven {
+        name = 'spark-core'
         url "https://api.modrinth.com/maven"
     }
     maven {
@@ -181,6 +182,11 @@ dependencies {
     // 物理库
 //    implementation files('libs/spark_core-1.21.1-1.0.125.jar')
     implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
+//    implementation "maven.modrinth:spark_core:${spark_core_version}"
+//    implementation "maven.modrinth:spark-core:8kLb3s3o"
+//    implementation "maven.modrinth:spark_core-neoforge:8kLb3s3o"
+//    implementation "maven.modrinth:spark_core:${minecraft_version}-8kLb3s3o"
+//    implementation "maven.modrinth:spark_core-neoforge:${minecraft_version}-8kLb3s3o"
     //其它mod
     runtimeOnly files(fileTree(dir: 'lib', includes: ['*.jar']))
 

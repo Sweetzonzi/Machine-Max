@@ -19,7 +19,7 @@ public class MachineMax {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, true);//一体化注册器
     public MachineMax(IEventBus bus){
-        PartType.PART_TYPE.register(bus);
+
         REGISTER.register(bus);
         MMBlocks.register();//注册所有方块
         MMEntities.register();//注册所有实体
@@ -29,7 +29,8 @@ public class MachineMax {
         MMItems.register();//注册所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMAttachments.register();//注册所有附件类型
-
+        PartType.PART_TYPE.register(bus);
+        PartPortType.PART_PORT_TYPE.register(bus);
     }
 
 }

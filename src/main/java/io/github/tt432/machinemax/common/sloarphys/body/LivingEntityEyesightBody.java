@@ -1,15 +1,16 @@
 package io.github.tt432.machinemax.common.sloarphys.body;
 
-import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.part.slot.AbstractBodySlot;
+import com.mojang.datafixers.util.Pair;
+import io.github.tt432.machinemax.common.part.port.AbstractPortPort;
 import io.github.tt432.machinemax.common.registry.MMBodyTypes;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE;
 
@@ -17,10 +18,9 @@ public class LivingEntityEyesightBody extends AbstractBody {
     final LivingEntity owner;
     public final DRay ray;
     @Getter
-    volatile private double range;
-    @Getter
-    volatile private DGeom target;
-    volatile private boolean hit;
+    volatile private HashMap<DGeom, Double> targets = HashMap.newHashMap(2);
+    volatile private HashMap<DGeom, Integer> hitCount = HashMap.newHashMap(2);
+    private final Comparator<HashMap.Entry<DGeom, Double>> valueComparator = HashMap.Entry.comparingByValue();
 
     public LivingEntityEyesightBody(String name, LivingEntity entity) {
         super(name, entity.level());
@@ -43,35 +43,52 @@ public class LivingEntityEyesightBody extends AbstractBody {
     }
 
     @Override
-    protected void onPhysTick() {
-        if (!hit) {
-            target = null;
-            range = Double.MAX_VALUE;
-        } else hit = false;
+    protected void onPhysTick() {//物理线程迭代时
+        Iterator<Map.Entry<DGeom, Double>> iterator = targets.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<DGeom, Double> entry = iterator.next();
+            if (hitCount.get(entry.getKey()) == 0) {
+                hitCount.remove(entry.getKey());//计数器移除键值对
+                iterator.remove();//移除5次未命中目标的计数器的目标
+            } else {
+                hitCount.put(entry.getKey(), hitCount.get(entry.getKey()) - 1);//计数器减1
+            }
+        }
     }
 
     @Override
-    protected void onTick() {
-        this.setPosRotVel();
+    protected void onTick() {//主线程迭代时
+        getPhysLevel().getWorld().laterConsume(() -> {
+            ((DRay) this.geoms.getFirst()).setLength(owner.getAttributeValue(ENTITY_INTERACTION_RANGE));//更新射线长度
+            return null;
+        });
+        this.setPosRotVel();//更新位置姿态和速度
     }
 
     @Override
-    protected void onCollide(DGeom dGeom, DContactBuffer dContacts) {
+    protected void onCollide(DGeom dGeom, DContactBuffer dContacts) {//射线与碰撞体碰撞时
         if (dGeom.getBody().getOwner() instanceof EntityBoundingBoxBody) {//不检测自身的碰撞箱
             if (((EntityBoundingBoxBody) dGeom.getBody().getOwner()).owner == this.owner) return;
         }
-        hit = true;
+        hitCount.put(dGeom, 5);
         double range = dContacts.get(0).getContactGeom().depth;
-        if (range < this.range) {
-            this.range = range;
-            this.target = dGeom;
-        }
+        targets.put(dGeom, range);
     }
 
-    public AbstractBodySlot getSlot() {
-        if (target != null && target.getBody() != null && target.getBody().getOwner() instanceof AbstractBodySlot) {
-            return (AbstractBodySlot) target.getBody().getOwner();
-        } else return null;
+    /**
+     * 获取指向的最近的部件对接口，如果没有则返回null
+     *
+     * @return 线段命中的最近的部件对接口
+     */
+    public AbstractPortPort getPort() {
+        if (!targets.isEmpty()) {
+            for (Map.Entry<DGeom, Double> entry : getSortedTargets()) {
+                if (entry.getKey().getBody() != null && entry.getKey().getBody().getOwner() instanceof AbstractPortPort port) {
+                    return port;
+                }
+            }
+        }
+        return null;
     }
 
     private void setPosRotVel() {
@@ -82,6 +99,13 @@ public class LivingEntityEyesightBody extends AbstractBody {
             body.setLinearVel(new DVector3(vel.x, vel.y, vel.z));
             return null;
         });
+    }
+
+    // 获取根据值排序后的列表
+    public List<Map.Entry<DGeom, Double>> getSortedTargets() {
+        return targets.entrySet().stream()
+                .sorted(valueComparator)
+                .collect(Collectors.toList());
     }
 
     @Override

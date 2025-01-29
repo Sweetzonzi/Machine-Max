@@ -3,7 +3,7 @@
 	"minecraft:geometry": [
 		{
 			"description": {
-				"identifier": "geometry.ae86_chassis",
+				"identifier": "geometry.streetcar_gtr",
 				"texture_width": 512,
 				"texture_height": 512,
 				"visible_bounds_width": 10,
@@ -2575,42 +2575,42 @@
 					}
 				},
 				{
-					"name": "mmSlot_Fixed_LeftFrontWheel",
+					"name": "mmPort_Fixed_LeftFrontWheel",
 					"parent": "mmPartBody_Chassis",
 					"pivot": [28, -14, -34]
 				},
 				{
-					"name": "mmSlot_Fixed_RightFrontWheel",
+					"name": "mmPort_Fixed_RightFrontWheel",
 					"parent": "mmPartBody_Chassis",
 					"pivot": [-28, -14, -34]
 				},
 				{
-					"name": "mmSlot_Fixed_LeftBackWheel",
+					"name": "mmPort_Fixed_LeftBackWheel",
 					"parent": "mmPartBody_Chassis",
 					"pivot": [28, -14, 40]
 				},
 				{
-					"name": "mmSlot_Fixed_RightBackWheel",
+					"name": "mmPort_Fixed_RightBackWheel",
 					"parent": "mmPartBody_Chassis",
 					"pivot": [-28, -14, 40]
 				},
 				{
-					"name": "mmSlot_Fixed_DriverSeat",
+					"name": "mmPort_Fixed_DriverSeat",
 					"parent": "mmPartBody_Chassis",
 					"pivot": [-9, 8, 4]
 				},
 				{
-					"name": "mmSlot_Fixed_CopilotSeat",
+					"name": "mmPort_Fixed_CopilotSeat",
 					"parent": "mmPartBody_Chassis",
 					"pivot": [9, 8, 4]
 				},
 				{
-					"name": "mmSlot_Fixed_BackSeat",
+					"name": "mmPort_Fixed_BackSeat",
 					"parent": "mmPartBody_Chassis",
 					"pivot": [0, 6, 19]
 				},
 				{
-					"name": "mmSlot_FIxed_Hull",
+					"name": "mmPort_Fixed_Hull",
 					"parent": "mmPartBody_Chassis",
 					"pivot": [0, 9, 6]
 				},

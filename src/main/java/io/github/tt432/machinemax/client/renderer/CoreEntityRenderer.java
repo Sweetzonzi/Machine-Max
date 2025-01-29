@@ -4,13 +4,15 @@ import cn.solarmoon.spark_core.animation.renderer.GeoLivingEntityRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.tt432.machinemax.common.entity.CoreEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.resources.ResourceLocation;
 
-public class CoreEntityRenderer extends LivingEntityRenderer<CoreEntity, MMEmptyModel<CoreEntity>> {
-    public CoreEntityRenderer(EntityRendererProvider.Context context, MMEmptyModel<CoreEntity> model, float shadowRadius) {
-        super(context, model, shadowRadius);
+public class CoreEntityRenderer extends EntityRenderer<CoreEntity> {
+
+    protected CoreEntityRenderer(EntityRendererProvider.Context context) {
+        super(context);
     }
 
     @Override

@@ -33,10 +33,10 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
 
         @Override
         public boolean isActive() {
-            if(GUI.isActive()) return false;
+            if (GUI.isActive()) return false;
             if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
                 return e.getMode() == OldPartEntity.controlMode.GROUND;
-            }else return false;
+            } else return false;
         }
 
         @Override
@@ -51,10 +51,10 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
         }
 
         public boolean isActive() {
-            if(GUI.isActive()) return false;
+            if (GUI.isActive()) return false;
             if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
                 return e.getMode() == OldPartEntity.controlMode.SHIP;
-            }else return false;
+            } else return false;
         }
 
         @Override
@@ -69,10 +69,10 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
         }
 
         public boolean isActive() {
-            if(GUI.isActive()) return false;
+            if (GUI.isActive()) return false;
             if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
                 return e.getMode() == OldPartEntity.controlMode.PLANE;
-            }else return false;
+            } else return false;
         }
 
         @Override
@@ -87,15 +87,32 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
         }
 
         public boolean isActive() {
-            if(GUI.isActive()) return false;
+            if (GUI.isActive()) return false;
             if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
                 return e.getMode() == OldPartEntity.controlMode.MECH;
-            }else return false;
+            } else return false;
         }
 
         @Override
         public boolean conflicts(IKeyConflictContext other) {
             return other == this || other == GENERAL; //二者为同一类时，或另一类为通用按键时，冲突
+        }
+    },
+    ASSEMBLY {
+        @Override
+        public String getCategory() {
+            return "key.category.machine_max.assembly";
+        }
+
+        public boolean isActive() {
+            if (GUI.isActive()) return false;
+            return Minecraft.getInstance().player == null || Minecraft.getInstance().player.getVehicle() == null;
+        }
+
+        @Override
+        public boolean conflicts(IKeyConflictContext other) {
+            if (other == this || other == GENERAL) return true;
+            else return (!(other instanceof KeyCategory));
         }
     }
 }

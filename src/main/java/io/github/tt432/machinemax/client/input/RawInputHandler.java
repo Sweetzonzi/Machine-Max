@@ -5,6 +5,7 @@ import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
 import io.github.tt432.machinemax.network.payload.MovementInputPayload;
 import io.github.tt432.machinemax.network.payload.RegularInputPayload;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -12,6 +13,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.HashMap;
 
 /**
  * 按键逻辑与发包
@@ -33,8 +36,7 @@ public class RawInputHandler {
     static int rot_y_input = 0;
     static int rot_z_input = 0;
 
-    static int interact_down_ticks = 0;
-
+    private static final HashMap<KeyMapping,Integer> keyPressTicks = HashMap.newHashMap(15);//各个按键被按下的持续时间
     /**
      * 在每个客户端tick事件后调用，处理按键逻辑。
      *
@@ -110,13 +112,22 @@ public class RawInputHandler {
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Post event){
         if (KeyBinding.generalInteractKey.isDown()){
-            if(interact_down_ticks == 0){
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(), interact_down_ticks));
+            if(keyPressTicks.getOrDefault(KeyBinding.generalInteractKey,0) == 0){
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(), 0));
             }
-            interact_down_ticks++;
-        } else if (interact_down_ticks > 0) {//按键松开且按下持续至少1tick
-            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(),interact_down_ticks));
-            interact_down_ticks = 0;
+            keyPressTicks.put(KeyBinding.generalInteractKey, keyPressTicks.getOrDefault(KeyBinding.generalInteractKey,0) + 1);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey,0) > 0) {//按键松开且按下持续至少1tick
+            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(),keyPressTicks.get(KeyBinding.generalInteractKey)));
+            keyPressTicks.put(KeyBinding.generalInteractKey, 0);
+        }
+
+        if(KeyBinding.assemblyCycleKey.isDown()){
+            if(keyPressTicks.getOrDefault(KeyBinding.assemblyCycleKey,0) == 0){//按下时循环切换配件连接点键时发包服务器
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_ATTACH_POINTS.getValue(), 0));
+            }
+            keyPressTicks.put(KeyBinding.assemblyCycleKey, keyPressTicks.getOrDefault(KeyBinding.assemblyCycleKey,0) + 1);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleKey,0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.assemblyCycleKey, 0);
         }
     }
 }

@@ -7,9 +7,9 @@ import cn.solarmoon.spark_core.phys.SparkMathKt;
 import cn.solarmoon.spark_core.registry.common.SparkVisualEffects;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.part.AbstractPart;
-import io.github.tt432.machinemax.common.part.slot.FixedBodySlot;
+import io.github.tt432.machinemax.common.part.port.AttachPointPortPort;
+import io.github.tt432.machinemax.common.part.port.FixedPartPort;
 import io.github.tt432.machinemax.util.data.PosRot;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -28,19 +28,8 @@ import static org.ode4j.ode.OdeConstants.dContactRolling;
 
 public class ModelPartBody extends AbstractPartBody {
 
-    public ModelPartBody(String name, AbstractPart part, OBone bone) {
+    public ModelPartBody(String name, AbstractPart part) {
         super(name, part);
-        //读取创建零件体连接点
-        for(HashMap.Entry<String, OLocator> entry : bone.getLocators().entrySet()){
-            String OLocatorName = entry.getKey();
-            OLocator OLocator = entry.getValue();
-            if (OLocatorName.startsWith("attach_point_")){
-                String AttachPointName = OLocatorName.replaceFirst("attach_point_", "");
-                DVector3 AttachPointPos = SparkMathKt.toDVector3(OLocator.getOffset());
-                DQuaternion AttachPointRot = DQuaternion.fromEuler(SparkMathKt.toDVector3(OLocator.getRotation()));
-                parentBodyAttachPoints.put(AttachPointName, new PosRot(AttachPointPos, AttachPointRot));
-            }
-        }
     }
 
     @Override
@@ -52,8 +41,11 @@ public class ModelPartBody extends AbstractPartBody {
     protected void onCollide(DGeom dGeom, DContactBuffer dContacts) {
         var b = dGeom.getBody();
         var o = b.getOwner();
-        if (o instanceof AbstractPartBody || o instanceof BlockBody){//仅与其他零件或地形碰撞
-            if (b == this.getBody() || o == this.getBody().getOwner() || OdeHelper.areConnected(this.getBody(), b)) return;//防止自身碰撞
+        if (o instanceof AbstractPartBody || o instanceof BlockBody) {//仅与其他零件或地形碰撞
+            if (b == this.getBody() || o == this.getBody().getOwner() || OdeHelper.areConnected(this.getBody(), b))
+                return;//防止同一部件内的零件碰撞
+            if(o instanceof AbstractPartBody && ((AbstractPartBody) o).getPart().core == this.part.core)
+                return;//防止同一载具内的零件碰撞
             for (DContact contact : dContacts) {
                 //TODO:读取材料，获取摩擦系数
                 contact.surface.mode = dContactBounce | dContactRolling;
@@ -109,7 +101,7 @@ public class ModelPartBody extends AbstractPartBody {
             } else if (OLocatorName.startsWith("direction_")) {
                 direction = (int) value;
             } else {
-                MachineMax.LOGGER.error("不支持的OLocator关键词: {}", OLocatorName);
+                MachineMax.LOGGER.error("不支持的Locator关键词: {}", OLocatorName);
             }
         }
         if (!bone.getCubes().isEmpty() && name.startsWith("mmMass_Box_")) {//对于盒装质量体，取bone内第一个cube的尺寸作为质量体的尺寸
@@ -175,7 +167,7 @@ public class ModelPartBody extends AbstractPartBody {
      *
      * @param bone
      */
-    public void createPartBodySlots(OBone bone) {
+    public void createPartBodyPorts(OBone bone) {
         //创建安装槽所需的数据
         String name = bone.getName();
         DVector3 childElementAttachPos = SparkMathKt.toDVector3(bone.getPivot());
@@ -193,18 +185,24 @@ public class ModelPartBody extends AbstractPartBody {
         }
         //根据骨骼名和先前读取到的数据，创建零件安装槽
         //TODO:把安装槽位注册表化后，允许此方法创建任意类型的安装槽
-        if (name.startsWith("mmSlot_Fixed_")) {
-            name = name.replaceFirst("mmSlot_Fixed_", "");
-            this.getBodySlots().put(name, new FixedBodySlot(name, this, childElementAttachPoint));
-        } else if (name.startsWith("mmSlot_Ball_")) {
+        if (name.startsWith("mmPort_AttachPoint_")) {
+            name = name.replaceFirst("mmPort_AttachPoint_", "");
+            this.getPartPorts().put(name, new AttachPointPortPort(name, this, childElementAttachPoint));
+            //TODO:仅将与外部零件连接的对接口同步到部件对接口列表
+            part.getBodyPorts().put(name, this.getPartPorts().get(name));//将对接口同步到部件
+        } else if (name.startsWith("mmPort_Fixed_")) {
+            name = name.replaceFirst("mmPort_Fixed_", "");
+            this.getPartPorts().put(name, new FixedPartPort(name, this, childElementAttachPoint));
+            part.getBodyPorts().put(name, this.getPartPorts().get(name));//将对接口同步到部件
+        } else if (name.startsWith("mmPort_Ball_")) {
 
-        } else if (name.startsWith("mmSlot_DoubleBall_")) {
+        } else if (name.startsWith("mmPort_DoubleBall_")) {
 
-        } else if (name.startsWith("mmSlot_Hinge_")) {
+        } else if (name.startsWith("mmPort_Hinge_")) {
 
-        } else if (name.startsWith("mmSlot_Hinge2_")) {
+        } else if (name.startsWith("mmPort_Hinge2_")) {
 
-        } else if (name.startsWith("mmSlot_Piston_")) {
+        } else if (name.startsWith("mmPort_Piston_")) {
 
         }
     }

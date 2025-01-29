@@ -41,13 +41,13 @@ public class AE86Controller extends PhysController {
     private void drive() {//驱动轮胎
         engineControl();
         //驱动力
-        AbstractPartSlot slot;
+        AbstractPartSlot port;
         DHinge2Joint joint;
         DVector3 omega;
         double torque;
         for (int i = 1; i < 4; i++){
-            slot = controlledEntity.corePart.childrenPartSlots.get(i);
-            joint = (DHinge2Joint) slot.joints.getFirst();
+            port = controlledEntity.corePart.childrenPartSlots.get(i);
+            joint = (DHinge2Joint) port.joints.getFirst();
             omega = joint.getBody(1).getAngularVel().copy();//获取轮胎角速度
             joint.getBody(1).vectorFromWorld(omega, omega);//转换为自体坐标
             torque = -power / 4 / (abs(omega.get0()) + Math.PI/12);
@@ -55,11 +55,11 @@ public class AE86Controller extends PhysController {
         }
         //刹车力
         for (int i = 0; i < 4; i++) {
-            slot = controlledEntity.corePart.childrenPartSlots.get(i);
-            joint = (DHinge2Joint) slot.joints.getFirst();
+            port = controlledEntity.corePart.childrenPartSlots.get(i);
+            joint = (DHinge2Joint) port.joints.getFirst();
             omega = joint.getBody(1).getAngularVel().copy();//获取轮胎角速度
             joint.getBody(1).vectorFromWorld(omega, omega);//转换为自体坐标
-            torque = -brake * MMMath.sigmoidSignum(omega.get0()*signum(slot.getChildPartAttachPos().get0()));
+            torque = -brake * MMMath.sigmoidSignum(omega.get0()*signum(port.getChildPartAttachPos().get0()));
             joint.addTorques(0, torque);//刹车制动力矩
         }
     }
@@ -68,14 +68,14 @@ public class AE86Controller extends PhysController {
         rudderControl();
         DHinge2Joint hinge;
         DAMotorJoint motor;
-        AbstractPartSlot slot;
+        AbstractPartSlot port;
         for (int i = 0; i < 4; i++) {
-            slot = controlledEntity.corePart.childrenPartSlots.get(i);
-            hinge = (DHinge2Joint) slot.joints.getFirst();
-            motor = (DAMotorJoint) slot.joints.get(1);
-            slot.getChildPart().dbody.setFiniteRotationAxis(0, 0, 0);
+            port = controlledEntity.corePart.childrenPartSlots.get(i);
+            hinge = (DHinge2Joint) port.joints.getFirst();
+            motor = (DAMotorJoint) port.joints.get(1);
+            port.getChildPart().dbody.setFiniteRotationAxis(0, 0, 0);
             double m2;
-            if(turning_input == 0||slot instanceof WheelPartSlot){//无转向输入，或不具备转向功能则维持前向
+            if(turning_input == 0||port instanceof WheelPartSlot){//无转向输入，或不具备转向功能则维持前向
                 m2 = - hinge.getAngle1();
             }else {//由转弯半径分别计算各个轮胎的最大转角(阿克曼转向)
                 double lr_half;

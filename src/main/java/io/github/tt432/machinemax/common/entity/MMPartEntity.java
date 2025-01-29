@@ -6,15 +6,17 @@ import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.part.slot.AbstractBodySlot;
+import io.github.tt432.machinemax.common.part.PartNetCore;
+import io.github.tt432.machinemax.common.part.port.AbstractPortPort;
+import io.github.tt432.machinemax.common.part.port.AttachPointPortPort;
 import io.github.tt432.machinemax.common.registry.MMEntities;
 import io.github.tt432.machinemax.common.part.AbstractPart;
 import io.github.tt432.machinemax.common.registry.PartType;
-import io.github.tt432.machinemax.common.sloarphys.body.AbstractPartBody;
 import io.github.tt432.machinemax.common.sloarphys.body.ModelPartBody;
 import io.github.tt432.machinemax.common.sloarphys.thread.MMAbstractPhysLevel;
 import io.github.tt432.machinemax.common.sloarphys.thread.MMClientPhysLevel;
 import io.github.tt432.machinemax.mixin_interface.IMixinClientLevel;
+import io.github.tt432.machinemax.util.data.PosRot;
 import io.github.tt432.machinemax.util.data.PosRotVel;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,10 +44,14 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEntityAnimatable<MMPartEntity> {
+    @Getter
     public AbstractPart part;//部件实体对应的部件
-    public MMPartEntity motherPartEntity;//本部件附着于的母部件实体
-    public AbstractPartBody motherBody;//本部件附着于的母部件的零件
-    public AbstractBodySlot motherSlot;//本部件附着于的母部件的槽位
+    public PartType partType;//部件类型
+    @Getter
+    @Setter
+    private PartNetCore core;//本载具的控制核心
+    @Getter
+    private CoreEntity coreEntity;//本载具的控制核心实体
     @Setter
     @Getter
     private float ZRot;
@@ -59,10 +65,11 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
     //从保存的文件中新建时的初始化信息
     @Setter
     private PosRotVel initPosRotVel;
-    private UUID initMotherEntityUUID;
-    private String initMotherPartBodyName = "";
-    private String initMotherPartSlotName = "";
-    private int childrenPartToCreate = 0;//仍需创建的子部件数量
+    @Setter
+    private PosRot attachPosRot = new PosRot(new DVector3(), new DQuaternion(1,0,0,0));
+    private UUID coreEntityUUID;
+    @Getter
+    @Setter
     private boolean initialized = false;
 
     final AnimController animController = new AnimController(this);
@@ -87,12 +94,10 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
     public MMPartEntity(Level level, AbstractPart part) {
         this(MMEntities.getPART_ENTITY().get(), level);
         reCreateFromPart = true;
-        this.part = part;
-        part.setAttachedEntity(this);
-        part.createMolangScope();
-        this.setId(part.getId());
+        this.setPart(part);
         DVector3 pos = part.rootBody.getBody().getPosition().copy();
         this.setPos(pos.get0(), pos.get1(), pos.get2());
+        //TODO:客户端部分
     }
 
     /**
@@ -101,8 +106,9 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
      * @param type
      * @param level
      */
-    public MMPartEntity(PartType type, Level level) {
+    public MMPartEntity(PartType type, Level level, CoreEntity coreEntity) {
         this(MMEntities.getPART_ENTITY().get(), level);
+        setCoreEntity(coreEntity);
         this.createPart(this.getId(), type);
     }
 
@@ -111,16 +117,22 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
      *
      * @param type
      * @param level
-     * @param slot
+     * @param targetPort
+     * @param partPortName
      */
-    public MMPartEntity(PartType type, Level level, AbstractBodySlot slot) {
-        this(type, level);
-        this.attachPart(slot.getSlotOwnerBody().getPart().getAttachedEntity(), slot.getSlotOwnerBody().getName(), slot.getName());
-        this.initPosRotVel = new PosRotVel(
+    public MMPartEntity(PartType type, Level level, AbstractPortPort targetPort, String partPortName) {
+        this(type, level, targetPort.getPortOwnerBody().getPart().getAttachedEntity().coreEntity);
+
+        AbstractPortPort partPort = part.getBodyPorts().get(partPortName);
+        part.rootBody.getBody().setPosition(targetPort.getWorldAttachPos(partPort));
+        part.rootBody.getBody().setQuaternion(targetPort.getWorldAttachRot(partPort));
+
+        if(targetPort instanceof AttachPointPortPort) partPort.attach((AttachPointPortPort) targetPort);
+        else targetPort.attach((AttachPointPortPort) partPort);
+
+        this.attachPosRot = new PosRot(
                 new DVector3(part.rootBody.getBody().getPosition()),
-                new DQuaternion(part.rootBody.getBody().getQuaternion()),
-                new DVector3(part.rootBody.getBody().getLinearVel()),
-                new DVector3(part.rootBody.getBody().getAngularVel())
+                new DQuaternion(part.rootBody.getBody().getQuaternion())
         );
     }
 
@@ -128,31 +140,23 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
     public void tick() {
         if (firstTick) {
             if (part == null) return;
-            if (!initialized && childrenPartToCreate == 0) {//所有子部件创建完成时
-                checkInitialized();//检查自根部件到自身的所有部件是否都初始化完成
-                //初始化部件连接关系
-                if (initMotherEntityUUID != null && !initMotherPartBodyName.isEmpty() && !initMotherPartSlotName.isEmpty()) {
-                    if (!this.level().isClientSide())
-                        this.motherPartEntity = (MMPartEntity) ((ServerLevel) this.level()).getEntity(initMotherEntityUUID);
-                    else
-                        this.motherPartEntity = (MMPartEntity) ((IMixinClientLevel) this.level()).machine_Max$getEntity(initMotherEntityUUID);
-                    if (this.motherPartEntity != null)
-                        this.motherBody = motherPartEntity.part.partBody.get(initMotherPartBodyName);
-                    else return;
-                    if (this.motherBody != null)
-                        this.motherSlot = motherBody.getBodySlots().get(initMotherPartSlotName);
-                    else return;
-                    this.attachPart(motherPartEntity, initMotherPartBodyName, initMotherPartSlotName);
-                    //初始化部件运动体位姿
-                    if (initPosRotVel != null) {
-                        part.rootBody.getBody().setPosition(initPosRotVel.pos());//读取部件位置
-                        part.rootBody.getBody().setQuaternion(initPosRotVel.rot());//读取部件姿态
-                        part.rootBody.getBody().setLinearVel(initPosRotVel.lVel());//读取部件平移速度
-                        part.rootBody.getBody().setAngularVel(initPosRotVel.aVel());//读取部件角速度
-                    }
-                    motherPartEntity.childrenPartToCreate--;
+            if (this.coreEntityUUID != null) {
+                if (this.level().isClientSide()) {
+                    this.coreEntity = (CoreEntity) ((IMixinClientLevel) this.level()).machine_Max$getEntity(this.coreEntityUUID);
+                } else {
+                    this.coreEntity = (CoreEntity) ((ServerLevel) this.level()).getEntity(this.coreEntityUUID);
                 }
-            } else if (!initialized && childrenPartToCreate > 0) {//还有子部件未创建完成时
+                if (this.coreEntity == null) return;//等待核心实体创建完成
+                this.initialized = true;//TODO:载具核心实体负责完成各个部件实体的初始化
+            }
+            if (initialized) {//所有子部件创建完成时
+                if (initPosRotVel != null) {
+                    part.rootBody.getBody().setPosition(initPosRotVel.pos());//读取部件位置
+                    part.rootBody.getBody().setQuaternion(initPosRotVel.rot());//读取部件姿态
+                    part.rootBody.getBody().setLinearVel(initPosRotVel.lVel());//读取部件平移速度
+                    part.rootBody.getBody().setAngularVel(initPosRotVel.aVel());//读取部件角速度
+                }
+            } else {//还有子部件未创建完成时
                 return;//等待子部件创建完成
             }
             //将部件加入同步列表
@@ -175,7 +179,7 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
             DQuaternion dq = part.rootBody.getBody().getQuaternion().copy();
             DVector3 heading = dq.toEulerDegrees();
             setXRot((float) heading.get0());
-            setYRot(-(float) heading.get1());
+            setYRot((float) heading.get1());
             setZRot((float) heading.get2());
             this.setBoundingBox(this.makeBoundingBox());
         }
@@ -221,8 +225,8 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
         if (part != null) {
             DVector3 min = new DVector3(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
             DVector3 max = new DVector3(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE).scale(-1);
-            for (ModelPartBody partElement : part.partBody.values()) {
-                for (DGeom geom : partElement.getGeoms()) {
+            for (ModelPartBody partBody : part.partBody.values()) {
+                for (DGeom geom : partBody.getGeoms()) {
                     DAABBC temp = geom.getAABB();
                     for (int i = 0; i < 3; i++) {
                         if (temp.getMax(i) > max.get(i)) max.set(i, temp.getMax(i));
@@ -276,20 +280,16 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
 
     @Override
     protected void readAdditionalSaveData(CompoundTag compound) {
-        PartType type = PartType.PART_TYPE.getRegistry().get().get(ResourceLocation.parse(compound.getString("part_type")));
-        if (type != null) {
-            createPart(this.getId(), type);//重建部件
-            //读取部件位置姿态速度
+        this.partType = PartType.PART_TYPE.getRegistry().get().get(ResourceLocation.parse(compound.getString("part_type")));
+        this.coreEntityUUID = compound.getUUID("core_entity_uuid");
+        if (this.partType != null) {
+            createPart(this.getId(), this.partType);//服务端重建部件
+            //读取部件位置姿态速度角速度
             DVector3 pos = new DVector3(compound.getDouble("part_x"), compound.getDouble("part_y"), compound.getDouble("part_z"));
             DQuaternion dq = new DQuaternion(compound.getDouble("part_qw"), compound.getDouble("part_qx"), compound.getDouble("part_qy"), compound.getDouble("part_qz"));
             DVector3 lVel = new DVector3(compound.getDouble("part_lx"), compound.getDouble("part_ly"), compound.getDouble("part_lz"));
             DVector3 aVel = new DVector3(compound.getDouble("part_ax"), compound.getDouble("part_ay"), compound.getDouble("part_az"));
             initPosRotVel = new PosRotVel(pos, dq, lVel, aVel);
-            //读取部件连接关系
-            if (compound.contains("mother_entity_uuid"))
-                initMotherEntityUUID = UUID.fromString(compound.getString("mother_entity_uuid"));
-            initMotherPartBodyName = compound.getString("mother_body_name");
-            initMotherPartSlotName = compound.getString("mother_slot_name");
         }
     }
 
@@ -297,11 +297,7 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
     protected void addAdditionalSaveData(CompoundTag compound) {
         if (part != null) {
             compound.putString("part_type", part.getType().getRegistryKey().toString());//存储部件类型
-            if (this.motherPartEntity != null && this.motherBody != null && this.motherSlot != null) {
-                compound.putString("mother_entity_uuid", motherPartEntity.getUUID().toString());
-                compound.putString("mother_body_name", motherBody.getName());
-                compound.putString("mother_slot_name", motherSlot.getName());
-            }
+            compound.putUUID("core_entity_uuid", coreEntityUUID);//存储控制核心实体UUID
             DVector3 pos = part.rootBody.getBody().getPosition().copy();//存储部件位置
             compound.putDouble("part_x", pos.get0());
             compound.putDouble("part_y", pos.get1());
@@ -327,18 +323,12 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
     }
 
     protected void createPart(int id, PartType type) {
-        this.part = type.createPart(this.level());
+        this.setPart(type.createPart(this.level()));
         part.setId(id);
-        part.setAttachedEntity(this);
-        part.createMolangScope();
-    }
-
-    protected void attachPart(MMPartEntity motherPartEntity, String motherBodyName, String motherSlotName) {
-        this.motherPartEntity = motherPartEntity;
-        this.motherBody = motherPartEntity.part.partBody.get(motherBodyName);
-        this.motherSlot = motherBody.getBodySlots().get(motherSlotName);
-        //连接部件
-        this.motherSlot.attachBody(part.rootBody);
+        part.setCore(core);
+        part.rootBody.getBody().setPosition(attachPosRot.pos());
+        part.rootBody.getBody().setQuaternion(attachPosRot.rot());
+        this.setId(id);
     }
 
     /**
@@ -351,9 +341,17 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
      */
     @Override
     public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
+        buffer.writeUUID(coreEntityUUID);//写入控制核心实体ID
         buffer.writeInt(this.getId());//写入实体ID
         buffer.writeBoolean(reCreateFromPart);
         buffer.writeResourceLocation(part.getType().getRegistryKey());
+        buffer.writeDouble(attachPosRot.pos().get0());
+        buffer.writeDouble(attachPosRot.pos().get1());
+        buffer.writeDouble(attachPosRot.pos().get2());
+        buffer.writeDouble(attachPosRot.rot().get0());
+        buffer.writeDouble(attachPosRot.rot().get1());
+        buffer.writeDouble(attachPosRot.rot().get2());
+        buffer.writeDouble(attachPosRot.rot().get3());
         if (initPosRotVel == null)
             initPosRotVel = new PosRotVel(part.rootBody.getBody().getPosition(),
                     part.rootBody.getBody().getQuaternion(),
@@ -372,13 +370,6 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
         buffer.writeDouble(initPosRotVel.aVel().get0());
         buffer.writeDouble(initPosRotVel.aVel().get1());
         buffer.writeDouble(initPosRotVel.aVel().get2());
-        if (this.motherPartEntity != null) {
-            buffer.writeBoolean(true);
-            buffer.writeUUID(motherPartEntity.getUUID());
-            buffer.writeUtf(motherBody.getName());
-            buffer.writeUtf(motherSlot.getName());
-            buffer.writeInt(childrenPartToCreate);
-        } else buffer.writeBoolean(false);
     }
 
     /**
@@ -388,39 +379,24 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
      */
     @Override
     public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
+        coreEntityUUID = additionalData.readUUID();
         int id = additionalData.readInt();
         boolean reCreate = additionalData.readBoolean();
         ResourceLocation type = additionalData.readResourceLocation();
+        this.attachPosRot = new PosRot(
+                new DVector3(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble()),
+                new DQuaternion(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble())
+        );
         this.initPosRotVel = new PosRotVel(
                 new DVector3(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble()),
                 new DQuaternion(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble()),
                 new DVector3(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble()),
                 new DVector3(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble())
         );
-        boolean attached = additionalData.readBoolean();
         if (reCreate) {//若是通过已有部件创建的实体，则调用reCreateFromPart方法
             this.reCreateFromPart();
         } else {//若是完全新建的实体，则调用createPart方法
-            this.createPart(id, Objects.requireNonNull(PartType.PART_TYPE.getRegistry().get().get(type)));
-            if (attached) {//若应被安装于某个槽位，则调用attachPart方法，保存母体及安装槽信息并连接部件
-                this.initMotherEntityUUID = additionalData.readUUID();
-                this.initMotherPartBodyName = additionalData.readUtf();
-                this.initMotherPartSlotName = additionalData.readUtf();
-                this.childrenPartToCreate = additionalData.readInt();
-            }
-        }
-    }
-
-    private void checkInitialized() {
-        if (this.motherPartEntity !=null){
-            if(this.childrenPartToCreate != 0) initialized = false;
-            else {
-                motherPartEntity.checkInitialized();
-                if(motherPartEntity.initialized) this.initialized = true;
-            }
-        } else {
-            if(this.childrenPartToCreate != 0) initialized = false;
-            else this.initialized = true;
+            this.createPart(id, Objects.requireNonNull(PartType.PART_TYPE.getRegistry().get().get(type)));//客户端重建部件
         }
     }
 
@@ -432,19 +408,40 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
     @NotNull
     @Override
     public AnimController getAnimController() {
-        return part.getAnimController();
+        if (part != null)
+            return part.getAnimController();
+        else return animController;
     }
 
     @NotNull
     @Override
     public ModelIndex getModelIndex() {
         //指向零件的modelData
-        return part.getModelIndex();
+        if(part == null) return new ModelIndex(
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "unknown"),
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "unknown")
+        );
+        else return part.getModelIndex();
     }
 
     @NotNull
     @Override
     public BoneGroup getBones() {
         return part.getBones();
+    }
+
+    public void setPart(@NotNull AbstractPart part) {
+        if (this.part != null)
+            this.part.removeAllBodiesFromLevel();//销毁原来的部件
+        if (part.getId() != -1) this.setId(part.getId());
+        this.part = part;
+        this.part.setAttachedEntity(this);
+        this.part.createMolangScope();
+    }
+
+    public void setCoreEntity(CoreEntity coreEntity) {
+        this.coreEntity = coreEntity;
+        this.coreEntityUUID = coreEntity.getUUID();
+        this.core = coreEntity.core;
     }
 }

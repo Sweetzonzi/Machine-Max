@@ -39,9 +39,9 @@ abstract public class AbstractPartSlot {
      */
     public void attachPart(AbstractPart part) {
         if (hasPart()) {
-            MachineMax.LOGGER.error("Failed to attach the part, because the slot already has a part!");
+            MachineMax.LOGGER.error("Failed to attach the part, because the port already has a part!");
         } else if (!slotConditionCheck(part)) {
-            MachineMax.LOGGER.error("Failed to attach the part, because the part doesn't match the slot's condition!");
+            MachineMax.LOGGER.error("Failed to attach the part, because the part doesn't match the port's condition!");
         } else {
             this.childPart = part;
             part.fatherPart = this.slotOwnerPart;
