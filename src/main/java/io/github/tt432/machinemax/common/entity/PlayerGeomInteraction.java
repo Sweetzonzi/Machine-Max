@@ -1,18 +1,15 @@
 package io.github.tt432.machinemax.common.entity;
 
-import cn.solarmoon.spark_core.registry.common.SparkAttachments;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
-import io.github.tt432.machinemax.common.sloarphys.body.EntityBoundingBoxBody;
-import io.github.tt432.machinemax.common.sloarphys.body.LivingEntityEyesightBody;
+import io.github.tt432.machinemax.common.phys.body.EntityBoundingBoxBody;
+import io.github.tt432.machinemax.common.phys.body.LivingEntityEyesightBody;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
-
-import java.util.HashMap;
 
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 

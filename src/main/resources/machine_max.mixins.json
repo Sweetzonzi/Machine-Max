@@ -5,9 +5,7 @@
   "package": "io.github.tt432.machinemax.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "BlockStateMixin",
     "ClientLevelMixin",
-    "EntityMixin",
     "LevelMixin"
   ],
   "injectors": {

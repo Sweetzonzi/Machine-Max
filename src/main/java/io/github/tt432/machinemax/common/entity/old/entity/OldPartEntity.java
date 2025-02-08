@@ -2,18 +2,13 @@ package io.github.tt432.machinemax.common.entity.old.entity;
 
 import io.github.tt432.eyelib.capability.EyelibAttachableData;
 import io.github.tt432.machinemax.common.entity.old.controller.PhysController;
-import io.github.tt432.machinemax.common.part.old.AbstractPart;
+import io.github.tt432.machinemax.common.vehicle.old.AbstractPart;
 import org.ode4j.math.DQuaternion;
 import org.ode4j.math.DVector3;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
-import org.jetbrains.annotations.NotNull;
 
 public abstract class OldPartEntity extends Entity {
 

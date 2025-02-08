@@ -6,15 +6,16 @@ import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.phys.thread.ThreadHelperKt;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.part.PartNetCore;
-import io.github.tt432.machinemax.common.part.port.AbstractPortPort;
-import io.github.tt432.machinemax.common.part.port.AttachPointPortPort;
+import io.github.tt432.machinemax.common.registry.MMRegistries;
+import io.github.tt432.machinemax.common.vehicle.PartType;
+import io.github.tt432.machinemax.common.vehicle.VehicleCore;
+import io.github.tt432.machinemax.common.vehicle.port.AbstractPortPort;
+import io.github.tt432.machinemax.common.vehicle.port.AttachPointPortPort;
 import io.github.tt432.machinemax.common.registry.MMEntities;
-import io.github.tt432.machinemax.common.part.AbstractPart;
-import io.github.tt432.machinemax.common.registry.PartType;
-import io.github.tt432.machinemax.common.sloarphys.body.ModelPartBody;
-import io.github.tt432.machinemax.common.sloarphys.thread.MMAbstractPhysLevel;
-import io.github.tt432.machinemax.common.sloarphys.thread.MMClientPhysLevel;
+import io.github.tt432.machinemax.common.vehicle.AbstractPart;
+import io.github.tt432.machinemax.common.phys.body.ModelPartBody;
+import io.github.tt432.machinemax.common.phys.thread.MMAbstractPhysLevel;
+import io.github.tt432.machinemax.common.phys.thread.MMClientPhysLevel;
 import io.github.tt432.machinemax.mixin_interface.IMixinClientLevel;
 import io.github.tt432.machinemax.util.data.PosRot;
 import io.github.tt432.machinemax.util.data.PosRotVel;
@@ -49,7 +50,7 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
     public PartType partType;//部件类型
     @Getter
     @Setter
-    private PartNetCore core;//本载具的控制核心
+    private VehicleCore core;//本载具的控制核心
     @Getter
     private CoreEntity coreEntity;//本载具的控制核心实体
     @Setter
@@ -280,7 +281,7 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
 
     @Override
     protected void readAdditionalSaveData(CompoundTag compound) {
-        this.partType = PartType.PART_TYPE.getRegistry().get().get(ResourceLocation.parse(compound.getString("part_type")));
+        partType =MMRegistries.getRegistryAccess(level()).registry(PartType.PART_REGISTRY_KEY).get().get(ResourceLocation.parse(compound.getString("part_type")));
         this.coreEntityUUID = compound.getUUID("core_entity_uuid");
         if (this.partType != null) {
             createPart(this.getId(), this.partType);//服务端重建部件
@@ -323,7 +324,7 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
     }
 
     protected void createPart(int id, PartType type) {
-        this.setPart(type.createPart(this.level()));
+//        this.setPart(type.createPart(this.level()));
         part.setId(id);
         part.setCore(core);
         part.rootBody.getBody().setPosition(attachPosRot.pos());
@@ -396,7 +397,7 @@ public class MMPartEntity extends Entity implements IEntityWithComplexSpawn, IEn
         if (reCreate) {//若是通过已有部件创建的实体，则调用reCreateFromPart方法
             this.reCreateFromPart();
         } else {//若是完全新建的实体，则调用createPart方法
-            this.createPart(id, Objects.requireNonNull(PartType.PART_TYPE.getRegistry().get().get(type)));//客户端重建部件
+//            this.createPart(id, Objects.requireNonNull(PartType.PART_REGISTRY.get(type)));//客户端重建部件
         }
     }
 

@@ -1,7 +1,7 @@
 package io.github.tt432.machinemax.util;
 
-import io.github.tt432.machinemax.common.part.AbstractPart;
-import io.github.tt432.machinemax.common.registry.PartType;
+import io.github.tt432.machinemax.common.vehicle.AbstractPart;
+import io.github.tt432.machinemax.common.vehicle.PartType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -31,11 +31,11 @@ public class PartTypeBuilder<T extends AbstractPart> {
         return this;
     }
 
-    public Supplier<PartType> build() {
-        if (partFactory == null) {
-            throw new IllegalStateException("Part factory must be set before building PartType");
-        }
-        Supplier<PartType> supplier = partTypeRegister.register(id, () -> new PartType(ResourceLocation.fromNamespaceAndPath(modId, id), partFactory));
-        return supplier;
-    }
+//    public Supplier<PartType> build() {
+//        if (partFactory == null) {
+//            throw new IllegalStateException("Part factory must be set before building PartType");
+//        }
+//        Supplier<PartType> supplier = partTypeRegister.register(id, () -> new PartType(id, partFactory));
+//        return supplier;
+//    }
 }

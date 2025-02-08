@@ -2,10 +2,10 @@ package io.github.tt432.machinemax.common.registry;
 
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.part.port.AbstractPortPort;
-import io.github.tt432.machinemax.common.part.port.AttachPointPortPort;
-import io.github.tt432.machinemax.common.part.port.FixedPartPort;
-import io.github.tt432.machinemax.common.sloarphys.body.AbstractPartBody;
+import io.github.tt432.machinemax.common.vehicle.port.AbstractPortPort;
+import io.github.tt432.machinemax.common.vehicle.port.AttachPointPortPort;
+import io.github.tt432.machinemax.common.vehicle.port.FixedPartPort;
+import io.github.tt432.machinemax.common.phys.body.AbstractPartBody;
 import io.github.tt432.machinemax.util.PartPortTypeBuilder;
 import io.github.tt432.machinemax.util.data.PosRot;
 import lombok.Getter;

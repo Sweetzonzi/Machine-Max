@@ -1,7 +1,7 @@
 package io.github.tt432.machinemax.common.entity.old.controller;
 
 import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
-import io.github.tt432.machinemax.common.part.old.AbstractPart;
+import io.github.tt432.machinemax.common.vehicle.old.AbstractPart;
 import org.ode4j.math.*;
 import org.ode4j.ode.internal.Rotation;
 import lombok.Getter;

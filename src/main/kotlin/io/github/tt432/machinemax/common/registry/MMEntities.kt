@@ -15,18 +15,18 @@ object MMEntities {
     //测试用车辆
     @JvmStatic
     val TEST_CAR_ENTITY = MachineMax.REGISTER.entityType<TestCarEntity>().id("test_car")
-        .builder(EntityType.Builder.of(::TestCarEntity, MobCategory.MISC).fireImmune())
+        .builder(EntityType.Builder.of(::TestCarEntity, MobCategory.MISC).fireImmune().noSummon())
         .build()
 
     //部件实体
     @JvmStatic
     val PART_ENTITY = MachineMax.REGISTER.entityType<MMPartEntity>().id("part")
-        .builder(EntityType.Builder.of(::MMPartEntity, MobCategory.MISC).fireImmune())
+        .builder(EntityType.Builder.of(::MMPartEntity, MobCategory.MISC).fireImmune().noSummon())
         .build()
 
     //载具核心实体
     @JvmStatic
     val CORE_ENTITY = MachineMax.REGISTER.entityType<CoreEntity>().id("core")
-        .builder(EntityType.Builder.of(::CoreEntity, MobCategory.MISC).fireImmune())
+        .builder(EntityType.Builder.of(::CoreEntity, MobCategory.MISC).fireImmune().noSummon())
         .build()
 }

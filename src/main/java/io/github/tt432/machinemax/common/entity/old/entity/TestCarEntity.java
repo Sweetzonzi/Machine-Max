@@ -1,6 +1,6 @@
 package io.github.tt432.machinemax.common.entity.old.entity;
 
-import io.github.tt432.machinemax.common.part.old.TestCarChassisPart;
+import io.github.tt432.machinemax.common.vehicle.old.TestCarChassisPart;
 import io.github.tt432.machinemax.common.entity.old.controller.CarController;
 import org.ode4j.math.DVector3;
 import net.minecraft.core.particles.ParticleTypes;

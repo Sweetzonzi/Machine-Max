@@ -1,8 +1,8 @@
 package io.github.tt432.machinemax.common.entity.old.controller;
 
 import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
-import io.github.tt432.machinemax.common.part.old.slot.AbstractPartSlot;
-import io.github.tt432.machinemax.common.part.old.slot.WheelPartSlot;
+import io.github.tt432.machinemax.common.vehicle.old.slot.AbstractPartSlot;
+import io.github.tt432.machinemax.common.vehicle.old.slot.WheelPartSlot;
 import io.github.tt432.machinemax.util.MMMath;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.DAMotorJoint;

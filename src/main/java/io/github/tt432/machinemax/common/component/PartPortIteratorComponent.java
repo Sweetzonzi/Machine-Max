@@ -1,9 +1,8 @@
 package io.github.tt432.machinemax.common.component;
 
 import com.mojang.serialization.Codec;
-import io.github.tt432.machinemax.common.part.port.AbstractPortPort;
+import io.github.tt432.machinemax.common.vehicle.port.AbstractPortPort;
 import io.netty.buffer.ByteBuf;
-import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.codec.StreamCodec;

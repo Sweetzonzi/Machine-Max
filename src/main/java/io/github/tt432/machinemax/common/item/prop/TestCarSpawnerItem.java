@@ -2,8 +2,7 @@ package io.github.tt432.machinemax.common.item.prop;
 
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.CoreEntity;
-import io.github.tt432.machinemax.common.entity.MMPartEntity;
-import io.github.tt432.machinemax.common.registry.PartType;
+import io.github.tt432.machinemax.common.vehicle.PartType;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -19,9 +18,9 @@ public class TestCarSpawnerItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if(!level.isClientSide()){
-            CoreEntity coreEntity = new CoreEntity(PartType.AE86_CHASSIS_PART.get(), level);
-            level.addFreshEntity(coreEntity);
-            MachineMax.LOGGER.info(player+" tried to place a test car.");
+//            CoreEntity coreEntity = new CoreEntity(PartType.AE86_CHASSIS_PART.get(), level);
+//            level.addFreshEntity(coreEntity);
+//            MachineMax.LOGGER.info(player+" tried to place a test car.");
         }
         return super.use(level, player, usedHand);
     }

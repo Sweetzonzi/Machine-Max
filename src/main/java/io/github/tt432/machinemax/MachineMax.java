@@ -5,7 +5,7 @@ import com.mojang.logging.LogUtils;
 import io.github.tt432.machinemax.common.registry.*;
 import io.github.tt432.machinemax.common.registry.MMBlockEntities;
 import io.github.tt432.machinemax.common.registry.MMCreativeTabs;
-import io.github.tt432.machinemax.common.registry.PartType;
+import io.github.tt432.machinemax.common.vehicle.PartType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
@@ -17,7 +17,7 @@ public class MachineMax {
 
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, true);//一体化注册器
+    public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器
     public MachineMax(IEventBus bus){
 
         REGISTER.register(bus);
@@ -29,7 +29,7 @@ public class MachineMax {
         MMItems.register();//注册所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMAttachments.register();//注册所有附件类型
-        PartType.PART_TYPE.register(bus);
+//        PartType.PART_TYPE.register(bus);
         PartPortType.PART_PORT_TYPE.register(bus);
     }
 

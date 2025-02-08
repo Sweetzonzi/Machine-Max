@@ -11,7 +11,7 @@ import io.github.tt432.eyelib.client.render.RenderHelper;
 import io.github.tt432.eyelib.client.render.RenderParams;
 import io.github.tt432.eyelib.client.render.bone.BoneRenderInfos;
 import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
-import io.github.tt432.machinemax.common.part.old.AbstractPart;
+import io.github.tt432.machinemax.common.vehicle.old.AbstractPart;
 import org.ode4j.math.DQuaternionC;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;

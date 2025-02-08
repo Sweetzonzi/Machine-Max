@@ -1,14 +1,5 @@
 package io.github.tt432.machinemax.common.entity.old.controller;
 
-import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
-import io.github.tt432.machinemax.common.part.old.slot.AbstractPartSlot;
-import io.github.tt432.machinemax.common.part.old.slot.WheelPartSlot;
-import io.github.tt432.machinemax.util.MMMath;
-import org.ode4j.math.DVector3;
-import org.ode4j.ode.DAMotorJoint;
-import org.ode4j.ode.DHinge2Joint;
-
-import static java.lang.Math.*;
 /*
 public class AE86Controller extends PhysController {
     public double MAX_POWER = 100000;//最大总功率100kW

@@ -1,6 +1,6 @@
 package io.github.tt432.machinemax.util.formula;
 
-import io.github.tt432.machinemax.common.part.old.AbstractPart;
+import io.github.tt432.machinemax.common.vehicle.old.AbstractPart;
 import org.ode4j.math.DVector3;
 
 /**

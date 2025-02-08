@@ -1,8 +1,8 @@
 package io.github.tt432.machinemax.common.entity;
 
-import io.github.tt432.machinemax.common.part.PartNetCore;
+import io.github.tt432.machinemax.common.vehicle.PartType;
+import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.registry.MMEntities;
-import io.github.tt432.machinemax.common.registry.PartType;
 import io.github.tt432.machinemax.mixin_interface.IMixinClientLevel;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -18,7 +18,7 @@ import java.util.UUID;
 
 public class CoreEntity extends LivingEntity implements IMMEntityAttribute, IEntityWithComplexSpawn {
 
-    public PartNetCore core;
+    public VehicleCore core;
     public MMPartEntity rootPartEntity;
     //初始化属性
     private UUID initRootPartEntityUUID;
@@ -27,7 +27,6 @@ public class CoreEntity extends LivingEntity implements IMMEntityAttribute, IEnt
         super(entityType, level);
         setNoGravity(true);
         noPhysics = true;
-        this.core = new PartNetCore(this);
     }
 
     /**

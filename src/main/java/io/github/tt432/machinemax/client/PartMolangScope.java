@@ -2,12 +2,8 @@ package io.github.tt432.machinemax.client;
 
 import io.github.tt432.eyelib.capability.EyelibAttachableData;
 import io.github.tt432.eyelib.molang.MolangScope;
-import io.github.tt432.machinemax.common.part.AbstractPart;
+import io.github.tt432.machinemax.common.vehicle.AbstractPart;
 import lombok.Getter;
-import org.ode4j.math.DMatrix3;
-import org.ode4j.math.DQuaternion;
-import org.ode4j.math.DVector3;
-import org.ode4j.ode.internal.Rotation;
 
 public class PartMolangScope {
 
