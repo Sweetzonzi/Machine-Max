@@ -1,15 +1,18 @@
 package io.github.tt432.machinemax.common.vehicle.connector;
 
+import com.jme3.bullet.RotationOrder;
+import com.jme3.bullet.joints.New6Dof;
+import com.jme3.math.Transform;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
-import io.github.tt432.machinemax.util.data.PosRot;
+import com.mojang.datafixers.util.Pair;
+import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
+import io.github.tt432.machinemax.network.payload.ConnectorDetachPayload;
 import lombok.Getter;
 import lombok.Setter;
-import org.ode4j.math.DMatrix3;
-import org.ode4j.math.DQuaternion;
-import org.ode4j.math.DVector3;
-import org.ode4j.ode.internal.Rotation;
+import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
@@ -20,17 +23,21 @@ public abstract class AbstractConnector {
     public final SubPart subPart;//接口所属的零件
     public final List<String> acceptableVariants;//可接受的变体列表
     public final boolean breakable;//是否可拆解
-
+    public final boolean internal;//是否为内部接口
+    public final ConnectorAttr attr;//接口属性
+    public New6Dof joint;//关节
     @Setter
     public AbstractConnector attachedConnector;//与本接口对接的接口
-    final PosRot subPartAttachPoint;//被安装零件的连接点相对本部件质心的位置与姿态
+    public final Transform subPartTransform;//被安装零件的连接点相对本部件质心的位置与姿态
 
-    public AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, PosRot subPartAttachPoint) {
+    public AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, Transform subPartTransform) {
         this.name = name;
         this.subPart = subPart;
-        this.subPartAttachPoint = subPartAttachPoint;
+        this.subPartTransform = subPartTransform;
         this.acceptableVariants = attr.acceptableVariants();
         this.breakable = attr.breakable();
+        this.internal = !attr.ConnectedTo().isEmpty();
+        this.attr = attr;
     }
 
     /**
@@ -55,12 +62,6 @@ public abstract class AbstractConnector {
         } else {
             this.attachedConnector = targetConnector;
             targetConnector.attachedConnector = this;
-            //处理安装偏移
-            DVector3 pos = getWorldAttachPos(targetConnector);
-//            targetConnector.getSubPart().getBody().setPosition(pos);//子部件指定安装点对齐槽位安装点
-            //处理安装角
-            DQuaternion rot = getWorldAttachRot(targetConnector);
-//            targetConnector.getSubPart().getBody().setQuaternion(rot);//调整姿态
             this.attachJoint(targetConnector);
             return true;
         }
@@ -76,41 +77,54 @@ public abstract class AbstractConnector {
         return this.attach(targetConnector, false);
     }
 
-    abstract protected void attachJoint(AttachPointConnector attachPoint);
+    protected void attachJoint(AttachPointConnector targetConnector) {
+        this.joint = new New6Dof(this.subPart.body, targetConnector.subPart.body,
+                this.subPartTransform.getTranslation(), targetConnector.subPartTransform.getTranslation(),
+                this.subPartTransform.getRotation().toRotationMatrix(), targetConnector.subPartTransform.getRotation().toRotationMatrix(),
+                RotationOrder.ZYX);
+        targetConnector.joint = this.joint;
+    }
 
     /**
      * 将此接口连接的零件从此接口拆下
+     * 特别地，部件内零件之间的内部接口不允许被断开连接
      */
-    public void detach() {
-        if (hasPart()) {
+    public void detach(boolean force) {
+        if (force || (!internal && hasPart())) {
+            if (!internal) {//若是与外部部件连接的接口，则需要移除载具核心中记录的连接关系
+                Pair<AbstractConnector, AttachPointConnector> connection;
+                boolean removed;
+                if (this instanceof AttachPointConnector) {//若是连接点接口
+                    connection = Pair.of(attachedConnector, (AttachPointConnector) this);
+                    removed = subPart.part.vehicle.partNet.removeEdge(connection);
+                    if (!removed) {
+                        connection = Pair.of(attachedConnector, (AttachPointConnector) this);
+                        removed = subPart.part.vehicle.partNet.removeEdge(connection);
+                    }
+                } else {//若是一般接口
+                    connection = Pair.of(this, (AttachPointConnector) attachedConnector);
+                    removed = subPart.part.vehicle.partNet.removeEdge(connection);
+                }
+                if (!removed)//检查是否成功移除了连接关系
+                    MachineMax.LOGGER.error("零件拆解失败，载具核心中找不到对接口{}与对接口{}的连接关系！", this.getName(), attachedConnector.getName());
+                if (!this.subPart.part.level.isClientSide()) {//若是服务端，则向客户端发包通知拆解接口
+                    PacketDistributor.sendToPlayersInDimension((ServerLevel) subPart.part.level, new ConnectorDetachPayload(
+                            subPart.part.vehicle.uuid,
+                            new ConnectionData(connection)
+                    ));
+                }
+            }
             detachJoint();
             this.attachedConnector.attachedConnector = null;
             this.attachedConnector = null;
-        }
+        } else if (internal)
+            MachineMax.LOGGER.error("{}的内部接口{}不允许被断开连接！", this.subPart.part.name, this.getName());
     }
 
     protected void detachJoint() {
-        //TODO:销毁关节约束
-    }
-
-    public DVector3 getWorldAttachPos(AbstractConnector partPort) {
-        DVector3 pos = new DVector3();
-//        this.subPart.getBody().getRelPointPos(
-//                this.subPartAttachPoint.pos()
-//                        .reSub(partPort.subPartAttachPoint.pos()), pos);//获取连接点在世界坐标系下的位置
-        return pos;
-    }
-
-    public DQuaternion getWorldAttachRot(AbstractConnector partPort) {
-        DQuaternion rot = new DQuaternion();
-        DMatrix3 BodyRot = new DMatrix3().setIdentity();
-        DMatrix3 temp = new DMatrix3();
-        Rotation.dRfromQ(temp, partPort.subPartAttachPoint.rot());
-        BodyRot.eqMul(temp, BodyRot);
-        Rotation.dRfromQ(temp, this.subPartAttachPoint.rot());
-//        BodyRot.eqMul(temp, BodyRot).eqMul(this.subPart.getBody().getRotation(), BodyRot);
-        Rotation.dQfromR(rot, BodyRot);
-        return rot;
+        if (attachedConnector != null)
+            attachedConnector.joint = null;
+        joint.destroy();//销毁关节约束
     }
 
     /**
@@ -121,10 +135,10 @@ public abstract class AbstractConnector {
      */
     public boolean conditionCheck(SubPart subPart) {
         if (this.acceptableVariants.isEmpty() || this.acceptableVariants.contains(subPart.part.variant))
+            //TODO:tag检查
             return true;
         else
             return false;
-        //TODO:tag检查
     }
 
     /**
@@ -137,7 +151,7 @@ public abstract class AbstractConnector {
     }
 
     public void destroy() {
-        detach();
+        detach(true);
     }
 
 }

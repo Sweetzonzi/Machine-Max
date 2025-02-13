@@ -1,7 +1,7 @@
 package io.github.tt432.machinemax.common.component;
 
 import com.mojang.serialization.Codec;
-import io.github.tt432.machinemax.common.vehicle.port.AbstractPortPort;
+import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.netty.buffer.ByteBuf;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
@@ -13,25 +13,25 @@ import java.util.Map;
 
 public class PartPortIteratorComponent extends CompoundTag {
     @Setter
-    private Iterator<Map.Entry<String, AbstractPortPort>> iterator;
-    private AbstractPortPort currentPort;
+    private Iterator<Map.Entry<String, AbstractConnector>> iterator;
+    private AbstractConnector currentConnector;
     public static final StreamCodec<ByteBuf, PartPortIteratorComponent> STREAM_CODEC = StreamCodec.unit(
             new PartPortIteratorComponent(null)
     );
     public static final Codec<PartPortIteratorComponent> CODEC = Codec.unit(()->new PartPortIteratorComponent(null));
-    public PartPortIteratorComponent(Iterator<Map.Entry<String, AbstractPortPort>> iterator) {
+    public PartPortIteratorComponent(Iterator<Map.Entry<String, AbstractConnector>> iterator) {
         this.iterator = iterator;
     }
 
-    public AbstractPortPort getCurrentPort() {
-        if (currentPort == null && iterator.hasNext()) return iterator.next().getValue();
-        else return currentPort;
+    public AbstractConnector getCurrentConnector() {
+        if (currentConnector == null && iterator.hasNext()) return iterator.next().getValue();
+        else return currentConnector;
     }
 
-    public AbstractPortPort getNextPort() {
+    public AbstractConnector getNextPort() {
         if (iterator.hasNext()) {
-            currentPort = iterator.next().getValue();
-            return currentPort;
+            currentConnector = iterator.next().getValue();
+            return currentConnector;
         } else {
             iterator = null; // 重置迭代器
             return null;
@@ -39,7 +39,7 @@ public class PartPortIteratorComponent extends CompoundTag {
     }
 
     @Nullable
-    public Iterator<Map.Entry<String, AbstractPortPort>> getIterator() {
+    public Iterator<Map.Entry<String, AbstractConnector>> getIterator() {
         return iterator;
     }
 }

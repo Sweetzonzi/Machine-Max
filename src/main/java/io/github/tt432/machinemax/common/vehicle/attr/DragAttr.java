@@ -10,6 +10,7 @@ public record DragAttr(
         float rightward,
         float upward,
         float downward
+        //TODO:考虑旋转对称性
 ) {
     public static final Codec<DragAttr> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(

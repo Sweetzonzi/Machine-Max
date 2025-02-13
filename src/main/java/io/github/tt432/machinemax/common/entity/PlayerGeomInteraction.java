@@ -2,7 +2,6 @@ package io.github.tt432.machinemax.common.entity;
 
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
-import io.github.tt432.machinemax.common.phys.body.EntityBoundingBoxBody;
 import io.github.tt432.machinemax.common.phys.body.LivingEntityEyesightBody;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -30,12 +29,12 @@ public class PlayerGeomInteraction {
             LivingEntityEyesightBody attachedBody;
             if (player.hasData(MMAttachments.getENTITY_EYESIGHT())) {
                 attachedBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
-                attachedBody.getPhysLevel().getWorld().laterConsume(() -> {
-                    attachedBody.ray.destroy();
-                    attachedBody.getBody().destroy();
-                    player.removeData(MMAttachments.getENTITY_EYESIGHT());
-                    return null;
-                });
+//                attachedBody.getPhysLevel().getWorld().laterConsume(() -> {
+//                    attachedBody.ray.destroy();
+//                    attachedBody.getBody().destroy();
+//                    player.removeData(MMAttachments.getENTITY_EYESIGHT());
+//                    return null;
+//                });
             }
             //TODO:玩家移除碰撞箱
         }
@@ -44,10 +43,10 @@ public class PlayerGeomInteraction {
     @SubscribeEvent
     private static void interact(PlayerInteractEvent.EntityInteract event) {
         MachineMax.LOGGER.info("By Entity Target: " + event.getTarget());
-        LivingEntityEyesightBody ray = event.getEntity().getData(MMAttachments.getENTITY_EYESIGHT());
-        if (!ray.getTargets().isEmpty()) {
-            MachineMax.LOGGER.info("By Entity Target: " + ray.getSortedTargets().getFirst().getKey().getBody().getOwner());
-
-        }
+//        LivingEntityEyesightBody ray = event.getEntity().getData(MMAttachments.getENTITY_EYESIGHT());
+//        if (!ray.getTargets().isEmpty()) {
+//            MachineMax.LOGGER.info("By Entity Target: " + ray.getSortedTargets().getFirst().getKey().getBody().getOwner());
+//
+//        }
     }
 }

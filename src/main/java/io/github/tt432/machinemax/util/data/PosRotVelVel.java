@@ -7,8 +7,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
-import org.ode4j.math.DQuaternion;
-import org.ode4j.math.DVector3;
 
 public record PosRotVelVel(
         Vec3 position,

@@ -43,6 +43,21 @@ public class MMPayloadRegistry {
                 VehicleRemovePayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(VehicleRemovePayload::handle)
         );
+        sync.playToClient(//通知客户端创建部件与连接
+                ConnectorAttachPayload.TYPE,
+                ConnectorAttachPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ConnectorAttachPayload::handle)
+        );
+        sync.playToClient(//通知客户端移除连接
+                ConnectorDetachPayload.TYPE,
+                ConnectorDetachPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ConnectorDetachPayload::handle)
+        );
+        sync.playToClient(//通知客户端移除部件
+                PartRemovePayload.TYPE,
+                PartRemovePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PartRemovePayload::handle)
+        );
         sync.commonToServer(//客户端请求维度载具数据
                 ClientRequestVehicleDataPayload.TYPE,
                 ClientRequestVehicleDataPayload.STREAM_CODEC,

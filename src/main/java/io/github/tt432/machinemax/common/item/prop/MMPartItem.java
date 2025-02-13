@@ -4,11 +4,7 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.component.PartItemComponent;
 import io.github.tt432.machinemax.common.component.PartPortIteratorComponent;
 import io.github.tt432.machinemax.common.component.PartTypeComponent;
-import io.github.tt432.machinemax.common.entity.CoreEntity;
-import io.github.tt432.machinemax.common.entity.MMPartEntity;
-import io.github.tt432.machinemax.common.vehicle.AbstractPart;
 import io.github.tt432.machinemax.common.vehicle.PartType;
-import io.github.tt432.machinemax.common.vehicle.port.AbstractPortPort;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.registry.MMDataComponents;
 import net.minecraft.client.Minecraft;
@@ -138,7 +134,7 @@ public class MMPartItem extends Item {
 
     public static AbstractPortPort getSelectedPort(ItemStack stack, Level level) {
         PartPortIteratorComponent iteratorComponent = getPortIteratorComponent(stack, level);
-        return iteratorComponent.getCurrentPort();
+        return iteratorComponent.getCurrentConnector();
     }
 
     public static AbstractPortPort getNextPort(ItemStack stack, Level level) {

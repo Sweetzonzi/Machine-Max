@@ -1,10 +1,8 @@
 package io.github.tt432.machinemax.util.data;
 
-import org.ode4j.math.DQuaternion;
-import org.ode4j.math.DQuaternionC;
-import org.ode4j.math.DVector3;
-import org.ode4j.math.DVector3C;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Vector3f;
 
-public record PosRot(DVector3C pos, DQuaternionC rot) {
+public record PosRot(Vector3f pos, Quaternion rot) {
 
 }

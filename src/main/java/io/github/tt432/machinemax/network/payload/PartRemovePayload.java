@@ -17,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
 public record PartRemovePayload(
-        ResourceKey<Level> dimension,
         String vehicleUUID,
         String partUUID
 ) implements CustomPacketPayload {
@@ -25,8 +24,6 @@ public record PartRemovePayload(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_remove_payload")
     );
     public static final StreamCodec<ByteBuf, PartRemovePayload> STREAM_CODEC = StreamCodec.composite(
-            ResourceKey.streamCodec(Registries.DIMENSION),
-            PartRemovePayload::dimension,
             ByteBufCodecs.STRING_UTF8,
             PartRemovePayload::vehicleUUID,
             ByteBufCodecs.STRING_UTF8,
@@ -40,11 +37,9 @@ public record PartRemovePayload(
     }
 
     public static void handle(PartRemovePayload payload, IPayloadContext context) {
-        if(payload.dimension == context.player().level().dimension()){
-            VehicleCore vehicle = VehicleManager.allVehicles.get(UUID.fromString(payload.vehicleUUID));
-            if(vehicle!= null){
-                vehicle.removePart(UUID.fromString(payload.partUUID));
-            } else MachineMax.LOGGER.error("未找到载具: " + payload.partUUID);
-        } else MachineMax.LOGGER.error("从错误维度收到部件移除请求: " + payload.dimension);
+        VehicleCore vehicle = VehicleManager.allVehicles.get(UUID.fromString(payload.vehicleUUID));
+        if(vehicle!= null){
+            vehicle.removePart(UUID.fromString(payload.partUUID));
+        } else MachineMax.LOGGER.error("未找到载具: " + payload.partUUID);
     }
 }

@@ -1,11 +1,9 @@
 package io.github.tt432.machinemax.util.data;
 
-import org.ode4j.math.DQuaternion;
-import org.ode4j.math.DQuaternionC;
-import org.ode4j.math.DVector3;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Vector3f;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import org.ode4j.math.DVector3C;
 
 /**
  * 存储一个运动体的所有位姿速度信息。
@@ -17,7 +15,7 @@ import org.ode4j.math.DVector3C;
  * @param lVel 线速度 Liner velocity
  * @param aVel 角速度 Angular velocity
  */
-public record PosRotVel(DVector3C pos, DQuaternionC rot, DVector3C lVel, DVector3C aVel) {
+public record PosRotVel(Vector3f pos, Quaternion rot, Vector3f lVel, Vector3f aVel) {
     /**
      * 用于网络发包传输运动体位姿速度信息的编解码器
      * <p>
@@ -25,28 +23,27 @@ public record PosRotVel(DVector3C pos, DQuaternionC rot, DVector3C lVel, DVector
      */
     public static final StreamCodec<ByteBuf, PosRotVel> DATA_CODEC = new StreamCodec<>() {
         public PosRotVel decode(ByteBuf data) {
-            DVector3 pos = new DVector3(data.readDouble(), data.readDouble(), data.readDouble());//解码位置 Decode position
-            DQuaternion rot = new DQuaternion(data.readDouble(), data.readDouble(), data.readDouble(), data.readDouble());//解码姿态 Decode rotation
-            DVector3 lVel = new DVector3(data.readDouble(), data.readDouble(), data.readDouble());//解码线速度 Decode liner velocity
-            DVector3 aVel = new DVector3(data.readDouble(), data.readDouble(), data.readDouble());//解码角速度 Decode angular velocity
-            PosRotVel result = new PosRotVel(pos, rot, lVel, aVel);
-            return result;
+            Vector3f pos = new Vector3f(data.readFloat(), data.readFloat(), data.readFloat());//解码位置 Decode position
+            Quaternion rot = new Quaternion(data.readFloat(), data.readFloat(), data.readFloat(), data.readFloat());//解码姿态 Decode rotation
+            Vector3f lVel = new Vector3f(data.readFloat(), data.readFloat(), data.readFloat());//解码线速度 Decode liner velocity
+            Vector3f aVel = new Vector3f(data.readFloat(), data.readFloat(), data.readFloat());//解码角速度 Decode angular velocity
+            return new PosRotVel(pos, rot, lVel, aVel);
         }
 
         public void encode(ByteBuf buffer, PosRotVel data) {
-            buffer.writeDouble(data.pos.get0());//编码位置 Encode position
-            buffer.writeDouble(data.pos.get1());
-            buffer.writeDouble(data.pos.get2());
-            buffer.writeDouble(data.rot.get0());//编码姿态 Encode rotation
-            buffer.writeDouble(data.rot.get1());
-            buffer.writeDouble(data.rot.get2());
-            buffer.writeDouble(data.rot.get3());
-            buffer.writeDouble(data.lVel.get0());//编码线速度 Encode liner velocity
-            buffer.writeDouble(data.lVel.get1());
-            buffer.writeDouble(data.lVel.get2());
-            buffer.writeDouble(data.aVel.get0());//编码角速度 Encode Angular velocity
-            buffer.writeDouble(data.aVel.get1());
-            buffer.writeDouble(data.aVel.get2());
+            buffer.writeFloat(data.pos.x);//编码位置 Encode position
+            buffer.writeFloat(data.pos.y);
+            buffer.writeFloat(data.pos.z);
+            buffer.writeFloat(data.rot.getX());//编码姿态 Encode rotation
+            buffer.writeFloat(data.rot.getY());
+            buffer.writeFloat(data.rot.getZ());
+            buffer.writeFloat(data.rot.getW());
+            buffer.writeFloat(data.lVel.x);//编码线速度 Encode liner velocity
+            buffer.writeFloat(data.lVel.y);
+            buffer.writeFloat(data.lVel.z);
+            buffer.writeFloat(data.aVel.x);//编码角速度 Encode Angular velocity
+            buffer.writeFloat(data.aVel.y);
+            buffer.writeFloat(data.aVel.z);
         }
     };
 }

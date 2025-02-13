@@ -1,7 +1,6 @@
 package io.github.tt432.machinemax.client.input;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
 import io.github.tt432.machinemax.network.payload.MovementInputPayload;
 import io.github.tt432.machinemax.network.payload.RegularInputPayload;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
@@ -46,60 +45,60 @@ public class RawInputHandler {
     public static void handleMoveInputs(ClientTickEvent.Post event) {
         var client = Minecraft.getInstance();
 
-        if (client.player != null && client.player.getVehicle() instanceof OldPartEntity e) {
-            id = e.getId();
-            int trans_x_conflict = 0;
-            int trans_y_conflict = 0;
-            int trans_z_conflict = 0;
-            int rot_x_conflict = 0;
-            int rot_y_conflict = 0;
-            int rot_z_conflict = 0;
-            switch (e.getMode()) {
-                case GROUND:
-                    //移动
-                    if (KeyBinding.groundForwardKey.isDown() && KeyBinding.groundBackWardKey.isDown()) {
-                        trans_z_conflict = 1;
-                        trans_z_input = 0;
-                    }
-                    else if (KeyBinding.groundForwardKey.isDown()) trans_z_input = 100;
-                    else if (KeyBinding.groundBackWardKey.isDown()) trans_z_input = -100;
-                    else trans_z_input = 0;
-                    //转向
-                    if (KeyBinding.groundLeftwardKey.isDown() && KeyBinding.groundRightwardKey.isDown()) {
-                        rot_y_conflict = 1;
-                        rot_y_input = 0;
-                    }
-                    else if (KeyBinding.groundLeftwardKey.isDown()) rot_y_input = 100;
-                    else if (KeyBinding.groundRightwardKey.isDown()) rot_y_input = -100;
-                    else rot_y_input = 0;
-                    break;
-                case SHIP:
-                    break;
-                case PLANE:
-                    //TODO:键盘输入的优先级应当高于视角朝向
-                    break;
-                case MECH:
-                    break;
-                default:
-                    break;
-            }
-
-            moveInputs = new byte[]{
-                    (byte) (trans_x_input),
-                    (byte) (trans_y_input),
-                    (byte) (trans_z_input),
-                    (byte) (rot_x_input),
-                    (byte) (rot_y_input),
-                    (byte) (rot_z_input)};
-            moveInputConflicts = new byte[]{
-                    (byte) (trans_x_conflict),
-                    (byte) (trans_y_conflict),
-                    (byte) (trans_z_conflict),
-                    (byte) (rot_x_conflict),
-                    (byte) (rot_y_conflict),
-                    (byte) (rot_z_conflict)};
-            PacketDistributor.sendToServer(new MovementInputPayload(id, moveInputs, moveInputConflicts));
-        }
+//        if (client.player != null && client.player.getVehicle() instanceof OldPartEntity e) {
+//            id = e.getId();
+//            int trans_x_conflict = 0;
+//            int trans_y_conflict = 0;
+//            int trans_z_conflict = 0;
+//            int rot_x_conflict = 0;
+//            int rot_y_conflict = 0;
+//            int rot_z_conflict = 0;
+//            switch (e.getMode()) {
+//                case GROUND:
+//                    //移动
+//                    if (KeyBinding.groundForwardKey.isDown() && KeyBinding.groundBackWardKey.isDown()) {
+//                        trans_z_conflict = 1;
+//                        trans_z_input = 0;
+//                    }
+//                    else if (KeyBinding.groundForwardKey.isDown()) trans_z_input = 100;
+//                    else if (KeyBinding.groundBackWardKey.isDown()) trans_z_input = -100;
+//                    else trans_z_input = 0;
+//                    //转向
+//                    if (KeyBinding.groundLeftwardKey.isDown() && KeyBinding.groundRightwardKey.isDown()) {
+//                        rot_y_conflict = 1;
+//                        rot_y_input = 0;
+//                    }
+//                    else if (KeyBinding.groundLeftwardKey.isDown()) rot_y_input = 100;
+//                    else if (KeyBinding.groundRightwardKey.isDown()) rot_y_input = -100;
+//                    else rot_y_input = 0;
+//                    break;
+//                case SHIP:
+//                    break;
+//                case PLANE:
+//                    //TODO:键盘输入的优先级应当高于视角朝向
+//                    break;
+//                case MECH:
+//                    break;
+//                default:
+//                    break;
+//            }
+//
+//            moveInputs = new byte[]{
+//                    (byte) (trans_x_input),
+//                    (byte) (trans_y_input),
+//                    (byte) (trans_z_input),
+//                    (byte) (rot_x_input),
+//                    (byte) (rot_y_input),
+//                    (byte) (rot_z_input)};
+//            moveInputConflicts = new byte[]{
+//                    (byte) (trans_x_conflict),
+//                    (byte) (trans_y_conflict),
+//                    (byte) (trans_z_conflict),
+//                    (byte) (rot_x_conflict),
+//                    (byte) (rot_y_conflict),
+//                    (byte) (rot_z_conflict)};
+//            PacketDistributor.sendToServer(new MovementInputPayload(id, moveInputs, moveInputConflicts));
+//        }
     }
 
     @SubscribeEvent

@@ -1,7 +1,6 @@
 package io.github.tt432.machinemax.network.payload;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -34,18 +33,18 @@ public record MovementInputPayload(int id, byte[] input, byte[] inputConflict) i
         //将其他玩家的输入同步至本机，以在客户端模拟其他玩家的操作
         //TODO:测试操作延迟情况
         Player player = context.player();
-        if (player.getVehicle() instanceof OldPartEntity e && e.getController() != null) {
-            e.getController().setRawMoveInput(payload.input());
-            e.getController().setMoveInputConflict(payload.inputConflict());
-        }
+//        if (player.getVehicle() instanceof OldPartEntity e && e.getController() != null) {
+//            e.getController().setRawMoveInput(payload.input());
+//            e.getController().setMoveInputConflict(payload.inputConflict());
+//        }
     }
 
     public static void serverHandler(final MovementInputPayload payload, final IPayloadContext context) {
         Player player = context.player();
-        if (player.getVehicle() instanceof OldPartEntity e && e.getController() != null) {
-            e.getController().setRawMoveInput(payload.input());
-            e.getController().setMoveInputConflict(payload.inputConflict());
-        }
+//        if (player.getVehicle() instanceof OldPartEntity e && e.getController() != null) {
+//            e.getController().setRawMoveInput(payload.input());
+//            e.getController().setMoveInputConflict(payload.inputConflict());
+//        }
         //将玩家输入转发给其他玩家，以在其他玩家客户端模拟自己的操作
         PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload);
     }

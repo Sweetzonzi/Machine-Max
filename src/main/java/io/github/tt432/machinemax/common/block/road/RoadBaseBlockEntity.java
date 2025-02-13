@@ -2,9 +2,6 @@ package io.github.tt432.machinemax.common.block.road;
 
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMBlockEntities;
-import org.ode4j.ode.DHeightfieldData;
-import org.ode4j.ode.OdeHelper;
-import org.ode4j.ode.internal.DxTrimeshHeightfield;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -18,8 +15,6 @@ public class RoadBaseBlockEntity extends BlockEntity {
     protected double pitch = 0;//道路节点坡度(角度,在±80度之间)
     protected double roll = 0;//道路节点倾斜角(角度，在±80度之间)
     double[] heightData = new double[17 * 17];//道路高程数据
-    DHeightfieldData heightfieldData = OdeHelper.createHeightfieldData();//道路高程图数据
-    DxTrimeshHeightfield heightfield;//道路几何形状
 
     public RoadBaseBlockEntity(BlockPos pos, BlockState blockState) {
         super(MMBlockEntities.getROAD_BASE_BLOCK_ENTITY().get(), pos, blockState);
@@ -43,13 +38,7 @@ public class RoadBaseBlockEntity extends BlockEntity {
     public void onLoad() {
         super.onLoad();
         //根据连接的道路节点信息，创建道路高程图
-        heightfieldData.build(heightData, false,
-                16, 16,
-                3, 3,
-                1, 0, 0, false);
-        heightfield = new DxTrimeshHeightfield(null, heightfieldData, true, true);
-        BlockPos pos = this.getBlockPos();
-        heightfield.setPosition(pos.getX(), pos.getY()+2, pos.getZ());//挪到正确的位置
+
         //将道路几何体加入物理世界
         loadHeightfield();
     }

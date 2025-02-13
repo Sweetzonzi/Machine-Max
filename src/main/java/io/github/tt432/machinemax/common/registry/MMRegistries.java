@@ -22,13 +22,6 @@ import net.neoforged.neoforge.registries.NewRegistryEvent;
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class MMRegistries {
 
-
-    @SubscribeEvent//注册器注册
-    public static void registerRegistries(NewRegistryEvent event) {
-//        event.register(PartType.PART_REGISTRY);
-        event.register(PartPortType.PART_PORT_REGISTRY);
-    }
-
     @SubscribeEvent//数据包注册
     public static void registerDataPackRegistries(DataPackRegistryEvent.NewRegistry event) {
         event.dataPackRegistry(

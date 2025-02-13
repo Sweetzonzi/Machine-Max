@@ -1,7 +1,6 @@
 package io.github.tt432.machinemax.common.item.prop;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.entity.CoreEntity;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;

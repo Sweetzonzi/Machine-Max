@@ -4,8 +4,7 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.item.prop.MMPartItem;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.registry.MMItems;
-import io.github.tt432.machinemax.common.vehicle.port.AbstractPortPort;
-import io.github.tt432.machinemax.common.vehicle.port.AttachPointPortPort;
+import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -63,7 +62,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                 break;
             case CYCLE_PART_ATTACH_POINTS://切换零件连接点
                 var eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
-                AbstractPortPort targetPort = eyesightBody.getPort();//获取视线看着的部件对接口
+                AbstractConnector targetPort = eyesightBody.getConnector();//获取视线看着的部件对接口
                 if (targetPort != null && !targetPort.hasPart()) {
                     ItemStack heldItem = player.getMainHandItem();
                     if (!heldItem.is(MMItems.getPART_ITEM())) {//确保手持物品为部件物品

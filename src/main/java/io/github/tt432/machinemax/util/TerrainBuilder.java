@@ -1,4 +1,4 @@
-package io.github.tt432.machinemax.common.phys.thread;
+package io.github.tt432.machinemax.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

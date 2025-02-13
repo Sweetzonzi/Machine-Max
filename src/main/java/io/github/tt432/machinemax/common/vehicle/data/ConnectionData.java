@@ -9,36 +9,41 @@ import lombok.Getter;
 
 @Getter
 public class ConnectionData {
-    public final String SubPartUuidA;
+    public final String PartUuidA;
+    public final String SubPartNameA;
     public final String connectorNameA;
-    public final String SubPartUuidB;
+    public final String PartUuidB;
+    public final String SubPartNameB;
     public final String connectorNameB;
 
     public static final Codec<ConnectionData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("SubPartUuidA").forGetter(ConnectionData::getSubPartUuidA),
+            Codec.STRING.fieldOf("PartUuidA").forGetter(ConnectionData::getPartUuidA),
+            Codec.STRING.fieldOf("SubPartNameA").forGetter(ConnectionData::getSubPartNameA),
             Codec.STRING.fieldOf("connectorNameA").forGetter(ConnectionData::getConnectorNameA),
-            Codec.STRING.fieldOf("SubPartUuidB").forGetter(ConnectionData::getSubPartUuidB),
+            Codec.STRING.fieldOf("PartUuidB").forGetter(ConnectionData::getPartUuidB),
+            Codec.STRING.fieldOf("SubPartNameB").forGetter(ConnectionData::getSubPartNameB),
             Codec.STRING.fieldOf("connectorNameB").forGetter(ConnectionData::getConnectorNameB)
     ).apply(instance, ConnectionData::new));
 
-    public ConnectionData(String subPartUuidA, String connectorNameA, String subPartUuidB, String connectorNameB) {
-        this.SubPartUuidA = subPartUuidA;
+    public ConnectionData(String partUuidA, String subPartNameA, String connectorNameA, String partUuidB, String subPartNameB, String connectorNameB) {
+        this.PartUuidA = partUuidA;
+        SubPartNameA = subPartNameA;
         this.connectorNameA = connectorNameA;
-        this.SubPartUuidB = subPartUuidB;
+        this.PartUuidB = partUuidB;
+        SubPartNameB = subPartNameB;
         this.connectorNameB = connectorNameB;
     }
 
     public ConnectionData(AbstractConnector connectorA, AttachPointConnector connectorB){
-        this.SubPartUuidA = connectorA.subPart.part.uuid.toString();
+        this.PartUuidA = connectorA.subPart.part.uuid.toString();
         this.connectorNameA = connectorA.name;
-        this.SubPartUuidB = connectorB.subPart.part.uuid.toString();
+        this.SubPartNameA = connectorA.subPart.name;
+        this.PartUuidB = connectorB.subPart.part.uuid.toString();
         this.connectorNameB = connectorB.name;
+        this.SubPartNameB = connectorB.subPart.name;
     }
 
     public ConnectionData(Pair<AbstractConnector, AttachPointConnector> connectorPair){
-        this.SubPartUuidA = connectorPair.getFirst().subPart.part.uuid.toString();
-        this.connectorNameA = connectorPair.getFirst().name;
-        this.SubPartUuidB = connectorPair.getSecond().subPart.part.uuid.toString();
-        this.connectorNameB = connectorPair.getSecond().name;
+        this(connectorPair.getFirst(), connectorPair.getSecond());
     }
 }

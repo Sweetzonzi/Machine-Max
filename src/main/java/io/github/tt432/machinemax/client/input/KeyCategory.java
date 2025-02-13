@@ -1,6 +1,6 @@
 package io.github.tt432.machinemax.client.input;
 
-import io.github.tt432.machinemax.common.entity.old.entity.OldPartEntity;
+import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
 
@@ -34,9 +34,10 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
         @Override
         public boolean isActive() {
             if (GUI.isActive()) return false;
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
-                return e.getMode() == OldPartEntity.controlMode.GROUND;
-            } else return false;
+//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
+//                return e.getMode() == VehicleCore.ControlMode.GROUND;
+//            } else return false;
+            return false;
         }
 
         @Override
@@ -52,9 +53,10 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
 
         public boolean isActive() {
             if (GUI.isActive()) return false;
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
-                return e.getMode() == OldPartEntity.controlMode.SHIP;
-            } else return false;
+//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
+//                return e.getMode() == VehicleCore.ControlMode.SHIP;
+//            } else return false;
+            return false;
         }
 
         @Override
@@ -70,9 +72,10 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
 
         public boolean isActive() {
             if (GUI.isActive()) return false;
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
-                return e.getMode() == OldPartEntity.controlMode.PLANE;
-            } else return false;
+//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
+//                return e.getMode() == VehicleCore.ControlMode.PLANE;
+//            } else return false;
+            return false;
         }
 
         @Override
@@ -88,9 +91,10 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
 
         public boolean isActive() {
             if (GUI.isActive()) return false;
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
-                return e.getMode() == OldPartEntity.controlMode.MECH;
-            } else return false;
+//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof VehicleCore e) {
+//                return e.getMode() == VehicleCore.ControlMode.MECH;
+//            } else return false;
+            return false;
         }
 
         @Override

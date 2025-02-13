@@ -10,12 +10,10 @@
   "sub_parts": {//零件(子部件)列表
     "root": {//零件(子部件)名称
       "mass": 1000.0,//零件质量(kg)
-      "shape_and_materials": {
-        "mmCollision_Box_Root": {//骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
-          "type": "box",//碰撞形状类型，支持box、sphere、cylinder、capsule和cone
-          "material": "default",//暂时无实际作用，计划影响摩擦力，伤害抗性，护甲等效系数等
-          "thickness": 1000 //暂时无实际作用，计划影响护甲水平
-        }
+      "material": "default",//暂时无实际作用，计划影响摩擦力，伤害抗性，护甲等效系数等
+      "thickness": 1000,//暂时无实际作用，计划影响护甲水平
+      "shapes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
+        "mmCollision_Box_Root": "box"//值:碰撞形状类型，支持box、sphere、cylinder、capsule和cone
       },
       "connectors": {//子部件用于与其他零件连接的对接口列表
         "north": {//接口名称

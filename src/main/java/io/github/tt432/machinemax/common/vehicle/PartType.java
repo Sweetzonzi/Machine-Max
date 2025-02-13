@@ -49,7 +49,7 @@ public class PartType {
             }
     );
     public static final Codec<PartType> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("nameA").forGetter(PartType::getName),
+            Codec.STRING.fieldOf("name").forGetter(PartType::getName),
             VARIANT_MAP_CODEC.fieldOf("variants").forGetter(PartType::getVariants),
             ResourceLocation.CODEC.listOf().fieldOf("textures").forGetter(PartType::getTextures),
             ResourceLocation.CODEC.optionalFieldOf("animation",
