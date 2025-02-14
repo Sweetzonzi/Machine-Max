@@ -14,6 +14,6 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 public class MMRenderHandler {
     @SubscribeEvent//注册每个实体渲染器
     public static void onEntityRendererRegistry(EntityRenderersEvent.RegisterRenderers event){
-//        event.registerEntityRenderer(MMEntities.getPART_ENTITY().get(), PartLivingEntityRenderer::new);
+        event.registerEntityRenderer(MMEntities.getPART_ENTITY().get(), PartLivingEntityRenderer::new);
     }
 }

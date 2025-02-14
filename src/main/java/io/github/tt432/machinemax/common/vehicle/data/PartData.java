@@ -1,19 +1,16 @@
 package io.github.tt432.machinemax.common.vehicle.data;
 
+import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
-import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.util.data.PosRotVelVel;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,10 +28,7 @@ public class PartData {
     public final float durability;
     public final Map<String, PosRotVelVel> subPartTransforms;
 
-    public static final Codec<Map<String, PosRotVelVel>> SUB_PART_TRANS_MAP_CODEC = Codec.unboundedMap(
-            Codec.STRING,// 键：子部件名称，字符串
-            PosRotVelVel.CODEC// 值：子部件位置、旋转、线速度和角速度
-    );
+
 
     public static final Codec<PartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("registryKey").forGetter(PartData::getRegistryKey),
@@ -43,7 +37,7 @@ public class PartData {
             Codec.INT.fieldOf("textureIndex").forGetter(PartData::getTextureIndex),
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),
             Codec.FLOAT.fieldOf("durability").forGetter(PartData::getDurability),
-            SUB_PART_TRANS_MAP_CODEC.fieldOf("subPartTransforms").forGetter(PartData::getSubPartTransforms)
+            PosRotVelVel.MAP_CODEC.fieldOf("subPartTransforms").forGetter(PartData::getSubPartTransforms)
     ).apply(instance, PartData::new));
 
     public static final Codec<Map<String, PartData>> MAP_CODEC = CODEC.listOf().xmap(
@@ -67,7 +61,7 @@ public class PartData {
             int textureIndex = buffer.readInt();
             String uuid = buffer.readUtf();
             float durability = buffer.readFloat();
-            Map<String, PosRotVelVel> subPartTransforms = buffer.readJsonWithCodec(SUB_PART_TRANS_MAP_CODEC);
+            Map<String, PosRotVelVel> subPartTransforms = buffer.readJsonWithCodec(PosRotVelVel.MAP_CODEC);
             return new PartData(registryKey, name, variant, textureIndex, uuid, durability, subPartTransforms);
         }
 
@@ -79,7 +73,7 @@ public class PartData {
             buffer.writeInt(value.textureIndex);
             buffer.writeUtf(value.uuid);
             buffer.writeFloat(value.durability);
-            buffer.writeJsonWithCodec(SUB_PART_TRANS_MAP_CODEC, value.subPartTransforms);
+            buffer.writeJsonWithCodec(PosRotVelVel.MAP_CODEC, value.subPartTransforms);
         }
 
     };
@@ -109,15 +103,10 @@ public class PartData {
         this.subPartTransforms = HashMap.newHashMap(1);
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {
             this.subPartTransforms.put(entry.getKey(), new PosRotVelVel(
-//                    entry.getValue().position,
-//                    entry.getValue().rotation,
-//                    entry.getValue().linearVel,
-//                    entry.getValue().angularVel
-                    //TODO:改成Body的位置、旋转、线速度、角速度
-                    new Vec3(0, 0, 0),
-                    new Quaternionf(0, 0, 0, 1),
-                    new Vec3(0, 0, 0),
-                    new Vec3(0, 0, 0)
+                    entry.getValue().body.getPhysicsLocation(null),
+                    SparkMathKt.toQuaternionf(entry.getValue().body.getPhysicsRotation(null)),
+                    entry.getValue().body.getLinearVelocity(null),
+                    entry.getValue().body.getAngularVelocity(null)
             ));
         }
     }

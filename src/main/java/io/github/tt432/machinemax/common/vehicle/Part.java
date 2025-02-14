@@ -9,11 +9,14 @@ import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.sync.SyncData;
+import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.registry.MMRegistries;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
@@ -25,11 +28,13 @@ import io.github.tt432.machinemax.util.data.PosRotVelVel;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
@@ -43,6 +48,8 @@ public class Part implements IAnimatable<Part> {
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
     //基本属性
     public VehicleCore vehicle;//所属的VehicleCore
+    @Nullable
+    public MMPartEntity entity;//实体对象
     public String name;
     public final PartType type;
     public final Level level;
@@ -63,7 +70,6 @@ public class Part implements IAnimatable<Part> {
      * @param variant  部件变体类型
      * @param level    部件被加入的世界
      */
-    @OnlyIn(Dist.DEDICATED_SERVER)
     public Part(PartType partType, String variant, Level level) {
         this.modelIndex = new ModelIndex(
                 partType.variants.getOrDefault(variant, partType.variants.get("default")),//获取部件模型路径
@@ -75,6 +81,7 @@ public class Part implements IAnimatable<Part> {
         this.variant = variant;
         this.level = level;
         this.uuid = UUID.randomUUID();
+        this.durability = partType.basicDurability;
         this.rootSubPart = createSubPart(type.subParts);//创建子部件并指定根子部件
     }
 
@@ -85,7 +92,6 @@ public class Part implements IAnimatable<Part> {
      * @param partType 部件类型
      * @param level    部件被加入的世界
      */
-    @OnlyIn(Dist.DEDICATED_SERVER)
     public Part(PartType partType, Level level) {
         this(partType, "default", level);
     }
@@ -115,8 +121,10 @@ public class Part implements IAnimatable<Part> {
         for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {//遍历保存的子部件位置、旋转、速度数据
             SubPart subPart = subParts.get(entry.getKey());//获取已重建的子部件
             if (subPart != null) {//设定子部件body的位置、旋转、速度
-                subPart.body.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entry.getValue().position()));
-
+                subPart.body.setPhysicsLocation(entry.getValue().position());
+                subPart.body.setPhysicsRotation(SparkMathKt.toBQuaternion(entry.getValue().rotation()));
+                subPart.body.setLinearVelocity(entry.getValue().linearVel());
+                subPart.body.setAngularVelocity(entry.getValue().angularVel());
             } else
                 MachineMax.LOGGER.error("从数据中重建零件时似乎发生了错误，零件{}中未找到子部件{}。", type.name, entry.getKey());
         }
@@ -179,7 +187,6 @@ public class Part implements IAnimatable<Part> {
                 } else
                     MachineMax.LOGGER.error("在零件{}中未找到对应的碰撞形状骨骼{}。", type.name, shapeEntry.getKey());
             }
-            subPart.body.setMass(subPartEntry.getValue().mass());//设置质量
             Transform massCenter = new Transform();//质心位置默认位于坐标原点
             if (!subPartEntry.getValue().massCenterLocator().isEmpty()) {//若零件制定了质心定位点
                 OLocator locator = locators.get(subPartEntry.getValue().massCenterLocator());
@@ -194,6 +201,8 @@ public class Part implements IAnimatable<Part> {
                 }
                 subPart.collisionShape.correctAxes(massCenter);//调整碰撞体位置，使模型原点对齐质心(必须在创建完成碰撞体积后进行！)
             }
+            subPart.body.setCollisionShape(subPart.collisionShape);//重新设置碰撞体积
+            subPart.body.setMass(subPartEntry.getValue().mass());//设置质量
             //创建零件接口
             for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartEntry.getValue().connectors().entrySet()) {
                 if (bones.get(connectorEntry.getValue().boneName()) != null) {//若找到了对应的零件接口骨骼
@@ -286,6 +295,11 @@ public class Part implements IAnimatable<Part> {
 
     public void destroy() {
         for (SubPart subPart : subParts.values()) subPart.destroy();
+        if (this.entity != null) {
+            this.entity.part=null;
+            this.entity.remove(Entity.RemovalReason.DISCARDED);
+            this.entity = null;
+        }
     }
 
     @Override
@@ -323,4 +337,15 @@ public class Part implements IAnimatable<Part> {
         return SparkMathKt.toMatrix4f(rootSubPart.body.getTransform(new Transform()).toTransformMatrix());
     }
 
+    @NotNull
+    @Override
+    public SyncerType getSyncerType() {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public SyncData getSyncData() {
+        return null;
+    }
 }

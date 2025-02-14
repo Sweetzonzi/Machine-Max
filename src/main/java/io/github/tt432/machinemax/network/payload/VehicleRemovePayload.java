@@ -5,7 +5,6 @@ import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -39,7 +38,7 @@ public record VehicleRemovePayload(
 
     public static void handle(VehicleRemovePayload payload, IPayloadContext context) {
         if(payload.dimension == context.player().level().dimension()){
-            VehicleCore vehicle = VehicleManager.allVehicles.get(UUID.fromString(payload.vehicleUUID));
+            VehicleCore vehicle = VehicleManager.clientAllVehicles.get(UUID.fromString(payload.vehicleUUID));
             if(vehicle!= null){
                 VehicleManager.removeVehicle(vehicle);
             } else MachineMax.LOGGER.error("收到移除不存在的载具的请求: " + payload.vehicleUUID);

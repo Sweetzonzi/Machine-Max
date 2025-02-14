@@ -90,7 +90,7 @@ public abstract class AbstractConnector {
      * 特别地，部件内零件之间的内部接口不允许被断开连接
      */
     public void detach(boolean force) {
-        if (force || (!internal && hasPart())) {
+        if ((force || !internal) && hasPart()) {
             if (!internal) {//若是与外部部件连接的接口，则需要移除载具核心中记录的连接关系
                 Pair<AbstractConnector, AttachPointConnector> connection;
                 boolean removed;

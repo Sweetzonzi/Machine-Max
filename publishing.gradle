@@ -6,25 +6,3 @@ java {
     //withJavadocJar()
     withSourcesJar()
 }
-
-java {
-    withSourcesJar()
-}
-
-javadoc {
-    options.encoding("UTF-8")
-}
-
-publishing {
-    repositories {
-        maven {
-            url "file://${project.projectDir}/repo"
-        }
-    }
-
-    publications {
-        register('mavenJava', MavenPublication) {
-            from components.java
-        }
-    }
-}

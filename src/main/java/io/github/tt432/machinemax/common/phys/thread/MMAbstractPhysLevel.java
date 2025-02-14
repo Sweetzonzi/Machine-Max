@@ -23,7 +23,7 @@ public abstract class MMAbstractPhysLevel {
 //    protected HashMap<Long, ChunkAccess> terrainChunkCache = HashMap.newHashMap(4);//地形碰撞方块所在的区块缓存
 //    protected HashMap<Long, Integer> terrainChunkCount = HashMap.newHashMap(4);//地形碰撞方块所在的区块缓存
 //    int terrainChunkMaxTick = 50;//地形碰撞方块所在的区块缓存的清理时间，指定次数物理计算未被访问后将被从缓存中清除
-//    public int step = 0;//物理运算迭代运行的总次数
+//    public int vehicleUUID = 0;//物理运算迭代运行的总次数
 //    long start;
 //    long end;
 //
@@ -36,11 +36,11 @@ public abstract class MMAbstractPhysLevel {
 //    @Override
 //    public void physTick() {
 //        start = System.nanoTime();
-//        step++;
+//        vehicleUUID++;
 //        addTerrainCollisionBoxes();
 //        super.physTick();
 //        end = System.nanoTime();
-////        if (getLevel().dimension() == Level.OVERWORLD)System.out.println("level: " + getLevel() + " step: " + step + " time: " + (end - start) / 1000000);
+////        if (getLevel().dimension() == Level.OVERWORLD)System.out.println("level: " + getLevel() + " vehicleUUID: " + vehicleUUID + " time: " + (end - start) / 1000000);
 //    }
 //
 //    public void init(PhysLevel level) {

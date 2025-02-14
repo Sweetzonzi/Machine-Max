@@ -69,9 +69,9 @@ public class MMPayloadRegistry {
                 new MainThreadPayloadHandler<>(LevelVehicleDataPayload::handle)
         );
         sync.playToClient(//运动体的位姿和速度
-                PhysSyncPayload.TYPE,
-                PhysSyncPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(PhysSyncPayload::handler)
+                SubPartSyncPayload.TYPE,
+                SubPartSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(SubPartSyncPayload::handler)
         );
     }
 }

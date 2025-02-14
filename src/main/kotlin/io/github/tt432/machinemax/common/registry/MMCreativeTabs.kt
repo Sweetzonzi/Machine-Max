@@ -28,8 +28,7 @@ object MMCreativeTabs {
 //                    list.add(itemStack)
 //                }
 //                list.forEach(output::accept)
-//                var list2 =MachineMax.REGISTER.itemDeferredRegister.entries.map { it.get() }.toMutableList()
-//                list2.forEach(output::accept)
+                output.accept(MMItems.TEST_CAR_SPAWNER.get())
             }
         )
         .build()

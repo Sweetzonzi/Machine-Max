@@ -50,7 +50,7 @@ public class PIDController {
         this.error_accu_min = min;
         if (step <= 0) {
             this.STEP = 0.1;
-            MachineMax.LOGGER.error("PID's time step must be greater than 0!");
+            MachineMax.LOGGER.error("PID's time vehicleUUID must be greater than 0!");
         } else {
             this.STEP = step;
         }

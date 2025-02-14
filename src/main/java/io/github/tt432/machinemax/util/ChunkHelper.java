@@ -2,10 +2,11 @@ package io.github.tt432.machinemax.util;
 
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 public class ChunkHelper {
-    public static ChunkPos getChunkPos(Vec3 pos) {
+    public static ChunkPos getChunkPos(@NotNull Vec3 pos) {
         return getChunkPos((int) pos.x, (int) pos.z);
     }
 

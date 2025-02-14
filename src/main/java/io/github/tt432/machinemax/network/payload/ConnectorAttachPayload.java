@@ -53,7 +53,7 @@ public record ConnectorAttachPayload(
     }
 
     public static void handle(ConnectorAttachPayload payload, IPayloadContext context) {
-        VehicleCore vehicle = VehicleManager.allVehicles.get(payload.vehicleUuid);
+        VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUuid);
         Part newPart = null;
         if (vehicle == null) throw new IllegalStateException("未找到载具: " + payload.vehicleUuid);
         if (payload.hasNewPart) {

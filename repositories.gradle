@@ -1,4 +1,6 @@
 dependencies {
+    // 物理库
+    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -10,20 +12,11 @@ dependencies {
     //eyelib 基岩版模型、动画、控制器支持
     implementation "io.github.tt432:eyelib:21.1.5"
     jarJar(group: 'io.github.tt432', name: 'eyelib', version: '[21.1.5,22.0)')
-    // 物理库
-    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
     // 其它mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
-
     // 本地lib
-    jarJar(implementation files(fileTree(dir: 'libs', includes: ['*.jar'])))
     additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
 
-    // 兼容
-    // geckolib
-    implementation "software.bernie.geckolib:geckolib-neoforge-${minecraft_version}:${geckolib_version}"
-    // azurelib
-    implementation "mod.azure.azurelib:azurelib-neo-${minecraft_version}:${azurelib_version}"
 }
 
 repositories {

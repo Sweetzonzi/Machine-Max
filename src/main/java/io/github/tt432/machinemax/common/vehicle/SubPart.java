@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import org.jetbrains.annotations.NotNull;
@@ -31,9 +32,9 @@ public class SubPart implements PhysicsHost {
     }
 
     public void addToLevel() {
-        this.bindBody(body, true,
+        this.bindBody(body, part.level.getPhysicsLevel(), true,
                 (body -> {
-                    body.addContactListener(null);//TODO:写接触规则
+//                    body.addContactListener();//TODO:写接触规则
                     body.activate();
                     return null;
                 }));

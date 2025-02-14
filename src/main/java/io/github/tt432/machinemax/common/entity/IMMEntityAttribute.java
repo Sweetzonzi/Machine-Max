@@ -7,7 +7,7 @@ public interface IMMEntityAttribute {
     //注册属性
     static AttributeSupplier.Builder createLivingAttributes() {
         return AttributeSupplier.builder()
-                .add(Attributes.MAX_HEALTH)
+                .add(Attributes.MAX_HEALTH, 20)
                 .add(Attributes.KNOCKBACK_RESISTANCE)
                 .add(Attributes.MOVEMENT_SPEED, 0D)
                 .add(Attributes.ARMOR)
