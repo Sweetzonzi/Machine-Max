@@ -11,6 +11,7 @@ import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import lombok.Getter;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
@@ -113,6 +114,22 @@ public class LivingEntityEyesightAttachment {
             for (PhysicsRigidBody body : sortedTargetsCache) {
                 if (body.getOwner() != null && body.getOwner() instanceof SubPart part) {
                     return part.part;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指向的最近的实体，如果没有则返回null
+     *
+     * @return 线段命中的最近的实体
+     */
+    public Entity getEntity() {
+        if (!sortedTargetsCache.isEmpty()) {
+            for (PhysicsRigidBody body : sortedTargetsCache) {
+                if (body.getOwner() != null && body.getOwner() instanceof Entity entity) {
+                    return entity;
                 }
             }
         }

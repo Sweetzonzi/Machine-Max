@@ -23,8 +23,12 @@ public class SprayCanItem extends Item {
     @Override
     public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity interactionTarget, InteractionHand usedHand) {
         if (!player.level().isClientSide) {
-            if (interactionTarget instanceof MMPartEntity) {
-                MMPartEntity partEntity = (MMPartEntity) interactionTarget;
+            LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
+            Part part = eyesight.getPart();
+            if (part != null) {//改变瞄准的部件的涂装
+                //TODO:播放声音与粒子效果
+                part.switchTexture(part.textureIndex + 1);
+            } else if (interactionTarget instanceof MMPartEntity partEntity) {
                 if (partEntity.part != null) {
                     //TODO:播放声音与粒子效果
                     partEntity.part.switchTexture(partEntity.part.textureIndex + 1);
@@ -42,6 +46,8 @@ public class SprayCanItem extends Item {
             Part part = eyesight.getPart();
             if (part != null) {//提示信息
                 Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.spray_can.interact").append(part.name), true);
+            } else if (eyesight.getEntity() instanceof MMPartEntity partEntity && partEntity.part != null) {
+                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.spray_can.interact").append(partEntity.part.name), true);
             } else Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
         }
     }
