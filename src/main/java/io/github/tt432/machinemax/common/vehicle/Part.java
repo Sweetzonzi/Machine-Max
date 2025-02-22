@@ -26,15 +26,18 @@ import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.Dof6Connector;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
+import io.github.tt432.machinemax.network.payload.PartPaintPayload;
 import io.github.tt432.machinemax.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -308,6 +311,9 @@ public class Part implements IAnimatable<Part> {
                 modelIndex.getAnimPath(),
                 type.getTextures().get(index % type.getTextures().size())
         ));
+        //同步客户端
+        if (!level.isClientSide()) PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+                new PartPaintPayload(vehicle.uuid.toString(), this.uuid.toString(), this.textureIndex));
     }
 
     /**
@@ -326,15 +332,15 @@ public class Part implements IAnimatable<Part> {
         }
     }
 
-    public void setTransform(Transform transform){
-        level.getPhysicsLevel().submitTask((a,b)->{
+    public void setTransform(Transform transform) {
+        level.getPhysicsLevel().submitTask((a, b) -> {
             Transform rootTransform = rootSubPart.body.getTransform(null).invert();
             rootSubPart.body.setPhysicsTransform(transform);
-            for(SubPart subPart : subParts.values()){
+            for (SubPart subPart : subParts.values()) {
                 if (subPart == rootSubPart) continue;
                 Transform subPartTransform = subPart.body.getTransform(null);
-                MyMath.combine(subPartTransform, rootTransform,subPartTransform);
-                MyMath.combine(subPartTransform, transform,subPartTransform);
+                MyMath.combine(subPartTransform, rootTransform, subPartTransform);
+                MyMath.combine(subPartTransform, transform, subPartTransform);
                 subPart.body.setPhysicsTransform(subPartTransform);
             }
             return null;
