@@ -29,6 +29,6 @@ public class MMRegistries {
 
     public static RegistryAccess getRegistryAccess(Level level) {
         if (level instanceof ServerLevel) return level.registryAccess();
-        else return Minecraft.getInstance().level.registryAccess();
+        else return Minecraft.getInstance().getConnection().registryAccess();
     }
 }

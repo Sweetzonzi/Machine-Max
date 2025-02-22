@@ -20,5 +20,6 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         //按键名称
         //提示信息
         this.add("tooltip.machinemax.crossbar.interact", "Interact to disassemble:");
+        this.add("tooltip.machinemax.spray_can.interact", "Interact to paint:");
     }
 }

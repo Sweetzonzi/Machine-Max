@@ -137,6 +137,7 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
                 this.subPartTransform.getRotation().toRotationMatrix(), targetConnector.subPartTransform.getRotation().toRotationMatrix(),
                 RotationOrder.ZYX);
         //TODO:设置关节属性
+        joint.setCollisionBetweenLinkedBodies(false);
         joint.set(MotorParam.LowerLimit, 3, 0);
         joint.set(MotorParam.LowerLimit, 4, 0);
         joint.set(MotorParam.LowerLimit, 5, 0);

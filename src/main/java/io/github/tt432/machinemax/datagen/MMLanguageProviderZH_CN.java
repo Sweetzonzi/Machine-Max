@@ -20,5 +20,6 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         //按键名称
         //提示信息
         this.add("tooltip.machinemax.crossbar.interact", "互动以拆除：");
+        this.add("tooltip.machinemax.spray_can.interact", "互动以喷涂：");
     }
 }

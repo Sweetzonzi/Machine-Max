@@ -2509,7 +2509,18 @@
 				{
 					"name": "mmPartBody_Chassis",
 					"parent": "Chassis",
-					"pivot": [0, 0, 0]
+					"pivot": [0, 0, 0],
+					"locators": {
+						"LeftFrontWheel": [28, -14, -34],
+						"MassCenter": [0, 0, 0],
+						"RightFrontWheel": [-28, -14, -34],
+						"LeftBackWheel": [28, -14, 40],
+						"RightBackWheel": [-28, -14, 40],
+						"Hull": [0, 9, 6],
+						"BackSeat": [0, 6, 19],
+						"CopilotSeat": [9, 8, 4],
+						"DriverSeat": [-9, 8, 4]
+					}
 				},
 				{
 					"name": "mmCollision_Box_Chassis",
@@ -2558,61 +2569,6 @@
 							"uv": {}
 						}
 					]
-				},
-				{
-					"name": "mmMass_Box_Chassis",
-					"parent": "mmPartBody_Chassis",
-					"pivot": [0, 0, 0],
-					"cubes": [
-						{
-							"origin": [-18, -13, -46],
-							"size": [36, 26, 92],
-							"uv": {}
-						}
-					],
-					"locators": {
-						"mass_2000": [0, 0, 0]
-					}
-				},
-				{
-					"name": "mmPort_Fixed_LeftFrontWheel",
-					"parent": "mmPartBody_Chassis",
-					"pivot": [28, -14, -34]
-				},
-				{
-					"name": "mmPort_Fixed_RightFrontWheel",
-					"parent": "mmPartBody_Chassis",
-					"pivot": [-28, -14, -34]
-				},
-				{
-					"name": "mmPort_Fixed_LeftBackWheel",
-					"parent": "mmPartBody_Chassis",
-					"pivot": [28, -14, 40]
-				},
-				{
-					"name": "mmPort_Fixed_RightBackWheel",
-					"parent": "mmPartBody_Chassis",
-					"pivot": [-28, -14, 40]
-				},
-				{
-					"name": "mmPort_Fixed_DriverSeat",
-					"parent": "mmPartBody_Chassis",
-					"pivot": [-9, 8, 4]
-				},
-				{
-					"name": "mmPort_Fixed_CopilotSeat",
-					"parent": "mmPartBody_Chassis",
-					"pivot": [9, 8, 4]
-				},
-				{
-					"name": "mmPort_Fixed_BackSeat",
-					"parent": "mmPartBody_Chassis",
-					"pivot": [0, 6, 19]
-				},
-				{
-					"name": "mmPort_Fixed_Hull",
-					"parent": "mmPartBody_Chassis",
-					"pivot": [0, 9, 6]
 				},
 				{
 					"name": "rot",

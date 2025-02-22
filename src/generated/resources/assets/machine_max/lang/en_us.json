@@ -5,5 +5,6 @@
   "key.category.machine_max.mech": "Machine Max:Mech",
   "key.category.machine_max.plane": "Machine Max:Plane",
   "key.category.machine_max.ship": "Machine Max:Ship",
-  "tooltip.machinemax.crossbar.interact": "Interact to disassemble:"
+  "tooltip.machinemax.crossbar.interact": "Interact to disassemble:",
+  "tooltip.machinemax.spray_can.interact": "Interact to paint:"
 }

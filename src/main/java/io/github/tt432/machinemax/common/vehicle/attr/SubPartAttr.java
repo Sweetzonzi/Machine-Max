@@ -17,7 +17,7 @@ public record SubPartAttr(
     public static final Codec<SubPartAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("parent", "").forGetter(SubPartAttr::parent),
             Codec.FLOAT.fieldOf("mass").forGetter(SubPartAttr::mass),
-            Codec.STRING.optionalFieldOf("mass_center_bone", "").forGetter(SubPartAttr::massCenterLocator),
+            Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::massCenterLocator),
             ShapeAttr.MAP_CODEC.fieldOf("shapes").forGetter(SubPartAttr::collisionShapeAttr),
             ConnectorAttr.MAP_CODEC.fieldOf("connectors").forGetter(SubPartAttr::connectors),
             DragAttr.CODEC.fieldOf("air_drag").forGetter(SubPartAttr::airDrag)

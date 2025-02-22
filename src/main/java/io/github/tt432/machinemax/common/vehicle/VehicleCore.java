@@ -202,6 +202,7 @@ public class VehicleCore {
                 );
             }
             if (partMap.values().isEmpty()) VehicleManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
+            else for(Part p : partMap.values()) p.subParts.values().forEach(subPart -> subPart.body.activate());//重新激活，进行部件移除后的物理计算
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.name, part.name);
     }
 

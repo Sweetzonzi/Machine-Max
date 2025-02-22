@@ -34,6 +34,7 @@ public class LivingEntityEyesightAttachment {
     private HashMap<PhysicsRigidBody, PhysicsRayTestResult> targetsCache = new HashMap<>(2);
     private List<PhysicsRigidBody> sortedTargetsCache = new LinkedList<>();
     private double eyesightRange;
+
     public LivingEntityEyesightAttachment(LivingEntity entity) {
         this.owner = entity;
     }
@@ -75,9 +76,27 @@ public class LivingEntityEyesightAttachment {
      */
     public AbstractConnector getConnector() {
         if (!sortedTargetsCache.isEmpty()) {
-            for (PhysicsRigidBody body: sortedTargetsCache) {
-                if (body.getOwner() != null && body.getOwner() instanceof AbstractConnector connector) {
-                    return connector;
+            for (PhysicsRigidBody body : sortedTargetsCache) {
+                if (body.getOwner() != null) {
+                    if (body.getOwner() instanceof SubPart && targetsCache.get(body) instanceof PhysicsRayTestResult rayTestResult) {//如果射线命中物体是部件
+                        rayTestResult.getHitFraction();//获取距离命中点最近的可用部件接口
+                        Vector3f hitPoint = PhysicsHelperKt.toBVector3f(owner.position()
+                                .add(0, owner.getEyeHeight(), 0)
+                                .add(owner.getViewVector(1).normalize().scale(this.eyesightRange * rayTestResult.getHitFraction())));
+                        AbstractConnector result = null;
+                        float distance = Float.MAX_VALUE;
+                        for (AbstractConnector connector : ((SubPart) body.getOwner()).connectors.values()) {
+                            if (!connector.internal && !connector.hasPart() && connector.body!=null){
+                                Vector3f attachPos =  connector.body.getPhysicsLocation(null);
+                                float dist = attachPos.subtract(hitPoint).lengthSquared();
+                                if(dist < distance) {//如果距离更近
+                                    distance = dist;//更新距离
+                                    result = connector;//更新结果
+                                }
+                            }
+                        }
+                        return result;
+                    } else if (body.getOwner() instanceof AbstractConnector connector) return connector;
                 }
             }
         }
@@ -91,7 +110,7 @@ public class LivingEntityEyesightAttachment {
      */
     public Part getPart() {
         if (!sortedTargetsCache.isEmpty()) {
-            for (PhysicsRigidBody body: sortedTargetsCache) {
+            for (PhysicsRigidBody body : sortedTargetsCache) {
                 if (body.getOwner() != null && body.getOwner() instanceof SubPart part) {
                     return part.part;
                 }

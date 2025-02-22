@@ -13,6 +13,7 @@ import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
+import com.jme3.math.Matrix3f;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
@@ -27,6 +28,7 @@ import io.github.tt432.machinemax.common.vehicle.connector.Dof6Connector;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
 import io.github.tt432.machinemax.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
+import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
@@ -150,7 +152,7 @@ public class Part implements IAnimatable<Part> {
                 subPart.body.setLinearVelocity(entry.getValue().linearVel());
                 subPart.body.setAngularVelocity(entry.getValue().angularVel());
             } else
-                MachineMax.LOGGER.error("从数据中重建零件时似乎发生了错误，零件{}中未找到子部件{}。", type.name, entry.getKey());
+                MachineMax.LOGGER.error("从数据中重建部件时发生了错误，部件{}中未能找到子部件{}。", type.name, entry.getKey());
         }
     }
 
@@ -169,7 +171,7 @@ public class Part implements IAnimatable<Part> {
             subParts.put(subPartEntry.getKey(), subPart);//将零件放入部件的零件表
             if (subPartEntry.getValue().parent().isEmpty()) {//检测是否为根零件
                 if (rootSubPart == null) rootSubPart = subPart;//记录第一个根零件
-                else MachineMax.LOGGER.error("仅允许存在一个父节点为空的零件作为根零件，请检查模型文件{}。", type);
+                else MachineMax.LOGGER.error("仅允许存在一个根零件，请检查模型文件{}。", type);
             } else subPartMap.put(subPart, subPartEntry.getValue().parent());//记录子部件的父子关系
             //创建碰撞体积
             for (Map.Entry<String, ShapeAttr> shapeEntry : subPartEntry.getValue().collisionShapeAttr().entrySet()) {
@@ -181,7 +183,7 @@ public class Part implements IAnimatable<Part> {
                                 org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
                                 BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
                                 org.joml.Vector3f rotation = cube.getRotation().toVector3f();
-                                Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
+                                Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                                 subPart.collisionShape.addChildShape(
                                         boxShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
@@ -229,14 +231,12 @@ public class Part implements IAnimatable<Part> {
             subPart.body.setMass(subPartEntry.getValue().mass());//设置质量
             //创建零件接口
             for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartEntry.getValue().connectors().entrySet()) {
-                if (bones.get(connectorEntry.getValue().boneName()) != null) {//若找到了对应的零件接口骨骼
-                    OBone bone = bones.get(connectorEntry.getValue().boneName());
-                    org.joml.Vector3f rotation = bone.getRotation().toVector3f();
+                if (locators.get(connectorEntry.getValue().locatorName()) instanceof OLocator locator) {//若找到了对应的零件接口Locator
+                    org.joml.Vector3f rotation = locator.getRotation().toVector3f();
                     Transform posRot = new Transform(//接口的位置与姿态
-                            PhysicsHelperKt.toBVector3f(bone.getPivot()).subtract(massCenter.getTranslation()),
+                            PhysicsHelperKt.toBVector3f(locator.getOffset()).subtract(massCenter.getTranslation()),
                             SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z)).mult(massCenter.getRotation().inverse())
                     );
-                    //TODO:考虑父骨骼带来的旋转问题？
                     AbstractConnector connector = null;
                     switch (connectorEntry.getValue().type()) {
                         case "AttachPoint"://连接点接口
@@ -263,7 +263,7 @@ public class Part implements IAnimatable<Part> {
                         if (!connector.internal) this.connectors.put(connectorEntry.getKey(), connector);
                     }
                 } else
-                    MachineMax.LOGGER.error("在零件{}中未找到对应的零件接口骨骼{}。", type.name, connectorEntry.getValue().boneName());
+                    MachineMax.LOGGER.error("在部件{}中未找到对应的零件接口Locator:{}。", type.name, connectorEntry.getValue().locatorName());
             }
         }
         //设置零件的父子关系，连接内部关节
