@@ -18,5 +18,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.category.machine_max.mech", "Machine Max:机甲");
         this.add("key.category.machine_max.assembly", "Machine Max:组装");
         //按键名称
+        //提示信息
+        this.add("tooltip.machinemax.crossbar.interact", "互动以拆除：");
     }
 }

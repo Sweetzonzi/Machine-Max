@@ -1,9 +1,6 @@
 package io.github.tt432.machinemax.common.entity.old.controller;
 
-import lombok.Getter;
 import lombok.Setter;
-
-import static io.github.tt432.machinemax.util.formula.Dynamic.aerodynamicForce;
 
 /**
  * 此类为实体的控制器原型

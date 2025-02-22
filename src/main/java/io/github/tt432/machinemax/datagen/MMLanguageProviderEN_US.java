@@ -18,5 +18,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("key.category.machine_max.mech", "Machine Max:Mech");
         this.add("key.category.machine_max.assembly", "Machine Max:Assembly");
         //按键名称
+        //提示信息
+        this.add("tooltip.machinemax.crossbar.interact", "Interact to disassemble:");
     }
 }

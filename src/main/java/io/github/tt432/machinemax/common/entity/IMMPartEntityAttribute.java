@@ -3,11 +3,11 @@ package io.github.tt432.machinemax.common.entity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
-public interface IMMEntityAttribute {
+public interface IMMPartEntityAttribute {
     //注册属性
-    static AttributeSupplier.Builder createLivingAttributes() {
+    static AttributeSupplier.Builder createPartEntityAttributes() {
         return AttributeSupplier.builder()
-                .add(Attributes.MAX_HEALTH, 20)
+                .add(Attributes.MAX_HEALTH, 100)
                 .add(Attributes.KNOCKBACK_RESISTANCE)
                 .add(Attributes.MOVEMENT_SPEED, 0D)
                 .add(Attributes.ARMOR)

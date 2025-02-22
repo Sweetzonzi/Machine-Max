@@ -4,5 +4,6 @@
   "key.category.machine_max.ground": "Machine Max:Ground",
   "key.category.machine_max.mech": "Machine Max:Mech",
   "key.category.machine_max.plane": "Machine Max:Plane",
-  "key.category.machine_max.ship": "Machine Max:Ship"
+  "key.category.machine_max.ship": "Machine Max:Ship",
+  "tooltip.machinemax.crossbar.interact": "Interact to disassemble:"
 }

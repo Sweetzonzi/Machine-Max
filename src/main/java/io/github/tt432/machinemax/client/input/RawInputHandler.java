@@ -1,7 +1,6 @@
 package io.github.tt432.machinemax.client.input;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.network.payload.MovementInputPayload;
 import io.github.tt432.machinemax.network.payload.RegularInputPayload;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import net.minecraft.client.KeyMapping;
@@ -110,6 +109,7 @@ public class RawInputHandler {
 
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Post event){
+        //载具交互
         if (KeyBinding.generalInteractKey.isDown()){
             if(keyPressTicks.getOrDefault(KeyBinding.generalInteractKey,0) == 0){
                 PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(), 0));
@@ -119,14 +119,23 @@ public class RawInputHandler {
             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(),keyPressTicks.get(KeyBinding.generalInteractKey)));
             keyPressTicks.put(KeyBinding.generalInteractKey, 0);
         }
-
-        if(KeyBinding.assemblyCycleKey.isDown()){
-            if(keyPressTicks.getOrDefault(KeyBinding.assemblyCycleKey,0) == 0){//按下时循环切换配件连接点键时发包服务器
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_ATTACH_POINTS.getValue(), 0));
+        //切换部件对接口
+        if(KeyBinding.assemblyCycleConnectorKey.isDown()){
+            if(keyPressTicks.getOrDefault(KeyBinding.assemblyCycleConnectorKey,0) == 0){//按下时循环切换配件连接点键时发包服务器
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
             }
-            keyPressTicks.put(KeyBinding.assemblyCycleKey, keyPressTicks.getOrDefault(KeyBinding.assemblyCycleKey,0) + 1);
-        } else if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleKey,0) > 0) {//按键松开且按下持续至少1tick
-            keyPressTicks.put(KeyBinding.assemblyCycleKey, 0);
+            keyPressTicks.put(KeyBinding.assemblyCycleConnectorKey, keyPressTicks.getOrDefault(KeyBinding.assemblyCycleConnectorKey,0) + 1);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleConnectorKey,0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.assemblyCycleConnectorKey, 0);
+        }
+        //切换部件变体类型
+        if(KeyBinding.assemblyCycleVariantKey.isDown()){
+            if(keyPressTicks.getOrDefault(KeyBinding.assemblyCycleVariantKey,0) == 0){//按下时循环切换配件连接点键时发包服务器
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
+            }
+            keyPressTicks.put(KeyBinding.assemblyCycleVariantKey, keyPressTicks.getOrDefault(KeyBinding.assemblyCycleVariantKey,0) + 1);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleVariantKey,0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.assemblyCycleVariantKey, 0);
         }
     }
 }

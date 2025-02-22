@@ -1,9 +1,9 @@
 package io.github.tt432.machinemax.common.registry
 
 import io.github.tt432.machinemax.MachineMax
-import io.github.tt432.machinemax.common.component.PartItemComponent
-import io.github.tt432.machinemax.common.component.PartPortIteratorComponent
-import io.github.tt432.machinemax.common.component.PartTypeComponent
+import io.github.tt432.machinemax.common.component.PartAssemblyCacheComponent
+import io.github.tt432.machinemax.common.component.PartAssemblyInfoComponent
+import io.github.tt432.machinemax.common.vehicle.PartType
 
 object MMDataComponents {
     @JvmStatic
@@ -13,32 +13,37 @@ object MMDataComponents {
     /**
      * 保存在部件物品上的物品类型，用于从物品创建部件
      */
-//    @JvmStatic
-//    val PART_TYPE = MachineMax.REGISTER.dataComponent<PartTypeComponent>()
-//        .id("part_type")
-//        .build {
-//            it.persistent(PartTypeComponent.CODEC)
-//                .networkSynchronized(PartTypeComponent.STREAM_CODEC)
-//                .cacheEncoding()
-//        }
-
-    /**
-     * 保存在物品上的部件，用于读取保存部件安装槽，安装姿态等信息
-     * Codec仅用于初始化，不在退出游戏时保存
-     */
     @JvmStatic
-    val PART = MachineMax.REGISTER.dataComponent<PartItemComponent>()
-        .id("part")
+    val PART_TYPE = MachineMax.REGISTER.dataComponent<PartType>()
+        .id("part_type")
         .build {
-            it.persistent(PartItemComponent.CODEC)
-//                .networkSynchronized(PartItemComponent.STREAM_CODEC)
+            it
+                .persistent(PartType.CODEC)
+                .networkSynchronized(PartType.STREAM_CODEC)
+                .cacheEncoding()
         }
 
     @JvmStatic
-    val PART_PORT_ITERATOR = MachineMax.REGISTER.dataComponent<PartPortIteratorComponent>()
-        .id("part_port_iterator")
+    val PART_ASSEMBLY_INFO = MachineMax.REGISTER.dataComponent<PartAssemblyInfoComponent>()
+        .id("part_assembly_info")
         .build {
-            it.persistent(PartPortIteratorComponent.CODEC)
-//                .networkSynchronized(PartPortIteratorComponent.STREAM_CODEC)
+            it
+//                .persistent(PartAssemblyInfoComponent.CODEC)
+                .networkSynchronized(PartAssemblyInfoComponent.STREAM_CODEC)
+                .cacheEncoding()
+        }
+
+    /**
+     * 用于暂存部件变体与部件对接口的迭代器
+     * 仅存在于服务端，仅应在服务端被使用
+     */
+    @JvmStatic
+    val PART_ASSEMBLY_CACHE = MachineMax.REGISTER.dataComponent<PartAssemblyCacheComponent>()
+        .id("part_assembly_cache")
+        .build {
+            it
+                .persistent(PartAssemblyCacheComponent.CODEC)
+//                .networkSynchronized(PartAssemblyInfoComponent.STREAM_CODEC)
+                .cacheEncoding()
         }
 }

@@ -1,9 +1,7 @@
 package io.github.tt432.machinemax.common.item.prop;
 
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.registry.MMRegistries;
 import io.github.tt432.machinemax.common.vehicle.Part;
-import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import net.minecraft.resources.ResourceLocation;
@@ -22,9 +20,7 @@ public class TestCarSpawnerItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if(!level.isClientSide()){
-            Part part = new Part(MMRegistries.getRegistryAccess(level).registry(PartType.PART_REGISTRY_KEY).get().get(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID,"test_cube")
-            ), level);
+            Part part = new Part(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID,"test_cube"), level);
             VehicleManager.addVehicle(new VehicleCore(level, part));
         }
         return super.use(level, player, usedHand);

@@ -28,8 +28,6 @@ public class PartData {
     public final float durability;
     public final Map<String, PosRotVelVel> subPartTransforms;
 
-
-
     public static final Codec<PartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("registryKey").forGetter(PartData::getRegistryKey),
             Codec.STRING.fieldOf("boneName").forGetter(PartData::getName),

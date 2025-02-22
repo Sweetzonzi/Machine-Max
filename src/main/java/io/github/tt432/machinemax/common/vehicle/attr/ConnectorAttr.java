@@ -5,7 +5,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public record ConnectorAttr(
         String boneName,//对接口对应的骨骼名称

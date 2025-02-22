@@ -1,6 +1,5 @@
 package io.github.tt432.machinemax.client.input;
 
-import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
 

@@ -4,7 +4,8 @@ public enum KeyInputMapping {
     FREE_CAM(0),
     INTERACT(1),
 
-    CYCLE_PART_ATTACH_POINTS(101);
+    CYCLE_PART_CONNECTORS(101),
+    CYCLE_PART_VARIANTS(102);
     private final int value;
 
     KeyInputMapping(int value) {

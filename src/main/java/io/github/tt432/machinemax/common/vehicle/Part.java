@@ -19,20 +19,20 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.registry.MMRegistries;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
+import io.github.tt432.machinemax.common.vehicle.attr.ShapeAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.Dof6Connector;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
 import io.github.tt432.machinemax.util.data.PosRotVelVel;
+import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -63,14 +63,15 @@ public class Part implements IAnimatable<Part> {
     public final Map<String, AbstractConnector> connectors = HashMap.newHashMap(1);
 
     /**
-     * 创建新部件
-     * 仅在服务端新建部件时使用
+     * <p>创建新部件，使用指定变体</p>
+     * <p>仅应在服务端新建部件时使用</p>
      *
      * @param partType 部件类型
      * @param variant  部件变体类型
      * @param level    部件被加入的世界
      */
     public Part(PartType partType, String variant, Level level) {
+        if (variant == null) variant = "default";
         this.modelIndex = new ModelIndex(
                 partType.variants.getOrDefault(variant, partType.variants.get("default")),//获取部件模型路径
                 partType.animation,//获取部件动画路径
@@ -86,14 +87,37 @@ public class Part implements IAnimatable<Part> {
     }
 
     /**
-     * 创建新部件，使用默认变体
-     * 仅在服务端新建部件时使用
+     * <p>从注册名创建新部件，使用指定变体</p>
+     * <p>仅应在服务端新建部件时使用</p>
+     *
+     * @param registryKey 部件注册名
+     * @param variant     部件变体类型
+     * @param level       部件被加入的世界
+     */
+    public Part(ResourceLocation registryKey, String variant, Level level) {
+        this(Objects.requireNonNull(MMRegistries.getRegistryAccess(level).registry(PartType.PART_REGISTRY_KEY).get().get(registryKey)), variant, level);
+    }
+
+    /**
+     * <p>创建新部件，使用默认变体</p>
+     * <p>仅应在服务端新建部件时使用</p>
      *
      * @param partType 部件类型
      * @param level    部件被加入的世界
      */
     public Part(PartType partType, Level level) {
         this(partType, "default", level);
+    }
+
+    /**
+     * <p>创建新部件，使用默认变体</p>
+     * <p>仅应在服务端新建部件时使用</p>
+     *
+     * @param registryKey 部件注册名
+     * @param level       部件被加入的世界
+     */
+    public Part(ResourceLocation registryKey, Level level) {
+        this(registryKey, "default", level);
     }
 
     /**
@@ -148,10 +172,10 @@ public class Part implements IAnimatable<Part> {
                 else MachineMax.LOGGER.error("仅允许存在一个父节点为空的零件作为根零件，请检查模型文件{}。", type);
             } else subPartMap.put(subPart, subPartEntry.getValue().parent());//记录子部件的父子关系
             //创建碰撞体积
-            for (Map.Entry<String, String> shapeEntry : subPartEntry.getValue().collisionShape().entrySet()) {
+            for (Map.Entry<String, ShapeAttr> shapeEntry : subPartEntry.getValue().collisionShapeAttr().entrySet()) {
                 if (bones.get(shapeEntry.getKey()) != null) {//若找到了对应的碰撞形状骨骼
                     OBone bone = bones.get(shapeEntry.getKey());
-                    switch (shapeEntry.getValue()) {
+                    switch (shapeEntry.getValue().shapeType()) {
                         case "box"://与方块的尺寸匹配
                             for (OCube cube : bone.getCubes()) {
                                 org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
@@ -234,7 +258,7 @@ public class Part implements IAnimatable<Part> {
                         default:
                             MachineMax.LOGGER.error("在零件{}中发现不支持的零件接口类型{}。", type.name, connectorEntry.getValue().type());
                     }
-                    if (connector != null){
+                    if (connector != null) {
                         subPart.connectors.put(connectorEntry.getKey(), connector);
                         if (!connector.internal) this.connectors.put(connectorEntry.getKey(), connector);
                     }
@@ -277,7 +301,7 @@ public class Part implements IAnimatable<Part> {
      * @param index 纹理索引
      */
     public void switchTexture(int index) {
-        if(type.getTextures().size() ==1) return;
+        if (type.getTextures().size() == 1) return;
         this.textureIndex = index % type.getTextures().size();
         this.setModelIndex(new ModelIndex(
                 modelIndex.getModelPath(),
@@ -296,10 +320,26 @@ public class Part implements IAnimatable<Part> {
     public void destroy() {
         for (SubPart subPart : subParts.values()) subPart.destroy();
         if (this.entity != null) {
-            this.entity.part=null;
+            this.entity.part = null;
             this.entity.remove(Entity.RemovalReason.DISCARDED);
             this.entity = null;
         }
+    }
+
+    public void setTransform(Transform transform){
+        level.getPhysicsLevel().submitTask((a,b)->{
+            Transform rootTransform = rootSubPart.body.getTransform(null).invert();
+            rootSubPart.body.setPhysicsTransform(transform);
+            for(SubPart subPart : subParts.values()){
+                if (subPart == rootSubPart) continue;
+                Transform subPartTransform = subPart.body.getTransform(null);
+                MyMath.combine(subPartTransform, rootTransform,subPartTransform);
+                MyMath.combine(subPartTransform, transform,subPartTransform);
+                subPart.body.setPhysicsTransform(subPartTransform);
+            }
+            return null;
+        });
+
     }
 
     @Override

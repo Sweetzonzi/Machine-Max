@@ -22,10 +22,7 @@ import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerEntity;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -35,11 +32,16 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.UUID;
 
-public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn, IMMEntityAttribute {
+public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn, IMMPartEntityAttribute {
 
     public Part part;//实体所属的部件
+    public UUID vehicleUUID;
+    public UUID partUUID;
 
     /**
      * 不应被使用！
@@ -63,9 +65,11 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     public void tick() {
         super.tick();
         if (this.part == null) {//如果实体没有所属的部件，则移除实体
-            if (tickCount < 20) return;//等待20tick用于同步部件信息
-            MachineMax.LOGGER.warn("部件实体没有匹配的部件，已移除!");
-            this.remove(RemovalReason.DISCARDED);
+            if (tickCount % 20 == 0) updatePart();
+            else if (tickCount > 100) {//等待100tick用于同步部件信息
+                MachineMax.LOGGER.warn("部件实体没有匹配的部件，已移除!");
+                this.remove(RemovalReason.DISCARDED);
+            }
         } else {
             //更新实体位置
             this.deathTime = 0;
@@ -102,11 +106,6 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     @Override
     public boolean shouldBeSaved() {
         return false;
-    }
-
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket(ServerEntity entity) {
-        return super.getAddEntityPacket(entity);
     }
 
     @Override
@@ -184,7 +183,7 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     @NotNull
     @Override
     public ModelIndex getModelIndex() {//返回部件的模型索引用于渲染
-        if(part != null) return part.getModelIndex();
+        if (part != null) return part.getModelIndex();
         else return IEntityAnimatable.super.getModelIndex();
     }
 
@@ -203,8 +202,19 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     @NotNull
     @Override
     public BoneGroup getBones() {
-        if(part != null) return part.getBones();
+        if (part != null) return part.getBones();
         else return new BoneGroup(this);
+    }
+
+    private void updatePart() {
+        VehicleCore vehicle = VehicleManager.clientAllVehicles.get(vehicleUUID);
+        if (vehicle != null && vehicle.level == this.level()) {
+            this.part = vehicle.partMap.get(partUUID);//设置实体对应的部件
+            if (part != null) {
+                if (part.entity != null) part.entity.part = null;
+                part.entity = this;
+            }
+        }
     }
 
     /**
@@ -216,6 +226,7 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         if (part != null) {
             buffer.writeBoolean(true);
+            buffer.writeUUID(this.part.vehicle.uuid);
             buffer.writeUUID(this.part.uuid);
         } else buffer.writeBoolean(false);
     }
@@ -230,10 +241,9 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
         boolean hasPart = additionalData.readBoolean();
         if (hasPart) {
-            UUID partUUID = additionalData.readUUID();
-            VehicleCore vehicle = VehicleManager.clientAllVehicles.get(partUUID);
-            if (vehicle != null && vehicle.level == this.level())
-                this.part = vehicle.partMap.get(partUUID);
+            vehicleUUID = additionalData.readUUID();
+            partUUID = additionalData.readUUID();
+            updatePart();
         } else this.remove(RemovalReason.DISCARDED);
     }
 }

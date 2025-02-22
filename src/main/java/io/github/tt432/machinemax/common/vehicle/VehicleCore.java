@@ -3,6 +3,7 @@ package io.github.tt432.machinemax.common.vehicle;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
+import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
@@ -26,10 +27,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
 @Getter
@@ -73,11 +71,20 @@ public class VehicleCore {
         //重建部件
         for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level));
         //重建连接关系
-        for (ConnectionData connectionData : savedData.connections)
-            this.attachConnector(
-                    partMap.get(UUID.fromString(connectionData.PartUuidA)).subParts.get(connectionData.SubPartNameA).connectors.get(connectionData.connectorNameA),
-                    partMap.get(UUID.fromString(connectionData.PartUuidB)).subParts.get(connectionData.SubPartNameB).connectors.get(connectionData.connectorNameB),
-                    null);
+        for (ConnectionData connectionData : savedData.connections) {
+            try {
+                Part partA = partMap.get(UUID.fromString(connectionData.PartUuidA));
+                Part partB = partMap.get(UUID.fromString(connectionData.PartUuidB));
+                if (partA != null && partB != null) {
+                    this.attachConnector(
+                            partMap.get(UUID.fromString(connectionData.PartUuidA)).subParts.get(connectionData.SubPartNameA).connectors.get(connectionData.connectorNameA),
+                            partMap.get(UUID.fromString(connectionData.PartUuidB)).subParts.get(connectionData.SubPartNameB).connectors.get(connectionData.connectorNameB),
+                            null);
+                } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
+            } catch (IllegalArgumentException e) {
+                MachineMax.LOGGER.error("载具{}中存在无效的连接数据，已跳过无效数据。", this.name);
+            }
+        }
     }
 
     /**
@@ -89,10 +96,8 @@ public class VehicleCore {
             Vec3 newPos = new Vec3(0, 0, 0);
             for (Part part : partNet.nodes()) {
                 Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null));
-                if (!level.isClientSide && (part.entity == null || part.entity.isRemoved())) {
-                    part.entity = new MMPartEntity(level, part);
-                    part.entity.setHealth(part.durability);
-                    level.addFreshEntity(part.entity);
+                if (part.entity == null || part.entity.isRemoved()) {
+                    if (!level.isClientSide()) refreshPartEntity(part);
                 }
                 if (part.entity != null) {//更新实体生命值
                     part.entity.setHealth(part.durability);
@@ -116,6 +121,12 @@ public class VehicleCore {
 
     public void physicsTick() {
 
+    }
+
+    public void refreshPartEntity(Part part) {
+        part.entity = new MMPartEntity(level, part);
+        part.entity.setHealth(part.durability);
+        level.addFreshEntity(part.entity);
     }
 
     public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, PosRotVelVel>> subPartSyncData) {
@@ -171,7 +182,7 @@ public class VehicleCore {
      * @param part 新部件
      * @see VehicleCore#attachConnector
      */
-    protected void addPart(Part part) {
+    public void addPart(Part part) {
         part.vehicle = this;
         partMap.put(part.uuid, part);
         partNet.addNode(part);
@@ -184,13 +195,13 @@ public class VehicleCore {
             partNet.removeNode(part);
             partMap.remove(part.uuid, part);
             //TODO:连通性检查
-            if (!inLevel && !level.isClientSide()) {//发包客户端移除部件
+            if (inLevel && !level.isClientSide()) {//发包客户端移除部件
                 PacketDistributor.sendToPlayersInDimension(
                         (ServerLevel) this.level,
                         new PartRemovePayload(this.uuid.toString(), partUuid)
                 );
             }
-            if (partNet.nodes().isEmpty()) VehicleManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
+            if (partMap.values().isEmpty()) VehicleManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.name, part.name);
     }
 
@@ -210,7 +221,7 @@ public class VehicleCore {
      * @param newPart    新安装的部件，可为null
      */
     public void attachConnector(AbstractConnector connector1, AbstractConnector connector2, @Nullable Part newPart) {
-        if (newPart != null && (connector1.subPart.part == newPart || connector2.subPart.part == newPart))
+        if (newPart != null && !partMap.containsKey(newPart.uuid) && (connector1.subPart.part == newPart || connector2.subPart.part == newPart))
             this.addPart(newPart);
         if (connector1.subPart.part == connector2.subPart.part)
             throw new IllegalArgumentException("不能连接同一个部件内的接口");
@@ -230,7 +241,11 @@ public class VehicleCore {
                 Pair.of(specialConnector, attachPoint)
         );
         specialConnector.attach(attachPoint);//连接部件
-        if (newPart != null) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
+        if (newPart != null) {
+            if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
+            newPart.addToLevel();//将新部件加入到世界
+        }
+        if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
         if (inLevel && !level.isClientSide()) {
             comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//打包新增连接关系
             //发包客户端创建连接关系
@@ -304,16 +319,30 @@ public class VehicleCore {
     }
 
     public void onAddToLevel() {
-        partNet.nodes().forEach(node -> node.addToLevel());
+        Set<New6Dof> joints = new HashSet<>();
+        Set<Part> parts = new HashSet<>(partMap.values());
+        partMap.values().forEach(node -> {
+            for (SubPart subPart : node.subParts.values()) {
+                for (AbstractConnector connector : subPart.connectors.values()) {
+                    if (connector.hasPart()) joints.add(connector.joint);
+                }
+            }
+        });
+        parts.forEach(Part::addToLevel);
+        level.getPhysicsLevel().submitTask((a, b) -> {
+            joints.forEach(joint -> level.getPhysicsLevel().getWorld().addJoint(joint));
+            return null;
+        });
         this.inLevel = true;
     }
 
     public void onRemoveFromLevel() {
         this.position = null;
-        partNet.nodes().forEach(part -> {
-            part.destroy();
+        for (Part part : partMap.values()) {
             partNet.removeNode(part);
-        });
+            part.destroy();
+        }
+        partMap.clear();
     }
 
     /**
@@ -323,7 +352,7 @@ public class VehicleCore {
      */
     public Map<String, PartData> getPartData() {
         Map<String, PartData> result = new java.util.HashMap<>();
-        partNet.nodes().forEach(part -> result.put(part.getName(), new PartData(part)));
+        partNet.nodes().forEach(part -> result.put(part.uuid.toString(), new PartData(part)));
         return result;
     }
 

@@ -1,6 +1,7 @@
 package io.github.tt432.machinemax.common.registry
 
 import io.github.tt432.machinemax.MachineMax
+import io.github.tt432.machinemax.common.item.prop.CrossbarItem
 import io.github.tt432.machinemax.common.item.prop.MMPartItem
 import io.github.tt432.machinemax.common.item.prop.TestCarSpawnerItem
 import net.minecraft.world.item.BlockItem
@@ -22,7 +23,13 @@ object MMItems {
     @JvmStatic
     val PART_ITEM = MachineMax.REGISTER.item<MMPartItem>()
         .id("part_item")
-        .bound { MMPartItem(Item.Properties().stacksTo(1)) }
+        .bound { MMPartItem(Item.Properties()) }
+        .build()
+
+    @JvmStatic
+    val CROSSBAR_ITEM = MachineMax.REGISTER.item<CrossbarItem>()
+        .id("crossbar_item")
+        .bound { CrossbarItem(Item.Properties()) }
         .build()
 
     //路基方块

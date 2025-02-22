@@ -14,6 +14,6 @@ import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 public class MMAttributeHandler {
     @SubscribeEvent
     public static void attr(EntityAttributeCreationEvent event) {
-        event.put(MMEntities.getPART_ENTITY().get(), MMPartEntity.createLivingAttributes().build());
+        event.put(MMEntities.getPART_ENTITY().get(), IMMPartEntityAttribute.createPartEntityAttributes().build());
     }
 }

@@ -1,5 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle;
 
+import cn.solarmoon.spark_core.event.PhysicsTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
 import com.jme3.bullet.objects.PhysicsBody;
@@ -27,7 +28,6 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.ChunkWatchEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -93,9 +93,8 @@ public class VehicleManager {
     }
 
     @SubscribeEvent
-    public static void onPhysicsTick(LevelTickEvent.Post event) {
-        //TODO:改成物理LevelTickEvent
-        levelVehicles.computeIfAbsent(event.getLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::physicsTick);
+    public static void onPhysicsTick(PhysicsTickEvent.Level.Pre event) {
+        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::physicsTick);
     }
 
     private static void updateVehicleChunk(VehicleCore vehicle) {

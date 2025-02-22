@@ -27,10 +27,10 @@ public class MMMath {
      */
     public static Vector3f RelPointWorldPos(Vector3f relPointPos, PhysicsCollisionObject obj){
         Vector3f absPos = obj.getPhysicsLocation(null);//获取物体质心世界坐标
-        Quaternion localToWorld = obj.getPhysicsRotation(null); //获取物体相对世界坐标的四元数
-        MyQuaternion.rotateInverse(localToWorld, relPointPos, relPointPos);//旋转相对位置向量到世界坐标系
-        relPointPos.addLocal(absPos);//相对位置加上物体质心坐标
-        return relPointPos;
+        Quaternion localToWorld = obj.getPhysicsRotation(null).normalizeLocal(); //获取物体相对世界坐标的四元数
+        Vector3f result =MyQuaternion.rotate(localToWorld, relPointPos, null);//旋转相对位置向量到世界坐标系
+        result.addLocal(absPos);//相对位置加上物体质心坐标
+        return result;
     }
 
     public static Vector3f getLinearVelocityLocal(PhysicsRigidBody obj){

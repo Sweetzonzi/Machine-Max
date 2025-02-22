@@ -1,9 +1,5 @@
 package io.github.tt432.machinemax.common.entity.old.controller;
 
-import io.github.tt432.machinemax.util.MMMath;
-
-import static java.lang.Math.*;
-
 public class CarController extends PhysController {
     //TODO:把这些参数挪到其他地方
     public double MAX_POWER = 30000;//最大总功率30kW

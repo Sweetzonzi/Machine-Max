@@ -1,19 +1,6 @@
 package io.github.tt432.machinemax.common.phys.thread;
 
 
-import io.github.tt432.machinemax.util.data.PosRotVel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkAccess;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-
 public abstract class MMAbstractPhysLevel {
 
 //    volatile public HashMap<Integer, PosRotVel> syncData = HashMap.newHashMap(100);//用于同步的线程内所有运动体位姿速度数据

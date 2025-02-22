@@ -4,18 +4,18 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import lombok.Getter;
 import net.minecraft.core.Registry;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.RegistryBuilder;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Getter
 public class PartType {
@@ -58,6 +58,29 @@ public class PartType {
             SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(PartType::getSubParts)
     ).apply(instance, PartType::new));
 
+    public static final StreamCodec<RegistryFriendlyByteBuf, PartType> STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public @NotNull PartType decode(RegistryFriendlyByteBuf buffer) {
+            String name = buffer.readUtf();
+            Map<String, ResourceLocation> variants = buffer.readJsonWithCodec(VARIANT_MAP_CODEC);
+            List<ResourceLocation> textures = buffer.readList(FriendlyByteBuf::readResourceLocation);
+            ResourceLocation animation = buffer.readResourceLocation();
+            float basicDurability = buffer.readFloat();
+            Map<String, SubPartAttr> subParts = buffer.readJsonWithCodec(SubPartAttr.MAP_CODEC);
+            return new PartType(name, variants, textures, animation, basicDurability, subParts);
+        }
+
+        @Override
+        public void encode(RegistryFriendlyByteBuf buffer, PartType value) {
+            buffer.writeUtf(value.name);
+            buffer.writeJsonWithCodec(VARIANT_MAP_CODEC, value.variants);
+            buffer.writeCollection(value.textures, FriendlyByteBuf::writeResourceLocation);
+            buffer.writeResourceLocation(value.animation);
+            buffer.writeFloat(value.basicDurability);
+            buffer.writeJsonWithCodec(SubPartAttr.MAP_CODEC, value.subParts);
+        }
+    };
+
     public static final ResourceKey<Registry<PartType>> PART_REGISTRY_KEY =
             ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_type"));
 
@@ -91,5 +114,30 @@ public class PartType {
     @Override
     public int hashCode() {
         return registryKey.hashCode();
+    }
+
+    public Iterator<String> getVariantIterator() {
+        return variants.keySet().iterator();
+    }
+
+    public Iterator<String> getConnectorIterator() {
+        Set<String> connectors = new HashSet<>();
+        for (SubPartAttr subParts : this.subParts.values()) {//遍历零件
+            for(Map.Entry<String, ConnectorAttr> connector : subParts.connectors().entrySet()){//遍历零件的接口
+                if (connector.getValue().ConnectedTo().isEmpty()) connectors.add(connector.getKey());//外部接口加入可用接口集合
+            }
+        }
+        return connectors.iterator();
+    }
+
+    public Map<String, String> getPartOutwardConnectors() {
+        Map<String, String> partConnectors = new HashMap<>(1);//获取部件所有外部对接口名称与类型
+        for (SubPartAttr subParts : this.subParts.values()) {
+            for (Map.Entry<String, ConnectorAttr> entry : subParts.connectors().entrySet()) {
+                if (entry.getValue().ConnectedTo().isEmpty())//外部零件对接口
+                    partConnectors.put(entry.getKey(), entry.getValue().type());
+            }
+        }
+        return partConnectors;
     }
 }

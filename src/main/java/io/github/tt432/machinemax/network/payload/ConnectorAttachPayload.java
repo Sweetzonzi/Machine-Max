@@ -54,17 +54,18 @@ public record ConnectorAttachPayload(
 
     public static void handle(ConnectorAttachPayload payload, IPayloadContext context) {
         VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUuid);
-        Part newPart = null;
         if (vehicle == null) throw new IllegalStateException("未找到载具: " + payload.vehicleUuid);
         if (payload.hasNewPart) {
             if (payload.partData == null) throw new IllegalStateException("载具" + vehicle.name + "应有新部件，但数据包中没有提供新部件数据");
-            newPart = new Part(payload.partData, vehicle.level);
+            Part newPart = new Part(payload.partData, vehicle.level);
+            vehicle.addPart(newPart);
+            newPart.addToLevel();
         }
         for (ConnectionData connection : payload.connections) {
             vehicle.attachConnector(
                     vehicle.partMap.get(UUID.fromString(connection.PartUuidA)).subParts.get(connection.SubPartNameA).connectors.get(connection.connectorNameA),
                     vehicle.partMap.get(UUID.fromString(connection.PartUuidB)).subParts.get(connection.SubPartNameB).connectors.get(connection.connectorNameB),
-                    newPart
+                    null
             );
         }
     }
