@@ -6,38 +6,36 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.collision.ContactListener;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Transform;
 import com.mojang.datafixers.util.Pair;
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 public class SubPart implements PhysicsHost, ContactListener, BodyPhysicsTicker {
     public String name;
     public final Part part;
     public SubPart parent;
+    public Transform massCenterTransform = new Transform();
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
     public final PhysicsRigidBody body;
     //TODO:建Shape在SubPartAttr中进行，节约内存
     CompoundCollisionShape collisionShape = new CompoundCollisionShape(1);
-    public final List<Pair<String, Float>> shapeAttr = new ArrayList<>();//碰撞体积各部分的属性列表
+    public final Map<Integer, String> materials = new HashMap<>(2);//碰撞体积各部分的材料类型
+    public final Map<Integer, Float> thicknesses = new HashMap<>(2);//碰撞体积各部分的厚度
+    public final Map<Integer, Float> frictionCoeffs = new HashMap<>(2);//碰撞体积各部分的粗糙度修正系数
 
     public SubPart(String name, Part part, SubPartAttr attr) {
         this.part = part;
         this.name = name;
         this.body = new PhysicsRigidBody(name, this, collisionShape, attr.mass());
-        attr.collisionShapeAttr().values().forEach(shape ->{
-            String material = shape.materialName();
-            float thickness = shape.thickness();
-            shapeAttr.add(Pair.of(material, thickness));
-        });
     }
 
     public void addToLevel() {
@@ -46,6 +44,7 @@ public class SubPart implements PhysicsHost, ContactListener, BodyPhysicsTicker 
                     body.addContactListener(this);//TODO:写接触规则
                     body.addPhysicsTicker(this);
                     body.activate();
+                    body.setEnableSleep(false);
                     return null;
                 }));
     }
@@ -71,7 +70,7 @@ public class SubPart implements PhysicsHost, ContactListener, BodyPhysicsTicker 
      */
     @Override
     public void onContactEnded(long manifoldId) {
-
+        this.part.vehicle.activate();
     }
 
     /**

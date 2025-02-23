@@ -73,12 +73,12 @@ public class VehicleCore {
         //重建连接关系
         for (ConnectionData connectionData : savedData.connections) {
             try {
-                Part partA = partMap.get(UUID.fromString(connectionData.PartUuidA));
-                Part partB = partMap.get(UUID.fromString(connectionData.PartUuidB));
+                Part partA = partMap.get(UUID.fromString(connectionData.PartUuidS));
+                Part partB = partMap.get(UUID.fromString(connectionData.PartUuidA));
                 if (partA != null && partB != null) {
                     this.attachConnector(
-                            partMap.get(UUID.fromString(connectionData.PartUuidA)).subParts.get(connectionData.SubPartNameA).connectors.get(connectionData.connectorNameA),
-                            partMap.get(UUID.fromString(connectionData.PartUuidB)).subParts.get(connectionData.SubPartNameB).connectors.get(connectionData.connectorNameB),
+                            partMap.get(UUID.fromString(connectionData.PartUuidS)).subParts.get(connectionData.SubPartNameS).connectors.get(connectionData.SpecialConnectorName),
+                            partMap.get(UUID.fromString(connectionData.PartUuidA)).subParts.get(connectionData.SubPartNameA).connectors.get(connectionData.AttachPointConnectorName),
                             null);
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             } catch (IllegalArgumentException e) {
@@ -165,6 +165,7 @@ public class VehicleCore {
                                 body.setPhysicsRotation(SparkMathKt.toBQuaternion(data.rotation()));
                                 body.setLinearVelocity(data.linearVel());
                                 body.setAngularVelocity(data.angularVel());
+                                body.activate();
                             } else
                                 MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this, partUUID, subPartName);
                         }
@@ -173,6 +174,13 @@ public class VehicleCore {
                 return null;
             });
         }
+    }
+
+    /**
+     * 激活载具所有零件的运动体
+     */
+    public void activate() {
+        for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
     }
 
     /**
@@ -202,7 +210,7 @@ public class VehicleCore {
                 );
             }
             if (partMap.values().isEmpty()) VehicleManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
-            else for(Part p : partMap.values()) p.subParts.values().forEach(subPart -> subPart.body.activate());//重新激活，进行部件移除后的物理计算
+            else this.activate();//重新激活，进行部件移除后的物理计算
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.name, part.name);
     }
 
@@ -236,26 +244,29 @@ public class VehicleCore {
             specialConnector = connector2;
         } else throw new IllegalArgumentException("对接口之一必须是AttachPointConnector类型");
         List<ConnectionData> comboList = new java.util.ArrayList<>(1);
-        this.partNet.addEdge(//添加连接关系
-                specialConnector.subPart.part,
-                attachPoint.subPart.part,
-                Pair.of(specialConnector, attachPoint)
-        );
-        specialConnector.attach(attachPoint);//连接部件
-        if (newPart != null) {
-            if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
-            newPart.addToLevel();//将新部件加入到世界
-        }
-        if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
-        if (inLevel && !level.isClientSide()) {
-            comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//打包新增连接关系
-            //发包客户端创建连接关系
-            PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new ConnectorAttachPayload(
-                    this.uuid,
-                    comboList,
-                    newPart != null,
-                    newPart == null ? null : new PartData(newPart)
-            ));
+        boolean attached = specialConnector.attach(attachPoint);//连接部件
+        if (attached) {
+            this.partNet.addEdge(//添加连接关系
+                    specialConnector.subPart.part,
+                    attachPoint.subPart.part,
+                    Pair.of(specialConnector, attachPoint)
+            );
+
+            if (newPart != null) {
+                if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
+                newPart.addToLevel();//将新部件加入到世界
+            }
+            if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
+            if (inLevel && !level.isClientSide()) {
+                comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊对接口在前面，以保证对接口属性得到正确应用
+                //发包客户端创建连接关系
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new ConnectorAttachPayload(
+                        this.uuid,
+                        comboList,
+                        newPart != null,
+                        newPart == null ? null : new PartData(newPart)
+                ));
+            }
         }
     }
 

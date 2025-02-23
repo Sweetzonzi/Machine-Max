@@ -44,8 +44,8 @@ public record ConnectorDetachPayload(
     public static void handle(ConnectorDetachPayload payload, IPayloadContext context) {
         VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUuid);
         if (vehicle == null) throw new IllegalStateException("未找到载具: " + payload.vehicleUuid);
-        AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(payload.connection.PartUuidA)).connectors.get(payload.connection.connectorNameA);
-        AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(payload.connection.PartUuidB)).connectors.get(payload.connection.connectorNameB);
+        AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(payload.connection.PartUuidS)).connectors.get(payload.connection.SpecialConnectorName);
+        AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(payload.connection.PartUuidA)).connectors.get(payload.connection.AttachPointConnectorName);
         if (connectorA == null || connectorB == null) throw new IllegalStateException("未找到对接口: " + payload.connection);
         vehicle.detachConnector(connectorA, connectorB);
     }

@@ -12,8 +12,9 @@ import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.collision.shapes.CylinderCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
-import com.jme3.math.Matrix3f;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
@@ -24,12 +25,11 @@ import io.github.tt432.machinemax.common.vehicle.attr.ShapeAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
-import io.github.tt432.machinemax.common.vehicle.connector.Dof6Connector;
+import io.github.tt432.machinemax.common.vehicle.connector.SpecialConnector;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
 import io.github.tt432.machinemax.network.payload.PartPaintPayload;
 import io.github.tt432.machinemax.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
-import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
@@ -195,14 +195,23 @@ public class Part implements IAnimatable<Part> {
                             break;
                         case "sphere"://取方块的x轴尺寸作为球直径
                             for (OCube cube : bone.getCubes()) {
-                                SphereCollisionShape boxShape = new SphereCollisionShape((float) (cube.getSize().x / 2));
+                                SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().x / 2));
                                 subPart.collisionShape.addChildShape(
-                                        boxShape,
+                                        ballShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())));
                             }
                             break;
-                        case "cylinder":
-                            //TODO:创建碰撞体积
+                        case "cylinder"://取方块的z轴尺寸为直径，x轴尺寸为圆柱高，圆柱默认方向为X轴(横躺)
+                            for (OCube cube : bone.getCubes()) {
+                                Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
+                                org.joml.Vector3f rotation = cube.getRotation().toVector3f();
+                                Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
+                                CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size,0);
+                                subPart.collisionShape.addChildShape(
+                                        cylinderShape,
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
+                                        SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
+                            }
                             break;
                         case "cone":
                             //TODO:创建碰撞体积
@@ -211,12 +220,12 @@ public class Part implements IAnimatable<Part> {
                             //TODO:创建碰撞体积
                             break;
                         default:
-                            MachineMax.LOGGER.error("在零件{}中发现不支持的碰撞形状类型{}。", type.name, shapeEntry.getValue());
+                            MachineMax.LOGGER.error("在部件{}中发现不支持的碰撞形状类型{}。", type.name, shapeEntry.getValue());
                     }
                 } else
-                    MachineMax.LOGGER.error("在零件{}中未找到对应的碰撞形状骨骼{}。", type.name, shapeEntry.getKey());
+                    MachineMax.LOGGER.error("在部件{}中未找到对应的碰撞形状骨骼{}。", type.name, shapeEntry.getKey());
             }
-            Transform massCenter = new Transform();//质心位置默认位于坐标原点
+            Transform massCenter = new Transform();
             if (!subPartEntry.getValue().massCenterLocator().isEmpty()) {//若零件制定了质心定位点
                 OLocator locator = locators.get(subPartEntry.getValue().massCenterLocator());
                 if (locator != null) {
@@ -226,9 +235,10 @@ public class Part implements IAnimatable<Part> {
                             SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
                     );
                 } else {
-                    MachineMax.LOGGER.error("在零件{}中未找到质心定位点{}。", type.name, subPartEntry.getValue().massCenterLocator());
+                    MachineMax.LOGGER.error("在部件{}中未找到质心定位点{}。", type.name, subPartEntry.getValue().massCenterLocator());
                 }
                 subPart.collisionShape.correctAxes(massCenter);//调整碰撞体位置，使模型原点对齐质心(必须在创建完成碰撞体积后进行！)
+                subPart.massCenterTransform = massCenter;
             }
             subPart.body.setCollisionShape(subPart.collisionShape);//重新设置碰撞体积
             subPart.body.setMass(subPartEntry.getValue().mass());//设置质量
@@ -238,8 +248,10 @@ public class Part implements IAnimatable<Part> {
                     org.joml.Vector3f rotation = locator.getRotation().toVector3f();
                     Transform posRot = new Transform(//接口的位置与姿态
                             PhysicsHelperKt.toBVector3f(locator.getOffset()).subtract(massCenter.getTranslation()),
+//                            Quaternion.IDENTITY
                             SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z)).mult(massCenter.getRotation().inverse())
                     );
+                    MachineMax.LOGGER.info("接口{}的偏移：{}", connectorEntry.getKey(), posRot.getTranslation());
                     AbstractConnector connector = null;
                     switch (connectorEntry.getValue().type()) {
                         case "AttachPoint"://连接点接口
@@ -250,8 +262,8 @@ public class Part implements IAnimatable<Part> {
                                     posRot
                             );
                             break;
-                        case "6DOF"://6自由度自定义关节接口
-                            connector = new Dof6Connector(
+                        case "Special"://6自由度自定义关节接口
+                            connector = new SpecialConnector(
                                     connectorEntry.getKey(),
                                     connectorEntry.getValue(),
                                     subPart,
@@ -278,11 +290,13 @@ public class Part implements IAnimatable<Part> {
                 if (connector.internal && connector.attachedConnector == null) {
                     for (Map.Entry<SubPart, String> entry2 : subPartMap.entrySet()) {
                         if (entry2.getValue().equals(parentName)) continue;
-                        if (entry2.getKey().connectors.containsKey(connector.name)) {
-                            AbstractConnector targetConnector = entry2.getKey().connectors.get(connector.name);
-                            if (targetConnector.internal && targetConnector.attachedConnector == null && targetConnector instanceof AttachPointConnector)
+                        if (entry2.getKey().connectors.containsKey(connector.attr.ConnectedTo())) {
+                            AbstractConnector targetConnector = entry2.getKey().connectors.get(connector.attr.ConnectedTo());
+                            if (targetConnector.internal && targetConnector.attachedConnector == null && targetConnector instanceof AttachPointConnector) {
+                                targetConnector.subPart.body.setPhysicsTransform(targetConnector.subPart.massCenterTransform);
                                 connector.attach((AttachPointConnector) targetConnector, true);
-                            else if (targetConnector.internal && targetConnector.attachedConnector == null && connector instanceof AttachPointConnector) {
+                            } else if (targetConnector.internal && targetConnector.attachedConnector == null && connector instanceof AttachPointConnector) {
+                                connector.subPart.body.setPhysicsTransform(connector.subPart.massCenterTransform);
                                 targetConnector.attach((AttachPointConnector) connector, true);
                             } else
                                 MachineMax.LOGGER.error("零件{}的{}接口与零件{}的{}接口不匹配。", type.name, connector.name, entry2.getKey().name, targetConnector.name);

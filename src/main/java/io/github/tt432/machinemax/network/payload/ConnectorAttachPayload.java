@@ -63,8 +63,8 @@ public record ConnectorAttachPayload(
         }
         for (ConnectionData connection : payload.connections) {
             vehicle.attachConnector(
-                    vehicle.partMap.get(UUID.fromString(connection.PartUuidA)).subParts.get(connection.SubPartNameA).connectors.get(connection.connectorNameA),
-                    vehicle.partMap.get(UUID.fromString(connection.PartUuidB)).subParts.get(connection.SubPartNameB).connectors.get(connection.connectorNameB),
+                    vehicle.partMap.get(UUID.fromString(connection.PartUuidS)).subParts.get(connection.SubPartNameS).connectors.get(connection.SpecialConnectorName),
+                    vehicle.partMap.get(UUID.fromString(connection.PartUuidA)).subParts.get(connection.SubPartNameA).connectors.get(connection.AttachPointConnectorName),
                     null
             );
         }

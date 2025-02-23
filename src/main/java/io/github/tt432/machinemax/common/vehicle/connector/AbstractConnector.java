@@ -17,10 +17,12 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
+import io.github.tt432.machinemax.common.vehicle.attr.JointAttr;
 import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
 import io.github.tt432.machinemax.network.payload.ConnectorDetachPayload;
 import io.github.tt432.machinemax.util.MMMath;
+import io.github.tt432.machinemax.util.data.Axis;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,10 +39,11 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
     public final String name;//接口名称
     public final SubPart subPart;//接口所属的零件
     public final List<String> acceptableVariants;//可接受的变体列表
-    public final boolean breakable;//是否可拆解
+    public final boolean collideBetweenParts;//是否允许零件间碰撞
+    public final boolean breakable;//TODO:是否可拆解
     public final boolean internal;//是否为内部接口
     public final ConnectorAttr attr;//接口属性
-    public New6Dof joint;//关节
+    public New6Dof joint;//在两个对接口间共享的关节
     @Setter
     public AbstractConnector attachedConnector;//与本接口对接的接口
     public final Transform subPartTransform;//被安装零件的连接点相对本部件质心的位置与姿态
@@ -51,6 +54,7 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
         this.subPart = subPart;
         this.subPartTransform = subPartTransform;
         this.acceptableVariants = attr.acceptableVariants();
+        this.collideBetweenParts = attr.collideBetweenParts();
         this.breakable = attr.breakable();
         this.internal = !attr.ConnectedTo().isEmpty();
         this.attr = attr;
@@ -109,7 +113,7 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
             MachineMax.LOGGER.error("零件安装失败，对接口{}已被占用！", targetConnector.getName());
             return false;
         }
-        if ((!conditionCheck(new PartData(this.subPart.part)) || !targetConnector.conditionCheck(new PartData(targetConnector.subPart.part)) && !force)) {
+        if ((!conditionCheck(new PartData(targetConnector.subPart.part)) || !targetConnector.conditionCheck(new PartData(this.subPart.part)) && !force)) {
             MachineMax.LOGGER.error("零件安装失败，零件不符合对接口安装条件！");
             return false;
         } else {
@@ -135,16 +139,48 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
         this.joint = new New6Dof(this.subPart.body, targetConnector.subPart.body,
                 this.subPartTransform.getTranslation(), targetConnector.subPartTransform.getTranslation(),
                 this.subPartTransform.getRotation().toRotationMatrix(), targetConnector.subPartTransform.getRotation().toRotationMatrix(),
-                RotationOrder.ZYX);
-        //TODO:设置关节属性
-        joint.setCollisionBetweenLinkedBodies(false);
+                RotationOrder.XYZ);
+        targetConnector.joint = this.joint;
+        adjustJoint();//调整关节属性
+    }
+
+    /**
+     * 根据储存的关节属性调整关节
+     */
+    protected void adjustJoint() {
+        //设置关节属性，默认全自由度锁死，且相连零件之间无碰撞
+        joint.setCollisionBetweenLinkedBodies(collideBetweenParts);
         joint.set(MotorParam.LowerLimit, 3, 0);
         joint.set(MotorParam.LowerLimit, 4, 0);
         joint.set(MotorParam.LowerLimit, 5, 0);
         joint.set(MotorParam.UpperLimit, 3, 0);
         joint.set(MotorParam.UpperLimit, 4, 0);
         joint.set(MotorParam.UpperLimit, 5, 0);
-        targetConnector.joint = this.joint;
+        for (int i = 0; i < 6; i++) {//设置各轴关节属性(0~2为XYZ轴平动，3~5为XYZ轴转动)
+            if (this instanceof SpecialConnector) {
+                JointAttr jointAttr = this.attr.jointAttrs().get(Axis.fromValue(i).name());
+                if (jointAttr != null) {
+                    if (jointAttr.lowerLimit() != null)
+                        joint.set(MotorParam.LowerLimit, i, (float) (jointAttr.lowerLimit() * (i <= 2 ? 1 : Math.PI / 180)));
+                    if (jointAttr.upperLimit() != null)
+                        joint.set(MotorParam.UpperLimit, i, (float) (jointAttr.upperLimit() * (i <= 2 ? 1 : Math.PI / 180)));
+                    if (jointAttr.equilibrium() != null)
+                        joint.set(MotorParam.Equilibrium, i, (float) (jointAttr.equilibrium() * (i <= 2 ? 1 : Math.PI / 180)));
+                    if (jointAttr.stiffness() != null) {
+                        joint.set(MotorParam.Stiffness, i, (float) (jointAttr.stiffness() * (i <= 2 ? 1 : Math.PI / 180)));
+                        joint.enableSpring(i, true);
+                    }
+                    if (jointAttr.damping() != null) {
+                        joint.set(MotorParam.Damping, i, (float) (jointAttr.damping() * (i <= 2 ? 1 : Math.PI / 180)));
+                        joint.enableSpring(i, true);
+                    }
+                }
+            } else {
+                JointAttr jointAttr1 = this.attr.jointAttrs().get(i);
+                JointAttr jointAttr2 = attachedConnector.attr.jointAttrs().get(i);
+                //TODO:混合两个AttachPoint关节的属性信息，并应用于关节
+            }
+        }
     }
 
     /**
@@ -227,7 +263,7 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
      * @return 给定零件是否满足当前接口安装条件
      */
     public boolean conditionCheck(String variant) {
-        if (this.acceptableVariants.isEmpty() || this.acceptableVariants.contains(variant))
+        if (!this.hasPart() && (this.acceptableVariants.isEmpty() || this.acceptableVariants.contains(variant)))
             //TODO:tag检查
             return true;
         else

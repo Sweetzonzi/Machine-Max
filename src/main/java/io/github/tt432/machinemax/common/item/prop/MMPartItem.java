@@ -56,7 +56,7 @@ public class MMPartItem extends Item {
             var eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
             AbstractConnector targetConnector = eyesightBody.getConnector();
             if (targetConnector != null) {//若有可用的接口
-                if (targetConnector.acceptableVariants.contains(variant) || targetConnector.acceptableVariants.isEmpty()) {//检查变体条件
+                if (targetConnector.conditionCheck(variant)) {//检查变体条件
                     if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
                         VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
                         Part part = new Part(partType, variant, level);
@@ -68,7 +68,7 @@ public class MMPartItem extends Item {
                 Part part = new Part(partType, variant, level);
                 part.setTransform(new Transform(PhysicsHelperKt.toBVector3f(player.getPosition(1)), Quaternion.IDENTITY));
                 VehicleManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
-                }
+            }
         }
         return super.use(level, player, usedHand);
     }
@@ -91,8 +91,8 @@ public class MMPartItem extends Item {
                     if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {
                         message.append("目标接口:" + targetConnector.name + "部件接口:" + connectorName);
                         if (!variant.equals("default") && partType.variants.size() > 1)
-                            message.append("部件变体类型:" + variant);
-                    }
+                            message.append(" 部件变体类型:" + variant);
+                    } else message.append("无法连接两个非AttachPoint接口");
                 } else
                     message = Component.empty().append(" 连接口" + targetConnector.name + "不接受部件" + partType.name + "的" + variant + "变体");
             } else {
