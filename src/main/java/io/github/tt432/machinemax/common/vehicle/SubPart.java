@@ -1,6 +1,7 @@
 package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker;
+import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.collision.ContactListener;
@@ -19,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SubPart implements PhysicsHost, ContactListener, BodyPhysicsTicker {
+public class SubPart implements PhysicsHost, CollisionCallback, BodyPhysicsTicker {
     public String name;
     public final Part part;
     public SubPart parent;
@@ -41,10 +42,9 @@ public class SubPart implements PhysicsHost, ContactListener, BodyPhysicsTicker 
     public void addToLevel() {
         this.bindBody(body, part.level.getPhysicsLevel(), true,
                 (body -> {
-                    body.addContactListener(this);//TODO:写接触规则
+                    body.addCollisionCallback(this);//TODO:写接触规则
                     body.addPhysicsTicker(this);
                     body.activate();
-                    body.setEnableSleep(false);
                     return null;
                 }));
     }
@@ -69,7 +69,7 @@ public class SubPart implements PhysicsHost, ContactListener, BodyPhysicsTicker 
      *                   zero)
      */
     @Override
-    public void onContactEnded(long manifoldId) {
+    public void onEnded(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldId) {
         this.part.vehicle.activate();
     }
 
@@ -83,7 +83,7 @@ public class SubPart implements PhysicsHost, ContactListener, BodyPhysicsTicker 
      *                        zero)
      */
     @Override
-    public void onContactProcessed(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldPointId) {
+    public void onProcessed(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldPointId) {
 
     }
 
@@ -94,7 +94,7 @@ public class SubPart implements PhysicsHost, ContactListener, BodyPhysicsTicker 
      *                   zero)
      */
     @Override
-    public void onContactStarted(long manifoldId) {
+    public void onStarted(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB,long manifoldId) {
 
     }
 

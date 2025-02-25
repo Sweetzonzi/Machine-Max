@@ -5,10 +5,13 @@ import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.entity.attack.CollisionHurtData;
+import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
+import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
+import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
+import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.skill.SkillGroup;
-import cn.solarmoon.spark_core.skill.SkillInstance;
+import cn.solarmoon.spark_core.skill.Skill;
 import cn.solarmoon.spark_core.sync.EntitySyncerType;
 import cn.solarmoon.spark_core.sync.IntSyncData;
 import cn.solarmoon.spark_core.sync.SyncData;
@@ -22,7 +25,6 @@ import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -33,16 +35,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn, IMMPartEntityAttribute {
 
     public Part part;//实体所属的部件
     public UUID vehicleUUID;
     public UUID partUUID;
-
     /**
      * 不应被使用！
      *
@@ -145,29 +146,6 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
         return level().getPhysicsLevel();
     }
 
-    @Nullable
-    @Override
-    public SkillGroup getActiveSkillGroup() {
-        return null;
-    }
-
-    @Override
-    public void setActiveSkillGroup(@Nullable SkillGroup skillGroup) {
-
-    }
-
-    @NotNull
-    @Override
-    public Set<SkillInstance> getActiveSkills() {
-        return Set.of();
-    }
-
-    @NotNull
-    @Override
-    public LinkedHashMap<ResourceLocation, SkillGroup> getSkillGroups() {
-        return LinkedHashMap.newLinkedHashMap(1);
-    }
-
     @NotNull
     @Override
     public SyncerType getSyncerType() {
@@ -245,5 +223,50 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
             partUUID = additionalData.readUUID();
             updatePart();
         } else this.remove(RemovalReason.DISCARDED);
+    }
+
+    @Nullable
+    @Override
+    public Level getLevel() {
+        return level();
+    }
+
+    @NotNull
+    @Override
+    public ITempVariableStorage getTempStorage() {
+        if (part != null) return part.tempStorage;
+        else return new VariableStorage();
+    }
+
+    @NotNull
+    @Override
+    public IScopedVariableStorage getScopedStorage() {
+        if (part != null) return part.scopedStorage;
+        else return new VariableStorage();
+    }
+
+    @NotNull
+    @Override
+    public IForeignVariableStorage getForeignStorage() {
+        if(part != null) return part.foreignStorage;
+        else return new VariableStorage();
+    }
+
+    @NotNull
+    @Override
+    public AtomicInteger getSkillCount() {
+        return new AtomicInteger();
+    }
+
+    @NotNull
+    @Override
+    public ConcurrentHashMap<Integer, Skill> getAllSkills() {
+        return new ConcurrentHashMap<>();
+    }
+
+    @NotNull
+    @Override
+    public ConcurrentHashMap<Integer, Skill> getPredictedSkills() {
+        return getAllSkills();
     }
 }

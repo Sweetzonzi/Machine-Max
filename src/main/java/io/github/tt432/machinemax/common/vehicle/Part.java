@@ -7,6 +7,10 @@ import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
+import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
+import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
+import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
+import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.sync.SyncData;
@@ -64,6 +68,10 @@ public class Part implements IAnimatable<Part> {
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
     public final AnimController animController = new AnimController(this);
+    //Molang变量存储
+    public ITempVariableStorage tempStorage = new VariableStorage();
+    public IScopedVariableStorage scopedStorage = new VariableStorage();
+    public IForeignVariableStorage foreignStorage = new VariableStorage();
     //模块化属性
     public final Map<String, AbstractConnector> connectors = HashMap.newHashMap(1);
 
@@ -407,5 +415,23 @@ public class Part implements IAnimatable<Part> {
     @Override
     public SyncData getSyncData() {
         return null;
+    }
+
+    @NotNull
+    @Override
+    public ITempVariableStorage getTempStorage() {
+        return tempStorage;
+    }
+
+    @NotNull
+    @Override
+    public IScopedVariableStorage getScopedStorage() {
+        return scopedStorage;
+    }
+
+    @NotNull
+    @Override
+    public IForeignVariableStorage getForeignStorage() {
+        return foreignStorage;
     }
 }

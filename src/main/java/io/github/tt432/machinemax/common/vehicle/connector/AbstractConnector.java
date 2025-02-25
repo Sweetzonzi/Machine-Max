@@ -176,8 +176,8 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
                     }
                 }
             } else {
-                JointAttr jointAttr1 = this.attr.jointAttrs().get(i);
-                JointAttr jointAttr2 = attachedConnector.attr.jointAttrs().get(i);
+                JointAttr jointAttr1 = this.attr.jointAttrs().get(Axis.fromValue(i).name());
+                JointAttr jointAttr2 = attachedConnector.attr.jointAttrs().get(Axis.fromValue(i).name());
                 //TODO:混合两个AttachPoint关节的属性信息，并应用于关节
             }
         }
