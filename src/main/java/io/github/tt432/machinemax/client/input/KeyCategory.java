@@ -10,7 +10,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     GENERAL {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.general";
+            return "resourceType.category.machine_max.general";
         }
 
         @Override
@@ -27,13 +27,13 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     GROUND {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.ground";
+            return "resourceType.category.machine_max.ground";
         }
 
         @Override
         public boolean isActive() {
             if (GUI.isActive()) return false;
-//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
+//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVEHICLE_BUS() instanceof OldPartEntity e) {
 //                return e.getMode() == VehicleCore.ControlMode.GROUND;
 //            } else return false;
             return false;
@@ -47,12 +47,12 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     SHIP {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.ship";
+            return "resourceType.category.machine_max.ship";
         }
 
         public boolean isActive() {
             if (GUI.isActive()) return false;
-//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
+//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVEHICLE_BUS() instanceof OldPartEntity e) {
 //                return e.getMode() == VehicleCore.ControlMode.SHIP;
 //            } else return false;
             return false;
@@ -66,12 +66,12 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     PLANE {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.plane";
+            return "resourceType.category.machine_max.plane";
         }
 
         public boolean isActive() {
             if (GUI.isActive()) return false;
-//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof OldPartEntity e) {
+//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVEHICLE_BUS() instanceof OldPartEntity e) {
 //                return e.getMode() == VehicleCore.ControlMode.PLANE;
 //            } else return false;
             return false;
@@ -85,12 +85,12 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     MECH {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.mech";
+            return "resourceType.category.machine_max.mech";
         }
 
         public boolean isActive() {
             if (GUI.isActive()) return false;
-//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof VehicleCore e) {
+//            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVEHICLE_BUS() instanceof VehicleCore e) {
 //                return e.getMode() == VehicleCore.ControlMode.MECH;
 //            } else return false;
             return false;
@@ -104,7 +104,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     ASSEMBLY {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.assembly";
+            return "resourceType.category.machine_max.assembly";
         }
 
         public boolean isActive() {

@@ -14,10 +14,13 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.common.vehicle.IPortHost;
 import io.github.tt432.machinemax.common.vehicle.Part;
+import io.github.tt432.machinemax.common.vehicle.Port;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.JointAttr;
+import io.github.tt432.machinemax.common.vehicle.attr.PortAttr;
 import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
 import io.github.tt432.machinemax.network.payload.ConnectorDetachPayload;
@@ -32,10 +35,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 
 @Getter
-public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicker {
+public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicker, IPortHost {
     public final String name;//接口名称
     public final SubPart subPart;//接口所属的零件
     public final List<String> acceptableVariants;//可接受的变体列表
@@ -44,16 +50,19 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
     public final boolean internal;//是否为内部接口
     public final ConnectorAttr attr;//接口属性
     public New6Dof joint;//在两个对接口间共享的关节
+    public final Port port;//接口资源/信号传输端口
     @Setter
     public AbstractConnector attachedConnector;//与本接口对接的接口
     public final Transform subPartTransform;//被安装零件的连接点相对本部件质心的位置与姿态
     public final PhysicsRigidBody body;//部件接口安装判定区
 
-    public AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, Transform subPartTransform) {
+    protected AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, Transform subPartTransform) {
         this.name = name;
         this.subPart = subPart;
         this.subPartTransform = subPartTransform;
         this.acceptableVariants = attr.acceptableVariants();
+        if (attr.portAttr() != null) this.port = new Port(this, attr.portAttr());
+        else port = null;
         this.collideBetweenParts = attr.collideBetweenParts();
         this.breakable = attr.breakable();
         this.internal = !attr.ConnectedTo().isEmpty();
@@ -119,7 +128,10 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
         } else {
             this.attachedConnector = targetConnector;
             targetConnector.attachedConnector = this;
-
+            if (this.port != null && attachedConnector.port != null) {
+                this.port.onConnectorAttach();
+                attachedConnector.port.onConnectorAttach();
+            }
             this.attachJoint(targetConnector);
             return true;
         }
@@ -216,6 +228,10 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
             }
             detachJoint();
             if (body != null) body.activate();
+            if (this.port != null && attachedConnector.port != null) {
+                this.port.onConnectorDetach();
+                attachedConnector.port.onConnectorDetach();
+            }
             this.attachedConnector.attachedConnector = null;
             this.attachedConnector = null;
         } else if (internal)
@@ -296,4 +312,5 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
     public PhysicsLevel getPhysicsLevel() {
         return subPart.getPhysicsLevel();
     }
+
 }

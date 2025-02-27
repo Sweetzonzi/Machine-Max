@@ -31,4 +31,5 @@ public class MMRegistries {
         if (level instanceof ServerLevel) return level.registryAccess();
         else return Minecraft.getInstance().getConnection().registryAccess();
     }
+
 }

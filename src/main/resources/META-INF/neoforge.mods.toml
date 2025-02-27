@@ -3,7 +3,7 @@
 # The overall format is standard TOML format, v0.5.0.
 # Note that there are a couple of TOML lists in this file.
 # Find more information on toml format here:  https://github.com/toml-lang/toml
-# The locatorName of the mod loader type to load - for regular FML @Mod mods it should be javafml
+# The locatorName of the mod loader codec to load - for regular FML @Mod mods it should be javafml
 modLoader="javafml" #mandatory
 
 # A version range to match for said mod loader - for regular FML @Mod it will be the FML version. This is currently 2.
@@ -38,10 +38,10 @@ displayName="${mod_name}" #mandatory
 #logoFile="examplemod.png" #optional
 
 # A text field displayed in the mod UI
-#credits="" #optional
+authors="${mod_authors}" #optional
 
 # A text field displayed in the mod UI
-authors="${mod_authors}" #optional
+credits="${mod_credits}" #optional
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''${mod_description}'''
@@ -61,7 +61,7 @@ file="META-INF/accesstransformer.cfg"
 [[dependencies.${mod_id}]] #optional
     # the modid of the dependency
     modId="neoforge" #mandatory
-    # The type of the dependency. Can be one of "required", "optional", "incompatible" or "discouraged" (case insensitive).
+    # The codec of the dependency. Can be one of "required", "optional", "incompatible" or "discouraged" (case insensitive).
     # 'required' requires the mod to exist, 'optional' does not
     # 'incompatible' will prevent the game from loading when the mod exists, and 'discouraged' will show a warning
     type="required" #mandatory

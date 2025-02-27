@@ -11,12 +11,12 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
     @Override
     protected void addTranslations() {
         //按键类别
-        this.add("key.category.machine_max.general", "Machine Max:General");
-        this.add("key.category.machine_max.ground", "Machine Max:Ground");
-        this.add("key.category.machine_max.ship", "Machine Max:Ship");
-        this.add("key.category.machine_max.plane", "Machine Max:Plane");
-        this.add("key.category.machine_max.mech", "Machine Max:Mech");
-        this.add("key.category.machine_max.assembly", "Machine Max:Assembly");
+        this.add("resourceType.category.machine_max.general", "Machine Max:General");
+        this.add("resourceType.category.machine_max.ground", "Machine Max:Ground");
+        this.add("resourceType.category.machine_max.ship", "Machine Max:Ship");
+        this.add("resourceType.category.machine_max.plane", "Machine Max:Plane");
+        this.add("resourceType.category.machine_max.mech", "Machine Max:Mech");
+        this.add("resourceType.category.machine_max.assembly", "Machine Max:Assembly");
         //按键名称
         //提示信息
         this.add("tooltip.machinemax.crossbar.interact", "Interact to disassemble:");

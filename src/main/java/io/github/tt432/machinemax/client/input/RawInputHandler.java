@@ -44,7 +44,7 @@ public class RawInputHandler {
     public static void handleMoveInputs(ClientTickEvent.Post event) {
         var client = Minecraft.getInstance();
 
-//        if (client.player != null && client.player.getVehicle() instanceof OldPartEntity e) {
+//        if (client.player != null && client.player.getVEHICLE_BUS() instanceof OldPartEntity e) {
 //            id = e.getId();
 //            int trans_x_conflict = 0;
 //            int trans_y_conflict = 0;

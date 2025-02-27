@@ -3,11 +3,9 @@ package io.github.tt432.machinemax.common.registry
 import io.github.tt432.machinemax.MachineMax
 import io.github.tt432.machinemax.common.vehicle.PartType
 import net.minecraft.client.Minecraft
-import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.ItemStack
-import net.neoforged.bus.api.Event
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent

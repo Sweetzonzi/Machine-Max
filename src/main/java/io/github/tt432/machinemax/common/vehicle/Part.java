@@ -18,7 +18,6 @@ import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.collision.shapes.CylinderCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
@@ -27,10 +26,14 @@ import io.github.tt432.machinemax.common.registry.MMRegistries;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.ShapeAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
+import io.github.tt432.machinemax.common.vehicle.attr.subsystem.AbstractSubSystemAttr;
+import io.github.tt432.machinemax.common.vehicle.attr.subsystem.ResourceStorageSubSystemAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.SpecialConnector;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubSystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.ResourceStorageSubSystem;
 import io.github.tt432.machinemax.network.payload.PartPaintPayload;
 import io.github.tt432.machinemax.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
@@ -50,7 +53,7 @@ import org.joml.Quaternionf;
 import java.util.*;
 
 @Getter
-public class Part implements IAnimatable<Part> {
+public class Part implements IAnimatable<Part>, ISubsystemHost {
     //渲染属性
     @Setter
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
@@ -74,6 +77,7 @@ public class Part implements IAnimatable<Part> {
     public IForeignVariableStorage foreignStorage = new VariableStorage();
     //模块化属性
     public final Map<String, AbstractConnector> connectors = HashMap.newHashMap(1);
+    public final Map<String, AbstractSubSystem> subSystems;
 
     /**
      * <p>创建新部件，使用指定变体</p>
@@ -96,6 +100,7 @@ public class Part implements IAnimatable<Part> {
         this.level = level;
         this.uuid = UUID.randomUUID();
         this.durability = partType.basicDurability;
+        this.subSystems = createSubSystems(partType.subsystems);//创建子系统，赋予部件实际功能
         this.rootSubPart = createSubPart(type.subParts);//创建子部件并指定根子部件
     }
 
@@ -154,6 +159,7 @@ public class Part implements IAnimatable<Part> {
                 type.textures.get(textureIndex % type.textures.size()));//获取部件第一个可用纹理作为默认纹理
         this.uuid = UUID.fromString(data.uuid);
         this.durability = data.durability;
+        this.subSystems = createSubSystems(type.subsystems);//创建子系统，赋予部件实际功能
         this.rootSubPart = createSubPart(type.subParts);//重建子部件并指定根子部件
         for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {//遍历保存的子部件位置、旋转、速度数据
             SubPart subPart = subParts.get(entry.getKey());//获取已重建的子部件
@@ -165,6 +171,35 @@ public class Part implements IAnimatable<Part> {
             } else
                 MachineMax.LOGGER.error("从数据中重建部件时发生了错误，部件{}中未能找到子部件{}。", type.name, entry.getKey());
         }
+    }
+
+    private Map<String, AbstractSubSystem> createSubSystems(Map<String, AbstractSubSystemAttr> subSystemAttrMap) {
+        HashMap<String, AbstractSubSystem> subSystems = new HashMap<>();
+        for (Map.Entry<String, AbstractSubSystemAttr> entry : subSystemAttrMap.entrySet()) {
+            String name = entry.getKey();
+            AbstractSubSystemAttr attr = entry.getValue();
+            switch (attr.getType()) {//根据类型为部件创建不同的子系统
+                case RESOURCE_STORAGE:
+                    subSystems.put(name, new ResourceStorageSubSystem(this, name, (ResourceStorageSubSystemAttr) attr));
+                    break;
+                case ENGINE:
+
+                    break;
+                case GEARBOX:
+
+                    break;
+                case TRANSMISSION:
+
+                    break;
+                case BRAKE:
+
+                    break;
+                case CAR_STEERING:
+
+                    break;
+            }
+        }
+        return subSystems;
     }
 
     private SubPart createSubPart(Map<String, SubPartAttr> subPartAttrMap) {
@@ -214,7 +249,7 @@ public class Part implements IAnimatable<Part> {
                                 Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
                                 org.joml.Vector3f rotation = cube.getRotation().toVector3f();
                                 Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
-                                CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size,0);
+                                CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size, 0);
                                 subPart.collisionShape.addChildShape(
                                         cylinderShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
@@ -233,6 +268,7 @@ public class Part implements IAnimatable<Part> {
                 } else
                     MachineMax.LOGGER.error("在部件{}中未找到对应的碰撞形状骨骼{}。", type.name, shapeEntry.getKey());
             }
+            //调整零件质心
             Transform massCenter = new Transform();
             if (!subPartEntry.getValue().massCenterLocator().isEmpty()) {//若零件制定了质心定位点
                 OLocator locator = locators.get(subPartEntry.getValue().massCenterLocator());
@@ -247,6 +283,7 @@ public class Part implements IAnimatable<Part> {
                 }
                 subPart.collisionShape.correctAxes(massCenter);//调整碰撞体位置，使模型原点对齐质心(必须在创建完成碰撞体积后进行！)
                 subPart.massCenterTransform = massCenter;
+                //TODO:重新计算并调节转动惯量
             }
             subPart.body.setCollisionShape(subPart.collisionShape);//重新设置碰撞体积
             subPart.body.setMass(subPartEntry.getValue().mass());//设置质量
@@ -256,7 +293,6 @@ public class Part implements IAnimatable<Part> {
                     org.joml.Vector3f rotation = locator.getRotation().toVector3f();
                     Transform posRot = new Transform(//接口的位置与姿态
                             PhysicsHelperKt.toBVector3f(locator.getOffset()).subtract(massCenter.getTranslation()),
-//                            Quaternion.IDENTITY
                             SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z)).mult(massCenter.getRotation().inverse())
                     );
                     MachineMax.LOGGER.info("接口{}的偏移：{}", connectorEntry.getKey(), posRot.getTranslation());
@@ -433,5 +469,10 @@ public class Part implements IAnimatable<Part> {
     @Override
     public IForeignVariableStorage getForeignStorage() {
         return foreignStorage;
+    }
+
+    @Override
+    public Part getPart() {
+        return this;
     }
 }

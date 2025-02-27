@@ -33,7 +33,7 @@ public record MovementInputPayload(int id, byte[] input, byte[] inputConflict) i
         //将其他玩家的输入同步至本机，以在客户端模拟其他玩家的操作
         //TODO:测试操作延迟情况
         Player player = context.player();
-//        if (player.getVehicle() instanceof OldPartEntity e && e.getController() != null) {
+//        if (player.getVEHICLE_BUS() instanceof OldPartEntity e && e.getController() != null) {
 //            e.getController().setRawMoveInput(payload.input());
 //            e.getController().setMoveInputConflict(payload.inputConflict());
 //        }
@@ -41,7 +41,7 @@ public record MovementInputPayload(int id, byte[] input, byte[] inputConflict) i
 
     public static void serverHandler(final MovementInputPayload payload, final IPayloadContext context) {
         Player player = context.player();
-//        if (player.getVehicle() instanceof OldPartEntity e && e.getController() != null) {
+//        if (player.getVEHICLE_BUS() instanceof OldPartEntity e && e.getController() != null) {
 //            e.getController().setRawMoveInput(payload.input());
 //            e.getController().setMoveInputConflict(payload.inputConflict());
 //        }

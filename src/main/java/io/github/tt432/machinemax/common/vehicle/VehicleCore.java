@@ -1,6 +1,10 @@
 package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.skill.Skill;
+import cn.solarmoon.spark_core.skill.SkillHost;
+import cn.solarmoon.spark_core.sync.SyncData;
+import cn.solarmoon.spark_core.sync.SyncerType;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
 import com.jme3.bullet.joints.New6Dof;
@@ -8,6 +12,7 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
+import io.github.tt432.machinemax.common.vehicle.attr.PortAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
@@ -25,13 +30,16 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
-public class VehicleCore {
+public class VehicleCore implements SkillHost {
     //存储所有部件与连接关系
     public final MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
     //存储所有部件
@@ -53,7 +61,34 @@ public class VehicleCore {
     @Setter
     public boolean inLoadedChunk = false;//是否睡眠
     public boolean isRemoved = false;//是否已被移除
+    //控制
+    public SubsystemController subSystemController = new SubsystemController();
+    private final AtomicInteger skillCount = new AtomicInteger();
     public ControlMode mode = ControlMode.GROUND;//控制模式
+
+    @NotNull
+    @Override
+    public ConcurrentHashMap<Integer, Skill> getAllSkills() {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public ConcurrentHashMap<Integer, Skill> getPredictedSkills() {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public SyncerType getSyncerType() {
+        return null;
+    }
+
+    @NotNull
+    @Override
+    public SyncData getSyncData() {
+        return null;
+    }
 
     public enum ControlMode {GROUND, PLANE, SHIP, MECH}
 
@@ -360,7 +395,7 @@ public class VehicleCore {
     /**
      * 将载具的所有部件存入一个Map中
      *
-     * @return key:部件UUID，value:部件数据
+     * @return resourceType:部件UUID，value:部件数据
      */
     public Map<String, PartData> getPartData() {
         Map<String, PartData> result = new java.util.HashMap<>();

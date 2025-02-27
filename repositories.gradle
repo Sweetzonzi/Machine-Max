@@ -1,6 +1,7 @@
 dependencies {
     // 物理库
-    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
+//    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
+    implementation files('libs/SparkCore-1.21.1-1.0.524.jar')
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -13,9 +14,9 @@ dependencies {
     implementation "io.github.tt432:eyelib:21.1.5"
     jarJar(group: 'io.github.tt432', name: 'eyelib', version: '[21.1.5,22.0)')
     // 其它mod
-    runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
+//    runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib
-    additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
+//    additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
 
 }
 

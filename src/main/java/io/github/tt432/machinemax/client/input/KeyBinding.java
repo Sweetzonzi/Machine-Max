@@ -15,16 +15,16 @@ import org.lwjgl.glfw.GLFW;
 public class KeyBinding {
 
     //本地化用的按键资源路径
-    public static final String FREE_CAM_KEY = "key.machine_max.ground.free_cam";
-    public static final String INTERACT_KEY = "key.machine_max.ground.interact";
+    public static final String FREE_CAM_KEY = "resourceType.machine_max.ground.free_cam";
+    public static final String INTERACT_KEY = "resourceType.machine_max.ground.interact";
 
-    public static final String GROUND_FORWARD_KEY = "key.machine_max.ground.forward";
-    public static final String GROUND_BACKWARD_KEY = "key.machine_max.ground.backward";
-    public static final String GROUND_LEFTWARD_KEY = "key.machine_max.ground.leftward";
-    public static final String GROUND_RIGHTWARD_KEY = "key.machine_max.ground.rightward";
+    public static final String GROUND_FORWARD_KEY = "resourceType.machine_max.ground.forward";
+    public static final String GROUND_BACKWARD_KEY = "resourceType.machine_max.ground.backward";
+    public static final String GROUND_LEFTWARD_KEY = "resourceType.machine_max.ground.leftward";
+    public static final String GROUND_RIGHTWARD_KEY = "resourceType.machine_max.ground.rightward";
 
-    public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = "key.machine_max.assembly.cycle_connector";
-    public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "key.machine_max.assembly.cycle_variant";
+    public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = "resourceType.machine_max.assembly.cycle_connector";
+    public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "resourceType.machine_max.assembly.cycle_variant";
     /**
      * 在此注册所有按键
      */

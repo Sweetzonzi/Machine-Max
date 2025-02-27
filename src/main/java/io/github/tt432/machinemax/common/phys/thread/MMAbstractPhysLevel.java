@@ -60,7 +60,7 @@ public abstract class MMAbstractPhysLevel {
 //            HashMap.Entry<Long, Integer> entry = iterator.next();
 //            entry.setValue(entry.getValue() - 1);
 //            if (entry.getValue() <= 0) {
-//                chunkPos = entry.getKey();
+//                chunkPos = entry.getResourceType();
 //                terrainChunkCache.remove(chunkPos);
 //                iterator.remove();
 //            }
