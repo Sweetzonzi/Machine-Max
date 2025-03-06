@@ -1,10 +1,11 @@
 {
-  "key.category.machine_max.assembly": "Machine Max:组装",
-  "key.category.machine_max.general": "Machine Max:通用",
-  "key.category.machine_max.ground": "Machine Max:地面载具",
-  "key.category.machine_max.mech": "Machine Max:机甲",
-  "key.category.machine_max.plane": "Machine Max:飞行器",
-  "key.category.machine_max.ship": "Machine Max:舰艇",
+  "message.machine_max.leaving_vehicle": "长按%1$s键%2$s/0.5秒以离开载具",
+  "resourceType.category.machine_max.assembly": "Machine Max:组装",
+  "resourceType.category.machine_max.general": "Machine Max:通用",
+  "resourceType.category.machine_max.ground": "Machine Max:地面载具",
+  "resourceType.category.machine_max.mech": "Machine Max:机甲",
+  "resourceType.category.machine_max.plane": "Machine Max:飞行器",
+  "resourceType.category.machine_max.ship": "Machine Max:舰艇",
   "tooltip.machinemax.crossbar.interact": "互动以拆除：",
   "tooltip.machinemax.spray_can.interact": "互动以喷涂："
 }

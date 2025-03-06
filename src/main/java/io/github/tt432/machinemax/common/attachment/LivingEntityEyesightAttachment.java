@@ -11,9 +11,12 @@ import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import lombok.Getter;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -67,6 +70,9 @@ public class LivingEntityEyesightAttachment {
                 eyesight.targetsCache = new HashMap<>(eyesight.targets);
                 return null;
             });
+            if(level instanceof ClientLevel && entity instanceof Player player){//正观察的部件
+                Part targetPart = eyesight.getPart();
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-package io.github.tt432.machinemax.network.payload;
+package io.github.tt432.machinemax.network.payload.assembly;
 
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
@@ -44,8 +44,8 @@ public record ConnectorDetachPayload(
     public static void handle(ConnectorDetachPayload payload, IPayloadContext context) {
         VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUuid);
         if (vehicle == null) throw new IllegalStateException("未找到载具: " + payload.vehicleUuid);
-        AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(payload.connection.PartUuidS)).connectors.get(payload.connection.SpecialConnectorName);
-        AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(payload.connection.PartUuidA)).connectors.get(payload.connection.AttachPointConnectorName);
+        AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(payload.connection.PartUuidS)).externalConnectors.get(payload.connection.SpecialConnectorName);
+        AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(payload.connection.PartUuidA)).externalConnectors.get(payload.connection.AttachPointConnectorName);
         if (connectorA == null || connectorB == null) throw new IllegalStateException("未找到对接口: " + payload.connection);
         vehicle.detachConnector(connectorA, connectorB);
     }

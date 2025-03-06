@@ -37,7 +37,8 @@ object MMCreativeTabs {
             val list = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
             for (partType in MMRegistries.getRegistryAccess(Minecraft.getInstance().level).registry(PartType.PART_REGISTRY_KEY).get()) {
                 val itemStack = ItemStack(MMItems.PART_ITEM)
-                itemStack.set(MMDataComponents.PART_TYPE, partType)
+                itemStack.set(MMDataComponents.PART_TYPE, partType.registryKey)
+                itemStack.set(MMDataComponents.PART_NAME, partType.name)
                 //TODO:根据零件最大生命值调整物品耐久上限
                 list.add(itemStack)
             }

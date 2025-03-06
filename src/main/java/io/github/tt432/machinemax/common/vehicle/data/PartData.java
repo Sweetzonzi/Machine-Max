@@ -30,7 +30,7 @@ public class PartData {
 
     public static final Codec<PartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("registryKey").forGetter(PartData::getRegistryKey),
-            Codec.STRING.fieldOf("locatorName").forGetter(PartData::getName),
+            Codec.STRING.fieldOf("subpart").forGetter(PartData::getName),
             Codec.STRING.fieldOf("variant").forGetter(PartData::getVariant),
             Codec.INT.fieldOf("textureIndex").forGetter(PartData::getTextureIndex),
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),

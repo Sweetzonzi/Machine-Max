@@ -14,16 +14,14 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.vehicle.IPortHost;
 import io.github.tt432.machinemax.common.vehicle.Part;
-import io.github.tt432.machinemax.common.vehicle.Port;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.JointAttr;
-import io.github.tt432.machinemax.common.vehicle.attr.PortAttr;
 import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
-import io.github.tt432.machinemax.network.payload.ConnectorDetachPayload;
+import io.github.tt432.machinemax.common.vehicle.signal.Port;
+import io.github.tt432.machinemax.network.payload.assembly.ConnectorDetachPayload;
 import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.data.Axis;
 import jme3utilities.math.MyMath;
@@ -35,13 +33,10 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 
 @Getter
-public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicker, IPortHost {
+public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicker{
     public final String name;//接口名称
     public final SubPart subPart;//接口所属的零件
     public final List<String> acceptableVariants;//可接受的变体列表
@@ -92,7 +87,7 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
     public void physicsTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull PhysicsLevel physicsLevel) {
         if (body != null) {
             if (!this.hasPart()) {//更新判定点位置姿态
-                body.setPhysicsLocation(MMMath.RelPointWorldPos(subPartTransform.getTranslation(), subPart.body));
+                body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
                 body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
             } else {
                 body.setPhysicsLocation(new Vector3f(0, -1000, 0));
@@ -128,11 +123,11 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
         } else {
             this.attachedConnector = targetConnector;
             targetConnector.attachedConnector = this;
+            this.attachJoint(targetConnector);
             if (this.port != null && attachedConnector.port != null) {
                 this.port.onConnectorAttach();
                 attachedConnector.port.onConnectorAttach();
             }
-            this.attachJoint(targetConnector);
             return true;
         }
     }
@@ -226,12 +221,13 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
                     ));
                 }
             }
-            detachJoint();
+
             if (body != null) body.activate();
             if (this.port != null && attachedConnector.port != null) {
                 this.port.onConnectorDetach();
                 attachedConnector.port.onConnectorDetach();
             }
+            detachJoint();
             this.attachedConnector.attachedConnector = null;
             this.attachedConnector = null;
         } else if (internal)

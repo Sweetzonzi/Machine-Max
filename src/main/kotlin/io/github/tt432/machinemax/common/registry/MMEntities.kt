@@ -10,16 +10,10 @@ object MMEntities {
     fun register() {
     }
 
-//    //测试用车辆
-//    @JvmStatic
-//    val TEST_CAR_ENTITY = MachineMax.REGISTER.entityType<TestCarEntity>().id("test_car")
-//        .builder(EntityType.Builder.of(::TestCarEntity, MobCategory.MISC).fireImmune().noSummon())
-//        .build()
-
     //部件实体
     @JvmStatic
     val PART_ENTITY = MachineMax.REGISTER.entityType<MMPartEntity>().id("part")
-        .builder(EntityType.Builder.of(::MMPartEntity, MobCategory.MISC).fireImmune().noSummon())
+        .builder(EntityType.Builder.of(::MMPartEntity, MobCategory.MISC).fireImmune().noSummon().noSave().eyeHeight(0.0F))
         .build()
 
 //    //载具核心实体

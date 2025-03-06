@@ -4,12 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum Axis{
-    x(0),
-    y(1),
-    z(2),
-    xr(3),
-    yr(4),
-    zr(5);
+    x(0), X(0),
+    y(1), Y(1),
+    z(2), Z(2),
+    xr(3), XR(3),
+    yr(4), YR(4),
+    zr(5), ZR(5);
 
     private final int value;
 

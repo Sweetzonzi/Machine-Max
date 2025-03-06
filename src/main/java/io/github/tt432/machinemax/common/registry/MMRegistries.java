@@ -3,6 +3,7 @@ package io.github.tt432.machinemax.common.registry;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -28,8 +29,7 @@ public class MMRegistries {
     }
 
     public static RegistryAccess getRegistryAccess(Level level) {
-        if (level instanceof ServerLevel) return level.registryAccess();
-        else return Minecraft.getInstance().getConnection().registryAccess();
+        return level.registryAccess();
     }
 
 }

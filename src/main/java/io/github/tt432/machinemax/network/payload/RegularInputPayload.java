@@ -4,6 +4,7 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.attachment.LivingEntityEyesightAttachment;
 import io.github.tt432.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.tt432.machinemax.common.component.PartAssemblyInfoComponent;
+import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.item.prop.MMPartItem;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.registry.MMDataComponents;
@@ -11,6 +12,9 @@ import io.github.tt432.machinemax.common.registry.MMItems;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
+import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -21,7 +25,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
@@ -66,11 +69,21 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
 
                 break;
             case INTERACT://与载具等交互
-                if (player.getVehicle() == null && payload.tick_count() < 10) {
-                    //未处于骑乘状态，则在按下按键时交互
+                if (payload.tick_count() == 0) {
+                    //未乘坐于载具部件，则在按下按键时交互
+                    var a = player.getVehicle();
+                    var b = ((IEntityMixin) player).getRidingSubsystem();
                 } else if (player.getVehicle() != null && payload.tick_count() >= 10) {
-                    Vec3 dismountLocation = player.getVehicle().getDismountLocationForPassenger(player);
-                    player.dismountTo(dismountLocation.x, dismountLocation.y, dismountLocation.z);
+                    //处于骑乘状态，且长按互动键1秒，则尝试脱离载具
+                    if (player.getVehicle() instanceof MMPartEntity vehicle) {
+                        for (AbstractSubsystem subSystem : vehicle.part.subsystems.values()) {
+                            if (subSystem instanceof SeatSubsystem seatSubSystem) {
+                                seatSubSystem.removePassenger();
+                                break;
+                            }
+                        }
+                        player.stopRiding();//保险措施，确保停止骑乘
+                    } else player.stopRiding();//一般载具实体的处理方式
                 }
                 break;
             case CYCLE_PART_CONNECTORS://切换部件连接点
@@ -83,9 +96,9 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
                     targetConnector = eyesightBody.getConnector();//获取视线看着的部件对接口
                     if (targetConnector != null && !targetConnector.hasPart()) {
-                        PartType partType = MMPartItem.getPartType(heldItem);
-                        PartAssemblyInfoComponent info = MMPartItem.getPartAssemblyInfo(heldItem);
-                        PartAssemblyCacheComponent iterators = MMPartItem.getPartAssemblyCache(heldItem);
+                        PartType partType = MMPartItem.getPartType(heldItem, level);
+                        PartAssemblyInfoComponent info = MMPartItem.getPartAssemblyInfo(heldItem, level);
+                        PartAssemblyCacheComponent iterators = MMPartItem.getPartAssemblyCache(heldItem, level);
                         Map<String, String> partConnectors = partType.getPartOutwardConnectors();
                         int i = partConnectors.size();//设置最大迭代次数
                         String connector = iterators.getNextConnector();//获取下一个部件接口
@@ -113,9 +126,9 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
                     targetConnector = eyesightBody.getConnector();//获取视线看着的部件对接口
                     if (targetConnector != null && !targetConnector.hasPart()) {
-                        PartType partType = MMPartItem.getPartType(heldItem);
-                        PartAssemblyInfoComponent info = MMPartItem.getPartAssemblyInfo(heldItem);
-                        PartAssemblyCacheComponent iterators = MMPartItem.getPartAssemblyCache(heldItem);
+                        PartType partType = MMPartItem.getPartType(heldItem, level);
+                        PartAssemblyInfoComponent info = MMPartItem.getPartAssemblyInfo(heldItem, level);
+                        PartAssemblyCacheComponent iterators = MMPartItem.getPartAssemblyCache(heldItem, level);
                         int i = partType.variants.size();//设置最大迭代次数
                         String variant = iterators.getNextVariant();//获取下一个部件变体
                         info = new PartAssemblyInfoComponent(variant, info.connector(), info.connectorType());

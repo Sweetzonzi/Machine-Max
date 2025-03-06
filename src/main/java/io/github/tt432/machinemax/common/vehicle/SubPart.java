@@ -40,6 +40,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, BodyPhysicsTicke
                 (body -> {
                     body.addCollisionCallback(this);//TODO:写接触规则
                     body.addPhysicsTicker(this);
+                    body.setSleepingThresholds(0.05f, 0.05f);
+                    body.setDamping(0.01f, 0.01f);
                     body.activate();
                     return null;
                 }));
@@ -66,7 +68,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, BodyPhysicsTicke
      */
     @Override
     public void onEnded(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldId) {
-        this.part.vehicle.activate();
+
     }
 
     /**
@@ -80,7 +82,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, BodyPhysicsTicke
      */
     @Override
     public void onProcessed(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldPointId) {
+        if(pcoA.getOwner() instanceof SubPart subPartA && pcoB.getOwner() instanceof SubPart subPartB){
 
+        }
     }
 
     /**
@@ -90,8 +94,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, BodyPhysicsTicke
      *                   zero)
      */
     @Override
-    public void onStarted(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB,long manifoldId) {
-
+    public void onStarted(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldId) {
+        this.part.vehicle.activate();
     }
 
     @Override

@@ -25,7 +25,7 @@ public class MMMath {
      * @param obj 物体
      * @return 相对世界原点的位置坐标
      */
-    public static Vector3f RelPointWorldPos(Vector3f relPointPos, PhysicsCollisionObject obj){
+    public static Vector3f relPointWorldPos(Vector3f relPointPos, PhysicsCollisionObject obj){
         Vector3f absPos = obj.getPhysicsLocation(null);//获取物体质心世界坐标
         Quaternion localToWorld = obj.getPhysicsRotation(null).normalizeLocal(); //获取物体相对世界坐标的四元数
         Vector3f result =MyQuaternion.rotate(localToWorld, relPointPos, null);//旋转相对位置向量到世界坐标系

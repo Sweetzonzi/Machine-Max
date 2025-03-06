@@ -12,14 +12,15 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
-import io.github.tt432.machinemax.common.vehicle.attr.PortAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
-import io.github.tt432.machinemax.network.payload.ConnectorAttachPayload;
-import io.github.tt432.machinemax.network.payload.PartRemovePayload;
+import io.github.tt432.machinemax.common.vehicle.signal.ISignalSender;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.network.payload.assembly.ConnectorAttachPayload;
+import io.github.tt432.machinemax.network.payload.assembly.PartRemovePayload;
 import io.github.tt432.machinemax.network.payload.SubPartSyncPayload;
 import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.data.PosRotVelVel;
@@ -62,7 +63,7 @@ public class VehicleCore implements SkillHost {
     public boolean inLoadedChunk = false;//是否睡眠
     public boolean isRemoved = false;//是否已被移除
     //控制
-    public SubsystemController subSystemController = new SubsystemController();
+    public SubsystemController subSystemController = new SubsystemController(this);
     private final AtomicInteger skillCount = new AtomicInteger();
     public ControlMode mode = ControlMode.GROUND;//控制模式
 
@@ -129,70 +130,61 @@ public class VehicleCore implements SkillHost {
         if (inLoadedChunk && !isRemoved) {//TODO:如果在已加载区块内，或速度大于某个阈值
             //保持激活与控制量更新
             Vec3 newPos = new Vec3(0, 0, 0);
-            for (Part part : partNet.nodes()) {
+            for (Part part : partMap.values()) {
                 Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null));
-                if (part.entity == null || part.entity.isRemoved()) {
-                    if (!level.isClientSide()) refreshPartEntity(part);
-                }
-                if (part.entity != null) {//更新实体生命值
-                    part.entity.setHealth(part.durability);
-                }
+                part.onTick();
                 newPos = newPos.add(partPos);//计算载具形心位置
             }
-            this.position = newPos.scale((double) 1 / partNet.nodes().size());//更新载具形心位置
+            this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
             if (!level.isClientSide && tickCount % 10 == 0) syncSubParts(null);//同步零件位置姿态速度
         } else {
             //休眠
-            for (Part part : partNet.nodes()) {
-//                if (part.entity != null) {
-//                    part.entity.part = null;
-//                    part.entity.remove(Entity.RemovalReason.DISCARDED);
-//                }
+            for (Part part : partMap.values()) {
+
             }
         }
-        if (partNet.nodes().isEmpty() || this.position.y < -1024) VehicleManager.removeVehicle(this);
+        subSystemController.tick();
+        if (partMap.values().isEmpty() || this.position.y < -1024) VehicleManager.removeVehicle(this);//移除掉出世界的载具
         tickCount++;
     }
 
     public void physicsTick() {
-
+        subSystemController.physicsTick();
+        for (Part part : partMap.values()) {
+            part.onPhysicsTick();
+        }
     }
 
-    public void refreshPartEntity(Part part) {
-        part.entity = new MMPartEntity(level, part);
-        part.entity.setHealth(part.durability);
-        level.addFreshEntity(part.entity);
-    }
-
-    public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, PosRotVelVel>> subPartSyncData) {
+    public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Float>>> subPartSyncData) {
         if (!level.isClientSide()) {
-            HashMap<UUID, HashMap<String, PosRotVelVel>> subPartSyncDataToSend = new HashMap<>(1);
+            HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Float>>> subPartSyncDataToSend = new HashMap<>(1);
             for (Map.Entry<UUID, Part> entry : partMap.entrySet()) {
-                HashMap<String, PosRotVelVel> subPartSyncDataMap = new HashMap<>(1);
+                HashMap<String, Pair<PosRotVelVel, Float>> subPartSyncDataMap = new HashMap<>(1);
                 Part part = entry.getValue();
                 for (Map.Entry<String, SubPart> subPartEntry : part.subParts.entrySet()) {
                     SubPart subPart = subPartEntry.getValue();
                     PhysicsRigidBody body = subPart.body;
-                    subPartSyncDataMap.put(subPartEntry.getKey(), new PosRotVelVel(
+                    PosRotVelVel data = new PosRotVelVel(
                             body.getPhysicsLocation(null),
                             SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
                             body.getLinearVelocity(null),
-                            body.getAngularVelocity(null)
-                    ));
+                            body.getAngularVelocity(null));
+                    subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, body.getDeactivationTime()));
                 }
                 subPartSyncDataToSend.put(entry.getKey(), subPartSyncDataMap);
             }
             PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(this.uuid, subPartSyncDataToSend));
         } else if (subPartSyncData != null) {
             this.level.getPhysicsLevel().submitTask((a, b) -> {
-                for (Map.Entry<UUID, HashMap<String, PosRotVelVel>> outerEntry : subPartSyncData.entrySet()) {
+                for (Map.Entry<UUID, HashMap<String, Pair<PosRotVelVel, Float>>> outerEntry : subPartSyncData.entrySet()) {
                     UUID partUUID = outerEntry.getKey();
                     Part part = this.partMap.get(partUUID);
-                    HashMap<String, PosRotVelVel> innerMap = outerEntry.getValue();
+                    HashMap<String, Pair<PosRotVelVel, Float>> innerMap = outerEntry.getValue();
                     if (part != null) {
-                        for (Map.Entry<String, PosRotVelVel> innerEntry : innerMap.entrySet()) {
+                        for (Map.Entry<String, Pair<PosRotVelVel, Float>> innerEntry : innerMap.entrySet()) {
                             String subPartName = innerEntry.getKey();
-                            PosRotVelVel data = innerEntry.getValue();
+                            PosRotVelVel data = innerEntry.getValue().getFirst();
+                            float sleepTime = innerEntry.getValue().getSecond();
                             SubPart subPart = part.subParts.get(subPartName);
                             if (subPart != null) {
                                 PhysicsRigidBody body = subPart.body;
@@ -200,7 +192,7 @@ public class VehicleCore implements SkillHost {
                                 body.setPhysicsRotation(SparkMathKt.toBQuaternion(data.rotation()));
                                 body.setLinearVelocity(data.linearVel());
                                 body.setAngularVelocity(data.angularVel());
-                                body.activate();
+                                body.setDeactivationTime(sleepTime);
                             } else
                                 MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this, partUUID, subPartName);
                         }
@@ -227,23 +219,31 @@ public class VehicleCore implements SkillHost {
      */
     public void addPart(Part part) {
         part.vehicle = this;
+        for (AbstractSubsystem subSystem : part.subsystems.values()) {//连接部件内子系统的传输关系
+            if (subSystem instanceof ISignalSender) ((ISignalSender) subSystem).setTargetFromNames();
+        }
+        for (AbstractConnector connector : part.allConnectors.values()) {//连接部件内信号端口的传输关系
+            if (connector.port != null) connector.port.setTargetFromNames();
+        }
         partMap.put(part.uuid, part);
         partNet.addNode(part);
+        subSystemController.addSubsystems(part.subsystems.values());
     }
 
     public void removePart(Part part) {
         if (partMap.containsValue(part)) {
             String partUuid = part.getUuid().toString();
+            subSystemController.removeSubsystems(part.subsystems.values());
             part.destroy();
             partNet.removeNode(part);
             partMap.remove(part.uuid, part);
-            //TODO:连通性检查
             if (inLevel && !level.isClientSide()) {//发包客户端移除部件
                 PacketDistributor.sendToPlayersInDimension(
                         (ServerLevel) this.level,
                         new PartRemovePayload(this.uuid.toString(), partUuid)
                 );
             }
+            checkAndSplitVehicle();//连通性检查
             if (partMap.values().isEmpty()) VehicleManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
             else this.activate();//重新激活，进行部件移除后的物理计算
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.name, part.name);
@@ -331,8 +331,8 @@ public class VehicleCore implements SkillHost {
                                     specialConnector = connector2;
                                 } else continue;//二者中存在AttachPointConnector时才可尝试连接
                                 //检查连接是否合理(连接点位置姿态差异)
-                                float posError = MMMath.RelPointWorldPos(attachPoint.subPartTransform.getTranslation(), attachPoint.subPart.body).subtract(
-                                        MMMath.RelPointWorldPos(specialConnector.subPartTransform.getTranslation(), specialConnector.subPart.body)
+                                float posError = MMMath.relPointWorldPos(attachPoint.subPartTransform.getTranslation(), attachPoint.subPart.body).subtract(
+                                        MMMath.relPointWorldPos(specialConnector.subPartTransform.getTranslation(), specialConnector.subPart.body)
                                 ).length();//计算连接点位置差异
                                 float rotError = SparkMathKt.toQuaternionf(
                                         attachPoint.subPart.body.getPhysicsRotation(null).mult(attachPoint.subPartTransform.getRotation()).mult(
@@ -363,6 +363,20 @@ public class VehicleCore implements SkillHost {
         else throw new IllegalArgumentException("要拆解的对接口之一必须是AttachPointConnector类型");
         //TODO:连通性检查，如果有部件分离，则创建新的VehicleCore
         //TODO:为分离的部件指定新的VehicleCore
+        checkAndSplitVehicle();
+    }
+
+    private void checkAndSplitVehicle() {
+        if (partNet.nodes().isEmpty()) return;
+        // TODO:连通性检查
+        Set<Set<Part>> splitPartNets = new HashSet<>();
+        Set<Part> visitedParts = new HashSet<>();
+        for (Part part : partMap.values()) {
+            if (!visitedParts.contains(part)) {
+                Set<Part> spiltPartNet = partNet.adjacentNodes(part);
+                visitedParts.addAll(spiltPartNet);
+            }
+        }
     }
 
     public void onAddToLevel() {
@@ -385,6 +399,7 @@ public class VehicleCore implements SkillHost {
 
     public void onRemoveFromLevel() {
         this.position = null;
+        subSystemController.destroy();
         for (Part part : partMap.values()) {
             partNet.removeNode(part);
             part.destroy();
@@ -398,7 +413,7 @@ public class VehicleCore implements SkillHost {
      * @return resourceType:部件UUID，value:部件数据
      */
     public Map<String, PartData> getPartData() {
-        Map<String, PartData> result = new java.util.HashMap<>();
+        Map<String, PartData> result = new HashMap<>();
         partNet.nodes().forEach(part -> result.put(part.uuid.toString(), new PartData(part)));
         return result;
     }
@@ -409,7 +424,7 @@ public class VehicleCore implements SkillHost {
      * @return 连接关系列表
      */
     public List<ConnectionData> getConnectionData() {
-        List<ConnectionData> result = new java.util.ArrayList<>();
+        List<ConnectionData> result = new ArrayList<>();
         partNet.edges().forEach(connectorPair -> result.add(new ConnectionData(connectorPair)));
         return result;
     }

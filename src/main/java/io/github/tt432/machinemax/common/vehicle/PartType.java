@@ -6,7 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.AbstractSubSystemAttr;
+import io.github.tt432.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import lombok.Getter;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
@@ -27,7 +27,7 @@ public class PartType {
     public final ResourceLocation animation;
     public final float basicDurability;//部件基础耐久度
     //       public final List<TagKey<Part>> tags,//部件标签(引擎，轮胎，AE86，之类)
-    public final Map<String, AbstractSubSystemAttr> subsystems;//子系统(引擎功能，车门控制，转向…等)
+    public final Map<String, AbstractSubsystemAttr> subsystems;//子系统(引擎功能，车门控制，转向…等)
     public final Map<String, SubPartAttr> subParts;
     public final ResourceLocation registryKey;
     //编解码器
@@ -56,7 +56,7 @@ public class PartType {
             ResourceLocation.CODEC.optionalFieldOf("animation",
                     ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty")).forGetter(PartType::getAnimation),
             Codec.FLOAT.fieldOf("basic_durability").forGetter(PartType::getBasicDurability),
-            AbstractSubSystemAttr.MAP_CODEC.optionalFieldOf("subSystems", Map.of()).forGetter(PartType::getSubsystems),
+            AbstractSubsystemAttr.MAP_CODEC.optionalFieldOf("subsystems", Map.of()).forGetter(PartType::getSubsystems),
             SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(PartType::getSubParts)
     ).apply(instance, PartType::new));
 
@@ -68,7 +68,7 @@ public class PartType {
             List<ResourceLocation> textures = buffer.readList(FriendlyByteBuf::readResourceLocation);
             ResourceLocation animation = buffer.readResourceLocation();
             float basicDurability = buffer.readFloat();
-            Map<String, AbstractSubSystemAttr> subsystems = buffer.readJsonWithCodec(AbstractSubSystemAttr.MAP_CODEC);
+            Map<String, AbstractSubsystemAttr> subsystems = buffer.readJsonWithCodec(AbstractSubsystemAttr.MAP_CODEC);
             Map<String, SubPartAttr> subParts = buffer.readJsonWithCodec(SubPartAttr.MAP_CODEC);
             return new PartType(name, variants, textures, animation, basicDurability, subsystems, subParts);
         }
@@ -80,7 +80,7 @@ public class PartType {
             buffer.writeCollection(value.textures, FriendlyByteBuf::writeResourceLocation);
             buffer.writeResourceLocation(value.animation);
             buffer.writeFloat(value.basicDurability);
-            buffer.writeJsonWithCodec(AbstractSubSystemAttr.MAP_CODEC, value.subsystems);
+            buffer.writeJsonWithCodec(AbstractSubsystemAttr.MAP_CODEC, value.subsystems);
             buffer.writeJsonWithCodec(SubPartAttr.MAP_CODEC, value.subParts);
         }
     };
@@ -95,7 +95,7 @@ public class PartType {
             ResourceLocation animation,
             float basicDurability,
 //        List<TagKey<Part>> tags,//部件标签(引擎，轮胎，AE86，之类)
-            Map<String, AbstractSubSystemAttr> subsystems,
+            Map<String, AbstractSubsystemAttr> subsystems,
             Map<String, SubPartAttr> subParts
     ) {
         this.name = name;

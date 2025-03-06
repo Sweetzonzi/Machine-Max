@@ -1,9 +1,12 @@
 package io.github.tt432.machinemax.common.registry
 
+import com.mojang.serialization.Codec
 import io.github.tt432.machinemax.MachineMax
 import io.github.tt432.machinemax.common.component.PartAssemblyCacheComponent
 import io.github.tt432.machinemax.common.component.PartAssemblyInfoComponent
 import io.github.tt432.machinemax.common.vehicle.PartType
+import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 
 object MMDataComponents {
     @JvmStatic
@@ -14,12 +17,24 @@ object MMDataComponents {
      * 保存在部件物品上的物品类型，用于从物品创建部件
      */
     @JvmStatic
-    val PART_TYPE = MachineMax.REGISTER.dataComponent<PartType>()
+    val PART_TYPE = MachineMax.REGISTER.dataComponent<ResourceLocation>()
         .id("part_type")
         .build {
             it
-                .persistent(PartType.CODEC)
-                .networkSynchronized(PartType.STREAM_CODEC)
+                .persistent(ResourceLocation.CODEC)
+                .networkSynchronized(ResourceLocation.STREAM_CODEC)
+                .cacheEncoding()
+        }
+
+    /**
+     * 保存在部件物品上的物品类型，用于从物品创建部件
+     */
+    @JvmStatic
+    val PART_NAME = MachineMax.REGISTER.dataComponent<String>()
+        .id("part_name")
+        .build {
+            it
+                .persistent(Codec.STRING)
                 .cacheEncoding()
         }
 

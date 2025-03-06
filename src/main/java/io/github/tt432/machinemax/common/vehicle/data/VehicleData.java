@@ -22,7 +22,7 @@ public class VehicleData {
     public final List<ConnectionData> connections;
 
     public static final Codec<VehicleData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("locatorName").forGetter(VehicleData::getName),
+            Codec.STRING.fieldOf("subpart").forGetter(VehicleData::getName),
             Codec.STRING.fieldOf("uuid").forGetter(VehicleData::getUuid),
             Vec3.CODEC.fieldOf("pos").forGetter(VehicleData::getPos),
             Codec.FLOAT.fieldOf("hp").forGetter(VehicleData::getHp),

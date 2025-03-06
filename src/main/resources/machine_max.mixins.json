@@ -5,7 +5,9 @@
   "package": "io.github.tt432.machinemax.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ClientLevelMixin"
+    "ClientLevelMixin",
+    "EntityMixin",
+    "PlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

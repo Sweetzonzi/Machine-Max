@@ -8,6 +8,7 @@ import io.github.tt432.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.tt432.machinemax.common.component.PartAssemblyInfoComponent;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.registry.MMDataComponents;
+import io.github.tt432.machinemax.common.registry.MMRegistries;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
@@ -15,7 +16,6 @@ import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import net.minecraft.client.Minecraft;
-import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.InteractionHand;
@@ -48,20 +48,20 @@ public class MMPartItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if (!level.isClientSide()) {
             ItemStack stack = player.getItemInHand(usedHand);
-            PartType partType = getPartType(stack);//获取物品保存的部件类型
-            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack);//获取物品保存的组装信息
+            PartType partType = getPartType(stack,level);//获取物品保存的部件类型
+            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack,level);//获取物品保存的组装信息
             String variant = info.variant();//获取物品保存的部件变体
             String connectorName = info.connector();//获取物品保存的部件接口
             String connectorType = info.connectorType();//获取物品保存的部件接口类型
-            var eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            AbstractConnector targetConnector = eyesightBody.getConnector();
+            var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
+            AbstractConnector targetConnector = eyesight.getConnector();
             if (targetConnector != null) {//若有可用的接口
                 if (targetConnector.conditionCheck(variant)) {//检查变体条件
                     if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
                         VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
                         Part part = new Part(partType, variant, level);
-                        targetConnector.adjustTransform(part, part.connectors.get(connectorName));
-                        vehicleCore.attachConnector(targetConnector, part.connectors.get(connectorName), part);//尝试将新部件连接至接口
+                        targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
+                        vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
                     }
                 }
             } else {
@@ -78,13 +78,13 @@ public class MMPartItem extends Item {
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int portId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (level.isClientSide() && isSelected) {
-            PartType partType = getPartType(stack);//获取物品保存的部件类型
-            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack);//获取物品保存的组装信息
+            PartType partType = getPartType(stack,level);//获取物品保存的部件类型
+            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack,level);//获取物品保存的组装信息
             String variant = info.variant();//获取物品保存的部件变体
             String connectorName = info.connector();//获取物品保存的部件接口
             String connectorType = info.connectorType();//获取物品保存的部件接口类型
-            var eyesightBody = entity.getData(MMAttachments.getENTITY_EYESIGHT());
-            AbstractConnector targetConnector = eyesightBody.getConnector();
+            var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
+            AbstractConnector targetConnector = eyesight.getConnector();
             MutableComponent message = Component.empty();
             if (targetConnector != null) {
                 if (targetConnector.conditionCheck(variant)) {
@@ -116,22 +116,22 @@ public class MMPartItem extends Item {
      */
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {
-        PartType partType = getPartType(stack);
-        return Component.translatable(MachineMax.MOD_ID + ".item." + partType.name);
+        String partName = stack.get(MMDataComponents.getPART_NAME());
+        return Component.translatable(MachineMax.MOD_ID + ".item." + partName);
     }
 
-    public static PartAssemblyCacheComponent getPartAssemblyCache(ItemStack stack) {
+    public static PartAssemblyCacheComponent getPartAssemblyCache(ItemStack stack, Level level) {
         if (!stack.has(MMDataComponents.getPART_ASSEMBLY_CACHE())) {
-            PartAssemblyCacheComponent cache = new PartAssemblyCacheComponent(getPartType(stack));
+            PartAssemblyCacheComponent cache = new PartAssemblyCacheComponent(getPartType(stack, level));
             stack.set(MMDataComponents.getPART_ASSEMBLY_CACHE(), cache);
             return cache;
         } else return stack.get(MMDataComponents.getPART_ASSEMBLY_CACHE());
     }
 
-    public static PartAssemblyInfoComponent getPartAssemblyInfo(ItemStack stack) {
-        PartType partType = getPartType(stack);
+    public static PartAssemblyInfoComponent getPartAssemblyInfo(ItemStack stack, Level level) {
+        PartType partType = getPartType(stack, level);
         if (!stack.has(MMDataComponents.getPART_ASSEMBLY_INFO())) {//若物品Component中无组装信息，则新建
-            PartAssemblyCacheComponent iterators = getPartAssemblyCache(stack);//获取物品保存的组装信息
+            PartAssemblyCacheComponent iterators = getPartAssemblyCache(stack, level);//获取物品保存的组装信息
             var connectors = partType.getPartOutwardConnectors();
             String variant = iterators.getNextVariant();
             String connector = iterators.getNextConnector();
@@ -141,11 +141,11 @@ public class MMPartItem extends Item {
         } else return stack.get(MMDataComponents.getPART_ASSEMBLY_INFO());
     }
 
-    public static PartType getPartType(ItemStack stack) {
+    public static PartType getPartType(ItemStack stack, Level level) {
         PartType partType;
         if (stack.has(MMDataComponents.getPART_TYPE())) {
             //从物品Component中获取部件类型
-            partType = stack.get(MMDataComponents.getPART_TYPE());
+            partType = MMRegistries.getRegistryAccess(level).registry(PartType.PART_REGISTRY_KEY).get().get(stack.get(MMDataComponents.getPART_TYPE()));
         } else throw new IllegalStateException("物品" + stack + "中未找到部件类型数据");//如果物品Component中部件类型为空，则抛出异常
         return partType;
     }

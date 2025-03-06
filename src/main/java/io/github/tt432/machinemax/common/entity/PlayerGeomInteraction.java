@@ -2,6 +2,10 @@ package io.github.tt432.machinemax.common.entity;
 
 import io.github.tt432.machinemax.common.attachment.LivingEntityEyesightAttachment;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
+import io.github.tt432.machinemax.common.vehicle.Part;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -37,11 +41,17 @@ public class PlayerGeomInteraction {
 
     @SubscribeEvent
     private static void interact(PlayerInteractEvent.EntityInteract event) {
-//        MachineMax.LOGGER.info("Hit Entity Target: " + event.getTarget());
-//        LivingEntityEyesightAttachment ray = event.getEntity().getData(MMAttachments.getENTITY_EYESIGHT());
-//        if (!ray.getTargets().isEmpty()) {
-//            for (PhysicsRigidBody target : ray.getSortedTargets())
-//                MachineMax.LOGGER.info("Hit Target: " + target.getOwner());
-//        } else MachineMax.LOGGER.info(ray.getTargets().toString());
+        //TODO:仅服务端触发？
+        LivingEntityEyesightAttachment ray = event.getEntity().getData(MMAttachments.getENTITY_EYESIGHT());
+        Part part = ray.getPart();
+        if (part != null && !event.getEntity().isShiftKeyDown()) {
+            for (AbstractSubsystem subSystem : part.subsystems.values()) {
+                if (subSystem instanceof SeatSubsystem seatSubSystem) {
+                    boolean success = seatSubSystem.setPassenger(event.getEntity());
+                    if (success) break;
+                    event.setCancellationResult(InteractionResult.SUCCESS);
+                }
+            }
+        }
     }
 }

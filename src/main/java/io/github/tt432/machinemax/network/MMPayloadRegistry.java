@@ -2,6 +2,7 @@ package io.github.tt432.machinemax.network;
 
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.network.payload.*;
+import io.github.tt432.machinemax.network.payload.assembly.*;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;

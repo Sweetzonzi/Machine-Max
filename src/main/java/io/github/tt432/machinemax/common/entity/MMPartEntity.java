@@ -17,6 +17,7 @@ import cn.solarmoon.spark_core.sync.IntSyncData;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.bounding.BoundingBox;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMEntities;
@@ -24,8 +25,10 @@ import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
+import jme3utilities.math.MyQuaternion;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -33,6 +36,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 
 import java.util.Collections;
 import java.util.UUID;
@@ -44,6 +48,7 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     public Part part;//实体所属的部件
     public UUID vehicleUUID;
     public UUID partUUID;
+
     /**
      * 不应被使用！
      *
@@ -75,6 +80,10 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
             //更新实体位置
             this.deathTime = 0;
             this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
+            Quaternionf q = SparkMathKt.toQuaternionf(part.rootSubPart.body.getPhysicsRotation(null));
+            org.joml.Vector3f eulerAngles = new org.joml.Vector3f();
+            q.getEulerAnglesZYX(eulerAngles);
+            this.setRot(eulerAngles.y+180, eulerAngles.x);
             updateBoundingBox();//更新实体包围盒
         }
     }
@@ -100,13 +109,23 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     }
 
     @Override
+    protected Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
+        return new Vec3(0,10,0);
+    }
+
+    @Override
+    public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {
+        return super.getDismountLocationForPassenger(passenger);
+    }
+
+    @Override
     public void move(@NotNull MoverType type, @NotNull Vec3 pos) {
         //交由物理引擎处理
     }
 
     @Override
-    public boolean shouldBeSaved() {
-        return false;
+    public boolean canCollideWith(@NotNull Entity entity) {
+        return !(entity instanceof Player);
     }
 
     @Override
@@ -248,7 +267,7 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     @NotNull
     @Override
     public IForeignVariableStorage getForeignStorage() {
-        if(part != null) return part.foreignStorage;
+        if (part != null) return part.foreignStorage;
         else return new VariableStorage();
     }
 

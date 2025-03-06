@@ -27,7 +27,7 @@ public record PartAssemblyInfoComponent(
 
     public static final Codec<PartAssemblyInfoComponent> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("variant").forGetter(PartAssemblyInfoComponent::variant),
-            Codec.STRING.fieldOf("connector").forGetter(PartAssemblyInfoComponent::connector),
+            Codec.STRING.fieldOf("seatLocator").forGetter(PartAssemblyInfoComponent::connector),
             Codec.STRING.fieldOf("connectorType").forGetter(PartAssemblyInfoComponent::connectorType)
     ).apply(instance, PartAssemblyInfoComponent::new));
 

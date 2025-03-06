@@ -6,39 +6,21 @@ import lombok.Getter;
 
 import java.util.*;
 
-@Getter
-public class PortAttr {
-    public final String name;
-    public final String target;//目标端口名称，特别地，“VEHICLE_BUS”将会把内容传输给载具本身
-    public final Set<String> requiredSignals = new HashSet<>();//端口需求的信号类型
-    public final Set<String> providedSignals = new HashSet<>();//端口提供的信号类型
-    public final Set<String> requiredResources = new HashSet<>();//端口需求的资源类型
-    public final Set<String> providedResources = new HashSet<>();//端口提供的资源类型
+/**
+ * @param signalTargets  信号传输目标与信号的识别名，特别地，当目标为part时将会令信号在部件内共享，当目标为vehicle时将会令信号在载具内共享
+ * @param acceptableSignals 接受的信号识别名列表，不在此列表中的信号将不会被传输给连接的部件对接口，留空时接受所有类型的信号
+ */
+
+public record PortAttr(
+        Map<String, List<String>> signalTargets,//信号名与传输目标列表
+        List<String> acceptableSignals) {
+    public static final Codec<Map<String, List<String>>> TARGET_CODEC = Codec.unboundedMap(
+            Codec.STRING,
+            Codec.STRING.listOf()
+    );
     public static final Codec<PortAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("name").forGetter(PortAttr::getName),
-            Codec.STRING.optionalFieldOf("target","").forGetter(PortAttr::getTarget),
-            Codec.STRING.listOf().optionalFieldOf("required_signals", List.of()).forGetter((p) -> p.requiredSignals.stream().toList()),
-            Codec.STRING.listOf().optionalFieldOf("provided_signals", List.of()).forGetter((p) -> p.providedSignals.stream().toList()),
-            Codec.STRING.listOf().optionalFieldOf("required_resources", List.of()).forGetter((p) -> p.requiredResources.stream().toList()),
-            Codec.STRING.listOf().optionalFieldOf("provided_resources", List.of()).forGetter((p) -> p.providedResources.stream().toList())
+            TARGET_CODEC.optionalFieldOf("signal_targets", Map.of()).forGetter(PortAttr::signalTargets),
+            Codec.STRING.listOf().optionalFieldOf("acceptable_signals", List.of()).forGetter(PortAttr::acceptableSignals)
     ).apply(instance, PortAttr::new));
 
-    public static final Codec<Map<String, PortAttr>> MAP_CODEC = Codec.unboundedMap(
-            Codec.STRING,
-            CODEC
-    );
-
-    public PortAttr(String name,
-                    String target,
-                    List<String> requiredSignals,
-                    List<String> providedSignals,
-                    List<String> requiredResources,
-                    List<String> providedResources) {
-        this.name = name;
-        this.target = target;
-        this.requiredSignals.addAll(requiredSignals);
-        this.providedSignals.addAll(providedSignals);
-        this.requiredResources.addAll(requiredResources);
-        this.providedResources.addAll(providedResources);
-    }
 }
