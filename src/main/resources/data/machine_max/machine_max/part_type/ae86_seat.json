@@ -17,11 +17,11 @@
       "connector": "seat_point", //乘坐点对接口名称，乘客将被定位于此对接口
       "move_output": {
         "key": "move_output",
-        "targets": ["vehicle", "part", "chassis_connection"] //将控制信号转发给载具本身及与底盘连接的对接口
+        "targets": ["chassis_connection"] //将控制信号转发给载具本身及与底盘连接的对接口
       },
       "regular_output": {
         "key": "regular_output",
-        "targets": ["vehicle", "part", "chassis_connection"] //将控制信号转发给载具本身及与底盘连接的对接口
+        "targets": ["vehicle", "chassis_connection"] //将控制信号转发给载具本身及与底盘连接的对接口
       }
     }
   },

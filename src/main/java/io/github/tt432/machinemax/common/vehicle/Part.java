@@ -61,6 +61,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Setter
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
+    private Vec3 oldPos = Vec3.ZERO;//上一tick的位置
+    private Vec3 pos = Vec3.ZERO;//当前tick位置
     //基本属性
     public VehicleCore vehicle;//所属的VehicleCore
     @Nullable
@@ -183,6 +185,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (this.entity != null) {//更新部件实体显示生命值
             this.entity.setHealth(this.durability);
         }
+        oldPos = pos;
+        pos = SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
     }
 
     public void onPhysicsTick() {
@@ -475,9 +479,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @NotNull
     @Override
     public Vec3 getWorldPosition(float v) {
-        Vector3f result = new Vector3f();
-        SparkMathKt.toVec3(rootSubPart.body.getMotionState().getLocation(result));
-        return SparkMathKt.toVec3(result);
+        return oldPos.scale(1 - v).add(pos.scale(v));
     }
 
     @Override
@@ -487,7 +489,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     @Override
     public Matrix4f getWorldPositionMatrix(float partialTick) {
-        return SparkMathKt.toMatrix4f(rootSubPart.body.getTransform(new Transform()).toTransformMatrix());
+        return SparkMathKt.toMatrix4f(rootSubPart.body.getTransform(null).setTranslation(PhysicsHelperKt.toBVector3f(getWorldPosition(partialTick))).toTransformMatrix());
     }
 
     @NotNull
