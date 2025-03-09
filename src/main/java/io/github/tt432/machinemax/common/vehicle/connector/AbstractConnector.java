@@ -1,6 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle.connector;
 
-import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker;
+import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.RotationOrder;
@@ -33,10 +33,11 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Getter
-public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicker{
+public abstract class AbstractConnector implements PhysicsHost, PhysicsCollisionObjectTicker {
     public final String name;//接口名称
     public final SubPart subPart;//接口所属的零件
     public final List<String> acceptableVariants;//可接受的变体列表
@@ -56,8 +57,7 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
         this.subPart = subPart;
         this.subPartTransform = subPartTransform;
         this.acceptableVariants = attr.acceptableVariants();
-        if (attr.portAttr() != null) this.port = new Port(this, attr.portAttr());
-        else port = null;
+        this.port = new Port(this, attr.signalTargets());
         this.collideBetweenParts = attr.collideBetweenParts();
         this.breakable = attr.breakable();
         this.internal = !attr.ConnectedTo().isEmpty();
@@ -163,9 +163,10 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
         joint.set(MotorParam.UpperLimit, 3, 0);
         joint.set(MotorParam.UpperLimit, 4, 0);
         joint.set(MotorParam.UpperLimit, 5, 0);
-        for (int i = 0; i < 6; i++) {//设置各轴关节属性(0~2为XYZ轴平动，3~5为XYZ轴转动)
+        for (Map.Entry<String, JointAttr> entry : attr.jointAttrs().entrySet()) {//设置各轴关节属性(0~2为XYZ轴平动，3~5为XYZ轴转动)
+            int i = Axis.getValue(entry.getKey());//获取轴序号
+            JointAttr jointAttr = entry.getValue();//获取轴属性
             if (this instanceof SpecialConnector) {
-                JointAttr jointAttr = this.attr.jointAttrs().get(Axis.fromValue(i).name());
                 if (jointAttr != null) {
                     if (jointAttr.lowerLimit() != null)
                         joint.set(MotorParam.LowerLimit, i, (float) (jointAttr.lowerLimit() * (i <= 2 ? 1 : Math.PI / 180)));
@@ -183,8 +184,6 @@ public abstract class AbstractConnector implements PhysicsHost, BodyPhysicsTicke
                     }
                 }
             } else {
-                JointAttr jointAttr1 = this.attr.jointAttrs().get(Axis.fromValue(i).name());
-                JointAttr jointAttr2 = attachedConnector.attr.jointAttrs().get(Axis.fromValue(i).name());
                 //TODO:混合两个AttachPoint关节的属性信息，并应用于关节
             }
         }

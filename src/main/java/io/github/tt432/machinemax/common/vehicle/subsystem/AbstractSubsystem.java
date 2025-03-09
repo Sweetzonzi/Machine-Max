@@ -21,9 +21,8 @@ abstract public class AbstractSubsystem {
     public final AbstractSubsystemAttr subSystemAttr;
     public final ISubsystemHost owner;
 
-    public final Map<String, List<ISignalReceiver>> targets = new HashMap<>();
+    public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();
     public final ConcurrentMap<String, Signals> signalInputs = new ConcurrentHashMap<>();
-    public final ConcurrentMap<String, Signals> signalOutputs = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Float> resourceInputs = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Float> resourceOutputs = new ConcurrentHashMap<>();
 

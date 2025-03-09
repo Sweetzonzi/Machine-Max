@@ -25,10 +25,10 @@ public record JointAttr(
                     .forGetter(j -> Optional.ofNullable(j.stiffness)),
             Codec.FLOAT.optionalFieldOf("damping")
                     .forGetter(j -> Optional.ofNullable(j.damping))
-    ).apply(instance, (lower, upper, equi, stiff, damp) -> new JointAttr(
+    ).apply(instance, (lower, upper, equal, stiff, damp) -> new JointAttr(
             lower.orElse(null),
             upper.orElse(null),
-            equi.orElse(null),
+            equal.orElse(null),
             stiff.orElse(null),
             damp.orElse(null)
     )));

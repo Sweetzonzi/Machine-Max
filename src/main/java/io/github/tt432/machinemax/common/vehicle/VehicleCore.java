@@ -136,7 +136,7 @@ public class VehicleCore implements SkillHost {
                 newPos = newPos.add(partPos);//计算载具形心位置
             }
             this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
-            if (!level.isClientSide && tickCount % 10 == 0) syncSubParts(null);//同步零件位置姿态速度
+            if (!level.isClientSide && tickCount % 2 == 0) syncSubParts(null);//同步零件位置姿态速度
         } else {
             //休眠
             for (Part part : partMap.values()) {

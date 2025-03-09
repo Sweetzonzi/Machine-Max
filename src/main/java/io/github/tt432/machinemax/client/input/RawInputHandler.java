@@ -66,7 +66,6 @@ public class RawInputHandler {
             switch (part.vehicle.mode) {
                 case GROUND:
                     //移动
-                    MachineMax.LOGGER.info("forward:" + KeyBinding.groundForwardKey.isDown());
                     if (KeyBinding.groundForwardKey.isDown() && KeyBinding.groundBackWardKey.isDown()) {
                         trans_z_conflict = 1;
                         trans_z_input = 0;

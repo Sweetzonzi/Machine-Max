@@ -12,22 +12,24 @@ import java.util.Map;
 public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     public final float maxPower;
     public final float baseRpm;
+    public final float maxTorqueRpm;
     public final float maxRpm;
-    public final float inertia;//发动机系统转动惯量(kg·m²)
-    public final float damping;
+    public final double inertia;//发动机系统转动惯量(kg·m²)
+    public final List<Double> dampingFactors;//发动机系统各阶阻力系数，分别为常数项，一次项…递增
     public final List<String> throttleInputKeys;//优先级从高至低
     public final String speedFeedbackInputKey;//输出功率的速度反馈输入
     public final String powerOutputTarget;
-    public final Map<String, String> rpmOutputTargets;//目标与信号名
+    public final Map<String, List<String>> rpmOutputTargets;
 
-    public static final Codec<Map<String,String>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING);
+    public static final Codec<Map<String,List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
 
     public static final MapCodec<EngineSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.fieldOf("max_power").forGetter(EngineSubsystemAttr::getMaxPower),
             Codec.FLOAT.fieldOf("base_rpm").forGetter(EngineSubsystemAttr::getBaseRpm),
+            Codec.FLOAT.fieldOf("max_torque_rpm").forGetter(EngineSubsystemAttr::getMaxTorqueRpm),
             Codec.FLOAT.fieldOf("max_rpm").forGetter(EngineSubsystemAttr::getMaxRpm),
-            Codec.FLOAT.optionalFieldOf("inertia",50f).forGetter(EngineSubsystemAttr::getInertia),
-            Codec.FLOAT.optionalFieldOf("damping", 0.5f).forGetter(EngineSubsystemAttr::getDamping),
+            Codec.DOUBLE.optionalFieldOf("inertia",0.1).forGetter(EngineSubsystemAttr::getInertia),
+            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(5.0,0.005,0.00003)).forGetter(EngineSubsystemAttr::getDampingFactors),
             Codec.STRING.listOf().fieldOf("throttle_inputs").forGetter(EngineSubsystemAttr::getThrottleInputKeys),
             Codec.STRING.fieldOf("speed_feedback_input").forGetter(EngineSubsystemAttr::getSpeedFeedbackInputKey),
             Codec.STRING.fieldOf("power_output_target").forGetter(EngineSubsystemAttr::getPowerOutputTarget),
@@ -37,18 +39,20 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     public EngineSubsystemAttr(
             float maxPower,
             float baseRpm,
+            float maxTorqueRpm,
             float maxRpm,
-            float inertia,
-            float damping,
+            double inertia,
+            List<Double> dampingFactors,
             List<String> throttleInputKeys,
             String speedFeedbackInputKey,
             String powerOutputTarget,
-            Map<String, String> rpmOutputTargets) {
+            Map<String, List<String>> rpmOutputTargets) {
         this.maxPower = maxPower;
         this.baseRpm = baseRpm;
+        this.maxTorqueRpm = maxTorqueRpm;
         this.maxRpm = maxRpm;
         this.inertia = inertia;
-        this.damping = damping;
+        this.dampingFactors = dampingFactors;
         this.throttleInputKeys = throttleInputKeys;
         this.speedFeedbackInputKey = speedFeedbackInputKey;
         this.powerOutputTarget = powerOutputTarget;

@@ -1,62 +1,102 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
-import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.EngineSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class EngineSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
     public final EngineSubsystemAttr attr;
-    public final float MAX_ROT_SPEED;//最大转速(rad/s)
-    public final float BASE_ROT_SPEED;//怠速转速(rad/s)
-    public final float MIN_IDLE_THROTTLE;//怠速转速下的最小油门
-    public float rotSpeed = 0;//当前转速(rad/s)
+    public final double MAX_ROT_SPEED;//最大转速(rad/s)
+    public final double MAX_TORQUE_SPEED;//最大扭矩转速(rad/s)
+    public final double BASE_ROT_SPEED;//怠速转速(rad/s)
+    public final double MAX_TORQUE;//最大扭矩(N·m)
+    public final double MIN_IDLE_THROTTLE;//怠速转速下的最小油门
+    public double rotSpeed;//当前转速(rad/s)
 
     public EngineSubsystem(ISubsystemHost owner, String name, EngineSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        MAX_ROT_SPEED = attr.maxRpm * 2 * 3.14159265358979323846f / 60;
-        BASE_ROT_SPEED = attr.baseRpm * 2 * 3.14159265358979323846f / 60;
-        MIN_IDLE_THROTTLE = attr.damping * BASE_ROT_SPEED * BASE_ROT_SPEED //阻力矩的功率
-                / (BASE_ROT_SPEED / MAX_ROT_SPEED * attr.maxPower) * 1; //怠速转速下的最大功率
+        // 单位转换（RPM -> rad/s）
+        MAX_ROT_SPEED = attr.maxRpm * Math.PI / 30.0;
+        MAX_TORQUE_SPEED = attr.maxTorqueRpm * Math.PI / 30.0;
+        BASE_ROT_SPEED = attr.baseRpm * Math.PI / 30.0;
+
+        // 计算最大扭矩（基于最大功率点公式 P_max = T_max * ω）
+        MAX_TORQUE = attr.maxPower / MAX_TORQUE_SPEED;
+        rotSpeed = BASE_ROT_SPEED + 5;
+
+        double minThrottle = calculateDampingTorque(BASE_ROT_SPEED) / calculateMaxTorque(BASE_ROT_SPEED);
+        MIN_IDLE_THROTTLE = Math.min(minThrottle, 1f);
     }
 
     @Override
-    public void onPhysicsTick() {
-        super.onPhysicsTick();
-        float throttleInput = Math.clamp(getThrottleInput(), MIN_IDLE_THROTTLE, 1);
-        float enginePower;
+    public void onTick() {
+        // 获取并钳位油门输入（自动维持怠速）
+        double throttleInput = getThrottleInput();
+        if (rotSpeed / BASE_ROT_SPEED < 1.05) throttleInput = Math.clamp(throttleInput, MIN_IDLE_THROTTLE, 1);
+        else throttleInput = Math.clamp(throttleInput, 0, 1);
+
+        double engineTorque = throttleInput * calculateMaxTorque(rotSpeed);//输出扭矩
+        double dampingTorque = calculateDampingTorque(rotSpeed);
+        double netTorque = engineTorque - dampingTorque;
+
         if (signalInputs.containsKey(attr.speedFeedbackInputKey) &&
                 signalInputs.get(attr.speedFeedbackInputKey).getFirst() instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
-            send("power", new EmptySignal());//空挡不输出功率
-            rotSpeed = Math.max(rotSpeed, BASE_ROT_SPEED / 2);
-            float torque = getEnginePower(throttleInput) / rotSpeed - attr.damping * rotSpeed;//总扭矩
-            rotSpeed += torque / attr.inertia * 1 / 60f;
+            rotSpeed += netTorque / attr.inertia * 0.05;
+            rotSpeed = Math.max(rotSpeed, 0.8 * BASE_ROT_SPEED);
+            sendSignalToAllTargets("power", new EmptySignal());//空挡不输出功率
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else if (signalInputs.containsKey(attr.speedFeedbackInputKey) &&
                 signalInputs.get(attr.speedFeedbackInputKey).getFirst() instanceof Float rotSpeedFeedback) {
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
-            rotSpeed = Math.max(rotSpeedFeedback, BASE_ROT_SPEED / 2);
-            enginePower = getEnginePower(throttleInput) - attr.damping * rotSpeed * rotSpeed;
-            send("power", enginePower);//输出功率
+            //TODO:如何和转动惯量属性挂钩？
+            rotSpeed = Math.max(0.95 * rotSpeed + 0.05 * rotSpeedFeedback, 0.8 * BASE_ROT_SPEED);
+            sendSignalToAllTargets("power", (float) netTorque * rotSpeed);//输出功率
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else {
             //没有转速反馈信号时，直接取用引擎转速
-            rotSpeed = Math.max(rotSpeed, BASE_ROT_SPEED / 2);
-            enginePower = getEnginePower(throttleInput);
-            float torque = enginePower / rotSpeed - attr.damping * rotSpeed;//总扭矩
-            enginePower = torque * rotSpeed;//输出功率
-            rotSpeed += torque / attr.inertia * 1 / 60f;//更新转速
-            send("power", enginePower);//输出功率
+            rotSpeed += netTorque / (7 * attr.inertia) * 0.05;
+            rotSpeed = Math.max(rotSpeed, 0.8 * BASE_ROT_SPEED);
+            sendSignalToAllTargets("power", (float) netTorque * rotSpeed);
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         }
-        //TODO:根据转速播放声音
-        MachineMax.LOGGER.info("Engine power: {} W, rot speed: {} rpm",
-                signalOutputs.get("power").getFirst(), rotSpeed * 60 / 2 / 3.14159265358979323846f);
+        //TODO:根据转速和油门播放声音
+    }
+
+    /**
+     * 计算给定转速下的最大扭矩
+     *
+     * @param rotSpeed 转速(rad/s)
+     * @return 当前转速下的最大扭矩(N · m)
+     */
+    private double calculateMaxTorque(double rotSpeed) {
+        if (rotSpeed <= MAX_TORQUE_SPEED) {//线性上升段：怠速 -> 最大扭矩转速
+            double k = MAX_TORQUE / MAX_TORQUE_SPEED;
+            return rotSpeed * k;
+        } else if (rotSpeed <= MAX_ROT_SPEED) {//全功率段
+            return attr.maxPower / rotSpeed;
+        } else { //超速时动力大幅衰减
+            return Math.pow(2.7, -2 * (rotSpeed - MAX_ROT_SPEED) / BASE_ROT_SPEED) * attr.maxPower / rotSpeed;
+        }
+    }
+
+    /**
+     * 计算给定转速下的内部阻力矩
+     *
+     * @param rotSpeed 转速(rad/s)
+     * @return 当前转速下的内部阻力矩(N · m)
+     */
+    private double calculateDampingTorque(double rotSpeed) {
+        double result = 0;
+        for (int i = 0; i < attr.dampingFactors.size(); i++) {
+            result += attr.dampingFactors.get(i) * Math.pow(rotSpeed, i);
+        }
+        return result;
     }
 
     /**
@@ -64,41 +104,26 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
      *
      * @return 油门开度，0~1
      */
-    private float getThrottleInput() {
-        float powerControlInput = -1;
+    private double getThrottleInput() {
+        double powerControlInput = -1;
         for (String inputKey : attr.throttleInputKeys) {
-            Signals signals = signalInputs.getOrDefault(inputKey, new Signals());
+            Signals signals = getSignals(inputKey);
             if (signals.getFirst() instanceof Float) {
                 powerControlInput = (float) signals.getFirst();
                 break;
             } else if (signals.getFirst() instanceof MoveInputSignal) {
-                powerControlInput = ((MoveInputSignal) signals.getFirst()).getMoveInput()[0] / 100f;
+                powerControlInput = ((MoveInputSignal) signals.getFirst()).getMoveInput()[2] / 100f;
                 break;
             }
         }
         return Math.clamp(powerControlInput, 0, 1);
     }
 
-    /**
-     * 计算引擎输出功率(不计内部阻力)
-     *
-     * @param throttle 油门开度，0~1
-     * @return 引擎输出功率(W)
-     */
-    private float getEnginePower(float throttle) {
-        float power = rotSpeed / MAX_ROT_SPEED * throttle * attr.maxPower;
-        if (rotSpeed > BASE_ROT_SPEED)
-            power = (float) (power * Math.pow(2.7, -(rotSpeed - BASE_ROT_SPEED) / BASE_ROT_SPEED));
-        return power;
-    }
-
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(2);
         result.put("power", List.of(attr.powerOutputTarget));
-        for (Map.Entry<String, String> entry : attr.rpmOutputTargets.entrySet()) {
-            result.put(entry.getKey(), List.of(entry.getValue()));
-        }
+        result.putAll(attr.rpmOutputTargets);
         return result;
     }
 

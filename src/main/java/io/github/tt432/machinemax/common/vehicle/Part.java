@@ -26,10 +26,7 @@ import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.ShapeAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.EngineSubsystemAttr;
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.ResourceStorageSubsystemAttr;
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr;
+import io.github.tt432.machinemax.common.vehicle.attr.subsystem.*;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.SpecialConnector;
@@ -186,8 +183,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (this.entity != null) {//更新部件实体显示生命值
             this.entity.setHealth(this.durability);
         }
-        if (signals.get("move_input") != null && signals.get("move_input").getFirst() instanceof MoveInputSignal moveInputSignal)
-            MachineMax.LOGGER.info("from vehicle:" + Arrays.toString(moveInputSignal.getMoveInput()));
     }
 
     public void onPhysicsTick() {
@@ -225,10 +220,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
                     break;
                 case TRANSMISSION:
-
+                    TransmissionSubsystem transmissionSubsystem = new TransmissionSubsystem(this, name, (TransmissionSubsystemAttr) attr);
+                    subsystems.put(name, transmissionSubsystem);
                     break;
                 case MOTOR:
-
+                    MotorSubsystem motorSubsystem = new MotorSubsystem(this, name, (MotorSubsystemAttr) attr);
+                    subsystems.put(name, motorSubsystem);
                     break;
             }
         }
@@ -246,7 +243,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                         PhysicsHelperKt.toBVector3f(locator.getOffset()).subtract(subPart.massCenterTransform.getTranslation()),
                         SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z)).mult(subPart.massCenterTransform.getRotation().inverse())
                 );
-                MachineMax.LOGGER.info("接口{}的偏移：{}", connectorEntry.getKey(), posRot.getTranslation());
                 AbstractConnector connector = null;
                 switch (connectorEntry.getValue().type()) {
                     case "AttachPoint"://连接点接口
@@ -376,14 +372,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             //创建零件对接口
             createConnectors(subPart, subPartEntry.getValue(), locators);
         }
-        //创建部件内子系统，并连接部件内子系统和信号端口的传输关系
+        //创建部件内子系统
         createSubsystems(type.subsystems);//创建子系统，赋予部件实际功能
-        for (AbstractSubsystem subSystem : subsystems.values()) {//连接部件内子系统的传输关系
-            if (subSystem instanceof ISignalSender) ((ISignalSender) subSystem).setTargetFromNames();
-        }
-        for (AbstractConnector connector : allConnectors.values()) {//连接部件内信号端口的传输关系
-            if (connector.port != null) connector.port.setTargetFromNames();
-        }
         //设置零件的父子关系，连接内部关节
         for (Map.Entry<SubPart, String> entry : subPartMap.entrySet()) {
             SubPart subPart = entry.getKey();
@@ -538,5 +528,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Override
     public ConcurrentMap<String, Signals> getSignalInputs() {
         return signals;
+    }
+
+    @Nullable
+    @Override
+    public Level getAnimLevel() {
+        return level;
     }
 }

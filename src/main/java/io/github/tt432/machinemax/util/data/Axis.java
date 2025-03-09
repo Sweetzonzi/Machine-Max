@@ -1,5 +1,7 @@
 package io.github.tt432.machinemax.util.data;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import lombok.Getter;
 
 @Getter
@@ -20,12 +22,35 @@ public enum Axis{
     /**
      * 根据int值获取对应的枚举实例
      */
-    public static Axis fromValue(int value) {
+    public static String fromValue(int value) {
         for (Axis key : Axis.values()) {
             if (key.getValue() == value) {
-                return key;
+                return key.name();
             }
         }
         throw new IllegalArgumentException("No KeyMapping with value: " + value);
     }
+
+    /**
+     * 根据字符串获取对应的枚举实例的int值
+     */
+    public static int getValue(String name) {
+        try {
+            Axis axis = Axis.valueOf(name);
+            return axis.getValue();
+        } catch (NumberFormatException e) {
+            throw new NumberFormatException();
+        }
+    }
+
+    public static final Codec<Integer> CODEC = Codec.STRING.comapFlatMap(
+            s -> { // Return data result containing error on failure
+                try {
+                    return DataResult.success(getValue(s));
+                } catch (NumberFormatException e) {
+                    return DataResult.error(()->"Invalid axis: " + s);
+                }
+            },
+            Axis::fromValue // Regular function
+    );
 }

@@ -4,11 +4,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 public interface ISignalReceiver {
+    String getName();
+
     ConcurrentMap<String, Signals> getSignalInputs();
 
-    default void onSignalUpdated(String signalKey, Object signalValue){}
+    default void onSignalUpdated(String signalKey) {
+    }
 
-    default Signals getSignals(String signalKey){
-        return getSignalInputs().getOrDefault(signalKey, new Signals());
+    default Signals getSignals(String signalKey) {
+        return getSignalInputs().computeIfAbsent(signalKey, k -> new Signals());
     }
 }

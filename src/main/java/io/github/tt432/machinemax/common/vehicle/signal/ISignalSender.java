@@ -2,66 +2,76 @@ package io.github.tt432.machinemax.common.vehicle.signal;
 
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.Part;
-import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 public interface ISignalSender {
-    ConcurrentMap<String, Signals> getSignalOutputs();
-
     Map<String, List<String>> getTargetNames();
 
-    Map<String, List<ISignalReceiver>> getTargets();
+    Map<String, Map<String, ISignalReceiver>> getTargets();
 
     Part getPart();
 
     /**
      * 将发送的信号输出类型全部重置为空信号
      */
-    default void resetSignalOutputs(){
-        for (String signalKey :getTargetNames().keySet()){
-            getSignalOutputs().put(signalKey, new Signals());
+    default void resetSignalOutputs() {
+        if (this instanceof Port) return;//信号端口只应转发信号，不应对其输出信号进行操作
+        for (Map.Entry<String, Map<String, ISignalReceiver>> entry : getTargets().entrySet()) {
+            entry.getValue().forEach((receiverName, signalReceiver) -> {
+                var emptySignal = new EmptySignal();
+                signalReceiver.getSignalInputs().computeIfAbsent(entry.getKey(), k -> new Signals()).put(this, emptySignal);
+                signalReceiver.onSignalUpdated(entry.getKey());
+            });
         }
     }
 
-    default void send(String signalKey, Object signalValue) {
-        //TODO:发送给载具时的处理
-        getSignalOutputs().getOrDefault(signalKey, new Signals()).put(this, signalValue);
-        getTargets().get(signalKey).forEach(signalReceiver -> signalReceiver.onSignalUpdated(signalKey, signalValue));
+    /**
+     * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
+     * @param signalKey 信号名称
+     * @param signalValue 信号值
+     */
+    default void sendSignalToAllTargets(String signalKey, Object signalValue) {
+        if (getTargets().containsKey(signalKey))
+            getTargets().get(signalKey).forEach((receiverName, signalReceiver) -> {
+                signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
+                signalReceiver.onSignalUpdated(signalKey);
+            });
+    }
+
+    /**
+     * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
+     * @param targetName 接收者名称
+     * @param signalKey 信号名称
+     * @param signalValue 信号值
+     */
+    default void sendSignalToTarget(String targetName, String signalKey, Object signalValue) {
+        if (getTargets().containsKey(signalKey)) {
+            ISignalReceiver signalReceiver =  getTargets().get(signalKey).get(targetName);
+            if (signalReceiver != null) {
+                signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
+                signalReceiver.onSignalUpdated(signalKey);
+            }
+        }
     }
 
     /**
      * 设置信号传输目标
      */
-    default void setTargetFromNames(){
+    default void setTargetFromNames() {
         if (getPart() != null) {
             Map<String, AbstractSubsystem> subSystems = getPart().subsystems;
             Map<String, Port> ports = new HashMap<>();
             getPart().allConnectors.forEach((name, connector) -> ports.put(name, connector.port));
-            List<ISignalReceiver> signalReceivers;
+            Map<String, ISignalReceiver> signalReceivers = new HashMap<>(2);
             for (Map.Entry<String, List<String>> entry : getTargetNames().entrySet()) {
-                signalReceivers = getReceiversFromNames(entry.getValue(), getPart(), subSystems, ports);
+                if (entry.getKey().isEmpty()) continue;
+                getReceiversFromNames(entry.getValue(), getPart(), subSystems, ports).forEach(receiver -> signalReceivers.put(receiver.getName(), receiver));
                 getTargets().put(entry.getKey(), signalReceivers);
-            }
-            //设置连接关系
-            setTargetConnections(this);
-        }
-    }
-
-    /**
-     * 设置信号传输关系
-     */
-    default void setTargetConnections(ISignalSender sender) {
-        for (Map.Entry<String, List<ISignalReceiver>> entry : getTargets().entrySet()) {
-            String signalKey = entry.getKey();
-            List<ISignalReceiver> signalReceivers = entry.getValue();
-            for (ISignalReceiver signalReceiver : signalReceivers) {
-                signalReceiver.getSignalInputs().put(signalKey, sender.getSignalOutputs().get(signalKey));
             }
         }
     }
@@ -74,7 +84,8 @@ public interface ISignalSender {
         List<ISignalReceiver> targets = new ArrayList<>();
         for (String targetName : targetNames) {
             if (targetName.equals("vehicle")) {
-                continue;//发往载具本身的信号于发送时处理
+                if (ownerPart.vehicle != null)
+                    targets.add(ownerPart.vehicle.subSystemController);
             } else if (targetName.equals("part")) {
                 targets.add(ownerPart);
             } else if (subSystems.containsKey(targetName)) {

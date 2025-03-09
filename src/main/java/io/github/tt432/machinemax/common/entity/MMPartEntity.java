@@ -17,7 +17,6 @@ import cn.solarmoon.spark_core.sync.IntSyncData;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.bounding.BoundingBox;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMEntities;
@@ -25,7 +24,6 @@ import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
-import jme3utilities.math.MyQuaternion;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
@@ -64,7 +62,6 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
         this.setNoGravity(true);
         this.part = part;
         this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
-        MachineMax.LOGGER.info("创建部件实体: " + this);
     }
 
     @Override
@@ -83,7 +80,7 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
             Quaternionf q = SparkMathKt.toQuaternionf(part.rootSubPart.body.getPhysicsRotation(null));
             org.joml.Vector3f eulerAngles = new org.joml.Vector3f();
             q.getEulerAnglesZYX(eulerAngles);
-            this.setRot(eulerAngles.y+180, eulerAngles.x);
+            this.setRot(eulerAngles.y, eulerAngles.x);
             updateBoundingBox();//更新实体包围盒
         }
     }
@@ -108,13 +105,13 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
         }
     }
 
-    @Override
-    protected Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
-        return new Vec3(0,10,0);
-    }
+//    @Override
+//    protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
+//        return new Vec3(0,5,0);
+//    }
 
     @Override
-    public Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {
+    public @NotNull Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {
         return super.getDismountLocationForPassenger(passenger);
     }
 
@@ -244,12 +241,6 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
         } else this.remove(RemovalReason.DISCARDED);
     }
 
-    @Nullable
-    @Override
-    public Level getLevel() {
-        return level();
-    }
-
     @NotNull
     @Override
     public ITempVariableStorage getTempStorage() {
@@ -287,5 +278,11 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     @Override
     public ConcurrentHashMap<Integer, Skill> getPredictedSkills() {
         return getAllSkills();
+    }
+
+    @Nullable
+    @Override
+    public Level getAnimLevel() {
+        return this.level();
     }
 }

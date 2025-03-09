@@ -99,13 +99,13 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
 
     public void setMoveInputSignal(byte[] inputs, byte[] conflicts) {
         if (attr.moveSignalTargets != null) {
-            send(attr.moveSignalTargets.getFirst(), new MoveInputSignal(inputs, conflicts));
+            sendSignalToAllTargets(attr.moveSignalTargets.getFirst(), new MoveInputSignal(inputs, conflicts));
         }
     }
 
     public void setRegularInputSignal() {
         if (attr.regularSignalTargets != null) {
-            send(attr.regularSignalTargets.getFirst(), new EmptySignal());
+            sendSignalToAllTargets(attr.regularSignalTargets.getFirst(), new EmptySignal());
         }
     }
 

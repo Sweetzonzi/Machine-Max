@@ -1,7 +1,7 @@
 package io.github.tt432.machinemax.common.vehicle;
 
-import cn.solarmoon.spark_core.physics.collision.BodyPhysicsTicker;
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
+import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SubPart implements PhysicsHost, CollisionCallback, BodyPhysicsTicker {
+public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollisionObjectTicker {
     public String name;
     public final Part part;
     public SubPart parent;
@@ -43,6 +43,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, BodyPhysicsTicke
                     body.setSleepingThresholds(0.05f, 0.05f);
                     body.setDamping(0.01f, 0.01f);
                     body.activate();
+                    body.setEnableSleep(false);
+                    body.setFriction(1f);
+                    body.setRollingFriction(0.2f);
                     return null;
                 }));
     }

@@ -16,6 +16,7 @@ import java.util.concurrent.ConcurrentMap;
 
 @Getter
 public class SubsystemController implements ISignalReceiver {
+    public final String name = "vehicle";
     public final VehicleCore CORE;
     public final ConcurrentMap<String, Signals> signals = new ConcurrentHashMap<>();//可查可改
     public final ConcurrentMap<String, Object> resources = new ConcurrentHashMap<>();//可查可改
@@ -27,8 +28,6 @@ public class SubsystemController implements ISignalReceiver {
 
     public void tick() {
         allSubsystems.forEach(AbstractSubsystem::onTick);
-        if (signals.get("move_input") != null && signals.get("move_input").getFirst() instanceof MoveInputSignal moveInputSignal)
-            MachineMax.LOGGER.info("from vehicle:" + Arrays.toString(moveInputSignal.getMoveInput()));
     }
     public void physicsTick() {
         allSubsystems.forEach(AbstractSubsystem::onPhysicsTick);

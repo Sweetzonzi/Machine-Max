@@ -1,6 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle;
 
-import cn.solarmoon.spark_core.event.PhysicsTickEvent;
+import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
 import com.jme3.bullet.objects.PhysicsBody;
@@ -93,7 +93,7 @@ public class VehicleManager {
     }
 
     @SubscribeEvent
-    public static void onPhysicsTick(PhysicsTickEvent.Level.Pre event) {
+    public static void onPhysicsTick(PhysicsLevelTickEvent.Pre event) {
         levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::physicsTick);
     }
 

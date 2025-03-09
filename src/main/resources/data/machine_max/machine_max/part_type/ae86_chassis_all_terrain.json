@@ -10,9 +10,134 @@
     "machine_max:textures/part/ae86_4.png"
   ],
   "basic_durability": 100.0,//部件基础生命值
+  "subsystems": {
+    "engine": {
+      "type": "machine_max:engine", //子系统类型
+      "max_power": 125000,//最大功率(W)
+      "base_rpm": 500,//基础转速(转/分钟)
+      "max_torque_rpm": 5000,//最大扭矩转速(转/分钟)
+      "max_rpm": 7000,//最大转速(转/分钟)，超过此速度输出功率将严重衰减
+      "throttle_inputs": ["move_output"],//可供转速输入的信号名称列表，优先级依次递减
+      "speed_feedback_input": "speed_feedback",//转速反馈输入的信号名称
+      "power_output_target": "left_front_wheel",//功率输出目标，可填写任意本部件内其他子系统名称、部件对接口名称，或“part”，或“vehicle”
+      "rpm_output_targets": {//转速信号输出目标及信号名称，同上，但可以有多个
+        "rot_speed": ["vehicle", "left_front_wheel", "right_front_wheel", "left_back_wheel", "right_back_wheel"]
+      }
+    },
+    "transmission": {
+      "type": "machine_max:transmission",
+      "speed_input": "rot_speed",
+      "speed_feedback_inputs": ["speed_feedback"],
+      "speed_feedback_outputs": {
+        "speed_feedback": ["engine"]
+      },
+      "power_outputs": {
+        "left_front_wheel": {
+          "speed_signal_output": "rot_speed",
+          "power_weight": 1.0
+        },
+        "right_front_wheel": {
+          "speed_signal_output": "rot_speed",
+          "power_weight": 1.0
+        },
+        "left_back_wheel": {
+          "speed_signal_output": "rot_speed",
+          "power_weight": 1.0
+        },
+        "right_back_wheel": {
+          "speed_signal_output": "rot_speed",
+          "power_weight": 1.0
+        }
+      }
+    },
+    "left_front_wheel": {
+      "type": "machine_max:motor",
+      "connector": "left_front_wheel",
+      "rotation_order": "XYZ",
+      "axes": {
+        "XR": {
+          "needs_power": true,
+          "max_force": 1000,
+          "max_brake_force": 1500,
+          "max_speed": 314,
+          "target_speed_inputs": ["move_output"],
+          "speed_outputs": {
+            "speed_feedback": ["transmission"]
+          }
+        },
+        "YR": {
+          "needs_power": false,
+          "max_force": 5000,
+          "max_brake_force": 5000,
+          "max_speed": 3.14,
+          "target_speed_inputs": ["move_output"],
+          "target_position_inputs": ["move_output"]
+        }
+      }
+    },
+    "right_front_wheel": {
+      "type": "machine_max:motor",
+      "connector": "right_front_wheel",
+      "rotation_order": "XYZ",
+      "axes": {
+        "XR": {
+          "needs_power": true,
+          "max_force": 1000,
+          "max_brake_force": 1500,
+          "max_speed": 314,
+          "target_speed_inputs": ["move_output"],
+          "speed_outputs": {
+            "speed_feedback": ["transmission"]
+          }
+        },
+        "YR": {
+          "needs_power": false,
+          "max_force": 5000,
+          "max_brake_force": 5000,
+          "max_speed": 3.14,
+          "target_speed_inputs": ["move_output"],
+          "target_position_inputs": ["move_output"]
+        }
+      }
+    },
+    "left_back_wheel": {
+      "type": "machine_max:motor",
+      "connector": "left_back_wheel",
+      "rotation_order": "XYZ",
+      "axes": {
+        "XR": {
+          "needs_power": true,
+          "max_force": 1000,
+          "max_brake_force": 1500,
+          "max_speed": 314,
+          "target_speed_inputs": ["move_output"],
+          "speed_outputs": {
+            "speed_feedback": ["transmission"]
+          }
+        }
+      }
+    },
+    "right_back_wheel": {
+      "type": "machine_max:motor",
+      "connector": "right_back_wheel",
+      "rotation_order": "XYZ",
+      "axes": {
+        "XR": {
+          "needs_power": true,
+          "max_force": 1000,
+          "max_brake_force": 1500,
+          "max_speed": 314,
+          "target_speed_inputs": ["move_output"],
+          "speed_outputs": {
+            "speed_feedback": ["transmission"]
+          }
+        }
+      }
+    }
+  },
   "sub_parts": {//零件(子部件)列表
     "ae86_chassis_all_terrain": {//零件(子部件)名称
-      "mass": 2500.0,//零件质量(kg)
+      "mass": 1000.0,//零件质量(kg)
       "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
       "shapes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
         "mmCollision_Box_Chassis": {//值:碰撞形状属性
@@ -34,12 +159,15 @@
               "damping": 1000 //阻尼系数(N/(m/s))
             },
             "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
-              "lower_limit": 1.0,//关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
-              "upper_limit": -1.0 //当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
+              "lower_limit": 1.0, //关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
+              "upper_limit": -1.0, //当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
+              "damping": 100
             },
             "yr": {
               "lower_limit": -45.0,
-              "upper_limit": 45.0
+              "upper_limit": 45.0,
+              "stiffness": 1000,
+              "damping": 200
             }
           },
           "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
@@ -57,10 +185,10 @@
             },
             "xr": {
               "lower_limit": 1.0,
-              "upper_limit": -1.0
+              "upper_limit": -1.0,
+              "damping": 100
             }
-          },
-          "breakable": false
+          }
         },
         "right_front_wheel": {
           "locator": "RightFrontWheel",
@@ -75,11 +203,14 @@
             },
             "xr": {
               "lower_limit": 1.0,
-              "upper_limit": -1.0
+              "upper_limit": -1.0,
+              "damping": 100
             },
             "yr": {
               "lower_limit": -45.0,
-              "upper_limit": 45.0
+              "upper_limit": 45.0,
+              "stiffness": 1000,
+              "damping": 200
             }
           },
           "breakable": false
@@ -97,34 +228,29 @@
             },
             "xr": {
               "lower_limit": 1.0,
-              "upper_limit": -1.0
+              "upper_limit": -1.0,
+              "damping": 100
             }
-          },
-          "breakable": false
+          }
         },
         "hull": {
           "locator": "Hull",
-          "type": "Special",
-          "variant": [],
-          "breakable": false
+          "type": "Special"
         },
         "driver_seat": {
           "locator": "DriverSeat",
           "type": "Special",
-          "variant": [],
-          "breakable": false
+          "signal_targets": {
+            "move_output": ["engine", "left_front_wheel", "right_front_wheel", "left_back_wheel", "right_back_wheel"]
+          }
         },
         "copilot_seat": {
           "locator": "CopilotSeat",
-          "type": "Special",
-          "variant": [],
-          "breakable": false
+          "type": "Special"
         },
         "back_seat": {
           "locator": "BackSeat",
-          "type": "Special",
-          "variant": [],
-          "breakable": false
+          "type": "Special"
         }
       },
       "air_drag": {

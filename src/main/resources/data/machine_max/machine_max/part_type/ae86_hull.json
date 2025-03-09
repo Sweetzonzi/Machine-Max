@@ -12,7 +12,7 @@
   "basic_durability": 150.0,//部件基础生命值
   "sub_parts": {//零件(子部件)列表
     "ae86_hull": {//零件(子部件)名称
-      "mass": 1200.0,//零件质量(kg)
+      "mass": 500.0,//零件质量(kg)
       "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
       "shapes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
         "CollisionShape": {//值:碰撞形状属性
