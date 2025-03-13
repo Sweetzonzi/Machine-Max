@@ -24,6 +24,9 @@ import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
+import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
+import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
+import io.github.tt432.machinemax.util.MMMath;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
@@ -67,6 +70,7 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     @Override
     public void tick() {
         super.tick();
+        if(firstTick) removeAllBodies();
         if (this.part == null) {//如果实体没有所属的部件，则移除实体
             if (tickCount % 20 == 0) updatePart();
             else if (tickCount > 100) {//等待100tick用于同步部件信息
@@ -81,6 +85,7 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
             org.joml.Vector3f eulerAngles = new org.joml.Vector3f();
             q.getEulerAnglesZYX(eulerAngles);
             this.setRot(eulerAngles.y, eulerAngles.x);
+            this.setYHeadRot(eulerAngles.y);
             updateBoundingBox();//更新实体包围盒
         }
     }
@@ -99,16 +104,18 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
                 }
             }
             AABB aabb = new AABB(min.get(0), min.get(1), min.get(2), max.get(0), max.get(1), max.get(2));
-            if (!aabb.isInfinite() && !aabb.hasNaN())
+            if (!aabb.isInfinite() && !aabb.hasNaN() && min.get(0)< max.get(0) && min.get(1)< max.get(1) && min.get(2)< max.get(2))
                 this.setBoundingBox(aabb);
             else setBoundingBox(new AABB(0, 0, 0, 0, 0, 0));
         }
     }
 
-//    @Override
-//    protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
-//        return new Vec3(0,5,0);
-//    }
+    @Override
+    protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
+        if (entity instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).getRidingSubsystem() instanceof SeatSubsystem seat)
+            return SparkMathKt.toVec3(seat.seatLocator.subPartTransform.getTranslation());
+        else return new Vec3(0, 0, 0);
+    }
 
     @Override
     public @NotNull Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {

@@ -8,6 +8,7 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
+import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import net.minecraft.world.level.Level;
@@ -44,7 +45,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     body.setDamping(0.01f, 0.01f);
                     body.activate();
                     body.setEnableSleep(false);
-                    body.setFriction(1f);
+                    body.setFriction(2f);
                     body.setRollingFriction(0.2f);
                     return null;
                 }));

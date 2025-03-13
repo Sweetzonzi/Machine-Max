@@ -44,7 +44,7 @@ public class LivingEntityEyesightAttachment {
     }
 
     @SubscribeEvent
-    public static void onTick(EntityTickEvent.Pre event) {
+    public static void onTick(EntityTickEvent.Post event) {
         if (event.getEntity() instanceof LivingEntity entity && entity.hasData(MMAttachments.getENTITY_EYESIGHT().get())) {
             Level level = entity.level();
             LivingEntityEyesightAttachment eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT().get());

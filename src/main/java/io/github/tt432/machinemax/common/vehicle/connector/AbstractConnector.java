@@ -66,7 +66,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
             body = new PhysicsRigidBody(name, this, new BoxCollisionShape(0.125f), PhysicsBody.massForStatic);
             body.setProtectGravity(true);
             body.setGravity(Vector3f.ZERO);
-            body.setKinematic(true);
+//            body.setKinematic(true);
             body.setContactResponse(false);
             body.setCollisionGroup(PhysicsCollisionObject.COLLISION_GROUP_15);
             body.removeCollideWithGroup(PhysicsCollisionObject.COLLISION_GROUP_01);
@@ -85,20 +85,18 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
 
     @Override
     public void physicsTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull PhysicsLevel physicsLevel) {
+    }
+
+    @Override
+    public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
         if (body != null) {
             if (!this.hasPart()) {//更新判定点位置姿态
                 body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
                 body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
             } else {
                 body.setPhysicsLocation(new Vector3f(0, -1000, 0));
-//                MachineMax.LOGGER.info("{}角度:{}", name, joint.getAngles(null));
             }
         }
-    }
-
-    @Override
-    public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
-
     }
 
     /**
@@ -201,7 +199,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                 if (this instanceof AttachPointConnector) {//若是连接点接口
                     connection = Pair.of(attachedConnector, (AttachPointConnector) this);
                     removed = subPart.part.vehicle.partNet.removeEdge(connection);
-                    if (!removed) {
+                    if (!removed && attachedConnector instanceof AttachPointConnector) {
                         connection = Pair.of(this, (AttachPointConnector) attachedConnector);
                         removed = subPart.part.vehicle.partNet.removeEdge(connection);
                     }

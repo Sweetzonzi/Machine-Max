@@ -40,12 +40,18 @@ public class MMMath {
         return result;
     }
 
-    public static Vector3f RelPointLocalVel(Vector3f relPointPos, PhysicsRigidBody obj){
+    public static Vector3f relPointLocalVel(Vector3f relPointPos, PhysicsRigidBody obj){
         Vector3f result = getLinearVelocityLocal(obj);//获取物体质心在世界坐标系下的线速度
         Vector3f relAngularVel = obj.getAngularVelocityLocal(null);//获取物体相对自身坐标系的三轴角速度
         // 计算旋转带来的额外速度
         Vector3f extraVelocity = new Vector3f();
         relAngularVel.cross(relPointPos, null);
         return result.add(extraVelocity);
+    }
+
+    public static Vector3f relPointWorldVel(Vector3f relPointPos, PhysicsRigidBody obj){
+        Vector3f relPointVel = relPointLocalVel(relPointPos, obj);//获取相对位置的速度
+        Quaternion localToWorld = obj.getPhysicsRotation(null).normalizeLocal(); //获取物体相对世界坐标的四元数
+        return MyQuaternion.rotate(localToWorld, relPointVel, null);
     }
 }

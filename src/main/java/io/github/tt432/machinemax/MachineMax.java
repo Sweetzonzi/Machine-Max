@@ -5,6 +5,8 @@ import com.mojang.logging.LogUtils;
 import io.github.tt432.machinemax.common.registry.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import org.lwjgl.openal.AL10;
+import org.lwjgl.openal.ALC;
 import org.slf4j.Logger;
 
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;

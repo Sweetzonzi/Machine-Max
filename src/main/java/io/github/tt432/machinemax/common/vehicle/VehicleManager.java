@@ -150,14 +150,14 @@ public class VehicleManager {
     @SubscribeEvent//加载服务端世界时加载载具核心数据
     public static void loadVehicleData(LevelEvent.Load event) {
         Level level = (Level) event.getLevel();
-        PhysicsLevel physicsLevel = level.getPhysicsLevel();
-        level.getPhysicsLevel().submitTask((a, b) -> {//临时碰撞平面
-            Plane plane = new Plane(Vector3f.UNIT_Y, -60);
-            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
-            PhysicsRigidBody body = new PhysicsRigidBody("ground", null, shape, PhysicsBody.massForStatic);
-            physicsLevel.getWorld().add(body);
-            return null;
-        });
+//        PhysicsLevel physicsLevel = level.getPhysicsLevel();
+//        level.getPhysicsLevel().submitTask((a, b) -> {//临时碰撞平面
+//            Plane plane = new Plane(Vector3f.UNIT_Y, -60);
+//            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
+//            PhysicsRigidBody body = new PhysicsRigidBody("ground", null, shape, PhysicsBody.massForStatic);
+//            physicsLevel.getWorld().add(body);
+//            return null;
+//        });
         ResourceKey<Level> dimension = level.dimension();
         if (!level.isClientSide()) loadVehicles(level);
         else if (Minecraft.getInstance().getConnection() != null) {
