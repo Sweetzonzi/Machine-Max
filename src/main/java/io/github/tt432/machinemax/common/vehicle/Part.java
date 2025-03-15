@@ -77,6 +77,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
     public final AnimController animController = new AnimController(this);
+    public final float totalMass;
     //Molang变量存储
     public ITempVariableStorage tempStorage = new VariableStorage();
     public IScopedVariableStorage scopedStorage = new VariableStorage();
@@ -108,6 +109,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.level = level;
         this.uuid = UUID.randomUUID();
         this.durability = partType.basicDurability;
+        float totalMass = 0;
+        for (SubPartAttr subPart : partType.subParts.values()){
+            totalMass += subPart.mass();
+        }
+        this.totalMass = totalMass;
         this.rootSubPart = createSubPart(type.subParts);//创建子部件并指定根子部件
     }
 
@@ -166,6 +172,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 type.textures.get(textureIndex % type.textures.size()));//获取部件第一个可用纹理作为默认纹理
         this.uuid = UUID.fromString(data.uuid);
         this.durability = data.durability;
+        float totalMass = 0;
+        for (SubPartAttr subPart : this.type.subParts.values()){
+            totalMass += subPart.mass();
+        }
+        this.totalMass = totalMass;
         this.rootSubPart = createSubPart(type.subParts);//重建子部件并指定根子部件
         for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {//遍历保存的子部件位置、旋转、速度数据
             SubPart subPart = subParts.get(entry.getKey());//获取已重建的子部件

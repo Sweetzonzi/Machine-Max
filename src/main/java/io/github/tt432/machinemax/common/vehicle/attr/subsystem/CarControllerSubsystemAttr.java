@@ -10,6 +10,6 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr{
 
     @Override
     public SubsystemType getType() {
-        return null;
+        return SubsystemType.CAR_CTRL;
     }
 }

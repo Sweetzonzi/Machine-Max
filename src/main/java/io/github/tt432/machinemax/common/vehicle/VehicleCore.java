@@ -59,6 +59,7 @@ public class VehicleCore implements SkillHost {
     public float hp = 20;//耐久度
     private Vec3 position = Vec3.ZERO;//位置
     private Vec3 velocity = Vec3.ZERO;//速度
+    public float totalMass = 0;//总质量
     @Setter
     public boolean inLoadedChunk = false;//是否睡眠
     public boolean loadFromSavedData = false;//是否已加载
@@ -267,6 +268,7 @@ public class VehicleCore implements SkillHost {
         for (AbstractConnector connector : part.allConnectors.values()) {//连接部件内信号端口的传输关系
             if (connector.port != null) connector.port.setTargetFromNames();
         }
+        this.totalMass += part.totalMass;
         partMap.put(part.uuid, part);
         partNet.addNode(part);
         subSystemController.addSubsystems(part.subsystems.values());
@@ -276,6 +278,7 @@ public class VehicleCore implements SkillHost {
         if (partMap.containsValue(part)) {
             String partUuid = part.getUuid().toString();
             subSystemController.removeSubsystems(part.subsystems.values());
+            this.totalMass -= part.totalMass;
             part.destroy();
             partNet.removeNode(part);
             partMap.remove(part.uuid, part);

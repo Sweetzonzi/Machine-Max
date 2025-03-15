@@ -119,14 +119,15 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     @SubscribeEvent
     public static void onPreCollision(NeedsCollisionEvent event) {
         //同载具部件不发生碰撞
-        if (event.getPcoA().getOwner() instanceof SubPart subPartA && event.getPcoB().getOwner() instanceof SubPart subPartB){
-            if (subPartA.part.vehicle instanceof VehicleCore vehicleA && subPartB.part.vehicle instanceof VehicleCore vehicleB){
-                if (vehicleA == vehicleB){
+        if (event.getPcoA().getOwner() instanceof SubPart subPartA && event.getPcoB().getOwner() instanceof SubPart subPartB) {
+            if (subPartA.part.vehicle instanceof VehicleCore vehicleA && subPartB.part.vehicle instanceof VehicleCore vehicleB) {
+                if (vehicleA == vehicleB) {
                     event.setShouldCollide(false);
                     return;
                 }
             }
         }
+        //轮胎零件的爬坡辅助功能
         PhysicsRigidBody terrain;
         PhysicsRigidBody wheel;
         if (event.getPcoA() instanceof PhysicsRigidBody pcoA && event.getPcoB() instanceof PhysicsRigidBody pcoB) {
@@ -182,8 +183,14 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 }
             }
             if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
+                //不知为何，施加力量的效果无效
+//                float impulse = -0.02f * getPhysicsLevel().getWorld().getGravity(null).y * height * part.vehicle.totalMass;
+//                body.applyCentralImpulse(new Vector3f(0, impulse, 0));
                 var vel = this.body.getLinearVelocity(null);
-                body.applyCentralImpulse(new Vector3f(0, 2*body.getMass(), 0));
+                var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
+                var ang = Math.atan2(height, 1);
+                float extraVel = (float) Math.max(Math.sin(ang)*horizonVel, 1.5);
+                body.setLinearVelocity(new Vector3f(vel.x, vel.y + extraVel, vel.z));
             }
         }
     }

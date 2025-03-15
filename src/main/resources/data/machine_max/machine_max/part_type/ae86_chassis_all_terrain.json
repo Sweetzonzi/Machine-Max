@@ -155,8 +155,8 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 25000,//刚度系数(N/m)
-              "damping": 1000 //阻尼系数(N/(m/s))
+              "stiffness": 35000,//刚度系数(N/m)
+              "damping": 2000 //阻尼系数(N/(m/s))
             },
             "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
               "lower_limit": 1.0, //关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
@@ -180,8 +180,8 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 25000,
-              "damping": 1000
+              "stiffness": 35000,
+              "damping": 2000
             },
             "xr": {
               "lower_limit": 1.0,
@@ -198,8 +198,8 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 25000,
-              "damping": 1000
+              "stiffness": 35000,
+              "damping": 2000
             },
             "xr": {
               "lower_limit": 1.0,
@@ -223,8 +223,8 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 25000,
-              "damping": 1000
+              "stiffness": 35000,
+              "damping": 2000
             },
             "xr": {
               "lower_limit": 1.0,

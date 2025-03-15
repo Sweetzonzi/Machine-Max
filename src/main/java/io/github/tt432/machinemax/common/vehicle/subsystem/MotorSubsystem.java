@@ -131,7 +131,8 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
                             float torque = powerAllocation[axis] / Math.max(relativeAngularVel.get(axis - 3), 0.25f);
                             rotationMotor.set(MotorParam.MaxMotorForce, Math.clamp(torque, -MAX_FORCE[axis], MAX_FORCE[axis]));
                         } else {//减速过程
-                            rotationMotor.set(MotorParam.MaxMotorForce, MAX_BRAKE_FORCE[axis] - Math.clamp(powerAllocation[axis], -MAX_FORCE[axis], 0));
+//                            rotationMotor.set(MotorParam.MaxMotorForce, MAX_BRAKE_FORCE[axis] - Math.clamp(powerAllocation[axis], -MAX_FORCE[axis], 0));
+                            rotationMotor.set(MotorParam.MaxMotorForce, MAX_BRAKE_FORCE[axis]);
                         }
                     }
                 }
