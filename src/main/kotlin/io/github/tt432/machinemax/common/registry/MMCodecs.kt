@@ -2,7 +2,6 @@ package io.github.tt432.machinemax.common.registry
 
 import io.github.tt432.machinemax.MachineMax
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.EngineSubsystemAttr
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.GearboxManualCtrlSubsystemAttr
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.GearboxSubsystemAttr
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.MotorSubsystemAttr
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.ResourceStorageSubsystemAttr

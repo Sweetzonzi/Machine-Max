@@ -51,9 +51,8 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
                 passenger = null;
                 return;
             }
-            Vector3f pos = MMMath.relPointWorldPos(seatLocator.subPartTransform.getTranslation(), part.rootSubPart.body);
-            passenger.setPos(SparkMathKt.toVec3(pos));
             passenger.resetFallDistance();//防止摔死
+            if (part.vehicle != null) part.vehicle.activate();
         } else {
             resetSignalOutputs();
         }
@@ -62,10 +61,9 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
     public boolean setPassenger(LivingEntity passenger) {
         if (!occupied && owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).getRidingSubsystem() == null) {
             occupied = true;
-            passenger.stopRiding();
             this.passenger = passenger;
             ((IEntityMixin) passenger).setRidingSubsystem(this);
-            passenger.startRiding(owner.getPart().entity);
+            passenger.startRiding(owner.getPart().entity, true);
             //TODO:换成在hud角落常驻显示好了
             if (passenger.level() instanceof ClientLevel && passenger instanceof Player player)
                 player.displayClientMessage(
@@ -90,9 +88,9 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(1);
-        if (attr.moveSignalTargets !=null)
+        if (attr.moveSignalTargets != null)
             result.put(attr.moveSignalTargets.getFirst(), attr.moveSignalTargets.getSecond());
-        if (attr.regularSignalTargets !=null)
+        if (attr.regularSignalTargets != null)
             result.put(attr.regularSignalTargets.getFirst(), attr.regularSignalTargets.getSecond());
         return result;
     }

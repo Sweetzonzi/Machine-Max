@@ -9,9 +9,9 @@ import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
@@ -52,15 +52,17 @@ public class VehicleCore implements SkillHost {
     public final UUID uuid;//载具UUID
     @Setter
     private ChunkPos oldChunkPos = new ChunkPos(0, 0);
-    public volatile int tickCount = 0;
+    public int tickCount = 0;
     public boolean inLevel = false;
     //属性
     @Setter
     public float hp = 20;//耐久度
-    @Setter
-    public Vec3 position = Vec3.ZERO;//位置
+    private Vec3 position = Vec3.ZERO;//位置
+    private Vec3 velocity = Vec3.ZERO;//速度
     @Setter
     public boolean inLoadedChunk = false;//是否睡眠
+    public boolean loadFromSavedData = false;//是否已加载
+    public boolean loaded = false;//是否已加载完毕
     public boolean isRemoved = false;//是否已被移除
     //控制
     public SubsystemController subSystemController = new SubsystemController(this);
@@ -128,23 +130,36 @@ public class VehicleCore implements SkillHost {
      */
     public void tick() {
         if (inLoadedChunk && !isRemoved) {//TODO:如果在已加载区块内，或速度大于某个阈值
+            if (!loaded) {
+                if (loadFromSavedData) {
+                    if (tickCount > 100) {//等待五秒防止因地形未加载而跌入虚空
+                        loaded = true;
+                        setKinematic(false);
+                    }
+                } else {
+                    loaded = true;
+                }
+            }
             //保持激活与控制量更新
             Vec3 newPos = new Vec3(0, 0, 0);
+            Vec3 newVel = new Vec3(0, 0, 0);
             for (Part part : partMap.values()) {
                 Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null));
+                Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.body.getLinearVelocity(null));
                 part.onTick();
                 newPos = newPos.add(partPos);//计算载具形心位置
+                newVel = newVel.add(partVel);//计算载具形心速度
             }
             this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
+            this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
             if (!level.isClientSide && tickCount % 2 == 0) syncSubParts(null);//同步零件位置姿态速度
-        } else {
-            //休眠
-            for (Part part : partMap.values()) {
-
-            }
+            subSystemController.tick();
+        } else if (this.velocity.length() < 30) {
+//            deactivate();//休眠
         }
-        subSystemController.tick();
-        if (partMap.values().isEmpty() || this.position.y < -1024) VehicleManager.removeVehicle(this);//移除掉出世界的载具
+
+        if (partMap.values().isEmpty() || this.position.y < -1024)
+            VehicleManager.removeVehicle(this);//移除掉出世界的载具
         tickCount++;
     }
 
@@ -207,7 +222,34 @@ public class VehicleCore implements SkillHost {
      * 激活载具所有零件的运动体
      */
     public void activate() {
-        for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
+        level.getPhysicsLevel().submitTask((a, b) -> {
+            for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
+            return null;
+        });
+    }
+
+    /**
+     * 令载具所有零件的运动体休眠
+     */
+    public void deactivate() {
+        level.getPhysicsLevel().submitTask((a, b) -> {
+            for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.setDeactivationTime(300f));
+            return null;
+        });
+    }
+
+    public void setGravity(Vector3f gravity) {
+        level.getPhysicsLevel().submitTask((a, b) -> {
+            for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.setGravity(gravity));
+            return null;
+        });
+    }
+
+    public void setKinematic(boolean kinematic) {
+        level.getPhysicsLevel().submitTask((a, b) -> {
+            for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.setKinematic(kinematic));
+            return null;
+        });
     }
 
     /**

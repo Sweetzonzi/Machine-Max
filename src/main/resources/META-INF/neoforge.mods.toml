@@ -46,7 +46,7 @@ credits="${mod_credits}" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description='''${mod_description}'''
 
-# The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
+# The [[mixins]] block allows you to declare your mixin config to FML so that it gets loadFromSavedData.
 [[mixins]]
 config="${mod_id}.mixins.json"
 
@@ -55,7 +55,7 @@ config="${mod_id}.mixins.json"
 [[accessTransformers]]
 file="META-INF/accesstransformer.cfg"
 
-# The coremods config file path is not configurable and is always loaded from META-INF/coremods.json
+# The coremods config file path is not configurable and is always loadFromSavedData from META-INF/coremods.json
 
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
 [[dependencies.${mod_id}]] #optional
@@ -70,8 +70,8 @@ file="META-INF/accesstransformer.cfg"
     # The version range of the dependency
     versionRange="${neo_version_range}" #mandatory
     # An ordering relationship for the dependency.
-    # BEFORE - This mod is loaded BEFORE the dependency
-    # AFTER - This mod is loaded AFTER the dependency
+    # BEFORE - This mod is loadFromSavedData BEFORE the dependency
+    # AFTER - This mod is loadFromSavedData AFTER the dependency
     ordering="NONE"
     # Side this dependency is applied on - BOTH, CLIENT, or SERVER
     side="BOTH"

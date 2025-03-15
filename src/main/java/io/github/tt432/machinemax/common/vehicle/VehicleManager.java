@@ -136,6 +136,8 @@ public class VehicleManager {
         Set<VehicleData> savedVehicles = level.getData(MMAttachments.getLEVEL_VEHICLES());
         for (VehicleData savedVehicleData : savedVehicles) {
             VehicleCore vehicle = new VehicleCore(level, savedVehicleData);
+            vehicle.loadFromSavedData = true;
+            vehicle.setKinematic(true);
             addVehicle(vehicle);
         }
         MachineMax.LOGGER.info("已从维度{}加载{}个载具", level.dimension().location(), savedVehicles.size());

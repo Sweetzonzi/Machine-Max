@@ -9,6 +9,8 @@ public record SubPartAttr(
         String parent,
         float mass,
         String massCenterLocator,
+        float radius,
+        float stepHeight,
         Map<String, ShapeAttr> collisionShapeAttr,
         Map<String, ConnectorAttr> connectors,
         DragAttr airDrag
@@ -18,6 +20,8 @@ public record SubPartAttr(
             Codec.STRING.optionalFieldOf("parent", "").forGetter(SubPartAttr::parent),
             Codec.FLOAT.fieldOf("mass").forGetter(SubPartAttr::mass),
             Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::massCenterLocator),
+            Codec.FLOAT.optionalFieldOf("radius", -1.0f).forGetter(SubPartAttr::radius),
+            Codec.FLOAT.optionalFieldOf("step_height", 0.0f).forGetter(SubPartAttr::stepHeight),
             ShapeAttr.MAP_CODEC.fieldOf("shapes").forGetter(SubPartAttr::collisionShapeAttr),
             ConnectorAttr.MAP_CODEC.fieldOf("connectors").forGetter(SubPartAttr::connectors),
             DragAttr.CODEC.fieldOf("air_drag").forGetter(SubPartAttr::airDrag)

@@ -43,6 +43,8 @@ import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -61,9 +63,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Setter
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
-    private Vec3 oldPos = Vec3.ZERO;//上一tick的位置
-    private Vec3 pos = Vec3.ZERO;//当前tick位置
-    //基本属性
+    private Vec3 oldPos;//上一tick的位置
+    private Vec3 pos;//当前tick位置//基本属性
     public VehicleCore vehicle;//所属的VehicleCore
     @Nullable
     public MMPartEntity entity;//实体对象
@@ -182,10 +183,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (this.entity == null || this.entity.isRemoved()) {
             if (!level.isClientSide()) refreshPartEntity();
         }
-        if (this.entity != null) {//更新部件实体显示生命值
-            this.entity.setHealth(this.durability);
-        }
-        oldPos = pos;
+        if(pos!=null) oldPos = pos;
         pos = SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
     }
 
@@ -195,7 +193,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     public void refreshPartEntity() {
         this.entity = new MMPartEntity(level, this);
-        this.entity.setHealth(this.durability);
         level.addFreshEntity(this.entity);
     }
 
@@ -220,7 +217,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 case GEARBOX:
 
                     break;
-                case GBX_MANUAL_CTRL:
+                case CAR_CTRL:
 
                     break;
                 case TRANSMISSION:
@@ -479,7 +476,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @NotNull
     @Override
     public Vec3 getWorldPosition(float v) {
-        return oldPos.scale(1 - v).add(pos.scale(v));
+        if (rootSubPart != null) {
+            if (oldPos == null || pos == null)
+                return SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
+            else
+                return oldPos.scale(1 - v).add(pos.scale(v));
+        } else return Vec3.ZERO;
     }
 
     @Override

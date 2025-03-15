@@ -22,8 +22,8 @@ abstract public class AbstractSubsystemAttr {
         RESOURCE_STORAGE,//资源存储子系统，可指定储存类型、容量等
         ENGINE,//发动机子系统，可指定最大功率，转速等
         GEARBOX,//变速箱子系统，可指定多级减速比，自动变速
-        GBX_AUTO_CTRL,//自动挡变速箱控制器
-        GBX_MANUAL_CTRL,//手动挡变速箱控制器
+        CAR_CTRL,//车辆控制子系统，用于更好地处理控制输入信号，辅助控制变速箱、轮胎转向等
+        TURRET_CTRL,//炮塔控制子系统，用于控制炮塔的位置、角度、开火等
         TRANSMISSION,//传动子系统，将转速、转矩分发给各个轴
         MOTOR,//驱动机构子系统
         SEAT,//座椅子系统，可指定乘坐位置、信号输出等

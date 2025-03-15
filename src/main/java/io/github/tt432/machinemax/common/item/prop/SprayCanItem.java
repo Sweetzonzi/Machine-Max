@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -21,21 +22,16 @@ public class SprayCanItem extends Item {
     }
 
     @Override
-    public InteractionResult interactLivingEntity(ItemStack stack, Player player, LivingEntity interactionTarget, InteractionHand usedHand) {
-        if (!player.level().isClientSide) {
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+        if (!level.isClientSide) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
             if (part != null) {//改变瞄准的部件的涂装
                 //TODO:播放声音与粒子效果
                 part.switchTexture(part.textureIndex + 1);
-            } else if (interactionTarget instanceof MMPartEntity partEntity) {
-                if (partEntity.part != null) {
-                    //TODO:播放声音与粒子效果
-                    partEntity.part.switchTexture(partEntity.part.textureIndex + 1);
-                }
-            }
-        }
-        return super.interactLivingEntity(stack, player, interactionTarget, usedHand);
+                return InteractionResultHolder.success(player.getItemInHand(usedHand));
+            } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
+        }else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
     }
 
     @Override

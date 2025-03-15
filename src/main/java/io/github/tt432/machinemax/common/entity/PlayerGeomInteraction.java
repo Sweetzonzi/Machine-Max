@@ -41,15 +41,17 @@ public class PlayerGeomInteraction {
 
     @SubscribeEvent
     private static void interact(PlayerInteractEvent.EntityInteract event) {
-        //TODO:仅服务端触发？
+        //TODO:客户端触发后通知服务端？
         LivingEntityEyesightAttachment ray = event.getEntity().getData(MMAttachments.getENTITY_EYESIGHT());
         Part part = ray.getPart();
         if (part != null && !event.getEntity().isShiftKeyDown()) {
             for (AbstractSubsystem subSystem : part.subsystems.values()) {
                 if (subSystem instanceof SeatSubsystem seatSubSystem) {
                     boolean success = seatSubSystem.setPassenger(event.getEntity());
-                    if (success) break;
-                    event.setCancellationResult(InteractionResult.SUCCESS);
+                    if (success) {
+                        event.setCancellationResult(InteractionResult.SUCCESS);
+                        break;
+                    }
                 }
             }
         }

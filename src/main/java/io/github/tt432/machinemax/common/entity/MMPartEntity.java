@@ -27,7 +27,10 @@ import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
 import io.github.tt432.machinemax.util.MMMath;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -44,7 +47,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn, IMMPartEntityAttribute {
+public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn {
 
     public Part part;//实体所属的部件
     public UUID vehicleUUID;
@@ -56,8 +59,13 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
      * @param entityType 实体类型
      * @param level      实体加入的世界
      */
-    public MMPartEntity(EntityType<? extends LivingEntity> entityType, Level level) {
+    public MMPartEntity(EntityType<? extends Entity> entityType, Level level) {
         super(entityType, level);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+
     }
 
     public MMPartEntity(Level level, Part part) {
@@ -79,7 +87,6 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
             }
         } else {
             //更新实体位置
-            this.deathTime = 0;
             this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
             Quaternionf q = SparkMathKt.toQuaternionf(part.rootSubPart.body.getPhysicsRotation(null));
             org.joml.Vector3f eulerAngles = new org.joml.Vector3f();
@@ -88,6 +95,12 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
             this.setYHeadRot(eulerAngles.y);
             updateBoundingBox();//更新实体包围盒
         }
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        //TODO:将伤害转发给部件进行操作
+        return false;
     }
 
     public void updateBoundingBox() {
@@ -128,28 +141,23 @@ public class MMPartEntity extends LivingEntity implements IEntityAnimatable<MMPa
     }
 
     @Override
+    protected void readAdditionalSaveData(CompoundTag compoundTag) {
+
+    }
+
+    @Override
+    protected void addAdditionalSaveData(CompoundTag compoundTag) {
+
+    }
+
+    @Override
     public boolean canCollideWith(@NotNull Entity entity) {
         return !(entity instanceof Player);
     }
 
     @Override
-    public @NotNull Iterable<ItemStack> getArmorSlots() {
-        return Collections.singleton(ItemStack.EMPTY);
-    }
-
-    @Override
-    public @NotNull ItemStack getItemBySlot(@NotNull EquipmentSlot equipmentSlot) {
-        return ItemStack.EMPTY;
-    }
-
-    @Override
-    public void setItemSlot(@NotNull EquipmentSlot equipmentSlot, @NotNull ItemStack itemStack) {
-
-    }
-
-    @Override
-    public @NotNull HumanoidArm getMainArm() {
-        return HumanoidArm.RIGHT;
+    public boolean isPickable() {
+        return true;
     }
 
     @Nullable

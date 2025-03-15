@@ -85,10 +85,6 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
 
     @Override
     public void physicsTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull PhysicsLevel physicsLevel) {
-    }
-
-    @Override
-    public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
         if (body != null) {
             if (!this.hasPart()) {//更新判定点位置姿态
                 body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
@@ -97,6 +93,10 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                 body.setPhysicsLocation(new Vector3f(0, -1000, 0));
             }
         }
+    }
+
+    @Override
+    public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
     }
 
     /**
@@ -209,13 +209,14 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                 }
                 if (!removed)//检查是否成功移除了连接关系
                     MachineMax.LOGGER.error("零件拆解失败，载具核心中找不到对接口{}与对接口{}的连接关系！", this.getName(), attachedConnector.getName());
-                else
+                else {
                     MachineMax.LOGGER.info("零件拆解成功，接口{}与接口{}已断开连接！", this.getName(), attachedConnector.getName());
-                if (!this.subPart.part.level.isClientSide()) {//若是服务端，则向客户端发包通知拆解接口
-                    PacketDistributor.sendToPlayersInDimension((ServerLevel) subPart.part.level, new ConnectorDetachPayload(
-                            subPart.part.vehicle.uuid,
-                            new ConnectionData(connection)
-                    ));
+                    if (!this.subPart.part.level.isClientSide()) {//若是服务端，则向客户端发包通知拆解接口
+                        PacketDistributor.sendToPlayersInDimension((ServerLevel) subPart.part.level, new ConnectorDetachPayload(
+                                subPart.part.vehicle.uuid,
+                                new ConnectionData(connection)
+                        ));
+                    }
                 }
             }
 
@@ -245,14 +246,17 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         MyMath.combine(this.subPartTransform, targetTransform, targetTransform);
         MyMath.combine(partConnector.subPartTransform.invert(), targetTransform, targetTransform);
         Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
-        part.rootSubPart.body.setPhysicsTransform(targetTransform);
-        for (SubPart subPart : part.subParts.values()) {
-            if (subPart == part.rootSubPart) continue;
-            Transform transform = subPart.body.getTransform(null);
-            MyMath.combine(transform, rootTransform, transform);
-            MyMath.combine(transform, targetTransform, transform);
-            subPart.body.setPhysicsTransform(transform);
-        }
+        getPhysicsLevel().submitTask((a, b) -> {
+            part.rootSubPart.body.setPhysicsTransform(targetTransform);
+            for (SubPart subPart : part.subParts.values()) {
+                if (subPart == part.rootSubPart) continue;
+                Transform transform = subPart.body.getTransform(null);
+                MyMath.combine(transform, rootTransform, transform);
+                MyMath.combine(transform, targetTransform, transform);
+                subPart.body.setPhysicsTransform(transform);
+            }
+            return null;
+        });
     }
 
     /**

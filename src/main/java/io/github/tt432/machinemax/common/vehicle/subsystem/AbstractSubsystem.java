@@ -26,6 +26,8 @@ abstract public class AbstractSubsystem {
     public final ConcurrentMap<String, Float> resourceInputs = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Float> resourceOutputs = new ConcurrentHashMap<>();
 
+    public volatile boolean active = true;
+
     protected AbstractSubsystem(ISubsystemHost owner, String name, AbstractSubsystemAttr attr) {
         this.owner = owner;
         this.subSystemAttr = attr;

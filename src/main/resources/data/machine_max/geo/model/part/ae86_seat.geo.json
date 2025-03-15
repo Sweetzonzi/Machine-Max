@@ -16,7 +16,7 @@
 					"pivot": [0, 0, 0],
 					"locators": {
 						"AttachPoint": [0, 0, 0],
-						"SeatPoint": [0, -15, -3]
+						"SeatPoint": [0, -5, -3]
 					}
 				},
 				{
