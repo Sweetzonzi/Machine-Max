@@ -13,7 +13,7 @@ object MMEntities {
     //部件实体
     @JvmStatic
     val PART_ENTITY = MachineMax.REGISTER.entityType<MMPartEntity>().id("part")
-        .builder(EntityType.Builder.of(::MMPartEntity, MobCategory.MISC).fireImmune().noSummon().noSave().eyeHeight(0.0F))
+        .builder(EntityType.Builder.of(::MMPartEntity, MobCategory.MISC).fireImmune().noSummon().noSave().eyeHeight(0.0F).setShouldReceiveVelocityUpdates(false))
         .build()
 
 //    //载具核心实体

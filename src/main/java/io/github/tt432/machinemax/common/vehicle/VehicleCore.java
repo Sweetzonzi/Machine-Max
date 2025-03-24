@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.sync.SyncerType;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
 import com.jme3.bullet.joints.New6Dof;
+import com.jme3.bullet.objects.PhysicsBody;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
@@ -153,7 +154,7 @@ public class VehicleCore implements SkillHost {
             }
             this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
             this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
-            if (!level.isClientSide && tickCount % 2 == 0) syncSubParts(null);//同步零件位置姿态速度
+            if (!level.isClientSide && tickCount % 2000 == 0) syncSubParts(null);//同步零件位置姿态速度
             subSystemController.tick();
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
@@ -171,11 +172,11 @@ public class VehicleCore implements SkillHost {
         }
     }
 
-    public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Float>>> subPartSyncData) {
+    public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> subPartSyncData) {
         if (!level.isClientSide()) {
-            HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Float>>> subPartSyncDataToSend = new HashMap<>(1);
+            HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> subPartSyncDataToSend = new HashMap<>(1);
             for (Map.Entry<UUID, Part> entry : partMap.entrySet()) {
-                HashMap<String, Pair<PosRotVelVel, Float>> subPartSyncDataMap = new HashMap<>(1);
+                HashMap<String, Pair<PosRotVelVel, Boolean>> subPartSyncDataMap = new HashMap<>(1);
                 Part part = entry.getValue();
                 for (Map.Entry<String, SubPart> subPartEntry : part.subParts.entrySet()) {
                     SubPart subPart = subPartEntry.getValue();
@@ -185,22 +186,22 @@ public class VehicleCore implements SkillHost {
                             SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
                             body.getLinearVelocity(null),
                             body.getAngularVelocity(null));
-                    subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, body.getDeactivationTime()));
+                    subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, !body.isActive()));
                 }
                 subPartSyncDataToSend.put(entry.getKey(), subPartSyncDataMap);
             }
             PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(this.uuid, subPartSyncDataToSend));
         } else if (subPartSyncData != null) {
-            this.level.getPhysicsLevel().submitTask((a, b) -> {
-                for (Map.Entry<UUID, HashMap<String, Pair<PosRotVelVel, Float>>> outerEntry : subPartSyncData.entrySet()) {
+            this.level.getPhysicsLevel().submitImmediateTask(() -> {
+                for (Map.Entry<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> outerEntry : subPartSyncData.entrySet()) {
                     UUID partUUID = outerEntry.getKey();
                     Part part = this.partMap.get(partUUID);
-                    HashMap<String, Pair<PosRotVelVel, Float>> innerMap = outerEntry.getValue();
+                    HashMap<String, Pair<PosRotVelVel, Boolean>> innerMap = outerEntry.getValue();
                     if (part != null) {
-                        for (Map.Entry<String, Pair<PosRotVelVel, Float>> innerEntry : innerMap.entrySet()) {
+                        for (Map.Entry<String, Pair<PosRotVelVel, Boolean>> innerEntry : innerMap.entrySet()) {
                             String subPartName = innerEntry.getKey();
                             PosRotVelVel data = innerEntry.getValue().getFirst();
-                            float sleepTime = innerEntry.getValue().getSecond();
+                            boolean sleep = innerEntry.getValue().getSecond();
                             SubPart subPart = part.subParts.get(subPartName);
                             if (subPart != null) {
                                 PhysicsRigidBody body = subPart.body;
@@ -208,7 +209,7 @@ public class VehicleCore implements SkillHost {
                                 body.setPhysicsRotation(SparkMathKt.toBQuaternion(data.rotation()));
                                 body.setLinearVelocity(data.linearVel());
                                 body.setAngularVelocity(data.angularVel());
-                                body.setDeactivationTime(sleepTime);
+                                if (sleep) body.forceDeactivate();
                             } else
                                 MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this, partUUID, subPartName);
                         }
@@ -223,7 +224,7 @@ public class VehicleCore implements SkillHost {
      * 激活载具所有零件的运动体
      */
     public void activate() {
-        level.getPhysicsLevel().submitTask((a, b) -> {
+        level.getPhysicsLevel().submitImmediateTask(() -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;
         });
@@ -233,22 +234,25 @@ public class VehicleCore implements SkillHost {
      * 令载具所有零件的运动体休眠
      */
     public void deactivate() {
-        level.getPhysicsLevel().submitTask((a, b) -> {
-            for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.setDeactivationTime(300f));
+        level.getPhysicsLevel().submitImmediateTask(() -> {
+            for (Part part : partMap.values())
+                part.subParts.values().forEach(subPart -> subPart.body.forceDeactivate());
             return null;
         });
     }
 
     public void setGravity(Vector3f gravity) {
-        level.getPhysicsLevel().submitTask((a, b) -> {
-            for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.setGravity(gravity));
+        level.getPhysicsLevel().submitImmediateTask(() -> {
+            for (Part part : partMap.values())
+                part.subParts.values().forEach(subPart -> subPart.body.setGravity(gravity));
             return null;
         });
     }
 
     public void setKinematic(boolean kinematic) {
-        level.getPhysicsLevel().submitTask((a, b) -> {
-            for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.setKinematic(kinematic));
+        level.getPhysicsLevel().submitImmediateTask(() -> {
+            for (Part part : partMap.values())
+                part.subParts.values().forEach(subPart -> subPart.body.setKinematic(kinematic));
             return null;
         });
     }
@@ -331,7 +335,6 @@ public class VehicleCore implements SkillHost {
                     attachPoint.subPart.part,
                     Pair.of(specialConnector, attachPoint)
             );
-
             if (newPart != null) {
                 if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
                 newPart.addToLevel();//将新部件加入到世界
@@ -435,7 +438,7 @@ public class VehicleCore implements SkillHost {
             }
         });
         parts.forEach(Part::addToLevel);
-        level.getPhysicsLevel().submitTask((a, b) -> {
+        level.getPhysicsLevel().submitImmediateTask(() -> {
             joints.forEach(joint -> level.getPhysicsLevel().getWorld().addJoint(joint));
             return null;
         });

@@ -235,7 +235,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     protected void detachJoint() {
         if (attachedConnector != null)
             attachedConnector.joint = null;
-        getPhysicsLevel().submitTask((a, b) -> {
+        getPhysicsLevel().submitImmediateTask(() -> {
             getPhysicsLevel().getWorld().removeJoint(joint);
             return null;
         });
@@ -246,7 +246,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         MyMath.combine(this.subPartTransform, targetTransform, targetTransform);
         MyMath.combine(partConnector.subPartTransform.invert(), targetTransform, targetTransform);
         Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
-        getPhysicsLevel().submitTask((a, b) -> {
+        getPhysicsLevel().submitImmediateTask(() -> {
             part.rootSubPart.body.setPhysicsTransform(targetTransform);
             for (SubPart subPart : part.subParts.values()) {
                 if (subPart == part.rootSubPart) continue;
@@ -293,7 +293,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     }
 
     public void addToLevel() {
-        if (hasPart() && joint != null) subPart.getPhysicsLevel().submitTask((a, b) -> {
+        if (hasPart() && joint != null) subPart.getPhysicsLevel().submitImmediateTask(() -> {
             subPart.getPhysicsLevel().getWorld().addJoint(joint);
             return null;
         });

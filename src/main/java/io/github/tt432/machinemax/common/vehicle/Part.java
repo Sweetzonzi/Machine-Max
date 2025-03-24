@@ -56,6 +56,7 @@ import org.joml.Quaternionf;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Getter
 public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver {
@@ -65,6 +66,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
     private Vec3 oldPos;//上一tick的位置
     private Vec3 pos;//当前tick位置//基本属性
+    private long physicsUpdateTime;
+    private Vec3 physOldPos = Vec3.ZERO;//上一tick的物理位置
+    private Vec3 physPos = Vec3.ZERO;//当前tick物理位置
+    private final AtomicReference<Vec3> physPosAtomic = new AtomicReference<>(Vec3.ZERO);
+    private int renderCount = 0;
+    private int physicsCount = 0;
     public VehicleCore vehicle;//所属的VehicleCore
     @Nullable
     public MMPartEntity entity;//实体对象
@@ -110,7 +117,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.uuid = UUID.randomUUID();
         this.durability = partType.basicDurability;
         float totalMass = 0;
-        for (SubPartAttr subPart : partType.subParts.values()){
+        for (SubPartAttr subPart : partType.subParts.values()) {
             totalMass += subPart.mass();
         }
         this.totalMass = totalMass;
@@ -173,7 +180,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.uuid = UUID.fromString(data.uuid);
         this.durability = data.durability;
         float totalMass = 0;
-        for (SubPartAttr subPart : this.type.subParts.values()){
+        for (SubPartAttr subPart : this.type.subParts.values()) {
             totalMass += subPart.mass();
         }
         this.totalMass = totalMass;
@@ -194,12 +201,23 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (this.entity == null || this.entity.isRemoved()) {
             if (!level.isClientSide()) refreshPartEntity();
         }
-        if(pos!=null) oldPos = pos;
-        pos = SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
+        if (pos != null) oldPos = pos;
+        long currentTime = System.nanoTime();
+        long delta = currentTime - physicsUpdateTime;
+        float ppt = Math.clamp(delta / (1e9f / 60f), 0, 1);
+        pos = SparkMathKt.toVec3(rootSubPart.body.getMotionState().getLocation(null));
+        Vec3 poss = SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
+        pos = pos.scale(1 - ppt).add(poss.scale(ppt));
+//        pos = physPosAtomic.get();
+
     }
 
     public void onPhysicsTick() {
-
+        physPosAtomic.set(SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null)));
+        physOldPos = physPos;
+        physPos = SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
+        physicsUpdateTime = System.nanoTime();
+        physicsCount++;
     }
 
     public void refreshPartEntity() {
@@ -453,7 +471,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     public void setTransform(Transform transform) {
-        level.getPhysicsLevel().submitTask((a, b) -> {
+        level.getPhysicsLevel().submitImmediateTask(() -> {
             Transform rootTransform = rootSubPart.body.getTransform(null).invert();
             rootSubPart.body.setPhysicsTransform(transform);
             for (SubPart subPart : subParts.values()) {
@@ -487,11 +505,19 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @NotNull
     @Override
     public Vec3 getWorldPosition(float v) {
+        renderCount++;
         if (rootSubPart != null) {
             if (oldPos == null || pos == null)
                 return SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
-            else
-                return oldPos.scale(1 - v).add(pos.scale(v));
+            else {
+//                return oldPos.scale(1 - v).add(pos.scale(v));
+                long currentTime = System.nanoTime();
+                long delta = currentTime - physicsUpdateTime;
+                double ppt = Math.clamp(delta / (1e9f / 60f), 0, 1);
+                Vec3 result = physPos.scale(1-ppt).add(physOldPos.scale(ppt));
+                if (level.isClientSide && name.equals("ae86_chassis_all_terrain")) System.out.println(result.x);
+                return result;
+            }
         } else return Vec3.ZERO;
     }
 
