@@ -2,6 +2,7 @@ package io.github.tt432.machinemax.client.input;
 
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
+import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
@@ -120,25 +121,38 @@ public class RawInputHandler {
 
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Post event) {
+        var client = Minecraft.getInstance();
         //载具交互
         if (KeyBinding.generalInteractKey.isDown()) {
             if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 0) {//一般互动
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(), 0));
+                if (client.player != null) client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
             }
-            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 10) {//长按1秒，离开载具
+            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 10) {//长按0.5秒，进入交互模式
+
+            }
+            //按键计时器
+            keyPressTicks.put(KeyBinding.generalInteractKey, keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) + 1);
+
+        } else if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.generalInteractKey, 0);//重置计时器
+            //TODO:退出交互模式
+        }
+        if (KeyBinding.generalLeaveVehicleKey.isDown()) {
+            if (keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) == 10) {//长按0.5秒，离开载具
                 PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(), 10));
             }
-            keyPressTicks.put(KeyBinding.generalInteractKey, keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) + 1);
+            //按键计时
+            keyPressTicks.put(KeyBinding.generalLeaveVehicleKey, keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) + 1);
+            //离开载具进度显示
             if (Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
                 player.displayClientMessage(
                         Component.translatable("message.machine_max.leaving_vehicle",
-                                KeyBinding.generalInteractKey.getTranslatedKeyMessage(),
-                                String.format("%.2f", Math.clamp(0.05 * keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0), 0.0, 0.5))
+                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
+                                String.format("%.2f", Math.clamp(0.05 * keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0), 0.0, 0.5))
                         ), true
                 );
-        } else if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) > 0) {//按键松开且按下持续至少1tick
-//            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(),keyPressTicks.get(KeyBinding.generalInteractKey)));
-            keyPressTicks.put(KeyBinding.generalInteractKey, 0);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.generalLeaveVehicleKey, 0);
             if (Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
                 player.displayClientMessage(Component.empty(), true);
         }

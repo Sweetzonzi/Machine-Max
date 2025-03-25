@@ -63,10 +63,10 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         this.internal = !attr.ConnectedTo().isEmpty();
         this.attr = attr;
         if (!internal) {//为与外部部件连接的接口创建碰撞判定，供玩家通过视线选取
-            body = new PhysicsRigidBody(name, this, new BoxCollisionShape(0.125f), PhysicsBody.massForStatic);
+            body = new PhysicsRigidBody(name, this, new BoxCollisionShape(0.25f), PhysicsBody.massForStatic);
             body.setProtectGravity(true);
             body.setGravity(Vector3f.ZERO);
-//            body.setKinematic(true);
+            body.setKinematic(true);
             body.setContactResponse(false);
             body.setCollisionGroup(PhysicsCollisionObject.COLLISION_GROUP_15);
             body.removeCollideWithGroup(PhysicsCollisionObject.COLLISION_GROUP_01);

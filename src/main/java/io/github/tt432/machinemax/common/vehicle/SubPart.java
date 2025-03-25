@@ -10,8 +10,10 @@ import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
+import io.github.tt432.machinemax.util.ShapeHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -35,19 +37,21 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public final Map<Integer, String> materials = new HashMap<>(2);//碰撞体积各部分的材料类型
     public final Map<Integer, Float> thicknesses = new HashMap<>(2);//碰撞体积各部分的厚度
     public final Map<Integer, Float> frictionCoeffs = new HashMap<>(2);//碰撞体积各部分的粗糙度修正系数
-    public final boolean isWheel;
-    public final float wheelRadius;
+    public final boolean GROUND_COLLISION;
     public final float stepHeight;
-    public PhysicsRigidBody terrainsUnder;
 
     public SubPart(String name, Part part, SubPartAttr attr) {
         this.part = part;
         this.name = name;
         this.attr = attr;
         this.body = new PhysicsRigidBody(name, this, collisionShape, attr.mass());
-        this.wheelRadius = attr.radius();
+        if (attr.blockCollision().equals("true")) GROUND_COLLISION = false;
+        else if (attr.blockCollision().equals("ground")) GROUND_COLLISION = true;
+        else {
+            GROUND_COLLISION = false;
+            body.removeCollideWithGroup(PhysicsCollisionObject.COLLISION_GROUP_03);
+        }
         this.stepHeight = attr.stepHeight();
-        this.isWheel = attr.radius() > 0;
     }
 
     public void addToLevel() {
@@ -127,25 +131,25 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 }
             }
         }
-        //轮胎零件的爬坡辅助功能
+        //特殊碰撞模式的处理
         PhysicsRigidBody terrain;
-        PhysicsRigidBody wheel;
+        PhysicsRigidBody partBody;
         if (event.getPcoA() instanceof PhysicsRigidBody pcoA && event.getPcoB() instanceof PhysicsRigidBody pcoB) {
             if (pcoA.getOwner() instanceof SubPart && pcoB.name.equals("terrain")) {
                 terrain = pcoB;
-                wheel = pcoA;
+                partBody = pcoA;
             } else if (pcoB.getOwner() instanceof SubPart && pcoA.name.equals("terrain")) {
                 terrain = pcoA;
-                wheel = pcoB;
+                partBody = pcoB;
             } else return;
         } else return;
-        if (wheel.getOwner() instanceof SubPart subPart && subPart.isWheel) {//轮胎零件遭遇地形方块时
+        if (partBody.getOwner() instanceof SubPart subPart && subPart.GROUND_COLLISION) {//仅与地面方块碰撞的零件遭遇方块时
             float terrainHeight = terrain.boundingBox(null).getMax(null).y;
-            if (terrainHeight < subPart.body.getPhysicsLocation(null).y - 0.95 * subPart.wheelRadius) {
+            if (terrainHeight < ShapeHelper.getShapeMinY(partBody, 0.1f) + 0.1f) {
                 //若地形方块位于车轮之下，则不修改碰撞检测结果
             } else {
-                float y0 = subPart.body.getPhysicsLocation(null).y - subPart.wheelRadius;
-                float height = terrain.boundingBox(null).getMax(null).y - y0;
+                float y0 = ShapeHelper.getShapeMinY(partBody, 0.1f) + 0.1f;
+                float height = terrainHeight - y0;
                 BlockPos highestBlockPos = terrain.blockPos.above();
                 while (height <= subPart.stepHeight && subPart.getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
                     height = subPart.getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).boundingBox(null).getMax(null).y - y0;
@@ -159,16 +163,17 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     }
 
     @Override
-    public void physicsTick(@NotNull PhysicsCollisionObject pco, @NotNull PhysicsLevel physicsLevel) {
+    public void prePhysicsTick(@NotNull PhysicsCollisionObject pco, @NotNull PhysicsLevel physicsLevel) {
         //TODO:阻力处理
-        if (this.isWheel) {//轮胎攀爬辅助处理
-            var start = this.body.getPhysicsLocation(null).subtract(0f, 1 + this.wheelRadius, 0f);
+        if (this.GROUND_COLLISION && stepHeight > 0) {//攀爬辅助处理
+            float y0 = ShapeHelper.getShapeMinY(this.body, 0.1f);
+            Vector3f start = this.body.getPhysicsLocation(null);
+            start.set(1, y0 - 1);
             var end = start.add(0f, 1 + stepHeight, 0f);
             var test = getPhysicsLevel().getWorld().rayTest(start, end);
-            terrainsUnder = null;//清空先前记录的地面碰撞体
-            float y0 = this.body.getPhysicsLocation(null).y - this.wheelRadius;
+            PhysicsRigidBody terrainsUnder = null;//清空先前记录的地面碰撞体
             float height = -1;
-            for (var hit : test) {//寻找轮子下最低的方块
+            for (var hit : test) {//寻找部件下最低的方块
                 if (hit.getCollisionObject() instanceof PhysicsRigidBody terrain && terrain.name.equals("terrain")) {
                     terrainsUnder = terrain;
                     height = Math.max(terrain.boundingBox(null).getMax(null).y - y0, height);
@@ -183,13 +188,10 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 }
             }
             if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
-                //不知为何，施加力量的效果无效
-//                float impulse = -0.02f * getPhysicsLevel().getWorld().getGravity(null).y * height * part.vehicle.totalMass;
-//                body.applyCentralImpulse(new Vector3f(0, impulse, 0));
                 var vel = this.body.getLinearVelocity(null);
                 var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
                 var ang = Math.atan2(height, 1);
-                float extraVel = (float) Math.max(Math.sin(ang)*horizonVel, 1.5);
+                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 1.5);
                 body.setLinearVelocity(new Vector3f(vel.x, vel.y + extraVel, vel.z));
             }
         }

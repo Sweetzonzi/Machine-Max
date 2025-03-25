@@ -1,5 +1,5 @@
 {
-  "message.machine_max.leaving_vehicle": "Hold [SHIFT] {}/0.5s to leave the vehicle.",
+  "message.machine_max.leaving_vehicle": "Hold [%1$s] %2$s/0.5s to leave the vehicle.",
   "resourceType.category.machine_max.assembly": "Machine Max:Assembly",
   "resourceType.category.machine_max.general": "Machine Max:General",
   "resourceType.category.machine_max.ground": "Machine Max:Ground",

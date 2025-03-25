@@ -2,6 +2,7 @@ package io.github.tt432.machinemax.common.item.prop;
 
 import io.github.tt432.machinemax.common.attachment.LivingEntityEyesightAttachment;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
+import io.github.tt432.machinemax.common.item.IPartInteractableItem;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import net.minecraft.client.Minecraft;
@@ -15,8 +16,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
-public class SprayCanItem extends Item {
+public class SprayCanItem extends Item implements IPartInteractableItem {
     public SprayCanItem(Properties properties) {
         super(properties);
     }
@@ -46,5 +48,22 @@ public class SprayCanItem extends Item {
                 Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.spray_can.interact").append(partEntity.part.name), true);
             } else Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
         }
+    }
+
+    @Override
+    public void interactWitchPart(@NotNull Part part, @NotNull Player player) {
+
+    }
+
+    @Override
+    public void watchingPart(@NotNull Part part, @NotNull Player player) {
+        if (player.level().isClientSide)
+            Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.spray_can.interact").append(part.name), true);
+    }
+
+    @Override
+    public void stopWatchingPart(@NotNull Player player) {
+        if (player.level().isClientSide)
+            Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
     }
 }

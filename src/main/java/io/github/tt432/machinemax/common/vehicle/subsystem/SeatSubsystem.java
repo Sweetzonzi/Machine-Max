@@ -64,6 +64,7 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
             this.passenger = passenger;
             ((IEntityMixin) passenger).setRidingSubsystem(this);
             passenger.startRiding(owner.getPart().entity, true);
+            getPart().vehicle.activate();
             //TODO:换成在hud角落常驻显示好了
             if (passenger.level() instanceof ClientLevel && passenger instanceof Player player)
                 player.displayClientMessage(

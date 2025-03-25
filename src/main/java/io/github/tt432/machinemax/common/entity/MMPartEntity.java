@@ -43,16 +43,18 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn {
 
     public Part part;//实体所属的部件
     public UUID vehicleUUID;
     public UUID partUUID;
-
+    public AtomicReference<List<BoundingBox>> boundingBoxes = new AtomicReference<>(List.of());
     /**
      * 不应被使用！
      *
@@ -104,13 +106,13 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     }
 
     public void updateBoundingBox() {
-        if (part != null) {
+        List<BoundingBox> boxes = boundingBoxes.get();
+        if (part != null && !boxes.isEmpty()) {
             Vector3f min = new Vector3f(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
             Vector3f max = new Vector3f(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE).mult(-1);
-            for (SubPart subPart : part.subParts.values()) {
-                BoundingBox temp = subPart.body.boundingBox(null);
-                Vector3f tempMin = temp.getMin(null);
-                Vector3f tempMax = temp.getMax(null);
+            for (BoundingBox box : boxes) {
+                Vector3f tempMin = box.getMin(null);
+                Vector3f tempMax = box.getMax(null);
                 for (int i = 0; i < 3; i++) {
                     if (tempMax.get(i) > max.get(i)) max.set(i, tempMax.get(i));
                     if (tempMin.get(i) < min.get(i)) min.set(i, tempMin.get(i));

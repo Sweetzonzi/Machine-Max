@@ -17,6 +17,7 @@ public class KeyBinding {
     //本地化用的按键资源路径
     public static final String FREE_CAM_KEY = "resourceType.machine_max.ground.free_cam";
     public static final String INTERACT_KEY = "resourceType.machine_max.ground.interact";
+    public static final String LEAVE_VEHICLE_KEY = "resourceType.machine_max.ground.leave_vehicle";
 
     public static final String GROUND_FORWARD_KEY = "resourceType.machine_max.ground.forward";
     public static final String GROUND_BACKWARD_KEY = "resourceType.machine_max.ground.backward";
@@ -33,6 +34,7 @@ public class KeyBinding {
         //通用按键
         event.register(KeyBinding.generalFreeCamKey);//自由视角
         event.register(KeyBinding.generalInteractKey);//互动
+        event.register(KeyBinding.generalLeaveVehicleKey);//离开载具
         //地面载具
         event.register(KeyBinding.groundForwardKey);//地面前进
         event.register(KeyBinding.groundBackWardKey);//地面后退
@@ -58,6 +60,12 @@ public class KeyBinding {
             KeyCategory.GENERAL.getCategory()//键位类型
     );
     public static KeyMapping generalInteractKey = new KeyMapping(INTERACT_KEY,//键位名称
+            KeyCategory.GENERAL,//键位冲突类型
+            InputConstants.Type.KEYSYM,//默认为键盘
+            GLFW.GLFW_KEY_F,//默认按键
+            KeyCategory.GENERAL.getCategory()//键位类型
+    );
+    public static KeyMapping generalLeaveVehicleKey = new KeyMapping(LEAVE_VEHICLE_KEY,//键位名称
             KeyCategory.GENERAL,//键位冲突类型
             InputConstants.Type.KEYSYM,//默认为键盘
             GLFW.GLFW_KEY_J,//默认按键

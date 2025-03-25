@@ -14,7 +14,7 @@ public class WheelSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, Pair<Float, Float>> wheelAttrs;
 
     public static final Codec<Pair<Float, Float>> WHEEL_CODEC = Codec.pair(
-            Codec.FLOAT.fieldOf("radius").codec(),
+            Codec.FLOAT.fieldOf("blockCollision").codec(),
             Codec.FLOAT.fieldOf("step_height").codec()
     );
     public static final Codec<Map<String, Pair<Float, Float>>> WHEEL_MAP_CODEC = Codec.unboundedMap(

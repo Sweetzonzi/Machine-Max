@@ -38,7 +38,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 OverlayTexture.NO_OVERLAY,
                 getColor(entity, partialTick),
                 partialTick,
-                entity.getPhysicsLevel().getPartialTicks()
+                1f
                 );
         poseStack.popPose();//结束渲染
 

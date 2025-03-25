@@ -138,6 +138,8 @@
   "sub_parts": {//零件(子部件)列表
     "ae86_chassis_all_terrain": {//零件(子部件)名称
       "mass": 1000.0,//零件质量(kg)
+      "block_collision": "ground",
+      "step_height": 0.5,//自动攀爬高度
       "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
       "shapes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
         "mmCollision_Box_Chassis": {//值:碰撞形状属性
