@@ -17,7 +17,6 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     public final double inertia;//发动机系统转动惯量(kg·m²)
     public final List<Double> dampingFactors;//发动机系统各阶阻力系数，分别为常数项，一次项…递增
     public final List<String> throttleInputKeys;//优先级从高至低
-    public final String speedFeedbackInputKey;//输出功率的速度反馈输入
     public final String powerOutputTarget;
     public final Map<String, List<String>> rpmOutputTargets;
 
@@ -31,9 +30,8 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
             Codec.DOUBLE.optionalFieldOf("inertia",0.1).forGetter(EngineSubsystemAttr::getInertia),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(5.0,0.005,0.00003)).forGetter(EngineSubsystemAttr::getDampingFactors),
             Codec.STRING.listOf().fieldOf("throttle_inputs").forGetter(EngineSubsystemAttr::getThrottleInputKeys),
-            Codec.STRING.fieldOf("speed_feedback_input").forGetter(EngineSubsystemAttr::getSpeedFeedbackInputKey),
             Codec.STRING.fieldOf("power_output_target").forGetter(EngineSubsystemAttr::getPowerOutputTarget),
-            RPM_OUTPUT_TARGETS_CODEC.fieldOf("rpm_output_targets").forGetter(EngineSubsystemAttr::getRpmOutputTargets)
+            RPM_OUTPUT_TARGETS_CODEC.optionalFieldOf("speed_output_targets", Map.of()).forGetter(EngineSubsystemAttr::getRpmOutputTargets)
     ).apply(instance, EngineSubsystemAttr::new));
 
     public EngineSubsystemAttr(
@@ -44,7 +42,6 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
             double inertia,
             List<Double> dampingFactors,
             List<String> throttleInputKeys,
-            String speedFeedbackInputKey,
             String powerOutputTarget,
             Map<String, List<String>> rpmOutputTargets) {
         this.maxPower = maxPower;
@@ -54,7 +51,6 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
         this.inertia = inertia;
         this.dampingFactors = dampingFactors;
         this.throttleInputKeys = throttleInputKeys;
-        this.speedFeedbackInputKey = speedFeedbackInputKey;
         this.powerOutputTarget = powerOutputTarget;
         this.rpmOutputTargets = rpmOutputTargets;
     }

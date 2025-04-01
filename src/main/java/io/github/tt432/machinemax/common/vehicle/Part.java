@@ -15,13 +15,14 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
+import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.collision.shapes.CylinderCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
@@ -44,8 +45,6 @@ import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -57,7 +56,6 @@ import org.joml.Quaternionf;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Getter
 public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver {
@@ -65,9 +63,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Setter
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
-    private Vec3 oldPos;//上一tick的位置
-    private Vec3 pos;//当前tick位置//基本属性
-//    private final AtomicReference<Vec3> physPosAtomic = new AtomicReference<>(Vec3.ZERO);
     public VehicleCore vehicle;//所属的VehicleCore
     @Nullable
     public MMPartEntity entity;//实体对象
@@ -197,20 +192,14 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (this.entity == null || this.entity.isRemoved()) {
             if (!level.isClientSide()) refreshPartEntity();
         }
-        if (pos != null) oldPos = pos;
-        else pos = SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
-//        double a = 0.05;
-//        pos = (pos.add(SparkMathKt.toVec3(rootSubPart.body.getLinearVelocity(null)).scale(0.05))).scale(a)
-//                .add(SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null)).scale(1 - a));
-//        pos = SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
-//        pos = new Vec3(rootSubPart.body.sync.getBuffer(1).getPosition());
-//        pos = physPosAtomic.get();
-//        if(level.isClientSide && name.equals("ae86_chassis_all_terrain")) System.out.println(pos.x);
     }
 
-    public void onPhysicsTick() {
-//        physPosAtomic.set(SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null)));
-        if (entity != null && !entity.isRemoved()) {//更新包围盒
+    public void onPrePhysicsTick() {
+
+    }
+
+    public void onPostPhysicsTick() {
+        if (entity != null && !entity.isRemoved()) {//更新实体包围盒
             List<BoundingBox> boxes = new ArrayList<>();
             for (SubPart subPart : subParts.values()) boxes.add(subPart.body.boundingBox(null));
             entity.boundingBoxes.set(boxes);
@@ -241,10 +230,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                     subsystems.put(name, engineSubsystem);
                     break;
                 case GEARBOX:
-
+                    GearboxSubsystem gearboxSubsystem = new GearboxSubsystem(this, name, (GearboxSubsystemAttr) attr);
+                    subsystems.put(name, gearboxSubsystem);
                     break;
                 case CAR_CTRL:
-
+                    CarControllerSubsystem carControllerSubsystem = new CarControllerSubsystem(this, name, (CarControllerSubsystemAttr) attr);
+                    subsystems.put(name, carControllerSubsystem);
                     break;
                 case TRANSMISSION:
                     TransmissionSubsystem transmissionSubsystem = new TransmissionSubsystem(this, name, (TransmissionSubsystemAttr) attr);
@@ -395,7 +386,21 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 //TODO:重新计算并调节转动惯量
             }
             subPart.body.setCollisionShape(subPart.collisionShape);//重新设置碰撞体积
-            subPart.body.setMass(subPartEntry.getValue().mass());//设置质量
+            subPart.body.setMass(subPartEntry.getValue().mass() > 0 ? subPartEntry.getValue().mass() : 1);//设置质量
+            subPart.body.setCcdSweptSphereRadius(subPart.collisionShape.maxRadius());//设置CCD半径
+            //计算/设置零件三轴投影面积，用于阻力计算
+            BoundingBox boundingBox = subPart.collisionShape.boundingBox(new Vector3f(), Quaternion.IDENTITY, null);
+            double xArea, yArea, zArea;
+            if (subPart.attr.projectedArea().x <= 0)
+                xArea = 4 * boundingBox.getYExtent() * boundingBox.getZExtent();
+            else xArea = subPart.attr.projectedArea().x;
+            if (subPart.attr.projectedArea().y <= 0)
+                yArea = 4 * boundingBox.getXExtent() * boundingBox.getZExtent();
+            else yArea = subPart.attr.projectedArea().y;
+            if (subPart.attr.projectedArea().z <= 0)
+                zArea = 4 * boundingBox.getXExtent() * boundingBox.getYExtent();
+            else zArea = subPart.attr.projectedArea().z;
+            subPart.projectedArea = new Vec3(xArea, yArea, zArea);
             //创建零件对接口
             createConnectors(subPart, subPartEntry.getValue(), locators);
         }
@@ -468,7 +473,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     public void setTransform(Transform transform) {
-        level.getPhysicsLevel().submitImmediateTask(() -> {
+        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             Transform rootTransform = rootSubPart.body.getTransform(null).invert();
             rootSubPart.body.setPhysicsTransform(transform);
             for (SubPart subPart : subParts.values()) {
@@ -503,12 +508,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Override
     public Vec3 getWorldPosition(float v) {
         if (rootSubPart != null) {
-            return new Vec3(rootSubPart.body.sync.getBuffer(v).getPosition());
-//            if (oldPos == null || pos == null)
-//                return SparkMathKt.toVec3(rootSubPart.body.getPhysicsLocation(null));
-//            else {
-//                return oldPos.scale(1 - v).add(pos.scale(v));
-//            }
+            return SparkMathKt.toVec3(SparkMathKt.lerp(rootSubPart.body.lastTickTransform, rootSubPart.body.tickTransform, v).getTranslation());
         } else return Vec3.ZERO;
     }
 
@@ -519,8 +519,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     @Override
     public Matrix4f getWorldPositionMatrix(float partialTick) {
-        return SparkMathKt.toMatrix4f(rootSubPart.body.sync.getBuffer(partialTick).getTransform().toTransformMatrix());
-//        return SparkMathKt.toMatrix4f(rootSubPart.body.getTransform(null).setTranslation(PhysicsHelperKt.toBVector3f(getWorldPosition(partialTick))).toTransformMatrix());
+        if (rootSubPart != null) {
+            return SparkMathKt.toMatrix4f(
+                    SparkMathKt.lerp(rootSubPart.body.lastTickTransform, rootSubPart.body.tickTransform, partialTick).toTransformMatrix()
+            );
+        } else return new Matrix4f().identity();
     }
 
     @NotNull

@@ -29,6 +29,7 @@ public class MachineMax {
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMAttachments.register();//注册所有附件类型
         MMCodecs.register(bus);//注册所有编解码器
+        MMVisualEffects.register();//注册所有视觉效果
     }
 
 }

@@ -5,10 +5,10 @@ import cn.solarmoon.spark_core.skill.Skill;
 import cn.solarmoon.spark_core.skill.SkillHost;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
+import cn.solarmoon.spark_core.util.PPhase;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
 import com.jme3.bullet.joints.New6Dof;
-import com.jme3.bullet.objects.PhysicsBody;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
@@ -165,10 +165,17 @@ public class VehicleCore implements SkillHost {
         tickCount++;
     }
 
-    public void physicsTick() {
-        subSystemController.physicsTick();
+    public void prePhysicsTick() {
+        subSystemController.prePhysicsTick();
         for (Part part : partMap.values()) {
-            part.onPhysicsTick();
+            part.onPrePhysicsTick();
+        }
+    }
+
+    public void postPhysicsTick() {
+        subSystemController.postPhysicsTick();
+        for (Part part : partMap.values()) {
+            part.onPostPhysicsTick();
         }
     }
 
@@ -192,7 +199,7 @@ public class VehicleCore implements SkillHost {
             }
             PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(this.uuid, subPartSyncDataToSend));
         } else if (subPartSyncData != null) {
-            this.level.getPhysicsLevel().submitImmediateTask(() -> {
+            this.level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
                 for (Map.Entry<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> outerEntry : subPartSyncData.entrySet()) {
                     UUID partUUID = outerEntry.getKey();
                     Part part = this.partMap.get(partUUID);
@@ -210,6 +217,7 @@ public class VehicleCore implements SkillHost {
                                 body.setLinearVelocity(data.linearVel());
                                 body.setAngularVelocity(data.angularVel());
                                 if (sleep) body.forceDeactivate();
+                                else body.activate();
                             } else
                                 MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this, partUUID, subPartName);
                         }
@@ -224,7 +232,7 @@ public class VehicleCore implements SkillHost {
      * 激活载具所有零件的运动体
      */
     public void activate() {
-        level.getPhysicsLevel().submitImmediateTask(() -> {
+        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;
         });
@@ -234,7 +242,7 @@ public class VehicleCore implements SkillHost {
      * 令载具所有零件的运动体休眠
      */
     public void deactivate() {
-        level.getPhysicsLevel().submitImmediateTask(() -> {
+        level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
             for (Part part : partMap.values())
                 part.subParts.values().forEach(subPart -> subPart.body.forceDeactivate());
             return null;
@@ -242,7 +250,7 @@ public class VehicleCore implements SkillHost {
     }
 
     public void setGravity(Vector3f gravity) {
-        level.getPhysicsLevel().submitImmediateTask(() -> {
+        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values())
                 part.subParts.values().forEach(subPart -> subPart.body.setGravity(gravity));
             return null;
@@ -250,7 +258,7 @@ public class VehicleCore implements SkillHost {
     }
 
     public void setKinematic(boolean kinematic) {
-        level.getPhysicsLevel().submitImmediateTask(() -> {
+        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values())
                 part.subParts.values().forEach(subPart -> subPart.body.setKinematic(kinematic));
             return null;
@@ -438,7 +446,7 @@ public class VehicleCore implements SkillHost {
             }
         });
         parts.forEach(Part::addToLevel);
-        level.getPhysicsLevel().submitImmediateTask(() -> {
+        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             joints.forEach(joint -> level.getPhysicsLevel().getWorld().addJoint(joint));
             return null;
         });

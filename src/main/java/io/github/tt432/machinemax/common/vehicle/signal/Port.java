@@ -65,6 +65,9 @@ public class Port implements ISignalReceiver, ISignalSender {
                 for (ISignalReceiver receiver : entry.getValue().values()) {//遍历信号的输出目标
                     //从输出目标的信号输入中移除本端口的信号输出
                     receiver.getSignalInputs().remove(entry.getKey());
+                    if (receiver instanceof ISignalSender sender) {
+                        sender.clearCallbackTargets();//由于动力反馈信号等是接收到动力输入后额外添加的，因此需要额外移除
+                    }
                 }
             }
         }

@@ -86,7 +86,7 @@ public class PartType {
     };
 
     public static final ResourceKey<Registry<PartType>> PART_REGISTRY_KEY =
-            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_type"));
+            ResourceKey.createRegistryKey(ResourceLocation.fromNamespaceAndPath("assembly", "part_type"));
 
     public PartType(
             String name,

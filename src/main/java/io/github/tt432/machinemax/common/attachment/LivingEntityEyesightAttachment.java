@@ -1,6 +1,7 @@
 package io.github.tt432.machinemax.common.attachment;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -52,7 +53,7 @@ public class LivingEntityEyesightAttachment {
             LivingEntityEyesightAttachment eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT().get());
             eyesight.eyesightRange = entity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);//更新射线距离
             if (eyesight.eyesightRange <= 0) return;
-            level.getPhysicsLevel().submitImmediateTask(() -> {
+            level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
                 Vector3f startPos = PhysicsHelperKt.toBVector3f(entity.position().add(0, entity.getEyeHeight(), 0));
                 Vector3f endPos = startPos.add(PhysicsHelperKt.toBVector3f(
                         entity.getViewVector(1).normalize().scale(eyesight.eyesightRange)
@@ -72,9 +73,11 @@ public class LivingEntityEyesightAttachment {
                 eyesight.targetsCache = new HashMap<>(eyesight.targets);
                 return null;
             });
-            if(level instanceof ClientLevel && entity instanceof Player player){//正观察的部件
-                Part targetPart = eyesight.getPart();
-            }
+//            if(level instanceof ClientLevel && entity instanceof Player player){//正观察的部件
+//                Part targetPart = eyesight.getPart();
+//                if (targetPart!= null)
+//                    player.sendSystemMessage(Component.nullToEmpty(targetPart.name));
+//            }
         }
     }
 

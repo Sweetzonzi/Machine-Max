@@ -4,15 +4,16 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public interface ISignalSender {
     Map<String, List<String>> getTargetNames();
 
-    Map<String, Map<String, ISignalReceiver>> getTargets();
+    Map<String, Map<String, ISignalReceiver>> getTargets();//信号名称->接收者名称->接收者 Signal key -> receiver name -> receiver
+
+    default Map<String, Set<ISignalReceiver>> getCallbackTargets(){return Map.of();}
+
+    default void clearCallbackTargets() {getCallbackTargets().clear();}
 
     Part getPart();
 
@@ -23,6 +24,13 @@ public interface ISignalSender {
         if (this instanceof Port) return;//信号端口只应转发信号，不应对其输出信号进行操作
         for (Map.Entry<String, Map<String, ISignalReceiver>> entry : getTargets().entrySet()) {
             entry.getValue().forEach((receiverName, signalReceiver) -> {
+                var emptySignal = new EmptySignal();
+                signalReceiver.getSignalInputs().computeIfAbsent(entry.getKey(), k -> new Signals()).put(this, emptySignal);
+                signalReceiver.onSignalUpdated(entry.getKey());
+            });
+        }
+        for (Map.Entry<String, Set<ISignalReceiver>> entry : getCallbackTargets().entrySet()){
+            entry.getValue().forEach((signalReceiver) -> {
                 var emptySignal = new EmptySignal();
                 signalReceiver.getSignalInputs().computeIfAbsent(entry.getKey(), k -> new Signals()).put(this, emptySignal);
                 signalReceiver.onSignalUpdated(entry.getKey());
@@ -56,6 +64,23 @@ public interface ISignalSender {
                 signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
                 signalReceiver.onSignalUpdated(signalKey);
             }
+        }
+    }
+
+    default void sendCallbackToListeners(String signalKey, Object signalValue) {
+        if (this instanceof ISignalReceiver) {
+            var targets = getCallbackTargets().computeIfAbsent(signalKey, k -> new HashSet<>());
+            for (ISignalReceiver target : targets) {
+                target.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
+                target.onSignalUpdated(signalKey);
+            }
+        }
+    }
+
+    default void sendCallbackToListener(String signalKey, ISignalReceiver receiver, Object signalValue){
+        if (this instanceof ISignalReceiver) {
+            receiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
+            receiver.onSignalUpdated(signalKey);
         }
     }
 

@@ -3,6 +3,7 @@ package io.github.tt432.machinemax.common.vehicle.connector;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.RotationOrder;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
@@ -84,7 +85,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     }
 
     @Override
-    public void physicsTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull PhysicsLevel physicsLevel) {
+    public void prePhysicsTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull PhysicsLevel physicsLevel) {
         if (body != null) {
             if (!this.hasPart()) {//更新判定点位置姿态
                 body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
@@ -96,7 +97,8 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     }
 
     @Override
-    public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
+    public void ownerTick(@NotNull PhysicsCollisionObject physicsCollisionObject) {
+
     }
 
     /**
@@ -219,7 +221,6 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                     }
                 }
             }
-
             if (body != null) body.activate();
             if (this.port != null && attachedConnector.port != null) {
                 this.port.onConnectorDetach();
@@ -235,8 +236,9 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     protected void detachJoint() {
         if (attachedConnector != null)
             attachedConnector.joint = null;
-        getPhysicsLevel().submitImmediateTask(() -> {
+        getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             getPhysicsLevel().getWorld().removeJoint(joint);
+            this.joint = null;
             return null;
         });
     }
@@ -246,7 +248,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         MyMath.combine(this.subPartTransform, targetTransform, targetTransform);
         MyMath.combine(partConnector.subPartTransform.invert(), targetTransform, targetTransform);
         Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
-        getPhysicsLevel().submitImmediateTask(() -> {
+        getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             part.rootSubPart.body.setPhysicsTransform(targetTransform);
             for (SubPart subPart : part.subParts.values()) {
                 if (subPart == part.rootSubPart) continue;
@@ -293,7 +295,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     }
 
     public void addToLevel() {
-        if (hasPart() && joint != null) subPart.getPhysicsLevel().submitImmediateTask(() -> {
+        if (hasPart() && joint != null) subPart.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             subPart.getPhysicsLevel().getWorld().addJoint(joint);
             return null;
         });

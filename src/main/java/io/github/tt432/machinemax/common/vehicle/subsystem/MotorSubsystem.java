@@ -10,13 +10,13 @@ import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.MotorAttr;
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.MotorSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.SpecialConnector;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
 import jme3utilities.math.MyQuaternion;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -85,10 +85,10 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
     }
 
     @Override
-    public void onPhysicsTick() {
-        super.onPhysicsTick();
+    public void onPrePhysicsTick() {
+        super.onPrePhysicsTick();
         if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
-            MotorInputSignal controlSignal = getControlInput();
+            MotorControlSignal controlSignal = getControlInput();
             Float[] speedControl = controlSignal.getValue().getFirst();
             Float[] positionControl = controlSignal.getValue().getSecond();
             //TODO:处理平动控制信号
@@ -147,7 +147,37 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
         }
     }
 
-    private MotorInputSignal getControlInput() {
+    @Override
+    public void onPostPhysicsTick() {
+        if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
+            Vector3f relativePos = getRelativePos();
+            Vector3f relativeAngle = getRelativeAngle();
+            Vector3f relativeLinearVel = getRelativeLinearVel();
+            Vector3f relativeAngularVel = getRelativeAngularVel();
+            for (int axis : attr.axisParams.keySet()) {
+                var axisAttr = attr.axisParams.get(axis);
+                if (axis <= 2) {//一般平动信号
+                    for (String signalKey : axisAttr.speedSignalOutputs().keySet())//一般平动速度信号
+                        sendSignalToAllTargets(signalKey, relativeLinearVel.get(axis));
+                    for (String signalKey : axisAttr.positionSignalOutputs().keySet())//一般平动位置信号
+                        sendSignalToAllTargets(signalKey, relativePos.get(axis));
+                } else {//一般转动信号
+                    for (String signalKey : axisAttr.speedSignalOutputs().keySet())//一般转动速度信号
+                        sendSignalToAllTargets(signalKey, relativeAngularVel.get(axis - 3));
+                    for (String signalKey : axisAttr.positionSignalOutputs().keySet())//一般转动位置信号
+                        sendSignalToAllTargets(signalKey, -relativeAngle.get(axis - 3));
+                }
+                if (!axisAttr.needsPower()) continue;
+                if (axis <= 2) {//反馈平动速度信号
+                    sendCallbackToListeners("speed_feedback", relativeLinearVel.get(axis));
+                } else {//反馈转动速度信号
+                    sendCallbackToListeners("speed_feedback", relativeAngularVel.get(axis - 3));
+                }
+            }
+        }
+    }
+
+    private MotorControlSignal getControlInput() {
         Float[] speedInput = new Float[6];
         Float[] positionInput = new Float[6];
         for (int axis : attr.axisParams.keySet()) {
@@ -180,14 +210,20 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
                 positionInput[axis] = position;//若为float信号则设置目标位置
             else positionInput[axis] = null;//若为其他任何类型的信号则不对位置进行控制
         }
-        return new MotorInputSignal(speedInput, positionInput);
+        return new MotorControlSignal(speedInput, positionInput);
     }
 
     private void distributePower() {
         double totalPower = 0.0;
         Signals powers = getSignals("power");
-        for (Object value : powers.get().values()) {
-            if (value instanceof Double power) totalPower += power;//计算收到的总功率
+        for (Map.Entry<ISignalSender, Object> entry : powers.get().entrySet()) {
+            if (entry.getValue() instanceof MechPowerSignal power) {
+                totalPower += power.getPower();//计算收到的总功率
+                ISignalSender sender = entry.getKey();
+                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
+                    callbackTargets.computeIfAbsent("speed_feedback", k -> new HashSet<>()).add(receiver);
+                }
+            }
         }
         for (int axis : attr.axisParams.keySet()) {
             MotorAttr axisAttr = attr.axisParams.get(axis);
@@ -197,6 +233,12 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
         }
     }
 
+    private Vector3f getRelativeAngle() {
+        Vector3f result = new Vector3f();
+        connector.joint.getAngles(result);
+        return result;
+    }
+
     private Vector3f getRelativeAngularVel() {
         Vector3f result = new Vector3f();
         Vector3f angularVelA = connector.joint.getBodyA().getAngularVelocity(null);
@@ -204,6 +246,16 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
         Vector3f relativeVelInWorld = angularVelB.subtract(angularVelA);
         Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
         MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
+        return result;
+    }
+
+    private Vector3f getRelativePos() {
+        Vector3f result = new Vector3f();
+        Vector3f posA = connector.joint.getBodyA().getPhysicsLocation(null);
+        Vector3f posB = connector.joint.getBodyB().getPhysicsLocation(null);
+        Vector3f relativePosInWorld = posB.subtract(posA);
+        Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
+        MyQuaternion.rotateInverse(localToWorld, relativePosInWorld, result);
         return result;
     }
 

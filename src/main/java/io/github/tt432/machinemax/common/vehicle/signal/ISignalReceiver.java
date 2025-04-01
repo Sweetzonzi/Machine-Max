@@ -1,5 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle.signal;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 

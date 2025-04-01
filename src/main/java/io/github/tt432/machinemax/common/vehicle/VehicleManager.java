@@ -1,12 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
-import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
-import com.jme3.bullet.objects.PhysicsBody;
-import com.jme3.bullet.objects.PhysicsRigidBody;
-import com.jme3.math.Plane;
-import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
@@ -93,8 +87,13 @@ public class VehicleManager {
     }
 
     @SubscribeEvent
-    public static void onPhysicsTick(PhysicsLevelTickEvent.Pre event) {
-        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::physicsTick);
+    public static void onPrePhysicsTick(PhysicsLevelTickEvent.Pre event) {
+        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::prePhysicsTick);
+    }
+
+    @SubscribeEvent
+    public static void onPostPhysicsTick(PhysicsLevelTickEvent.Post event) {
+        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::postPhysicsTick);
     }
 
     private static void updateVehicleChunk(VehicleCore vehicle) {
@@ -153,7 +152,7 @@ public class VehicleManager {
     public static void loadVehicleData(LevelEvent.Load event) {
         Level level = (Level) event.getLevel();
 //        PhysicsLevel physicsLevel = level.getPhysicsLevel();
-//        level.getPhysicsLevel().submitTask((a, b) -> {//临时碰撞平面
+//        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//临时碰撞平面
 //            Plane plane = new Plane(Vector3f.UNIT_Y, -60);
 //            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
 //            PhysicsRigidBody body = new PhysicsRigidBody("ground", null, shape, PhysicsBody.massForStatic);

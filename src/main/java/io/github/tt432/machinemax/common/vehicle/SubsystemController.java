@@ -1,13 +1,10 @@
 package io.github.tt432.machinemax.common.vehicle;
 
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.signal.ISignalReceiver;
-import io.github.tt432.machinemax.common.vehicle.signal.MoveInputSignal;
 import io.github.tt432.machinemax.common.vehicle.signal.Signals;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import lombok.Getter;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,8 +26,13 @@ public class SubsystemController implements ISignalReceiver {
     public void tick() {
         allSubsystems.forEach(AbstractSubsystem::onTick);
     }
-    public void physicsTick() {
-        allSubsystems.forEach(AbstractSubsystem::onPhysicsTick);
+
+    public void prePhysicsTick() {
+        allSubsystems.forEach(AbstractSubsystem::onPrePhysicsTick);
+    }
+
+    public void postPhysicsTick() {
+        allSubsystems.forEach(AbstractSubsystem::onPostPhysicsTick);
     }
 
     public void addSubsystems(Collection<AbstractSubsystem> subSystems){

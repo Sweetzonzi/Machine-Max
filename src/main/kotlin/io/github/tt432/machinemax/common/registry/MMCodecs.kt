@@ -1,6 +1,7 @@
 package io.github.tt432.machinemax.common.registry
 
 import io.github.tt432.machinemax.MachineMax
+import io.github.tt432.machinemax.common.vehicle.attr.subsystem.CarControllerSubsystemAttr
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.EngineSubsystemAttr
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.GearboxSubsystemAttr
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.MotorSubsystemAttr
@@ -16,6 +17,7 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("seat")) { SeatSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("resource_storage")) { ResourceStorageSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("engine")) { EngineSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("car_controller")) { CarControllerSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("gearbox")) { GearboxSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("transmission")) { TransmissionSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("motor")) { MotorSubsystemAttr.CODEC}

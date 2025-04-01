@@ -1,5 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.EngineSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
@@ -16,6 +17,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
     public final double MAX_TORQUE;//最大扭矩(N·m)
     public final double MIN_IDLE_THROTTLE;//怠速转速下的最小油门
     public double rotSpeed;//当前转速(rad/s)
+    public double throttleInput;//当前油门输入（0~1）
 
     public EngineSubsystem(ISubsystemHost owner, String name, EngineSubsystemAttr attr) {
         super(owner, name, attr);
@@ -35,37 +37,44 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
 
     @Override
     public void onTick() {
+        //TODO:根据转速和油门播放声音
+    }
+
+    @Override
+    public void onPrePhysicsTick() {
         // 获取并钳位油门输入（自动维持怠速）
-        double throttleInput = getThrottleInput();
+        updateThrottleInput();
         if (rotSpeed / BASE_ROT_SPEED < 1.05) throttleInput = Math.clamp(throttleInput, MIN_IDLE_THROTTLE, 1);
         else throttleInput = Math.clamp(throttleInput, 0, 1);
 
         double engineTorque = throttleInput * calculateMaxTorque(rotSpeed);//输出扭矩
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
-
-        if (signalInputs.containsKey(attr.speedFeedbackInputKey) &&
-                signalInputs.get(attr.speedFeedbackInputKey).getFirst() instanceof EmptySignal) {
+//        if (getPart().level.isClientSide) MachineMax.LOGGER.debug("torque: " + netTorque);
+        if (signalInputs.containsKey("speed_feedback") &&
+                signalInputs.get("speed_feedback").getFirst() instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
             rotSpeed += netTorque / attr.inertia * 0.05;
             rotSpeed = Math.max(rotSpeed, 0.8 * BASE_ROT_SPEED);
             sendSignalToAllTargets("power", new EmptySignal());//空挡不输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
-        } else if (signalInputs.containsKey(attr.speedFeedbackInputKey) &&
-                signalInputs.get(attr.speedFeedbackInputKey).getFirst() instanceof Float rotSpeedFeedback) {
+        } else if (signalInputs.containsKey("speed_feedback") &&
+                signalInputs.get("speed_feedback").getFirst() instanceof Float speedFeedback) {
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
+            speedFeedback = -speedFeedback;
             //TODO:如何和转动惯量属性挂钩？
-            rotSpeed = Math.max(0.95 * rotSpeed + 0.05 * rotSpeedFeedback, 0.8 * BASE_ROT_SPEED);
-            sendSignalToAllTargets("power", (float) netTorque * rotSpeed);//输出功率
+            if (getPart().level.isClientSide)
+                MachineMax.LOGGER.debug("speed feedback: " + speedFeedback / 2 / 3.1415 * 60);
+            rotSpeed = Math.max(0.95 * rotSpeed + 0.05 * speedFeedback, 0.8 * BASE_ROT_SPEED);
+            sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else {
             //没有转速反馈信号时，直接取用引擎转速
             rotSpeed += netTorque / (7 * attr.inertia) * 0.05;
             rotSpeed = Math.max(rotSpeed, 0.8 * BASE_ROT_SPEED);
-            sendSignalToAllTargets("power", (float) netTorque * rotSpeed);
+            sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         }
-        //TODO:根据转速和油门播放声音
     }
 
     /**
@@ -102,9 +111,8 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
     /**
      * 获取油门信号，控制油门开度进而控制发动机输出功率
      *
-     * @return 油门开度，0~1
      */
-    private double getThrottleInput() {
+    private void updateThrottleInput() {
         double powerControlInput = -1;
         for (String inputKey : attr.throttleInputKeys) {
             Signals signals = getSignals(inputKey);
@@ -116,7 +124,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
                 break;
             }
         }
-        return Math.clamp(powerControlInput, 0, 1);
+        throttleInput = powerControlInput;
     }
 
     @Override

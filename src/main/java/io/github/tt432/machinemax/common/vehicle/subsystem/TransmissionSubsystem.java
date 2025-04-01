@@ -5,12 +5,10 @@ import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.TransmissionSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.ISignalReceiver;
 import io.github.tt432.machinemax.common.vehicle.signal.ISignalSender;
+import io.github.tt432.machinemax.common.vehicle.signal.MechPowerSignal;
 import io.github.tt432.machinemax.common.vehicle.signal.Signals;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TransmissionSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
     public final TransmissionSubsystemAttr attr;
@@ -20,62 +18,71 @@ public class TransmissionSubsystem extends AbstractSubsystem implements ISignalR
         super(owner, name, attr);
         this.attr = attr;
         float totalPowerWeight = 0.0f;
-        for (Pair<String, Float> target : attr.rotationOutputs.values()) totalPowerWeight += target.getSecond();
+        for (Map.Entry<String, Float> entry : attr.powerOutputs.entrySet()) totalPowerWeight += entry.getValue();
         TOTAL_POWER_WEIGHT = totalPowerWeight;
     }
 
     @Override
-    public void onTick() {
+    public void onPrePhysicsTick() {
         distributePower();
-        updateSpeedFeedback();
+    }
+
+    @Override
+    public void onPostPhysicsTick() {
+        updateFeedback();
     }
 
     private void distributePower() {
         double totalPower = 0.0;
+        float averageSpeed = 0.0F;
+        int count = 0;
         Signals powerSignal = getSignals("power");
-        for (Object value : powerSignal.get().values()) {
-            if (value instanceof Double power) totalPower += power;//计算收到的总功率
+        for (Map.Entry<ISignalSender, Object> entry : powerSignal.get().entrySet()) {
+            if (entry.getValue() instanceof MechPowerSignal power) {
+                totalPower += power.getPower();//计算收到的总功率
+                averageSpeed += power.getSpeed();
+                count++;
+                ISignalSender sender = entry.getKey();
+                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
+                    callbackTargets.computeIfAbsent("speed_feedback", k -> new HashSet<>()).add(receiver);
+                }
+            }
         }
-        for (Map.Entry<String, Pair<String, Float>> target : attr.rotationOutputs.entrySet()) {
+        averageSpeed /= count;//计算转速平均值
+        for (Map.Entry<String, Float> target : attr.powerOutputs.entrySet()) {
             String targetName = target.getKey();
-            String signalName = target.getValue().getFirst();
-            float weight = target.getValue().getSecond();
+            float weight = target.getValue();
             float power = (float) (totalPower * weight / TOTAL_POWER_WEIGHT);
-            sendSignalToTarget(targetName, signalName, power);//发送功率
+            MechPowerSignal powerSignalToSend = new MechPowerSignal(power, averageSpeed);
+            sendSignalToTarget(targetName, "power", powerSignalToSend);//发送功率信号
         }
     }
 
-    private void updateSpeedFeedback() {
+    private void updateFeedback() {
         float speed = 0;
         int count = 0;
-        for (String signalName : attr.speedFeedbackInputKeys) {
-            Signals speedSignal = getSignals(signalName);
-            if (!speedSignal.get().values().isEmpty()) {
-                for (Object value : speedSignal.get().values()) {
-                    if (value instanceof Float f) {
-                        speed += Math.abs(f);
-                        count++;
-                    }
+        Signals speedSignal = getSignals("speed_feedback");
+        if (!speedSignal.get().values().isEmpty()) {
+            for (Object value : speedSignal.get().values()) {
+                if (value instanceof Float f) {
+                    speed += f;
+                    count++;
                 }
             }
         }
         if (count > 0) speed /= count;
-        for (String signalName : attr.speedFeedbackOutputTargets.keySet()) {
-            sendSignalToAllTargets(signalName, speed);
-        }
+        sendCallbackToListeners("speed_feedback", speed);
     }
 
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> targetNames = new HashMap<>(4);
-        //添加旋转输出目标
-        for (Map.Entry<String, Pair<String, Float>> entry : attr.rotationOutputs.entrySet()) {
+        //添加功率输出目标
+        for (Map.Entry<String, Float> entry : attr.powerOutputs.entrySet()) {
             String targetName = entry.getKey();
-            String signalName = entry.getValue().getFirst();
+            String signalName = "power";
             targetNames.computeIfAbsent(signalName, k -> new ArrayList<>()).add(targetName);
         }
-        //添加转速反馈输出目标
-        targetNames.putAll(attr.speedFeedbackOutputTargets);
         return targetNames;
     }
 }

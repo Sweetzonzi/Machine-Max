@@ -11,6 +11,7 @@ import lombok.Getter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -21,7 +22,8 @@ abstract public class AbstractSubsystem {
     public final AbstractSubsystemAttr subSystemAttr;
     public final ISubsystemHost owner;
 
-    public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();
+    public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//信号名->接收者名称->接收者
+    public final Map<String, Set<ISignalReceiver>> callbackTargets = new HashMap<>();//信号名->回调接收者
     public final ConcurrentMap<String, Signals> signalInputs = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Float> resourceInputs = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Float> resourceOutputs = new ConcurrentHashMap<>();
@@ -37,7 +39,9 @@ abstract public class AbstractSubsystem {
 
     public void onTick() {}
 
-    public void onPhysicsTick() {}
+    public void onPrePhysicsTick() {}
+
+    public void onPostPhysicsTick() {}
 
     public void onAttach() {}
 

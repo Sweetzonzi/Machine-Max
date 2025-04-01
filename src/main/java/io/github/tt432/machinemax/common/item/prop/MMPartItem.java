@@ -1,14 +1,17 @@
 package io.github.tt432.machinemax.common.item.prop;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.client.renderer.PartProjectionRenderer;
 import io.github.tt432.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.tt432.machinemax.common.component.PartAssemblyInfoComponent;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.registry.MMDataComponents;
 import io.github.tt432.machinemax.common.registry.MMRegistries;
+import io.github.tt432.machinemax.common.registry.MMVisualEffects;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
@@ -57,6 +60,7 @@ public class MMPartItem extends Item {
             AbstractConnector targetConnector = eyesight.getConnector();
             if (targetConnector != null) {//若有可用的接口
                 if (targetConnector.conditionCheck(variant)) {//检查变体条件
+                    //TODO:检查connectorType，骑乘姿态拆卸零件后这一内容会变null
                     if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
                         VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
                         Part part = new Part(partType, variant, level);
@@ -97,6 +101,13 @@ public class MMPartItem extends Item {
                     message = Component.empty().append(" 连接口" + targetConnector.name + "不接受部件" + partType.name + "的" + variant + "变体");
             } else {
                 message.append("未选中可用的部件接口，右键将直接放置零件");
+                if (MMVisualEffects.getPROJECTION().partToAssembly !=null)
+                    MMVisualEffects.getPROJECTION().partToAssembly.setTransform(
+                            new Transform(
+                                    PhysicsHelperKt.toBVector3f(entity.position()),
+                                    Quaternion.IDENTITY
+                            )
+                    );
             }
             Minecraft.getInstance().player.displayClientMessage(message, true);
         }

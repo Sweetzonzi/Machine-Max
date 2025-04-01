@@ -52,7 +52,6 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
                 return;
             }
             passenger.resetFallDistance();//防止摔死
-            if (part.vehicle != null) part.vehicle.activate();
         } else {
             resetSignalOutputs();
         }
@@ -99,6 +98,12 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
     public void setMoveInputSignal(byte[] inputs, byte[] conflicts) {
         if (attr.moveSignalTargets != null) {
             sendSignalToAllTargets(attr.moveSignalTargets.getFirst(), new MoveInputSignal(inputs, conflicts));
+            for (int i = 0; i < 6; i++){
+                if (inputs[i] != 0 && getPart()!= null && getPart().vehicle != null) {
+                    getPart().vehicle.activate();
+                    break;
+                }
+            }
         }
     }
 

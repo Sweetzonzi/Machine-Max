@@ -1,12 +1,16 @@
 package io.github.tt432.machinemax.util.formula;
 
 
+import com.jme3.math.Vector3f;
+import io.github.tt432.machinemax.common.vehicle.Part;
+import io.github.tt432.machinemax.common.vehicle.SubPart;
+
 public interface IPartPhysParameters {
     /**
      * 根据运动体的相对运动状态，计算总的气动力系数
      * @return 运动体三个轴向的气动力系数
      */
-//    default DVector3 getAerodynamicForceCoef(AbstractPart part) {
+//    default Vector3f getAerodynamicForceCoef(SubPart part) {
 //        //气动力相关系数
 //        double BASIC_AIRDRAG_COEF_ZP=0.01;//空气阻力系数(前向)，一般较小
 //        double BASIC_AIRDRAG_COEF_ZN=0.01;//空气阻力系数(后向)，一般较小
@@ -18,11 +22,11 @@ public interface IPartPhysParameters {
 //        double BASIC_AIRLIFT_COEF_X =0;//空气升力系数(水平向)，一般为0
 //        double BASIC_AIRLIFT_COEF_Y =0;//空气升力系数(垂向)，一般为0
 //        //TODO:考虑旋转对称性
-//        DVector3 coef=new DVector3(BASIC_AIRLIFT_COEF_X,BASIC_AIRLIFT_COEF_Y,BASIC_AIRLIFT_COEF_Z);
-//        DVector3 vAbs = new DVector3();
-//        part.dbody.getRelPointVel(part.airDragCentre, vAbs);//获取升力作用点的绝对速度
-//        DVector3 vRel = new DVector3();
-//        part.dbody.vectorFromWorld(vAbs, vRel);//绝对速度转换为相对速度
+//        Vector3f coef=new Vector3f(BASIC_AIRLIFT_COEF_X,BASIC_AIRLIFT_COEF_Y,BASIC_AIRLIFT_COEF_Z);
+//        Vector3f vAbs = new Vector3f();
+//        part.body.getRelPointVel(part.airDragCentre, vAbs);//获取升力作用点的绝对速度
+//        Vector3f vRel = new Vector3f();
+//        part.body.vectorFromWorld(vAbs, vRel);//绝对速度转换为相对速度
 //        if(vRel.get0()>0){//x轴
 //            coef.add0(BASIC_AIRDRAG_COEF_XP);
 //        } else {

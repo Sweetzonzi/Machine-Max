@@ -57,7 +57,7 @@ public class PhysController {
 //    protected void applyAeroDynamicForces() {
 //        if (controlledEntity.corePart != null) {
 //            for (AbstractPart part : controlledEntity.corePart) {
-//                DVector3 F = aerodynamicForce(part);
+//                DVector3 F = aeroDynamicForce(part);
 //                part.dbody.addRelForceAtRelPos(F, part.airDragCentre);
 //            }
 //        }
