@@ -31,7 +31,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
         MAX_TORQUE = attr.maxPower / MAX_TORQUE_SPEED;
         rotSpeed = BASE_ROT_SPEED + 5;
 
-        double minThrottle = calculateDampingTorque(BASE_ROT_SPEED) / calculateMaxTorque(BASE_ROT_SPEED);
+        double minThrottle = 1.02 * calculateDampingTorque(BASE_ROT_SPEED) / calculateMaxTorque(BASE_ROT_SPEED);
         MIN_IDLE_THROTTLE = Math.min(minThrottle, 1f);
     }
 
@@ -50,7 +50,6 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
         double engineTorque = throttleInput * calculateMaxTorque(rotSpeed);//输出扭矩
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
-//        if (getPart().level.isClientSide) MachineMax.LOGGER.debug("torque: " + netTorque);
         if (signalInputs.containsKey("speed_feedback") &&
                 signalInputs.get("speed_feedback").getFirst() instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
@@ -63,9 +62,10 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
             speedFeedback = -speedFeedback;
             //TODO:如何和转动惯量属性挂钩？
-            if (getPart().level.isClientSide)
-                MachineMax.LOGGER.debug("speed feedback: " + speedFeedback / 2 / 3.1415 * 60);
-            rotSpeed = Math.max(0.95 * rotSpeed + 0.05 * speedFeedback, 0.8 * BASE_ROT_SPEED);
+            rotSpeed = Math.max(0.95 * rotSpeed + 0.05 * speedFeedback, 0.1 * BASE_ROT_SPEED);
+//            if (getPart().level.isClientSide) {
+//                MachineMax.LOGGER.debug("speed feedback: " + speedFeedback / 2 / 3.1415 * 60 + " torque: " + netTorque);
+//            }
             sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else {
@@ -84,13 +84,16 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
      * @return 当前转速下的最大扭矩(N · m)
      */
     private double calculateMaxTorque(double rotSpeed) {
-        if (rotSpeed <= MAX_TORQUE_SPEED) {//线性上升段：怠速 -> 最大扭矩转速
-            double k = MAX_TORQUE / MAX_TORQUE_SPEED;
-            return rotSpeed * k;
+        if (rotSpeed <= 0) return 0;
+        else if (rotSpeed <= BASE_ROT_SPEED) {
+            return rotSpeed / BASE_ROT_SPEED * MAX_TORQUE / 3;
+        } else if (rotSpeed <= MAX_TORQUE_SPEED) {//线性上升段：怠速 -> 最大扭矩转速
+            double k = 2 * MAX_TORQUE / MAX_TORQUE_SPEED / 3;
+            return MAX_TORQUE / 3 + rotSpeed * k;
         } else if (rotSpeed <= MAX_ROT_SPEED) {//全功率段
             return attr.maxPower / rotSpeed;
         } else { //超速时动力大幅衰减
-            return Math.pow(2.7, -2 * (rotSpeed - MAX_ROT_SPEED) / BASE_ROT_SPEED) * attr.maxPower / rotSpeed;
+            return Math.pow(2.7, -2.5 * (rotSpeed - MAX_ROT_SPEED) / BASE_ROT_SPEED) * attr.maxPower / rotSpeed;
         }
     }
 
@@ -103,14 +106,13 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
     private double calculateDampingTorque(double rotSpeed) {
         double result = 0;
         for (int i = 0; i < attr.dampingFactors.size(); i++) {
-            result += attr.dampingFactors.get(i) * Math.pow(rotSpeed, i);
+            result += attr.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i);
         }
-        return result;
+        return Math.signum(rotSpeed) * result;
     }
 
     /**
      * 获取油门信号，控制油门开度进而控制发动机输出功率
-     *
      */
     private void updateThrottleInput() {
         double powerControlInput = -1;
@@ -120,7 +122,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
                 powerControlInput = (float) signals.getFirst();
                 break;
             } else if (signals.getFirst() instanceof MoveInputSignal) {
-                powerControlInput = ((MoveInputSignal) signals.getFirst()).getMoveInput()[2] / 100f;
+                powerControlInput = Math.abs(((MoveInputSignal) signals.getFirst()).getMoveInput()[2] / 100f);
                 break;
             }
         }

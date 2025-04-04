@@ -88,16 +88,17 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(1);
-        if (attr.moveSignalTargets != null)
-            result.put(attr.moveSignalTargets.getFirst(), attr.moveSignalTargets.getSecond());
-        if (attr.regularSignalTargets != null)
-            result.put(attr.regularSignalTargets.getFirst(), attr.regularSignalTargets.getSecond());
+        result.putAll(attr.moveSignalTargets);
+        result.putAll(attr.regularSignalTargets);
+        result.putAll(attr.viewSignalTargets);
         return result;
     }
 
     public void setMoveInputSignal(byte[] inputs, byte[] conflicts) {
-        if (attr.moveSignalTargets != null) {
-            sendSignalToAllTargets(attr.moveSignalTargets.getFirst(), new MoveInputSignal(inputs, conflicts));
+        if (!attr.moveSignalTargets.isEmpty()) {
+            for (String signalKey : attr.moveSignalTargets.keySet()) {
+                sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
+            }
             for (int i = 0; i < 6; i++){
                 if (inputs[i] != 0 && getPart()!= null && getPart().vehicle != null) {
                     getPart().vehicle.activate();
@@ -108,9 +109,18 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
     }
 
     public void setRegularInputSignal() {
-        if (attr.regularSignalTargets != null) {
-            sendSignalToAllTargets(attr.regularSignalTargets.getFirst(), new EmptySignal());
+        if (!attr.regularSignalTargets.isEmpty()) {
+            for (String signalKey : attr.regularSignalTargets.keySet()) {
+                sendSignalToAllTargets(signalKey, new EmptySignal());
+            }
         }
     }
 
+    public void setViewInputSignal() {
+        if (!attr.viewSignalTargets.isEmpty()) {
+            for (String signalKey : attr.viewSignalTargets.keySet()){
+                sendSignalToAllTargets(signalKey, new EmptySignal());
+            }
+        }
+    }
 }

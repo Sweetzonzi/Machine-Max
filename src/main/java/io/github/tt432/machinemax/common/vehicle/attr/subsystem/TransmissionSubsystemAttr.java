@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -13,18 +14,20 @@ import java.util.Map;
 @Getter
 public class TransmissionSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, Float> powerOutputs;//功率输出目标，及输出权重
-
+    public final List<String> controlInputKeys;//控制信号名
     public static final Codec<Map<String, Float>> POWER_OUTPUTS_CODEC = Codec.unboundedMap(
             Codec.STRING,
             Codec.FLOAT
     );
 
     public static final MapCodec<TransmissionSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            POWER_OUTPUTS_CODEC.fieldOf("power_outputs").forGetter(TransmissionSubsystemAttr::getPowerOutputs)
+            POWER_OUTPUTS_CODEC.fieldOf("power_outputs").forGetter(TransmissionSubsystemAttr::getPowerOutputs),
+            Codec.STRING.listOf().optionalFieldOf("distribute_inputs", List.of()).forGetter(TransmissionSubsystemAttr::getControlInputKeys)
     ).apply(instance, TransmissionSubsystemAttr::new));
 
-    public TransmissionSubsystemAttr(Map<String, Float> powerOutputs) {
+    public TransmissionSubsystemAttr(Map<String, Float> powerOutputs, List<String> controlInputKeys) {
         this.powerOutputs = powerOutputs;
+        this.controlInputKeys = controlInputKeys;
     }
 
     @Override

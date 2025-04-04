@@ -11,116 +11,60 @@
   ],
   "basic_durability": 100.0,//部件基础生命值
   "subsystems": {
+    "car_controller": {
+      "type": "machine_max:car_controller",
+      "control_inputs": ["move_control"],
+      "engine_outputs": {
+        "engine_control": ["engine"]
+      },
+      "wheel_outputs": {
+        "wheel_control": [
+          "left_front_wheel_driver",
+          "right_front_wheel_driver",
+          "left_back_wheel_driver",
+          "right_back_wheel_driver"]
+      },
+      "gearbox_outputs": {
+        "gearbox_control": ["gearbox"]
+      }
+    },
     "engine": {
       "type": "machine_max:engine", //子系统类型
       "max_power": 125000,//最大功率(W)
-      "base_rpm": 500,//基础转速(转/分钟)
-      "max_torque_rpm": 5000,//最大扭矩转速(转/分钟)
-      "max_rpm": 7000,//最大转速(转/分钟)，超过此速度输出功率将严重衰减
-      "throttle_inputs": ["move_output"],//可供转速输入的信号名称列表，优先级依次递减
-      "power_output_target": "gearbox",//功率输出目标，可填写任意本部件内其他子系统名称、部件对接口名称，或“part”，或“vehicle”
-      "speed_output_targets": {//转速信号输出目标及信号名称，同上，但可以有多个
+      "power_output": "gearbox",//功率输出目标，可填写任意本部件内其他子系统名称、部件对接口名称，或“part”，或“vehicle”
+      "speed_outputs": {//转速信号输出目标及信号名称，同上，但可以有多个
         "engine_speed": ["part", "vehicle"]
       }
     },
     "gearbox": {
-      "final_ratio": 15.0, //最终变速比，用于整体缩放变速箱减速比
       "type": "machine_max:gearbox",
-      "ratio_ctrl_inputs": ["move_output"],
-      "power_output_target": "transmission"
+      "final_ratio": 15.0, //最终变速比，用于整体缩放变速箱减速比
+      "power_output": "transmission"
     },
     "transmission": {
       "type": "machine_max:transmission",
       "power_outputs": { //动力输出目标及权重
-        "left_front_wheel": 1.0,
-        "right_front_wheel": 1.0,
-        "left_back_wheel": 1.0,
-        "right_back_wheel": 1.0
+        "left_front_wheel_driver": 1.0,
+        "right_front_wheel_driver": 1.0,
+        "left_back_wheel_driver": 1.0,
+        "right_back_wheel_driver": 1.0
       }
     },
-    "left_front_wheel": {
-      "type": "machine_max:motor",
-      "connector": "left_front_wheel",
-      "rotation_order": "XYZ",
-      "axes": {
-        "XR": {
-          "needs_power": true,
-          "max_force": 1000,
-          "max_brake_force": 1500,
-          "max_speed": 314,
-          "target_speed_inputs": ["move_output"],
-          "speed_outputs": {
-            "speed_feedback": ["transmission"]
-          }
-        },
-        "YR": {
-          "needs_power": false,
-          "max_force": 5000,
-          "max_brake_force": 5000,
-          "max_speed": 3.14,
-          "target_speed_inputs": ["move_output"],
-          "target_position_inputs": ["move_output"]
-        }
-      }
+    "left_front_wheel_driver": {
+      "type": "machine_max:wheel_driver",
+      "connector": "left_front_wheel"
     },
-    "right_front_wheel": {
-      "type": "machine_max:motor",
-      "connector": "right_front_wheel",
-      "rotation_order": "XYZ",
-      "axes": {
-        "XR": {
-          "needs_power": true,
-          "max_force": 1000,
-          "max_brake_force": 1500,
-          "max_speed": 314,
-          "target_speed_inputs": ["move_output"],
-          "speed_outputs": {
-            "speed_feedback": ["transmission"]
-          }
-        },
-        "YR": {
-          "needs_power": false,
-          "max_force": 5000,
-          "max_brake_force": 5000,
-          "max_speed": 3.14,
-          "target_speed_inputs": ["move_output"],
-          "target_position_inputs": ["move_output"]
-        }
-      }
+    "right_front_wheel_driver": {
+      "type": "machine_max:wheel_driver",
+      "connector": "right_front_wheel"
     },
-    "left_back_wheel": {
-      "type": "machine_max:motor",
-      "connector": "left_back_wheel",
-      "rotation_order": "XYZ",
-      "axes": {
-        "XR": {
-          "needs_power": true,
-          "max_force": 1000,
-          "max_brake_force": 1500,
-          "max_speed": 314,
-          "target_speed_inputs": ["move_output"],
-          "speed_outputs": {
-            "speed_feedback": ["transmission"]
-          }
-        }
-      }
+    "left_back_wheel_driver": {
+      "type": "machine_max:wheel_driver",
+      "connector": "left_back_wheel"
     },
-    "right_back_wheel": {
-      "type": "machine_max:motor",
-      "connector": "right_back_wheel",
-      "rotation_order": "XYZ",
-      "axes": {
-        "XR": {
-          "needs_power": true,
-          "max_force": 1000,
-          "max_brake_force": 1500,
-          "max_speed": 314,
-          "target_speed_inputs": ["move_output"],
-          "speed_outputs": {
-            "speed_feedback": ["transmission"]
-          }
-        }
-      }
+    "right_back_wheel_driver": {
+      "type": "machine_max:wheel_driver",
+      "connector": "right_back_wheel"
     }
   },
   "sub_parts": {//零件(子部件)列表
@@ -231,7 +175,10 @@
           "locator": "DriverSeat",
           "type": "Special",
           "signal_targets": {
-            "move_output": ["engine", "left_front_wheel", "right_front_wheel", "left_back_wheel", "right_back_wheel"]
+            "move_control": [
+              "car_controller",
+              "engine"//备用控制链路，优先级低于控制器，当车辆控制器失效时可继续控制
+            ]
           }
         },
         "copilot_seat": {

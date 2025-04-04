@@ -32,18 +32,13 @@ public class GearboxSubsystemAttr extends AbstractSubsystemAttr {
         this.gearOutputTargets = gearOutputTargets;
     }
 
-    public static final Codec<Map<String, List<String>>> GEAR_SIGNAL_CODEC = Codec.unboundedMap(
-            Codec.STRING,
-            Codec.STRING.listOf()
-    );
-
     public static final MapCodec<GearboxSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("final_ratio", 5f).forGetter(GearboxSubsystemAttr::getFinalRatio),
             Codec.list(Codec.FLOAT).optionalFieldOf("ratios", List.of(-3.5f, 3.5f, 2f, 1.3f, 1.0f, 0.8f)).forGetter(GearboxSubsystemAttr::getRatios),
             Codec.FLOAT.optionalFieldOf("switch_time", 0.5f).forGetter(GearboxSubsystemAttr::getSwitchTime),
-            Codec.STRING.listOf().fieldOf("ratio_ctrl_inputs").forGetter(GearboxSubsystemAttr::getRatioControlSignalKeys),
-            Codec.STRING.fieldOf("power_output_target").forGetter(GearboxSubsystemAttr::getPowerOutputTarget),
-            GEAR_SIGNAL_CODEC.optionalFieldOf("gear_output_targets", Map.of()).forGetter(GearboxSubsystemAttr::getGearOutputTargets)
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("gearbox_control")).forGetter(GearboxSubsystemAttr::getRatioControlSignalKeys),
+            Codec.STRING.fieldOf("power_output").forGetter(GearboxSubsystemAttr::getPowerOutputTarget),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("gear_outputs", Map.of()).forGetter(GearboxSubsystemAttr::getGearOutputTargets)
     ).apply(instance, GearboxSubsystemAttr::new));
 
     @Override

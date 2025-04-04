@@ -13,6 +13,14 @@ public interface ISignalSender {
 
     default Map<String, Set<ISignalReceiver>> getCallbackTargets(){return Map.of();}
 
+    default void addCallbackTarget(String signalKey, ISignalReceiver target) {
+        getCallbackTargets().computeIfAbsent(signalKey, k -> new HashSet<>()).add(target);
+    }
+
+    default void removeCallbackTarget(String signalKey, ISignalReceiver target) {
+        getCallbackTargets().computeIfAbsent(signalKey, k -> new HashSet<>()).remove(target);
+    }
+
     default void clearCallbackTargets() {getCallbackTargets().clear();}
 
     Part getPart();
@@ -26,14 +34,14 @@ public interface ISignalSender {
             entry.getValue().forEach((receiverName, signalReceiver) -> {
                 var emptySignal = new EmptySignal();
                 signalReceiver.getSignalInputs().computeIfAbsent(entry.getKey(), k -> new Signals()).put(this, emptySignal);
-                signalReceiver.onSignalUpdated(entry.getKey());
+                signalReceiver.onSignalUpdated(entry.getKey(), this);
             });
         }
         for (Map.Entry<String, Set<ISignalReceiver>> entry : getCallbackTargets().entrySet()){
             entry.getValue().forEach((signalReceiver) -> {
                 var emptySignal = new EmptySignal();
                 signalReceiver.getSignalInputs().computeIfAbsent(entry.getKey(), k -> new Signals()).put(this, emptySignal);
-                signalReceiver.onSignalUpdated(entry.getKey());
+                signalReceiver.onSignalUpdated(entry.getKey(), this);
             });
         }
     }
@@ -44,10 +52,23 @@ public interface ISignalSender {
      * @param signalValue 信号值
      */
     default void sendSignalToAllTargets(String signalKey, Object signalValue) {
+        sendSignalToAllTargets(signalKey, signalValue, false);
+    }
+
+    /**
+     * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
+     * @param signalKey 信号名称
+     * @param signalValue 信号值
+     * @param requiresImmediateCallback 是否需要即时回调
+     */
+    default void sendSignalToAllTargets(String signalKey, Object signalValue, boolean requiresImmediateCallback) {
         if (getTargets().containsKey(signalKey))
             getTargets().get(signalKey).forEach((receiverName, signalReceiver) -> {
                 signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
-                signalReceiver.onSignalUpdated(signalKey);
+                signalReceiver.onSignalUpdated(signalKey, this);
+                if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender){
+                    callbackSender.sendImmediateCallback(signalKey, (ISignalReceiver) this);
+                }
             });
     }
 
@@ -58,21 +79,43 @@ public interface ISignalSender {
      * @param signalValue 信号值
      */
     default void sendSignalToTarget(String targetName, String signalKey, Object signalValue) {
+        sendSignalToTarget(targetName, signalKey, signalValue, false);
+    }
+
+    /**
+     * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
+     * @param targetName 接收者名称
+     * @param signalKey 信号名称
+     * @param signalValue 信号值
+     * @param requiresImmediateCallback 是否需要即时回调
+     */
+    default void sendSignalToTarget(String targetName, String signalKey, Object signalValue, boolean requiresImmediateCallback) {
         if (getTargets().containsKey(signalKey)) {
             ISignalReceiver signalReceiver =  getTargets().get(signalKey).get(targetName);
             if (signalReceiver != null) {
                 signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
-                signalReceiver.onSignalUpdated(signalKey);
+                signalReceiver.onSignalUpdated(signalKey, this);
+                if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender){
+                    callbackSender.sendImmediateCallback(signalKey, (ISignalReceiver) this);
+                }
             }
         }
     }
 
-    default void sendCallbackToListeners(String signalKey, Object signalValue) {
+    /**
+     * 发送回调信号给指定监听器，通常用于握手或检查连接状态
+     * @param callbackListener 回调监听器
+     */
+    default void sendImmediateCallback(String signalKey, ISignalReceiver callbackListener){
+        sendCallbackToListener("callback", callbackListener, signalKey);//发回收到的信号类型，尝试握手
+    }
+
+    default void sendCallbackToAllListeners(String signalKey, Object signalValue) {
         if (this instanceof ISignalReceiver) {
             var targets = getCallbackTargets().computeIfAbsent(signalKey, k -> new HashSet<>());
             for (ISignalReceiver target : targets) {
                 target.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
-                target.onSignalUpdated(signalKey);
+                target.onSignalUpdated(signalKey, this);
             }
         }
     }
@@ -80,7 +123,7 @@ public interface ISignalSender {
     default void sendCallbackToListener(String signalKey, ISignalReceiver receiver, Object signalValue){
         if (this instanceof ISignalReceiver) {
             receiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
-            receiver.onSignalUpdated(signalKey);
+            receiver.onSignalUpdated(signalKey, this);
         }
     }
 
@@ -92,8 +135,8 @@ public interface ISignalSender {
             Map<String, AbstractSubsystem> subSystems = getPart().subsystems;
             Map<String, Port> ports = new HashMap<>();
             getPart().allConnectors.forEach((name, connector) -> ports.put(name, connector.port));
-            Map<String, ISignalReceiver> signalReceivers = new HashMap<>(2);
             for (Map.Entry<String, List<String>> entry : getTargetNames().entrySet()) {
+                Map<String, ISignalReceiver> signalReceivers = new HashMap<>(2);
                 if (entry.getKey().isEmpty()) continue;
                 getReceiversFromNames(entry.getValue(), getPart(), subSystems, ports).forEach(receiver -> signalReceivers.put(receiver.getName(), receiver));
                 getTargets().put(entry.getKey(), signalReceivers);

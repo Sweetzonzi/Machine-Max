@@ -1,6 +1,5 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
-import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.TransmissionSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.ISignalReceiver;
@@ -32,19 +31,25 @@ public class TransmissionSubsystem extends AbstractSubsystem implements ISignalR
         updateFeedback();
     }
 
+    @Override
+    public void onVehicleStructureChanged() {
+        super.onVehicleStructureChanged();
+        clearCallbackSignals();
+    }
+
     private void distributePower() {
         double totalPower = 0.0;
         float averageSpeed = 0.0F;
         int count = 0;
         Signals powerSignal = getSignals("power");
-        for (Map.Entry<ISignalSender, Object> entry : powerSignal.get().entrySet()) {
+        for (Map.Entry<ISignalSender, Object> entry : powerSignal.entrySet()) {
             if (entry.getValue() instanceof MechPowerSignal power) {
                 totalPower += power.getPower();//计算收到的总功率
                 averageSpeed += power.getSpeed();
                 count++;
                 ISignalSender sender = entry.getKey();
                 if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
-                    callbackTargets.computeIfAbsent("speed_feedback", k -> new HashSet<>()).add(receiver);
+                    addCallbackTarget("speed_feedback", receiver);
                 }
             }
         }
@@ -62,8 +67,8 @@ public class TransmissionSubsystem extends AbstractSubsystem implements ISignalR
         float speed = 0;
         int count = 0;
         Signals speedSignal = getSignals("speed_feedback");
-        if (!speedSignal.get().values().isEmpty()) {
-            for (Object value : speedSignal.get().values()) {
+        if (!speedSignal.values().isEmpty()) {
+            for (Object value : speedSignal.values()) {
                 if (value instanceof Float f) {
                     speed += f;
                     count++;
@@ -71,7 +76,7 @@ public class TransmissionSubsystem extends AbstractSubsystem implements ISignalR
             }
         }
         if (count > 0) speed /= count;
-        sendCallbackToListeners("speed_feedback", speed);
+        sendCallbackToAllListeners("speed_feedback", speed);
     }
 
     @Override

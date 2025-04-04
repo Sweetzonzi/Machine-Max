@@ -39,9 +39,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public final PhysicsRigidBody body;
     //TODO:建Shape在SubPartAttr中进行，节约内存
     CompoundCollisionShape collisionShape = new CompoundCollisionShape(1);
-    public final Map<Integer, String> materials = new HashMap<>(2);//碰撞体积各部分的材料类型
-    public final Map<Integer, Float> thicknesses = new HashMap<>(2);//碰撞体积各部分的厚度
-    public final Map<Integer, Float> frictionCoeffs = new HashMap<>(2);//碰撞体积各部分的粗糙度修正系数
+    public final Map<Long, String> materials = new HashMap<>(2);//碰撞体积各部分的材料类型
+    public final Map<Long, Float> thicknesses = new HashMap<>(2);//碰撞体积各部分的厚度
+    public final Map<Long, Float> frictionCoeffs = new HashMap<>(2);//碰撞体积各部分的粗糙度修正系数
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
     //流体动力相关参数

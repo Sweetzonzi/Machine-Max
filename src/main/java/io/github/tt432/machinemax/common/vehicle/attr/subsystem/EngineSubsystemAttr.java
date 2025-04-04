@@ -20,18 +20,18 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     public final String powerOutputTarget;
     public final Map<String, List<String>> rpmOutputTargets;
 
-    public static final Codec<Map<String,List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
+    public static final Codec<Map<String, List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
 
     public static final MapCodec<EngineSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.fieldOf("max_power").forGetter(EngineSubsystemAttr::getMaxPower),
-            Codec.FLOAT.fieldOf("base_rpm").forGetter(EngineSubsystemAttr::getBaseRpm),
-            Codec.FLOAT.fieldOf("max_torque_rpm").forGetter(EngineSubsystemAttr::getMaxTorqueRpm),
-            Codec.FLOAT.fieldOf("max_rpm").forGetter(EngineSubsystemAttr::getMaxRpm),
-            Codec.DOUBLE.optionalFieldOf("inertia",0.1).forGetter(EngineSubsystemAttr::getInertia),
-            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(5.0,0.005,0.00003)).forGetter(EngineSubsystemAttr::getDampingFactors),
-            Codec.STRING.listOf().fieldOf("throttle_inputs").forGetter(EngineSubsystemAttr::getThrottleInputKeys),
-            Codec.STRING.fieldOf("power_output_target").forGetter(EngineSubsystemAttr::getPowerOutputTarget),
-            RPM_OUTPUT_TARGETS_CODEC.optionalFieldOf("speed_output_targets", Map.of()).forGetter(EngineSubsystemAttr::getRpmOutputTargets)
+            Codec.FLOAT.optionalFieldOf("base_rpm", 500f).forGetter(EngineSubsystemAttr::getBaseRpm),
+            Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5000f).forGetter(EngineSubsystemAttr::getMaxTorqueRpm),
+            Codec.FLOAT.optionalFieldOf("max_rpm", 7000f).forGetter(EngineSubsystemAttr::getMaxRpm),
+            Codec.DOUBLE.optionalFieldOf("inertia", 0.1).forGetter(EngineSubsystemAttr::getInertia),
+            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(5.0, 0.005, 0.00003)).forGetter(EngineSubsystemAttr::getDampingFactors),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemAttr::getThrottleInputKeys),
+            Codec.STRING.fieldOf("power_output").forGetter(EngineSubsystemAttr::getPowerOutputTarget),
+            RPM_OUTPUT_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of()).forGetter(EngineSubsystemAttr::getRpmOutputTargets)
     ).apply(instance, EngineSubsystemAttr::new));
 
     public EngineSubsystemAttr(

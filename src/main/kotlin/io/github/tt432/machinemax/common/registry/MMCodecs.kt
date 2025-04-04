@@ -1,13 +1,7 @@
 package io.github.tt432.machinemax.common.registry
 
 import io.github.tt432.machinemax.MachineMax
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.CarControllerSubsystemAttr
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.EngineSubsystemAttr
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.GearboxSubsystemAttr
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.MotorSubsystemAttr
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.ResourceStorageSubsystemAttr
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr
-import io.github.tt432.machinemax.common.vehicle.attr.subsystem.TransmissionSubsystemAttr
+import io.github.tt432.machinemax.common.vehicle.attr.subsystem.*
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.bus.api.IEventBus
 import net.neoforged.neoforge.registries.RegisterEvent
@@ -21,6 +15,8 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("gearbox")) { GearboxSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("transmission")) { TransmissionSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("motor")) { MotorSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("wheel_driver")) { WheelDriverSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("turret_driver")) { TurretDriverSubsystemAttr.CODEC}
     }
 
     private fun id(id: String) = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, id)

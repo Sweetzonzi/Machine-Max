@@ -302,7 +302,10 @@ public class VehicleCore implements SkillHost {
             }
             checkAndSplitVehicle();//连通性检查
             if (partMap.values().isEmpty()) VehicleManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
-            else this.activate();//重新激活，进行部件移除后的物理计算
+            else {
+                this.activate();//重新激活，进行部件移除后的物理计算
+                this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
+            }
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.name, part.name);
     }
 
@@ -348,6 +351,7 @@ public class VehicleCore implements SkillHost {
                 newPart.addToLevel();//将新部件加入到世界
             }
             if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
+            this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
             if (inLevel && !level.isClientSide()) {
                 comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊对接口在前面，以保证对接口属性得到正确应用
                 //发包客户端创建连接关系
@@ -417,6 +421,7 @@ public class VehicleCore implements SkillHost {
         if (connector2 instanceof AttachPointConnector) connector1.detach(false);
         else if (connector1 instanceof AttachPointConnector) connector2.detach(false);
         else throw new IllegalArgumentException("要拆解的对接口之一必须是AttachPointConnector类型");
+        this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
         //TODO:连通性检查，如果有部件分离，则创建新的VehicleCore
         //TODO:为分离的部件指定新的VehicleCore
         checkAndSplitVehicle();

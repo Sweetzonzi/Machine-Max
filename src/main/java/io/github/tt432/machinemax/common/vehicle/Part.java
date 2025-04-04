@@ -245,6 +245,10 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                     MotorSubsystem motorSubsystem = new MotorSubsystem(this, name, (MotorSubsystemAttr) attr);
                     subsystems.put(name, motorSubsystem);
                     break;
+                case WHEEL:
+                    WheelDriverSubsystem wheelSubsystem = new WheelDriverSubsystem(this, name, (WheelDriverSubsystemAttr) attr);
+                    subsystems.put(name, wheelSubsystem);
+                    break;
             }
         }
     }
@@ -299,14 +303,19 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             LinkedHashMap<String, OBone> bones,
             LinkedHashMap<String, OLocator> locators
     ) {
+        int i = 0;
         for (Map.Entry<String, ShapeAttr> shapeEntry : subPartAttr.collisionShapeAttr().entrySet()) {
             if (bones.get(shapeEntry.getKey()) != null) {//若找到了对应的碰撞形状骨骼
+                float thickness = shapeEntry.getValue().thickness();
+                String material = shapeEntry.getValue().materialName();
                 OBone bone = bones.get(shapeEntry.getKey());
                 switch (shapeEntry.getValue().shapeType()) {
                     case "box"://与方块的尺寸匹配
                         for (OCube cube : bone.getCubes()) {
                             org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
                             BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
+                            subPart.materials.put(boxShape.nativeId(), material);
+                            subPart.thicknesses.put(boxShape.nativeId(), thickness);
                             org.joml.Vector3f rotation = cube.getRotation().toVector3f();
                             Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                             subPart.collisionShape.addChildShape(
@@ -318,6 +327,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                     case "sphere"://取方块的x轴尺寸作为球直径
                         for (OCube cube : bone.getCubes()) {
                             SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().x / 2));
+                            subPart.materials.put(ballShape.nativeId(), material);
+                            subPart.thicknesses.put(ballShape.nativeId(), thickness);
                             subPart.collisionShape.addChildShape(
                                     ballShape,
                                     PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())));
@@ -329,6 +340,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                             org.joml.Vector3f rotation = cube.getRotation().toVector3f();
                             Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                             CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size, 0);
+                            subPart.materials.put(cylinderShape.nativeId(), material);
+                            subPart.thicknesses.put(cylinderShape.nativeId(), thickness);
                             subPart.collisionShape.addChildShape(
                                     cylinderShape,
                                     PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
@@ -343,7 +356,9 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                         break;
                     default:
                         MachineMax.LOGGER.error("在部件{}中发现不支持的碰撞形状类型{}。", type.name, shapeEntry.getValue());
+                        i--;
                 }
+                i++;
             } else
                 MachineMax.LOGGER.error("在部件{}中未找到对应的碰撞形状骨骼{}。", type.name, shapeEntry.getKey());
         }

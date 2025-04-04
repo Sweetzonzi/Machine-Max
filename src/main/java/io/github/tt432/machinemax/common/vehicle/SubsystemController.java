@@ -55,6 +55,10 @@ public class SubsystemController implements ISignalReceiver {
         allSubsystems.remove(subSystem);
     }
 
+    public void onVehicleStructureChanged() {
+        allSubsystems.forEach(AbstractSubsystem::onVehicleStructureChanged);
+    }
+
     @Override
     public ConcurrentMap<String, Signals> getSignalInputs() {
         return signals;

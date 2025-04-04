@@ -21,7 +21,7 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
         super(owner, name, attr);
         this.attr = attr;
         this.gearRatios = attr.ratios.stream().mapToDouble(Float::floatValue).map(r -> r * attr.finalRatio).toArray();
-        switchGear(1);
+        switchGear(0);
     }
 
     @Override
@@ -33,13 +33,6 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
     @Override
     public void onPostPhysicsTick() {
         updateFeedback();//更新反馈信号
-    }
-
-    @Override
-    public void onSignalUpdated(String signalKey) {
-        if (attr.ratioControlSignalKeys.contains(signalKey)) {
-            Signals signals = getSignals(signalKey);
-        }
     }
 
     public void switchGear(int gear) {
@@ -79,14 +72,14 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
         double averageSpeed = 0.0;
         int count = 0;
         Signals powerSignal = getSignals("power");
-        for (Map.Entry<ISignalSender, Object> entry : powerSignal.get().entrySet()) {
+        for (Map.Entry<ISignalSender, Object> entry : powerSignal.entrySet()) {
             if (entry.getValue() instanceof MechPowerSignal power) {
                 totalPower += power.getPower();//计算收到的总功率
                 averageSpeed += power.getSpeed();
                 count++;
                 ISignalSender sender = entry.getKey();
                 if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
-                    callbackTargets.computeIfAbsent("speed_feedback", k -> new HashSet<>()).add(receiver);
+                    addCallbackTarget("speed_feedback", receiver);
                 }
             }
         }
@@ -97,20 +90,20 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
 
     private void updateFeedback() {
         if (clutch|| remainingSwitchTime > 0.0f) {//空挡时或正在换挡时，不反馈速度信号
-            sendCallbackToListeners("speed_feedback", new EmptySignal());
+            sendCallbackToAllListeners("speed_feedback", new EmptySignal());
             return;
         }
         float speed;
         Signals speedSignal = getSignals("speed_feedback");
-        if (!speedSignal.get().values().isEmpty()) {
-            for (Object value : speedSignal.get().values()) {
+        if (!speedSignal.values().isEmpty()) {
+            for (Object value : speedSignal.values()) {
                 if (value instanceof Float f) {
                     speed = f;
-                    sendCallbackToListeners("speed_feedback", (float) (speed * gearRatios[currentGear]));
+                    sendCallbackToAllListeners("speed_feedback", (float) (speed * gearRatios[currentGear]));
                     return;
                 }
             }
-            sendCallbackToListeners("speed_feedback", new EmptySignal());//没有收到反馈速度信号时，发送空信号
+            sendCallbackToAllListeners("speed_feedback", new EmptySignal());//没有收到反馈速度信号时，发送空信号
         }
     }
 

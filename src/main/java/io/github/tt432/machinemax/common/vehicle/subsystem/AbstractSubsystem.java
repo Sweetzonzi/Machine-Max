@@ -8,10 +8,7 @@ import io.github.tt432.machinemax.common.vehicle.attr.subsystem.AbstractSubsyste
 import io.github.tt432.machinemax.common.vehicle.signal.Signals;
 import lombok.Getter;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -34,20 +31,37 @@ abstract public class AbstractSubsystem {
         this.owner = owner;
         this.subSystemAttr = attr;
         this.name = name;
-        if (this instanceof ISignalSender signalSender) {signalSender.resetSignalOutputs();}
+        if (this instanceof ISignalSender signalSender) {
+            signalSender.resetSignalOutputs();
+        }
     }
 
-    public void onTick() {}
+    public void onTick() {
+    }
 
-    public void onPrePhysicsTick() {}
+    public void onPrePhysicsTick() {
+    }
 
-    public void onPostPhysicsTick() {}
+    public void onPostPhysicsTick() {
+    }
 
-    public void onAttach() {}
+    public void onAttach() {
+    }
 
-    public void onDetach() {}
+    public void onDetach() {
+    }
 
-    public void onDisabled() {}
+    public void onDisabled() {
+    }
+
+    public void onVehicleStructureChanged() {
+        if (!this.callbackTargets.isEmpty()) {
+            // 使用迭代器的remove方法
+            this.callbackTargets.entrySet().removeIf(entry -> entry.getValue() instanceof AbstractSubsystem subsystem && subsystem.getPart().vehicle != this.getPart().vehicle);
+            if (this instanceof ISignalSender && this instanceof ISignalReceiver callbackListener)
+                callbackListener.clearCallbackSignals();
+        }
+    }
 
     public Part getPart() {
         if (owner instanceof Part part) return part;

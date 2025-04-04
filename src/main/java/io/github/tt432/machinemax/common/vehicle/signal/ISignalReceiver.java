@@ -9,10 +9,15 @@ public interface ISignalReceiver {
 
     ConcurrentMap<String, Signals> getSignalInputs();
 
-    default void onSignalUpdated(String signalKey) {
+    default void onSignalUpdated(String signalKey, ISignalSender sender) {
     }
 
     default Signals getSignals(String signalKey) {
         return getSignalInputs().computeIfAbsent(signalKey, k -> new Signals());
+    }
+
+    default void clearCallbackSignals() {
+        if (getSignalInputs().containsKey("callback")) getSignalInputs().get("callback").clear();
+        if (getSignalInputs().containsKey("speed_feedback")) getSignalInputs().get("speed_feedback").clear();
     }
 }

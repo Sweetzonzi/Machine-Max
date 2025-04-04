@@ -96,7 +96,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
             Vector3f relativeLinearVel = getRelativeLinearVel();
 //            for (int axis : attr.axisParams.keySet()) {
 //                if (axis <= 2) {
-//                    MotorAttr axisAttr = attr.axisParams.get(axis);
+//                    WheelRollingAxisAttr axisAttr = attr.axisParams.get(axis);
 //                    //处理速度控制信号
 //                    if (speedControl[axis] == null) {
 //                        translationMotor.setMotorEnabled(axis, false);
@@ -169,9 +169,9 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
                 }
                 if (!axisAttr.needsPower()) continue;
                 if (axis <= 2) {//反馈平动速度信号
-                    sendCallbackToListeners("speed_feedback", relativeLinearVel.get(axis));
+                    sendCallbackToAllListeners("speed_feedback", relativeLinearVel.get(axis));
                 } else {//反馈转动速度信号
-                    sendCallbackToListeners("speed_feedback", relativeAngularVel.get(axis - 3));
+                    sendCallbackToAllListeners("speed_feedback", relativeAngularVel.get(axis - 3));
                 }
             }
         }
@@ -187,11 +187,11 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
             //获取控制信号
             for (String signalKey : axisAttr.targetSpeedSignalKey()) {
                 targetSpeed = getSignals(signalKey);//获取目标速度信号(马达，仅控制速度)
-                if (!targetSpeed.get().isEmpty() && !(targetSpeed.getFirst() instanceof EmptySignal)) break;
+                if (!targetSpeed.isEmpty() && !(targetSpeed.getFirst() instanceof EmptySignal)) break;
             }
             for (String signalKey : axisAttr.targetPositionSignalKey()) {
                 targetPosition = getSignals(signalKey);//获取目标位置信号(伺服电机，试图达到目标位置)
-                if (!targetPosition.get().isEmpty() && !(targetPosition.getFirst() instanceof EmptySignal)) break;
+                if (!targetPosition.isEmpty() && !(targetPosition.getFirst() instanceof EmptySignal)) break;
             }
             //按类型处理控制信号
             //处理速度控制信号
@@ -216,12 +216,12 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
     private void distributePower() {
         double totalPower = 0.0;
         Signals powers = getSignals("power");
-        for (Map.Entry<ISignalSender, Object> entry : powers.get().entrySet()) {
+        for (Map.Entry<ISignalSender, Object> entry : powers.entrySet()) {
             if (entry.getValue() instanceof MechPowerSignal power) {
-                totalPower += power.getPower();//计算收到的总功率
+                totalPower += (Math.signum(power.getSpeed())) * power.getPower();//计算收到的总功率(考虑转速方向)
                 ISignalSender sender = entry.getKey();
                 if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
-                    callbackTargets.computeIfAbsent("speed_feedback", k -> new HashSet<>()).add(receiver);
+                    addCallbackTarget("speed_feedback", receiver);
                 }
             }
         }

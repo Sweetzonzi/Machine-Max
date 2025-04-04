@@ -31,7 +31,8 @@ public class Port implements ISignalReceiver, ISignalSender {
         this.targetNames = signalTargets;
     }
 
-    public void onSignalUpdated(String signalKey) {
+    @Override
+    public void onSignalUpdated(String signalKey, ISignalSender sender) {
         if (owner instanceof AbstractConnector ownerConnector
                 && ownerConnector.attachedConnector != null
                 && ownerConnector.attachedConnector.port.getTargets().containsKey(signalKey)) {
@@ -41,18 +42,19 @@ public class Port implements ISignalReceiver, ISignalSender {
                 // 仅在实际发生变更时传播
                 if (!receiverSignals.equals(currentSignals)) {
                     receiverSignals.putAll(currentSignals);
-                    signalReceiver.onSignalUpdated(signalKey);
+                    for (ISignalSender trueSender : currentSignals.keySet()) {
+                        signalReceiver.onSignalUpdated(signalKey, trueSender);
+                    }
                 }
             });
         }
     }
 
-
     /**
      * 对接口连接时，立即为对方更新一次信号
      */
     public void onConnectorAttach() {
-        for (Map.Entry<String, Signals> entry : signalInputs.entrySet()) onSignalUpdated(entry.getKey());
+        for (Map.Entry<String, Signals> entry : signalInputs.entrySet()) onSignalUpdated(entry.getKey(), this);
     }
 
     /**

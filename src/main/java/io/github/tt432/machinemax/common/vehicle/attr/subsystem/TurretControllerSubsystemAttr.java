@@ -10,6 +10,6 @@ public class TurretControllerSubsystemAttr extends AbstractSubsystemAttr{
 
     @Override
     public SubsystemType getType() {
-        return null;
+        return SubsystemType.TURRET_CTRL;
     }
 }
