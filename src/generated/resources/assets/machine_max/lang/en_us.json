@@ -1,11 +1,23 @@
 {
-  "message.machine_max.leaving_vehicle": "Hold [%1$s] %2$s/0.5s to leave the vehicle.",
+  "message.machine_max.leaving_vehicle": "Hold %1$s %2$s/0.50s to leave the vehicle.",
   "resourceType.category.machine_max.assembly": "Machine Max:Assembly",
   "resourceType.category.machine_max.general": "Machine Max:General",
   "resourceType.category.machine_max.ground": "Machine Max:Ground",
   "resourceType.category.machine_max.mech": "Machine Max:Mech",
   "resourceType.category.machine_max.plane": "Machine Max:Plane",
   "resourceType.category.machine_max.ship": "Machine Max:Ship",
-  "tooltip.machinemax.crossbar.interact": "Interact to disassemble:",
-  "tooltip.machinemax.spray_can.interact": "Interact to paint:"
+  "resourceType.machine_max.assembly.cycle_connector": "Cycle Part Connector",
+  "resourceType.machine_max.assembly.cycle_variant": "Cycle Part Variant",
+  "resourceType.machine_max.general.free_cam": "Free Camera",
+  "resourceType.machine_max.general.interact": "Interact with Vehicle",
+  "resourceType.machine_max.general.leave_vehicle": "Leave Vehicle",
+  "resourceType.machine_max.ground.forward": "Forward",
+  "resourceType.machine_max.ground.backward": "Backward",
+  "resourceType.machine_max.ground.leftward": "Leftward",
+  "resourceType.machine_max.ground.rightward": "Rightward",
+  "resourceType.machine_max.ground.clutch": "Clutch",
+  "resourceType.machine_max.ground.up_shift": "Shift Up",
+  "resourceType.machine_max.ground.down_shift": "Shift Down",
+  "tooltip.machinemax.crossbar.interactWitchPart": "Interact to disassemble:",
+  "tooltip.machinemax.spray_can.interactWitchPart": "Interact to paint:"
 }
