@@ -65,15 +65,17 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
         LivingEntityEyesightAttachment eyesightBody;
         AbstractConnector targetConnector;
         switch (KeyInputMapping.fromValue(payload.key())) {
+            /*
+             *  通用功能
+             */
             case FREE_CAM://自由相机模式
 
                 break;
-            case INTERACT://与载具等交互
-                if (payload.tick_count() == 0) {
-                    //未乘坐于载具部件，则在按下按键时交互
-                    var a = player.getVehicle();
-                    var b = ((IEntityMixin) player).getRidingSubsystem();
-                } else if (player.getVehicle() != null && payload.tick_count() >= 10) {
+            case INTERACT:
+
+                break;
+            case LEAVE_VEHICLE://与载具等交互
+                if (player.getVehicle() != null && payload.tick_count() >= 10) {
                     //处于骑乘状态，且长按互动键1秒，则尝试脱离载具
                     if (player.getVehicle() instanceof MMPartEntity vehicle) {
                         for (AbstractSubsystem subSystem : vehicle.part.subsystems.values()) {
@@ -86,6 +88,15 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     } else player.stopRiding();//一般载具实体的处理方式
                 }
                 break;
+            /*
+             * 地面载具
+             */
+            case CLUTCH, UP_SHIFT, DOWN_SHIFT:
+                handleRegularInputForSeatSubsystem(player, KeyInputMapping.fromValue(payload.key()), payload.tick_count());
+                break;
+            /*
+             *  载具组装
+             */
             case CYCLE_PART_CONNECTORS://切换部件连接点
                 if (!level.isClientSide()) {//仅在服务器端处理
                     heldItem = player.getMainHandItem();
@@ -146,5 +157,15 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
         }
     }
 
+    private static void handleRegularInputForSeatSubsystem(Player player, KeyInputMapping key, int tickCount) {
+        if (player.getVehicle() instanceof MMPartEntity vehicle) {
+            for (AbstractSubsystem subSystem : vehicle.part.subsystems.values()) {
+                if (subSystem instanceof SeatSubsystem seatSubSystem) {
+                    seatSubSystem.setRegularInputSignal(key, tickCount);
+                    break;
+                }
+            }
+        }
+    }
 
 }

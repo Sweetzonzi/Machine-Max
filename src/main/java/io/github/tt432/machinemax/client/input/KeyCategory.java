@@ -5,6 +5,7 @@ import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
 
 import static net.neoforged.neoforge.client.settings.KeyConflictContext.GUI;
 
@@ -44,7 +45,9 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
 
         @Override
         public boolean conflicts(IKeyConflictContext other) {
-            return other == this || other == GENERAL; //二者为同一类时，或另一类为通用按键时，冲突
+            return other == this ||
+                    other == GENERAL ||
+                    other == KeyConflictContext.IN_GAME; //二者为同一类时，或另一类为通用或原版时，冲突
         }
     },
     SHIP {
@@ -63,7 +66,9 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
 
         @Override
         public boolean conflicts(IKeyConflictContext other) {
-            return other == this || other == GENERAL; //二者为同一类时，或另一类为通用按键时，冲突
+            return other == this ||
+                    other == GENERAL ||
+                    other == KeyConflictContext.IN_GAME; //二者为同一类时，或另一类为通用或原版时，冲突
         }
     },
     PLANE {
@@ -82,7 +87,9 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
 
         @Override
         public boolean conflicts(IKeyConflictContext other) {
-            return other == this || other == GENERAL; //二者为同一类时，或另一类为通用按键时，冲突
+            return other == this ||
+                    other == GENERAL ||
+                    other == KeyConflictContext.IN_GAME; //二者为同一类时，或另一类为通用或原版时，冲突
         }
     },
     MECH {
@@ -101,7 +108,9 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
 
         @Override
         public boolean conflicts(IKeyConflictContext other) {
-            return other == this || other == GENERAL; //二者为同一类时，或另一类为通用按键时，冲突
+            return other == this ||
+                    other == GENERAL ||
+                    other == KeyConflictContext.IN_GAME; //二者为同一类时，或另一类为通用或原版时，冲突
         }
     },
     ASSEMBLY {

@@ -11,6 +11,7 @@ import io.github.tt432.machinemax.network.payload.RegularInputPayload;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
@@ -18,6 +19,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.HashMap;
@@ -122,10 +124,14 @@ public class RawInputHandler {
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Post event) {
         var client = Minecraft.getInstance();
+        /*
+          通用功能
+         */
         //载具交互
         if (KeyBinding.generalInteractKey.isDown()) {
             if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 0) {//一般互动
-                if (client.player != null) client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
+                if (client.player != null)
+                    client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
             }
             if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 10) {//长按0.5秒，进入交互模式
 
@@ -137,9 +143,10 @@ public class RawInputHandler {
             keyPressTicks.put(KeyBinding.generalInteractKey, 0);//重置计时器
             //TODO:退出交互模式
         }
+        //离开载具
         if (KeyBinding.generalLeaveVehicleKey.isDown()) {
             if (keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) == 10) {//长按0.5秒，离开载具
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.INTERACT.getValue(), 10));
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), 10));
             }
             //按键计时
             keyPressTicks.put(KeyBinding.generalLeaveVehicleKey, keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) + 1);
@@ -156,6 +163,40 @@ public class RawInputHandler {
             if (Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
                 player.displayClientMessage(Component.empty(), true);
         }
+        /*
+          地面载具
+         */
+        //离合
+        if (KeyBinding.groundClutchKey.isDown()) {
+            if (keyPressTicks.getOrDefault(KeyBinding.groundClutchKey, 0) == 0) {//按下时
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 0));
+            }
+            keyPressTicks.put(KeyBinding.groundClutchKey, keyPressTicks.getOrDefault(KeyBinding.groundClutchKey, 0) + 1);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.groundClutchKey, 0) > 0) {//按键松开且按下持续至少1tick
+            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), keyPressTicks.get(KeyBinding.groundClutchKey)));
+            keyPressTicks.put(KeyBinding.groundClutchKey, 0);
+        }
+        //升档
+        if (KeyBinding.groundUpShiftKey.isDown()) {
+            if (keyPressTicks.getOrDefault(KeyBinding.groundUpShiftKey, 0) == 0) {//按下时
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.UP_SHIFT.getValue(), 0));
+            }
+            keyPressTicks.put(KeyBinding.groundUpShiftKey, keyPressTicks.getOrDefault(KeyBinding.groundUpShiftKey, 0) + 1);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.groundUpShiftKey, 0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.groundUpShiftKey, 0);
+        }
+        //降档
+        if (KeyBinding.groundDownShiftKey.isDown()) {
+            if (keyPressTicks.getOrDefault(KeyBinding.groundDownShiftKey, 0) == 0) {//按下时
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.DOWN_SHIFT.getValue(), 0));
+            }
+            keyPressTicks.put(KeyBinding.groundDownShiftKey, keyPressTicks.getOrDefault(KeyBinding.groundDownShiftKey, 0) + 1);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.groundDownShiftKey, 0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.groundDownShiftKey, 0);
+        }
+        /*
+          载具组装
+         */
         //切换部件对接口
         if (KeyBinding.assemblyCycleConnectorKey.isDown()) {
             if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleConnectorKey, 0) == 0) {//按下时循环切换配件连接点键时发包服务器
@@ -173,6 +214,52 @@ public class RawInputHandler {
             keyPressTicks.put(KeyBinding.assemblyCycleVariantKey, keyPressTicks.getOrDefault(KeyBinding.assemblyCycleVariantKey, 0) + 1);
         } else if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleVariantKey, 0) > 0) {//按键松开且按下持续至少1tick
             keyPressTicks.put(KeyBinding.assemblyCycleVariantKey, 0);
+        }
+    }
+
+    @SubscribeEvent
+    public static void handVanillaInputs(InputEvent.InteractionKeyMappingTriggered event) {
+        // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player instanceof IEntityMixin passenger &&
+                passenger.getRidingSubsystem() instanceof SeatSubsystem seat &&
+                seat.disableVanillaActions) {
+            if (event.getKeyMapping() == Minecraft.getInstance().options.keyAttack ||
+                    event.getKeyMapping() == Minecraft.getInstance().options.keyUse ||
+                    event.getKeyMapping() == Minecraft.getInstance().options.keyPickItem) {
+                event.setSwingHand(false);
+                event.setCanceled(true);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void handleVanillaInputs(InputEvent.Key event) {
+        // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player instanceof IEntityMixin passenger &&
+                passenger.getRidingSubsystem() instanceof SeatSubsystem seat) {
+            //很奇怪，必须套一层if判断，屏蔽效果才能生效 Wired, must have a if to work
+            if (Minecraft.getInstance().options.keyUp.consumeClick()) {
+                Minecraft.getInstance().options.keyUp.setDown(false);
+            } else if (Minecraft.getInstance().options.keyDown.consumeClick()) {
+                Minecraft.getInstance().options.keyDown.setDown(false);
+            } else if (Minecraft.getInstance().options.keyLeft.consumeClick()) {
+                Minecraft.getInstance().options.keyLeft.setDown(false);
+            } else if (Minecraft.getInstance().options.keyRight.consumeClick()) {
+                Minecraft.getInstance().options.keyRight.setDown(false);
+            } else if (Minecraft.getInstance().options.keyShift.consumeClick()) {
+                Minecraft.getInstance().options.keyShift.setDown(false);
+            } else if (Minecraft.getInstance().options.keyInventory.isDown() && seat.disableVanillaActions) {
+                Minecraft.getInstance().options.keyInventory.consumeClick();
+                Minecraft.getInstance().options.keyInventory.setDown(false);
+            } else if (Minecraft.getInstance().options.keyDrop.isDown() && seat.disableVanillaActions) {
+                Minecraft.getInstance().options.keyDrop.consumeClick();
+                Minecraft.getInstance().options.keyDrop.setDown(false);
+            } else if (Minecraft.getInstance().options.keySwapOffhand.isDown() && seat.disableVanillaActions) {
+                Minecraft.getInstance().options.keySwapOffhand.consumeClick();
+                Minecraft.getInstance().options.keySwapOffhand.setDown(false);
+            }
         }
     }
 }
