@@ -15,6 +15,7 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
     public byte[] moveInput;
     public byte[] moveInputConflict;
     public float speed;
+    private float overrideCountDown = 0.0f;
 
     private final Map<String, ISignalReceiver> engines = new HashMap<>();
     private Map<String, ISignalReceiver> gearboxes = new HashMap<>();
@@ -30,6 +31,7 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
         super.onTick();
         updateMoveInputs();
         this.speed = getPart().rootSubPart.body.getLinearVelocity(null).z;
+        if (active && overrideCountDown > 0) overrideCountDown -= 0.05f;
     }
 
     @Override
@@ -96,16 +98,25 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
                 int tickCount = regularInputSignal.getInputTickCount();
                 switch (regularInputSignal.getInputType()) {
                     case CLUTCH:
+                        overrideCountDown = 2f;//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
                         if (tickCount == 0) {//踩离合 Unclutch
-                            System.out.println("Unclutch");
+//                            for (ISignalReceiver gearbox : gearboxes.values())
+//                                ((GearboxSubsystem) gearbox).setClutched(false);
+                            System.out.println("Clutch engaged");
                         } else {//松离合 Clutch
-                            System.out.println("Clutch");
+//                            for (ISignalReceiver gearbox : gearboxes.values())
+//                                ((GearboxSubsystem) gearbox).setClutched(true);
+                            System.out.println("Clutch released");
                         }
                         break;
                     case UP_SHIFT://升档 Shift up
+                        overrideCountDown = 5f;
+//                        for (ISignalReceiver gearbox : gearboxes.values()) ((GearboxSubsystem) gearbox).upShift();
                         System.out.println("Shift up");
                         break;
                     case DOWN_SHIFT://降档 Shift down
+                        overrideCountDown = 5f;
+//                        for (ISignalReceiver gearbox : gearboxes.values()) ((GearboxSubsystem) gearbox).downShift();
                         System.out.println("Shift down");
                         break;
                     default://忽视其他输入 Ignore other inputs
@@ -151,7 +162,7 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
                     for (Map.Entry<String, ISignalReceiver> entry : engines.entrySet()) {
                         sendCallbackToAllListeners(entry.getKey(), 1f);
                     }
-                    if (Math.abs(speed) <= 0.5f) {
+                    if (Math.abs(speed) <= 0.5f && overrideCountDown <= 0) {
                         for (ISignalReceiver gearbox : gearboxes.values())
                             ((GearboxSubsystem) gearbox).setClutched(true);
                     }
@@ -168,9 +179,10 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
                     for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
                         sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(Pair.of(0f, (float) moveInput[4])));
                     }
-                    for (ISignalReceiver gearbox : gearboxes.values()) {
-                        ((GearboxSubsystem) gearbox).setClutched(false);
-                    }
+                    if (overrideCountDown <= 0)
+                        for (ISignalReceiver gearbox : gearboxes.values()) {
+                            ((GearboxSubsystem) gearbox).setClutched(false);
+                        }
                 } else {//速度大于一定程度时，不刹车 Don't brake if the speed is high enough
                     for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
                         sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(Pair.of(null, (float) moveInput[4])));

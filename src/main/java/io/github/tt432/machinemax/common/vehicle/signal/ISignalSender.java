@@ -7,11 +7,19 @@ import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import java.util.*;
 
 public interface ISignalSender {
+    /**
+     * 在此填入各个信号名对应的接收者名列表，用于自动组织信号传输关系。<p>
+     * Return a map of signal names to a list of receiver names here, to automatically organize signal transfer.
+     *
+     * @return 信号名称->接收者名称列表 Map of signal names to a list of receiver names.
+     */
     Map<String, List<String>> getTargetNames();
 
     Map<String, Map<String, ISignalReceiver>> getTargets();//信号名称->接收者名称->接收者 Signal key -> receiver name -> receiver
 
-    default Map<String, Set<ISignalReceiver>> getCallbackTargets(){return Map.of();}
+    default Map<String, Set<ISignalReceiver>> getCallbackTargets() {
+        return Map.of();
+    }
 
     default void addCallbackTarget(String signalKey, ISignalReceiver target) {
         getCallbackTargets().computeIfAbsent(signalKey, k -> new HashSet<>()).add(target);
@@ -21,7 +29,9 @@ public interface ISignalSender {
         getCallbackTargets().computeIfAbsent(signalKey, k -> new HashSet<>()).remove(target);
     }
 
-    default void clearCallbackTargets() {getCallbackTargets().clear();}
+    default void clearCallbackTargets() {
+        getCallbackTargets().clear();
+    }
 
     Part getPart();
 
@@ -37,7 +47,7 @@ public interface ISignalSender {
                 signalReceiver.onSignalUpdated(entry.getKey(), this);
             });
         }
-        for (Map.Entry<String, Set<ISignalReceiver>> entry : getCallbackTargets().entrySet()){
+        for (Map.Entry<String, Set<ISignalReceiver>> entry : getCallbackTargets().entrySet()) {
             entry.getValue().forEach((signalReceiver) -> {
                 var emptySignal = new EmptySignal();
                 signalReceiver.getSignalInputs().computeIfAbsent(entry.getKey(), k -> new Signals()).put(this, emptySignal);
@@ -48,7 +58,8 @@ public interface ISignalSender {
 
     /**
      * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
-     * @param signalKey 信号名称
+     *
+     * @param signalKey   信号名称
      * @param signalValue 信号值
      */
     default void sendSignalToAllTargets(String signalKey, Object signalValue) {
@@ -57,8 +68,9 @@ public interface ISignalSender {
 
     /**
      * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
-     * @param signalKey 信号名称
-     * @param signalValue 信号值
+     *
+     * @param signalKey                 信号名称
+     * @param signalValue               信号值
      * @param requiresImmediateCallback 是否需要即时回调
      */
     default void sendSignalToAllTargets(String signalKey, Object signalValue, boolean requiresImmediateCallback) {
@@ -66,7 +78,7 @@ public interface ISignalSender {
             getTargets().get(signalKey).forEach((receiverName, signalReceiver) -> {
                 signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
                 signalReceiver.onSignalUpdated(signalKey, this);
-                if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender){
+                if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
                     callbackSender.sendImmediateCallback(signalKey, (ISignalReceiver) this);
                 }
             });
@@ -74,8 +86,9 @@ public interface ISignalSender {
 
     /**
      * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
-     * @param targetName 接收者名称
-     * @param signalKey 信号名称
+     *
+     * @param targetName  接收者名称
+     * @param signalKey   信号名称
      * @param signalValue 信号值
      */
     default void sendSignalToTarget(String targetName, String signalKey, Object signalValue) {
@@ -84,18 +97,19 @@ public interface ISignalSender {
 
     /**
      * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
-     * @param targetName 接收者名称
-     * @param signalKey 信号名称
-     * @param signalValue 信号值
+     *
+     * @param targetName                接收者名称
+     * @param signalKey                 信号名称
+     * @param signalValue               信号值
      * @param requiresImmediateCallback 是否需要即时回调
      */
     default void sendSignalToTarget(String targetName, String signalKey, Object signalValue, boolean requiresImmediateCallback) {
         if (getTargets().containsKey(signalKey)) {
-            ISignalReceiver signalReceiver =  getTargets().get(signalKey).get(targetName);
+            ISignalReceiver signalReceiver = getTargets().get(signalKey).get(targetName);
             if (signalReceiver != null) {
                 signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
                 signalReceiver.onSignalUpdated(signalKey, this);
-                if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender){
+                if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
                     callbackSender.sendImmediateCallback(signalKey, (ISignalReceiver) this);
                 }
             }
@@ -104,9 +118,10 @@ public interface ISignalSender {
 
     /**
      * 发送回调信号给指定监听器，通常用于握手或检查连接状态
+     *
      * @param callbackListener 回调监听器
      */
-    default void sendImmediateCallback(String signalKey, ISignalReceiver callbackListener){
+    default void sendImmediateCallback(String signalKey, ISignalReceiver callbackListener) {
         sendCallbackToListener("callback", callbackListener, signalKey);//发回收到的信号类型，尝试握手
     }
 
@@ -120,7 +135,7 @@ public interface ISignalSender {
         }
     }
 
-    default void sendCallbackToListener(String signalKey, ISignalReceiver receiver, Object signalValue){
+    default void sendCallbackToListener(String signalKey, ISignalReceiver receiver, Object signalValue) {
         if (this instanceof ISignalReceiver) {
             receiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
             receiver.onSignalUpdated(signalKey, this);

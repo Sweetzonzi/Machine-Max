@@ -48,7 +48,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
     @Override
     public void onTick() {
         if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
-            //检查并设置关节的旋转顺序
+            //检查并设置关节的旋转顺序 Check and set joint rotation order
             if (RotationOrder.XYZ != joint.getRotationOrder()) {
                 joint.setRotationOrder(RotationOrder.XYZ);
             }
@@ -58,7 +58,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        //计算收到功率
+        //计算收到功率 Calculate received power
         float totalPower = 0f;
         float speed = 0f;
         int i = 0;
@@ -66,10 +66,10 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
         for (Map.Entry<ISignalSender, Object> entry : powers.entrySet()) {
             i++;
             if (entry.getValue() instanceof MechPowerSignal power) {
-                totalPower += (Math.signum(power.getSpeed())) * power.getPower();//计算收到的总功率(考虑转速方向)
+                totalPower += (Math.signum(power.getSpeed())) * power.getPower();//计算收到的总功率(考虑转速方向) Calculate total power (considering direction of rotation)
                 speed += power.getSpeed();
                 ISignalSender sender = entry.getKey();
-                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
+                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者 If sender is also receiver, send speed back to sender
                     addCallbackTarget("speed_feedback", receiver);
                 }
             }
@@ -83,17 +83,16 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
             if (this.isActive() && controlSignal instanceof WheelControlSignal wheelControlSignal) {
                 //处理轮胎旋转 Handle rolling
                 rollingMotor.setMotorEnabled(true);
-                if (wheelControlSignal.getForwardControl() != null) {//若输入有转动速度信号，根据信号控制
+                float torque = 0;
+                if (speed != 0) torque = totalPower / speed;
+                if (wheelControlSignal.getForwardControl() != null) {//若输入有转动速度信号，根据信号控制 If speed signal is present, control with it
                     rollingMotor.set(MotorParam.TargetVelocity, wheelControlSignal.getForwardControl() * MAX_SPEED);
-                    float torque = 0;
-                    if (speed != 0) torque = totalPower / speed;
                     if (wheelControlSignal.getForwardControl() * Math.signum(relativeAngularVel.get(0) + 0.01f) < 0) {//加速过程
                         rollingMotor.set(MotorParam.MaxMotorForce, Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE));
-                    } else {//减速过程，发动机阻力也参与减速
+                    } else {//减速过程，发动机阻力也参与减速 If decelerating, apply engine braking as well
                         rollingMotor.set(MotorParam.MaxMotorForce, MAX_BRAKE_FORCE - Math.clamp(torque, -MAX_DRIVE_FORCE, 0));
                     }
-                } else {//若输入无转动速度信号，不进行刹车，溜车，但继续应用发动机阻力等
-                    float torque = totalPower / speed;
+                } else {//若输入无转动速度信号，不进行刹车，但溜车且继续应用发动机阻力等 If no speed signal, brake and apply engine braking
                     rollingMotor.set(MotorParam.TargetVelocity, 0f);
                     rollingMotor.set(MotorParam.MaxMotorForce, Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE));
                 }
