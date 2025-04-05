@@ -13,6 +13,7 @@
   "subsystems": {
     "car_controller": {
       "type": "machine_max:car_controller",
+      "manual_gear_shift": true,//手动控制挡位输入
       "control_inputs": ["move_control"],
       "engine_outputs": {
         "engine_control": ["engine"]
@@ -176,9 +177,14 @@
           "type": "Special",
           "signal_targets": {
             "move_control": [
-              "car_controller",
-              "engine"//备用控制链路，优先级低于控制器，当车辆控制器失效时可继续控制
-            ]
+              "car_controller",//向控制器传输标准移动输入信号，如转向、加速、刹车等
+              "engine",//备用控制链路，优先级低于控制器，当车辆控制器失效时可继续控制
+              "left_front_wheel_driver",
+              "right_front_wheel_driver",
+              "left_back_wheel_driver",
+              "right_back_wheel_driver"
+            ],
+            "regular_control": ["car_controller"]//向车辆控制器传输一般按键输入信号，如换挡、离合器控制等
           }
         },
         "copilot_seat": {

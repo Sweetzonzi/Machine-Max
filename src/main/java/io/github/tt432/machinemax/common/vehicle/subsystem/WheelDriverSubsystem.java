@@ -74,7 +74,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
                 }
             }
         }
-        speed /= i;
+        if (i > 0) speed /= i;
         if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
             Signal<?> controlSignal = getControlInput();
             RotationMotor rollingMotor = joint.getRotationMotor(0);
@@ -85,7 +85,8 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
                 rollingMotor.setMotorEnabled(true);
                 if (wheelControlSignal.getForwardControl() != null) {//若输入有转动速度信号，根据信号控制
                     rollingMotor.set(MotorParam.TargetVelocity, wheelControlSignal.getForwardControl() * MAX_SPEED);
-                    float torque = totalPower / speed;
+                    float torque = 0;
+                    if (speed != 0) torque = totalPower / speed;
                     if (wheelControlSignal.getForwardControl() * Math.signum(relativeAngularVel.get(0) + 0.01f) < 0) {//加速过程
                         rollingMotor.set(MotorParam.MaxMotorForce, Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE));
                     } else {//减速过程，发动机阻力也参与减速

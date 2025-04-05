@@ -1,7 +1,5 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
-import cn.solarmoon.spark_core.physics.SparkMathKt;
-import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.client.input.KeyBinding;
 import io.github.tt432.machinemax.client.input.RawInputHandler;
@@ -11,7 +9,7 @@ import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
-import io.github.tt432.machinemax.util.MMMath;
+import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import lombok.Getter;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
@@ -24,14 +22,16 @@ import java.util.Map;
 
 @Getter
 public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
+    public final SeatSubsystemAttr attr;
+    public boolean disableVanillaActions;
     public AbstractConnector seatLocator;
     public LivingEntity passenger;
-    public final SeatSubsystemAttr attr;
     public boolean occupied;
 
     public SeatSubsystem(ISubsystemHost owner, String name, SeatSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+        this.disableVanillaActions = !this.attr.allowUseItems;
     }
 
     @Override
@@ -99,8 +99,8 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
             for (String signalKey : attr.moveSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
             }
-            for (int i = 0; i < 6; i++){
-                if (inputs[i] != 0 && getPart()!= null && getPart().vehicle != null) {
+            for (int i = 0; i < 6; i++) {
+                if (inputs[i] != 0 && getPart() != null && getPart().vehicle != null) {
                     getPart().vehicle.activate();
                     break;
                 }
@@ -108,17 +108,17 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
         }
     }
 
-    public void setRegularInputSignal() {
+    public void setRegularInputSignal(KeyInputMapping inputType, int tickCount) {
         if (!attr.regularSignalTargets.isEmpty()) {
             for (String signalKey : attr.regularSignalTargets.keySet()) {
-                sendSignalToAllTargets(signalKey, new EmptySignal());
+                sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
             }
         }
     }
 
     public void setViewInputSignal() {
         if (!attr.viewSignalTargets.isEmpty()) {
-            for (String signalKey : attr.viewSignalTargets.keySet()){
+            for (String signalKey : attr.viewSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new EmptySignal());
             }
         }

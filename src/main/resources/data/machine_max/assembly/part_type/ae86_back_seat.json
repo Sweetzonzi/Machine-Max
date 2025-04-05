@@ -14,12 +14,14 @@
     "left_seat": {
       "type": "machine_max:seat",
       "sub_part": "ae86_back_seat",
-      "connector": "left_seat_point"
+      "connector": "left_seat_point",
+      "allow_use_items": true
     },
     "right_seat": {
       "type": "machine_max:seat",
       "sub_part": "ae86_back_seat",
-      "connector": "right_seat_point"
+      "connector": "right_seat_point",
+      "allow_use_items": true
     }
   },
   "sub_parts": {//零件(子部件)列表

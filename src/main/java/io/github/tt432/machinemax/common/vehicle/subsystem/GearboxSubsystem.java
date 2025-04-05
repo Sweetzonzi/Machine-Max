@@ -14,7 +14,7 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
     public final double[] gearRatios;//各级实际传动比率
     private int currentGear = 1;
     @Setter
-    private boolean clutch = false;//离合状态，false为正常传动，true为不传动
+    private boolean clutched = true;//离合状态，true为正常传动，false为不传动
     private float remainingSwitchTime = 0.0f;
 
     public GearboxSubsystem(ISubsystemHost owner, String name, GearboxSubsystemAttr attr) {
@@ -39,7 +39,7 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
         if (currentGear == gear) return;//当前挡位与目标挡位相同，无需切换
         if (gear >= 0 && gear < gearRatios.length) {//目标挡位有效
             this.currentGear = gear;//更新当前挡位
-            if (!clutch) this.remainingSwitchTime = attr.switchTime;//若未踩离合，开始换挡时间倒计时
+            if (clutched) this.remainingSwitchTime = attr.switchTime;//若未踩离合，开始换挡时间倒计时
             //更新挡位信号
             for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
                 String signalKey = entry.getKey();
@@ -64,8 +64,8 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
     }
 
     private void distributePower() {
-        if (clutch || remainingSwitchTime > 0.0f) {
-            sendSignalToTarget(attr.powerOutputTarget, "power", new EmptySignal());
+        if (!clutched || remainingSwitchTime > 0.0f) {
+            sendSignalToTarget(attr.powerOutputTarget, "power", new MechPowerSignal(0.0f, 0f));
             return;
         }
         double totalPower = 0.0;
@@ -83,13 +83,13 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
                 }
             }
         }
-        averageSpeed /= count;//计算转速平均值
+        if (count > 0) averageSpeed /= count;//计算转速平均值
         MechPowerSignal powerSignalToSend = new MechPowerSignal((float) totalPower, (float) (averageSpeed / gearRatios[currentGear]));
         sendSignalToTarget(attr.powerOutputTarget, "power", powerSignalToSend);//发送功率信号
     }
 
     private void updateFeedback() {
-        if (clutch|| remainingSwitchTime > 0.0f) {//空挡时或正在换挡时，不反馈速度信号
+        if (!clutched || remainingSwitchTime > 0.0f) {//空挡时或正在换挡时，不反馈速度信号
             sendCallbackToAllListeners("speed_feedback", new EmptySignal());
             return;
         }

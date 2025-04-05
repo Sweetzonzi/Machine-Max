@@ -15,6 +15,7 @@
       "type": "machine_max:seat", //子系统类型
       "sub_part": "ae86_seat", //子系统所属零件名称
       "connector": "seat_point", //乘坐点对接口名称，乘客将被定位于此对接口
+      "allow_use_items": false,
       "move_outputs": {
         "move_control": ["chassis_connection"] //将控制信号转发给与底盘连接的对接口
       },

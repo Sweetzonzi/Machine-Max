@@ -71,26 +71,48 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
     public void onSignalUpdated(String signalKey, ISignalSender sender) {
         ISignalReceiver.super.onSignalUpdated(signalKey, sender);
         Object signalValue = getSignals(signalKey).get(sender);
-        if (this.isActive() && signalKey.equals("callback") && signalValue instanceof String callbackValue) {
-            if (sender instanceof WheelDriverSubsystem wheel) {
-                if (wheel.getPart().vehicle != this.getPart().vehicle) wheels.remove(signalValue);
-                else {
-                    wheels.put(callbackValue, wheel);
-                    addCallbackTarget(callbackValue, wheel);
+        if (this.isActive()) {
+            if (signalKey.equals("callback") && signalValue instanceof String callbackValue) {
+                if (sender instanceof WheelDriverSubsystem wheel) {
+                    if (wheel.getPart().vehicle != this.getPart().vehicle) wheels.remove(signalValue);
+                    else {
+                        wheels.put(callbackValue, wheel);
+                        addCallbackTarget(callbackValue, wheel);
+                    }
+                } else if (sender instanceof EngineSubsystem engine) {
+                    if (engine.getPart().vehicle != this.getPart().vehicle) this.engines.remove(signalValue);
+                    else {
+                        engines.put(callbackValue, engine);
+                        addCallbackTarget(callbackValue, engine);
+                    }
+                } else if (sender instanceof GearboxSubsystem gearbox) {
+                    if (gearbox.getPart().vehicle != this.getPart().vehicle) this.gearboxes = null;
+                    else {
+                        gearboxes.put(callbackValue, gearbox);
+                        addCallbackTarget(callbackValue, gearbox);
+                    }
                 }
-            } else if (sender instanceof EngineSubsystem engine) {
-                if (engine.getPart().vehicle != this.getPart().vehicle) this.engines.remove(signalValue);
-                else {
-                    engines.put(callbackValue, engine);
-                    addCallbackTarget(callbackValue, engine);
-                }
-            } else if (sender instanceof GearboxSubsystem gearbox) {
-                if (gearbox.getPart().vehicle != this.getPart().vehicle) this.gearboxes = null;
-                else {
-                    gearboxes.put(callbackValue, gearbox);
-                    addCallbackTarget(callbackValue, gearbox);
+            } else if (signalValue instanceof RegularInputSignal regularInputSignal) {
+                int tickCount = regularInputSignal.getInputTickCount();
+                switch (regularInputSignal.getInputType()) {
+                    case CLUTCH:
+                        if (tickCount == 0) {//踩离合 Unclutch
+                            System.out.println("Unclutch");
+                        } else {//松离合 Clutch
+                            System.out.println("Clutch");
+                        }
+                        break;
+                    case UP_SHIFT://升档 Shift up
+                        System.out.println("Shift up");
+                        break;
+                    case DOWN_SHIFT://降档 Shift down
+                        System.out.println("Shift down");
+                        break;
+                    default://忽视其他输入 Ignore other inputs
+                        break;
                 }
             }
+
         }
     }
 
@@ -129,6 +151,10 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
                     for (Map.Entry<String, ISignalReceiver> entry : engines.entrySet()) {
                         sendCallbackToAllListeners(entry.getKey(), 1f);
                     }
+                    if (Math.abs(speed) <= 0.5f) {
+                        for (ISignalReceiver gearbox : gearboxes.values())
+                            ((GearboxSubsystem) gearbox).setClutched(true);
+                    }
                 } else if (moveInput[2] * speed < 0) {//减速行驶 Brake
                     for (Map.Entry<String, ISignalReceiver> entry : engines.entrySet()) {
                         sendCallbackToAllListeners(entry.getKey(), 0f);
@@ -143,7 +169,7 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
                         sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(Pair.of(0f, (float) moveInput[4])));
                     }
                     for (ISignalReceiver gearbox : gearboxes.values()) {
-//                        ((GearboxSubsystem)gearbox).setClutch(true);
+                        ((GearboxSubsystem) gearbox).setClutched(false);
                     }
                 } else {//速度大于一定程度时，不刹车 Don't brake if the speed is high enough
                     for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
