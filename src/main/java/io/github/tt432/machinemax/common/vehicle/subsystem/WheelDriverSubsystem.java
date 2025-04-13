@@ -87,7 +87,8 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
                 if (speed != 0) torque = totalPower / speed;
                 if (wheelControlSignal.getForwardControl() != null) {//若输入有转动速度信号，根据信号控制 If speed signal is present, control with it
                     rollingMotor.set(MotorParam.TargetVelocity, wheelControlSignal.getForwardControl() * MAX_SPEED);
-                    if (wheelControlSignal.getForwardControl() * Math.signum(relativeAngularVel.get(0) + 0.01f) < 0) {//加速过程
+                    if (wheelControlSignal.getForwardControl() * Math.signum(relativeAngularVel.get(0)) < 0
+                            || relativeAngularVel.get(0) == 0) {//加速过程 Accelerating, apply torque
                         rollingMotor.set(MotorParam.MaxMotorForce, Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE));
                     } else {//减速过程，发动机阻力也参与减速 If decelerating, apply engine braking as well
                         rollingMotor.set(MotorParam.MaxMotorForce, MAX_BRAKE_FORCE - Math.clamp(torque, -MAX_DRIVE_FORCE, 0));

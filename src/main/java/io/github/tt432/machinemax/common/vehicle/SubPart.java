@@ -182,51 +182,60 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             float xOcclusion = 1;//遮挡系数，1为无遮挡，应用全部流体动力；0为完全被遮挡，不应用流体动力
             float yOcclusion = 1;
             float zOcclusion = 1;
-            if (Math.abs(localVel.x) > 0.1f) {
-                Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(Math.signum(localVel.x), 0, 0), this.body).mult((float) attr.aeroDynamic().effectiveRange().x));
-                List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
-                for (PhysicsRayTestResult ray : result) {
-                    var hit = ray.getCollisionObject();
-                    if (hit == this.body || !(hit.getOwner() instanceof SubPart)) continue;
-                    if ((hit.getOwner() instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                        if (sp.attr.aeroDynamic().priority() > this.attr.aeroDynamic().priority()) {
-                            float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
-                            if (tempOcclusion < xOcclusion) xOcclusion = Math.max(0, tempOcclusion);
-                            if (xOcclusion <= 0) break;
-                        }
-                    }
-                }
-            }
-            if (Math.abs(localVel.y) > 0.1f) {
-                Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, Math.signum(localVel.y), 0), this.body).mult((float) attr.aeroDynamic().effectiveRange().y));
-                List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
-                for (PhysicsRayTestResult ray : result) {
-                    var hit = ray.getCollisionObject();
-                    if (hit == this.body || !(hit.getOwner() instanceof SubPart)) continue;
-                    if ((hit.getOwner() instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                        if (sp.attr.aeroDynamic().priority() > this.attr.aeroDynamic().priority()) {
-                            float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
-                            if (tempOcclusion < yOcclusion) yOcclusion = Math.max(0, tempOcclusion);
-                            if (yOcclusion <= 0) break;
-                        }
-                    }
-                }
-            }
-            if (Math.abs(localVel.z) > 0.1f) {
-                Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, 0, Math.signum(localVel.z)), this.body).mult((float) attr.aeroDynamic().effectiveRange().z));
-                List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
-                for (PhysicsRayTestResult ray : result) {
-                    var hit = ray.getCollisionObject();
-                    if (hit == this.body || !(hit.getOwner() instanceof SubPart)) continue;
-                    if ((hit.getOwner() instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                        if (sp.attr.aeroDynamic().priority() > this.attr.aeroDynamic().priority()) {
-                            float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
-                            if (tempOcclusion < zOcclusion) zOcclusion = Math.max(0, tempOcclusion);
-                            if (zOcclusion <= 0) break;
-                        }
-                    }
-                }
-            }
+//            if (Math.abs(localVel.x) > 0.1f) {
+//                Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(Math.signum(localVel.x), 0, 0), this.body).mult((float) attr.aeroDynamic().effectiveRange().x));
+//                if (target.equals(pos)){
+//                    System.out.println("x_target: " + target + " pos: " + pos);
+//                }
+//                List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
+//                for (PhysicsRayTestResult ray : result) {
+//                    var hit = ray.getCollisionObject();
+//                    if (hit == this.body || !(hit.getOwner() instanceof SubPart)) continue;
+//                    if ((hit.getOwner() instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
+//                        if (sp.attr.aeroDynamic().priority() > this.attr.aeroDynamic().priority()) {
+//                            float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
+//                            if (tempOcclusion < xOcclusion) xOcclusion = Math.max(0, tempOcclusion);
+//                            if (xOcclusion <= 0) break;
+//                        }
+//                    }
+//                }
+//            }
+//            if (Math.abs(localVel.y) > 0.1f) {
+//                Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, Math.signum(localVel.y), 0), this.body).mult((float) attr.aeroDynamic().effectiveRange().y));
+//                if (target.equals(pos)){
+//                    System.out.println("y_target: " + target + " pos: " + pos);
+//                }
+//                List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
+//                for (PhysicsRayTestResult ray : result) {
+//                    var hit = ray.getCollisionObject();
+//                    if (hit == this.body || !(hit.getOwner() instanceof SubPart)) continue;
+//                    if ((hit.getOwner() instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
+//                        if (sp.attr.aeroDynamic().priority() > this.attr.aeroDynamic().priority()) {
+//                            float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
+//                            if (tempOcclusion < yOcclusion) yOcclusion = Math.max(0, tempOcclusion);
+//                            if (yOcclusion <= 0) break;
+//                        }
+//                    }
+//                }
+//            }
+//            if (Math.abs(localVel.z) > 0.1f) {
+//                Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, 0, Math.signum(localVel.z)), this.body).mult((float) attr.aeroDynamic().effectiveRange().z));
+//                if (target.equals(pos)){
+//                    System.out.println("z_target: " + target + " pos: " + pos);
+//                }
+//                List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
+//                for (PhysicsRayTestResult ray : result) {
+//                    var hit = ray.getCollisionObject();
+//                    if (hit == this.body || !(hit.getOwner() instanceof SubPart)) continue;
+//                    if ((hit.getOwner() instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
+//                        if (sp.attr.aeroDynamic().priority() > this.attr.aeroDynamic().priority()) {
+//                            float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
+//                            if (tempOcclusion < zOcclusion) zOcclusion = Math.max(0, tempOcclusion);
+//                            if (zOcclusion <= 0) break;
+//                        }
+//                    }
+//                }
+//            }
             //流体动力计算
             Vector3f localAeroForce = Dynamic.aeroDynamicForce(
                     1.29f,//kg/m^3 流体密度

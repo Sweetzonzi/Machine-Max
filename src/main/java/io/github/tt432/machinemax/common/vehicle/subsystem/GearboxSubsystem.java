@@ -1,5 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.GearboxSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
@@ -34,11 +35,10 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
         if (getPart().level.isClientSide) {
             if (Minecraft.getInstance().player != null) {
                 String gear = gearNames.get(currentGear);
-                if (!clutched) gear = "N";
+                if (!clutched || remainingSwitchTime > 0.0f) gear = "N";
                 Object engineSpeed = getPart().vehicle.subSystemController.getSignals("engine_speed").getFirst();
                 float engineRPM = engineSpeed instanceof Float f ? (float) (f / Math.PI * 30f) : 0.0f;
-                if (engineRPM > 6500) gear = "&r" + gear;
-                Minecraft.getInstance().player.displayClientMessage(Component.empty().append("Gear: " + gear + " RPM:" + engineRPM), true);
+                Minecraft.getInstance().player.displayClientMessage(Component.empty().append("Gear: " + gear + " RPM:" + engineRPM).withColor(engineRPM > 6500 ? 0xff0000 : 0xffffff), true);
             }
         }
     }
