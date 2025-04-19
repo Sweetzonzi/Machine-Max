@@ -47,8 +47,8 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
     @Override
     public void onTick() {
         if (passenger != null && this.owner.getPart() instanceof Part part) {
-            if (passenger.isRemoved() || passenger.isDeadOrDying()) {
-                passenger = null;
+            if (passenger.isRemoved() || passenger.isDeadOrDying() || passenger.getVehicle() != part.entity) {
+                removePassenger();
                 return;
             }
             passenger.resetFallDistance();//防止摔死
@@ -58,11 +58,12 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
     }
 
     public boolean setPassenger(LivingEntity passenger) {
+        if (passenger == null) removePassenger();
         if (!occupied && owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).getRidingSubsystem() == null) {
+            passenger.startRiding(owner.getPart().entity, true);
             occupied = true;
             this.passenger = passenger;
             ((IEntityMixin) passenger).setRidingSubsystem(this);
-            passenger.startRiding(owner.getPart().entity, true);
             getPart().vehicle.activate();
             //TODO:换成在hud角落常驻显示好了
             if (passenger.level() instanceof ClientLevel && passenger instanceof Player player)
@@ -78,10 +79,12 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
 
     public void removePassenger() {
         if (passenger != null) {
-            ((IEntityMixin) passenger).setRidingSubsystem(null);
+            if (((IEntityMixin) passenger).getRidingSubsystem() == this)
+                ((IEntityMixin) passenger).setRidingSubsystem(null);
             passenger = null;
-            occupied = false;
         }
+        occupied = false;
+        resetSignalOutputs();
     }
 
     @Override

@@ -3,6 +3,9 @@ package io.github.tt432.machinemax.common.vehicle.attr.subsystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import lombok.Getter;
 
 import java.util.List;
@@ -18,6 +21,8 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, List<String>> regularSignalTargets;
 
     public static final MapCodec<SeatSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.fieldOf("sub_part").forGetter(SeatSubsystemAttr::getSubpart),
             Codec.STRING.fieldOf("connector").forGetter(SeatSubsystemAttr::getConnector),
             Codec.BOOL.fieldOf("allow_use_items").forGetter(SeatSubsystemAttr::isAllowUseItems),
@@ -27,13 +32,15 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     ).apply(instance, SeatSubsystemAttr::new));
 
     public SeatSubsystemAttr(
+            float basicDurability,
+            String hitBox,
             String subpart,
             String connector,
             boolean allowUseItems,
             Map<String, List<String>> moveSignalTargets,
             Map<String, List<String>> viewSignalTargets,
             Map<String, List<String>> regularSignalTargets) {
-        super();
+        super(basicDurability, hitBox);
         this.subpart = subpart;
         this.connector = connector;
         this.allowUseItems = allowUseItems;
@@ -50,5 +57,10 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     @Override
     public SubsystemType getType() {
         return SubsystemType.SEAT;
+    }
+
+    @Override
+    public AbstractSubsystem createSubsystem(ISubsystemHost owner, String name) {
+        return new SeatSubsystem(owner, name, this);
     }
 }
