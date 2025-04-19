@@ -31,7 +31,7 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.FLOAT.fieldOf("max_power").forGetter(EngineSubsystemAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("base_rpm", 500f).forGetter(EngineSubsystemAttr::getBaseRpm),
-            Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5000f).forGetter(EngineSubsystemAttr::getMaxTorqueRpm),
+            Codec.FLOAT.optionalFieldOf("max_torque_rpm", 4000f).forGetter(EngineSubsystemAttr::getMaxTorqueRpm),
             Codec.FLOAT.optionalFieldOf("max_rpm", 7000f).forGetter(EngineSubsystemAttr::getMaxRpm),
             Codec.DOUBLE.optionalFieldOf("inertia", 0.1).forGetter(EngineSubsystemAttr::getInertia),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(5.0, 0.005, 0.00003)).forGetter(EngineSubsystemAttr::getDampingFactors),

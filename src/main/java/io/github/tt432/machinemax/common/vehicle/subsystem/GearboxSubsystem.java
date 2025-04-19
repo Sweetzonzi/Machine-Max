@@ -15,6 +15,8 @@ import java.util.*;
 public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
     public final GearboxSubsystemAttr attr;
     public final double[] gearRatios;//各级实际传动比率 Actual transmission ratio of each gear
+    public final int minPositiveGear;
+    public final int minNegativeGear;
     public final List<String> gearNames;//各级挡位的名称 Names of each gear position
     private int currentGear = 1; //当前挡位 Current gear position
     @Setter
@@ -27,6 +29,19 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
         this.gearRatios = attr.ratios.stream().mapToDouble(Float::floatValue).map(r -> r * attr.finalRatio).toArray();
         gearNames = generateGears(this.gearRatios);
         switchGear(0);
+        int tempMinPositiveGear = this.gearRatios.length - 1;
+        int tempMinNegativeGear = 0;
+        for (int i = 0; i < this.gearRatios.length; i++) {
+            if (this.gearRatios[i] > 0 && i < tempMinPositiveGear) {
+                tempMinPositiveGear = i;
+                break;
+            }
+            if (this.gearRatios[i] < 0 && i > tempMinNegativeGear) {
+                tempMinNegativeGear = i;
+            }
+        }
+        minPositiveGear = tempMinPositiveGear;
+        minNegativeGear = tempMinNegativeGear;
     }
 
     @Override

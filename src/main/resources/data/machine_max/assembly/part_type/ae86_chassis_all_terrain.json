@@ -13,7 +13,7 @@
   "subsystems": {
     "car_controller": {
       "type": "machine_max:car_controller",
-      "manual_gear_shift": true,//(可选，默认false)是否强制手动挡
+      "manual_gear_shift": false,//(可选，默认false)是否强制手动挡
       "control_inputs": ["move_control"],
       "engine_outputs": {
         "engine_control": ["engine"]
