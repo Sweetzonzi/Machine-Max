@@ -34,7 +34,7 @@ public class SubPartAttr {
     public final String massCenterLocator;
     public final String blockCollision;
     public final float stepHeight;
-    public final Map<String, ShapeAttr> collisionShapeAttr;
+    public final Map<String, HitBoxAttr> collisionShapeAttr;
     public final Map<String, ConnectorAttr> connectors;
     public final DragAttr aeroDynamic;
 
@@ -48,7 +48,7 @@ public class SubPartAttr {
             Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::getMassCenterLocator),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("step_height", 0.0f).forGetter(SubPartAttr::getStepHeight),
-            ShapeAttr.MAP_CODEC.fieldOf("hit_box").forGetter(SubPartAttr::getCollisionShapeAttr),
+            HitBoxAttr.MAP_CODEC.fieldOf("hit_boxes").forGetter(SubPartAttr::getCollisionShapeAttr),
             ConnectorAttr.MAP_CODEC.fieldOf("connectors").forGetter(SubPartAttr::getConnectors),
             DragAttr.CODEC.fieldOf("aero_dynamic").forGetter(SubPartAttr::getAeroDynamic)
     ).apply(instance, SubPartAttr::new));
@@ -65,7 +65,7 @@ public class SubPartAttr {
             String massCenterLocator,
             String blockCollision,
             float stepHeight,
-            Map<String, ShapeAttr> collisionShapeAttr,
+            Map<String, HitBoxAttr> collisionShapeAttr,
             Map<String, ConnectorAttr> connectors,
             DragAttr aeroDynamic
     ) {
@@ -100,18 +100,24 @@ public class SubPartAttr {
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
             int i = 0;
-            for (Map.Entry<String, ShapeAttr> shapeEntry : this.collisionShapeAttr.entrySet()) {
-                if (bones.get(shapeEntry.getKey()) != null) {//若找到了对应的碰撞形状骨骼
-                    float thickness = shapeEntry.getValue().thickness();
-                    String material = shapeEntry.getValue().materialName();
-                    OBone bone = bones.get(shapeEntry.getKey());
-                    switch (shapeEntry.getValue().shapeType()) {
+            for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.collisionShapeAttr.entrySet()) {
+                if (bones.get(hitBoxEntry.getKey()) != null) {//若找到了对应的碰撞形状骨骼
+                    String hitBoxName = hitBoxEntry.getValue().hitBoxName();
+                    float rha = hitBoxEntry.getValue().RHA();
+                    float damageReduction = hitBoxEntry.getValue().damageReduction();
+                    float damageMultiplier = hitBoxEntry.getValue().damageMultiplier();
+                    OBone bone = bones.get(hitBoxEntry.getKey());
+                    switch (hitBoxEntry.getValue().shapeType()) {
                         case "box"://与方块的尺寸匹配
                             for (OCube cube : bone.getCubes()) {
                                 org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
                                 BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
                                 org.joml.Vector3f rotation = cube.getRotation().toVector3f();
                                 Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
+                                type.hitBoxes.put(boxShape.nativeId(), hitBoxName);
+                                type.thickness.put(boxShape.nativeId(), rha);
+                                type.damageReduction.put(boxShape.nativeId(), damageReduction);
+                                type.damageMultiplier.put(boxShape.nativeId(), damageMultiplier);
                                 shape.addChildShape(
                                         boxShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
@@ -121,6 +127,10 @@ public class SubPartAttr {
                         case "sphere"://取方块的x轴尺寸作为球直径
                             for (OCube cube : bone.getCubes()) {
                                 SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().x / 2));
+                                type.hitBoxes.put(ballShape.nativeId(), hitBoxName);
+                                type.thickness.put(ballShape.nativeId(), rha);
+                                type.damageReduction.put(ballShape.nativeId(), damageReduction);
+                                type.damageMultiplier.put(ballShape.nativeId(), damageMultiplier);
                                 shape.addChildShape(
                                         ballShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())));
@@ -132,6 +142,10 @@ public class SubPartAttr {
                                 org.joml.Vector3f rotation = cube.getRotation().toVector3f();
                                 Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                                 CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size, 0);
+                                type.hitBoxes.put(cylinderShape.nativeId(), hitBoxName);
+                                type.thickness.put(cylinderShape.nativeId(), rha);
+                                type.damageReduction.put(cylinderShape.nativeId(), damageReduction);
+                                type.damageMultiplier.put(cylinderShape.nativeId(), damageMultiplier);
                                 shape.addChildShape(
                                         cylinderShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
@@ -145,12 +159,12 @@ public class SubPartAttr {
                             //TODO:创建碰撞体积
                             break;
                         default:
-                            MachineMax.LOGGER.error("在部件{}中发现不支持的碰撞形状类型{}。", type.name, shapeEntry.getValue());
-                            i--;
+                            MachineMax.LOGGER.error("在部件{}中发现不支持的碰撞形状类型{}。", type.name, hitBoxEntry.getValue());
+                            continue;
                     }
                     i++;
                 } else
-                    MachineMax.LOGGER.error("在部件{}中未找到对应的碰撞形状骨骼{}。", type.name, shapeEntry.getKey());
+                    MachineMax.LOGGER.error("在部件{}中未找到对应的碰撞形状骨骼{}。", type.name, hitBoxEntry.getKey());
             }
             //调整零件质心 Adjust sub-part mass center
             Transform massCenter = new Transform();

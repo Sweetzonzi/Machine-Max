@@ -3,6 +3,8 @@ package io.github.tt432.machinemax.common.vehicle.attr.subsystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import io.github.tt432.machinemax.common.registry.MMDataRegistries;
+import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import lombok.Getter;
 
 import java.util.List;
@@ -12,7 +14,12 @@ import java.util.function.Function;
 @Getter
 abstract public class AbstractSubsystemAttr {
 
-    protected AbstractSubsystemAttr() {
+    public final float basicDurability;
+    public final String hitBox;
+
+    protected AbstractSubsystemAttr(float basicDurability, String hitBox) {
+        this.basicDurability = basicDurability;
+        this.hitBox = hitBox;
     }
 
     public abstract MapCodec<? extends AbstractSubsystemAttr> codec();
@@ -32,6 +39,8 @@ abstract public class AbstractSubsystemAttr {
     }
 
     public abstract SubsystemType getType();
+
+    public abstract AbstractSubsystem createSubsystem(ISubsystemHost owner, String name);
 
     public static final Codec<Map<String, List<String>>> SIGNAL_TARGETS_CODEC = Codec.unboundedMap(
             Codec.STRING,

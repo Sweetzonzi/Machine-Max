@@ -137,8 +137,7 @@ public class AssemblyHud implements LayeredDraw.Layer {
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,
                 partProjection.color.getRGB(),
-                partialTick,
-                1f
+                partialTick
         );
         bufferSource.endBatch();
         RenderSystem.applyModelViewMatrix();

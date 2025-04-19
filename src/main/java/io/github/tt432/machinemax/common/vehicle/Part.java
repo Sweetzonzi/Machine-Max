@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.anim.play.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
-import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
@@ -17,16 +16,13 @@ import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bounding.BoundingBox;
-import com.jme3.bullet.collision.shapes.BoxCollisionShape;
-import com.jme3.bullet.collision.shapes.CylinderCollisionShape;
-import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
-import io.github.tt432.machinemax.common.vehicle.attr.ShapeAttr;
+import io.github.tt432.machinemax.common.vehicle.attr.HitBoxAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.*;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
@@ -34,9 +30,7 @@ import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.SpecialConnector;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
-import io.github.tt432.machinemax.common.vehicle.subsystem.*;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.tt432.machinemax.common.vehicle.subsystem.ResourceStorageSubsystem;
 import io.github.tt432.machinemax.network.payload.assembly.PartPaintPayload;
 import io.github.tt432.machinemax.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
@@ -85,6 +79,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public final Map<String, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<String, AbstractConnector> allConnectors = HashMap.newHashMap(1);
     public final Map<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
+    public final Map<String, Set<AbstractSubsystem>> subsystemHitBoxes = new HashMap<>();
     public final ConcurrentMap<String, Signals> signals = new ConcurrentHashMap<>();//部件内共享的信号
 
     /**
@@ -111,6 +106,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         float totalMass = 0;
         for (SubPartAttr subPart : partType.subParts.values()) {
             totalMass += subPart.mass;
+            for (HitBoxAttr hitBox : subPart.collisionShapeAttr.values())
+                subsystemHitBoxes.put(hitBox.hitBoxName(), new HashSet<>());//用于容纳与特定判定区绑定的子系统
         }
         this.totalMass = totalMass;
         this.rootSubPart = createSubPart(type.subParts);//创建子部件并指定根子部件
@@ -172,8 +169,10 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.uuid = UUID.fromString(data.uuid);
         this.durability = data.durability;
         float totalMass = 0;
-        for (SubPartAttr subPart : this.type.subParts.values()) {
+        for (SubPartAttr subPart : type.subParts.values()) {
             totalMass += subPart.mass;
+            for (HitBoxAttr hitBox : subPart.collisionShapeAttr.values())
+                subsystemHitBoxes.put(hitBox.hitBoxName(), new HashSet<>());//用于容纳与特定判定区绑定的子系统
         }
         this.totalMass = totalMass;
         this.rootSubPart = createSubPart(type.subParts);//重建子部件并指定根子部件
@@ -220,6 +219,10 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             AbstractSubsystemAttr attr = entry.getValue();
             AbstractSubsystem subsystem = attr.createSubsystem(this, name);
             subsystems.put(name, subsystem);
+            subsystemHitBoxes.computeIfPresent(attr.hitBox, (k, v) -> {
+                v.add(subsystem);
+                return v;
+            });
         }
     }
 

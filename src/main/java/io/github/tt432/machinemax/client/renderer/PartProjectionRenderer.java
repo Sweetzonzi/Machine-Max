@@ -74,9 +74,7 @@ public class PartProjectionRenderer extends VisualEffectRenderer {
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,
                 partProjection.color.getRGB(),
-                partialTick,
-                1f
-        );
+                partialTick);
         poseStack.popPose();//结束渲染
     }
 }

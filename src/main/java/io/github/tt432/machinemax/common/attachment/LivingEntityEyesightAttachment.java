@@ -60,12 +60,18 @@ public class LivingEntityEyesightAttachment {
                 ));
                 eyesight.targets.clear();//清空targets列表
                 eyesight.sortedTargets.clear();//清空sortedTargets列表
-                level.getPhysicsLevel().getWorld().rayTest(startPos, endPos).forEach(//获取射线命中物体
+                var rayTestResults = level.getPhysicsLevel().getWorld().rayTest(startPos, endPos);
+                rayTestResults.forEach(//获取射线命中物体
                         result -> {
                             PhysicsCollisionObject object = result.getCollisionObject();
                             if (object instanceof PhysicsRigidBody body && body.getOwner() != null && body.getOwner() != entity) {//如果射线命中物体是刚体
                                 eyesight.targets.put(body, result);//将射线命中物体和相应信息存入targets列表
                                 eyesight.sortedTargets.add(body);//将射线命中物体加入sortedTargets列表
+//                                if (body.getOwner() instanceof SubPart subPart){
+//                                    long hitId = subPart.collisionShape.findChild(result.triangleIndex()).getShape().nativeId();
+//                                    boolean hasId = subPart.part.type.getHitBoxes().containsKey(hitId);
+//                                    MachineMax.LOGGER.info("hit:{}, hasId:{}", hitId, hasId);
+//                                }
                             }
                         }
                 );
@@ -76,7 +82,7 @@ public class LivingEntityEyesightAttachment {
 //            if(level instanceof ClientLevel && entity instanceof Player player){//正观察的部件
 //                Part targetPart = eyesight.getPart();
 //                if (targetPart!= null)
-//                    player.sendSystemMessage(Component.nullToEmpty(targetPart.name));
+//                    player.sendSystemMessage(Component.nullToEmpty(targetPart.hitBoxName));
 //            }
         }
     }

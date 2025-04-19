@@ -1,23 +1,10 @@
 package io.github.tt432.machinemax.common.vehicle;
 
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
-import cn.solarmoon.spark_core.animation.model.origin.OBone;
-import cn.solarmoon.spark_core.animation.model.origin.OCube;
-import cn.solarmoon.spark_core.animation.model.origin.OLocator;
-import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
-import com.jme3.bullet.collision.shapes.BoxCollisionShape;
-import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
-import com.jme3.bullet.collision.shapes.CylinderCollisionShape;
-import com.jme3.bullet.collision.shapes.SphereCollisionShape;
-import com.jme3.math.Transform;
-import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
-import io.github.tt432.machinemax.common.vehicle.attr.ShapeAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import lombok.Getter;
@@ -28,8 +15,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 
 import java.util.*;
 
@@ -46,7 +31,10 @@ public class PartType {
     public final Map<String, SubPartAttr> subParts;
     public final ResourceLocation registryKey;
 
-    public final Map<String, CompoundCollisionShape> collisionShapes = new HashMap<>();
+    public final Map<Long, String> hitBoxes = new HashMap<>();//碰撞体子形状id对应的碰撞判定区名称
+    public final Map<Long, Float> thickness = new HashMap<>();//碰撞体子形状id对应的材料厚度
+    public final Map<Long, Float> damageReduction = new HashMap<>();//碰撞体子形状id对应的线性伤害减免
+    public final Map<Long, Float> damageMultiplier = new HashMap<>();//碰撞体子形状id对应的伤害倍率
 
     //编解码器
     public static final Codec<Map<String, ResourceLocation>> VARIANT_MAP_CODEC = Codec.either(

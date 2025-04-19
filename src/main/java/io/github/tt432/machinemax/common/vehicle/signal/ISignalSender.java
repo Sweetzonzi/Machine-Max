@@ -15,7 +15,7 @@ public interface ISignalSender {
      */
     Map<String, List<String>> getTargetNames();
 
-    Map<String, Map<String, ISignalReceiver>> getTargets();//信号名称->接收者名称->接收者 Signal key -> receiver name -> receiver
+    Map<String, Map<String, ISignalReceiver>> getTargets();//信号名称->接收者名称->接收者 Signal key -> receiver hitBoxName -> receiver
 
     default Map<String, Set<ISignalReceiver>> getCallbackTargets() {
         return Map.of();

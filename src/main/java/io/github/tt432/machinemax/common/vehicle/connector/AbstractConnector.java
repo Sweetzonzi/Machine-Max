@@ -97,7 +97,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     }
 
     @Override
-    public void ownerTick(@NotNull PhysicsCollisionObject physicsCollisionObject) {
+    public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
 
     }
 

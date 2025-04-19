@@ -3,6 +3,9 @@ package io.github.tt432.machinemax.common.vehicle.attr.subsystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.WheelDriverSubsystem;
 import lombok.Getter;
 
 import java.util.List;
@@ -16,6 +19,8 @@ public class WheelDriverSubsystemAttr extends AbstractSubsystemAttr {
     public final WheelSteeringAxisAttr steeringAxis;
 
     public static final MapCodec<WheelDriverSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.fieldOf("connector").forGetter(WheelDriverSubsystemAttr::getControlledConnector),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("wheel_control", "move_control")).forGetter(WheelDriverSubsystemAttr::getControlSignalKeys),
             WheelRollingAxisAttr.CODEC.optionalFieldOf("roll", new WheelRollingAxisAttr(
@@ -32,7 +37,14 @@ public class WheelDriverSubsystemAttr extends AbstractSubsystemAttr {
     ).apply(instance, WheelDriverSubsystemAttr::new
     ));
 
-    public WheelDriverSubsystemAttr(String controlledConnector,List<String> controlSignalKeys, WheelRollingAxisAttr rollingAxis, WheelSteeringAxisAttr steeringAxis) {
+    public WheelDriverSubsystemAttr(
+            float basicDurability,
+            String hitBox,
+            String controlledConnector,
+            List<String> controlSignalKeys,
+            WheelRollingAxisAttr rollingAxis,
+            WheelSteeringAxisAttr steeringAxis) {
+        super(basicDurability, hitBox);
         this.controlledConnector = controlledConnector;
         this.controlSignalKeys = controlSignalKeys;
         this.rollingAxis = rollingAxis;
@@ -47,6 +59,11 @@ public class WheelDriverSubsystemAttr extends AbstractSubsystemAttr {
     @Override
     public SubsystemType getType() {
         return SubsystemType.WHEEL;
+    }
+
+    @Override
+    public AbstractSubsystem createSubsystem(ISubsystemHost owner, String name) {
+        return new WheelDriverSubsystem(owner, name, this);
     }
 
     public record WheelRollingAxisAttr(

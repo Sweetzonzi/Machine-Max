@@ -30,11 +30,10 @@
   "sub_parts": {//零件(子部件)列表
     "ae86_seat": {//零件(子部件)名称
       "mass": 25.0,//零件质量(kg)
-      "hit_box": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
+      "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
         "CollisionShape": {//值:碰撞形状属性
-          "type": "box",//碰撞形状类型，支持box、sphere、capsule、cylinder、cone
-          "material": "default",//(可选)暂时无实际作用，计划影响摩擦力，伤害抗性，护甲等效系数等
-          "thickness": 1 //(可选)暂时无实际作用，计划影响护甲水平
+          "type": "box",//碰撞形状类型，支持box、sphere、cylinder
+          "rha": 1 //(可选)暂时无实际作用，计划影响护甲水平
         }
       },
       "connectors": {//子部件用于与其他零件连接的对接口列表

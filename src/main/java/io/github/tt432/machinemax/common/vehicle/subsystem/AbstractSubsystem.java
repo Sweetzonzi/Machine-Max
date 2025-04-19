@@ -26,11 +26,13 @@ abstract public class AbstractSubsystem {
     public final ConcurrentMap<String, Float> resourceOutputs = new ConcurrentHashMap<>();
 
     public volatile boolean active = true;
+    public float durability;//子系统耐久度
 
     protected AbstractSubsystem(ISubsystemHost owner, String name, AbstractSubsystemAttr attr) {
         this.owner = owner;
         this.subSystemAttr = attr;
         this.name = name;
+        this.durability = attr.basicDurability;
         if (this instanceof ISignalSender signalSender) {
             signalSender.resetSignalOutputs();
         }

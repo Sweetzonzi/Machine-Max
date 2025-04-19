@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
-public class VehicleCore implements SkillHost {
+public class VehicleCore {
     //存储所有部件与连接关系
     public final MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
     //存储所有部件
@@ -70,30 +70,6 @@ public class VehicleCore implements SkillHost {
     public SubsystemController subSystemController = new SubsystemController(this);
     private final AtomicInteger skillCount = new AtomicInteger();
     public ControlMode mode = ControlMode.GROUND;//控制模式
-
-    @NotNull
-    @Override
-    public ConcurrentHashMap<Integer, Skill> getAllSkills() {
-        return null;
-    }
-
-    @NotNull
-    @Override
-    public ConcurrentHashMap<Integer, Skill> getPredictedSkills() {
-        return null;
-    }
-
-    @NotNull
-    @Override
-    public SyncerType getSyncerType() {
-        return null;
-    }
-
-    @NotNull
-    @Override
-    public SyncData getSyncData() {
-        return null;
-    }
 
     public enum ControlMode {GROUND, PLANE, SHIP, MECH}
 

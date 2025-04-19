@@ -3,6 +3,9 @@ package io.github.tt432.machinemax.common.vehicle.attr.subsystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.GearboxSubsystem;
 import lombok.Getter;
 
 import java.util.List;
@@ -18,12 +21,15 @@ public class GearboxSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, List<String>> gearOutputTargets;//输出反馈信号名，输出当前所处挡位供其他地方使用
 
     public GearboxSubsystemAttr(
+            float basicDurability,
+            String hitBox,
             float finalRatio,
             List<Float> ratios,
             float switchTime,
             List<String> ratioControlSignalKeys,
             String powerOutputTarget,
             Map<String, List<String>> gearOutputTargets) {
+        super(basicDurability, hitBox);
         this.finalRatio = finalRatio;
         this.ratios = ratios;
         this.switchTime = switchTime;
@@ -33,6 +39,8 @@ public class GearboxSubsystemAttr extends AbstractSubsystemAttr {
     }
 
     public static final MapCodec<GearboxSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.FLOAT.optionalFieldOf("final_ratio", 5f).forGetter(GearboxSubsystemAttr::getFinalRatio),
             Codec.list(Codec.FLOAT).optionalFieldOf("ratios", List.of(-3.5f, 3.5f, 2f, 1.3f, 1.0f, 0.8f)).forGetter(GearboxSubsystemAttr::getRatios),
             Codec.FLOAT.optionalFieldOf("switch_time", 0.5f).forGetter(GearboxSubsystemAttr::getSwitchTime),
@@ -49,5 +57,10 @@ public class GearboxSubsystemAttr extends AbstractSubsystemAttr {
     @Override
     public SubsystemType getType() {
         return SubsystemType.GEARBOX;
+    }
+
+    @Override
+    public AbstractSubsystem createSubsystem(ISubsystemHost owner, String name) {
+        return new GearboxSubsystem(owner, name, this);
     }
 }

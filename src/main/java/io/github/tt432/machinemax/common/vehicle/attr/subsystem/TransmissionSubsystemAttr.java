@@ -3,6 +3,9 @@ package io.github.tt432.machinemax.common.vehicle.attr.subsystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.TransmissionSubsystem;
 import lombok.Getter;
 
 import java.util.List;
@@ -21,11 +24,18 @@ public class TransmissionSubsystemAttr extends AbstractSubsystemAttr {
     );
 
     public static final MapCodec<TransmissionSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             POWER_OUTPUTS_CODEC.fieldOf("power_outputs").forGetter(TransmissionSubsystemAttr::getPowerOutputs),
             Codec.STRING.listOf().optionalFieldOf("distribute_inputs", List.of()).forGetter(TransmissionSubsystemAttr::getControlInputKeys)
     ).apply(instance, TransmissionSubsystemAttr::new));
 
-    public TransmissionSubsystemAttr(Map<String, Float> powerOutputs, List<String> controlInputKeys) {
+    public TransmissionSubsystemAttr(
+            float basicDurability,
+            String hitBox,
+            Map<String, Float> powerOutputs,
+            List<String> controlInputKeys) {
+        super(basicDurability, hitBox);
         this.powerOutputs = powerOutputs;
         this.controlInputKeys = controlInputKeys;
     }
@@ -38,5 +48,10 @@ public class TransmissionSubsystemAttr extends AbstractSubsystemAttr {
     @Override
     public SubsystemType getType() {
         return SubsystemType.TRANSMISSION;
+    }
+
+    @Override
+    public AbstractSubsystem createSubsystem(ISubsystemHost owner, String name) {
+        return new TransmissionSubsystem(owner, name, this);
     }
 }

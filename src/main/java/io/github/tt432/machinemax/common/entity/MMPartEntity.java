@@ -11,6 +11,7 @@ import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.preinput.PreInput;
 import cn.solarmoon.spark_core.skill.Skill;
 import cn.solarmoon.spark_core.sync.EntitySyncerType;
 import cn.solarmoon.spark_core.sync.IntSyncData;
@@ -55,6 +56,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     public UUID vehicleUUID;
     public UUID partUUID;
     public AtomicReference<List<BoundingBox>> boundingBoxes = new AtomicReference<>(List.of());
+
     /**
      * 不应被使用！
      *
@@ -80,7 +82,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     @Override
     public void tick() {
         super.tick();
-        if(firstTick) removeAllBodies();
+        if (firstTick) removeAllBodies();
         if (this.part == null) {//如果实体没有所属的部件，则移除实体
             if (tickCount % 20 == 0) updatePart();
             else if (tickCount > 100) {//等待100tick用于同步部件信息
@@ -119,7 +121,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                 }
             }
             AABB aabb = new AABB(min.get(0), min.get(1), min.get(2), max.get(0), max.get(1), max.get(2));
-            if (!aabb.isInfinite() && !aabb.hasNaN() && min.get(0)< max.get(0) && min.get(1)< max.get(1) && min.get(2)< max.get(2))
+            if (!aabb.isInfinite() && !aabb.hasNaN() && min.get(0) < max.get(0) && min.get(1) < max.get(1) && min.get(2) < max.get(2))
                 this.setBoundingBox(aabb);
             else setBoundingBox(new AABB(0, 0, 0, 0, 0, 0));
         }
@@ -297,9 +299,15 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
         return getAllSkills();
     }
 
-    @Nullable
+    @NotNull
     @Override
     public Level getAnimLevel() {
         return this.level();
+    }
+
+    @NotNull
+    @Override
+    public PreInput getPreInput() {
+        return new PreInput(this);
     }
 }

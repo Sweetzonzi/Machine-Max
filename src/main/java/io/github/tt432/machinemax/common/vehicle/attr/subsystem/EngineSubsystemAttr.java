@@ -3,6 +3,10 @@ package io.github.tt432.machinemax.common.vehicle.attr.subsystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.CarControllerSubsystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.EngineSubsystem;
 import lombok.Getter;
 
 import java.util.List;
@@ -23,6 +27,8 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     public static final Codec<Map<String, List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
 
     public static final MapCodec<EngineSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.FLOAT.fieldOf("max_power").forGetter(EngineSubsystemAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("base_rpm", 500f).forGetter(EngineSubsystemAttr::getBaseRpm),
             Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5000f).forGetter(EngineSubsystemAttr::getMaxTorqueRpm),
@@ -35,6 +41,8 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     ).apply(instance, EngineSubsystemAttr::new));
 
     public EngineSubsystemAttr(
+            float basicDurability,
+            String hitBox,
             float maxPower,
             float baseRpm,
             float maxTorqueRpm,
@@ -44,6 +52,7 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
             List<String> throttleInputKeys,
             String powerOutputTarget,
             Map<String, List<String>> rpmOutputTargets) {
+        super(basicDurability, hitBox);
         this.maxPower = maxPower;
         this.baseRpm = baseRpm;
         this.maxTorqueRpm = maxTorqueRpm;
@@ -63,5 +72,10 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     @Override
     public SubsystemType getType() {
         return SubsystemType.ENGINE;
+    }
+
+    @Override
+    public AbstractSubsystem createSubsystem(ISubsystemHost owner, String name) {
+        return new EngineSubsystem(owner, name, this);
     }
 }

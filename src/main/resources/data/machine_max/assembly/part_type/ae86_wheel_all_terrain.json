@@ -16,9 +16,9 @@
       "mass": 50.0,//零件质量(kg)
       "block_collision": "ground",//地形碰撞模式:可选true(与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
       "step_height": 1.2,//自动攀爬高度(m)，遭遇的障碍小于此高度时为零件赋予额外速度，辅助攀爬
-      "hit_box": {//碰撞形状属性，包括骨骼名称、形状类型、材质、厚度等
+      "hit_boxes": {//碰撞形状属性，包括骨骼名称、形状类型、材质、厚度等
         "root": {//骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
-          "type": "cylinder"//碰撞形状类型，支持box、sphere、capsule、cylinder、cone
+          "type": "cylinder"//碰撞形状类型，支持box、sphere、cylinder
         }
       },
       "connectors": {//子部件用于与其他零件连接的对接口列表

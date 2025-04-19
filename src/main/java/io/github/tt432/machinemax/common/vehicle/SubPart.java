@@ -12,13 +12,13 @@ import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.ShapeHelper;
 import io.github.tt432.machinemax.util.formula.Dynamic;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollisionObjectTicker {
@@ -37,10 +36,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public Transform massCenterTransform = new Transform();
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
     public final PhysicsRigidBody body;
-    CompoundCollisionShape collisionShape;
-    public final Map<Long, String> materials = new HashMap<>(2);//碰撞体积各部分的材料类型
-    public final Map<Long, Float> thicknesses = new HashMap<>(2);//碰撞体积各部分的厚度
-    public final Map<Long, Float> frictionCoeffs = new HashMap<>(2);//碰撞体积各部分的粗糙度修正系数
+    public final CompoundCollisionShape collisionShape;
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
     //流体动力相关参数
@@ -284,8 +280,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         }
     }
 
-    @Override
-    public void ownerTick(@NotNull PhysicsCollisionObject physicsCollisionObject) {
+    public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
 
     }
 }
