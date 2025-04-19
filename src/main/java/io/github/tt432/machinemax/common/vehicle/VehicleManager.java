@@ -1,6 +1,8 @@
 package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
+import cn.solarmoon.spark_core.util.PPhase;
+import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
@@ -73,7 +75,7 @@ public class VehicleManager {
 
     public static void removeAllVehiclesInLevel(Level level) {
         // 获取该Level中的所有载具
-        Set<VehicleCore> vehicles = levelVehicles.get(level);
+        Set<VehicleCore> vehicles = levelVehicles.getOrDefault(level, Set.of());
         // 遍历并移除所有载具
         for (VehicleCore vehicle : new HashSet<>(vehicles)) removeVehicle(vehicle);
     }
@@ -108,7 +110,7 @@ public class VehicleManager {
 
     public static void saveVehicles(ServerLevel serverLevel) {
         Set<VehicleData> savedVehicles = new HashSet<>();
-        for (VehicleCore vehicle : levelVehicles.get(serverLevel)) {
+        for (VehicleCore vehicle : levelVehicles.getOrDefault(serverLevel, Set.of())) {
             savedVehicles.add(new VehicleData(vehicle));
         }
         serverLevel.setData(MMAttachments.getLEVEL_VEHICLES(), savedVehicles);

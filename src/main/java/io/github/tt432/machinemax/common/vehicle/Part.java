@@ -59,13 +59,14 @@ import java.util.concurrent.ConcurrentMap;
 
 @Getter
 public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver {
-    //渲染属性
+    //渲染属性 Renderer attributes
     @Setter
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
+    //常规属性 General attributes
     public VehicleCore vehicle;//所属的VehicleCore
     @Nullable
-    public MMPartEntity entity;//实体对象
+    public MMPartEntity entity;//用于渲染模型以及和原版内容进行交互的的实体对象
     public String name;
     public final PartType type;
     public final Level level;
@@ -76,11 +77,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public final SubPart rootSubPart;
     public final AnimController animController = new AnimController(this);
     public final float totalMass;
-    //Molang变量存储
+    //Molang变量存储 Molang variable storage
     public ITempVariableStorage tempStorage = new VariableStorage();
     public IScopedVariableStorage scopedStorage = new VariableStorage();
     public IForeignVariableStorage foreignStorage = new VariableStorage();
-    //模块化属性
+    //模块化属性 Modular attributes
     public final Map<String, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<String, AbstractConnector> allConnectors = HashMap.newHashMap(1);
     public final Map<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
@@ -109,7 +110,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.durability = partType.basicDurability;
         float totalMass = 0;
         for (SubPartAttr subPart : partType.subParts.values()) {
-            totalMass += subPart.mass();
+            totalMass += subPart.mass;
         }
         this.totalMass = totalMass;
         this.rootSubPart = createSubPart(type.subParts);//创建子部件并指定根子部件
@@ -172,7 +173,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.durability = data.durability;
         float totalMass = 0;
         for (SubPartAttr subPart : this.type.subParts.values()) {
-            totalMass += subPart.mass();
+            totalMass += subPart.mass;
         }
         this.totalMass = totalMass;
         this.rootSubPart = createSubPart(type.subParts);//重建子部件并指定根子部件
@@ -217,39 +218,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         for (Map.Entry<String, AbstractSubsystemAttr> entry : subSystemAttrMap.entrySet()) {
             String name = entry.getKey();
             AbstractSubsystemAttr attr = entry.getValue();
-            switch (attr.getType()) {//根据类型为部件创建不同的子系统
-                case SEAT:
-                    SeatSubsystem seatSubsystem = new SeatSubsystem(this, name, (SeatSubsystemAttr) attr);
-                    subsystems.put(name, seatSubsystem);
-                    break;
-                case RESOURCE_STORAGE:
-                    subsystems.put(name, new ResourceStorageSubsystem(this, name, (ResourceStorageSubsystemAttr) attr));
-                    break;
-                case ENGINE:
-                    EngineSubsystem engineSubsystem = new EngineSubsystem(this, name, (EngineSubsystemAttr) attr);
-                    subsystems.put(name, engineSubsystem);
-                    break;
-                case GEARBOX:
-                    GearboxSubsystem gearboxSubsystem = new GearboxSubsystem(this, name, (GearboxSubsystemAttr) attr);
-                    subsystems.put(name, gearboxSubsystem);
-                    break;
-                case CAR_CTRL:
-                    CarControllerSubsystem carControllerSubsystem = new CarControllerSubsystem(this, name, (CarControllerSubsystemAttr) attr);
-                    subsystems.put(name, carControllerSubsystem);
-                    break;
-                case TRANSMISSION:
-                    TransmissionSubsystem transmissionSubsystem = new TransmissionSubsystem(this, name, (TransmissionSubsystemAttr) attr);
-                    subsystems.put(name, transmissionSubsystem);
-                    break;
-                case MOTOR:
-                    MotorSubsystem motorSubsystem = new MotorSubsystem(this, name, (MotorSubsystemAttr) attr);
-                    subsystems.put(name, motorSubsystem);
-                    break;
-                case WHEEL:
-                    WheelDriverSubsystem wheelSubsystem = new WheelDriverSubsystem(this, name, (WheelDriverSubsystemAttr) attr);
-                    subsystems.put(name, wheelSubsystem);
-                    break;
-            }
+            AbstractSubsystem subsystem = attr.createSubsystem(this, name);
+            subsystems.put(name, subsystem);
         }
     }
 
@@ -258,7 +228,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             SubPartAttr subPartAttr,
             LinkedHashMap<String, OLocator> locators
     ) {
-        for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartAttr.connectors().entrySet()) {
+        for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartAttr.connectors.entrySet()) {
             if (locators.get(connectorEntry.getValue().locatorName()) instanceof OLocator locator) {//若找到了对应的零件对接口Locator
                 org.joml.Vector3f rotation = locator.getRotation().toVector3f();
                 Transform posRot = new Transform(//对接口的位置与姿态
@@ -294,74 +264,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             } else
                 MachineMax.LOGGER.error("在部件{}中未找到对应的零件接口Locator:{}。", type.name, connectorEntry.getValue().locatorName());
         }
-
-    }
-
-    private void createCollisionShapes(
-            SubPart subPart,
-            SubPartAttr subPartAttr,
-            LinkedHashMap<String, OBone> bones,
-            LinkedHashMap<String, OLocator> locators
-    ) {
-        int i = 0;
-        for (Map.Entry<String, ShapeAttr> shapeEntry : subPartAttr.collisionShapeAttr().entrySet()) {
-            if (bones.get(shapeEntry.getKey()) != null) {//若找到了对应的碰撞形状骨骼
-                float thickness = shapeEntry.getValue().thickness();
-                String material = shapeEntry.getValue().materialName();
-                OBone bone = bones.get(shapeEntry.getKey());
-                switch (shapeEntry.getValue().shapeType()) {
-                    case "box"://与方块的尺寸匹配
-                        for (OCube cube : bone.getCubes()) {
-                            org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
-                            BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
-                            subPart.materials.put(boxShape.nativeId(), material);
-                            subPart.thicknesses.put(boxShape.nativeId(), thickness);
-                            org.joml.Vector3f rotation = cube.getRotation().toVector3f();
-                            Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
-                            subPart.collisionShape.addChildShape(
-                                    boxShape,
-                                    PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
-                                    SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
-                        }
-                        break;
-                    case "sphere"://取方块的x轴尺寸作为球直径
-                        for (OCube cube : bone.getCubes()) {
-                            SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().x / 2));
-                            subPart.materials.put(ballShape.nativeId(), material);
-                            subPart.thicknesses.put(ballShape.nativeId(), thickness);
-                            subPart.collisionShape.addChildShape(
-                                    ballShape,
-                                    PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())));
-                        }
-                        break;
-                    case "cylinder"://取方块的z轴尺寸为直径，x轴尺寸为圆柱高，圆柱默认方向为X轴(横躺)
-                        for (OCube cube : bone.getCubes()) {
-                            Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
-                            org.joml.Vector3f rotation = cube.getRotation().toVector3f();
-                            Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
-                            CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size, 0);
-                            subPart.materials.put(cylinderShape.nativeId(), material);
-                            subPart.thicknesses.put(cylinderShape.nativeId(), thickness);
-                            subPart.collisionShape.addChildShape(
-                                    cylinderShape,
-                                    PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
-                                    SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
-                        }
-                        break;
-                    case "cone":
-                        //TODO:创建碰撞体积
-                        break;
-                    case "capsule":
-                        //TODO:创建碰撞体积
-                        break;
-                    default:
-                        MachineMax.LOGGER.error("在部件{}中发现不支持的碰撞形状类型{}。", type.name, shapeEntry.getValue());
-                        i--;
-                }
-                i++;
-            } else
-                MachineMax.LOGGER.error("在部件{}中未找到对应的碰撞形状骨骼{}。", type.name, shapeEntry.getKey());
-        }
     }
 
     private SubPart createSubPart(Map<String, SubPartAttr> subPartAttrMap) {
@@ -377,44 +279,24 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         for (Map.Entry<String, SubPartAttr> subPartEntry : subPartAttrMap.entrySet()) {//遍历部件的零件属性
             SubPart subPart = new SubPart(subPartEntry.getKey(), this, subPartEntry.getValue());//创建零件
             subParts.put(subPartEntry.getKey(), subPart);//将零件放入部件的零件表
-            if (subPartEntry.getValue().parent().isEmpty()) {//检测是否为根零件
+            if (subPartEntry.getValue().parent.isEmpty()) {//检测是否为根零件
                 if (rootSubPart == null) rootSubPart = subPart;//记录第一个根零件
                 else MachineMax.LOGGER.error("仅允许存在一个根零件，请检查模型文件{}。", type);
-            } else subPartMap.put(subPart, subPartEntry.getValue().parent());//记录子部件的父子关系
-            //创建碰撞体积
-            createCollisionShapes(subPart, subPartEntry.getValue(), bones, locators);
-            //调整零件质心
-            Transform massCenter = new Transform();
-            if (!subPartEntry.getValue().massCenterLocator().isEmpty()) {//若零件制定了质心定位点
-                OLocator locator = locators.get(subPartEntry.getValue().massCenterLocator());
-                if (locator != null) {
-                    org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-                    massCenter = new Transform(
-                            PhysicsHelperKt.toBVector3f(locator.getOffset()),
-                            SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
-                    );
-                } else {
-                    MachineMax.LOGGER.error("在部件{}中未找到质心定位点{}。", type.name, subPartEntry.getValue().massCenterLocator());
-                }
-                subPart.collisionShape.correctAxes(massCenter);//调整碰撞体位置，使模型原点对齐质心(必须在创建完成碰撞体积后进行！)
-                subPart.massCenterTransform = massCenter;
-                //TODO:重新计算并调节转动惯量
-            }
-            subPart.body.setCollisionShape(subPart.collisionShape);//重新设置碰撞体积
-            subPart.body.setMass(subPartEntry.getValue().mass() > 0 ? subPartEntry.getValue().mass() : 1);//设置质量
+            } else subPartMap.put(subPart, subPartEntry.getValue().parent);//记录子部件的父子关系
+            subPart.body.setMass(subPartEntry.getValue().mass > 0 ? subPartEntry.getValue().mass : 1);//设置质量
             subPart.body.setCcdSweptSphereRadius(subPart.collisionShape.maxRadius());//设置CCD半径
             //计算/设置零件三轴投影面积，用于阻力计算
             BoundingBox boundingBox = subPart.collisionShape.boundingBox(new Vector3f(), Quaternion.IDENTITY, null);
             double xArea, yArea, zArea;
-            if (subPart.attr.projectedArea().x <= 0)
+            if (subPart.attr.projectedArea.x <= 0)
                 xArea = 4 * boundingBox.getYExtent() * boundingBox.getZExtent();
-            else xArea = subPart.attr.projectedArea().x;
-            if (subPart.attr.projectedArea().y <= 0)
+            else xArea = subPart.attr.projectedArea.x;
+            if (subPart.attr.projectedArea.y <= 0)
                 yArea = 4 * boundingBox.getXExtent() * boundingBox.getZExtent();
-            else yArea = subPart.attr.projectedArea().y;
-            if (subPart.attr.projectedArea().z <= 0)
+            else yArea = subPart.attr.projectedArea.y;
+            if (subPart.attr.projectedArea.z <= 0)
                 zArea = 4 * boundingBox.getXExtent() * boundingBox.getYExtent();
-            else zArea = subPart.attr.projectedArea().z;
+            else zArea = subPart.attr.projectedArea.z;
             subPart.projectedArea = new Vec3(xArea, yArea, zArea);
             //创建零件对接口
             createConnectors(subPart, subPartEntry.getValue(), locators);

@@ -1,10 +1,23 @@
 package io.github.tt432.machinemax.common.vehicle;
 
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
+import cn.solarmoon.spark_core.animation.model.origin.OCube;
+import cn.solarmoon.spark_core.animation.model.origin.OLocator;
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.SparkMathKt;
+import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
+import com.jme3.bullet.collision.shapes.CylinderCollisionShape;
+import com.jme3.bullet.collision.shapes.SphereCollisionShape;
+import com.jme3.math.Transform;
+import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
+import io.github.tt432.machinemax.common.vehicle.attr.ShapeAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import lombok.Getter;
@@ -15,6 +28,8 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
 
 import java.util.*;
 
@@ -30,6 +45,9 @@ public class PartType {
     public final Map<String, AbstractSubsystemAttr> subsystems;//子系统(引擎功能，车门控制，转向…等)
     public final Map<String, SubPartAttr> subParts;
     public final ResourceLocation registryKey;
+
+    public final Map<String, CompoundCollisionShape> collisionShapes = new HashMap<>();
+
     //编解码器
     public static final Codec<Map<String, ResourceLocation>> VARIANT_MAP_CODEC = Codec.either(
             // 尝试解析为单个ResourceLocation（单值模式）
@@ -49,16 +67,18 @@ public class PartType {
                 } else return Either.right(map); // 序列化为Map
             }
     );
-    public static final Codec<PartType> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("name").forGetter(PartType::getName),
-            VARIANT_MAP_CODEC.fieldOf("variants").forGetter(PartType::getVariants),
-            ResourceLocation.CODEC.listOf().fieldOf("textures").forGetter(PartType::getTextures),
-            ResourceLocation.CODEC.optionalFieldOf("animation",
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty")).forGetter(PartType::getAnimation),
-            Codec.FLOAT.fieldOf("basic_durability").forGetter(PartType::getBasicDurability),
-            AbstractSubsystemAttr.MAP_CODEC.optionalFieldOf("subsystems", Map.of()).forGetter(PartType::getSubsystems),
-            SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(PartType::getSubParts)
-    ).apply(instance, PartType::new));
+    public static final Codec<PartType> CODEC = Codec.lazyInitialized(
+            () -> RecordCodecBuilder.create(instance -> instance.group(
+                    Codec.STRING.fieldOf("name").forGetter(PartType::getName),
+                    VARIANT_MAP_CODEC.fieldOf("variants").forGetter(PartType::getVariants),
+                    ResourceLocation.CODEC.listOf().fieldOf("textures").forGetter(PartType::getTextures),
+                    ResourceLocation.CODEC.optionalFieldOf("animation",
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty")).forGetter(PartType::getAnimation),
+                    Codec.FLOAT.fieldOf("basic_durability").forGetter(PartType::getBasicDurability),
+                    AbstractSubsystemAttr.MAP_CODEC.optionalFieldOf("subsystems", Map.of()).forGetter(PartType::getSubsystems),
+                    SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(PartType::getSubParts)
+            ).apply(instance, PartType::new))
+    );
 
     public static final StreamCodec<RegistryFriendlyByteBuf, PartType> STREAM_CODEC = new StreamCodec<>() {
         @Override
@@ -114,7 +134,6 @@ public class PartType {
         if (other == null || getClass() != other.getClass()) return false;
         PartType partType = (PartType) other;
         return Objects.equals(registryKey, partType.registryKey);
-
     }
 
     @Override
@@ -129,7 +148,7 @@ public class PartType {
     public Iterator<String> getConnectorIterator() {
         Set<String> connectors = new HashSet<>();
         for (SubPartAttr subParts : this.subParts.values()) {//遍历零件
-            for (Map.Entry<String, ConnectorAttr> connector : subParts.connectors().entrySet()) {//遍历零件的接口
+            for (Map.Entry<String, ConnectorAttr> connector : subParts.connectors.entrySet()) {//遍历零件的接口
                 if (connector.getValue().ConnectedTo().isEmpty()) connectors.add(connector.getKey());//外部接口加入可用接口集合
             }
         }
@@ -139,7 +158,7 @@ public class PartType {
     public Map<String, String> getPartOutwardConnectors() {
         Map<String, String> partConnectors = new HashMap<>(1);//获取部件所有外部对接口名称与类型
         for (SubPartAttr subParts : this.subParts.values()) {
-            for (Map.Entry<String, ConnectorAttr> entry : subParts.connectors().entrySet()) {
+            for (Map.Entry<String, ConnectorAttr> entry : subParts.connectors.entrySet()) {
                 if (entry.getValue().ConnectedTo().isEmpty())//外部零件对接口
                     partConnectors.put(entry.getKey(), entry.getValue().type());
             }
