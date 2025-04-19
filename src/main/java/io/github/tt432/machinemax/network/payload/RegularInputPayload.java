@@ -81,6 +81,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                         for (AbstractSubsystem subSystem : vehicle.part.subsystems.values()) {
                             if (subSystem instanceof SeatSubsystem seatSubSystem) {
                                 seatSubSystem.removePassenger();
+                                player.stopRiding();
                                 break;
                             }
                         }

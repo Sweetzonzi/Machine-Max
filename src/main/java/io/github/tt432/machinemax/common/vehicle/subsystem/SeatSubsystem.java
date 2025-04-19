@@ -78,7 +78,6 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
 
     public void removePassenger() {
         if (passenger != null) {
-            passenger.stopRiding();
             ((IEntityMixin) passenger).setRidingSubsystem(null);
             passenger = null;
             occupied = false;
