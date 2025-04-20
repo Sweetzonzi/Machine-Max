@@ -34,7 +34,7 @@ public class MMMath {
     }
 
     public static Vector3f localVectorToWorldVector(Vector3f localVel, PhysicsRigidBody obj){
-        Quaternion localToWorld = obj.getPhysicsRotation(null).normalizeLocal(); //获取物体相对世界坐标的四元数
+        Quaternion localToWorld = obj.getPhysicsRotation(null); //获取物体相对世界坐标的四元数
         return MyQuaternion.rotate(localToWorld, localVel, null);
     }
 

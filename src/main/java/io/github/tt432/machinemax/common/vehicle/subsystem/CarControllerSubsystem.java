@@ -15,14 +15,14 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
     public byte[] moveInput;
     public byte[] moveInputConflict;
     public float speed;
-    private Map<ISignalReceiver, Float> overrideCountDown = new HashMap<>();
+    private final Map<ISignalReceiver, Float> overrideCountDown = new HashMap<>();
 
     float avgEngineMaxSpeed = 0f;
     float avgEngineMaxTorqueSpeed = 0f;
     int engineCount = 0;
 
     private final Map<String, ISignalReceiver> engines = new HashMap<>();//控制的发动机接受的信号名和发动机对象映射 Controlled engine receives signal name and engine object mapping
-    private Map<String, ISignalReceiver> gearboxes = new HashMap<>();//控制的变速箱接受的信号名和变速箱对象映射 Controlled gearbox receives signal name and gearbox object mapping
+    private final Map<String, ISignalReceiver> gearboxes = new HashMap<>();//控制的变速箱接受的信号名和变速箱对象映射 Controlled gearbox receives signal name and gearbox object mapping
     private final Map<String, ISignalReceiver> wheels = new HashMap<>();//控制的轮子接受的信号名和轮子对象映射 Controlled wheel receives signal name and wheel object mapping
 
     public CarControllerSubsystem(ISubsystemHost owner, String name, CarControllerSubsystemAttr attr) {

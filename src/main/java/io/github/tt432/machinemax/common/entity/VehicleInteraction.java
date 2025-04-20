@@ -50,7 +50,8 @@ public class VehicleInteraction {
                     boolean success = seatSubSystem.setPassenger(event.getEntity());
                     if (success) {
                         event.setCancellationResult(InteractionResult.SUCCESS);
-                        break;
+                        event.setCanceled(true);
+                        return;
                     }
                 }
             }

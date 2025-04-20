@@ -18,7 +18,7 @@
       "connectors": {//子部件用于与其他零件连接的对接口列表
         "north": {//接口名称
           "locator": "AttachPoint_North",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-          "type": "AttachPoint", //对接口类型，支持AttachPoint和6DOF
+          "type": "AttachPoint", //对接口类型，支持AttachPoint和Special
           "collide_between_parts": true //是否允许子部件之间碰撞
         },
         "east": {

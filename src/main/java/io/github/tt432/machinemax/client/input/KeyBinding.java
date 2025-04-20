@@ -106,8 +106,7 @@ public class KeyBinding {
     );
     public static KeyMapping groundClutchKey = new KeyMapping(GROUND_CLUTCH_KEY,//键位名称
             KeyCategory.GROUND,//键位冲突类型
-            InputConstants.Type.KEYSYM,//默认按键无
-            GLFW.GLFW_KEY_Z,//默认按键
+            InputConstants.UNKNOWN,//默认按键无
             KeyCategory.GROUND.getCategory()//键位类型
     );
     public static KeyMapping groundUpShiftKey = new KeyMapping(GROUND_UP_SHIFT_KEY,//键位名称
@@ -131,7 +130,7 @@ public class KeyBinding {
     public static KeyMapping assemblyCycleVariantKey = new KeyMapping(ASSEMBLY_CYCLE_VARIANT_KEY,//键位名称
             KeyCategory.ASSEMBLY,//键位冲突类型
             InputConstants.Type.KEYSYM,//默认为键盘
-            GLFW.GLFW_KEY_C,//默认按键
+            GLFW.GLFW_KEY_V,//默认按键
             KeyCategory.ASSEMBLY.getCategory()//键位类型
     );
 }

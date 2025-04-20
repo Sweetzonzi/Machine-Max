@@ -1,6 +1,7 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.GearboxSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
@@ -48,7 +49,7 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
     public void onTick() {
         super.onTick();
         if (getPart().level.isClientSide) {
-            if (Minecraft.getInstance().player != null) {
+            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof MMPartEntity) {
                 String gear = gearNames.get(currentGear);
                 if (!clutched || remainingSwitchTime > 0.0f) gear = "N";
                 Object engineSpeed = getPart().vehicle.subSystemController.getSignals("engine_speed").getFirst();

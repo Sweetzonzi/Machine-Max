@@ -13,7 +13,9 @@ import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 
 @Mod(MOD_ID)
 public class MachineMax {
-
+    //TODO:已知BUG
+    //1. 神秘抖动
+    //2. 有时不显示模型
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器

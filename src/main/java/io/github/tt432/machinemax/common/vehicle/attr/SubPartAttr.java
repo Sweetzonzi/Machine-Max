@@ -34,6 +34,7 @@ public class SubPartAttr {
     public final String massCenterLocator;
     public final String blockCollision;
     public final float stepHeight;
+    public final boolean climbAssist;
     public final Map<String, HitBoxAttr> collisionShapeAttr;
     public final Map<String, ConnectorAttr> connectors;
     public final DragAttr aeroDynamic;
@@ -47,7 +48,8 @@ public class SubPartAttr {
             Vec3.CODEC.optionalFieldOf("projected_area", Vec3.ZERO).forGetter(SubPartAttr::getProjectedArea),
             Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::getMassCenterLocator),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
-            Codec.FLOAT.optionalFieldOf("step_height", 0.0f).forGetter(SubPartAttr::getStepHeight),
+            Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
+            Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
             HitBoxAttr.MAP_CODEC.fieldOf("hit_boxes").forGetter(SubPartAttr::getCollisionShapeAttr),
             ConnectorAttr.MAP_CODEC.fieldOf("connectors").forGetter(SubPartAttr::getConnectors),
             DragAttr.CODEC.fieldOf("aero_dynamic").forGetter(SubPartAttr::getAeroDynamic)
@@ -65,6 +67,7 @@ public class SubPartAttr {
             String massCenterLocator,
             String blockCollision,
             float stepHeight,
+            boolean climbAssist,
             Map<String, HitBoxAttr> collisionShapeAttr,
             Map<String, ConnectorAttr> connectors,
             DragAttr aeroDynamic
@@ -75,6 +78,7 @@ public class SubPartAttr {
         this.massCenterLocator = massCenterLocator;
         this.blockCollision = blockCollision;
         this.stepHeight = stepHeight;
+        this.climbAssist = climbAssist;
         this.collisionShapeAttr = collisionShapeAttr;
         this.connectors = connectors;
         this.aeroDynamic = aeroDynamic;

@@ -9,13 +9,14 @@ import com.jme3.math.Vector3f;
 public class ShapeHelper {
 
     public static float getShapeMinY(PhysicsCollisionObject pco, float resolution) {
+        float centerY = pco.getPhysicsLocation(null).y;
         if (pco.getCollisionShape() instanceof SphereCollisionShape sphere) {
-            return pco.getPhysicsLocation(null).y - sphere.getRadius();
+            return centerY - sphere.getRadius();
         } else {
             float height = pco.boundingBox(null).getMin(null).y;
             PlaneCollisionShape testPlane;
             PhysicsRigidBody testPco = new PhysicsRigidBody("test_plane", null, new EmptyShape(false), 0);
-            while (height < pco.getPhysicsLocation(null).y) {
+            while (height < centerY) {
                 testPlane = new PlaneCollisionShape(new Plane(new Vector3f(0, 1, 0), height));
                 testPco.setCollisionShape(testPlane);
                 int count = pco.getCollisionSpace().pairTest(pco, testPco, null);
