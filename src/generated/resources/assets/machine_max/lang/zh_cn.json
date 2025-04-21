@@ -1,0 +1,23 @@
+{
+  "message.machine_max.leaving_vehicle": "长按%1$s键%2$s/0.50秒以离开载具",
+  "resourceType.category.machine_max.assembly": "Machine Max:组装",
+  "resourceType.category.machine_max.general": "Machine Max:通用",
+  "resourceType.category.machine_max.ground": "Machine Max:地面载具",
+  "resourceType.category.machine_max.mech": "Machine Max:机甲",
+  "resourceType.category.machine_max.plane": "Machine Max:飞行器",
+  "resourceType.category.machine_max.ship": "Machine Max:舰艇",
+  "resourceType.machine_max.assembly.cycle_connector": "循环部件连接口",
+  "resourceType.machine_max.assembly.cycle_variant": "循环部件变体",
+  "resourceType.machine_max.general.free_cam": "自由摄像",
+  "resourceType.machine_max.general.interact": "交互",
+  "resourceType.machine_max.general.leave_vehicle": "离开载具",
+  "resourceType.machine_max.ground.forward": "前进",
+  "resourceType.machine_max.ground.backward": "后退",
+  "resourceType.machine_max.ground.leftward": "左转",
+  "resourceType.machine_max.ground.rightward": "右转",
+  "resourceType.machine_max.ground.clutch": "离合",
+  "resourceType.machine_max.ground.up_shift": "升档",
+  "resourceType.machine_max.ground.down_shift": "降档",
+  "tooltip.machinemax.crossbar.interactWitchPart": "互动以拆除：",
+  "tooltip.machinemax.spray_can.interactWitchPart": "互动以喷涂："
+}

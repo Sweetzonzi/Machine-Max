@@ -1,8 +1,11 @@
 package io.github.tt432.machinemax.client.input;
 
-import io.github.tt432.machinemax.common.entity.entity.BasicEntity;
+import io.github.tt432.machinemax.common.entity.MMPartEntity;
+import io.github.tt432.machinemax.common.vehicle.Part;
+import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
 
 import static net.neoforged.neoforge.client.settings.KeyConflictContext.GUI;
 
@@ -11,7 +14,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     GENERAL {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.general";
+            return "resourceType.category.machine_max.general";
         }
 
         @Override
@@ -28,74 +31,103 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     GROUND {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.ground";
+            return "resourceType.category.machine_max.ground";
         }
 
         @Override
         public boolean isActive() {
-            if(GUI.isActive()) return false;
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof BasicEntity e) {
-                return e.getMode() == BasicEntity.controlMode.GROUND;
-            }else return false;
+            if (GUI.isActive()) return false;
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null && client.player.getVehicle() instanceof MMPartEntity e && e.part instanceof Part part) {
+                return part.vehicle.getMode() == VehicleCore.ControlMode.GROUND;
+            } else return false;
         }
 
         @Override
         public boolean conflicts(IKeyConflictContext other) {
-            return other == this || other == GENERAL; //二者为同一类时，或另一类为通用按键时，冲突
+            return other == this ||
+                    other == GENERAL ||
+                    other == KeyConflictContext.IN_GAME; //二者为同一类时，或另一类为通用或原版时，冲突
         }
     },
     SHIP {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.ship";
+            return "resourceType.category.machine_max.ship";
         }
 
         public boolean isActive() {
-            if(GUI.isActive()) return false;
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof BasicEntity e) {
-                return e.getMode() == BasicEntity.controlMode.SHIP;
-            }else return false;
+            if (GUI.isActive()) return false;
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null && client.player.getVehicle() instanceof MMPartEntity e && e.part instanceof Part part) {
+                return part.vehicle.getMode() == VehicleCore.ControlMode.SHIP;
+            } else return false;
         }
 
         @Override
         public boolean conflicts(IKeyConflictContext other) {
-            return other == this || other == GENERAL; //二者为同一类时，或另一类为通用按键时，冲突
+            return other == this ||
+                    other == GENERAL ||
+                    other == KeyConflictContext.IN_GAME; //二者为同一类时，或另一类为通用或原版时，冲突
         }
     },
     PLANE {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.plane";
+            return "resourceType.category.machine_max.plane";
         }
 
         public boolean isActive() {
-            if(GUI.isActive()) return false;
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof BasicEntity e) {
-                return e.getMode() == BasicEntity.controlMode.PLANE;
-            }else return false;
+            if (GUI.isActive()) return false;
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null && client.player.getVehicle() instanceof MMPartEntity e && e.part instanceof Part part) {
+                return part.vehicle.getMode() == VehicleCore.ControlMode.PLANE;
+            } else return false;
         }
 
         @Override
         public boolean conflicts(IKeyConflictContext other) {
-            return other == this || other == GENERAL; //二者为同一类时，或另一类为通用按键时，冲突
+            return other == this ||
+                    other == GENERAL ||
+                    other == KeyConflictContext.IN_GAME; //二者为同一类时，或另一类为通用或原版时，冲突
         }
     },
     MECH {
         @Override
         public String getCategory() {
-            return "key.category.machine_max.mech";
+            return "resourceType.category.machine_max.mech";
         }
 
         public boolean isActive() {
-            if(GUI.isActive()) return false;
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof BasicEntity e) {
-                return e.getMode() == BasicEntity.controlMode.MECH;
-            }else return false;
+            if (GUI.isActive()) return false;
+            Minecraft client = Minecraft.getInstance();
+            if (client.player != null && client.player.getVehicle() instanceof MMPartEntity e && e.part instanceof Part part) {
+                return part.vehicle.getMode() == VehicleCore.ControlMode.MECH;
+            } else return false;
         }
 
         @Override
         public boolean conflicts(IKeyConflictContext other) {
-            return other == this || other == GENERAL; //二者为同一类时，或另一类为通用按键时，冲突
+            return other == this ||
+                    other == GENERAL ||
+                    other == KeyConflictContext.IN_GAME; //二者为同一类时，或另一类为通用或原版时，冲突
+        }
+    },
+    ASSEMBLY {
+        @Override
+        public String getCategory() {
+            return "resourceType.category.machine_max.assembly";
+        }
+
+        public boolean isActive() {
+            if (GUI.isActive()) return false;
+            return Minecraft.getInstance().player == null || Minecraft.getInstance().player.getVehicle() == null;
+        }
+
+        @Override
+        public boolean conflicts(IKeyConflictContext other) {
+            if (other == this || other == GENERAL) return true;
+            else return (!(other instanceof KeyCategory));
         }
     }
 }

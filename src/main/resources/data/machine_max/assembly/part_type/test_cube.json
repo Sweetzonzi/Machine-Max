@@ -1,0 +1,53 @@
+{
+  "name": "test_cube",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
+  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
+    "default": "machine_max:part/test_cube.geo"//若无变体，可缩减，即"variants": "machine_max:part/test_cube.geo"
+  },
+  "textures": [//部件贴图列表，不同变体模型必须共享一张贴图，否则请创建新的部件而非部件变体
+    "machine_max:textures/part/test_cube.png"
+  ],
+  "basic_durability": 10.0,//部件基础生命值
+  "sub_parts": {//零件(子部件)列表
+    "cube": {//零件(子部件)名称
+      "mass": 1000.0,//零件质量(kg)
+      "hit_boxes": {//碰撞形状属性，包括骨骼名称、形状类型、材质、厚度等
+        "Root": {//骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
+          "type": "box"//碰撞形状类型，支持box、sphere、cylinder
+        }
+      },
+      "connectors": {//子部件用于与其他零件连接的对接口列表
+        "north": {//接口名称
+          "locator": "AttachPoint_North",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
+          "type": "AttachPoint", //对接口类型，支持AttachPoint和Special
+          "collide_between_parts": true //是否允许子部件之间碰撞
+        },
+        "east": {
+          "locator": "AttachPoint_East",
+          "type": "AttachPoint",
+          "collide_between_parts": true
+        },
+        "south": {
+          "locator": "attachPoint_South",
+          "type": "AttachPoint",
+          "collide_between_parts": true
+        },
+        "west": {
+          "locator": "AttachPoint_West",
+          "type": "AttachPoint",
+          "collide_between_parts": true
+        },
+        "top": {
+          "locator": "AttachPoint_Top",
+          "type": "AttachPoint",
+          "collide_between_parts": true
+        },
+        "bottom": {
+          "locator": "AttachPoint_Bottom",
+          "type": "AttachPoint",
+          "collide_between_parts": true
+        }
+      },
+      "aero_dynamic": {}
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.test_cube",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 3,
+				"visible_bounds_height": 13.5,
+				"visible_bounds_offset": [0, 6.25, 0]
+			},
+			"bones": [
+				{
+					"name": "Root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-8, -8, -8],
+							"size": [16, 16, 16],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [16, 16]},
+								"east": {"uv": [0, 16], "uv_size": [16, 16]},
+								"south": {"uv": [16, 0], "uv_size": [16, 16]},
+								"west": {"uv": [16, 16], "uv_size": [16, 16]},
+								"up": {"uv": [0, 32], "uv_size": [16, 16]},
+								"down": {"uv": [32, 16], "uv_size": [16, -16]}
+							}
+						}
+					],
+					"locators": {
+						"AttachPoint_North": [0, 0, -8],
+						"attachPoint_South": [0, 0, 8],
+						"AttachPoint_Top": [0, 8, 0],
+						"AttachPoint_Bottom": [0, -8, 0],
+						"AttachPoint_West": [8, 0, 0],
+						"AttachPoint_East": [-8, 0, 0],
+						"MassCenter": [0, 0, 0]
+					}
+				}
+			]
+		}
+	]
+}
