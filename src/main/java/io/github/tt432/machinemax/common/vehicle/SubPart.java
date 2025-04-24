@@ -250,7 +250,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             start.set(1, y0 - 1);
             var end = start.add(0f, 1 + stepHeight, 0f);
             if (start.equals(end)) {
-                MachineMax.LOGGER.error("y0:{} stepHeight:{} start:{} end:{}", y0, stepHeight, start, end);
+                MachineMax.LOGGER.error("Same start and end position for climb assist ray test, canceling climb assist.");
+                //TODO:治标不治本，需要排查原因
+                return;
             }
             var test = getPhysicsLevel().getWorld().rayTest(start, end);
             PhysicsRigidBody terrainsUnder = null;//清空先前记录的地面碰撞体
