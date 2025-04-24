@@ -70,7 +70,7 @@ public class PartProjectionRenderer extends VisualEffectRenderer {
                 partProjection.getBones(),
                 partProjection.getWorldPositionMatrix(partialTick),
                 poseStack.last().normal(),
-                bufferSource.getBuffer(RenderType.entityTranslucent(partProjection.modelIndex.getTextureLocation())),
+                bufferSource.getBuffer(RenderType.entityTranslucentEmissive(partProjection.modelIndex.getTextureLocation())),
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,
                 partProjection.color.getRGB(),

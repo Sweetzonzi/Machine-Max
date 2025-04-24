@@ -244,9 +244,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     }
 
     public void adjustTransform(Part part, AbstractConnector partConnector) {
-        Transform targetTransform = subPart.body.getTransform(null);
-        MyMath.combine(this.subPartTransform, targetTransform, targetTransform);
-        MyMath.combine(partConnector.subPartTransform.invert(), targetTransform, targetTransform);
+        Transform targetTransform = mergeTransform(partConnector.subPartTransform.invert());
         Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
         part.rootSubPart.body.setPhysicsTransform(targetTransform);
         //相应调整部件内子零件的位置姿态
@@ -257,6 +255,12 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
             MyMath.combine(transform, targetTransform, transform);
             subPart.body.setPhysicsTransform(transform);
         }
+    }
+
+    public Transform mergeTransform(Transform transform){
+        Transform result = subPart.body.getTransform(null);
+        MyMath.combine(this.subPartTransform, result, result);
+        return MyMath.combine(transform, result, result);
     }
 
     /**

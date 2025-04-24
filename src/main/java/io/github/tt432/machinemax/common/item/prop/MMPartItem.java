@@ -1,11 +1,12 @@
 package io.github.tt432.machinemax.common.item.prop;
 
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.tt432.machinemax.MachineMax;
-import io.github.tt432.machinemax.client.renderer.PartProjectionRenderer;
 import io.github.tt432.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.tt432.machinemax.common.component.PartAssemblyInfoComponent;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
@@ -16,11 +17,13 @@ import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
+import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -30,7 +33,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
+import java.awt.*;
 import java.util.List;
 
 public class MMPartItem extends Item {
@@ -51,8 +57,8 @@ public class MMPartItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if (!level.isClientSide()) {
             ItemStack stack = player.getItemInHand(usedHand);
-            PartType partType = getPartType(stack,level);//获取物品保存的部件类型
-            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack,level);//获取物品保存的组装信息
+            PartType partType = getPartType(stack, level);//获取物品保存的部件类型
+            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
             String variant = info.variant();//获取物品保存的部件变体
             String connectorName = info.connector();//获取物品保存的部件接口
             String connectorType = info.connectorType();//获取物品保存的部件接口类型
@@ -82,8 +88,8 @@ public class MMPartItem extends Item {
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int portId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (level.isClientSide() && isSelected) {
-            PartType partType = getPartType(stack,level);//获取物品保存的部件类型
-            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack,level);//获取物品保存的组装信息
+            PartType partType = getPartType(stack, level);//获取物品保存的部件类型
+            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
             String variant = info.variant();//获取物品保存的部件变体
             String connectorName = info.connector();//获取物品保存的部件接口
             String connectorType = info.connectorType();//获取物品保存的部件接口类型
@@ -96,12 +102,20 @@ public class MMPartItem extends Item {
                         message.append("目标接口:" + targetConnector.name + "部件接口:" + connectorName);
                         if (!variant.equals("default") && partType.variants.size() > 1)
                             message.append(" 部件变体类型:" + variant);
+                        if (MMVisualEffects.getPROJECTION().partToAssembly != null) {
+                            MMVisualEffects.getPROJECTION().partToAssembly.setTransform(
+                                    targetConnector.mergeTransform(new Transform(
+                                            PhysicsHelperKt.toBVector3f(info.offset()),
+                                            SparkMathKt.toBQuaternion(info.rotation())
+                                    ).invert())
+                            );
+                        }
                     } else message.append("无法连接两个非AttachPoint接口");
                 } else
                     message = Component.empty().append(" 连接口" + targetConnector.name + "不接受部件" + partType.name + "的" + variant + "变体");
             } else {
                 message.append("未选中可用的部件接口，右键将直接放置零件");
-                if (MMVisualEffects.getPROJECTION().partToAssembly !=null)
+                if (MMVisualEffects.getPROJECTION().partToAssembly != null)
                     MMVisualEffects.getPROJECTION().partToAssembly.setTransform(
                             new Transform(
                                     PhysicsHelperKt.toBVector3f(entity.position()),
@@ -145,8 +159,15 @@ public class MMPartItem extends Item {
             PartAssemblyCacheComponent iterators = getPartAssemblyCache(stack, level);//获取物品保存的组装信息
             var connectors = partType.getPartOutwardConnectors();
             String variant = iterators.getNextVariant();
-            String connector = iterators.getNextConnector();
-            PartAssemblyInfoComponent info = new PartAssemblyInfoComponent(variant, connector, connectors.get(connector));
+            String connectorName = iterators.getNextConnector();
+            ConnectorAttr connectorAttr = connectors.get(connectorName);
+            ModelIndex modelIndex = new ModelIndex(partType.variants.get(variant), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
+            var locators = modelIndex.getModel().getLocators();
+            OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
+            Vector3f offset = partConnectorLocator.getOffset().toVector3f();
+            Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
+            Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
+            PartAssemblyInfoComponent info = new PartAssemblyInfoComponent(variant, connectorName, connectorAttr.type(), offset, quaternion);
             stack.set(MMDataComponents.getPART_ASSEMBLY_INFO(), info);//将组装信息存入物品，并自动同步至客户端
             return info;
         } else return stack.get(MMDataComponents.getPART_ASSEMBLY_INFO());

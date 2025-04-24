@@ -13,6 +13,7 @@ import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.math.Transform;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.checkerframework.checker.units.qual.C;
@@ -39,17 +40,24 @@ public class PartProjection implements IAnimatable<PartProjection> {
         this.setVariant(variant);
     }
 
-    public void setTransform(Transform transform) {
+    public PartProjection setTransform(Transform transform) {
         this.oldTransform = this.transform;
         this.transform = transform;
+        return this;
     }
 
-    public void setVariant(String variant) {
+    public PartProjection setVariant(String variant) {
         this.variant = variant;
         this.setModelIndex(new ModelIndex(
                 type.variants.getOrDefault(variant, type.variants.get("default")),
                 type.animation,
                 type.textures.getFirst()));
+        return this;
+    }
+
+    public PartProjection setColor(Color color) {
+        this.color = color;
+        return this;
     }
 
     @Override
