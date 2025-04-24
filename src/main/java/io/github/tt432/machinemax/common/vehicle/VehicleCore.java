@@ -61,6 +61,7 @@ public class VehicleCore {
     private Vec3 position = Vec3.ZERO;//位置
     private Vec3 velocity = Vec3.ZERO;//速度
     public float totalMass = 0;//总质量
+    public int syncCountDown = 0;//同步倒计时
     @Setter
     public boolean inLoadedChunk = false;//是否睡眠
     public boolean loadFromSavedData = false;//是否已加载
@@ -130,7 +131,10 @@ public class VehicleCore {
             }
             this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
             this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
-            if (!level.isClientSide && tickCount % 2 == 0) syncSubParts(null);//同步零件位置姿态速度
+            if (!level.isClientSide && syncCountDown <= 0) {
+                syncSubParts(null);//同步零件位置姿态速度
+                syncCountDown = Math.max((int) (200 * Math.pow(2, -velocity.length())), 1);//速度越大，同步冷却时间越短
+            }
             subSystemController.tick();
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
@@ -139,6 +143,7 @@ public class VehicleCore {
         if (partMap.values().isEmpty() || this.position.y < -1024)
             VehicleManager.removeVehicle(this);//移除掉出世界的载具
         tickCount++;
+        if (syncCountDown > 0) syncCountDown--;
     }
 
     public void prePhysicsTick() {
@@ -164,16 +169,19 @@ public class VehicleCore {
                 for (Map.Entry<String, SubPart> subPartEntry : part.subParts.entrySet()) {
                     SubPart subPart = subPartEntry.getValue();
                     PhysicsRigidBody body = subPart.body;
+                    boolean isSleep = !body.isActive();
                     PosRotVelVel data = new PosRotVelVel(
                             body.getPhysicsLocation(null),
                             SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
                             body.getLinearVelocity(null),
                             body.getAngularVelocity(null));
-                    subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, !body.isActive()));
+                    subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, isSleep));
                 }
                 subPartSyncDataToSend.put(entry.getKey(), subPartSyncDataMap);
             }
-            PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(this.uuid, subPartSyncDataToSend));
+            if (!subPartSyncDataToSend.isEmpty()) {
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(this.uuid, subPartSyncDataToSend));
+            }
         } else if (subPartSyncData != null) {
             this.level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
                 for (Map.Entry<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> outerEntry : subPartSyncData.entrySet()) {
@@ -192,8 +200,7 @@ public class VehicleCore {
                                 body.setPhysicsRotation(SparkMathKt.toBQuaternion(data.rotation()));
                                 body.setLinearVelocity(data.linearVel());
                                 body.setAngularVelocity(data.angularVel());
-                                if (sleep) body.forceDeactivate();
-                                else body.activate();
+                                if (!sleep) body.activate();
                             } else
                                 MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this, partUUID, subPartName);
                         }
@@ -208,22 +215,23 @@ public class VehicleCore {
      * 激活载具所有零件的运动体
      */
     public void activate() {
+        syncCountDown = 0;
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;
         });
     }
 
-    /**
-     * 令载具所有零件的运动体休眠
-     */
-    public void deactivate() {
-        level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
-            for (Part part : partMap.values())
-                part.subParts.values().forEach(subPart -> subPart.body.forceDeactivate());
-            return null;
-        });
-    }
+//    /**
+//     * 令载具所有零件的运动体休眠
+//     */
+//    public void deactivate() {
+//        level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
+//            for (Part part : partMap.values())
+//                part.subParts.values().forEach(subPart -> subPart.body.forceDeactivate());
+//            return null;
+//        });
+//    }
 
     public void setGravity(Vector3f gravity) {
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
@@ -328,6 +336,7 @@ public class VehicleCore {
             }
             if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
             this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
+            this.activate();
             if (inLevel && !level.isClientSide()) {
                 comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊对接口在前面，以保证对接口属性得到正确应用
                 //发包客户端创建连接关系

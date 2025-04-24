@@ -248,17 +248,14 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         MyMath.combine(this.subPartTransform, targetTransform, targetTransform);
         MyMath.combine(partConnector.subPartTransform.invert(), targetTransform, targetTransform);
         Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
-        getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            part.rootSubPart.body.setPhysicsTransform(targetTransform);
-            for (SubPart subPart : part.subParts.values()) {
-                if (subPart == part.rootSubPart) continue;
-                Transform transform = subPart.body.getTransform(null);
-                MyMath.combine(transform, rootTransform, transform);
-                MyMath.combine(transform, targetTransform, transform);
-                subPart.body.setPhysicsTransform(transform);
-            }
-            return null;
-        });
+        part.rootSubPart.body.setPhysicsTransform(targetTransform);
+        for (SubPart subPart : part.subParts.values()) {
+            if (subPart == part.rootSubPart) continue;
+            Transform transform = subPart.body.getTransform(null);
+            MyMath.combine(transform, rootTransform, transform);
+            MyMath.combine(transform, targetTransform, transform);
+            subPart.body.setPhysicsTransform(transform);
+        }
     }
 
     /**
