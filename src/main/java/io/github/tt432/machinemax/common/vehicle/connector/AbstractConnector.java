@@ -249,6 +249,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         MyMath.combine(partConnector.subPartTransform.invert(), targetTransform, targetTransform);
         Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
         part.rootSubPart.body.setPhysicsTransform(targetTransform);
+        //相应调整部件内子零件的位置姿态
         for (SubPart subPart : part.subParts.values()) {
             if (subPart == part.rootSubPart) continue;
             Transform transform = subPart.body.getTransform(null);

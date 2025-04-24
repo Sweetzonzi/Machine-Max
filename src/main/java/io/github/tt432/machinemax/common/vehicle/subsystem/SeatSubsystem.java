@@ -45,6 +45,12 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
     }
 
     @Override
+    public void onDetach() {
+        super.onDetach();
+        removePassenger();
+    }
+
+    @Override
     public void onTick() {
         if (passenger != null && this.owner.getPart() instanceof Part part) {
             if (passenger.isRemoved() || passenger.isDeadOrDying() || passenger.getVehicle() != part.entity) {
