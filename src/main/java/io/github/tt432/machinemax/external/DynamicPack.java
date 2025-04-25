@@ -23,11 +23,11 @@ public class DynamicPack implements PackResources {
     private final ResourceLocation location;
     private final File file;
     private final ByteArrayInputStream inputStream;
-    public DynamicPack(ResourceLocation location, String packRoot, File file, ByteArrayInputStream inputStream) {
+    public DynamicPack(ResourceLocation location, String packRoot, File file) {
         this.location = location;
         this.packRoot = packRoot;
         this.file = file;
-        this.inputStream = inputStream;
+        this.inputStream = MMDynamicRes.fileStream(file);
         loadContent();
     }
 
