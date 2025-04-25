@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -27,12 +28,22 @@ public class MMDynamicRes {
     public static void loadData() {
         Exist(NAMESPACE);
         Exist(VEHICLES);
+        generateTestPack();
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
             packUp(packName, Exist(root.resolve("part")));
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("script")));
         }
+    }
+
+    private static void generateTestPack() {
+        Path testpack = Exist(VEHICLES.resolve("testpack"));
+        Path partFolder = Exist(testpack.resolve("part"));
+        Path partTypeFolder = Exist(testpack.resolve("part_type"));
+        Exist(testpack.resolve("script"));
+        createDefaultFile(partFolder.resolve("test_cube.geo.json"), TestPackProvider.part());
+        createDefaultFile(partTypeFolder.resolve("test_cube.json"), TestPackProvider.part_type());
     }
 
     private static void packUp(String packName, Path categoryPath) {
@@ -55,6 +66,26 @@ public class MMDynamicRes {
         }
         return path;
     }
+
+    public static void createDefaultFile(Path targetPath, String content) {
+        if (!Files.exists(targetPath)) {
+            try {
+            Files.writeString(
+                    targetPath,
+                    content,
+                    StandardOpenOption.CREATE_NEW,
+                    StandardOpenOption.WRITE
+            );
+            System.out.println("文件创建成功: " + targetPath);
+            } catch (IOException e) {
+                LOGGER.error("Failed to create default-file on %s because of %s".formatted(targetPath, e));
+            }
+        } else {
+            System.out.println("文件已存在，跳过创建: " + targetPath);
+        }
+    }
+
+
     private static List<Path> listPaths(Path path, Predicate<Path> predicate) {
         try {
             return Files.list(path)
