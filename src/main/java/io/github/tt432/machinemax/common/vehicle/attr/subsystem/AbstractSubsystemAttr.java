@@ -27,11 +27,12 @@ abstract public class AbstractSubsystemAttr {
     public enum SubsystemType {
         RESOURCE_STORAGE,//资源存储子系统，可指定储存类型、容量等
         ENGINE,//发动机子系统，可指定最大功率，转速等
+        MOTOR,//电动机子系统，与发动机类似，可指定最大功率等
         GEARBOX,//变速箱子系统，可指定多级减速比，自动变速
         CAR_CTRL,//车辆控制子系统，用于更好地处理控制输入信号，辅助控制变速箱、轮胎转向等
         TURRET_CTRL,//炮塔控制子系统，用于控制炮塔的位置、角度、开火等
         TRANSMISSION,//传动子系统，将转速、转矩分发给各个轴
-        MOTOR,//驱动机构子系统，可指定各轴驱动和伺服
+        JOINT,//驱动机构子系统，可指定关节各轴驱动和伺服
         WHEEL,//轮胎子系统，与MOTOR类似，但仅限x轴旋转驱动和y轴旋转伺服
         TURRET,//炮塔子系统，与MOTOR类似，但仅限x轴和y轴旋转伺服
         SEAT,//座椅子系统，可指定乘坐位置、信号输出等

@@ -11,10 +11,11 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("seat")) { SeatSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("resource_storage")) { ResourceStorageSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("engine")) { EngineSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("motor")) {MotorSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("car_controller")) { CarControllerSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("gearbox")) { GearboxSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("transmission")) { TransmissionSubsystemAttr.CODEC}
-        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("motor")) { MotorSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("joint_driver")) { JointDriverSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("wheel_driver")) { WheelDriverSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("turret_driver")) { TurretDriverSubsystemAttr.CODEC}
     }
