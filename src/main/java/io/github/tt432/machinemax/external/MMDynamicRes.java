@@ -1,5 +1,10 @@
 package io.github.tt432.machinemax.external;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.github.tt432.machinemax.common.vehicle.PartType;
+import io.github.tt432.machinemax.external.parse.PartTypeAdapter;
+import io.github.tt432.machinemax.external.parse.ResourceLocationAdapter;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.loading.FMLPaths;
 
@@ -25,10 +30,10 @@ public class MMDynamicRes {
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);
     public static final Path VEHICLES = NAMESPACE.resolve("vehicles");
 
-    public static void loadData() {
+    public static void loadData() { //数据加载过程
         Exist(NAMESPACE);
         Exist(VEHICLES);
-        generateTestPack();
+        GenerateTestPack();
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
             packUp(packName, Exist(root.resolve("part")));
@@ -37,7 +42,7 @@ public class MMDynamicRes {
         }
     }
 
-    private static void generateTestPack() {
+    private static void GenerateTestPack() {
         Path testpack = Exist(VEHICLES.resolve("testpack"));
         Path partFolder = Exist(testpack.resolve("part"));
         Path partTypeFolder = Exist(testpack.resolve("part_type"));
@@ -47,11 +52,23 @@ public class MMDynamicRes {
     }
 
     private static void packUp(String packName, Path categoryPath) {
+        Gson gson = new GsonBuilder()
+                .registerTypeAdapter(ResourceLocation.class, new ResourceLocationAdapter())
+                .registerTypeAdapter(PartType.class, new PartTypeAdapter())
+                .create(); //首先注册解析器
         String category = categoryPath.getFileName().toString();
         for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
             String fileName = filePath.getFileName().toString();
             ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, fileName));
-            EXTERNAL_RESOURCE.put(location, new DynamicPack(location, category, filePath.toFile()));
+            DynamicPack dynamicPack = new DynamicPack(location, category, filePath.toFile());
+            String content = dynamicPack.getContent(false);
+            switch (category) {
+                case "part_type" -> {
+                    PartType partType = gson.fromJson(content, PartType.class);
+                    dynamicPack.setInstance(partType);
+                }
+            }
+            EXTERNAL_RESOURCE.put(location, dynamicPack);
         }
 
     }

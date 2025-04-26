@@ -1,6 +1,7 @@
 package io.github.tt432.machinemax.external;
 
 
+import io.github.tt432.machinemax.common.vehicle.PartType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
@@ -23,6 +24,7 @@ public class DynamicPack implements PackResources {
     private final ResourceLocation location;
     private final File file;
     private final ByteArrayInputStream inputStream;
+    private Object instance;
     public DynamicPack(ResourceLocation location, String packRoot, File file) {
         this.location = location;
         this.packRoot = packRoot;
@@ -59,6 +61,10 @@ public class DynamicPack implements PackResources {
     public String getContent() {
         return content;
     }
+    public String getContent(boolean keepComments) {
+        if (!keepComments) return CommentRemover.removeComments(content);
+        return content;
+    }
     public InputStream getInputStream() {
         return inputStream;
     } //文件字符流
@@ -88,4 +94,7 @@ public class DynamicPack implements PackResources {
     public void close() {}
 
 
+    public void setInstance(Object object) {
+        instance = object;
+    }
 }
