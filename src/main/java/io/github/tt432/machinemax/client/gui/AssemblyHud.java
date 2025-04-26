@@ -54,7 +54,7 @@ public class AssemblyHud implements LayeredDraw.Layer {
 
         float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
 //        renderRays(poseStack, partialTick, multiBufferSource.getBuffer(RenderType.dragonRays()), centerX, centerY);
-        renderPartToAssembly(poseStack, multiBufferSource, partialTick, Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(), centerX, centerY);
+//        renderPartToAssembly(poseStack, multiBufferSource, partialTick, Minecraft.getInstance().gameRenderer.getMainCamera().getPosition(), centerX, centerY);
     }
 
     private static void renderRays(PoseStack poseStack, float dragonDeathCompletion, VertexConsumer buffer, int x, int y) {
