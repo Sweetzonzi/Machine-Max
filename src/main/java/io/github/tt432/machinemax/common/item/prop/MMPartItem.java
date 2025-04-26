@@ -36,7 +36,6 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.awt.*;
 import java.util.List;
 
 public class MMPartItem extends Item {
@@ -102,8 +101,8 @@ public class MMPartItem extends Item {
                         message.append("目标接口:" + targetConnector.name + "部件接口:" + connectorName);
                         if (!variant.equals("default") && partType.variants.size() > 1)
                             message.append(" 部件变体类型:" + variant);
-                        if (MMVisualEffects.getPROJECTION().partToAssembly != null) {
-                            MMVisualEffects.getPROJECTION().partToAssembly.setTransform(
+                        if (MMVisualEffects.getPART_ASSEMBLY().partToAssembly != null) {
+                            MMVisualEffects.getPART_ASSEMBLY().partToAssembly.setTransform(
                                     targetConnector.mergeTransform(new Transform(
                                             PhysicsHelperKt.toBVector3f(info.offset()),
                                             SparkMathKt.toBQuaternion(info.rotation())
@@ -115,8 +114,8 @@ public class MMPartItem extends Item {
                     message = Component.empty().append(" 连接口" + targetConnector.name + "不接受部件" + partType.name + "的" + variant + "变体");
             } else {
                 message.append("未选中可用的部件接口，右键将直接放置零件");
-                if (MMVisualEffects.getPROJECTION().partToAssembly != null)
-                    MMVisualEffects.getPROJECTION().partToAssembly.setTransform(
+                if (MMVisualEffects.getPART_ASSEMBLY().partToAssembly != null)
+                    MMVisualEffects.getPART_ASSEMBLY().partToAssembly.setTransform(
                             new Transform(
                                     PhysicsHelperKt.toBVector3f(entity.position()),
                                     Quaternion.IDENTITY

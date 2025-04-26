@@ -15,7 +15,10 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.client.renderer.PartAssemblyRenderer;
+import io.github.tt432.machinemax.common.registry.MMVisualEffects;
 import io.github.tt432.machinemax.common.vehicle.Part;
+import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.JointAttr;
@@ -98,7 +101,14 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
 
     @Override
     public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
-
+        if (level.isClientSide()) {
+            PartAssemblyRenderer renderer = MMVisualEffects.getPART_ASSEMBLY();
+            if (!this.hasPart()) {
+                renderer.attachPoints.put(this, body);
+            } else {
+                renderer.attachPoints.remove(this);
+            }
+        }
     }
 
     /**
@@ -257,7 +267,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         }
     }
 
-    public Transform mergeTransform(Transform transform){
+    public Transform mergeTransform(Transform transform) {
         Transform result = subPart.body.getTransform(null);
         MyMath.combine(this.subPartTransform, result, result);
         return MyMath.combine(transform, result, result);
@@ -271,6 +281,17 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
      */
     public boolean conditionCheck(PartData part) {
         return conditionCheck(part.variant);
+    }
+
+    /**
+     * 检查给定零件是否符合本接口的安装要求
+     *
+     * @param partType 要检查的待安装部件的类型
+     * @param variant  要检查的待安装部件的变体类型
+     * @return 给定零件是否满足当前接口安装条件
+     */
+    public boolean conditionCheck(PartType partType, String variant) {
+        return conditionCheck(variant);
     }
 
     /**
@@ -305,6 +326,8 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
 
     public void destroy() {
         detach(true);
+        if (subPart.part.level.isClientSide())
+            MMVisualEffects.getPART_ASSEMBLY().attachPoints.remove(this);
         this.removeAllBodies();
     }
 
