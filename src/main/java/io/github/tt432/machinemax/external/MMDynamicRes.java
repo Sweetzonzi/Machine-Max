@@ -72,7 +72,7 @@ public class MMDynamicRes {
         @Override
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
             Minecraft.getInstance().player.sendSystemMessage(Component.literal("[%s]: 你刚刚尝试了重载载具包".formatted(MOD_ID)));
-            loadData();
+            loadData();//重新读取
         }
     }
 
@@ -151,7 +151,6 @@ public class MMDynamicRes {
 
 
     /**获取一个路径下所有的子目录，第二个是过滤器（比如Files::isDirectory 是拿到所有子文件夹）*/
-
     private static List<Path> listPaths(Path path, Predicate<Path> predicate) {
         try {
             return Files.list(path)
@@ -179,7 +178,8 @@ public class MMDynamicRes {
     }
 
 
-    private static String getRealName(String str) {     //将文件名称的.xxx后缀部分去掉
+    /**将文件名称的.xxx后缀部分去掉*/
+    private static String getRealName(String str) {
         return str.contains(".") ? str.substring(0, str.lastIndexOf('.')) : str;
     }
 }
