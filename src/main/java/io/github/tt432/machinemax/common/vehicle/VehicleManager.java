@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
+import io.github.tt432.machinemax.common.registry.MMVisualEffects;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
 import io.github.tt432.machinemax.network.payload.assembly.ClientRequestVehicleDataPayload;
 import io.github.tt432.machinemax.network.payload.assembly.LevelVehicleDataPayload;
@@ -166,6 +167,15 @@ public class VehicleManager {
         else if (Minecraft.getInstance().getConnection() != null) {
             PacketDistributor.sendToServer(new ClientRequestVehicleDataPayload(dimension));
             MachineMax.LOGGER.info("客户端进入维度{}，向服务器请求维度内现有载具数据", level.dimension().location());
+        }
+    }
+
+    @SubscribeEvent//卸载服务端世界时清除相关数据
+    public static void unloadVehicleData(LevelEvent.Unload event) {
+        if(event.getLevel().isClientSide()){
+            MMVisualEffects.getPART_ASSEMBLY().attachPoints.clear();
+            MMVisualEffects.getPART_ASSEMBLY().partToAssembly = null;
+            //TODO:检查物理世界清理情况
         }
     }
 

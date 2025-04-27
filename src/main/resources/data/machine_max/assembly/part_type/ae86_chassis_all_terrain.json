@@ -70,9 +70,9 @@
   },
   "sub_parts": {//零件(子部件)列表
     "ae86_chassis_all_terrain": {//零件(子部件)名称
-      "mass": 1000.0,//零件质量(kg)
+      "mass": 500.0,//零件质量(kg)
       "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
-      "collision_height": 1.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
+      "collision_height": 2.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
       "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
       "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
         "mmCollision_Box_Chassis": {//值:碰撞形状属性
@@ -89,7 +89,7 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 35000,//刚度系数(N/m)
+              "stiffness": 15000,//刚度系数(N/m)
               "damping": 2000 //阻尼系数(N/(m/s))
             },
             "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
@@ -114,7 +114,7 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 35000,
+              "stiffness": 15000,
               "damping": 2000
             },
             "xr": {
@@ -132,7 +132,7 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 35000,
+              "stiffness": 15000,
               "damping": 2000
             },
             "xr": {
@@ -157,7 +157,7 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 35000,
+              "stiffness": 15000,
               "damping": 2000
             },
             "xr": {
@@ -196,6 +196,8 @@
         }
       },
       "aero_dynamic": {
+        "center": [0.0, 0.7, 0.0],
+        "effective_range": [5.0, 5.0, 5.0]
       }
     }
   }

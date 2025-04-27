@@ -54,12 +54,12 @@ public class RawInputHandler {
     @SubscribeEvent
     public static void handleMoveInputs(ClientTickEvent.Post event) {
         var client = Minecraft.getInstance();
-        if (client.player != null && client.player.getVehicle() instanceof MMPartEntity e && e.part instanceof Part part) {
+        if (client.player != null &&
+                ((IEntityMixin) client.player).getRidingSubsystem() instanceof SeatSubsystem subSystem &&
+                subSystem.owner instanceof Part part) {
+            String subSystemName = subSystem.name;
             UUID vehicleUuid = part.vehicle.uuid;
             UUID partUuid = part.uuid;
-            String subSystemName = null;
-            if (((IEntityMixin) client.player).getRidingSubsystem() instanceof SeatSubsystem subSystem)
-                subSystemName = subSystem.name;
             int trans_x_conflict = 0;
             int trans_y_conflict = 0;
             int trans_z_conflict = 0;
