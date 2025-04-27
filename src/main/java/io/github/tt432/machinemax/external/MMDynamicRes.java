@@ -71,7 +71,7 @@ public class MMDynamicRes {
 
         @Override
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
-            Minecraft.getInstance().player.sendSystemMessage(Component.literal("[%s]: 你刚刚尝试了重载载具包"));
+            Minecraft.getInstance().player.sendSystemMessage(Component.literal("[%s]: 你刚刚尝试了重载载具包".formatted(MOD_ID)));
             loadData();
         }
     }
