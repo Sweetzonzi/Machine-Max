@@ -24,6 +24,7 @@ public class MachineMax {
     public MachineMax(IEventBus bus) {
         REGISTER.register(bus);
         MMDynamicRes.loadData();//读取外部资源文件
+        bus.addListener(MMDynamicRes::registerReloadListeners);
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块
         MMEntities.register();//注册所有实体

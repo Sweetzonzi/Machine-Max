@@ -1,8 +1,11 @@
 package io.github.tt432.machinemax.external;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackSelectionConfig;
@@ -10,13 +13,18 @@ import net.minecraft.server.packs.repository.*;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.logging.Level;
 
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 

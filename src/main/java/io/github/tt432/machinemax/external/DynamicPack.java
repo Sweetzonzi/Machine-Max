@@ -24,7 +24,6 @@ public class DynamicPack implements PackResources {
     private final ResourceLocation location;
     private final File file;
     private final ByteArrayInputStream inputStream;
-    private Object instance;
     public DynamicPack(ResourceLocation location, String packRoot, File file) {
         this.location = location;
         this.packRoot = packRoot;
@@ -94,7 +93,4 @@ public class DynamicPack implements PackResources {
     public void close() {}
 
 
-    public void setInstance(Object object) {
-        instance = object;
-    }
 }
