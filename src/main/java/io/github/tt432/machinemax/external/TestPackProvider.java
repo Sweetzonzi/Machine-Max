@@ -53,7 +53,7 @@ public class TestPackProvider {
     public static String part_type() {
         return """
                 {
-                  "name": "test_cube",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
+                  "name": "test_cube_vpack",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
                   "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
                     "default": "machine_max:part/test_cube.geo"//若无变体，可缩减，即"variants": "machine_max:part/test_cube.geo"
                   },
