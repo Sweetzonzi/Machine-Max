@@ -2,6 +2,10 @@ package io.github.tt432.machinemax.external;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.JsonOps;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.external.parse.PartTypeAdapter;
 import io.github.tt432.machinemax.external.parse.ResourceLocationAdapter;
@@ -94,8 +98,8 @@ public class MMDynamicRes {
 
     /**对一个载具包子目录的解析 packName是载具包名称 categoryPath是子目录*/
     private static void packUp(String packName, Path categoryPath) {
-        GsonBuilder gsonBuilder = new GsonBuilder()
-                .registerTypeAdapter(ResourceLocation.class, new ResourceLocationAdapter()); //首先注册ResourceLocation解析器
+//        GsonBuilder gsonBuilder = new GsonBuilder()
+//                .registerTypeAdapter(ResourceLocation.class, new ResourceLocationAdapter()); //首先注册ResourceLocation解析器
         String category = categoryPath.getFileName().toString();
         for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
             String fileName = filePath.getFileName().toString();
@@ -104,19 +108,30 @@ public class MMDynamicRes {
             String content = dynamicPack.getContent(false);//过滤掉注释后再交给解析器，避免gson报错
             switch (category) {
                 case "part_type" -> { //part_type文件夹中的配置
-                    Gson gson = gsonBuilder
-                            .registerTypeAdapter(PartType.class, new PartTypeAdapter()) //注册PartType解析器
-                            .create();
-                    PartType partType = gson.fromJson(content, PartType.class); //解析配置得到PartType对象
-                    PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
-
-                    //测试数据是否成功录入
-                    partType.getConnectorIterator().forEachRemaining((c) -> {
-                        System.out.println("ConnectorIterator: " +c);
-                    });
-                    partType.getPartOutwardConnectors().forEach((a, b) -> {
-                        System.out.println("接口名称: %s 类型: %s".formatted(a, b));
-                    });
+//                    Gson gson = gsonBuilder
+//                            .registerTypeAdapter(PartType.class, new PartTypeAdapter()) //注册PartType解析器
+//                            .create();
+//                    PartType partType = gson.fromJson(content, PartType.class); //解析配置得到PartType对象
+//
+                    try {
+                        JsonElement json = JsonParser.parseString(Files.readString(filePath));
+                        DataResult<PartType> result = PartType.CODEC.parse(JsonOps.INSTANCE, json);
+                        result.result().ifPresent(partType -> {
+                            LOGGER.info("成功还原 part type: {}", location);
+                            PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
+                            //测试数据是否成功录入
+                            partType.getConnectorIterator().forEachRemaining((c) -> {
+                                LOGGER.info("连接器队列: " +c);
+                            });
+                            partType.getPartOutwardConnectors().forEach((a, b) -> {
+                                LOGGER.info("接口名称: %s 类型: %s".formatted(a, b));
+                            });
+                        });
+                        result.error().ifPresent(error ->
+                                LOGGER.error("Failed to parse {}: {}", filePath, error.message()));
+                    } catch (IOException e) {
+                        LOGGER.error("Failed to read file {}: {}", filePath, e.getMessage());
+                    }
                 }
                 //下面的同理，读到后解析成对象
                 case "part" -> {}
