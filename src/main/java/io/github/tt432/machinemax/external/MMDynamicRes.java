@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
@@ -71,7 +72,9 @@ public class MMDynamicRes {
 
         @Override
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
-            Minecraft.getInstance().player.sendSystemMessage(Component.literal("[%s]: 你刚刚尝试了重载载具包".formatted(MOD_ID)));
+
+            if (Minecraft.getInstance().player instanceof Player player)
+                player.sendSystemMessage(Component.literal("[%s]: 你刚刚尝试了重载载具包".formatted(MOD_ID)));
             loadData();//重新读取
         }
     }
@@ -106,6 +109,14 @@ public class MMDynamicRes {
                             .create();
                     PartType partType = gson.fromJson(content, PartType.class); //解析配置得到PartType对象
                     PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
+
+                    //测试数据是否成功录入
+                    partType.getConnectorIterator().forEachRemaining((c) -> {
+                        System.out.println("ConnectorIterator: " +c);
+                    });
+                    partType.getPartOutwardConnectors().forEach((a, b) -> {
+                        System.out.println("接口名称: %s 类型: %s".formatted(a, b));
+                    });
                 }
                 //下面的同理，读到后解析成对象
                 case "part" -> {}
