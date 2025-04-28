@@ -21,6 +21,7 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
+import io.github.tt432.machinemax.common.registry.MMDataComponents;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.HitBoxAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
@@ -31,6 +32,7 @@ import io.github.tt432.machinemax.common.vehicle.connector.SpecialConnector;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.external.MMDynamicRes;
 import io.github.tt432.machinemax.network.payload.assembly.PartPaintPayload;
 import io.github.tt432.machinemax.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
@@ -155,10 +157,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
      */
     public Part(PartData data, Level level) {
         this.name = data.name;
-        PartType partType = level.registryAccess().registry(PartType.PART_REGISTRY_KEY).get().get(data.registryKey);
-        if (partType == null)
-            level.registryAccess().registry(PartType.PART_REGISTRY_KEY).get().get(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "test_cube"));
-        this.type = level.registryAccess().registry(PartType.PART_REGISTRY_KEY).get().get(data.registryKey);
+        this.type = getPT(level, data.registryKey);
         this.level = level;
         this.variant = data.variant;
         this.textureIndex = data.textureIndex;
@@ -186,6 +185,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             } else
                 MachineMax.LOGGER.error("从数据中重建部件时发生了错误，部件{}中未能找到子部件{}。", type.name, entry.getKey());
         }
+    }
+
+    public PartType getPT(Level level, ResourceLocation registryKey) {
+        PartType pt = level.registryAccess().registry(PartType.PART_REGISTRY_KEY).get().get(registryKey);
+        if (pt == null) pt = MMDynamicRes.PART_TYPES.get(registryKey);//为null说明是外部包 尝试还原
+        return pt;
     }
 
     public void onTick() {
