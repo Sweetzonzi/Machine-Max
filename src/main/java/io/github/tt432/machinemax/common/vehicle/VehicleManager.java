@@ -118,7 +118,16 @@ public class VehicleManager {
     @SubscribeEvent
     public static void transmitVehicleData(PlayerEvent.PlayerLoggedInEvent event) {
         Level level = event.getEntity().level();
-        PacketDistributor.sendToPlayer((ServerPlayer) event.getEntity(), new LevelVehicleDataPayload(level.dimension(), level.getData(MMAttachments.getLEVEL_VEHICLES())));
+        Set<VehicleData> dataToSend = level.getData(MMAttachments.getLEVEL_VEHICLES());
+        int packetNum = (dataToSend.size() + 4) / 5;//计算分包数量，5个载具为一包
+        Iterator<VehicleData> iterator = dataToSend.iterator();
+        for (int i = 0; i < packetNum; i++) {
+            Set<VehicleData> packetData = new HashSet<>();
+            for (int j = 0; j < 5 && iterator.hasNext(); j++) {
+                packetData.add(iterator.next());
+            }
+            PacketDistributor.sendToPlayer((ServerPlayer) event.getEntity(), new LevelVehicleDataPayload(level.dimension(), packetData, packetNum));
+        }
         MachineMax.LOGGER.info("玩家{}登录进入维度{}，发送维度内现有载具数据包", event.getEntity().getName().getString(), level.dimension().location());
     }
 
@@ -171,7 +180,7 @@ public class VehicleManager {
 
     @SubscribeEvent//卸载服务端世界时清除相关数据
     public static void unloadVehicleData(LevelEvent.Unload event) {
-        if(event.getLevel().isClientSide()){
+        if (event.getLevel().isClientSide()) {
             MMVisualEffects.getPART_ASSEMBLY().attachPoints.clear();
             MMVisualEffects.getPART_ASSEMBLY().partToAssembly = null;
             //TODO:检查物理世界清理情况
