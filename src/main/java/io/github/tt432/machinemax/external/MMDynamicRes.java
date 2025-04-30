@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.external.parse.PartTypeAdapter;
 import io.github.tt432.machinemax.external.parse.ResourceLocationAdapter;
@@ -91,8 +92,8 @@ public class MMDynamicRes {
         Path partTypeFolder = Exist(testpack.resolve("part_type"));
         Path script = Exist(testpack.resolve("script"));
         //设置默认测试包的路径、名字、内容
-        createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part());
-        createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type());
+        createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
+        createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type(), true);
     }
 
 
@@ -102,15 +103,13 @@ public class MMDynamicRes {
         for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
             String fileName = filePath.getFileName().toString();
             ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, fileName));
-            DynamicPack dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
-            String content = dynamicPack.getContent(false);//过滤掉注释后再交给解析器，避免gson报错
             switch (category) {
                 case "part_type" -> { //part_type文件夹中的配置
                     try {
                         JsonElement json = JsonParser.parseString(Files.readString(filePath));
                         DataResult<PartType> result = PartType.CODEC.parse(JsonOps.INSTANCE, json);
                         result.result().ifPresent(partType -> {
-                            LOGGER.info("成功还原 PartType: {}", location);
+                            LOGGER.info("成功还原 PartType: {}", result);
                             PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
                             //测试数据是否成功录入
                             partType.getConnectorIterator().forEachRemaining((c) -> {
@@ -126,10 +125,16 @@ public class MMDynamicRes {
                         LOGGER.error("读取失败 {}: {}", filePath, e.getMessage());
                     }
                 }
-                //下面的同理，读到后解析成对象
-                case "part" -> {}
+
+                case "part" -> {
+//                    fileName = getRealName(fileName);
+//                    location = ResourceLocation.tryBuild(MOD_ID, "part/%s".formatted(fileName));
+                }
                 case "script" -> {}
             }
+
+
+            DynamicPack dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
             EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
         }
 
@@ -149,21 +154,17 @@ public class MMDynamicRes {
 
 
     /**保证文件存在，否则创建这个文件*/
-    public static void createDefaultFile(Path targetPath, String content) {
-        if (!Files.exists(targetPath)) {
-            try {
+    public static void createDefaultFile(Path targetPath, String content, boolean overwrite) {
+        try {
             Files.writeString(
                     targetPath,
                     content,
-                    StandardOpenOption.CREATE_NEW,
+                    overwrite ? StandardOpenOption.TRUNCATE_EXISTING : StandardOpenOption.CREATE_NEW,
                     StandardOpenOption.WRITE
             );
             System.out.println("文件创建成功: " + targetPath);
-            } catch (IOException e) {
-                LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
-            }
-        } else {
-            System.out.println("文件已存在，跳过创建: " + targetPath);
+        } catch (IOException e) {
+            LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
         }
     }
 

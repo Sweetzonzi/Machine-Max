@@ -8,7 +8,7 @@ public class TestPackProvider {
                 	"minecraft:geometry": [
                 		{
                 			"description": {
-                				"identifier": "geometry.test_cube",
+                				"identifier": "geometry.test_cube_vpack",
                 				"texture_width": 64,
                 				"texture_height": 64,
                 				"visible_bounds_width": 3,
@@ -55,7 +55,7 @@ public class TestPackProvider {
                 {
                   "name": "test_cube_vpack",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
                   "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-                    "default": "machine_max:part/test_cube.geo"//若无变体，可缩减，即"variants": "machine_max:part/test_cube.geo"
+                    "default": "machine_max:testpack/part/test_cube_vpack.geo.json"//若无变体，可缩减，即"variants": "machine_max:part/test_cube.geo"
                   },
                   "textures": [//部件贴图列表，不同变体模型必须共享一张贴图，否则请创建新的部件而非部件变体
                     "machine_max:textures/part/test_cube.png"
