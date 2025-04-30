@@ -1,5 +1,7 @@
 package io.github.tt432.machinemax.external;
 
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -8,6 +10,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.PartType;
+import io.github.tt432.machinemax.external.parse.OBoneParse;
 import io.github.tt432.machinemax.external.parse.PartTypeAdapter;
 import io.github.tt432.machinemax.external.parse.ResourceLocationAdapter;
 import net.minecraft.client.Minecraft;
@@ -122,13 +125,21 @@ public class MMDynamicRes {
                         result.error().ifPresent(error ->
                                 LOGGER.error("还原失败 {}: {}", filePath, error.message()));
                     } catch (IOException e) {
-                        LOGGER.error("读取失败 {}: {}", filePath, e.getMessage());
+                        LOGGER.error("读取{}失败 {}: {}", category, filePath, e.getMessage());
                     }
                 }
 
                 case "part" -> {
-//                    fileName = getRealName(fileName);
-//                    location = ResourceLocation.tryBuild(MOD_ID, "part/%s".formatted(fileName));
+                    // 首先决定载具包中variants的格式定义
+//                    fileName = getRealName(fileName); //删去资源路径后缀 .json
+//                    location = ResourceLocation.tryBuild(MOD_ID, "part/%s".formatted(fileName));  //使用默认的路径格式 machine_max:part/test_cube.geo
+                    // 上面被注释则是放弃覆盖，继续使用路径格式 machine_max:testpack/part/test_cube.geo.json
+                    try {
+                        JsonElement json = JsonParser.parseString(Files.readString(filePath));
+                        OBoneParse.register(location, json);
+                    } catch (IOException e) {
+                        LOGGER.error("读取{}失败 {}: {}", category, filePath, e.getMessage());
+                    }
                 }
                 case "script" -> {}
             }
