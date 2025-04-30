@@ -51,13 +51,17 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         this.attr = attr;
         this.collisionShape = attr.getCollisionShape(part.variant, part.type);
         this.body = new PhysicsRigidBody(name, this, this.collisionShape, attr.mass);
-        if (attr.blockCollision.equals("true") || attr.blockCollision.equals("True"))
+        this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_PART);
+        if (attr.blockCollision.equals("true") || attr.blockCollision.equals("True")) {
             GROUND_COLLISION_ONLY = false;
-        else if (attr.blockCollision.equals("ground") || attr.blockCollision.equals("Ground"))
+            this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
+        }
+        else if (attr.blockCollision.equals("ground") || attr.blockCollision.equals("Ground")) {
             GROUND_COLLISION_ONLY = true;
+            this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
+        }
         else {
             GROUND_COLLISION_ONLY = false;
-            body.removeCollideWithGroup(PhysicsCollisionObject.COLLISION_GROUP_03);
         }
         this.stepHeight = attr.stepHeight;
         this.projectedArea = attr.projectedArea;
@@ -69,7 +73,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     body.addCollisionCallback(this);//TODO:写接触规则
                     body.addPhysicsTicker(this);
                     body.setProtectGravity(true);
-                    body.setSleepingThresholds(0.05f, 0.05f);
+                    body.setSleepingThresholds(0.1f, 0.1f);
                     body.setDamping(0.01f, 0.01f);
                     body.setRestitution(0.2f);
                     body.setFriction(2.5f);

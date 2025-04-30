@@ -36,7 +36,8 @@ public record PartRemovePayload(
     public static void handle(PartRemovePayload payload, IPayloadContext context) {
         VehicleCore vehicle = VehicleManager.clientAllVehicles.get(UUID.fromString(payload.vehicleUUID));
         if(vehicle!= null){
-            vehicle.removePart(UUID.fromString(payload.partUUID));
+            UUID partUUID = UUID.fromString(payload.partUUID);
+            context.enqueueWork(() -> vehicle.removePart(partUUID));
         } else MachineMax.LOGGER.error("未找到载具: " + payload.partUUID);
     }
 }

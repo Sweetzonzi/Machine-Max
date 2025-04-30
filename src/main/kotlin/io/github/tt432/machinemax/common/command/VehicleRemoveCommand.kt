@@ -17,8 +17,9 @@ class VehicleRemoveCommand : VehicleCommand(2) {
         val source = context.source
         val level = source.level
         try {
+            var num = VehicleManager.levelVehicles.getOrDefault(level, setOf()).size
             VehicleManager.removeAllVehiclesInLevel(level)
-            source.sendSuccess({ Component.literal("All vehicles in ${level.dimension().location()} have been removed.") }, false)
+            source.sendSuccess({ Component.literal("$num vehicles in ${level.dimension().location()} have been removed.") }, false)
             return 1
         } catch (e: Exception) {
             source.sendFailure(Component.literal("Failed to remove all vehicles in ${level.dimension().location()}: ${e.message}"))

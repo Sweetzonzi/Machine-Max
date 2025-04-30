@@ -1,8 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
-import cn.solarmoon.spark_core.util.PPhase;
-import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.registry.MMVisualEffects;
@@ -133,6 +131,7 @@ public class VehicleManager {
     public static void loadVehicles(Level level) {
         levelVehicles.computeIfAbsent(level, k -> ConcurrentHashMap.newKeySet()).clear();
         if (level.isClientSide()) {//客户端清空可能的已有载具数据，从服务器获取新维度的载具数据
+            MachineMax.LOGGER.info("客户端进入维度{}，清理维度载具数据", level.dimension().location());
             clientAllVehicles.clear();
         }
         Set<VehicleData> savedVehicles = level.getData(MMAttachments.getLEVEL_VEHICLES());
@@ -166,7 +165,7 @@ public class VehicleManager {
         if (!level.isClientSide()) loadVehicles(level);
         else if (Minecraft.getInstance().getConnection() != null) {
             PacketDistributor.sendToServer(new ClientRequestVehicleDataPayload(dimension));
-            MachineMax.LOGGER.info("客户端进入维度{}，向服务器请求维度内现有载具数据", level.dimension().location());
+            MachineMax.LOGGER.info("客户端切换至维度{}，向服务器请求维度内现有载具数据", level.dimension().location());
         }
     }
 
@@ -203,4 +202,79 @@ public class VehicleManager {
     public static void sendVehicleActivateMessage(ChunkWatchEvent.Sent event) {
 
     }
+
+    /**
+     * collideWithGroups bitmask that represents "no groups"
+     */
+    final public static int COLLISION_GROUP_NONE = 0x0;
+    /**
+     * 代表一般部件的碰撞组 #1
+     * Represent the collision group for general parts #1
+     */
+    final public static int COLLISION_GROUP_PART = 0x0001;
+    /**
+     * 代表地形方块的碰撞组 #2
+     * Represent the collision group for terrain blocks #2
+     */
+    final public static int COLLISION_GROUP_BLOCK = 0x0002;
+    /**
+     * 代表技能等范围效果判定区的碰撞组 #3
+     * Represent the collision group for skill range effect detection etc. #3
+     */
+    final public static int COLLISION_GROUP_EFFECT = 0x0004;
+    /**
+     * 代表受物理引擎控制的视觉效果的碰撞组 #4
+     * Represent the collision group for visual effects controlled by the physical engine #4
+     */
+    final public static int COLLISION_GROUP_VISUAL = 0x0008;
+    /**
+     * 代表除了射线检测等操作外，不应与任何物体发生碰撞的碰撞组 #5
+     * Represent the collision group for any object that should not collide with anything except ray detection etc. #5
+     */
+    final public static int COLLISION_GROUP_UNUSED = 0x0010;
+    /**
+     * 未使用的碰撞组 #6
+     * Unused collision group #6
+     */
+    final public static int COLLISION_GROUP_06 = 0x0020;
+    /**
+     * 未使用的碰撞组 #7
+     */
+    final public static int COLLISION_GROUP_07 = 0x0040;
+    /**
+     * 未使用的碰撞组 #8
+     */
+    final public static int COLLISION_GROUP_08 = 0x0080;
+    /**
+     * 未使用的碰撞组 #9
+     */
+    final public static int COLLISION_GROUP_09 = 0x0100;
+    /**
+     * 未使用的碰撞组 #10
+     */
+    final public static int COLLISION_GROUP_10 = 0x0200;
+    /**
+     * 未使用的碰撞组 #11
+     */
+    final public static int COLLISION_GROUP_11 = 0x0400;
+    /**
+     * 未使用的碰撞组 #12
+     */
+    final public static int COLLISION_GROUP_12 = 0x0800;
+    /**
+     * 未使用的碰撞组 #13
+     */
+    final public static int COLLISION_GROUP_13 = 0x1000;
+    /**
+     * 未使用的碰撞组 #14
+     */
+    final public static int COLLISION_GROUP_14 = 0x2000;
+    /**
+     * 未使用的碰撞组 #15
+     */
+    final public static int COLLISION_GROUP_15 = 0x4000;
+    /**
+     * 未使用的碰撞组 #16
+     */
+    final public static int COLLISION_GROUP_16 = 0x8000;
 }

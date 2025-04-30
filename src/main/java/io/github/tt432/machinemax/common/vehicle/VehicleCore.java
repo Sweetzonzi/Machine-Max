@@ -275,9 +275,9 @@ public class VehicleCore {
             String partUuid = part.getUuid().toString();
             subSystemController.removeSubsystems(part.subsystems.values());
             this.totalMass -= part.totalMass;
-            part.destroy();
             partNet.removeNode(part);
             partMap.remove(part.uuid, part);
+            part.destroy();
             if (inLevel && !level.isClientSide()) {//发包客户端移除部件
                 PacketDistributor.sendToPlayersInDimension(
                         (ServerLevel) this.level,

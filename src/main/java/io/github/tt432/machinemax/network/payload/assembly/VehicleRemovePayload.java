@@ -40,7 +40,7 @@ public record VehicleRemovePayload(
         if(payload.dimension == context.player().level().dimension()){
             VehicleCore vehicle = VehicleManager.clientAllVehicles.get(UUID.fromString(payload.vehicleUUID));
             if(vehicle!= null){
-                VehicleManager.removeVehicle(vehicle);
+                context.enqueueWork(()->VehicleManager.removeVehicle(vehicle));
             } else MachineMax.LOGGER.error("收到移除不存在的载具的请求: " + payload.vehicleUUID);
         } else MachineMax.LOGGER.error("从错误维度收到载具移除请求: " + payload.dimension);
     }

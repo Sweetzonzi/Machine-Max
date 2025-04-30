@@ -27,6 +27,7 @@ public class MachineMax {
 
     public MachineMax(IEventBus bus) {
         REGISTER.register(bus);
+        MMCodecs.register(bus);//注册所有编解码器
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块
         MMEntities.register();//注册所有实体
@@ -35,7 +36,7 @@ public class MachineMax {
         MMItems.register();//注册所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMAttachments.register();//注册所有附件类型
-        MMCodecs.register(bus);//注册所有编解码器
+        MMCommands.register();//注册所有指令
         MMVisualEffects.register();//注册所有视觉效果
     }
 

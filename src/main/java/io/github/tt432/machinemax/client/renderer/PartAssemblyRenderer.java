@@ -13,6 +13,7 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.item.prop.MMPartItem;
 import io.github.tt432.machinemax.common.vehicle.PartProjection;
 import io.github.tt432.machinemax.common.vehicle.PartType;
@@ -30,6 +31,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.awt.*;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -77,13 +79,18 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     public void renderAttachPoints(PartType partType, String variant, Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
-        for (Map.Entry<AbstractConnector, PhysicsRigidBody> entry : attachPoints.entrySet()) {
+        Iterator<Map.Entry<AbstractConnector, PhysicsRigidBody>> iterator = attachPoints.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<AbstractConnector, PhysicsRigidBody> entry = iterator.next();
             AbstractConnector connector = entry.getKey();
             PhysicsRigidBody body = entry.getValue();
-            if (!connector.hasPart() && connector.conditionCheck(partType, variant))
+            if (body == null || !body.isInWorld()) {
+                iterator.remove();//保险措施，清理无效的物理体
+            } else if (!connector.hasPart() && connector.conditionCheck(partType, variant)) {
                 renderShape(body, camPos, Color.GREEN, poseStack, bufferSource, partialTick);
-            else if (!connector.hasPart() && !connector.conditionCheck(partType, variant))
+            } else if (!connector.hasPart() && !connector.conditionCheck(partType, variant)) {
                 renderShape(body, camPos, Color.RED, poseStack, bufferSource, partialTick);
+            }
         }
     }
 

@@ -20,6 +20,7 @@ import io.github.tt432.machinemax.common.registry.MMVisualEffects;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
+import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.JointAttr;
 import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
@@ -71,10 +72,10 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
             body.setProtectGravity(true);
             body.setGravity(Vector3f.ZERO);
             body.setKinematic(true);
+            body.setSleepingThresholds(5, 5);
             body.setContactResponse(false);
-            body.setCollisionGroup(PhysicsCollisionObject.COLLISION_GROUP_15);
-            body.removeCollideWithGroup(PhysicsCollisionObject.COLLISION_GROUP_01);
-            body.setCollideWithGroups(PhysicsCollisionObject.COLLISION_GROUP_16);
+            body.setCollisionGroup(VehicleManager.COLLISION_GROUP_UNUSED);
+            body.setCollideWithGroups(VehicleManager.COLLISION_GROUP_NONE);
             bindBody(
                     body,
                     subPart.getPhysicsLevel(),
