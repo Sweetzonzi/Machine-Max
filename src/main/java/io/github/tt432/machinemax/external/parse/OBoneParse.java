@@ -44,7 +44,7 @@ public class OBoneParse {
                 GsonHelper.getAsInt(texture, "texture_height")
         );
 
-        Map<String, OBone> bones = OBone.getMAP_CODEC()
+        LinkedHashMap<String, OBone> bones = OBone.getMAP_CODEC()
                 .decode(JsonOps.INSTANCE, target)
                 .result()
                 .orElseThrow()
@@ -102,7 +102,8 @@ public class OBoneParse {
                         (e1, e2) -> e1,
                         LinkedHashMap::new
                 ));
-        OModel model = new OModel(coord.x(), coord.y(), new LinkedHashMap<>(bones));
+
+        OModel model = new OModel(coord.x(), coord.y(), bones);
         MMDynamicRes.O_MODELS.put(id, model);
         OModel.getORIGINS().put(id, model);
     }
