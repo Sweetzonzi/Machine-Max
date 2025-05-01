@@ -28,8 +28,8 @@ public class TestPackProvider {
                 								"east": {"uv": [0, 16], "uv_size": [16, 16]},
                 								"south": {"uv": [16, 0], "uv_size": [16, 16]},
                 								"west": {"uv": [16, 16], "uv_size": [16, 16]},
-                								"up": {"uv": [0, 32], "uv_size": [16, 16]},
-                								"down": {"uv": [32, 16], "uv_size": [16, -16]}
+                								"down": {"uv": [0, 32], "uv_size": [16, 16]},
+                								"up": {"uv": [32, 16], "uv_size": [16, -16]}
                 							}
                 						}
                 					],
