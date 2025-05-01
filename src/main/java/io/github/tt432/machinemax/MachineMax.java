@@ -3,6 +3,7 @@ package io.github.tt432.machinemax;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import com.mojang.logging.LogUtils;
 import io.github.tt432.machinemax.common.registry.*;
+import io.github.tt432.machinemax.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import org.lwjgl.openal.AL10;
@@ -27,7 +28,8 @@ public class MachineMax {
 
     public MachineMax(IEventBus bus) {
         REGISTER.register(bus);
-        MMCodecs.register(bus);//注册所有编解码器
+        MMDynamicRes.loadData();//读取外部资源文件
+        bus.addListener(MMDynamicRes::registerReloadListeners);
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块
         MMEntities.register();//注册所有实体
@@ -36,6 +38,7 @@ public class MachineMax {
         MMItems.register();//注册所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMAttachments.register();//注册所有附件类型
+        MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令
         MMVisualEffects.register();//注册所有视觉效果
     }
