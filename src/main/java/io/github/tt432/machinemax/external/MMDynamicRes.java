@@ -1,19 +1,12 @@
 package io.github.tt432.machinemax.external;
 
-import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
-import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
-import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.external.parse.OBoneParse;
-import io.github.tt432.machinemax.external.parse.PartTypeAdapter;
-import io.github.tt432.machinemax.external.parse.ResourceLocationAdapter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -21,12 +14,8 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.player.Player;
-import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
-import net.neoforged.neoforge.registries.NewRegistryEvent;
-import net.neoforged.neoforge.registries.RegisterEvent;
-import net.neoforged.neoforge.registries.RegistryBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -45,7 +34,7 @@ import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 public class MMDynamicRes {
     public static HashMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new HashMap<>(); //所有当下读取的外部资源
     public static HashMap<ResourceLocation, PartType> PART_TYPES = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
-    public static HashMap<ResourceLocation, OModel> OMODELS = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
+    public static HashMap<ResourceLocation, OModel> O_MODELS = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹

@@ -103,14 +103,14 @@ public class OBoneParse {
                         LinkedHashMap::new
                 ));
         OModel model = new OModel(coord.x(), coord.y(), new LinkedHashMap<>(bones));
-        MMDynamicRes.OMODELS.put(id, model);
+        MMDynamicRes.O_MODELS.put(id, model);
         OModel.getORIGINS().put(id, model);
     }
 
     public static void clear() {
-        MMDynamicRes.OMODELS.forEach((id, oModel) -> {
+        MMDynamicRes.O_MODELS.forEach((id, oModel) -> {
             OModel.getORIGINS().remove(id, oModel);
         });
-        MMDynamicRes.OMODELS.clear();
+        MMDynamicRes.O_MODELS.clear();
     }
 }
