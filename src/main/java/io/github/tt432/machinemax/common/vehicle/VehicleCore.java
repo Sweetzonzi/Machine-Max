@@ -1,10 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.SparkMathKt;
-import cn.solarmoon.spark_core.skill.Skill;
-import cn.solarmoon.spark_core.skill.SkillHost;
-import cn.solarmoon.spark_core.sync.SyncData;
-import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
@@ -32,11 +28,9 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -192,15 +186,17 @@ public class VehicleCore {
                         for (Map.Entry<String, Pair<PosRotVelVel, Boolean>> innerEntry : innerMap.entrySet()) {
                             String subPartName = innerEntry.getKey();
                             PosRotVelVel data = innerEntry.getValue().getFirst();
-                            boolean sleep = innerEntry.getValue().getSecond();
+                            boolean isSleep = innerEntry.getValue().getSecond();
                             SubPart subPart = part.subParts.get(subPartName);
                             if (subPart != null) {
                                 PhysicsRigidBody body = subPart.body;
+                                if (!body.isActive() && isSleep) continue;//如果零件已休眠，则跳过此零件的同步
                                 body.setPhysicsLocation(data.position());
                                 body.setPhysicsRotation(SparkMathKt.toBQuaternion(data.rotation()));
                                 body.setLinearVelocity(data.linearVel());
                                 body.setAngularVelocity(data.angularVel());
-                                if (!sleep) body.activate();
+                                if (isSleep) body.forceDeactivate();
+                                else body.activate();
                             } else
                                 MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this, partUUID, subPartName);
                         }

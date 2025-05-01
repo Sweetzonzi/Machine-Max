@@ -39,7 +39,7 @@ repositories {
     }
     maven {
         name "KosmX's maven"
-        url 'https://maven.kosmx.dev/'
+        url = 'https://maven.kosmx.dev/'
     }
     maven {
         name = "Jared's maven"
