@@ -106,10 +106,10 @@ public class MMDynamicRes {
         for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
             String fileName = filePath.getFileName().toString();
             ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, fileName));
-            switch (category) {
-                case "part_type" -> { //part_type文件夹中的配置
-                    try {
-                        JsonElement json = JsonParser.parseString(Files.readString(filePath));
+            try {
+                JsonElement json = JsonParser.parseString(Files.readString(filePath));
+                switch (category) {
+                    case "part_type" -> { //part_type文件夹中的配置
                         DataResult<PartType> result = PartType.CODEC.parse(JsonOps.INSTANCE, json);
                         result.result().ifPresent(partType -> {
                             LOGGER.info("成功还原 PartType: {}", result);
@@ -124,26 +124,21 @@ public class MMDynamicRes {
                         });
                         result.error().ifPresent(error ->
                                 LOGGER.error("还原失败 {}: {}", filePath, error.message()));
-                    } catch (IOException e) {
-                        LOGGER.error("读取{}失败 {}: {}", category, filePath, e.getMessage());
                     }
-                }
 
-                case "part" -> {
-                    // 首先决定载具包中variants的格式定义
+                    case "part" -> {
+                        // 首先决定载具包中variants的格式定义
 //                    fileName = getRealName(fileName); //删去资源路径后缀 .json
 //                    location = ResourceLocation.tryBuild(MOD_ID, "part/%s".formatted(fileName));  //使用默认的路径格式 machine_max:part/test_cube.geo
-                    // 上面被注释则是放弃覆盖，继续使用路径格式 machine_max:testpack/part/test_cube.geo.json
-                    try {
-                        JsonElement json = JsonParser.parseString(Files.readString(filePath));
+                        // 上面被注释则是放弃覆盖，继续使用路径格式 machine_max:testpack/part/test_cube.geo.json
                         OBoneParse.register(location, json);
-                    } catch (IOException e) {
-                        LOGGER.error("读取{}失败 {}: {}", category, filePath, e.getMessage());
                     }
+                    case "script" -> {}
                 }
-                case "script" -> {}
-            }
 
+            } catch (IOException e) {
+                LOGGER.error("读取{}时失败 目标文件位于{}: {}", category, filePath, e.getMessage());
+            }
 
             DynamicPack dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
             EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
