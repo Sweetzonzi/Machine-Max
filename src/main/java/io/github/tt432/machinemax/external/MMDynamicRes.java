@@ -154,13 +154,14 @@ public class MMDynamicRes {
     /**保证文件存在，否则创建这个文件*/
     public static void createDefaultFile(Path targetPath, String content, boolean overwrite) {
         try {
+            boolean canOverwrite = overwrite && Files.exists(targetPath);
             Files.writeString(
                     targetPath,
                     content,
-                    overwrite ? StandardOpenOption.TRUNCATE_EXISTING : StandardOpenOption.CREATE_NEW,
+                    canOverwrite ? StandardOpenOption.TRUNCATE_EXISTING : StandardOpenOption.CREATE_NEW,
                     StandardOpenOption.WRITE
             );
-            System.out.printf("文件%s成功: %s%n", overwrite && Files.exists(targetPath) ? "覆写" : "创建", targetPath);
+            System.out.printf("文件%s成功: %s%n", canOverwrite ? "覆写" : "创建", targetPath);
         } catch (IOException e) {
             LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
         }
