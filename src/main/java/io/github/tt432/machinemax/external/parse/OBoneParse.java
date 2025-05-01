@@ -8,6 +8,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
+import io.github.tt432.machinemax.external.MMDynamicRes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.phys.Vec3;
@@ -101,7 +102,15 @@ public class OBoneParse {
                         (e1, e2) -> e1,
                         LinkedHashMap::new
                 ));
+        OModel model = new OModel(coord.x(), coord.y(), new LinkedHashMap<>(bones));
+        MMDynamicRes.OMODELS.put(id, model);
+        OModel.getORIGINS().put(id, model);
+    }
 
-         OModel.getORIGINS().put(id, new OModel(coord.x(), coord.y(), new LinkedHashMap<>(bones)));
+    public static void clear() {
+        MMDynamicRes.OMODELS.forEach((id, oModel) -> {
+            OModel.getORIGINS().remove(id, oModel);
+        });
+        MMDynamicRes.OMODELS.clear();
     }
 }

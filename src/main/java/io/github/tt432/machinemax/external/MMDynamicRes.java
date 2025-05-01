@@ -2,6 +2,7 @@ package io.github.tt432.machinemax.external;
 
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -44,6 +45,7 @@ import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 public class MMDynamicRes {
     public static HashMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new HashMap<>(); //所有当下读取的外部资源
     public static HashMap<ResourceLocation, PartType> PART_TYPES = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
+    public static HashMap<ResourceLocation, OModel> OMODELS = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
@@ -60,6 +62,7 @@ public class MMDynamicRes {
         //清理之前的数据，避免刷新时发生重复的注册
         EXTERNAL_RESOURCE.clear();
         PART_TYPES.clear();
+        OBoneParse.clear();
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
