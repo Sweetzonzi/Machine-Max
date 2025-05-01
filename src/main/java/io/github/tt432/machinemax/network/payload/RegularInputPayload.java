@@ -1,5 +1,10 @@
 package io.github.tt432.machinemax.network.payload;
 
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OLocator;
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.SparkMathKt;
+import com.jme3.math.Quaternion;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.attachment.LivingEntityEyesightAttachment;
 import io.github.tt432.machinemax.common.component.PartAssemblyCacheComponent;
@@ -10,11 +15,11 @@ import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.registry.MMDataComponents;
 import io.github.tt432.machinemax.common.registry.MMItems;
 import io.github.tt432.machinemax.common.vehicle.PartType;
+import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
-import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -25,9 +30,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.Map;
 
@@ -111,17 +119,25 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                         PartType partType = MMPartItem.getPartType(heldItem, level);
                         PartAssemblyInfoComponent info = MMPartItem.getPartAssemblyInfo(heldItem, level);
                         PartAssemblyCacheComponent iterators = MMPartItem.getPartAssemblyCache(heldItem, level);
-                        Map<String, String> partConnectors = partType.getPartOutwardConnectors();
+                        Map<String, ConnectorAttr> partConnectors = partType.getPartOutwardConnectors();
                         int i = partConnectors.size();//设置最大迭代次数
-                        String connector = iterators.getNextConnector();//获取下一个部件接口
-                        info = new PartAssemblyInfoComponent(info.variant(), connector, partConnectors.get(connector));
+                        var connectors = partType.getPartOutwardConnectors();
+                        String variant = info.variant();
                         while (i > 0) {
                             //循环获取下一个端口，直到找到合适的接口或到达迭代次数上限
-                            if (partConnectors.get(info.connector()).equals("AttachPoint") || targetConnector instanceof AttachPointConnector) {
+                            String connectorName = iterators.getNextConnector();//获取下一个部件接口
+                            if (partConnectors.get(connectorName).type().equals("AttachPoint") || targetConnector instanceof AttachPointConnector) {
+                                // TODO: 检查部件Tag是否与目标接口接受的类型匹配
+                                ModelIndex modelIndex = new ModelIndex(partType.variants.get(variant), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
+                                var locators = modelIndex.getModel().getLocators();
+                                var connectorAttr = connectors.get(connectorName);
+                                OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
+                                Vector3f offset = partConnectorLocator.getOffset().toVector3f();
+                                Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
+                                Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
+                                info = new PartAssemblyInfoComponent(variant, connectorName, connectorAttr.type(), offset, quaternion);
                                 break;
-                            } //TODO: 检查部件Tag是否与目标接口接受的类型匹配
-                            connector = iterators.getNextConnector();//若接口类型不匹配，则尝试下一个接口
-                            info = new PartAssemblyInfoComponent(info.variant(), connector, partConnectors.get(connector));
+                            }
                             i--;
                         }
                         heldItem.set(MMDataComponents.getPART_ASSEMBLY_INFO(), info);//更新物品保存的部件连接信息
@@ -137,22 +153,27 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     }
                     eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
                     targetConnector = eyesightBody.getConnector();//获取视线看着的部件对接口
-                    if (targetConnector != null && !targetConnector.hasPart()) {
-                        PartType partType = MMPartItem.getPartType(heldItem, level);
-                        PartAssemblyInfoComponent info = MMPartItem.getPartAssemblyInfo(heldItem, level);
-                        PartAssemblyCacheComponent iterators = MMPartItem.getPartAssemblyCache(heldItem, level);
-                        int i = partType.variants.size();//设置最大迭代次数
+                    PartType partType = MMPartItem.getPartType(heldItem, level);
+                    PartAssemblyInfoComponent info = MMPartItem.getPartAssemblyInfo(heldItem, level);
+                    PartAssemblyCacheComponent iterators = MMPartItem.getPartAssemblyCache(heldItem, level);
+                    var connectors = partType.getPartOutwardConnectors();
+                    int i = partType.variants.size();//设置最大迭代次数
+                    while (i >= 0) {
+                        //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限
                         String variant = iterators.getNextVariant();//获取下一个部件变体
-                        info = new PartAssemblyInfoComponent(variant, info.connector(), info.connectorType());
-                        while (i > 0) {
-                            //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限
-                            if (targetConnector.acceptableVariants.contains(info.variant())) break;
-                            variant = iterators.getNextVariant();//若部件变体不在目标接口可接受的变体列表中，则尝试下一个变体
-                            info = new PartAssemblyInfoComponent(variant, info.connector(), info.connectorType());
-                            i--;
+                        if (targetConnector==null || targetConnector.acceptableVariants.contains(variant)) {
+                            ModelIndex modelIndex = new ModelIndex(partType.variants.get(variant), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
+                            var locators = modelIndex.getModel().getLocators();
+                            OLocator partConnectorLocator = locators.get(connectors.get(info.connector()).locatorName());
+                            Vector3f offset = partConnectorLocator.getOffset().toVector3f();
+                            Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
+                            Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
+                            info = new PartAssemblyInfoComponent(variant, info.connector(), info.connectorType(), offset, quaternion);
+                            break;
                         }
-                        heldItem.set(MMDataComponents.getPART_ASSEMBLY_INFO(), info);//更新物品保存的部件连接信息
+                        i--;
                     }
+                    heldItem.set(MMDataComponents.getPART_ASSEMBLY_INFO(), info);//更新物品保存的部件连接信息
                 }
                 break;
         }

@@ -1,10 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.SparkMathKt;
-import cn.solarmoon.spark_core.skill.Skill;
-import cn.solarmoon.spark_core.skill.SkillHost;
-import cn.solarmoon.spark_core.sync.SyncData;
-import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
@@ -32,11 +28,9 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -61,6 +55,7 @@ public class VehicleCore {
     private Vec3 position = Vec3.ZERO;//位置
     private Vec3 velocity = Vec3.ZERO;//速度
     public float totalMass = 0;//总质量
+    public int syncCountDown = 0;//同步倒计时
     @Setter
     public boolean inLoadedChunk = false;//是否睡眠
     public boolean loadFromSavedData = false;//是否已加载
@@ -130,7 +125,10 @@ public class VehicleCore {
             }
             this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
             this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
-            if (!level.isClientSide && tickCount % 2 == 0) syncSubParts(null);//同步零件位置姿态速度
+            if (!level.isClientSide && syncCountDown <= 0) {
+                syncSubParts(null);//同步零件位置姿态速度
+                syncCountDown = Math.max((int) (200 * Math.pow(2, -velocity.length())), 1);//速度越大，同步冷却时间越短
+            }
             subSystemController.tick();
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
@@ -139,6 +137,7 @@ public class VehicleCore {
         if (partMap.values().isEmpty() || this.position.y < -1024)
             VehicleManager.removeVehicle(this);//移除掉出世界的载具
         tickCount++;
+        if (syncCountDown > 0) syncCountDown--;
     }
 
     public void prePhysicsTick() {
@@ -164,16 +163,19 @@ public class VehicleCore {
                 for (Map.Entry<String, SubPart> subPartEntry : part.subParts.entrySet()) {
                     SubPart subPart = subPartEntry.getValue();
                     PhysicsRigidBody body = subPart.body;
+                    boolean isSleep = !body.isActive();
                     PosRotVelVel data = new PosRotVelVel(
                             body.getPhysicsLocation(null),
                             SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
                             body.getLinearVelocity(null),
                             body.getAngularVelocity(null));
-                    subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, !body.isActive()));
+                    subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, isSleep));
                 }
                 subPartSyncDataToSend.put(entry.getKey(), subPartSyncDataMap);
             }
-            PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(this.uuid, subPartSyncDataToSend));
+            if (!subPartSyncDataToSend.isEmpty()) {
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(this.uuid, subPartSyncDataToSend));
+            }
         } else if (subPartSyncData != null) {
             this.level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
                 for (Map.Entry<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> outerEntry : subPartSyncData.entrySet()) {
@@ -184,15 +186,16 @@ public class VehicleCore {
                         for (Map.Entry<String, Pair<PosRotVelVel, Boolean>> innerEntry : innerMap.entrySet()) {
                             String subPartName = innerEntry.getKey();
                             PosRotVelVel data = innerEntry.getValue().getFirst();
-                            boolean sleep = innerEntry.getValue().getSecond();
+                            boolean isSleep = innerEntry.getValue().getSecond();
                             SubPart subPart = part.subParts.get(subPartName);
                             if (subPart != null) {
                                 PhysicsRigidBody body = subPart.body;
+                                if (!body.isActive() && isSleep) continue;//如果零件已休眠，则跳过此零件的同步
                                 body.setPhysicsLocation(data.position());
                                 body.setPhysicsRotation(SparkMathKt.toBQuaternion(data.rotation()));
                                 body.setLinearVelocity(data.linearVel());
                                 body.setAngularVelocity(data.angularVel());
-                                if (sleep) body.forceDeactivate();
+                                if (isSleep) body.forceDeactivate();
                                 else body.activate();
                             } else
                                 MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this, partUUID, subPartName);
@@ -208,6 +211,7 @@ public class VehicleCore {
      * 激活载具所有零件的运动体
      */
     public void activate() {
+        syncCountDown = 1;
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;
@@ -267,9 +271,9 @@ public class VehicleCore {
             String partUuid = part.getUuid().toString();
             subSystemController.removeSubsystems(part.subsystems.values());
             this.totalMass -= part.totalMass;
-            part.destroy();
             partNet.removeNode(part);
             partMap.remove(part.uuid, part);
+            part.destroy();
             if (inLevel && !level.isClientSide()) {//发包客户端移除部件
                 PacketDistributor.sendToPlayersInDimension(
                         (ServerLevel) this.level,
@@ -328,6 +332,7 @@ public class VehicleCore {
             }
             if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
             this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
+            this.activate();
             if (inLevel && !level.isClientSide()) {
                 comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊对接口在前面，以保证对接口属性得到正确应用
                 //发包客户端创建连接关系

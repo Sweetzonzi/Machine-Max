@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.Map;
-
+//TODO:渐进油门，根据油门开度调整换挡时机
 @Getter
 public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
     public final List<String> controlInputKeys;

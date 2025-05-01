@@ -11,13 +11,13 @@
   "resourceType.machine_max.general.free_cam": "Free Camera",
   "resourceType.machine_max.general.interact": "Interact with Vehicle",
   "resourceType.machine_max.general.leave_vehicle": "Leave Vehicle",
-  "resourceType.machine_max.ground.forward": "Forward",
   "resourceType.machine_max.ground.backward": "Backward",
+  "resourceType.machine_max.ground.clutch": "Clutch",
+  "resourceType.machine_max.ground.down_shift": "Shift Down",
+  "resourceType.machine_max.ground.forward": "Forward",
   "resourceType.machine_max.ground.leftward": "Leftward",
   "resourceType.machine_max.ground.rightward": "Rightward",
-  "resourceType.machine_max.ground.clutch": "Clutch",
   "resourceType.machine_max.ground.up_shift": "Shift Up",
-  "resourceType.machine_max.ground.down_shift": "Shift Down",
-  "tooltip.machinemax.crossbar.interactWitchPart": "Interact to disassemble:",
-  "tooltip.machinemax.spray_can.interactWitchPart": "Interact to paint:"
+  "tooltip.machinemax.crossbar.interact": "Interact to disassemble:",
+  "tooltip.machinemax.spray_can.interact": "Interact to paint:"
 }

@@ -2,6 +2,7 @@ package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
@@ -50,13 +51,17 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         this.attr = attr;
         this.collisionShape = attr.getCollisionShape(part.variant, part.type);
         this.body = new PhysicsRigidBody(name, this, this.collisionShape, attr.mass);
-        if (attr.blockCollision.equals("true") || attr.blockCollision.equals("True"))
+        this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_PART);
+        if (attr.blockCollision.equals("true") || attr.blockCollision.equals("True")) {
             GROUND_COLLISION_ONLY = false;
-        else if (attr.blockCollision.equals("ground") || attr.blockCollision.equals("Ground"))
+            this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
+        }
+        else if (attr.blockCollision.equals("ground") || attr.blockCollision.equals("Ground")) {
             GROUND_COLLISION_ONLY = true;
+            this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
+        }
         else {
             GROUND_COLLISION_ONLY = false;
-            body.removeCollideWithGroup(PhysicsCollisionObject.COLLISION_GROUP_03);
         }
         this.stepHeight = attr.stepHeight;
         this.projectedArea = attr.projectedArea;
@@ -68,10 +73,10 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     body.addCollisionCallback(this);//TODO:写接触规则
                     body.addPhysicsTicker(this);
                     body.setProtectGravity(true);
-                    body.setSleepingThresholds(0.05f, 0.05f);
+                    body.setSleepingThresholds(0.1f, 0.1f);
                     body.setDamping(0.01f, 0.01f);
                     body.setRestitution(0.2f);
-                    body.setFriction(2f);
+                    body.setFriction(2.5f);
                     body.setRollingFriction(0.2f);
                     return null;
                 }));
@@ -154,7 +159,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         if (partBody.getOwner() instanceof SubPart subPart && subPart.GROUND_COLLISION_ONLY) {//仅与地面方块碰撞的零件遭遇方块时
             float terrainHeight = terrain.boundingBox(null).getMax(null).y;
             float y0 = ShapeHelper.getShapeMinY(partBody, 0.1f) + 0.1f;//计算部件最低点高度
-            if (terrainHeight < y0) {
+            if (terrainHeight <= y0) {
                 //若地形方块位于部件最低位置以下，则不修改碰撞检测结果
             } else {
                 float height = terrainHeight - y0;//部件最低点与地形的高度差
@@ -174,7 +179,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public void prePhysicsTick(@NotNull PhysicsCollisionObject pco, @NotNull PhysicsLevel physicsLevel) {
         Vector3f vel = this.body.getLinearVelocity(null);
         Vector3f localVel = MMMath.relPointLocalVel(PhysicsHelperKt.toBVector3f(attr.aeroDynamic.center()), this.body);
-        Vector3f pos = this.body.getPhysicsLocation(null);
+        Vector3f pos = MMMath.relPointWorldPos(PhysicsHelperKt.toBVector3f(attr.aeroDynamic.center()), this.body);
         //仅在有速度时应用流体动力
         if (vel.length() > 0.1f) {
             //遮挡关系处理
@@ -250,7 +255,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             start.set(1, y0 - 1);
             var end = start.add(0f, 1 + stepHeight, 0f);
             if (start.equals(end)) {
-                MachineMax.LOGGER.error("y0:{} stepHeight:{} start:{} end:{}", y0, stepHeight, start, end);
+                MachineMax.LOGGER.error("Same start and end position for climb assist ray test, canceling climb assist.");
+                //TODO:治标不治本，需要排查原因
+                return;
             }
             var test = getPhysicsLevel().getWorld().rayTest(start, end);
             PhysicsRigidBody terrainsUnder = null;//清空先前记录的地面碰撞体
@@ -272,8 +279,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
                 var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
                 var ang = Math.atan2(height, 1);
-                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 1.0f);
-                body.setLinearVelocity(new Vector3f(vel.x, (float) (0.5 * vel.y + extraVel), vel.z));
+                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 1.75f);
+                float horizontalVelScale = (float) Math.cos(ang);
+                body.setLinearVelocity(new Vector3f(horizontalVelScale * vel.x, (float) (0.7 * vel.y + extraVel), horizontalVelScale * vel.z));
             }
         }
     }

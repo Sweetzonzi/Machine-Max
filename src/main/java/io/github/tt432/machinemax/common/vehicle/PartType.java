@@ -143,12 +143,15 @@ public class PartType {
         return connectors.iterator();
     }
 
-    public Map<String, String> getPartOutwardConnectors() {
-        Map<String, String> partConnectors = new HashMap<>(1);//获取部件所有外部对接口名称与类型
+    /**
+     * @return 部件所有外部对接口名称与对应的接口属性 The external connectors of the part and their corresponding connector attributes.
+     */
+    public Map<String, ConnectorAttr> getPartOutwardConnectors() {
+        Map<String, ConnectorAttr> partConnectors = new HashMap<>(1);//获取部件所有外部对接口名称与类型
         for (SubPartAttr subParts : this.subParts.values()) {
             for (Map.Entry<String, ConnectorAttr> entry : subParts.connectors.entrySet()) {
                 if (entry.getValue().ConnectedTo().isEmpty())//外部零件对接口
-                    partConnectors.put(entry.getKey(), entry.getValue().type());
+                    partConnectors.put(entry.getKey(), entry.getValue());
             }
         }
         return partConnectors;

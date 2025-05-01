@@ -54,7 +54,7 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
                 if (!clutched || remainingSwitchTime > 0.0f) gear = "N";
                 Object engineSpeed = getPart().vehicle.subSystemController.getSignals("engine_speed").getFirst();
                 float engineRPM = engineSpeed instanceof Float f ? (float) (f / Math.PI * 30f) : 0.0f;
-                Minecraft.getInstance().player.displayClientMessage(Component.empty().append("Gear: " + gear + " RPM:" + engineRPM).withColor(engineRPM > 6500 ? 0xff0000 : 0xffffff), true);
+                Minecraft.getInstance().player.displayClientMessage(Component.empty().append("Gear: " + gear + " Speed: " + String.format("%.1f", getPart().vehicle.getVelocity().length() * 3.6f) + " km/h RPM: " + String.format("%.0f", engineRPM)).withColor(engineRPM > 6500 ? 0xff0000 : 0xffffff), true);
             }
         }
     }

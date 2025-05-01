@@ -42,7 +42,6 @@ public class PartAssemblyCacheComponent {
     }
 
     public String getNextConnector() {
-        Map<String, String> partConnectors = partType.getPartOutwardConnectors();
         if (connectorIterator != null && connectorIterator.hasNext()) {
             return connectorIterator.next();
         } else if (connectorIterator != null && !partType.subParts.isEmpty()) {

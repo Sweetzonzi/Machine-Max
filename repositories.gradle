@@ -1,7 +1,7 @@
 dependencies {
     // 物理库
 //    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
-    implementation files('libs/SparkCore-1.21.1-1.0.690.jar')
+    implementation files('libs/SparkCore-1.21.1-1.0.693.jar')
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -11,7 +11,7 @@ dependencies {
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // 其它mod
-//    runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
+    runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib
 //    additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
 
@@ -39,7 +39,7 @@ repositories {
     }
     maven {
         name "KosmX's maven"
-        url 'https://maven.kosmx.dev/'
+        url = 'https://maven.kosmx.dev/'
     }
     maven {
         name = "Jared's maven"
@@ -57,10 +57,10 @@ repositories {
         }
     }
     maven {
-        url "https://api.modrinth.com/maven"
+        url = "https://api.modrinth.com/maven"
     }
     maven {
-        url "https://maven.ryanliptak.com/"
+        url = "https://maven.ryanliptak.com/"
     }
     maven {
         url = "https://maven.theillusivec4.top/"

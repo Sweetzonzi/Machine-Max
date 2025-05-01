@@ -35,7 +35,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
 
         //提示信息
         this.add("message.machine_max.leaving_vehicle", "Hold %1$s %2$s/0.50s to leave the vehicle.");
-        this.add("tooltip.machinemax.crossbar.interactWitchPart", "Interact to disassemble:");
-        this.add("tooltip.machinemax.spray_can.interactWitchPart", "Interact to paint:");
+        this.add("tooltip.machinemax.crossbar.interact", "Interact to disassemble:");
+        this.add("tooltip.machinemax.spray_can.interact", "Interact to paint:");
     }
 }

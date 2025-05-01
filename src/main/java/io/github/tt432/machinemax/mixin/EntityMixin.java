@@ -5,26 +5,23 @@ import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
 import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nullable;
 
 @Mixin(Entity.class)
 abstract public class EntityMixin implements IEntityMixin {
     @Unique
-    private SeatSubsystem subSystem;
+    private SeatSubsystem machine_Max$subSystem;
 
     @Nullable
     @Override
     public SeatSubsystem getRidingSubsystem() {
-        return subSystem;
+        return machine_Max$subSystem;
     }
 
     @Override
     public void setRidingSubsystem(SeatSubsystem subSystem) {
-        this.subSystem = subSystem;
+        this.machine_Max$subSystem = subSystem;
     }
 
 //    @Inject(method = "removeVehicle", at = @At("HEAD"))

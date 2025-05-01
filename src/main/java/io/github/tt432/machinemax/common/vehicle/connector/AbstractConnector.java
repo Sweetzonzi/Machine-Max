@@ -7,16 +7,22 @@ import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.RotationOrder;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.joints.motors.MotorParam;
 import com.jme3.bullet.objects.PhysicsBody;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.client.renderer.PartAssemblyRenderer;
+import io.github.tt432.machinemax.common.registry.MMVisualEffects;
 import io.github.tt432.machinemax.common.vehicle.Part;
+import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
+import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.JointAttr;
 import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
@@ -51,7 +57,8 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     @Setter
     public AbstractConnector attachedConnector;//与本接口对接的接口
     public final Transform subPartTransform;//被安装零件的连接点相对本部件质心的位置与姿态
-    public final PhysicsRigidBody body;//部件接口安装判定区
+    public final CollisionShape shape = new BoxCollisionShape(0.25f);//接口碰撞形状
+    public PhysicsRigidBody body;//部件接口安装判定区
 
     protected AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, Transform subPartTransform) {
         this.name = name;
@@ -63,25 +70,9 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         this.breakable = attr.breakable();
         this.internal = !attr.ConnectedTo().isEmpty();
         this.attr = attr;
-        if (!internal) {//为与外部部件连接的接口创建碰撞判定，供玩家通过视线选取
-            body = new PhysicsRigidBody(name, this, new BoxCollisionShape(0.25f), PhysicsBody.massForStatic);
-            body.setProtectGravity(true);
-            body.setGravity(Vector3f.ZERO);
-            body.setKinematic(true);
-            body.setContactResponse(false);
-            body.setCollisionGroup(PhysicsCollisionObject.COLLISION_GROUP_15);
-            body.removeCollideWithGroup(PhysicsCollisionObject.COLLISION_GROUP_01);
-            body.setCollideWithGroups(PhysicsCollisionObject.COLLISION_GROUP_16);
-            bindBody(
-                    body,
-                    subPart.getPhysicsLevel(),
-                    true,
-                    (body) -> {
-                        body.addPhysicsTicker(this);
-                        return null;
-                    }
-            );
-        } else body = null;
+        createAttachPointBody(
+                MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
+                subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
     }
 
     @Override
@@ -91,14 +82,26 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                 body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
                 body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
             } else {
-                body.setPhysicsLocation(new Vector3f(0, -1000, 0));
+                removeAllBodies();
+                this.body = null;
             }
+        } else if (!hasPart()) {
+            createAttachPointBody(
+                    MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
+                    subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
         }
     }
 
     @Override
     public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
-
+        if (level.isClientSide() && body != null) {
+            PartAssemblyRenderer renderer = MMVisualEffects.getPART_ASSEMBLY();
+            if (!this.hasPart()) {
+                renderer.attachPoints.put(this, body);
+            } else {
+                renderer.attachPoints.remove(this);
+            }
+        }
     }
 
     /**
@@ -221,7 +224,6 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                     }
                 }
             }
-            if (body != null) body.activate();
             if (this.port != null && attachedConnector.port != null) {
                 this.port.onConnectorDetach();
                 attachedConnector.port.onConnectorDetach();
@@ -244,21 +246,23 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     }
 
     public void adjustTransform(Part part, AbstractConnector partConnector) {
-        Transform targetTransform = subPart.body.getTransform(null);
-        MyMath.combine(this.subPartTransform, targetTransform, targetTransform);
-        MyMath.combine(partConnector.subPartTransform.invert(), targetTransform, targetTransform);
+        Transform targetTransform = mergeTransform(partConnector.subPartTransform.invert());
         Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
-        getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            part.rootSubPart.body.setPhysicsTransform(targetTransform);
-            for (SubPart subPart : part.subParts.values()) {
-                if (subPart == part.rootSubPart) continue;
-                Transform transform = subPart.body.getTransform(null);
-                MyMath.combine(transform, rootTransform, transform);
-                MyMath.combine(transform, targetTransform, transform);
-                subPart.body.setPhysicsTransform(transform);
-            }
-            return null;
-        });
+        part.rootSubPart.body.setPhysicsTransform(targetTransform);
+        //相应调整部件内子零件的位置姿态
+        for (SubPart subPart : part.subParts.values()) {
+            if (subPart == part.rootSubPart) continue;
+            Transform transform = subPart.body.getTransform(null);
+            MyMath.combine(transform, rootTransform, transform);
+            MyMath.combine(transform, targetTransform, transform);
+            subPart.body.setPhysicsTransform(transform);
+        }
+    }
+
+    public Transform mergeTransform(Transform transform) {
+        Transform result = subPart.body.getTransform(null);
+        MyMath.combine(this.subPartTransform, result, result);
+        return MyMath.combine(transform, result, result);
     }
 
     /**
@@ -269,6 +273,17 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
      */
     public boolean conditionCheck(PartData part) {
         return conditionCheck(part.variant);
+    }
+
+    /**
+     * 检查给定零件是否符合本接口的安装要求
+     *
+     * @param partType 要检查的待安装部件的类型
+     * @param variant  要检查的待安装部件的变体类型
+     * @return 给定零件是否满足当前接口安装条件
+     */
+    public boolean conditionCheck(PartType partType, String variant) {
+        return conditionCheck(variant);
     }
 
     /**
@@ -303,6 +318,8 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
 
     public void destroy() {
         detach(true);
+        if (subPart.part.level.isClientSide())
+            MMVisualEffects.getPART_ASSEMBLY().attachPoints.remove(this);
         this.removeAllBodies();
     }
 
@@ -310,6 +327,29 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     @Override
     public PhysicsLevel getPhysicsLevel() {
         return subPart.getPhysicsLevel();
+    }
+
+    private void createAttachPointBody(Vector3f position, Quaternion rotation) {
+        if (!internal) {//为与外部部件连接的接口创建碰撞判定，供玩家通过视线选取
+            body = new PhysicsRigidBody(name, this, shape, PhysicsBody.massForStatic);
+            body.setProtectGravity(true);
+            body.setGravity(Vector3f.ZERO);
+            body.setKinematic(true);
+            body.setContactResponse(false);
+            body.setCollisionGroup(VehicleManager.COLLISION_GROUP_UNUSED);
+            body.setCollideWithGroups(VehicleManager.COLLISION_GROUP_NONE);
+            body.setPhysicsLocation(position);
+            body.setPhysicsRotation(rotation);
+            bindBody(
+                    body,
+                    subPart.getPhysicsLevel(),
+                    true,
+                    (body) -> {
+                        body.addPhysicsTicker(this);
+                        return null;
+                    }
+            );
+        } else body = null;
     }
 
 }
