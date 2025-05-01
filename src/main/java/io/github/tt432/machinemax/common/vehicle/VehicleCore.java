@@ -218,16 +218,16 @@ public class VehicleCore {
         });
     }
 
-//    /**
-//     * 令载具所有零件的运动体休眠
-//     */
-//    public void deactivate() {
-//        level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
-//            for (Part part : partMap.values())
-//                part.subParts.values().forEach(subPart -> subPart.body.forceDeactivate());
-//            return null;
-//        });
-//    }
+    /**
+     * 令载具所有零件的运动体休眠
+     */
+    public void deactivate() {
+        level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
+            for (Part part : partMap.values())
+                part.subParts.values().forEach(subPart -> subPart.body.forceDeactivate());
+            return null;
+        });
+    }
 
     public void setGravity(Vector3f gravity) {
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
