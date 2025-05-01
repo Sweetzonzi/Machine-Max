@@ -160,7 +160,7 @@ public class MMDynamicRes {
                     overwrite ? StandardOpenOption.TRUNCATE_EXISTING : StandardOpenOption.CREATE_NEW,
                     StandardOpenOption.WRITE
             );
-            System.out.println("文件创建成功: " + targetPath);
+            System.out.printf("文件%s成功: %s%n", overwrite && Files.exists(targetPath) ? "覆写" : "创建", targetPath);
         } catch (IOException e) {
             LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
         }
