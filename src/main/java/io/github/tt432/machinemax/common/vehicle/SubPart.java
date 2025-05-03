@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import com.jme3.bullet.collision.AfMode;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
@@ -19,6 +20,7 @@ import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.ShapeHelper;
 import io.github.tt432.machinemax.util.formula.Dynamic;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -41,26 +43,27 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public final CompoundCollisionShape collisionShape;
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
+    public int humidity = 0;//湿润程度，额外影响表面摩擦力
     //流体动力相关参数
     private final boolean ENABLE_FLUID_DYNAMIC_SWEEP_TEST = false;//TODO:true时，检测流体遮挡效果时将使用球形扫掠而非射线检测
     public Vec3 projectedArea;
-
     public SubPart(String name, Part part, SubPartAttr attr) {
         this.part = part;
         this.name = name;
         this.attr = attr;
         this.collisionShape = attr.getCollisionShape(part.variant, part.type);
         this.body = new PhysicsRigidBody(name, this, this.collisionShape, attr.mass);
+        this.body.setAnisotropicFriction(PhysicsHelperKt.toBVector3f(attr.friction), AfMode.basic);
+        this.body.setRollingFriction(attr.rollingFriction);
+        this.body.setRestitution(attr.restitution);
         this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_PART);
         if (attr.blockCollision.equals("true") || attr.blockCollision.equals("True")) {
             GROUND_COLLISION_ONLY = false;
             this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
-        }
-        else if (attr.blockCollision.equals("ground") || attr.blockCollision.equals("Ground")) {
+        } else if (attr.blockCollision.equals("ground") || attr.blockCollision.equals("Ground")) {
             GROUND_COLLISION_ONLY = true;
             this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
-        }
-        else {
+        } else {
             GROUND_COLLISION_ONLY = false;
         }
         this.stepHeight = attr.stepHeight;
@@ -75,9 +78,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     body.setProtectGravity(true);
                     body.setSleepingThresholds(0.1f, 0.1f);
                     body.setDamping(0.01f, 0.01f);
-                    body.setRestitution(0.2f);
-                    body.setFriction(2.5f);
-                    body.setRollingFriction(0.2f);
                     return null;
                 }));
     }
@@ -286,7 +286,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         }
     }
 
-    public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
-
+    public void mcTick(@NotNull PhysicsCollisionObject pco, @NotNull Level level) {
     }
 }

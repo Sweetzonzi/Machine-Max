@@ -20,8 +20,10 @@ public class MachineMax {
     //TODO:自动匹配部件变体类型与对接口？
     //TODO:动画支持
     //TODO:部件放置方式修改：避免陷入地面
-    //TODO:指令删除世界内的物理体
     //TODO:无成员且低速时自动刹车
+    //TODO:座椅视角控制，以及是否渲染玩家
+    //TODO:组装度，衡量部件固定的牢靠程度
+    //TODO:自定义HUD
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器
