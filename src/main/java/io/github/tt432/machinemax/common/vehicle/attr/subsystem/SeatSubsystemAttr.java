@@ -15,6 +15,7 @@ import java.util.Map;
 public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     public final String subpart;
     public final String connector;
+    public final boolean renderPassenger;
     public final boolean allowUseItems;
     public final Map<String, List<String>> moveSignalTargets;
     public final Map<String, List<String>> viewSignalTargets;
@@ -25,6 +26,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.fieldOf("sub_part").forGetter(SeatSubsystemAttr::getSubpart),
             Codec.STRING.fieldOf("connector").forGetter(SeatSubsystemAttr::getConnector),
+            Codec.BOOL.optionalFieldOf("render_passenger", true).forGetter(SeatSubsystemAttr::isRenderPassenger),
             Codec.BOOL.fieldOf("allow_use_items").forGetter(SeatSubsystemAttr::isAllowUseItems),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("move_outputs", Map.of()).forGetter(SeatSubsystemAttr::getMoveSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("view_outputs", Map.of()).forGetter(SeatSubsystemAttr::getViewSignalTargets),
@@ -36,6 +38,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             String hitBox,
             String subpart,
             String connector,
+            boolean renderPassenger,
             boolean allowUseItems,
             Map<String, List<String>> moveSignalTargets,
             Map<String, List<String>> viewSignalTargets,
@@ -43,6 +46,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
         super(basicDurability, hitBox);
         this.subpart = subpart;
         this.connector = connector;
+        this.renderPassenger = renderPassenger;
         this.allowUseItems = allowUseItems;
         this.moveSignalTargets = moveSignalTargets;
         this.viewSignalTargets = viewSignalTargets;

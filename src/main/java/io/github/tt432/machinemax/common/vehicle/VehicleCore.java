@@ -198,9 +198,9 @@ public class VehicleCore {
                                 if (isSleep) body.forceDeactivate();
                                 else body.activate();
                             } else
-                                MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this, partUUID, subPartName);
+                                MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this.name, partUUID, subPartName);
                         }
-                    } else MachineMax.LOGGER.error("载具{}中不存在部件{}，无法同步。", this, partUUID);
+                    } else MachineMax.LOGGER.error("载具{}中不存在部件{}，无法同步。", this.name, partUUID);
                 }
                 return null;
             });

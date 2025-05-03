@@ -17,7 +17,6 @@ public class MachineMax {
     //TODO:物品本地化名
     //TODO:物品栏模型渲染
     //TODO:载具的保存与一键部署
-    //TODO:自动匹配部件变体类型与对接口？
     //TODO:动画支持
     //TODO:部件放置方式修改：避免陷入地面
     //TODO:无成员且低速时自动刹车

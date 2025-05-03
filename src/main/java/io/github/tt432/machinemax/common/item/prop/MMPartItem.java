@@ -87,7 +87,7 @@ public class MMPartItem extends Item {
                                 PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                         player.getEyePosition(),
                                         player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                        ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, player)).getLocation()),
+                                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
                                 Quaternion.IDENTITY
                         )
                 );
@@ -143,7 +143,7 @@ public class MMPartItem extends Item {
                                             PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                                     entity.getEyePosition(),
                                                     entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                                    ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, entity)).getLocation()),
+                                                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
                                             Quaternion.IDENTITY
                                     ) : new Transform(
                                     PhysicsHelperKt.toBVector3f(entity.position()),
