@@ -34,7 +34,7 @@ import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 public class MMDynamicRes {
     public static HashMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new HashMap<>(); //所有当下读取的外部资源
     public static HashMap<ResourceLocation, PartType> PART_TYPES = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
-    public static HashMap<ResourceLocation, OModel> O_MODELS = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
+    public static HashMap<ResourceLocation, OModel> O_MODELS = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的OModel
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
@@ -72,10 +72,9 @@ public class MMDynamicRes {
 
         @Override
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
-
+            loadData();// 重新读取
             if (Minecraft.getInstance().player instanceof Player player)
                 player.sendSystemMessage(Component.literal("[%s]: 你刚刚尝试了重载载具包".formatted(MOD_ID)));
-            loadData();//重新读取
         }
     }
 
