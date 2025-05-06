@@ -33,9 +33,8 @@ public class SubPartAttr {
     public final Vec3 projectedArea;
     public final String massCenterLocator;
     public final Vec3 friction;
-    public final float wetAdaptation;
+    public final float slipAdaptation;
     public final float rollingFriction;
-    public final float restitution;
     public final String blockCollision;
     public final float stepHeight;
     public final boolean climbAssist;
@@ -51,10 +50,9 @@ public class SubPartAttr {
             Codec.FLOAT.fieldOf("mass").forGetter(SubPartAttr::getMass),
             Vec3.CODEC.optionalFieldOf("projected_area", Vec3.ZERO).forGetter(SubPartAttr::getProjectedArea),
             Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::getMassCenterLocator),
-            Vec3.CODEC.optionalFieldOf("friction", new Vec3(0.7, 1.0, 1.0)).forGetter(SubPartAttr::getFriction),
-            Codec.FLOAT.optionalFieldOf("slip_adaptation", 0.5f).forGetter(SubPartAttr::getWetAdaptation),
+            Vec3.CODEC.optionalFieldOf("friction", new Vec3(1.5, 2.0, 1.5)).forGetter(SubPartAttr::getFriction),
+            Codec.FLOAT.optionalFieldOf("slip_adaptation", 0.5f).forGetter(SubPartAttr::getSlipAdaptation),
             Codec.FLOAT.optionalFieldOf("rolling_friction", 0.01f).forGetter(SubPartAttr::getRollingFriction),
-            Codec.FLOAT.optionalFieldOf("restitution", 0.2f).forGetter(SubPartAttr::getRestitution),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
             Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
@@ -74,9 +72,8 @@ public class SubPartAttr {
             Vec3 projectedArea,
             String massCenterLocator,
             Vec3 friction,
-            float wetAdaptation,
+            float slipAdaptation,
             float rollingFriction,
-            float restitution,
             String blockCollision,
             float stepHeight,
             boolean climbAssist,
@@ -89,9 +86,8 @@ public class SubPartAttr {
         this.projectedArea = projectedArea;
         this.massCenterLocator = massCenterLocator;
         this.friction = friction;
-        this.wetAdaptation = wetAdaptation;
+        this.slipAdaptation = slipAdaptation;
         this.rollingFriction = rollingFriction;
-        this.restitution = restitution;
         this.blockCollision = blockCollision;
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;

@@ -2,6 +2,8 @@ package io.github.tt432.machinemax;
 
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import com.mojang.logging.LogUtils;
+import io.github.tt432.machinemax.client.input.CameraController;
+import io.github.tt432.machinemax.client.input.RawInputHandler;
 import io.github.tt432.machinemax.common.registry.*;
 import io.github.tt432.machinemax.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;
@@ -18,9 +20,9 @@ public class MachineMax {
     //TODO:物品栏模型渲染
     //TODO:载具的保存与一键部署
     //TODO:动画支持
-    //TODO:部件放置方式修改：避免陷入地面
     //TODO:无成员且低速时自动刹车
-    //TODO:座椅视角控制，以及是否渲染玩家
+    //TODO:座椅视角控制
+    //TODO:过载与座椅过载吸收/耐受
     //TODO:组装度，衡量部件固定的牢靠程度
     //TODO:自定义HUD
     public static final String MOD_ID = "machine_max";
@@ -31,6 +33,8 @@ public class MachineMax {
         REGISTER.register(bus);
         MMDynamicRes.loadData();//读取外部资源文件
         bus.addListener(MMDynamicRes::registerReloadListeners);
+        bus.addListener(RawInputHandler::init);
+        bus.addListener(CameraController::init);
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块
         MMEntities.register();//注册所有实体

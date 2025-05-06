@@ -2,12 +2,12 @@ package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.collision.AfMode;
+import com.jme3.bullet.collision.ManifoldPoints;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
@@ -17,12 +17,14 @@ import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.ShapeHelper;
 import io.github.tt432.machinemax.util.formula.Dynamic;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -43,10 +45,10 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public final CompoundCollisionShape collisionShape;
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
-    public int humidity = 0;//湿润程度，额外影响表面摩擦力
     //流体动力相关参数
     private final boolean ENABLE_FLUID_DYNAMIC_SWEEP_TEST = false;//TODO:true时，检测流体遮挡效果时将使用球形扫掠而非射线检测
     public Vec3 projectedArea;
+
     public SubPart(String name, Part part, SubPartAttr attr) {
         this.part = part;
         this.name = name;
@@ -55,7 +57,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         this.body = new PhysicsRigidBody(name, this, this.collisionShape, attr.mass);
         this.body.setAnisotropicFriction(PhysicsHelperKt.toBVector3f(attr.friction), AfMode.basic);
         this.body.setRollingFriction(attr.rollingFriction);
-        this.body.setRestitution(attr.restitution);
         this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_PART);
         if (attr.blockCollision.equals("true") || attr.blockCollision.equals("True")) {
             GROUND_COLLISION_ONLY = false;
@@ -102,8 +103,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
      *                   zero)
      */
     @Override
-    public void onEnded(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldId) {
-
+    public void onEnded(@NotNull PhysicsCollisionObject pcoA, @NotNull PhysicsCollisionObject pcoB, long manifoldId) {
+//        MachineMax.LOGGER.debug("onEnded: {} {}", pcoA.name, pcoB.name);
     }
 
     /**
@@ -116,9 +117,81 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
      *                        zero)
      */
     @Override
-    public void onProcessed(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldPointId) {
-        if (pcoA.getOwner() instanceof SubPart subPartA && pcoB.getOwner() instanceof SubPart subPartB) {
-
+    public void onProcessed(PhysicsCollisionObject pcoA, @NotNull PhysicsCollisionObject pcoB, long manifoldPointId) {
+        PhysicsRigidBody other;
+        int hitBoxIndex, otherHitBoxIndex;
+        Vector3f contactPoint = new Vector3f(), otherContactPoint = new Vector3f();
+        long ChildShapeId = 0, otherChildShapeId;
+        if (pcoA.getOwner() == this) {
+            other = (PhysicsRigidBody) pcoB;
+            hitBoxIndex = ManifoldPoints.getIndex0(manifoldPointId);
+            otherHitBoxIndex = ManifoldPoints.getIndex1(manifoldPointId);
+            ManifoldPoints.getPositionWorldOnA(manifoldPointId, contactPoint);
+            ManifoldPoints.getPositionWorldOnB(manifoldPointId, otherContactPoint);
+        } else {
+            other = (PhysicsRigidBody) pcoA;
+            hitBoxIndex = ManifoldPoints.getIndex1(manifoldPointId);
+            otherHitBoxIndex = ManifoldPoints.getIndex0(manifoldPointId);
+            ManifoldPoints.getPositionWorldOnB(manifoldPointId, contactPoint);
+            ManifoldPoints.getPositionWorldOnA(manifoldPointId, otherContactPoint);
+        }
+        //获取世界坐标下的碰撞点法线
+        Vector3f normal = new Vector3f();
+        ManifoldPoints.getNormalWorldOnB(manifoldPointId, normal);
+        //计算相对接触速度
+        Vector3f relVel = (pcoA instanceof PhysicsRigidBody pcoA1) ? pcoA1.getLinearVelocity(null) : new Vector3f();
+        relVel.subtractLocal((pcoB instanceof PhysicsRigidBody pcoB1) ? pcoB1.getLinearVelocity(null) : new Vector3f());
+        //计算碰撞角度（法线与速度方向的夹角）
+        float impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(relVel.normalize())));
+        if (Float.isNaN(impactAngle)) impactAngle = 0; // 处理NaN情况
+        //获取参与碰撞的子系统
+        String hitBoxName = part.type.hitBoxes.get(collisionShape.findChild(hitBoxIndex).getShape().nativeId());
+        var subsystems = part.subsystemHitBoxes.get(hitBoxName);
+        //调用子系统碰撞回调
+        for (AbstractSubsystem subsystem : subsystems) subsystem.onCollide(pcoA, pcoB, manifoldPointId);
+        //与方块碰撞时
+        if (other.getCollisionGroup() == VehicleManager.COLLISION_GROUP_BLOCK) {
+            if (other.userIndex() <= 0) return;//忽略即将过期方块的碰撞
+            BlockState blockState = (BlockState) other.getUserObject();
+            BlockPos blockPos = other.blockPos;
+            //调用子系统碰撞回调
+            for (AbstractSubsystem subsystem : subsystems) {
+                subsystem.onCollideWithBlock(
+                        this.body, other, blockPos, blockState, relVel, normal, contactPoint, impactAngle, ChildShapeId, manifoldPointId
+                );
+                if (other.userIndex() <= 0) return;//所有子系统处理完碰撞后，忽略可能被手动设置为过期的方块的碰撞
+            }
+            //TODO:根据碰撞速度、碰撞角、方块硬度和爆炸抗性，摧毁碰撞的方块，同时对自身造成伤害
+            if (relVel.length() > 3f && impactAngle > 135f && blockState.getDestroySpeed(part.level, other.blockPos) > 0) {
+                other.setContactResponse(false);
+                other.setUserIndex(0);
+                if (!part.level.isClientSide) {
+                    part.level.destroyBlock(other.blockPos, false);
+                }
+                return;
+            }
+            //摩擦力修正
+            float friction1 = pcoA.getFriction();
+            float friction2 = pcoB.getFriction();
+            float slip = (float) 1 - ((other.userIndex2()) * (1 - attr.slipAdaptation) / 100);//湿滑带来的修正系数
+            ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, friction1 * friction2 * slip));
+        } else if (other.getCollisionGroup() == VehicleManager.COLLISION_GROUP_PART) {
+            if (other.getOwner() instanceof SubPart otherSubPart) {//与零件碰撞时
+                otherChildShapeId = otherSubPart.collisionShape.findChild(otherHitBoxIndex).getShape().nativeId();
+                //调用子系统碰撞回调
+                for (AbstractSubsystem subsystem : subsystems) {
+                    subsystem.onCollideWithPart(
+                            this.body, other, relVel, normal, contactPoint, impactAngle, ChildShapeId, otherChildShapeId, manifoldPointId
+                    );
+                }
+            } else if (other.getOwner() instanceof Entity entity) {//与实体碰撞时
+                //调用子系统碰撞回调
+                for (AbstractSubsystem subsystem : subsystems) {
+                    subsystem.onCollideWithEntity(
+                            this.body, other, relVel, normal, contactPoint, impactAngle, ChildShapeId, manifoldPointId
+                    );
+                }
+            }
         }
     }
 
@@ -129,8 +202,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
      *                   zero)
      */
     @Override
-    public void onStarted(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldId) {
-
+    public void onStarted(@NotNull PhysicsCollisionObject pcoA, @NotNull PhysicsCollisionObject pcoB, long manifoldId) {
+//        MachineMax.LOGGER.debug("onStarted: {} {}", pcoA.name, pcoB.name);
     }
 
     @SubscribeEvent
@@ -159,9 +232,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         if (partBody.getOwner() instanceof SubPart subPart && subPart.GROUND_COLLISION_ONLY) {//仅与地面方块碰撞的零件遭遇方块时
             float terrainHeight = terrain.boundingBox(null).getMax(null).y;
             float y0 = ShapeHelper.getShapeMinY(partBody, 0.1f) + 0.1f;//计算部件最低点高度
-            if (terrainHeight <= y0) {
-                //若地形方块位于部件最低位置以下，则不修改碰撞检测结果
-            } else {
+            if (terrainHeight > y0) {//若地形高于于部件最低位置，则视情况修改碰撞检测结果
                 float height = terrainHeight - y0;//部件最低点与地形的高度差
                 BlockPos highestBlockPos = terrain.blockPos.above();
                 while (height <= subPart.stepHeight && subPart.getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {

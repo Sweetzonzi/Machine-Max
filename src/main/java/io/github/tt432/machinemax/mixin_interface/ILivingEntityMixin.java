@@ -6,7 +6,7 @@ import javax.annotation.Nullable;
 
 public interface ILivingEntityMixin {
     @Nullable
-    SeatSubsystem getRidingSubsystem();
+    SeatSubsystem machine_Max$getRidingSubsystem();
 
-    void setRidingSubsystem(SeatSubsystem subSystem);
+    void machine_Max$setRidingSubsystem(SeatSubsystem subSystem);
 }

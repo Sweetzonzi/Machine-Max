@@ -13,6 +13,8 @@
     "defaultRequire": 1
   },
   "client": [
-    "LivingEntityRendererMixin"
+    "CameraMixin",
+    "LivingEntityRendererMixin",
+    "MouseHandlerMixin"
   ]
 }

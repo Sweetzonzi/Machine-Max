@@ -30,7 +30,6 @@ import io.github.tt432.machinemax.util.MMMath;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
@@ -126,7 +125,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
-        if (entity instanceof LivingEntity livingEntity && ((ILivingEntityMixin) livingEntity).getRidingSubsystem() instanceof SeatSubsystem seat)
+        if (entity instanceof LivingEntity livingEntity && ((ILivingEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat)
             return SparkMathKt.toVec3(MMMath.localVectorToWorldVector(seat.seatLocator.subPartTransform.getTranslation(), seat.seatLocator.subPart.body));
         else return new Vec3(0, 0, 0);
     }
@@ -138,7 +137,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     public void onPassengerTurned(@NotNull Entity entityToUpdate) {
-        if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((ILivingEntityMixin) livingEntity).getRidingSubsystem() instanceof SeatSubsystem seat) {
+        if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((ILivingEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
             entityToUpdate.setYBodyRot(180);
 //            float f = Mth.wrapDegrees(entityToUpdate.getYRot() - this.getYRot());
 //            float f1 = Mth.clamp(f, -105.0F, 105.0F);

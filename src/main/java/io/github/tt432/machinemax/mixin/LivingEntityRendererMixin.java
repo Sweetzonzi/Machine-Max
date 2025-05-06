@@ -17,7 +17,7 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
 
     @Inject(method = "setupRotations", at = @At("TAIL"))
     public void setupRotations(T entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale, CallbackInfo ci) {
-        if (((ILivingEntityMixin) entity).getRidingSubsystem() instanceof SeatSubsystem seatSubsystem) {
+        if (((ILivingEntityMixin) entity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seatSubsystem) {
             var rot = SparkMathKt.toQuaternionf(seatSubsystem.seatLocator.subPart.body.tickTransform.getRotation());
             var oldRot = SparkMathKt.toQuaternionf(seatSubsystem.seatLocator.subPart.body.lastTickTransform.getRotation());
             var actualRot = oldRot.slerp(rot, partialTick);
@@ -27,7 +27,7 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
 
     @Inject(method = "render*", at = @At("HEAD"), cancellable = true)
     public void render(T entity, float yaw, float partialTicks, PoseStack poseStack, MultiBufferSource multiBufferSource, int light, CallbackInfo ci) {
-        if (((ILivingEntityMixin) entity).getRidingSubsystem() instanceof SeatSubsystem seatSubsystem) {
+        if (((ILivingEntityMixin) entity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seatSubsystem) {
             //根据座椅部件的设置，取消实体模型的渲染
             //According to the seat subsystem settings, cancel the rendering of the entity model
             if (!seatSubsystem.attr.renderPassenger) ci.cancel();

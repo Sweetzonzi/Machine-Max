@@ -10,6 +10,7 @@ import io.github.tt432.machinemax.network.payload.RegularInputPayload;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
@@ -17,6 +18,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -33,8 +35,10 @@ import java.util.UUID;
 @OnlyIn(Dist.CLIENT)
 public class RawInputHandler {
 
+    private static Minecraft client;
     static byte[] moveInputs = new byte[6];//x,y,z方向的平移和绕x,y,z轴的旋转输入
     static byte[] moveInputConflicts = new byte[6];//相应轴向上的输入冲突
+    public static boolean freeCam = false;//自由视角是否激活
 
     static int trans_x_input = 0;
     static int trans_y_input = 0;
@@ -45,6 +49,10 @@ public class RawInputHandler {
 
     public static final HashMap<KeyMapping, Integer> keyPressTicks = HashMap.newHashMap(15);//各个按键被按下的持续时间
 
+    public static void init(FMLClientSetupEvent event) {
+        client = Minecraft.getInstance();
+    }
+
     /**
      * 在每个客户端tick事件后调用，处理按键逻辑。
      *
@@ -52,9 +60,8 @@ public class RawInputHandler {
      */
     @SubscribeEvent
     public static void handleMoveInputs(ClientTickEvent.Post event) {
-        var client = Minecraft.getInstance();
         if (client.player != null &&
-                ((ILivingEntityMixin) client.player).getRidingSubsystem() instanceof SeatSubsystem subSystem &&
+                ((ILivingEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem subSystem &&
                 subSystem.owner instanceof Part part) {
             String subSystemName = subSystem.name;
             UUID vehicleUuid = part.vehicle.uuid;
@@ -114,9 +121,12 @@ public class RawInputHandler {
     }
 
     @SubscribeEvent
-    public static void handleAimInputs(ClientTickEvent.Post event) {
+    public static void handleMouseInputs(ClientTickEvent.Post event) {
+        if (client.player == null) return;
         if (KeyBinding.generalFreeCamKey.isDown()) {
-            //TODO:自由视角键未被按下时，根据相机镜头角度发包视线输入
+            freeCam = true;
+        } else {
+            freeCam = false;
         }
     }
 
@@ -221,7 +231,7 @@ public class RawInputHandler {
         // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
         LocalPlayer player = Minecraft.getInstance().player;
         if (player instanceof ILivingEntityMixin passenger &&
-                passenger.getRidingSubsystem() instanceof SeatSubsystem seat &&
+                passenger.machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat &&
                 seat.disableVanillaActions) {
             if (event.getKeyMapping() == Minecraft.getInstance().options.keyAttack ||
                     event.getKeyMapping() == Minecraft.getInstance().options.keyUse ||
@@ -237,7 +247,7 @@ public class RawInputHandler {
         // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
         LocalPlayer player = Minecraft.getInstance().player;
         if (player instanceof ILivingEntityMixin passenger &&
-                passenger.getRidingSubsystem() instanceof SeatSubsystem seat) {
+                passenger.machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
             //很奇怪，必须套一层if判断，屏蔽效果才能生效 Wired, must have a if to work
             if (Minecraft.getInstance().options.keyUp.consumeClick()) {
                 Minecraft.getInstance().options.keyUp.setDown(false);

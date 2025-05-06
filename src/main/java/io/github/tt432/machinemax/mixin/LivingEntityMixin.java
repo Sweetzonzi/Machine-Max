@@ -15,12 +15,12 @@ abstract public class LivingEntityMixin implements ILivingEntityMixin {
 
     @Nullable
     @Override
-    public SeatSubsystem getRidingSubsystem() {
+    public SeatSubsystem machine_Max$getRidingSubsystem() {
         return machine_Max$subSystem;
     }
 
     @Override
-    public void setRidingSubsystem(SeatSubsystem subSystem) {
+    public void machine_Max$setRidingSubsystem(SeatSubsystem subSystem) {
         this.machine_Max$subSystem = subSystem;
     }
 
