@@ -27,7 +27,7 @@ import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.JointAttr;
 import io.github.tt432.machinemax.common.vehicle.data.ConnectionData;
 import io.github.tt432.machinemax.common.vehicle.data.PartData;
-import io.github.tt432.machinemax.common.vehicle.signal.Port;
+import io.github.tt432.machinemax.common.vehicle.signal.SignalPort;
 import io.github.tt432.machinemax.network.payload.assembly.ConnectorDetachPayload;
 import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.data.Axis;
@@ -53,7 +53,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     public final boolean internal;//是否为内部接口
     public final ConnectorAttr attr;//接口属性
     public New6Dof joint;//在两个对接口间共享的关节
-    public final Port port;//接口资源/信号传输端口
+    public final SignalPort signalPort;//接口资源/信号传输端口
     @Setter
     public AbstractConnector attachedConnector;//与本接口对接的接口
     public final Transform subPartTransform;//被安装零件的连接点相对本部件质心的位置与姿态
@@ -65,7 +65,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         this.subPart = subPart;
         this.subPartTransform = subPartTransform;
         this.acceptableVariants = attr.acceptableVariants();
-        this.port = new Port(this, attr.signalTargets());
+        this.signalPort = new SignalPort(this, attr.signalTargets());
         this.collideBetweenParts = attr.collideBetweenParts();
         this.breakable = attr.breakable();
         this.internal = !attr.ConnectedTo().isEmpty();
@@ -127,9 +127,9 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
             this.attachedConnector = targetConnector;
             targetConnector.attachedConnector = this;
             this.attachJoint(targetConnector);
-            if (this.port != null && attachedConnector.port != null) {
-                this.port.onConnectorAttach();
-                attachedConnector.port.onConnectorAttach();
+            if (this.signalPort != null && attachedConnector.signalPort != null) {
+                this.signalPort.onConnectorAttach();
+                attachedConnector.signalPort.onConnectorAttach();
             }
             return true;
         }
@@ -224,9 +224,9 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                     }
                 }
             }
-            if (this.port != null && attachedConnector.port != null) {
-                this.port.onConnectorDetach();
-                attachedConnector.port.onConnectorDetach();
+            if (this.signalPort != null && attachedConnector.signalPort != null) {
+                this.signalPort.onConnectorDetach();
+                attachedConnector.signalPort.onConnectorDetach();
             }
             detachJoint();
             this.attachedConnector.attachedConnector = null;

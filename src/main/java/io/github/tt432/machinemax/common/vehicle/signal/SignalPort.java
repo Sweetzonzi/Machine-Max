@@ -9,10 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * 用于在子系统之间传输信号，如玩家控制量、转速等
+ * 用于在部件之间转发子系统信号，如玩家控制量、引擎功率、火控信号等
  */
 @Getter
-public class Port implements ISignalReceiver, ISignalSender {
+public class SignalPort implements ISignalReceiver, ISignalSender {
     public final String name;
     public final AbstractConnector owner;
     public final Map<String, List<String>> targetNames;//接收哪些信号
@@ -25,7 +25,7 @@ public class Port implements ISignalReceiver, ISignalSender {
      * @param owner         部件连接器
      * @param signalTargets 信号提供目标
      */
-    public Port(AbstractConnector owner, Map<String, List<String>> signalTargets) {
+    public SignalPort(AbstractConnector owner, Map<String, List<String>> signalTargets) {
         this.name = owner.name;
         this.owner = owner;
         this.targetNames = signalTargets;
@@ -35,8 +35,8 @@ public class Port implements ISignalReceiver, ISignalSender {
     public void onSignalUpdated(String signalKey, ISignalSender sender) {
         if (owner instanceof AbstractConnector ownerConnector
                 && ownerConnector.attachedConnector != null
-                && ownerConnector.attachedConnector.port.getTargets().containsKey(signalKey)) {
-            ownerConnector.attachedConnector.port.getTargets().get(signalKey).forEach((receiverName, signalReceiver) -> {
+                && ownerConnector.attachedConnector.signalPort.getTargets().containsKey(signalKey)) {
+            ownerConnector.attachedConnector.signalPort.getTargets().get(signalKey).forEach((receiverName, signalReceiver) -> {
                 Signals currentSignals = signalInputs.get(signalKey);
                 Signals receiverSignals = signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals());
                 // 仅在实际发生变更时传播

@@ -22,7 +22,7 @@ public class MouseHandlerMixin {
             cancellable = true
     )
     public void beforeTurnPlayer(double movementTime, CallbackInfo ci, CalculatePlayerTurnEvent event, double d2, double d3, double d4, double d0, double d1, int i) {
-        CameraController.turnCamera(d0, d1*i);
-        if (RawInputHandler.freeCam) ci.cancel();
+        CameraController.turnCamera(d0, d1*i);//传输镜头控制量
+        if (RawInputHandler.freeCam) ci.cancel();//自由视角模式下不旋转玩家朝向
     }
 }

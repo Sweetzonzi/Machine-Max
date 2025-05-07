@@ -258,7 +258,7 @@ public class VehicleCore {
             if (subSystem instanceof ISignalSender) ((ISignalSender) subSystem).setTargetFromNames();
         }
         for (AbstractConnector connector : part.allConnectors.values()) {//连接部件内信号端口的传输关系
-            if (connector.port != null) connector.port.setTargetFromNames();
+            if (connector.signalPort != null) connector.signalPort.setTargetFromNames();
         }
         this.totalMass += part.totalMass;
         partMap.put(part.uuid, part);

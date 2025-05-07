@@ -16,14 +16,12 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class CameraController {
     private static Minecraft client;
-    private static MouseHandler mouseHandler;
     private static float pitch = 0;
     private static float yaw = 0;
     private static float roll = 0;
 
     public static void init(FMLClientSetupEvent event) {
         client = Minecraft.getInstance();
-        mouseHandler = Minecraft.getInstance().mouseHandler;
     }
 
     @SubscribeEvent
@@ -39,13 +37,22 @@ public class CameraController {
         event.setPitch(pitch);
         event.setYaw(yaw);
         float partialTick = (float) event.getPartialTick();
+        //非自由视角模式下，逐渐回正视角
         if (!RawInputHandler.freeCam) {
             pitch = 0.9f * pitch + 0.1f * camera.getEntity().getViewXRot(partialTick);
             yaw = 0.9f * yaw + 0.1f * camera.getEntity().getViewYRot(partialTick);
         }
     }
+    @SubscribeEvent
+    public static void updateCameraScale(ViewportEvent.ComputeFov event){
+        double scale = 1.0;
+        //TODO:视情况调整放大倍率
+        double rawFov = event.getFOV();
+        event.setFOV(rawFov/scale);
+    }
 
     public static void turnCamera(double yRot, double xRot) {
+        //保持与默认旋转视角相同的缩放量（为什么会有缩放？）
         float f = (float)xRot * 0.15F;
         float f1 = (float)yRot * 0.15F;
         pitch += f;
@@ -61,6 +68,7 @@ public class CameraController {
     public static void modifySensitivity(CalculatePlayerTurnEvent event) {
         double raw = event.getMouseSensitivity();
         //根据是否处于瞄准等因素调整灵敏度
-        event.setMouseSensitivity(raw * 0.1);
+        if (RawInputHandler.freeCam) raw *= 0.5;
+        event.setMouseSensitivity(raw);
     }
 }
