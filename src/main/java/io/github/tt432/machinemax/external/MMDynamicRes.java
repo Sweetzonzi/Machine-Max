@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import io.github.tt432.machinemax.common.vehicle.PartType;
+import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
 import io.github.tt432.machinemax.external.parse.OBoneParse;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -35,6 +36,7 @@ public class MMDynamicRes {
     public static HashMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new HashMap<>(); //所有当下读取的外部资源
     public static HashMap<ResourceLocation, PartType> PART_TYPES = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static HashMap<ResourceLocation, OModel> O_MODELS = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的OModel
+    public static HashMap<ResourceLocation, VehicleData> BLUEPRINTS = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的OModel
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
@@ -61,6 +63,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("part")));
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("script")));
+            packUp(packName, Exist(root.resolve("blueprint")));
         }
     }
 
@@ -85,9 +88,11 @@ public class MMDynamicRes {
         Path partFolder = Exist(testpack.resolve("part"));
         Path partTypeFolder = Exist(testpack.resolve("part_type"));
         Path script = Exist(testpack.resolve("script"));
+        Path blueprint = Exist(testpack.resolve("blueprint"));
         //设置默认测试包的路径、名字、内容
         createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
         createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type(), true);
+        createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
     }
 
 
@@ -96,35 +101,35 @@ public class MMDynamicRes {
         String category = categoryPath.getFileName().toString();
         for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
             String fileName = filePath.getFileName().toString();
+            String fileRealName = getRealName(fileName);
             ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, fileName));
             try {
                 JsonElement json = JsonParser.parseString(Files.readString(filePath));
                 switch (category) {
                     case "part_type" -> { //part_type文件夹中的配置
-                        DataResult<PartType> result = PartType.CODEC.parse(JsonOps.INSTANCE, json);
-                        result.result().ifPresent(partType -> {
-                            LOGGER.info("成功还原 PartType: {}", result);
-                            PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
-                            //测试数据是否成功录入
-                            partType.getConnectorIterator().forEachRemaining((c) -> {
-                                LOGGER.info("连接器队列: " +c);
-                            });
-                            partType.getPartOutwardConnectors().forEach((a, b) -> {
-                                LOGGER.info("接口名称: %s 类型: %s".formatted(a, b));
-                            });
+                        PartType partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
+                        PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
+                        //测试数据是否成功录入
+                        partType.getConnectorIterator().forEachRemaining((c) -> {
+                            LOGGER.info("连接器队列: " +c);
                         });
-                        result.error().ifPresent(error ->
-                                LOGGER.error("还原失败 {}: {}", filePath, error.message()));
+                        partType.getPartOutwardConnectors().forEach((a, b) -> {
+                            LOGGER.info("接口名称: %s 类型: %s".formatted(a, b));
+                        });
                     }
 
                     case "part" -> {
                         // 首先决定载具包中variants的格式定义
-//                    fileName = getRealName(fileName); //删去资源路径后缀 .json
+//                    fileName = fileRealName; //删去资源路径后缀 .json
 //                    location = ResourceLocation.tryBuild(MOD_ID, "part/%s".formatted(fileName));  //使用默认的路径格式 machine_max:part/test_cube.geo
                         // 上面被注释则是放弃覆盖，继续使用路径格式 machine_max:testpack/part/test_cube.geo.json
                         OBoneParse.register(location, json);
                     }
                     case "script" -> {}
+                    case "blueprint" -> {
+                        VehicleData data = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
+                        BLUEPRINTS.put(location, data);
+                    }
                 }
 
             } catch (IOException e) {

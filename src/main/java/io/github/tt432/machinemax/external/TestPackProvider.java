@@ -107,4 +107,261 @@ public class TestPackProvider {
                 }
                 """;
     }
+
+    public static String blueprint() {
+        return """
+                {
+                  "hp": 20.0,
+                  "parts": [
+                    {
+                      "textureIndex": 0,
+                      "uuid": "fb4a658d-dc9d-412c-8895-9c9637e4d2fd",
+                      "durability": 50.0,
+                      "subPartTransforms": {
+                        "ae86_wheel_all_terrain": {
+                          "position": [
+                            -15.372847,
+                            -59.187485,
+                            31.612873
+                          ],
+                          "rotation": [
+                            0.9763009,
+                            -0.016799172,
+                            0.08147507,
+                            0.19979016
+                          ],
+                          "linearVel": [
+                            -0.051574208,
+                            -3.2290816E-5,
+                            0.28265092
+                          ],
+                          "angularVel": [
+                            0.35034746,
+                            -0.0038909742,
+                            0.062637694
+                          ]
+                        }
+                      },
+                      "registryKey": "machine_max:ae86_wheel_all_terrain",
+                      "subpart": "ae86_wheel_all_terrain",
+                      "variant": "right"
+                    },
+                    {
+                      "textureIndex": 0,
+                      "uuid": "630c36d2-5c42-4a55-a83e-c3992b7b1404",
+                      "durability": 50.0,
+                      "subPartTransforms": {
+                        "ae86_wheel_all_terrain": {
+                          "position": [
+                            -18.057646,
+                            -59.187515,
+                            26.47162
+                          ],
+                          "rotation": [
+                            0.9648111,
+                            -0.011893405,
+                            0.044256665,
+                            0.25891975
+                          ],
+                          "linearVel": [
+                            -0.033523623,
+                            -0.0013167411,
+                            0.2731036
+                          ],
+                          "angularVel": [
+                            0.3429876,
+                            -0.0046978667,
+                            0.029372701
+                          ]
+                        }
+                      },
+                      "registryKey": "machine_max:ae86_wheel_all_terrain",
+                      "subpart": "ae86_wheel_all_terrain",
+                      "variant": "left"
+                    },
+                    {
+                      "textureIndex": 0,
+                      "uuid": "478c9368-9da9-4e93-a58f-8b9471094981",
+                      "durability": 25.0,
+                      "subPartTransforms": {
+                        "ae86_seat": {
+                          "position": [
+                            -16.170067,
+                            -57.89831,
+                            29.19351
+                          ],
+                          "rotation": [
+                            -0.0014343784,
+                            -0.083175406,
+                            -2.0089855E-4,
+                            0.9965339
+                          ],
+                          "linearVel": [
+                            -0.047025576,
+                            0.0027481169,
+                            0.27913797
+                          ],
+                          "angularVel": [
+                            -1.6900527E-4,
+                            -0.0036331657,
+                            0.002875739
+                          ]
+                        }
+                      },
+                      "registryKey": "machine_max:ae86_seat",
+                      "subpart": "ae86_seat",
+                      "variant": "default"
+                    },
+                    {
+                      "textureIndex": 0,
+                      "uuid": "87c577e0-ae4a-4ca4-ae7c-19404fb0add2",
+                      "durability": 50.0,
+                      "subPartTransforms": {
+                        "ae86_wheel_all_terrain": {
+                          "position": [
+                            -18.824375,
+                            -59.18756,
+                            31.032682
+                          ],
+                          "rotation": [
+                            0.9566448,
+                            -0.023201615,
+                            0.07983068,
+                            0.2791408
+                          ],
+                          "linearVel": [
+                            -0.05082639,
+                            -0.0017470419,
+                            0.26919675
+                          ],
+                          "angularVel": [
+                            0.3324166,
+                            -0.0024318853,
+                            0.06350585
+                          ]
+                        }
+                      },
+                      "registryKey": "machine_max:ae86_wheel_all_terrain",
+                      "subpart": "ae86_wheel_all_terrain",
+                      "variant": "left"
+                    },
+                    {
+                      "textureIndex": 0,
+                      "uuid": "ffe8f84a-a1bb-413e-9f9d-a48301c53e32",
+                      "durability": 50.0,
+                      "subPartTransforms": {
+                        "ae86_wheel_all_terrain": {
+                          "position": [
+                            -14.606006,
+                            -59.187508,
+                            27.051876
+                          ],
+                          "rotation": [
+                            0.9871038,
+                            -0.009282568,
+                            0.062016256,
+                            0.14728859
+                          ],
+                          "linearVel": [
+                            -0.035757557,
+                            0.0021484196,
+                            0.28432107
+                          ],
+                          "angularVel": [
+                            0.3517315,
+                            -0.011266961,
+                            0.04412765
+                          ]
+                        }
+                      },
+                      "registryKey": "machine_max:ae86_wheel_all_terrain",
+                      "subpart": "ae86_wheel_all_terrain",
+                      "variant": "right"
+                    },
+                    {
+                      "textureIndex": 0,
+                      "uuid": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
+                      "durability": 100.0,
+                      "subPartTransforms": {
+                        "ae86_chassis_all_terrain": {
+                          "position": [
+                            -16.683659,
+                            -58.398945,
+                            28.855127
+                          ],
+                          "rotation": [
+                            -0.0014347766,
+                            -0.08317477,
+                            -1.8289244E-4,
+                            0.99653393
+                          ],
+                          "linearVel": [
+                            -0.044462584,
+                            0.0012538135,
+                            0.27742064
+                          ],
+                          "angularVel": [
+                            -1.5141873E-4,
+                            -0.0036720766,
+                            0.0026221923
+                          ]
+                        }
+                      },
+                      "registryKey": "machine_max:ae86_chassis_all_terrain",
+                      "subpart": "ae86_chassis_all_terrain",
+                      "variant": "default"
+                    }
+                  ],
+                  "connections": [
+                    {
+                      "PartUuidA": "87c577e0-ae4a-4ca4-ae7c-19404fb0add2",
+                      "SubPartNameA": "ae86_wheel_all_terrain",
+                      "AttachPointConnectorName": "chassis_connection",
+                      "PartUuidS": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
+                      "SubPartNameS": "ae86_chassis_all_terrain",
+                      "SpecialConnectorName": "left_back_wheel"
+                    },
+                    {
+                      "PartUuidA": "630c36d2-5c42-4a55-a83e-c3992b7b1404",
+                      "SubPartNameA": "ae86_wheel_all_terrain",
+                      "AttachPointConnectorName": "chassis_connection",
+                      "PartUuidS": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
+                      "SubPartNameS": "ae86_chassis_all_terrain",
+                      "SpecialConnectorName": "left_front_wheel"
+                    },
+                    {
+                      "PartUuidA": "ffe8f84a-a1bb-413e-9f9d-a48301c53e32",
+                      "SubPartNameA": "ae86_wheel_all_terrain",
+                      "AttachPointConnectorName": "chassis_connection",
+                      "PartUuidS": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
+                      "SubPartNameS": "ae86_chassis_all_terrain",
+                      "SpecialConnectorName": "right_front_wheel"
+                    },
+                    {
+                      "PartUuidA": "fb4a658d-dc9d-412c-8895-9c9637e4d2fd",
+                      "SubPartNameA": "ae86_wheel_all_terrain",
+                      "AttachPointConnectorName": "chassis_connection",
+                      "PartUuidS": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
+                      "SubPartNameS": "ae86_chassis_all_terrain",
+                      "SpecialConnectorName": "right_back_wheel"
+                    },
+                    {
+                      "PartUuidA": "478c9368-9da9-4e93-a58f-8b9471094981",
+                      "SubPartNameA": "ae86_seat",
+                      "AttachPointConnectorName": "chassis_connection",
+                      "PartUuidS": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
+                      "SubPartNameS": "ae86_chassis_all_terrain",
+                      "SpecialConnectorName": "driver_seat"
+                    }
+                  ],
+                  "vehicle_name": "Vehicle",
+                  "uuid": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
+                  "pos": [
+                    -16.61766990025838,
+                    -58.841248194376625,
+                    29.02701187133789
+                  ]
+                }
+                """;
+    }
 }
