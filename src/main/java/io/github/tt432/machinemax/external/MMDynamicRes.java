@@ -54,6 +54,7 @@ public class MMDynamicRes {
         EXTERNAL_RESOURCE.clear();
         PART_TYPES.clear();
         OBoneParse.clear();
+        BLUEPRINTS.clear();
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
