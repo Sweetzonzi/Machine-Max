@@ -10,6 +10,9 @@ dependencies {
     implementation "maven.modrinth:jade:${jade_version}"
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
+//    // js
+//    jarJar(implementation("org.mozilla:rhino:1.8.0"))
+//    additionalRuntimeClasspath "org.mozilla:rhino:1.8.0"
     // 其它mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib

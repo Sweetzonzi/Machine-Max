@@ -5,6 +5,7 @@ import io.github.tt432.machinemax.common.item.prop.CrossbarItem
 import io.github.tt432.machinemax.common.item.prop.MMPartItem
 import io.github.tt432.machinemax.common.item.prop.SprayCanItem
 import io.github.tt432.machinemax.common.item.prop.TestCarSpawnerItem
+import io.github.tt432.machinemax.common.item.prop.VehicleRecoderItem
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
 
@@ -25,6 +26,17 @@ object MMItems {
     val PART_ITEM = MachineMax.REGISTER.item<MMPartItem>()
         .id("part_item")
         .bound { MMPartItem(Item.Properties().stacksTo(1)) }
+        .build()
+
+    //载具保存物品原型
+    @JvmStatic
+    val VEHICLE_RECORDER_ITEM = MachineMax.REGISTER.item<VehicleRecoderItem>()
+        .id("vehicle_recorder_item")
+        .bound {
+            VehicleRecoderItem(
+                Item.Properties().stacksTo(1)
+            )
+        }
         .build()
 
     //撬棍，用于拆卸载具部件，也可作为武器
