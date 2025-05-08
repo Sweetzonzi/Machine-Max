@@ -1,6 +1,11 @@
 package io.github.tt432.machinemax.common.vehicle.data;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import lombok.Getter;
@@ -9,6 +14,9 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +30,7 @@ public class VehicleData {
     public final List<ConnectionData> connections;
 
     public static final Codec<VehicleData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("subpart").forGetter(VehicleData::getName),
+            Codec.STRING.fieldOf("vehicle_name").forGetter(VehicleData::getName),
             Codec.STRING.fieldOf("uuid").forGetter(VehicleData::getUuid),
             Vec3.CODEC.fieldOf("pos").forGetter(VehicleData::getPos),
             Codec.FLOAT.fieldOf("hp").forGetter(VehicleData::getHp),
@@ -79,6 +87,20 @@ public class VehicleData {
         this.hp = vehicle.getHp();
         this.parts = vehicle.getPartData();
         this.connections = vehicle.getConnectionData();
+    }
+
+    public static void serializeVehicleDataToJson(VehicleData vehicleData, File filePath) throws IOException {
+        // 使用 codec 将 VehicleData 编码为 JsonElement
+        JsonElement encoded = VehicleData.CODEC.encodeStart(JsonOps.INSTANCE, vehicleData).getOrThrow(IllegalArgumentException::new);
+
+        // 使用 Gson 将 JsonElement 转换为 JSON 字符串
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String jsonString = gson.toJson(encoded);
+
+        // 将 JSON 字符串写入文件
+        try (FileWriter fileWriter = new FileWriter(filePath)) {
+            fileWriter.write(jsonString);
+        }
     }
 
 }

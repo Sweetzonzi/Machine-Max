@@ -39,7 +39,7 @@ public interface ISignalSender {
      * 将发送的信号输出类型全部重置为空信号
      */
     default void resetSignalOutputs() {
-        if (this instanceof Port) return;//信号端口只应转发信号，不应对其输出信号进行操作
+        if (this instanceof SignalPort) return;//信号端口只应转发信号，不应对其输出信号进行操作
         for (Map.Entry<String, Map<String, ISignalReceiver>> entry : getTargets().entrySet()) {
             entry.getValue().forEach((receiverName, signalReceiver) -> {
                 var emptySignal = new EmptySignal();
@@ -148,8 +148,8 @@ public interface ISignalSender {
     default void setTargetFromNames() {
         if (getPart() != null) {
             Map<String, AbstractSubsystem> subSystems = getPart().subsystems;
-            Map<String, Port> ports = new HashMap<>();
-            getPart().allConnectors.forEach((name, connector) -> ports.put(name, connector.port));
+            Map<String, SignalPort> ports = new HashMap<>();
+            getPart().allConnectors.forEach((name, connector) -> ports.put(name, connector.signalPort));
             for (Map.Entry<String, List<String>> entry : getTargetNames().entrySet()) {
                 Map<String, ISignalReceiver> signalReceivers = new HashMap<>(2);
                 if (entry.getKey().isEmpty()) continue;
@@ -163,7 +163,7 @@ public interface ISignalSender {
             List<String> targetNames,
             Part ownerPart,
             Map<String, AbstractSubsystem> subSystems,
-            Map<String, Port> ports) {
+            Map<String, SignalPort> ports) {
         List<ISignalReceiver> targets = new ArrayList<>();
         for (String targetName : targetNames) {
             if (targetName.equals("vehicle")) {
@@ -177,8 +177,8 @@ public interface ISignalSender {
                     targets.add((ISignalReceiver) subSystem);
                 }
             } else if (ports.containsKey(targetName)) {
-                Port port = ports.get(targetName);
-                targets.add(port);
+                SignalPort signalPort = ports.get(targetName);
+                targets.add(signalPort);
             } else MachineMax.LOGGER.error("未在部件内找到目标端口或子系统: {}", targetName);
         }
         return targets;

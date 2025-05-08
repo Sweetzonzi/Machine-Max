@@ -33,9 +33,9 @@ public class MMMath {
         return result;
     }
 
-    public static Vector3f localVectorToWorldVector(Vector3f localVel, PhysicsRigidBody obj){
+    public static Vector3f localVectorToWorldVector(Vector3f localVec, PhysicsRigidBody obj){
         Quaternion localToWorld = obj.getPhysicsRotation(null); //获取物体相对世界坐标的四元数
-        return MyQuaternion.rotate(localToWorld, localVel, null);
+        return MyQuaternion.rotate(localToWorld, localVec, null);
     }
 
     public static Vector3f getLinearVelocityLocal(PhysicsRigidBody obj){

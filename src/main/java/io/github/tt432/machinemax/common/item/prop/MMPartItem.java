@@ -21,6 +21,8 @@ import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.external.MMDynamicRes;
+import io.github.tt432.machinemax.network.payload.RegularInputPayload;
+import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -28,11 +30,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -76,7 +82,15 @@ public class MMPartItem extends Item {
                 }
             } else {
                 Part part = new Part(partType, variant, level);
-                part.setTransform(new Transform(PhysicsHelperKt.toBVector3f(player.getPosition(1)), Quaternion.IDENTITY));
+                part.setTransform(
+                        new Transform(
+                                PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                        player.getEyePosition(),
+                                        player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                                Quaternion.IDENTITY
+                        )
+                );
                 VehicleManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
             }
         }
@@ -111,16 +125,31 @@ public class MMPartItem extends Item {
                             );
                         }
                     } else message.append("无法连接两个非AttachPoint接口");
-                } else
+                } else {
+                    for (String variantName : partType.variants.keySet()) {
+                        if (targetConnector.conditionCheck(variantName)) {
+                            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
+                            return;
+                        }
+                    }
                     message = Component.empty().append(" 连接口" + targetConnector.name + "不接受部件" + partType.name + "的" + variant + "变体");
+                }
             } else {
                 message.append("未选中可用的部件接口，右键将直接放置零件");
                 if (MMVisualEffects.getPART_ASSEMBLY().partToAssembly != null)
                     MMVisualEffects.getPART_ASSEMBLY().partToAssembly.setTransform(
-                            new Transform(
+                            entity instanceof LivingEntity livingEntity ?
+                                    new Transform(
+                                            PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                                    entity.getEyePosition(),
+                                                    entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
+                                            Quaternion.IDENTITY
+                                    ) : new Transform(
                                     PhysicsHelperKt.toBVector3f(entity.position()),
                                     Quaternion.IDENTITY
                             )
+
                     );
             }
             Minecraft.getInstance().player.displayClientMessage(message, true);
@@ -178,7 +207,8 @@ public class MMPartItem extends Item {
         if (stack.has(MMDataComponents.getPART_TYPE())) {
             //从物品Component中获取部件类型
             partType = MMRegistries.getRegistryAccess(level).registry(PartType.PART_REGISTRY_KEY).get().get(stack.get(MMDataComponents.getPART_TYPE()));
-            if (partType == null) partType = MMDynamicRes.PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));//为null说明是外部包 尝试还原
+            if (partType == null)
+                partType = MMDynamicRes.PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));//为null说明是外部包 尝试还原
         } else throw new IllegalStateException("物品" + stack + "中未找到部件类型数据");//如果物品Component中部件类型为空，则抛出异常
         return partType;
     }

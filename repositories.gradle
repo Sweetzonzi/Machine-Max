@@ -1,7 +1,7 @@
 dependencies {
     // 物理库
 //    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
-    implementation files('libs/SparkCore-1.21.1-1.0.693.jar')
+    implementation files('libs/SparkCore-1.21.1-1.0.695.jar')
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -10,6 +10,9 @@ dependencies {
     implementation "maven.modrinth:jade:${jade_version}"
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
+//    // js
+//    jarJar(implementation("org.mozilla:rhino:1.8.0"))
+//    additionalRuntimeClasspath "org.mozilla:rhino:1.8.0"
     // 其它mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib
@@ -71,7 +74,7 @@ repositories {
     }
     maven {
         name = 'GeckoLib'
-        url 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
         content {
             includeGroup("software.bernie.geckolib")
         }

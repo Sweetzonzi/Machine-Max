@@ -8,7 +8,7 @@ import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr;
-import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
+import io.github.tt432.machinemax.mixin_interface.ILivingEntityMixin;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import lombok.Getter;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -66,11 +66,11 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
 
     public boolean setPassenger(LivingEntity passenger) {
         if (passenger == null) removePassenger();
-        if (!occupied && owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).getRidingSubsystem() == null) {
+        if (!occupied && owner.getPart() != null && owner.getPart().entity != null && ((ILivingEntityMixin) passenger).machine_Max$getRidingSubsystem() == null) {
             passenger.startRiding(owner.getPart().entity, false);
             occupied = true;
             this.passenger = passenger;
-            ((IEntityMixin) passenger).setRidingSubsystem(this);
+            ((ILivingEntityMixin) passenger).machine_Max$setRidingSubsystem(this);
             getPart().vehicle.activate();
             //TODO:换成在hud角落常驻显示好了
             if (passenger.level() instanceof ClientLevel && passenger instanceof Player player)
@@ -86,8 +86,8 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
 
     public void removePassenger() {
         if (passenger != null) {
-            if (((IEntityMixin) passenger).getRidingSubsystem() == this)
-                ((IEntityMixin) passenger).setRidingSubsystem(null);
+            if (((ILivingEntityMixin) passenger).machine_Max$getRidingSubsystem() == this)
+                ((ILivingEntityMixin) passenger).machine_Max$setRidingSubsystem(null);
             passenger = null;
         }
         occupied = false;

@@ -26,6 +26,7 @@ object MMCreativeTabs {
                 output.accept(MMItems.TEST_CAR_SPAWNER.get())
                 output.accept(MMItems.CROSSBAR_ITEM.get())
                 output.accept(MMItems.SPRAY_CAN_ITEM.get())
+                output.accept(MMItems.VEHICLE_RECORDER_ITEM.get())
             }
         )
         .build()

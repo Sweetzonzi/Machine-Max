@@ -6,13 +6,15 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "ClientLevelMixin",
-    "EntityMixin",
+    "LivingEntityMixin",
     "PlayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
-
+    "CameraMixin",
+    "LivingEntityRendererMixin",
+    "MouseHandlerMixin"
   ]
 }

@@ -22,11 +22,10 @@ import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMEntities;
 import io.github.tt432.machinemax.common.vehicle.Part;
-import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
-import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
+import io.github.tt432.machinemax.mixin_interface.ILivingEntityMixin;
 import io.github.tt432.machinemax.util.MMMath;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -34,7 +33,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -43,7 +41,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,9 +91,8 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
             this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
             Quaternionf q = SparkMathKt.toQuaternionf(part.rootSubPart.body.getPhysicsRotation(null));
             org.joml.Vector3f eulerAngles = new org.joml.Vector3f();
-            q.getEulerAnglesZYX(eulerAngles);
-            this.setRot(eulerAngles.y, eulerAngles.x);
-            this.setYHeadRot(eulerAngles.y);
+            q.getEulerAnglesZYX(eulerAngles).mul((float) (180/Math.PI));
+            this.setRot(-eulerAngles.y+180f, eulerAngles.x);
             updateBoundingBox();//更新实体包围盒
         }
     }
@@ -129,8 +125,8 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
-        if (entity instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).getRidingSubsystem() instanceof SeatSubsystem seat)
-            return SparkMathKt.toVec3(seat.seatLocator.subPartTransform.getTranslation());
+        if (entity instanceof LivingEntity livingEntity && ((ILivingEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat)
+            return SparkMathKt.toVec3(MMMath.localVectorToWorldVector(seat.seatLocator.subPartTransform.getTranslation(), seat.seatLocator.subPart.body));
         else return new Vec3(0, 0, 0);
     }
 
@@ -140,8 +136,25 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     }
 
     @Override
+    public void onPassengerTurned(@NotNull Entity entityToUpdate) {
+        if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((ILivingEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+            entityToUpdate.setYBodyRot(180);
+//            float f = Mth.wrapDegrees(entityToUpdate.getYRot() - this.getYRot());
+//            float f1 = Mth.clamp(f, -105.0F, 105.0F);
+//            entityToUpdate.yRotO += f1 - f;
+//            entityToUpdate.setYRot(entityToUpdate.getYRot() + f1 - f);
+//            entityToUpdate.setYHeadRot(this.getYRot() + 180F);
+        }
+    }
+
+    @Override
     public void move(@NotNull MoverType type, @NotNull Vec3 pos) {
         //交由物理引擎处理
+    }
+
+    @Override
+    public void setPos(double x, double y, double z) {
+        this.setPosRaw(x, y, z);
     }
 
     @Override
