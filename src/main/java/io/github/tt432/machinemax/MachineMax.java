@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import com.mojang.logging.LogUtils;
 import io.github.tt432.machinemax.client.input.CameraController;
 import io.github.tt432.machinemax.client.input.RawInputHandler;
+import io.github.tt432.machinemax.common.item.MMJavaItems;
 import io.github.tt432.machinemax.common.registry.*;
 import io.github.tt432.machinemax.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;
@@ -40,7 +41,8 @@ public class MachineMax {
         MMEntities.register();//注册所有实体
         MMBlockEntities.register();//注册所有方块实体
         MMDataComponents.register();//注册所有物品数据组件
-        MMItems.register();//注册所有物品
+        MMJavaItems.register(bus);//通过java注册的所有物品
+        MMItems.register();//通过kotlin注册的所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMAttachments.register();//注册所有附件类型
         MMCodecs.register(bus);//注册所有编解码器

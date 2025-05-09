@@ -1,6 +1,7 @@
 package io.github.tt432.machinemax.common.registry
 
 import io.github.tt432.machinemax.MachineMax
+import io.github.tt432.machinemax.common.item.MMJavaItems
 import io.github.tt432.machinemax.common.vehicle.PartType
 import io.github.tt432.machinemax.external.MMDynamicRes
 import net.minecraft.client.Minecraft
@@ -27,6 +28,9 @@ object MMCreativeTabs {
                 output.accept(MMItems.CROSSBAR_ITEM.get())
                 output.accept(MMItems.SPRAY_CAN_ITEM.get())
                 output.accept(MMItems.VEHICLE_RECORDER_ITEM.get())
+                for (blueprintEgg in MMJavaItems.BLUEPRINT_EGGS) {
+                    output.accept(blueprintEgg.get());
+                }
             }
         )
         .build()

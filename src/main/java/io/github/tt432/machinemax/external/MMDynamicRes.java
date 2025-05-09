@@ -1,12 +1,13 @@
 package io.github.tt432.machinemax.external;
 
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
+import io.github.tt432.machinemax.datagen.OtherLanguage;
 import io.github.tt432.machinemax.external.parse.OBoneParse;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -17,6 +18,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -24,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -35,8 +38,11 @@ import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 public class MMDynamicRes {
     public static HashMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new HashMap<>(); //所有当下读取的外部资源
     public static HashMap<ResourceLocation, PartType> PART_TYPES = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
-    public static HashMap<ResourceLocation, OModel> O_MODELS = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的OModel
-    public static HashMap<ResourceLocation, VehicleData> BLUEPRINTS = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的OModel
+    public static HashMap<ResourceLocation, OModel> O_MODELS = new HashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
+    public static HashMap<ResourceLocation, VehicleData> BLUEPRINTS = new HashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
+    public static HashMap<String, List<HashMap<String, String>>> LANGUAGES = new HashMap<>(); // 读取为所有外部包读到的自定义翻译器 key是语言分类y， value是暂存的各个翻译文件的列表
+    public static HashMap<String, OtherLanguage.CustomLanguageGetter> CUSTOM_LANGUAGE_PROVIDERS = new HashMap<>();
+
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
@@ -55,6 +61,7 @@ public class MMDynamicRes {
         PART_TYPES.clear();
         OBoneParse.clear();
         BLUEPRINTS.clear();
+        LANGUAGES.clear();
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
@@ -65,6 +72,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("blueprint")));
+            packUp(packName, Exist(root.resolve("lang")));
         }
     }
 
@@ -90,10 +98,12 @@ public class MMDynamicRes {
         Path partTypeFolder = Exist(testpack.resolve("part_type"));
         Path script = Exist(testpack.resolve("script"));
         Path blueprint = Exist(testpack.resolve("blueprint"));
+        Path lang = Exist(testpack.resolve("lang"));
         //设置默认测试包的路径、名字、内容
         createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
         createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type(), true);
-        createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
+        Path bluprintFile = createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
+        createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(testpack.getFileName().toString(), bluprintFile.getFileName().toString()), true);
     }
 
 
@@ -126,10 +136,22 @@ public class MMDynamicRes {
                         // 上面被注释则是放弃覆盖，继续使用路径格式 machine_max:testpack/part/test_cube.geo.json
                         OBoneParse.register(location, json);
                     }
+
                     case "script" -> {}
                     case "blueprint" -> {
                         VehicleData data = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
                         BLUEPRINTS.put(location, data);
+                    }
+
+                    case "lang" -> {
+                        Gson gson = new Gson();
+                        // 定义目标类型：HashMap<String, String>
+                        // 解析JSON到HashMap
+                        HashMap<String, String> translation = gson.fromJson(json, new TypeToken<HashMap<String, String>>(){}.getType());
+                        if ( ! LANGUAGES.containsKey(fileRealName)) {
+                            LANGUAGES.put(fileRealName, new ArrayList<>()); //不存在该语言的翻译则新建列表
+                        }
+                        LANGUAGES.get(fileRealName).add(translation);
                     }
                 }
 
@@ -156,8 +178,12 @@ public class MMDynamicRes {
     }
 
 
-    /**保证文件存在，否则创建这个文件*/
-    public static void createDefaultFile(Path targetPath, String content, boolean overwrite) {
+    /**
+     * 保证文件存在，否则创建这个文件
+     *
+     * @return
+     */
+    public static Path createDefaultFile(Path targetPath, String content, boolean overwrite) {
         try {
             boolean canOverwrite = overwrite && Files.exists(targetPath);
             Files.writeString(
@@ -170,6 +196,7 @@ public class MMDynamicRes {
         } catch (IOException e) {
             LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
         }
+        return targetPath;
     }
 
 

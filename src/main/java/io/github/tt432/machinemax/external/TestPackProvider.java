@@ -1,5 +1,7 @@
 package io.github.tt432.machinemax.external;
 
+import static io.github.tt432.machinemax.MachineMax.MOD_ID;
+
 public class TestPackProvider {
     public static String part() {
         return """
@@ -363,5 +365,13 @@ public class TestPackProvider {
                   ]
                 }
                 """;
+    }
+
+    public static String zh_cn(String packName, String blueprintFileName) {
+        return """
+                {
+                  "item.%s.%s.blueprint.%s": "测试蓝图"
+                }
+                """.formatted(MOD_ID, packName, blueprintFileName);
     }
 }
