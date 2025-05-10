@@ -1,6 +1,7 @@
 package io.github.tt432.machinemax.common.vehicle.data;
 
 import cn.solarmoon.spark_core.physics.SparkMathKt;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -119,12 +120,16 @@ public class PartData {
         this.uuid = part.getUuid().toString();
         this.durability = part.durability;
         this.subPartTransforms = HashMap.newHashMap(1);
+        Vector3f pos = new Vector3f();
+        Quaternion rot = new Quaternion();
+        Vector3f vel = new Vector3f();
+        Vector3f angVel = new Vector3f();
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {
             this.subPartTransforms.put(entry.getKey(), new PosRotVelVel(
-                    entry.getValue().body.getPhysicsLocation(null),
-                    SparkMathKt.toQuaternionf(entry.getValue().body.getPhysicsRotation(null)),
-                    entry.getValue().body.getLinearVelocity(null),
-                    entry.getValue().body.getAngularVelocity(null)
+                    entry.getValue().body.getPhysicsLocation(pos),
+                    SparkMathKt.toQuaternionf(entry.getValue().body.getPhysicsRotation(rot)),
+                    entry.getValue().body.getLinearVelocity(vel),
+                    entry.getValue().body.getAngularVelocity(angVel)
             ));
         }
     }

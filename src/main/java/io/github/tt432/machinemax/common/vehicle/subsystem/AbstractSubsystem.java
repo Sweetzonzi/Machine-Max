@@ -33,6 +33,7 @@ abstract public class AbstractSubsystem {
     public volatile boolean active = true;
     public float durability;//子系统耐久度
     public int tickCount = 0;
+    public int physicsTickCount = 0;
 
     protected AbstractSubsystem(ISubsystemHost owner, String name, AbstractSubsystemAttr attr) {
         this.owner = owner;
@@ -49,9 +50,11 @@ abstract public class AbstractSubsystem {
     }
 
     public void onPrePhysicsTick() {
+
     }
 
     public void onPostPhysicsTick() {
+        physicsTickCount++;
     }
 
     /**

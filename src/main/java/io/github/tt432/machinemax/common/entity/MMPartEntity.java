@@ -79,7 +79,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     @Override
     public void tick() {
         super.tick();
-        if (tickCount == 101) removeAllBodies();//移除SparkCore为实体添加的默认刚体
+        if (tickCount == 2) removeAllBodies();//移除SparkCore为实体添加的默认刚体
         if (this.part == null) {//如果实体没有所属的部件，则移除实体
             if (tickCount % 20 == 0) updatePart();
             else if (tickCount > 100) {//等待100tick用于同步部件信息

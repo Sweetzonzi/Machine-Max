@@ -7,6 +7,7 @@ import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
@@ -58,7 +59,7 @@ public class VehicleCore {
     private Vec3 position = Vec3.ZERO;//位置
     private Vec3 velocity = Vec3.ZERO;//速度
     public float totalMass = 0;//总质量
-    public int syncCountDown = 0;//同步倒计时
+    public int syncCountDown = 5;//同步倒计时
     @Setter
     public boolean inLoadedChunk = false;//是否睡眠
     public boolean loadFromSavedData = false;//是否已加载
@@ -118,17 +119,15 @@ public class VehicleCore {
                 }
             }
             //保持激活与控制量更新
+            Vec3 oldPos = position;
             Vec3 newPos = new Vec3(0, 0, 0);
-            Vec3 newVel = new Vec3(0, 0, 0);
             for (Part part : partMap.values()) {
-                Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null));
-                Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.body.getLinearVelocity(null));
+                Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.tickTransform.getTranslation());
                 part.onTick();
                 newPos = newPos.add(partPos);//计算载具形心位置
-                newVel = newVel.add(partVel);//计算载具形心速度
             }
             this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
-            this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
+            this.velocity = position.subtract(oldPos).scale(20);//更新载具形心速度
             if (!level.isClientSide && syncCountDown <= 0) {
                 syncSubParts(null);//同步零件位置姿态速度
                 syncCountDown = Math.max((int) (40 * Math.pow(2, -0.1 * velocity.length())), 2);//速度越大，同步冷却时间越短
@@ -161,6 +160,10 @@ public class VehicleCore {
     public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> subPartSyncData) {
         if (!level.isClientSide()) {
             HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> subPartSyncDataToSend = new HashMap<>(1);
+            Vector3f pos = new Vector3f();
+            Quaternion rot = new Quaternion();
+            Vector3f vel = new Vector3f();
+            Vector3f angVel = new Vector3f();
             for (Map.Entry<UUID, Part> entry : partMap.entrySet()) {
                 HashMap<String, Pair<PosRotVelVel, Boolean>> subPartSyncDataMap = new HashMap<>(1);
                 Part part = entry.getValue();
@@ -169,10 +172,10 @@ public class VehicleCore {
                     PhysicsRigidBody body = subPart.body;
                     boolean isSleep = !body.isActive();
                     PosRotVelVel data = new PosRotVelVel(
-                            body.getPhysicsLocation(null),
-                            SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
-                            body.getLinearVelocity(null),
-                            body.getAngularVelocity(null));
+                            body.getPhysicsLocation(pos),
+                            SparkMathKt.toQuaternionf(body.getPhysicsRotation(rot)),
+                            body.getLinearVelocity(vel),
+                            body.getAngularVelocity(angVel));
                     subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, isSleep));
                 }
                 subPartSyncDataToSend.put(entry.getKey(), subPartSyncDataMap);
@@ -427,20 +430,21 @@ public class VehicleCore {
 
     public void setPos(Vec3 pos) {
         Vector3f delta = PhysicsHelperKt.toBVector3f(pos.subtract(this.position));
-        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            Transform transform = new Transform();
-            for (Part part : partMap.values()) {
-                part.rootSubPart.body.getTransform(transform);
-                transform.setTranslation(transform.getTranslation().add(delta));
-                part.setTransform(transform);
-            }
+        if (!inLevel) moveRelatively(delta);
+        else level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            moveRelatively(delta);
             return null;
         });
         this.position = pos;
     }
 
     private void moveRelatively(Vector3f delta) {
-
+        Transform transform = new Transform();
+        for (Part part : partMap.values()) {
+            part.rootSubPart.body.getTransform(transform);
+            transform.setTranslation(transform.getTranslation().add(delta));
+            part.setTransform(transform);
+        }
     }
 
     public void onAddToLevel() {

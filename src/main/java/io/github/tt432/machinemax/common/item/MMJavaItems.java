@@ -45,7 +45,7 @@ public class MMJavaItems {
                         if(!level.isClientSide()){
                             VehicleCore vehicle = new VehicleCore(level, vehicleData);
                             vehicle.setUuid(UUID.randomUUID());
-                            vehicle.setPos(player.position().add(0, 1, 0));
+//                            vehicle.setPos(player.position().add(0, 1, 0));
                             VehicleManager.addVehicle(vehicle);
                         }
                         return super.use(level, player, usedHand);

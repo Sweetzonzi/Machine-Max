@@ -11,6 +11,7 @@ import com.jme3.bullet.collision.ManifoldPoints;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
+import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -121,7 +122,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         PhysicsRigidBody other;
         int hitBoxIndex, otherHitBoxIndex;
         Vector3f contactPoint = new Vector3f(), otherContactPoint = new Vector3f();
-        long ChildShapeId = 0, otherChildShapeId;
+        long childShapeId, otherChildShapeId;
         if (pcoA.getOwner() == this) {
             other = (PhysicsRigidBody) pcoB;
             hitBoxIndex = ManifoldPoints.getIndex0(manifoldPointId);
@@ -145,7 +146,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         float impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(relVel.normalize())));
         if (Float.isNaN(impactAngle)) impactAngle = 0; // 处理NaN情况
         //获取参与碰撞的子系统
-        String hitBoxName = part.type.hitBoxes.get(collisionShape.findChild(hitBoxIndex).getShape().nativeId());
+        childShapeId = collisionShape.findChild(hitBoxIndex).getShape().nativeId();
+        String hitBoxName = part.type.hitBoxes.get(childShapeId);
         var subsystems = part.subsystemHitBoxes.get(hitBoxName);
         //调用子系统碰撞回调
         for (AbstractSubsystem subsystem : subsystems) subsystem.onCollide(pcoA, pcoB, manifoldPointId);
@@ -157,7 +159,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             //调用子系统碰撞回调
             for (AbstractSubsystem subsystem : subsystems) {
                 subsystem.onCollideWithBlock(
-                        this.body, other, blockPos, blockState, relVel, normal, contactPoint, impactAngle, ChildShapeId, manifoldPointId
+                        this.body, other, blockPos, blockState, relVel, normal, contactPoint, impactAngle, childShapeId, manifoldPointId
                 );
                 if (other.userIndex() <= 0) return;//所有子系统处理完碰撞后，忽略可能被手动设置为过期的方块的碰撞
             }
@@ -181,14 +183,14 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 //调用子系统碰撞回调
                 for (AbstractSubsystem subsystem : subsystems) {
                     subsystem.onCollideWithPart(
-                            this.body, other, relVel, normal, contactPoint, impactAngle, ChildShapeId, otherChildShapeId, manifoldPointId
+                            this.body, other, relVel, normal, contactPoint, impactAngle, childShapeId, otherChildShapeId, manifoldPointId
                     );
                 }
             } else if (other.getOwner() instanceof Entity entity) {//与实体碰撞时
                 //调用子系统碰撞回调
                 for (AbstractSubsystem subsystem : subsystems) {
                     subsystem.onCollideWithEntity(
-                            this.body, other, relVel, normal, contactPoint, impactAngle, ChildShapeId, manifoldPointId
+                            this.body, other, relVel, normal, contactPoint, impactAngle, childShapeId, manifoldPointId
                     );
                 }
             }

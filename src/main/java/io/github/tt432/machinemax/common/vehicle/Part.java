@@ -178,10 +178,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {//遍历保存的子部件位置、旋转、速度数据
             SubPart subPart = subParts.get(entry.getKey());//获取已重建的子部件
             if (subPart != null) {//设定子部件body的位置、旋转、速度
-                subPart.body.setPhysicsLocation(entry.getValue().position());
-                subPart.body.setPhysicsRotation(SparkMathKt.toBQuaternion(entry.getValue().rotation()));
-                subPart.body.setLinearVelocity(entry.getValue().linearVel());
-                subPart.body.setAngularVelocity(entry.getValue().angularVel());
+                PosRotVelVel posRotVelVel = entry.getValue();
+                subPart.body.setPhysicsLocation(posRotVelVel.position());
+                subPart.body.setPhysicsRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
+                subPart.body.setLinearVelocity(posRotVelVel.linearVel());
+                subPart.body.setAngularVelocity(posRotVelVel.angularVel());
             } else
                 throw new NullPointerException("部件" + name + "的子部件" + entry.getKey() + "不存在，请检查数据。");
         }

@@ -21,4 +21,9 @@ public class WheelControlSignal extends Signal<Pair<Float, Float>> {
     public Float getSteeringControl() {
         return value.getSecond();
     }
+
+    @Override
+    public String toString() {
+        return "forwardControl=" + getForwardControl() + ", steeringControl=" + getSteeringControl();
+    }
 }

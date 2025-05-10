@@ -8,7 +8,6 @@ import io.github.tt432.machinemax.common.vehicle.signal.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class EngineSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
     public final EngineSubsystemAttr attr;
