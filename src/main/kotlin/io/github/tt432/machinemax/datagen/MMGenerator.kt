@@ -1,21 +1,20 @@
 package io.github.tt432.machinemax.datagen
 
 import io.github.tt432.machinemax.MachineMax
-import io.github.tt432.machinemax.external.MMDynamicRes
+import io.github.tt432.machinemax.common.vehicle.PartType
+import net.minecraft.core.RegistrySetBuilder
 import net.minecraft.data.DataProvider
+import net.minecraft.resources.ResourceKey
+import net.minecraft.resources.ResourceLocation
+import net.neoforged.bus.api.IEventBus
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.data.event.GatherDataEvent
-
-
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, modid = MachineMax.MOD_ID)
 object MMGenerator {
     @JvmStatic
     @SubscribeEvent
     private fun gather(event: GatherDataEvent) {
-        MMDynamicRes.loadData()
-        OtherLanguage.injection()
-
         val generator = event.generator
         val output = generator.packOutput
         val lookupProvider = event.lookupProvider
@@ -23,20 +22,9 @@ object MMGenerator {
 
         fun addServerProvider(provider: DataProvider) = generator.addProvider(event.includeServer(), provider)
         fun addClinetProvider(provider: DataProvider) = generator.addProvider(event.includeClient(), provider)
-
-        for (lang in MMDynamicRes.CUSTOM_LANGUAGE_PROVIDERS.keys) {
-            if (!MMDynamicRes.LANGUAGES.containsKey(lang))
-                MMDynamicRes.LANGUAGES[lang] = ArrayList()
-        }
-        MMDynamicRes.LANGUAGES.forEach { (locale, li) -> //动态包的每个语言的翻译
-            val collection = HashMap<String, String>()
-            for (translation in li) {
-                translation.forEach { (tag, trans) ->
-                    collection[tag] = trans
-                }
-            }
-            addClinetProvider(DynamicLanguageProvider(output, MachineMax.MOD_ID, locale) { collection })
-        }
+        //语言文件 Language Files
+        addClinetProvider(MMLanguageProviderZH_CN(output, MachineMax.MOD_ID, "zh_cn"))//中文
+        addClinetProvider(MMLanguageProviderEN_US(output, MachineMax.MOD_ID, "en_us"))//English
         //部件类 PartTypes
     }
 }

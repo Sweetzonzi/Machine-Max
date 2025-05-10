@@ -1,5 +1,4 @@
 {
-  "item.machine_max.testpack.blueprint.test_blue_print.json": "测试蓝图",
   "message.machine_max.leaving_vehicle": "长按%1$s键%2$s/0.50秒以离开载具",
   "resourceType.category.machine_max.assembly": "Machine Max:组装",
   "resourceType.category.machine_max.general": "Machine Max:通用",
