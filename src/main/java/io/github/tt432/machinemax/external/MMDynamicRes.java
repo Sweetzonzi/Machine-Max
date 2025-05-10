@@ -7,9 +7,9 @@ import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
-import io.github.tt432.machinemax.datagen.OtherLanguage;
 import io.github.tt432.machinemax.external.parse.OBoneParse;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.language.LanguageManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -40,8 +40,6 @@ public class MMDynamicRes {
     public static HashMap<ResourceLocation, PartType> PART_TYPES = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static HashMap<ResourceLocation, OModel> O_MODELS = new HashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static HashMap<ResourceLocation, VehicleData> BLUEPRINTS = new HashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
-    public static HashMap<String, List<HashMap<String, String>>> LANGUAGES = new HashMap<>(); // 读取为所有外部包读到的自定义翻译器 key是语言分类y， value是暂存的各个翻译文件的列表
-    public static HashMap<String, OtherLanguage.CustomLanguageGetter> CUSTOM_LANGUAGE_PROVIDERS = new HashMap<>();
 
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
@@ -61,7 +59,6 @@ public class MMDynamicRes {
         PART_TYPES.clear();
         OBoneParse.clear();
         BLUEPRINTS.clear();
-        LANGUAGES.clear();
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
@@ -74,6 +71,15 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("blueprint")));
             packUp(packName, Exist(root.resolve("lang")));
         }
+        if (Minecraft.getInstance().getLanguageManager() instanceof LanguageManager langManager) {
+            System.out.printf("当前语言系统编号 CODE: %s \n", langManager.getSelected());
+            System.out.println("下面是所有支持的语言系统编号: ");
+            langManager.getLanguages().forEach((code, info)-> {
+                System.out.printf("CODE: %s INFO: %s \n", code, info);
+            });
+
+        }
+
     }
 
     public static class DataPackReloader extends SimplePreparableReloadListener<Void> {
@@ -144,14 +150,7 @@ public class MMDynamicRes {
                     }
 
                     case "lang" -> {
-                        Gson gson = new Gson();
-                        // 定义目标类型：HashMap<String, String>
-                        // 解析JSON到HashMap
-                        HashMap<String, String> translation = gson.fromJson(json, new TypeToken<HashMap<String, String>>(){}.getType());
-                        if ( ! LANGUAGES.containsKey(fileRealName)) {
-                            LANGUAGES.put(fileRealName, new ArrayList<>()); //不存在该语言的翻译则新建列表
-                        }
-                        LANGUAGES.get(fileRealName).add(translation);
+                        location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //语言翻译系统的标准搜索路径
                     }
                 }
 
