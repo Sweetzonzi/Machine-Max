@@ -10,10 +10,12 @@ import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.repository.*;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.ClientHooks;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
@@ -24,12 +26,28 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public class DynamicInject {
+
+    @SubscribeEvent
+    public static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) { //防止 F3+T不再识别外部包
+        // 注册自定义重载监听器
+        event.registerReloadListener((ResourceManagerReloadListener) manager -> {
+            MMDynamicRes.EXTERNAL_RESOURCE.forEach((packName, resourcePack) -> {
+                PackLocationInfo location = createLocationInfo(String.valueOf(packName));
+                Pack.ResourcesSupplier supplier = createSupplier(resourcePack);
+                // 重新添加自定义资源包
+                Minecraft.getInstance().getResourcePackRepository().addPackFinder(buildSource(location, supplier));
+            });
+
+        });
+    }
+
     @SubscribeEvent
     public static void addPackFinders(AddPackFindersEvent event) {
         switch (event.getPackType()) {
