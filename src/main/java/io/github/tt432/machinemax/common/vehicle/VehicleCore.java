@@ -1,11 +1,13 @@
 package io.github.tt432.machinemax.common.vehicle;
 
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.tt432.machinemax.MachineMax;
@@ -44,7 +46,8 @@ public class VehicleCore {
     public final List<ConnectionData> connectionList = new java.util.ArrayList<>();
     public String name = "Vehicle";//载具名称
     public final Level level;//载具所在世界
-    public final UUID uuid;//载具UUID
+    @Setter
+    public UUID uuid;//载具UUID
     @Setter
     private ChunkPos oldChunkPos = new ChunkPos(0, 0);
     public int tickCount = 0;
@@ -286,14 +289,14 @@ public class VehicleCore {
                 this.activate();//重新激活，进行部件移除后的物理计算
                 this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
             }
-        } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.name, part.name);
+        } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, part.name);
     }
 
     public void removePart(UUID uuid) {
         if (partMap.containsKey(uuid)) {
             Part part = partMap.get(uuid);
             this.removePart(part);
-        } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.name, uuid.toString());
+        } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, uuid.toString());
     }
 
     /**
@@ -418,6 +421,25 @@ public class VehicleCore {
                 Set<Part> spiltPartNet = partNet.adjacentNodes(part);
                 visitedParts.addAll(spiltPartNet);
             }
+        }
+    }
+
+    public void setPos(Vec3 pos) {
+        Vector3f delta = PhysicsHelperKt.toBVector3f(pos.subtract(this.position));
+        if (!inLevel) moveRelatively(delta);
+        else level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            moveRelatively(delta);
+            return null;
+        });
+        this.position = pos;
+    }
+
+    private void moveRelatively(Vector3f delta) {
+        Transform transform = new Transform();
+        for (Part part : partMap.values()) {
+            part.rootSubPart.body.getTransform(transform);
+            transform.setTranslation(transform.getTranslation().add(delta));
+            part.setTransform(transform);
         }
     }
 

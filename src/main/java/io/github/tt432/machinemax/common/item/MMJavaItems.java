@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static io.github.tt432.machinemax.MachineMax.LOGGER;
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
@@ -42,7 +43,10 @@ public class MMJavaItems {
                     @Override
                     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
                         if(!level.isClientSide()){
-                            VehicleManager.addVehicle(new VehicleCore(level, vehicleData));
+                            VehicleCore vehicle = new VehicleCore(level, vehicleData);
+                            vehicle.setUuid(UUID.randomUUID());
+                            vehicle.setPos(player.position().add(0, 1, 0));
+                            VehicleManager.addVehicle(vehicle);
                         }
                         return super.use(level, player, usedHand);
                     }

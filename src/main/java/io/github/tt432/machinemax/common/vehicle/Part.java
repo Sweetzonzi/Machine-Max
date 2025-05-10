@@ -378,18 +378,25 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     public void setTransform(Transform transform) {
-        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            Transform rootTransform = rootSubPart.body.getTransform(null).invert();
-            rootSubPart.body.setPhysicsTransform(transform);
-            for (SubPart subPart : subParts.values()) {
-                if (subPart == rootSubPart) continue;
-                Transform subPartTransform = subPart.body.getTransform(null);
-                MyMath.combine(subPartTransform, rootTransform, subPartTransform);
-                MyMath.combine(subPartTransform, transform, subPartTransform);
-                subPart.body.setPhysicsTransform(subPartTransform);
-            }
+        if (vehicle == null || !vehicle.inLevel) {
+            setTransformRaw(transform);
+        } else level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            setTransformRaw(transform);
             return null;
         });
+    }
+
+    private void setTransformRaw(Transform transform){
+        Transform rootTransform = rootSubPart.body.getTransform(null).invert();
+        rootSubPart.body.setPhysicsTransform(transform);
+        Transform subPartTransform = new Transform();
+        for (SubPart subPart : subParts.values()) {
+            if (subPart == rootSubPart) continue;
+            subPart.body.getTransform(subPartTransform);
+            MyMath.combine(subPartTransform, rootTransform, subPartTransform);
+            MyMath.combine(subPartTransform, transform, subPartTransform);
+            subPart.body.setPhysicsTransform(subPartTransform);
+        }
     }
 
     @Override

@@ -21,7 +21,7 @@ public record SubPartSyncPayload(
         HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> syncData//部件UUID -> 零件名称 -> 位姿数据
 ) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<SubPartSyncPayload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "phys_sync_payload"));
-    public static final StreamCodec<FriendlyByteBuf, SubPartSyncPayload> STREAM_CODEC = new StreamCodec<FriendlyByteBuf, SubPartSyncPayload>() {
+    public static final StreamCodec<FriendlyByteBuf, SubPartSyncPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull SubPartSyncPayload decode(FriendlyByteBuf buffer) {
             UUID vehicleUUID = buffer.readUUID();
