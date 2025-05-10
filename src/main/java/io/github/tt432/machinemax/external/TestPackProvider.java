@@ -367,11 +367,18 @@ public class TestPackProvider {
                 """;
     }
 
-    public static String zh_cn(String packName, String blueprintFileName) {
+    public static String zh_cn() {
         return """
                 {
-                  "item.%s.%s.blueprint.%s": "测试蓝图"
+                  "item.machine_max.testpack.blueprint.test_blue_print.json": "测试蓝图"
                 }
-                """.formatted(MOD_ID, packName, blueprintFileName);
+                """;
+    }
+    public static String en_us() {
+        return """
+                {
+                  "item.machine_max.testpack.blueprint.test_blue_print.json": "test-blueprint"
+                }
+                """;
     }
 }

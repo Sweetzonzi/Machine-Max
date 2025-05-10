@@ -108,8 +108,9 @@ public class MMDynamicRes {
         //设置默认测试包的路径、名字、内容
         createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
         createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type(), true);
-        Path bluprintFile = createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
-        createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(testpack.getFileName().toString(), bluprintFile.getFileName().toString()), true);
+        createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
+        createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(), true);
+        createDefaultFile(lang.resolve("en_us.json"), TestPackProvider.en_us(), true);
     }
 
 
