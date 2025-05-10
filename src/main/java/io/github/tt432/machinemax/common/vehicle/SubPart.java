@@ -11,7 +11,6 @@ import com.jme3.bullet.collision.ManifoldPoints;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
-import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -56,6 +55,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         this.attr = attr;
         this.collisionShape = attr.getCollisionShape(part.variant, part.type);
         this.body = new PhysicsRigidBody(name, this, this.collisionShape, attr.mass);
+        this.body.setFriction(1.0f);
         this.body.setAnisotropicFriction(PhysicsHelperKt.toBVector3f(attr.friction), AfMode.basic);
         this.body.setRollingFriction(attr.rollingFriction);
         this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_PART);
@@ -121,20 +121,26 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public void onProcessed(PhysicsCollisionObject pcoA, @NotNull PhysicsCollisionObject pcoB, long manifoldPointId) {
         PhysicsRigidBody other;
         int hitBoxIndex, otherHitBoxIndex;
-        Vector3f contactPoint = new Vector3f(), otherContactPoint = new Vector3f();
+        Vector3f worldContactPoint = new Vector3f(), otherWorldContactPoint = new Vector3f();
+        Vector3f localContactPoint = new Vector3f(), otherLocalContactPoint = new Vector3f();
         long childShapeId, otherChildShapeId;
         if (pcoA.getOwner() == this) {
             other = (PhysicsRigidBody) pcoB;
             hitBoxIndex = ManifoldPoints.getIndex0(manifoldPointId);
             otherHitBoxIndex = ManifoldPoints.getIndex1(manifoldPointId);
-            ManifoldPoints.getPositionWorldOnA(manifoldPointId, contactPoint);
-            ManifoldPoints.getPositionWorldOnB(manifoldPointId, otherContactPoint);
+            ManifoldPoints.getPositionWorldOnA(manifoldPointId, worldContactPoint);
+            ManifoldPoints.getPositionWorldOnB(manifoldPointId, otherWorldContactPoint);
+            ManifoldPoints.getLocalPointA(manifoldPointId, localContactPoint);
+            ManifoldPoints.getLocalPointB(manifoldPointId, otherLocalContactPoint);
+
         } else {
             other = (PhysicsRigidBody) pcoA;
             hitBoxIndex = ManifoldPoints.getIndex1(manifoldPointId);
             otherHitBoxIndex = ManifoldPoints.getIndex0(manifoldPointId);
-            ManifoldPoints.getPositionWorldOnB(manifoldPointId, contactPoint);
-            ManifoldPoints.getPositionWorldOnA(manifoldPointId, otherContactPoint);
+            ManifoldPoints.getPositionWorldOnB(manifoldPointId, worldContactPoint);
+            ManifoldPoints.getPositionWorldOnA(manifoldPointId, otherWorldContactPoint);
+            ManifoldPoints.getLocalPointB(manifoldPointId, localContactPoint);
+            ManifoldPoints.getLocalPointA(manifoldPointId, otherLocalContactPoint);
         }
         //获取世界坐标下的碰撞点法线
         Vector3f normal = new Vector3f();
@@ -159,12 +165,12 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             //调用子系统碰撞回调
             for (AbstractSubsystem subsystem : subsystems) {
                 subsystem.onCollideWithBlock(
-                        this.body, other, blockPos, blockState, relVel, normal, contactPoint, impactAngle, childShapeId, manifoldPointId
+                        this.body, other, blockPos, blockState, relVel, normal, worldContactPoint, impactAngle, childShapeId, manifoldPointId
                 );
                 if (other.userIndex() <= 0) return;//所有子系统处理完碰撞后，忽略可能被手动设置为过期的方块的碰撞
             }
             //TODO:根据碰撞速度、碰撞角、方块硬度和爆炸抗性，摧毁碰撞的方块，同时对自身造成伤害
-            if (relVel.length() > 3f && impactAngle > 135f && blockState.getDestroySpeed(part.level, other.blockPos) > 0) {
+            if (relVel.length() > 5f && impactAngle > 135f && blockState.getDestroySpeed(part.level, other.blockPos) > 0) {
                 other.setContactResponse(false);
                 other.setUserIndex(0);
                 if (!part.level.isClientSide) {
@@ -175,7 +181,12 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             //摩擦力修正
             float friction1 = pcoA.getFriction();
             float friction2 = pcoB.getFriction();
-            float slip = (float) 1 - ((other.userIndex2()) * (1 - attr.slipAdaptation) / 100);//湿滑带来的修正系数
+            Vector3f frictionVel = MMMath.relPointWorldVel(localContactPoint, this.body).subtract(relVel);
+            float slip = (float) 1 - ((other.userIndex2()) * (1 - attr.slipAdaptation) / 100);//潮湿与打滑带来的修正系数
+            if (frictionVel.length() > 0.1f) {//打滑时
+                slip = (float) (Math.pow(slip, 1f + 5 * frictionVel.length()) * 0.9f);//根据打滑情况额外降低摩擦系数
+                //TODO:漂移音效和粒子特效
+            }
             ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, friction1 * friction2 * slip));
         } else if (other.getCollisionGroup() == VehicleManager.COLLISION_GROUP_PART) {
             if (other.getOwner() instanceof SubPart otherSubPart) {//与零件碰撞时
@@ -183,14 +194,14 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 //调用子系统碰撞回调
                 for (AbstractSubsystem subsystem : subsystems) {
                     subsystem.onCollideWithPart(
-                            this.body, other, relVel, normal, contactPoint, impactAngle, childShapeId, otherChildShapeId, manifoldPointId
+                            this.body, other, relVel, normal, worldContactPoint, impactAngle, childShapeId, otherChildShapeId, manifoldPointId
                     );
                 }
             } else if (other.getOwner() instanceof Entity entity) {//与实体碰撞时
                 //调用子系统碰撞回调
                 for (AbstractSubsystem subsystem : subsystems) {
                     subsystem.onCollideWithEntity(
-                            this.body, other, relVel, normal, contactPoint, impactAngle, childShapeId, manifoldPointId
+                            this.body, other, relVel, normal, worldContactPoint, impactAngle, childShapeId, manifoldPointId
                     );
                 }
             }
