@@ -1,5 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.TransmissionSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.ISignalReceiver;
@@ -53,7 +54,8 @@ public class TransmissionSubsystem extends AbstractSubsystem implements ISignalR
                 }
             }
         }
-        averageSpeed /= count;//计算转速平均值
+        if(count > 0) averageSpeed /= count;//计算转速平均值
+        else return;
         for (Map.Entry<String, Float> target : attr.powerOutputs.entrySet()) {
             String targetName = target.getKey();
             float weight = target.getValue();

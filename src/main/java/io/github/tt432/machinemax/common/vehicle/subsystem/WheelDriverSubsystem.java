@@ -75,11 +75,17 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
             }
         }
         if (i > 0) speed /= i;
+        if (Float.isNaN(totalPower) || Float.isNaN(speed)){
+            totalPower = 0f;
+            speed = 0f;
+            MachineMax.LOGGER.error("{}收到机械功率信号不正确，{}", this.getName(), powers);
+        }
         if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
             Signal<?> controlSignal = getControlInput();
             RotationMotor rollingMotor = joint.getRotationMotor(0);
             RotationMotor steeringMotor = joint.getRotationMotor(1);
             Vector3f relativeAngularVel = getRelativeAngularVel();
+
             if (this.isActive() && controlSignal instanceof WheelControlSignal wheelControlSignal) {
                 //处理轮胎旋转 Handle rolling
                 rollingMotor.setMotorEnabled(true);
@@ -157,9 +163,6 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
         Vector3f angularVelA = connector.joint.getBodyA().getAngularVelocity(null);
         Vector3f angularVelB = connector.joint.getBodyB().getAngularVelocity(null);
         Vector3f relativeVelInWorld = angularVelB.subtract(angularVelA);
-        if (!Vector3f.isValidVector(relativeVelInWorld)) {
-            return new Vector3f();
-        }
         Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
         MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
         return result;

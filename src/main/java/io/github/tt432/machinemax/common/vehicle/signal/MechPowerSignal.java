@@ -20,4 +20,11 @@ public class MechPowerSignal extends Signal<Pair<Float, Float>> implements IPowe
         return getValue().getSecond();
     }
 
+    public String toString() {
+        return "MechPowerSignal{" +
+                "power=" + getPower() +
+                ", speed=" + getSpeed() +
+                '}';
+    }
+
 }
