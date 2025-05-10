@@ -119,15 +119,17 @@ public class VehicleCore {
                 }
             }
             //保持激活与控制量更新
-            Vec3 oldPos = position;
             Vec3 newPos = new Vec3(0, 0, 0);
+            Vec3 newVel = new Vec3(0, 0, 0);
             for (Part part : partMap.values()) {
-                Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.tickTransform.getTranslation());
+                Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null));
+                Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.body.getLinearVelocity(null));
                 part.onTick();
                 newPos = newPos.add(partPos);//计算载具形心位置
+                newVel = newVel.add(partVel);//计算载具形心速度
             }
             this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
-            this.velocity = position.subtract(oldPos).scale(20);//更新载具形心速度
+            this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
             if (!level.isClientSide && syncCountDown <= 0) {
                 syncSubParts(null);//同步零件位置姿态速度
                 syncCountDown = Math.max((int) (40 * Math.pow(2, -0.1 * velocity.length())), 2);//速度越大，同步冷却时间越短
@@ -160,10 +162,6 @@ public class VehicleCore {
     public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> subPartSyncData) {
         if (!level.isClientSide()) {
             HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> subPartSyncDataToSend = new HashMap<>(1);
-            Vector3f pos = new Vector3f();
-            Quaternion rot = new Quaternion();
-            Vector3f vel = new Vector3f();
-            Vector3f angVel = new Vector3f();
             for (Map.Entry<UUID, Part> entry : partMap.entrySet()) {
                 HashMap<String, Pair<PosRotVelVel, Boolean>> subPartSyncDataMap = new HashMap<>(1);
                 Part part = entry.getValue();
@@ -172,10 +170,10 @@ public class VehicleCore {
                     PhysicsRigidBody body = subPart.body;
                     boolean isSleep = !body.isActive();
                     PosRotVelVel data = new PosRotVelVel(
-                            body.getPhysicsLocation(pos),
-                            SparkMathKt.toQuaternionf(body.getPhysicsRotation(rot)),
-                            body.getLinearVelocity(vel),
-                            body.getAngularVelocity(angVel));
+                            body.getPhysicsLocation(null),
+                            SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
+                            body.getLinearVelocity(null),
+                            body.getAngularVelocity(null));
                     subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, isSleep));
                 }
                 subPartSyncDataToSend.put(entry.getKey(), subPartSyncDataMap);
