@@ -26,10 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 
 import static io.github.tt432.machinemax.MachineMax.LOGGER;
@@ -70,6 +67,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("blueprint")));
             packUp(packName, Exist(root.resolve("lang")));
+            packUp(packName, Exist(root.resolve("texture")));
         }
         if (Minecraft.getInstance().getLanguageManager() instanceof LanguageManager langManager) {
             System.out.printf("当前语言系统编号 CODE: %s \n", langManager.getSelected());
@@ -105,6 +103,7 @@ public class MMDynamicRes {
         Path script = Exist(testpack.resolve("script"));
         Path blueprint = Exist(testpack.resolve("blueprint"));
         Path lang = Exist(testpack.resolve("lang"));
+        Path texture = Exist(testpack.resolve("texture"));
         //设置默认测试包的路径、名字、内容
         createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
         createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type(), true);
@@ -112,6 +111,8 @@ public class MMDynamicRes {
         //自定义翻译
         createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(), true);
         createDefaultFile(lang.resolve("en_us.json"), TestPackProvider.en_us(), true);
+        //自带测试材质
+        createDefaultFileByBase64(texture.resolve("test_cube_vpack.png"), TestPackProvider.test_cube_vpack_png_base64(), true);
     }
 
 
@@ -200,6 +201,28 @@ public class MMDynamicRes {
         return targetPath;
     }
 
+    /**
+     * 保证文件存在，否则通过base64创建这个文件
+     *
+     * @return
+     */
+    public static Path createDefaultFileByBase64(Path targetPath, String base64, boolean overwrite) {
+        try {
+            boolean canOverwrite = overwrite && Files.exists(targetPath);
+            byte[] fileBytes = Base64.getDecoder().decode(base64);
+            Files.write(
+                    targetPath,
+                    fileBytes,
+                    canOverwrite ? StandardOpenOption.TRUNCATE_EXISTING : StandardOpenOption.CREATE_NEW,
+                    StandardOpenOption.WRITE
+            );
+            System.out.printf("文件%s成功: %s%n", canOverwrite ? "覆写" : "创建", targetPath);
+        } catch (IOException e) {
+            LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
+        }
+        return targetPath;
+    }
+
 
 
     /**获取一个路径下所有的子目录，第二个是过滤器（比如Files::isDirectory 是拿到所有子文件夹）*/
@@ -231,7 +254,7 @@ public class MMDynamicRes {
 
 
     /**将文件名称的.xxx后缀部分去掉*/
-    private static String getRealName(String str) {
+    public static String getRealName(String str) {
         return str.contains(".") ? str.substring(0, str.lastIndexOf('.')) : str;
     }
 }

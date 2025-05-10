@@ -6,6 +6,7 @@ import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
 import io.github.tt432.machinemax.external.MMDynamicRes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -14,6 +15,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 
@@ -43,6 +45,13 @@ public class MMJavaItems {
                             VehicleManager.addVehicle(new VehicleCore(level, vehicleData));
                         }
                         return super.use(level, player, usedHand);
+                    }
+
+                    @Override
+                    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+                        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+                        //物品栏鼠标自定义信息 （正在筹备）
+//                        tooltipComponents.add(Component.translatable("tooltip.%s.%s.details".formatted(MOD_ID, MMDynamicRes.getRealName(location.getPath()).replace("/", ".")))); // 支持本地化
                     }
                 }
         );

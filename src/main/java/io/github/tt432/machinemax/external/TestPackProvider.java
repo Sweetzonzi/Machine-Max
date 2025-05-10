@@ -60,7 +60,7 @@ public class TestPackProvider {
                     "default": "machine_max:testpack/part/test_cube_vpack.geo.json"//若无变体，可缩减，即"variants": "machine_max:part/test_cube.geo"
                   },
                   "textures": [//部件贴图列表，不同变体模型必须共享一张贴图，否则请创建新的部件而非部件变体
-                    "machine_max:textures/part/test_cube.png"
+                    "machine_max:testpack/texture/test_cube_vpack.png"
                   ],
                   "basic_durability": 10.0,//部件基础生命值
                   "sub_parts": {//零件(子部件)列表
@@ -365,6 +365,22 @@ public class TestPackProvider {
                   ]
                 }
                 """;
+    }
+
+    public static String test_cube_vpack_png_base64() {
+        return "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QA" +
+                "AAltJREFUeJztmj1Ow0AQhd9GLqi4AuIKXAVER4EIHWWEUCiRohS5QYIo6BBn4QpR6KiQq" +
+                "EITUySr2Ov17uyPk80yX0NiM7bf25nxLEJMgRIB3J5NQ8KB88+w+McnERJeAEDfM3gmP5x" +
+                "6XmE+234eDtxiRxO/eyr0olwllOHATdBo4m5YC0XtW7mpBmHIqrJsPV++024qLjQHpQk2YR" +
+                "HFo2FAJLQCNxhNspkQWTy0JSDENhM8MImnnG8thw7Eo7UHBJoQjGpCR+JhLAFpgqkfaL" +
+                "D1AWsGSKomdCQe1reAYyZQxFEb5a6wN0HHTLCZQDagmvYdlgBtDth1T1AFu84JDtAHIYI" +
+                "JttUlrX7bandkQvQ5IKjGbalOHZYcqBtgq3PLeXKH10EVFtmENPYCroIilkOB6q7Ol3nwFTprcj" +
+                "aK38Bnn/W/g+L7H2H7+VAKALi68Qt+fV7/vMalV/wL3vxuHJE0esAeqb0Fjol/HfuBPmt75QlW" +
+                "YmGMpfzOLtHOAW0C4WASNmIBJCVYpVECJvGU84cG9wD1ACXFKVlQrfXU6r4KZ4B6IEa" +
+                "Nqyu+EotksyBqBkihrTdL0ISGAbYeQOkROpGpCZdo5wCXd/2hUzMgRv2bVjrFLOC3ACq7Ol9" +
+                "S2NX5Utx9HQVe4v6gZ+N1D3jwNGG8jPs0e8DcA8bLLESa+PdNkA3Y9wPsGzag9o3S8DJris" +
+                "0MMAnMTDwaBsh5QCdUHvOdGRKlmQEmgZmJh7EJVrMgw9SX6A3QrXSGqw9jBlQFZyoe" +
+                "1v8QyVi4ZG1AxjXOMAzDMAzDMAzDMAyj8gcpH7hLudrjwgAAAABJRU5ErkJggg==";
     }
 
     public static String zh_cn() {

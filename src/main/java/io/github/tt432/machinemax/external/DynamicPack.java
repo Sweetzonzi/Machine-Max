@@ -14,12 +14,14 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.Base64;
 import java.util.Set;
 
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 
 public class DynamicPack implements PackResources {
     private String content = "";
+    private String base64 = "";
     private final String packRoot;
     private final ResourceLocation location;
     private final File file;
@@ -30,6 +32,7 @@ public class DynamicPack implements PackResources {
         this.file = file;
         this.inputStream = MMDynamicRes.fileStream(file);
         loadContent();
+        loadBase64();
     }
 
     public void loadContent() {
@@ -37,6 +40,14 @@ public class DynamicPack implements PackResources {
             content = new String(Files.readAllBytes(getFile().toPath()));
         } catch (Exception ignored) {}
     }
+
+    public void loadBase64() {
+        try {
+            byte[] imageData = Files.readAllBytes(getFile().toPath());
+            base64 = Base64.getEncoder().encodeToString(imageData);
+        } catch (Exception ignored) {}
+    }
+
 
     @Nullable
     @Override
@@ -60,6 +71,11 @@ public class DynamicPack implements PackResources {
     public String getContent() {
         return content;
     }
+
+    public String getBase64() {
+        return base64;
+    }
+
     public String getContent(boolean keepComments) {
         if (!keepComments) return CommentRemover.removeComments(content);
         return content;
