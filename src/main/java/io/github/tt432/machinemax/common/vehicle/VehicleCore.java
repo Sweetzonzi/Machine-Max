@@ -82,11 +82,11 @@ public class VehicleCore {
         this.uuid = UUID.fromString(savedData.uuid);
         this.hp = savedData.hp;
         this.position = savedData.pos;
-        //重建部件
-        for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level));
-        //重建连接关系
-        for (ConnectionData connectionData : savedData.connections) {
-            try {
+        try {
+            //重建部件
+            for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level));
+            //重建连接关系
+            for (ConnectionData connectionData : savedData.connections) {
                 Part partA = partMap.get(UUID.fromString(connectionData.PartUuidS));
                 Part partB = partMap.get(UUID.fromString(connectionData.PartUuidA));
                 if (partA != null && partB != null) {
@@ -95,9 +95,10 @@ public class VehicleCore {
                             partMap.get(UUID.fromString(connectionData.PartUuidA)).subParts.get(connectionData.SubPartNameA).connectors.get(connectionData.AttachPointConnectorName),
                             null);
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
-            } catch (IllegalArgumentException e) {
-                MachineMax.LOGGER.error("载具{}中存在无效的连接数据，已跳过无效数据。", this.name);
             }
+        } catch (Exception e) {
+            onRemoveFromLevel();//移除数据出错的载具
+            throw e;
         }
     }
 
@@ -130,7 +131,7 @@ public class VehicleCore {
             this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
             if (!level.isClientSide && syncCountDown <= 0) {
                 syncSubParts(null);//同步零件位置姿态速度
-                syncCountDown = Math.max((int) (200 * Math.pow(2, -velocity.length())), 1);//速度越大，同步冷却时间越短
+                syncCountDown = Math.max((int) (40 * Math.pow(2, -0.1 * velocity.length())), 2);//速度越大，同步冷却时间越短
             }
             subSystemController.tick();
         } else if (this.velocity.length() < 30) {
@@ -426,21 +427,20 @@ public class VehicleCore {
 
     public void setPos(Vec3 pos) {
         Vector3f delta = PhysicsHelperKt.toBVector3f(pos.subtract(this.position));
-        if (!inLevel) moveRelatively(delta);
-        else level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            moveRelatively(delta);
+        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            Transform transform = new Transform();
+            for (Part part : partMap.values()) {
+                part.rootSubPart.body.getTransform(transform);
+                transform.setTranslation(transform.getTranslation().add(delta));
+                part.setTransform(transform);
+            }
             return null;
         });
         this.position = pos;
     }
 
     private void moveRelatively(Vector3f delta) {
-        Transform transform = new Transform();
-        for (Part part : partMap.values()) {
-            part.rootSubPart.body.getTransform(transform);
-            transform.setTranslation(transform.getTranslation().add(delta));
-            part.setTransform(transform);
-        }
+
     }
 
     public void onAddToLevel() {

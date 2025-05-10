@@ -157,6 +157,9 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
         Vector3f angularVelA = connector.joint.getBodyA().getAngularVelocity(null);
         Vector3f angularVelB = connector.joint.getBodyB().getAngularVelocity(null);
         Vector3f relativeVelInWorld = angularVelB.subtract(angularVelA);
+        if (!Vector3f.isValidVector(relativeVelInWorld)) {
+            return new Vector3f();
+        }
         Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
         MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
         return result;

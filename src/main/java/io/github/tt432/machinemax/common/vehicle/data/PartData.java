@@ -1,6 +1,7 @@
 package io.github.tt432.machinemax.common.vehicle.data;
 
 import cn.solarmoon.spark_core.physics.SparkMathKt;
+import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.tt432.machinemax.common.vehicle.Part;
@@ -11,6 +12,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -84,6 +86,24 @@ public class PartData {
         this.uuid = uuid;
         this.durability = durability;
         this.subPartTransforms = subPartTransforms;
+        //校验数据
+        for (Map.Entry<String, PosRotVelVel> entry : subPartTransforms.entrySet()) {
+            String subPartName = entry.getKey();
+            PosRotVelVel transform = entry.getValue();
+            Vector3f position = transform.position();
+            Quaternionf rotation = transform.rotation();
+            Vector3f linearVel = transform.linearVel();
+            Vector3f angularVel = transform.angularVel();
+            if (!Vector3f.isValidVector(position) ||
+                    !rotation.isFinite() ||
+                    !Vector3f.isValidVector(linearVel) ||
+                    !Vector3f.isValidVector(angularVel) ||
+                    position.length() > 3e8 ||
+                    linearVel.length() > 4e8 ||
+                    angularVel.length() > 4e8) {
+                throw new IllegalArgumentException("Invalid transform data for sub-part " + subPartName + " " + transform);
+            }
+        }
     }
 
     /**

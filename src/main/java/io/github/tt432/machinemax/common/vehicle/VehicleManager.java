@@ -144,13 +144,28 @@ public class VehicleManager {
             clientAllVehicles.clear();
         }
         Set<VehicleData> savedVehicles = level.getData(MMAttachments.getLEVEL_VEHICLES());
-        for (VehicleData savedVehicleData : savedVehicles) {
-            VehicleCore vehicle = new VehicleCore(level, savedVehicleData);
-            vehicle.loadFromSavedData = true;
-            vehicle.setKinematic(true);
-            addVehicle(vehicle);
+        if (!savedVehicles.isEmpty()) {
+            MachineMax.LOGGER.info("正在从维度{}加载{}个载具...", level.dimension().location(), savedVehicles.size());
+            int i = 0;
+            try{
+                for (VehicleData savedVehicleData : savedVehicles) {
+                    try {
+                        VehicleCore vehicle = new VehicleCore(level, savedVehicleData);
+                        vehicle.loadFromSavedData = true;
+                        vehicle.setKinematic(true);
+                        addVehicle(vehicle);
+                        i++;
+                    } catch (Exception e) {
+                        savedVehicles.remove(savedVehicleData);
+                        MachineMax.LOGGER.error("载具加载失败，出错载具数据：{}", savedVehicleData, e);
+                    }
+                }
+            } catch (Exception e){
+                level.setData(MMAttachments.getLEVEL_VEHICLES().get(), savedVehicles);
+                MachineMax.LOGGER.error("有载具未能成功加载，已清除出错载具");
+            }
+            MachineMax.LOGGER.info("已成功从维度{}加载{}个载具", level.dimension().location(), i);
         }
-        MachineMax.LOGGER.info("已从维度{}加载{}个载具", level.dimension().location(), savedVehicles.size());
     }
 
     @SubscribeEvent

@@ -10,6 +10,10 @@ public class WheelControlSignal extends Signal<Pair<Float, Float>> {
         super(value);
     }
 
+    public WheelControlSignal(float forwardControl, float steeringControl) {
+        super(Pair.of(forwardControl, steeringControl));
+    }
+
     public Float getForwardControl() {
         return value.getFirst();
     }

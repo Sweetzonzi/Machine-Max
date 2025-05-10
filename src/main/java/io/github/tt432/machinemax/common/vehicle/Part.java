@@ -183,7 +183,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 subPart.body.setLinearVelocity(entry.getValue().linearVel());
                 subPart.body.setAngularVelocity(entry.getValue().angularVel());
             } else
-                MachineMax.LOGGER.error("从数据中重建部件时发生了错误，部件{}中未能找到子部件{}。", type.name, entry.getKey());
+                throw new NullPointerException("部件" + name + "的子部件" + entry.getKey() + "不存在，请检查数据。");
         }
     }
 

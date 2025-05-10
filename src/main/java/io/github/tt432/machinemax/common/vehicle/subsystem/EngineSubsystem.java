@@ -8,6 +8,7 @@ import io.github.tt432.machinemax.common.vehicle.signal.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class EngineSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
     public final EngineSubsystemAttr attr;
@@ -121,10 +122,11 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
         double powerControlInput = -1;
         for (String inputKey : attr.throttleInputKeys) {
             Signals signals = getSignals(inputKey);
-            if (signals.getFirst() instanceof Float) {
+            Object signal = signals.getFirst();
+            if (signal instanceof Float) {
                 powerControlInput = (float) signals.getFirst();
                 break;
-            } else if (signals.getFirst() instanceof MoveInputSignal) {
+            } else if (signal instanceof MoveInputSignal) {
                 powerControlInput = Math.abs(((MoveInputSignal) signals.getFirst()).getMoveInput()[2] / 100f);
                 break;
             }

@@ -188,8 +188,9 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
     }
 
     private void distributeControlSignals() {
-        if (moveInput != null && moveInputConflict != null) {//前进方向有输入信号 (可为0) Have forward input signal (can be 0)
+        if (this.moveInput != null && moveInputConflict != null) {//前进方向有输入信号 (可为0) Have forward input signal (can be 0)
             float avgEngineSpeed = 0f;
+            byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
                 for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
                     //TODO:阿克曼转向
@@ -230,7 +231,7 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
                 avgEngineSpeed /= engineCount;
                 if (Math.abs(speed) < 0.5f) {//速度小于一定程度时，刹车 Brake if the speed is too low
                     for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
-                        sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(Pair.of(0f, (float) moveInput[4])));
+                        sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(0f, moveInput[4]));
                     }
                     for (ISignalReceiver gearbox : gearboxes.values()) {
                         if (overrideCountDown.get(gearbox) <= 0) {
@@ -253,6 +254,11 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
         } else {//无输入信号 No input signal
             for (Map.Entry<String, ISignalReceiver> entry : engines.entrySet()) {
                 sendCallbackToAllListeners(entry.getKey(), new EmptySignal());
+            }
+            if (Math.abs(speed) < 0.5f) {//速度小于一定程度时，刹车 Brake if the speed is too low
+                for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
+                    sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(0f, 0f));
+                }
             }
         }
     }
