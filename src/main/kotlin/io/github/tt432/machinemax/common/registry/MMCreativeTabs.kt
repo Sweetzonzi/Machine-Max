@@ -28,8 +28,26 @@ object MMCreativeTabs {
                 output.accept(MMItems.CROSSBAR_ITEM.get())
                 output.accept(MMItems.SPRAY_CAN_ITEM.get())
                 output.accept(MMItems.VEHICLE_RECORDER_ITEM.get())
+            }
+        )
+        .build()
+
+    @JvmStatic
+    val MACHINE_MAX_BLUEPRINT_TAB = MachineMax.REGISTER.creativeTab()
+        .id("machine_max_blueprint_tab")
+        .bound(CreativeModeTab.builder()
+            .title(Component.translatable("machine_max.tab.blueprint"))
+            // 动态设置图标：如果蓝图列表为空，则使用 MACHINE_MAX_TAB 的图标
+            .icon {
+                if (MMJavaItems.BLUEPRINT_EGGS.isEmpty()) { //判断蓝图注册表是否为空
+                    ItemStack(MMItems.PART_ITEM) // 使用主物品栏的图标
+                } else {
+                    ItemStack(MMJavaItems.BLUEPRINT_EGGS[0]) // 否则使用第一个蓝图
+                }
+            }
+            .displayItems { params, output ->
                 for (blueprintEgg in MMJavaItems.BLUEPRINT_EGGS) {
-                    output.accept(blueprintEgg.get());
+                    output.accept(blueprintEgg.get())
                 }
             }
         )
@@ -38,7 +56,7 @@ object MMCreativeTabs {
     @JvmStatic
     @SubscribeEvent
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
-        if(event.tab == MACHINE_MAX_TAB.get()) {
+        if(event.tab == MACHINE_MAX_TAB.get() || event.tab == MACHINE_MAX_BLUEPRINT_TAB) {
             MachineMax.LOGGER.info("Putting parts into creative tab")
             val list = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
             for (partType in MMRegistries.getRegistryAccess(Minecraft.getInstance().level).registry(PartType.PART_REGISTRY_KEY).get()) {
@@ -48,7 +66,7 @@ object MMCreativeTabs {
                 //TODO:根据零件最大生命值调整物品耐久上限
                 list.add(itemStack)
             }
-            val list2 = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
+            val list2 = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
             MMDynamicRes.PART_TYPES.forEach { loc, partType ->
                 val itemStack = ItemStack(MMItems.PART_ITEM)
                 itemStack.set(MMDataComponents.PART_TYPE, loc)

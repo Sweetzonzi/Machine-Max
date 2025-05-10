@@ -109,6 +109,7 @@ public class MMDynamicRes {
         createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
         createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type(), true);
         createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
+        //自定义翻译
         createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(), true);
         createDefaultFile(lang.resolve("en_us.json"), TestPackProvider.en_us(), true);
     }

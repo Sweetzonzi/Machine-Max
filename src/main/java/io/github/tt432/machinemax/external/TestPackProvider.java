@@ -370,14 +370,16 @@ public class TestPackProvider {
     public static String zh_cn() {
         return """
                 {
-                  "item.machine_max.testpack.blueprint.test_blue_print.json": "测试蓝图"
+                  "item.machine_max.testpack.blueprint.test_blue_print.json": "测试蓝图",
+                  "machine_max.tab.blueprint": "自定义蓝图"
                 }
                 """;
     }
     public static String en_us() {
         return """
                 {
-                  "item.machine_max.testpack.blueprint.test_blue_print.json": "test-blueprint"
+                  "item.machine_max.testpack.blueprint.test_blue_print.json": "Test BluePrint",
+                  "machine_max.tab.blueprint": "Custom BluePrints"
                 }
                 """;
     }
