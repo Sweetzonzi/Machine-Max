@@ -23,8 +23,7 @@ import java.util.Map;
 @Getter
 public class VehicleData {
     public final String name;
-    public final List<String> tooltip;
-    public final List<String> authors;
+    public final String tooltip;
     public final String uuid;
     public final Vec3 pos;
     public final float hp;
@@ -33,8 +32,7 @@ public class VehicleData {
 
     public static final Codec<VehicleData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("vehicle_name").forGetter(VehicleData::getName),
-            Codec.STRING.listOf().fieldOf("tooltip").forGetter(VehicleData::getTooltip),
-            Codec.STRING.listOf().fieldOf("authors").forGetter(VehicleData::getAuthors),
+            Codec.STRING.fieldOf("tooltip").forGetter(VehicleData::getTooltip),
             Codec.STRING.fieldOf("uuid").forGetter(VehicleData::getUuid),
             Vec3.CODEC.fieldOf("pos").forGetter(VehicleData::getPos),
             Codec.FLOAT.fieldOf("hp").forGetter(VehicleData::getHp),
@@ -47,8 +45,7 @@ public class VehicleData {
         @Override
         public @NotNull VehicleData decode(FriendlyByteBuf buffer) {
             String name = buffer.readUtf();
-            List<String> tooltip = buffer.readList(FriendlyByteBuf::readUtf);
-            List<String> authors = buffer.readList(FriendlyByteBuf::readUtf);
+            String tooltip = buffer.readUtf();
             String uuid = buffer.readUtf();
             double x = buffer.readDouble();
             double y = buffer.readDouble();
@@ -57,14 +54,13 @@ public class VehicleData {
             float hp = buffer.readFloat();
             Map<String, PartData> parts = buffer.readJsonWithCodec(PartData.MAP_CODEC);
             List<ConnectionData> connections = buffer.readJsonWithCodec(ConnectionData.CODEC.listOf());
-            return new VehicleData(name, tooltip, authors, uuid, pos, hp, parts, connections);
+            return new VehicleData(name, tooltip, uuid, pos, hp, parts, connections);
         }
 
         @Override
         public void encode(FriendlyByteBuf buffer, @NotNull VehicleData value) {
             buffer.writeUtf(value.name);
-            buffer.writeCollection(value.tooltip, FriendlyByteBuf::writeUtf);
-            buffer.writeCollection(value.authors, FriendlyByteBuf::writeUtf);
+            buffer.writeUtf(value.tooltip);
             buffer.writeUtf(value.uuid);
             buffer.writeDouble(value.pos.x);
             buffer.writeDouble(value.pos.y);
@@ -75,10 +71,9 @@ public class VehicleData {
         }
     };
 
-    public VehicleData(String name, List<String> tooltip, List<String> authors, String uuid, Vec3 pos, float hp, Map<String, PartData> parts, List<ConnectionData> connections) {
+    public VehicleData(String name, String tooltip, String uuid, Vec3 pos, float hp, Map<String, PartData> parts, List<ConnectionData> connections) {
         this.name = name;
         this.tooltip = tooltip;
-        this.authors = authors;
         this.uuid = uuid;
         this.pos = pos;
         this.hp = hp;
@@ -93,8 +88,7 @@ public class VehicleData {
      */
     public VehicleData(VehicleCore vehicle) {
         this.name = vehicle.name;
-        this.tooltip = new ArrayList<>();
-        this.authors = new ArrayList<>();
+        this.tooltip = "";
         this.uuid = vehicle.getUuid().toString();
         this.pos = vehicle.getPosition();
         this.hp = vehicle.getHp();

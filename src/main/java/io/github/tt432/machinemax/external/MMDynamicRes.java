@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
@@ -22,6 +23,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,6 +70,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("blueprint")));
             packUp(packName, Exist(root.resolve("lang")));
             packUp(packName, Exist(root.resolve("texture")));
+            packUp(packName, Exist(root.resolve("content")));
         }
         if (Minecraft.getInstance().getLanguageManager() instanceof LanguageManager langManager) {
             System.out.printf("当前语言系统编号 CODE: %s \n", langManager.getSelected());
@@ -104,6 +107,7 @@ public class MMDynamicRes {
         Path blueprint = Exist(testpack.resolve("blueprint"));
         Path lang = Exist(testpack.resolve("lang"));
         Path texture = Exist(testpack.resolve("texture"));
+        Path content = Exist(testpack.resolve("content"));
         //设置默认测试包的路径、名字、内容
         createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
         createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type(), true);
@@ -113,6 +117,8 @@ public class MMDynamicRes {
         createDefaultFile(lang.resolve("en_us.json"), TestPackProvider.en_us(), true);
         //自带测试材质
         createDefaultFileByBase64(texture.resolve("test_cube_vpack.png"), TestPackProvider.test_cube_vpack_png_base64(), true);
+        //自定义文本文件
+        createDefaultFile(content.resolve("test.txt"), TestPackProvider.content_txt(), true);
     }
 
 
@@ -123,8 +129,9 @@ public class MMDynamicRes {
             String fileName = filePath.getFileName().toString();
             String fileRealName = getRealName(fileName);
             ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, fileName));
-            try {
-                JsonElement json = JsonParser.parseString(Files.readString(filePath));
+            try (JsonReader reader = new JsonReader(new FileReader(filePath.toFile()))) {
+                reader.setLenient(true); // 允许非严格JSON
+                JsonElement json = JsonParser.parseReader(reader);
                 switch (category) {
                     case "part_type" -> { //part_type文件夹中的配置
                         PartType partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();

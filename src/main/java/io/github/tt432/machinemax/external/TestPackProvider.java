@@ -357,14 +357,7 @@ public class TestPackProvider {
                     }
                   ],
                   "vehicle_name": "Vehicle",
-                  "tooltip": [
-                    "这是一个演示蓝图，一台越野车"
-                  ],
-                  "authors" : [
-                    "一号作者",
-                    "二号作者",
-                    "三号作者"
-                  ],
+                  "tooltip": "machine_max:testpack/content/test.txt",
                   "uuid": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
                   "pos": [
                     -16.61766990025838,
@@ -396,8 +389,7 @@ public class TestPackProvider {
                 {
                   "item.machine_max.testpack.blueprint.test_blue_print.json": "测试蓝图",
                   "machine_max.tab.blueprint": "自定义蓝图",
-                  "machine_max.item.test_cube_vpack": "外部包测试方块",
-                  "tooltip.title.authors": "作者"
+                  "machine_max.item.test_cube_vpack": "外部包测试方块"
                 }
                 """;
     }
@@ -406,9 +398,11 @@ public class TestPackProvider {
                 {
                   "item.machine_max.testpack.blueprint.test_blue_print.json": "Test BluePrint",
                   "machine_max.tab.blueprint": "Custom BluePrints",
-                  "machine_max.item.test_cube_vpack": "External-Pack Test Cube",
-                  "tooltip.title.authors": "Authors"
+                  "machine_max.item.test_cube_vpack": "External-Pack Test Cube"
                 }
                 """;
+    }
+    public static String content_txt() {
+        return "这是一个演示蓝图，一台越野车\n作者: xxx";
     }
 }

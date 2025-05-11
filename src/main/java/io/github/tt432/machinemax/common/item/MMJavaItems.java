@@ -3,6 +3,7 @@ package io.github.tt432.machinemax.common.item;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
+import io.github.tt432.machinemax.external.DynamicPack;
 import io.github.tt432.machinemax.external.MMDynamicRes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -50,15 +51,24 @@ public class MMJavaItems {
                         //物品栏鼠标自定义信息 （正在筹备）
 //                        vehicleData.authors
 //                        tooltipComponents.add(Component.translatable("tooltip.%s.%s.details".formatted(MOD_ID, MMDynamicRes.getRealName(location.getPath()).replace("/", ".")))); // 支持本地化
-                        for (String tooltip : vehicleData.tooltip) {
-                            tooltipComponents.add(Component.literal(tooltip));
+                        String tip = vehicleData.tooltip;
+                        if (MMDynamicRes.EXTERNAL_RESOURCE.get(ResourceLocation.parse(tip)) instanceof DynamicPack dynamicPack) {
+                            tip = dynamicPack.getContent();
                         }
-                        tooltipComponents.add(Component.translatable("tooltip.title.authors").withColor(0x02E0C3));
-                        String authorText = "";
-                        for (String author : vehicleData.authors) {
-                            authorText += author+"  ";
+                        String[] regexList = {"\r\n", "\n"}; //扫描不同类型系统的回车符
+                        boolean contains = false;
+                        for (String regex : regexList) {
+                            contains = tip.contains(regex);
+                            if (contains) { //扫到了就替换成mc形式的回车，并且退出匹配
+                                for (String span : tip.split(regex)) {
+                                    tooltipComponents.add(Component.translatable(span));
+                                }
+                                break;
+                            }
                         }
-                        tooltipComponents.add(Component.literal(authorText).withColor(0x02E0C3));
+                        if (! contains) { //没有任何匹配，全部作为可翻译标题
+                            tooltipComponents.add(Component.translatable(tip));
+                        }
                     }
                 }
         );
