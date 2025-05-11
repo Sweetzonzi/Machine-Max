@@ -90,7 +90,7 @@ public class MMDynamicRes {
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
             loadData();// 重新读取
             if (Minecraft.getInstance().player instanceof Player player)
-                player.sendSystemMessage(Component.literal("[%s]: 你刚刚尝试了重载载具包".formatted(MOD_ID)));
+                player.sendSystemMessage(Component.literal("[%s]: 外部载具包已重载!".formatted(MOD_ID)));
         }
     }
 

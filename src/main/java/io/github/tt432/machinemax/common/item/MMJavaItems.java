@@ -1,6 +1,5 @@
 package io.github.tt432.machinemax.common.item;
 
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
@@ -9,27 +8,21 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.internal.versions.neoforge.NeoForgeVersion;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static io.github.tt432.machinemax.MachineMax.LOGGER;
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 
 public class MMJavaItems {
@@ -55,7 +48,17 @@ public class MMJavaItems {
                     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
                         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
                         //物品栏鼠标自定义信息 （正在筹备）
+//                        vehicleData.authors
 //                        tooltipComponents.add(Component.translatable("tooltip.%s.%s.details".formatted(MOD_ID, MMDynamicRes.getRealName(location.getPath()).replace("/", ".")))); // 支持本地化
+                        for (String tooltip : vehicleData.tooltip) {
+                            tooltipComponents.add(Component.literal(tooltip));
+                        }
+                        tooltipComponents.add(Component.translatable("tooltip.title.authors").withColor(0x02E0C3));
+                        String authorText = "";
+                        for (String author : vehicleData.authors) {
+                            authorText += author+"  ";
+                        }
+                        tooltipComponents.add(Component.literal(authorText).withColor(0x02E0C3));
                     }
                 }
         );

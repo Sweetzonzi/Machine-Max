@@ -42,7 +42,8 @@ object MMCreativeTabs {
                 if (MMJavaItems.BLUEPRINT_EGGS.isEmpty()) { //判断蓝图注册表是否为空
                     ItemStack(MMItems.PART_ITEM) // 使用主物品栏的图标
                 } else {
-                    ItemStack(MMJavaItems.BLUEPRINT_EGGS[0]) // 否则使用第一个蓝图
+                    val randomIndex = (0 until MMJavaItems.BLUEPRINT_EGGS.size).random() //随机的一个蓝图在图标上展示
+                    ItemStack(MMJavaItems.BLUEPRINT_EGGS[randomIndex].get())
                 }
             }
             .displayItems { params, output ->
