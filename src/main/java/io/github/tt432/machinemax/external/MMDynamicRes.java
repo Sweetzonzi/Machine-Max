@@ -37,6 +37,7 @@ public class MMDynamicRes {
     public static HashMap<ResourceLocation, PartType> PART_TYPES = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static HashMap<ResourceLocation, OModel> O_MODELS = new HashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static HashMap<ResourceLocation, VehicleData> BLUEPRINTS = new HashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
+    public static HashMap<ResourceLocation, JsonElement> COLORS = new HashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
 
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
@@ -72,6 +73,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("blueprint")));
+            packUp(packName, Exist(root.resolve("color")));
 
         }
         if (Minecraft.getInstance().getLanguageManager() instanceof LanguageManager langManager) {
@@ -111,6 +113,7 @@ public class MMDynamicRes {
         Path texture = Exist(testpack.resolve("texture"));
         Path content = Exist(testpack.resolve("content"));
         Path font = Exist(testpack.resolve("font"));
+        Path color = Exist(testpack.resolve("color"));
 
         //设置默认测试包的路径、名字、内容
         createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
@@ -128,6 +131,8 @@ public class MMDynamicRes {
         copyResourceToFile("/bell.ttf", font.resolve("bell.ttf"), true);
         copyResourceToFile("/bellb.ttf", font.resolve("bellb.ttf"), true);
         copyResourceToFile("/belli.ttf", font.resolve("belli.ttf"), true);
+
+        createDefaultFile(color.resolve("color_palette.json"), TestPackProvider.color_palette_json(), true);
     }
 
 
@@ -174,6 +179,10 @@ public class MMDynamicRes {
                     case "font" -> {
                         location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //字体系统的标准搜索路径
                         System.out.println("FONT " + location);
+                    }
+
+                    case "color" -> {
+                        COLORS.put(location, json);
                     }
                 }
 

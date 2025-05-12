@@ -403,7 +403,11 @@ public class TestPackProvider {
                 """;
     }
     public static String content_txt() {
-        return "这是一个演示蓝图，一台越野车\nThis is a demonstration blueprint, an off-road vehicle\n作者: xxx";
+        return "\n" +
+                "<c.9BE868><f.test_font>This</f.test_font></c.9BE868><s><f.test_font>is a demonstration blueprint, an off-road vehicle</f.test_font></s>\n" +
+                "\n" +
+                "\n" +
+                "<italic>这是一个演示蓝图，一台越野车      Maker:</italic><s><c.my_red>XXX</c.my_red></s>\n";
     }
 
     public static String test_font_json() {
@@ -418,6 +422,16 @@ public class TestPackProvider {
                       "oversample": 24.0
                     }
                   ]
+                }
+                """;
+    }
+
+    public static String color_palette_json() {
+        return """
+                {
+                  "colors" : {
+                    "my_red" : "FF0004"
+                  }
                 }
                 """;
     }
