@@ -1,4 +1,4 @@
-package io.github.tt432.machinemax.external;
+package io.github.tt432.machinemax.external.data;
 
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 
@@ -403,6 +403,22 @@ public class TestPackProvider {
                 """;
     }
     public static String content_txt() {
-        return "这是一个演示蓝图，一台越野车\n作者: xxx";
+        return "这是一个演示蓝图，一台越野车\nThis is a demonstration blueprint, an off-road vehicle\n作者: xxx";
+    }
+
+    public static String test_font_json() {
+        return """
+                {
+                  "providers": [
+                    {
+                      "type": "ttf",
+                      "file": "machine_max:bell.ttf",
+                      "size": 12,
+                      "shift": [0, 0],
+                      "oversample": 24.0
+                    }
+                  ]
+                }
+                """;
     }
 }

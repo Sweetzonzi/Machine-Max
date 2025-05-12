@@ -5,6 +5,8 @@ import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
 import io.github.tt432.machinemax.external.DynamicPack;
 import io.github.tt432.machinemax.external.MMDynamicRes;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.font.FontManager;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -22,6 +24,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
@@ -61,7 +64,7 @@ public class MMJavaItems {
                             contains = tip.contains(regex);
                             if (contains) { //扫到了就替换成mc形式的回车，并且退出匹配
                                 for (String span : tip.split(regex)) {
-                                    tooltipComponents.add(Component.translatable(span));
+                                    tooltipComponents.add(Component.translatable(span).withStyle(style -> style.withFont(ResourceLocation.parse(MOD_ID+":test_font"))));
                                 }
                                 break;
                             }

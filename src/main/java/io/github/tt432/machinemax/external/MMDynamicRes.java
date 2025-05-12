@@ -1,13 +1,13 @@
 package io.github.tt432.machinemax.external;
 
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
 import io.github.tt432.machinemax.common.vehicle.PartType;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
+import io.github.tt432.machinemax.external.data.TestPackProvider;
 import io.github.tt432.machinemax.external.parse.OBoneParse;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.LanguageManager;
@@ -19,14 +19,12 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
-import com.google.gson.reflect.TypeToken;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.function.Predicate;
@@ -64,13 +62,17 @@ public class MMDynamicRes {
         GenerateTestPack(); //自动生成测试包
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
+            //资源类数据先加载
+            packUp(packName, Exist(root.resolve("content")));
+            packUp(packName, Exist(root.resolve("lang")));
+            packUp(packName, Exist(root.resolve("texture")));
+            packUp(packName, Exist(root.resolve("font")));
+            //各种MM配置
             packUp(packName, Exist(root.resolve("part")));
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("blueprint")));
-            packUp(packName, Exist(root.resolve("lang")));
-            packUp(packName, Exist(root.resolve("texture")));
-            packUp(packName, Exist(root.resolve("content")));
+
         }
         if (Minecraft.getInstance().getLanguageManager() instanceof LanguageManager langManager) {
             System.out.printf("当前语言系统编号 CODE: %s \n", langManager.getSelected());
@@ -108,6 +110,8 @@ public class MMDynamicRes {
         Path lang = Exist(testpack.resolve("lang"));
         Path texture = Exist(testpack.resolve("texture"));
         Path content = Exist(testpack.resolve("content"));
+        Path font = Exist(testpack.resolve("font"));
+
         //设置默认测试包的路径、名字、内容
         createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
         createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type(), true);
@@ -119,6 +123,11 @@ public class MMDynamicRes {
         createDefaultFileByBase64(texture.resolve("test_cube_vpack.png"), TestPackProvider.test_cube_vpack_png_base64(), true);
         //自定义文本文件
         createDefaultFile(content.resolve("test.txt"), TestPackProvider.content_txt(), true);
+        //自定义字体文件
+        createDefaultFile(font.resolve("test_font.json"), TestPackProvider.test_font_json(), true);
+        copyResourceToFile("/bell.ttf", font.resolve("bell.ttf"), true);
+        copyResourceToFile("/bellb.ttf", font.resolve("bellb.ttf"), true);
+        copyResourceToFile("/belli.ttf", font.resolve("belli.ttf"), true);
     }
 
 
@@ -162,6 +171,10 @@ public class MMDynamicRes {
                     case "lang" -> {
                         location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //语言翻译系统的标准搜索路径
                     }
+                    case "font" -> {
+                        location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //字体系统的标准搜索路径
+                        System.out.println("FONT " + location);
+                    }
                 }
 
             } catch (IOException e) {
@@ -170,6 +183,12 @@ public class MMDynamicRes {
 
             DynamicPack dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
             EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
+
+//            //把指定包的文件转换成base64字符串形式    取消注释则会生成镜像base64文件包 在 run/config/machine_max/base64ify
+//            Path master_base64ify = Exist(NAMESPACE.resolve("base64ify"));
+//            Path root_base64ify = Exist(master_base64ify.resolve(packName+"_base64"));
+//            Path category_base64ify = Exist(root_base64ify.resolve(category));
+//            createDefaultFile(category_base64ify.resolve(fileName+"_base64.txt"), dynamicPack.getBase64(), true);
         }
 
     }
@@ -264,4 +283,41 @@ public class MMDynamicRes {
     public static String getRealName(String str) {
         return str.contains(".") ? str.substring(0, str.lastIndexOf('.')) : str;
     }
+
+
+
+    /**
+     * 将类路径资源文件复制到指定文件系统路径
+     * @param resourcePath 资源路径 (e.g. "config/default.properties")
+     * @param targetPath   目标文件系统路径
+     * @param overwrite    是否覆盖已存在文件
+     */
+    public static void copyResourceToFile(String resourcePath, Path targetPath, boolean overwrite) {
+        ClassLoader classLoader = MMDynamicRes.class.getClassLoader();
+
+        try (InputStream inputStream = classLoader.getResourceAsStream(resourcePath)) {
+            // 检查资源是否存在
+            if (inputStream == null) {
+                throw new IOException("未找到资源文件: " + resourcePath);
+            }
+
+            // 创建父目录（如果不存在）
+            Path parentDir = targetPath.getParent();
+            if (parentDir != null) {
+                Files.createDirectories(parentDir);
+            }
+
+            // 选择复制选项
+            if (overwrite) {
+                Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                Files.copy(inputStream, targetPath);
+            }
+        } catch (IOException e) {
+            System.err.println("复制失败: " + resourcePath + " -> " + targetPath);
+            e.printStackTrace();
+        }
+    }
+
+
 }
