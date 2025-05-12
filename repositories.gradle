@@ -1,7 +1,7 @@
 dependencies {
     // 物理库
 //    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
-    implementation files('libs/SparkCore-1.21.1-1.0.697.jar')
+    implementation files('libs/SparkCore-1.21.1-1.0.698.jar')
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"

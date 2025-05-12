@@ -1,6 +1,6 @@
 package io.github.tt432.machinemax.mixin;
 
-import io.github.tt432.machinemax.mixin_interface.IMixinClientLevel;
+import io.github.tt432.machinemax.mixin_interface.IClientLevelMixin;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.entity.LevelEntityGetter;
@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import java.util.UUID;
 
 @Mixin(ClientLevel.class)
-public abstract class ClientLevelMixin implements IMixinClientLevel {
+public abstract class ClientLevelMixin implements IClientLevelMixin {
     @Shadow
     protected abstract LevelEntityGetter<Entity> getEntities();
 
