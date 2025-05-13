@@ -45,7 +45,7 @@ public class HtmlLikeParser {
                     TagHtNode currentTag = stack.pop();
 
                     if (!currentTag.getTagName().equals(tagName)) {
-                        throw new IllegalArgumentException("标签不匹配: <" + currentTag.getTagName() + "> vs </" + tagName + ">");
+                        throw new IllegalArgumentException("标签不匹配: <" + currentTag.getTagName() + "> -x-> </" + tagName + ">");
                     }
 
                     if (stack.isEmpty()) {
