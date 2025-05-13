@@ -404,10 +404,10 @@ public class TestPackProvider {
     }
     public static String content_txt() {
         return "\n" +
-                "<c.9BE868><f.test_font>This</f.test_font></c.9BE868><s><f.test_font>is a demonstration blueprint, an off-road vehicle</f.test_font></s>\n" +
+                "<c.9BE868><f.test_font>This </f.test_font></c.9BE868><f.test_font>is a demonstration blueprint, an off-road vehicle</f.test_font>\n" +
                 "\n" +
                 "\n" +
-                "<italic>这是一个演示蓝图，一台越野车      Maker:</italic><s><c.my_red>XXX</c.my_red></s>\n";
+                "<italic> 这是一个演示蓝图，一台越野车             </italic>Maker:<c.my_red> XXX</c.my_red>\n";
     }
 
     public static String test_font_json() {
