@@ -357,7 +357,7 @@ public class TestPackProvider {
                     }
                   ],
                   "vehicle_name": "Vehicle",
-                  "tooltip": "machine_max:testpack/content/test.txt",
+                  "tooltip": "machine_max:testpack/content/test.html",
                   "uuid": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
                   "pos": [
                     -16.61766990025838,

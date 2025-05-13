@@ -125,7 +125,7 @@ public class MMDynamicRes {
         //自带测试材质
         createDefaultFileByBase64(texture.resolve("test_cube_vpack.png"), TestPackProvider.test_cube_vpack_png_base64(), true);
         //自定义文本文件
-        createDefaultFile(content.resolve("test.txt"), TestPackProvider.content_txt(), true);
+        createDefaultFile(content.resolve("test.html"), TestPackProvider.content_txt(), true);
         //自定义字体文件
         createDefaultFile(font.resolve("test_font.json"), TestPackProvider.test_font_json(), true);
         copyResourceToFile("/bell.ttf", font.resolve("bell.ttf"), true);
