@@ -54,7 +54,7 @@ public class LivingEntityEyesightAttachment {
             eyesight.eyesightRange = entity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);//更新射线距离
             if (eyesight.eyesightRange <= 0) return;
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-                Vector3f startPos = PhysicsHelperKt.toBVector3f(entity.position().add(0, entity.getEyeHeight(), 0));
+                Vector3f startPos = PhysicsHelperKt.toBVector3f(entity.getEyePosition());
                 Vector3f endPos = startPos.add(PhysicsHelperKt.toBVector3f(
                         entity.getViewVector(1).normalize().scale(eyesight.eyesightRange)
                 ));

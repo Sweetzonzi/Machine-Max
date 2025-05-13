@@ -2,10 +2,13 @@ package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
 import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import com.jme3.bullet.collision.AfMode;
 import com.jme3.bullet.collision.ManifoldPoints;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
@@ -18,16 +21,22 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.tt432.machinemax.mixin_interface.IProjectileMixin;
 import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.ShapeHelper;
 import io.github.tt432.machinemax.util.formula.Dynamic;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.EventHooks;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -120,6 +129,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     @Override
     public void onProcessed(PhysicsCollisionObject pcoA, @NotNull PhysicsCollisionObject pcoB, long manifoldPointId) {
         PhysicsRigidBody other;
+        Level level = part.level;
         int hitBoxIndex, otherHitBoxIndex;
         Vector3f worldContactPoint = new Vector3f(), otherWorldContactPoint = new Vector3f();
         Vector3f localContactPoint = new Vector3f(), otherLocalContactPoint = new Vector3f();
@@ -173,8 +183,11 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             if (relVel.length() > 5f && impactAngle > 135f && blockState.getDestroySpeed(part.level, other.blockPos) > 0) {
                 other.setContactResponse(false);
                 other.setUserIndex(0);
-                if (!part.level.isClientSide) {
-                    part.level.destroyBlock(other.blockPos, false);
+                if (!level.isClientSide) {
+                    ((TaskSubmitOffice) level).submitDeduplicatedTask(other.blockPos.toShortString(), PPhase.POST, () -> {
+                        level.destroyBlock(other.blockPos, false);
+                        return null;
+                    });
                 }
                 return;
             }
@@ -203,6 +216,31 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     subsystem.onCollideWithEntity(
                             this.body, other, relVel, normal, worldContactPoint, impactAngle, childShapeId, manifoldPointId
                     );
+                }
+                //原版投射物处理
+                if (entity instanceof Projectile projectile && !projectile.isRemoved() && part.getEntity() != null) {
+                    IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
+                    if (mixinProjectile.machine_Max$getHitSubPart() == null && projectile.getDeltaMovement().length() > 0) {//若投射物还未与任何零件碰撞过
+                        var start = PhysicsHelperKt.toBVector3f(projectile.getEyePosition().subtract(projectile.getDeltaMovement()));
+                        var end = PhysicsHelperKt.toBVector3f(projectile.getEyePosition().add(projectile.getDeltaMovement()));
+                        var results = getPhysicsLevel().getWorld().rayTest(start, end);
+                        for (PhysicsRayTestResult result : results) {//遍历射线检测结果
+                            if (result.getCollisionObject() == this.body) {//若命中本零件
+                                HitResult hitResult = new EntityHitResult(part.getEntity(), SparkMathKt.toVec3(worldContactPoint));
+                                if (!EventHooks.onProjectileImpact(projectile, hitResult)) {//若命中事件未被取消
+                                    mixinProjectile.machine_Max$setHitPoint(start.add(end.subtract(start).mult(result.getHitFraction())));
+                                    mixinProjectile.machine_Max$setHitNormal(result.getHitNormalLocal(null));
+                                    mixinProjectile.machine_Max$setHitBoxId(childShapeId);
+                                    mixinProjectile.machine_Max$setHitSubPart(this);
+                                    ((TaskSubmitOffice) part.level).submitDeduplicatedTask(projectile.getStringUUID(), PPhase.POST, () -> {
+                                        ((IProjectileMixin) projectile).machine_Max$manualProjectileHit(hitResult);
+                                        return null;
+                                    });
+                                }
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }

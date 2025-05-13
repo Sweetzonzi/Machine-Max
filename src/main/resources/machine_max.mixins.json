@@ -6,8 +6,9 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "ClientLevelMixin",
-    "LivingEntityMixin",
-    "PlayerMixin"
+    "EntityMixin",
+    "PlayerMixin",
+    "ProjectileMixin"
   ],
   "injectors": {
     "defaultRequire": 1

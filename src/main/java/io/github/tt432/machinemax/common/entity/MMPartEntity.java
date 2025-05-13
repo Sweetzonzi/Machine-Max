@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.preinput.PreInput;
@@ -18,21 +19,26 @@ import cn.solarmoon.spark_core.sync.IntSyncData;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.bounding.BoundingBox;
+import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMEntities;
 import io.github.tt432.machinemax.common.vehicle.Part;
+import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.VehicleManager;
 import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
-import io.github.tt432.machinemax.mixin_interface.ILivingEntityMixin;
+import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
+import io.github.tt432.machinemax.mixin_interface.IProjectileMixin;
 import io.github.tt432.machinemax.util.MMMath;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -62,6 +68,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
      */
     public MMPartEntity(EntityType<? extends Entity> entityType, Level level) {
         super(entityType, level);
+        this.blocksBuilding = false;
     }
 
     @Override
@@ -91,16 +98,61 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
             this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
             Quaternionf q = SparkMathKt.toQuaternionf(part.rootSubPart.body.getPhysicsRotation(null));
             org.joml.Vector3f eulerAngles = new org.joml.Vector3f();
-            q.getEulerAnglesZYX(eulerAngles).mul((float) (180/Math.PI));
-            this.setRot(-eulerAngles.y+180f, eulerAngles.x);
+            q.getEulerAnglesZYX(eulerAngles).mul((float) (180 / Math.PI));
+            this.setRot(-eulerAngles.y + 180f, eulerAngles.x);
             updateBoundingBox();//更新实体包围盒
         }
     }
 
     @Override
-    public boolean hurt(DamageSource source, float amount) {
-        //TODO:将伤害转发给部件进行操作
-        return false;
+    public boolean hurt(@NotNull DamageSource source, float amount) {
+        if (source.getDirectEntity() instanceof Projectile projectile) {
+            //来自投射物的伤害处理
+            IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
+            SubPart hitSubPart = mixinProjectile.machine_Max$getHitSubPart();
+            if (hitSubPart != null) {//如果命中了部件
+                Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
+                Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
+                long hitBoxId = mixinProjectile.machine_Max$getHitBoxId();
+                return part.onHurt(source, amount, hitSubPart, normal, contactPoint, hitBoxId);
+            } else return false;
+        } else if (source.getSourcePosition() != null && source.getDirectEntity() instanceof Entity entity) {
+            //来自其他实体的伤害处理
+            PhysicsLevel level = level().getPhysicsLevel();
+            Vector3f start;
+            Vector3f end;
+            if (entity instanceof LivingEntity livingEntity) {
+                start = PhysicsHelperKt.toBVector3f(livingEntity.getEyePosition());
+                end = PhysicsHelperKt.toBVector3f(
+                                livingEntity.getViewVector(1).normalize()
+                                        .scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)))
+                        .add(start);
+            } else {
+                start = PhysicsHelperKt.toBVector3f(source.getSourcePosition());
+                end = PhysicsHelperKt.toBVector3f(this.position());
+            }
+            if (start.subtract(end).length() > 0) {
+                var results = level.getWorld().rayTest(start, end);
+                for (var result : results) {
+                    PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
+                    if (body.getOwner() instanceof SubPart subPart) {
+                        //TODO: new一个新的source存储攻击来袭方向
+                        Vector3f normal = result.getHitNormalLocal(null);
+                        Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
+                        //将伤害转发给部件进行操作
+                        return subPart.part.onHurt(source, amount, subPart, normal, contactPoint, subPart.collisionShape.findChild(result.triangleIndex()).getShape().nativeId());
+                    }
+                }
+            } else {//射线长度有问题时的异常处理
+                MachineMax.LOGGER.error("Damage source {} is too close to entity position, causing a zero-length ray.", entity);
+            }
+            return false;//未能命中任何部件碰撞箱则不处理伤害
+        } else return false;
+    }
+
+    @Override
+    public boolean canBeHitByProjectile() {
+        return false;//投射物命中判定交由物理引擎处理
     }
 
     public void updateBoundingBox() {
@@ -125,7 +177,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
-        if (entity instanceof LivingEntity livingEntity && ((ILivingEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat)
+        if (entity instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat)
             return SparkMathKt.toVec3(MMMath.localVectorToWorldVector(seat.seatLocator.subPartTransform.getTranslation(), seat.seatLocator.subPart.body));
         else return new Vec3(0, 0, 0);
     }
@@ -137,7 +189,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     public void onPassengerTurned(@NotNull Entity entityToUpdate) {
-        if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((ILivingEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+        if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
             entityToUpdate.setYBodyRot(180);
 //            float f = Mth.wrapDegrees(entityToUpdate.getYRot() - this.getYRot());
 //            float f1 = Mth.clamp(f, -105.0F, 105.0F);

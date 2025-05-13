@@ -4,13 +4,12 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
-import io.github.tt432.machinemax.mixin_interface.ILivingEntityMixin;
+import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
 import io.github.tt432.machinemax.network.payload.MovementInputPayload;
 import io.github.tt432.machinemax.network.payload.RegularInputPayload;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHandler;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
@@ -61,7 +60,7 @@ public class RawInputHandler {
     @SubscribeEvent
     public static void handleMoveInputs(ClientTickEvent.Post event) {
         if (client.player != null &&
-                ((ILivingEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem subSystem &&
+                ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem subSystem &&
                 subSystem.owner instanceof Part part) {
             String subSystemName = subSystem.name;
             UUID vehicleUuid = part.vehicle.uuid;
@@ -230,7 +229,7 @@ public class RawInputHandler {
     public static void handVanillaInputs(InputEvent.InteractionKeyMappingTriggered event) {
         // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
         LocalPlayer player = Minecraft.getInstance().player;
-        if (player instanceof ILivingEntityMixin passenger &&
+        if (player instanceof IEntityMixin passenger &&
                 passenger.machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat &&
                 seat.disableVanillaActions) {
             if (event.getKeyMapping() == Minecraft.getInstance().options.keyAttack ||
@@ -246,7 +245,7 @@ public class RawInputHandler {
     public static void handleVanillaInputs(InputEvent.Key event) {
         // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
         LocalPlayer player = Minecraft.getInstance().player;
-        if (player instanceof ILivingEntityMixin passenger &&
+        if (player instanceof IEntityMixin passenger &&
                 passenger.machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
             //很奇怪，必须套一层if判断，屏蔽效果才能生效 Wired, must have a if to work
             if (Minecraft.getInstance().options.keyUp.consumeClick()) {

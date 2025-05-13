@@ -16,6 +16,7 @@ import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bounding.BoundingBox;
+import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -40,6 +41,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -210,6 +212,20 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             for (SubPart subPart : subParts.values()) boxes.add(subPart.body.boundingBox(null));
             entity.boundingBoxes.set(boxes);
         }
+    }
+
+    public boolean onHurt(DamageSource source,
+                          float damage,
+                          //TODO:伤害来源（模组投射物弹丸等）
+                          SubPart subPart,
+                          Vector3f normal,
+                          Vector3f contactPoint,
+                          long hitChildShapeNativeId){
+        MachineMax.LOGGER.info("部件{}受到伤害{}，来自{}，命中点{}。", name, damage, source.getDirectEntity(), contactPoint);
+        //TODO:处理伤害
+        if (getEntity()!= null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
+        //TODO:发包同步部件和子系统耐久度
+        return true;
     }
 
     public void refreshPartEntity() {

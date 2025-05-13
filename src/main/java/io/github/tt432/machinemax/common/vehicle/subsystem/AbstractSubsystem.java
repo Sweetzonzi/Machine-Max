@@ -11,6 +11,7 @@ import io.github.tt432.machinemax.common.vehicle.attr.subsystem.AbstractSubsyste
 import io.github.tt432.machinemax.common.vehicle.signal.Signals;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.*;
@@ -122,9 +123,13 @@ abstract public class AbstractSubsystem {
     public void onDisabled() {
     }
 
+    public void onHurt(DamageSource source, float amount) {
+    }
+
     public void onVehicleStructureChanged() {
         if (!this.callbackTargets.isEmpty()) {
-            // 使用迭代器的remove方法
+            //被清除动态设置的信号传输目标，防止信号传输到已分离部件的子系统
+            //使用迭代器的remove方法
             this.callbackTargets.entrySet().removeIf(entry -> entry.getValue() instanceof AbstractSubsystem subsystem && subsystem.getPart().vehicle != this.getPart().vehicle);
             if (this instanceof ISignalSender && this instanceof ISignalReceiver callbackListener)
                 callbackListener.clearCallbackSignals();
