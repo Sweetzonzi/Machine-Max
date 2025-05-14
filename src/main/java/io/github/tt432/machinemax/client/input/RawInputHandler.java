@@ -35,6 +35,7 @@ import java.util.UUID;
 public class RawInputHandler {
 
     private static Minecraft client;
+    static byte[] moveInputCache = new byte[6];//x,y,z方向的平移和绕x,y,z轴的旋转输入
     static byte[] moveInputs = new byte[6];//x,y,z方向的平移和绕x,y,z轴的旋转输入
     static byte[] moveInputConflicts = new byte[6];//相应轴向上的输入冲突
     public static boolean freeCam = false;//自由视角是否激活
@@ -98,7 +99,7 @@ public class RawInputHandler {
                 default:
                     break;
             }
-
+            moveInputCache = moveInputs;
             moveInputs = new byte[]{
                     (byte) (trans_x_input),
                     (byte) (trans_y_input),
@@ -113,7 +114,7 @@ public class RawInputHandler {
                     (byte) (rot_x_conflict),
                     (byte) (rot_y_conflict),
                     (byte) (rot_z_conflict)};
-            if (vehicleUuid != null && partUuid != null && subSystemName != null)
+            if (vehicleUuid != null && partUuid != null && subSystemName != null && moveInputs != moveInputCache)
                 PacketDistributor.sendToServer(new MovementInputPayload(
                         vehicleUuid, partUuid, subSystemName, moveInputs, moveInputConflicts));
         }
@@ -159,7 +160,7 @@ public class RawInputHandler {
             //按键计时
             keyPressTicks.put(KeyBinding.generalLeaveVehicleKey, keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) + 1);
             //离开载具进度显示
-            if (Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
+            if (Minecraft.getInstance().player instanceof Player player && (player.getVehicle() != null || ((IEntityMixin) player).machine_Max$getRidingSubsystem() != null))
                 player.displayClientMessage(
                         Component.translatable("message.machine_max.leaving_vehicle",
                                 KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),

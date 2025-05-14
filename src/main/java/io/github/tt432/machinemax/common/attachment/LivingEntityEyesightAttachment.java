@@ -4,23 +4,20 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
+import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
+import io.github.tt432.machinemax.common.vehicle.InteractBox;
 import io.github.tt432.machinemax.common.vehicle.Part;
 import io.github.tt432.machinemax.common.vehicle.SubPart;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import lombok.Getter;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -38,6 +35,7 @@ public class LivingEntityEyesightAttachment {
     public final LivingEntity owner;
     private final ConcurrentMap<PhysicsRigidBody, PhysicsRayTestResult> targets = new ConcurrentHashMap<>(2);
     private final ConcurrentSkipListSet<PhysicsRigidBody> sortedTargets = new ConcurrentSkipListSet<>();
+    private final ConcurrentSkipListSet<PhysicsGhostObject> fastInteractBoxes = new ConcurrentSkipListSet<>();
     private HashMap<PhysicsRigidBody, PhysicsRayTestResult> targetsCache = new HashMap<>(2);
     private List<PhysicsRigidBody> sortedTargetsCache = new LinkedList<>();
     private double eyesightRange;
@@ -59,6 +57,7 @@ public class LivingEntityEyesightAttachment {
                         entity.getViewVector(1).normalize().scale(eyesight.eyesightRange)
                 ));
                 eyesight.targets.clear();//清空targets列表
+                eyesight.fastInteractBoxes.clear();//清空fastInteractBoxes列表
                 eyesight.sortedTargets.clear();//清空sortedTargets列表
                 var rayTestResults = level.getPhysicsLevel().getWorld().rayTest(startPos, endPos);
                 rayTestResults.forEach(//获取射线命中物体
@@ -153,8 +152,31 @@ public class LivingEntityEyesightAttachment {
         return null;
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public void clientInteract(){
-
+    public InteractBox getAccurateInteractBox() {
+        if (!sortedTargetsCache.isEmpty()) {
+            for (PhysicsRigidBody body : sortedTargetsCache){
+                if (body.getOwner() != null && body.getOwner() instanceof InteractBox interactBox) {
+                    return interactBox;
+                }
+            }
+        }
+        return null;
     }
+
+    public InteractBox getFastInteractBox() {
+        if (!fastInteractBoxes.isEmpty()) {
+            for (PhysicsGhostObject interactBox : fastInteractBoxes) {
+                if (interactBox.getUserObject() != null && interactBox.getUserObject() instanceof InteractBox interactBox1) {
+                    return interactBox1;
+                }
+            }
+        }
+        return null;
+    }
+
+    public void addFastInteractBox(PhysicsGhostObject interactBox) {
+        fastInteractBoxes.add(interactBox);
+    }
+
+    public void clientInteract() {}
 }

@@ -216,7 +216,7 @@ public class VehicleCore {
      * 激活载具所有零件的运动体
      */
     public void activate() {
-        syncCountDown = 1;
+        syncCountDown = 0;
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;

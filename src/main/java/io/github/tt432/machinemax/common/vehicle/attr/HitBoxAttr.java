@@ -15,7 +15,7 @@ public record HitBoxAttr(
 ) {
 
     public static final Codec<HitBoxAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.optionalFieldOf("hit_box", "default").forGetter(HitBoxAttr::hitBoxName),
+            Codec.STRING.optionalFieldOf("hit_box", "part").forGetter(HitBoxAttr::hitBoxName),
             Codec.STRING.fieldOf("type").forGetter(HitBoxAttr::shapeType),
             Codec.FLOAT.optionalFieldOf("rha", 1.0f).forGetter(HitBoxAttr::RHA),
             Codec.FLOAT.optionalFieldOf("damage_reduction", 0.0f).forGetter(HitBoxAttr::damageReduction),

@@ -255,7 +255,7 @@ public class VehicleManager {
      * 代表除了射线检测等操作外，不应与任何物体发生碰撞的碰撞组 #5
      * Represent the collision group for any object that should not collide with anything except ray detection etc. #5
      */
-    final public static int COLLISION_GROUP_UNUSED = 0x0010;
+    final public static int COLLISION_GROUP_NO_COLLISION = 0x0010;
     /**
      * 未使用的碰撞组 #6
      * Unused collision group #6

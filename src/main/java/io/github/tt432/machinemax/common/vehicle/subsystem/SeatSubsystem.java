@@ -1,5 +1,7 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.physics.SparkMathKt;
+import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.client.input.KeyBinding;
 import io.github.tt432.machinemax.client.input.RawInputHandler;
@@ -9,6 +11,7 @@ import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
+import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import lombok.Getter;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -53,21 +56,30 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
     @Override
     public void onTick() {
         if (passenger != null && this.owner.getPart() instanceof Part part) {
-            if (passenger.isRemoved() || passenger.isDeadOrDying() || passenger.getVehicle() != part.entity) {
+            if (passenger.isRemoved() || passenger.isDeadOrDying()) {
                 removePassenger();
                 return;
             }
-            passenger.resetFallDistance();//防止摔死
-            getPart().vehicle.activate();
+            if (part.entity != null && passenger.getVehicle() != part.entity)
+                passenger.startRiding(part.entity, true);
+            else if (part.entity == null) {
+                removePassenger();
+                return;
+            } else {
+                passenger.resetFallDistance();//防止摔死
+            }
+//            Vector3f pos = MMMath.relPointWorldPos(seatLocator.subPartTransform.getTranslation(), part.rootSubPart.body);
+//            passenger.setPos(SparkMathKt.toVec3(pos));
         } else {
             resetSignalOutputs();
         }
     }
 
     public boolean setPassenger(LivingEntity passenger) {
-        if (passenger == null) removePassenger();
-        if (!occupied && owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getRidingSubsystem() == null) {
-            passenger.startRiding(owner.getPart().entity, false);
+        if (passenger == null || occupied || passenger.isRemoved() || passenger.isDeadOrDying()) {
+            return false;
+        } else if (owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getRidingSubsystem() == null) {
+            if (!passenger.level().isClientSide) passenger.startRiding(owner.getPart().entity, true);
             occupied = true;
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setRidingSubsystem(this);
@@ -76,7 +88,7 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
             if (passenger.level() instanceof ClientLevel && passenger instanceof Player player)
                 player.displayClientMessage(
                         Component.translatable("message.machine_max.leaving_vehicle",
-                                KeyBinding.generalInteractKey.getTranslatedKeyMessage(),
+                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
                                 String.format("%.2f", Math.clamp(0.05 * RawInputHandler.keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0), 0.0, 0.5))
                         ), true
                 );
@@ -113,6 +125,7 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
                     break;
                 }
             }
+            getPart().vehicle.activate();
         }
     }
 
@@ -121,6 +134,7 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
             for (String signalKey : attr.regularSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
             }
+            getPart().vehicle.activate();
         }
     }
 
@@ -129,6 +143,7 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
             for (String signalKey : attr.viewSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new EmptySignal());
             }
+            getPart().vehicle.activate();
         }
     }
 }

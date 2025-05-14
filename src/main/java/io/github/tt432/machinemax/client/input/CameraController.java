@@ -2,9 +2,11 @@ package io.github.tt432.machinemax.client.input;
 
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.client.event.ComputeCameraPosEvent;
+import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -61,7 +63,13 @@ public class CameraController {
 
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
-        //TODO:传输相机控制量
+        if (client.player != null) {
+            //TODO:传输相机控制量
+//            boolean isPassenger = client.player.isPassenger();
+//            Entity vehicle = client.player.getVehicle();
+//            IEntityMixin mixin = (IEntityMixin) client.player;
+//            MachineMax.LOGGER.debug("isPassenger:{}, vehicle:{}, subSystem:{}", isPassenger, vehicle, mixin.machine_Max$getRidingSubsystem());
+        }
     }
 
     @SubscribeEvent

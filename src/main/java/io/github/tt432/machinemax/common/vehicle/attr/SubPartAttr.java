@@ -38,7 +38,8 @@ public class SubPartAttr {
     public final String blockCollision;
     public final float stepHeight;
     public final boolean climbAssist;
-    public final Map<String, HitBoxAttr> collisionShapeAttr;
+    public final Map<String, HitBoxAttr> hitBoxes;
+    public final Map<String, InteractBoxAttr> interactBoxes;
     public final Map<String, ConnectorAttr> connectors;
     public final DragAttr aeroDynamic;
 
@@ -56,7 +57,8 @@ public class SubPartAttr {
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
             Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
-            HitBoxAttr.MAP_CODEC.fieldOf("hit_boxes").forGetter(SubPartAttr::getCollisionShapeAttr),
+            HitBoxAttr.MAP_CODEC.fieldOf("hit_boxes").forGetter(SubPartAttr::getHitBoxes),
+            InteractBoxAttr.MAP_CODEC.optionalFieldOf("interact_boxes", new HashMap<>()).forGetter(SubPartAttr::getInteractBoxes),
             ConnectorAttr.MAP_CODEC.fieldOf("connectors").forGetter(SubPartAttr::getConnectors),
             DragAttr.CODEC.fieldOf("aero_dynamic").forGetter(SubPartAttr::getAeroDynamic)
     ).apply(instance, SubPartAttr::new));
@@ -77,7 +79,8 @@ public class SubPartAttr {
             String blockCollision,
             float stepHeight,
             boolean climbAssist,
-            Map<String, HitBoxAttr> collisionShapeAttr,
+            Map<String, HitBoxAttr> hitBoxes,
+            Map<String, InteractBoxAttr> interactBoxes,
             Map<String, ConnectorAttr> connectors,
             DragAttr aeroDynamic
     ) {
@@ -91,7 +94,8 @@ public class SubPartAttr {
         this.blockCollision = blockCollision;
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
-        this.collisionShapeAttr = collisionShapeAttr;
+        this.hitBoxes = hitBoxes;
+        this.interactBoxes = interactBoxes;
         this.connectors = connectors;
         this.aeroDynamic = aeroDynamic;
     }
@@ -115,8 +119,7 @@ public class SubPartAttr {
             LinkedHashMap<String, OBone> bones = modelIndex.getModel().getBones();//从模型获取所有骨骼
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
-            int i = 0;
-            for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.collisionShapeAttr.entrySet()) {
+            for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {//若找到了对应的碰撞形状骨骼
                     String hitBoxName = hitBoxEntry.getValue().hitBoxName();
                     float rha = hitBoxEntry.getValue().RHA();
@@ -176,9 +179,7 @@ public class SubPartAttr {
                             break;
                         default:
                             MachineMax.LOGGER.error("在部件{}中发现不支持的碰撞形状类型{}。", type.name, hitBoxEntry.getValue());
-                            continue;
                     }
-                    i++;
                 } else
                     MachineMax.LOGGER.error("在部件{}中未找到对应的碰撞形状骨骼{}。", type.name, hitBoxEntry.getKey());
             }

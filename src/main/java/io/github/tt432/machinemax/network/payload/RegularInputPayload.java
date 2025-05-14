@@ -20,6 +20,7 @@ import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.connector.AttachPointConnector;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.tt432.machinemax.common.vehicle.subsystem.SeatSubsystem;
+import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -83,16 +84,10 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
 
                 break;
             case LEAVE_VEHICLE://与载具等交互
-                if (player.getVehicle() != null && payload.tick_count() >= 10) {
+                if ((player.getVehicle() != null || ((IEntityMixin) player).machine_Max$getRidingSubsystem() != null) && payload.tick_count() >= 10) {
                     //处于骑乘状态，且长按互动键1秒，则尝试脱离载具
-                    if (player.getVehicle() instanceof MMPartEntity vehicle) {
-                        for (AbstractSubsystem subSystem : vehicle.part.subsystems.values()) {
-                            if (subSystem instanceof SeatSubsystem seatSubSystem) {
-                                seatSubSystem.removePassenger();
-                                player.stopRiding();
-                                break;
-                            }
-                        }
+                    if (((IEntityMixin) player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seatSubSystem) {
+                        seatSubSystem.removePassenger();
                         player.stopRiding();//保险措施，确保停止骑乘
                     } else player.stopRiding();//一般载具实体的处理方式
                 }
@@ -161,7 +156,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     while (i >= 0) {
                         //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限
                         String variant = iterators.getNextVariant();//获取下一个部件变体
-                        if (targetConnector==null || targetConnector.acceptableVariants.contains(variant)) {
+                        if (targetConnector == null || targetConnector.acceptableVariants.contains(variant)) {
                             ModelIndex modelIndex = new ModelIndex(partType.variants.get(variant), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
                             var locators = modelIndex.getModel().getLocators();
                             OLocator partConnectorLocator = locators.get(connectors.get(info.connector()).locatorName());

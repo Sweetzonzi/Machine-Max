@@ -16,13 +16,11 @@ import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bounding.BoundingBox;
-import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
-import io.github.tt432.machinemax.common.registry.MMDataComponents;
 import io.github.tt432.machinemax.common.vehicle.attr.ConnectorAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.HitBoxAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
@@ -110,7 +108,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         float totalMass = 0;
         for (SubPartAttr subPart : partType.subParts.values()) {
             totalMass += subPart.mass;
-            for (HitBoxAttr hitBox : subPart.collisionShapeAttr.values())
+            for (HitBoxAttr hitBox : subPart.hitBoxes.values())
                 subsystemHitBoxes.put(hitBox.hitBoxName(), new HashSet<>());//用于容纳与特定判定区绑定的子系统
         }
         this.totalMass = totalMass;
@@ -172,7 +170,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         float totalMass = 0;
         for (SubPartAttr subPart : type.subParts.values()) {
             totalMass += subPart.mass;
-            for (HitBoxAttr hitBox : subPart.collisionShapeAttr.values())
+            for (HitBoxAttr hitBox : subPart.hitBoxes.values())
                 subsystemHitBoxes.put(hitBox.hitBoxName(), new HashSet<>());//用于容纳与特定判定区绑定的子系统
         }
         this.totalMass = totalMass;

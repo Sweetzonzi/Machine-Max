@@ -10,6 +10,7 @@ import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(LivingEntityRenderer.class)
@@ -32,5 +33,15 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
             //According to the seat subsystem settings, cancel the rendering of the entity model
             if (!seatSubsystem.attr.renderPassenger) ci.cancel();
         }
+    }
+
+    @ModifyVariable(
+            method = "render*",
+            at = @At(value = "STORE"),
+            ordinal = 0
+    )
+    private boolean modifyShouldSit(boolean original) {
+        // 修改 shouldSit 的值
+        return true;
     }
 }
