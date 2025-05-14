@@ -35,7 +35,6 @@ public class PartType {
     public final Map<Long, Float> thickness = new HashMap<>();//碰撞体子形状id对应的材料厚度
     public final Map<Long, Float> damageReduction = new HashMap<>();//碰撞体子形状id对应的线性伤害减免
     public final Map<Long, Float> damageMultiplier = new HashMap<>();//碰撞体子形状id对应的伤害倍率
-
     //编解码器
     public static final Codec<Map<String, ResourceLocation>> VARIANT_MAP_CODEC = Codec.either(
             // 尝试解析为单个ResourceLocation（单值模式）

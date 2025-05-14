@@ -54,6 +54,7 @@ public class JointDriverSubsystem extends AbstractSubsystem{
 
     @Override
     public void onTick() {
+        super.onTick();
         if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
             //检查并设置关节的旋转顺序
             if (RotationOrder.valueOf(attr.rotationOrder) != joint.getRotationOrder()) {

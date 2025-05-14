@@ -33,6 +33,22 @@
           "rha": 1 //(可选)暂时无实际作用，计划影响护甲水平
         }
       },
+      "interact_boxes": {//交互判定区列表
+        "left_seat": {//键:交互判定区名称
+          "bone": "LeftInteractShape",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+          "signal_targets": {
+            "interact": ["left_seat"] //将交互信号转发给座椅子系统
+          },
+          "interact_mode": "accurate" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
+        },
+        "right_seat": {//键:交互判定区名称
+          "bone": "RightInteractShape",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+          "signal_targets": {
+            "interact": ["right_seat"] //将交互信号转发给座椅子系统
+          },
+          "interact_mode": "accurate" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
+        }
+      },
       "connectors": {//子部件用于与其他零件连接的对接口列表
         "chassis_connection": {//接口名称
           "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态

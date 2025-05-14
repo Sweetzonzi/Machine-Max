@@ -33,7 +33,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("resourceType.machine_max.assembly.cycle_connector", "循环部件连接口");
         this.add("resourceType.machine_max.assembly.cycle_variant", "循环部件变体");
         //提示信息
-        this.add("message.machine_max.leaving_vehicle", "长按%1$s键%2$s/0.50秒以离开载具");
+        this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
+        this.add("message.machine_max.watch_interact_box_info", "按[%1$s]键与%2$s互动");
         this.add("tooltip.machinemax.crossbar.interact", "互动以拆除：");
         this.add("tooltip.machinemax.spray_can.interact", "互动以喷涂：");
     }

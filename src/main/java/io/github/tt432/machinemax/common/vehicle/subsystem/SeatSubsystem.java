@@ -1,5 +1,7 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.physics.SparkMathKt;
+import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.client.input.KeyBinding;
 import io.github.tt432.machinemax.client.input.RawInputHandler;
@@ -9,6 +11,7 @@ import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
+import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import lombok.Getter;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -21,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class SeatSubsystem extends AbstractSubsystem{
+public class SeatSubsystem extends AbstractSubsystem {
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
     public AbstractConnector seatLocator;
@@ -52,23 +55,29 @@ public class SeatSubsystem extends AbstractSubsystem{
 
     @Override
     public void onTick() {
+        super.onTick();
         if (passenger != null && this.owner.getPart() instanceof Part part) {
             if (passenger.isRemoved() || passenger.isDeadOrDying()) {
                 removePassenger();
                 return;
             }
-            if (part.entity != null && passenger.getVehicle() != part.entity)
-                passenger.startRiding(part.entity, true);
-            else if (part.entity == null) {
+            if (part.entity != null && passenger.getVehicle() != part.entity) {
+                if (!passenger.level().isClientSide) passenger.startRiding(part.entity, true);
+                passenger.resetFallDistance();//防止摔死
+                if (tickCount % 40 == 0) MachineMax.LOGGER.debug("{} 开始乘坐 {},{}", passenger.getName(), this.name,tickCount);
+                Vector3f pos = MMMath.relPointWorldPos(seatLocator.subPartTransform.getTranslation(), part.rootSubPart.body);
+                passenger.setPos(SparkMathKt.toVec3(pos));
+            } else if (part.entity == null) {
                 removePassenger();
-                return;
             } else {
                 passenger.resetFallDistance();//防止摔死
+                if (tickCount % 40 == 0) MachineMax.LOGGER.debug("{} 正在乘坐 {},{}", passenger.getName(), this.name,tickCount);
+                Vector3f pos = MMMath.relPointWorldPos(seatLocator.subPartTransform.getTranslation(), part.rootSubPart.body);
+                passenger.setPos(SparkMathKt.toVec3(pos));
             }
-//            Vector3f pos = MMMath.relPointWorldPos(seatLocator.subPartTransform.getTranslation(), part.rootSubPart.body);
-//            passenger.setPos(SparkMathKt.toVec3(pos));
         } else {
             resetSignalOutputs();
+            removePassenger();
         }
     }
 
@@ -76,11 +85,19 @@ public class SeatSubsystem extends AbstractSubsystem{
     public void onInteract(LivingEntity entity) {
         super.onInteract(entity);
         setPassenger(entity);
+        MachineMax.LOGGER.debug("{} 尝试乘坐 {}", entity.getName(), this.name);
     }
 
     @Override
     public void onSignalUpdated(String channelName, ISignalSender sender) {
         super.onSignalUpdated(channelName, sender);
+        if (!occupied) {//如果此座椅已有乘客，则忽略信号
+            Object signal = getSignalValueFrom(channelName, sender);
+            if (signal instanceof InteractSignal interactSignal) {
+                LivingEntity entity = interactSignal.getEntity();
+                onInteract(entity);
+            }
+        }
     }
 
     public void setPassenger(LivingEntity passenger) {

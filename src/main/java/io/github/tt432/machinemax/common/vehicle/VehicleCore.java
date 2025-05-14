@@ -259,11 +259,17 @@ public class VehicleCore {
      */
     public void addPart(Part part) {
         part.vehicle = this;
-        for (AbstractSubsystem subSystem : part.subsystems.values()) {//连接部件内子系统的传输关系
-            if (subSystem instanceof ISignalSender) ((ISignalSender) subSystem).setTargetFromNames();
+        for (AbstractSubsystem subSystem : part.subsystems.values()) {//连接部件内子系统的信号传输关系
+            subSystem.setTargetFromNames();
         }
         for (AbstractConnector connector : part.allConnectors.values()) {//连接部件内信号端口的传输关系
             if (connector.signalPort != null) connector.signalPort.setTargetFromNames();
+        }
+        for (SubPart subPart : part.subParts.values()){//连接部件内交互判定区的信号传输关系
+            if (subPart.interactBoxes != null)
+                for (InteractBox interactBox : subPart.interactBoxes.values()){
+                    interactBox.setTargetFromNames();
+                }
         }
         this.totalMass += part.totalMass;
         partMap.put(part.uuid, part);

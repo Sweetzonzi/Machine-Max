@@ -17,7 +17,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     public final AbstractConnector owner;
     public final Map<String, List<String>> targetNames;//接收哪些信号
     public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//将信号发给哪些目标
-    public ConcurrentMap<String, SignalChannel> signalInputs = new ConcurrentHashMap<>();//仅应被查询
+    public ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();//仅应被查询
 
     /**
      * 为部件对接口创建信号传输端口
@@ -37,7 +37,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
                 && ownerConnector.attachedConnector != null
                 && ownerConnector.attachedConnector.signalPort.getTargets().containsKey(channelName)) {
             ownerConnector.attachedConnector.signalPort.getTargets().get(channelName).forEach((receiverName, signalReceiver) -> {
-                SignalChannel currentChannels = signalInputs.get(channelName);
+                SignalChannel currentChannels = signalInputChannels.get(channelName);
                 SignalChannel receiverChannels = signalReceiver.getSignalInputChannels().computeIfAbsent(channelName, k -> new SignalChannel());
                 // 仅在实际发生变更时传播
                 if (!receiverChannels.equals(currentChannels)) {
@@ -54,7 +54,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
      * 对接口连接时，立即为对方更新一次信号
      */
     public void onConnectorAttach() {
-        for (Map.Entry<String, SignalChannel> entry : signalInputs.entrySet()) onSignalUpdated(entry.getKey(), this);
+        for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) onSignalUpdated(entry.getKey(), this);
     }
 
     /**

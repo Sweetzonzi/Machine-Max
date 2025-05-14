@@ -24,6 +24,8 @@ import org.joml.Quaternionf;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Getter
 public class SubPartAttr {
@@ -43,7 +45,9 @@ public class SubPartAttr {
     public final Map<String, ConnectorAttr> connectors;
     public final DragAttr aeroDynamic;
 
-    public final Map<String, CompoundCollisionShape> collisionShapes = new HashMap<>();
+    public final Map<String, CompoundCollisionShape> hitBoxShape = new HashMap<>();//不同变体零件模型的碰撞体积
+    public final Map<String, CompoundCollisionShape> interactBoxShape = new HashMap<>();//不同变体零件模型的交互体积
+    public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();//碰撞体子形状id对应的交互判定区名称
     public final Map<String, Transform> massCenterTransforms = new HashMap<>();
 
     public static final Codec<SubPartAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -109,12 +113,11 @@ public class SubPartAttr {
      * @return 碰撞体积
      */
     public CompoundCollisionShape getCollisionShape(String variant, PartType type) {
-        return collisionShapes.computeIfAbsent(variant, v -> {
+        return hitBoxShape.computeIfAbsent(variant, v -> {
             //创建碰撞体积 Create collision shape for sub-part
             var shape = new CompoundCollisionShape(1);
             ModelIndex modelIndex = new ModelIndex(
                     type.variants.getOrDefault(variant, type.variants.get("default")),//获取部件模型路径
-                    type.animation,//获取部件动画路径
                     type.textures.getFirst());//获取部件第一个可用纹理作为默认纹理
             LinkedHashMap<String, OBone> bones = modelIndex.getModel().getBones();//从模型获取所有骨骼
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
@@ -194,13 +197,62 @@ public class SubPartAttr {
                             SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
                     );
                 } else {
-                    MachineMax.LOGGER.error("在部件{}中未找到质心定位点{}。", type.name, this.massCenterLocator);
+                    MachineMax.LOGGER.warn("在部件{}中未找到质心定位点{}，未对子部件的碰撞体积进行偏移调整。", type.name, this.massCenterLocator);
                 }
                 shape.correctAxes(massCenter);//调整碰撞体位置，使模型原点对齐质心(必须在创建完成碰撞体积后进行！)
                 //TODO:重新计算并调节转动惯量
             }
             //将结果存入零件属性中 Store result in sub-part attributes
             this.massCenterTransforms.put(variant, massCenter);
+            return shape;
+        });
+    }
+
+    public CompoundCollisionShape getInteractBoxShape(String variant, PartType type) {
+        return interactBoxShape.computeIfAbsent(variant, v -> {
+            //创建交互体积 Create interact box shape for sub-part
+            var shape = new CompoundCollisionShape(1);
+            ModelIndex modelIndex = new ModelIndex(
+                    type.variants.getOrDefault(variant, type.variants.get("default")),//获取部件模型路径
+                    type.textures.getFirst());//获取部件第一个可用纹理作为默认纹理
+            LinkedHashMap<String, OBone> bones = modelIndex.getModel().getBones();//从模型获取所有骨骼
+            LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
+            for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
+            for (Map.Entry<String, InteractBoxAttr> interactBoxEntry : this.interactBoxes.entrySet()) {
+                String boneName = interactBoxEntry.getValue().boneName();
+                if (bones.get(boneName) != null) {//若找到了对应的碰撞形状骨骼
+                    String interactBoxName = interactBoxEntry.getKey();
+                    OBone bone = bones.get(boneName);
+                    for (OCube cube : bone.getCubes()) {
+                        org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
+                        BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
+                        org.joml.Vector3f rotation = cube.getRotation().toVector3f();
+                        Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
+                        interactBoxNames.put(boxShape.nativeId(), interactBoxName);
+                        shape.addChildShape(
+                                boxShape,
+                                PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
+                                SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
+                    }
+                } else
+                    MachineMax.LOGGER.error("在部件{}中未找到对应的交互形状骨骼{}。", type.name, interactBoxEntry.getValue().boneName());
+            }
+            //调整交互体积偏移 Adjust interact box shape offset
+            Transform massCenter = new Transform();
+            if (!this.massCenterLocator.isEmpty()) {//若零件制定了质心定位点
+                OLocator locator = locators.get(this.massCenterLocator);
+                if (locator != null) {
+                    org.joml.Vector3f rotation = locator.getRotation().toVector3f();
+                    massCenter = new Transform(
+                            PhysicsHelperKt.toBVector3f(locator.getOffset()),
+                            SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
+                    );
+                } else {
+                    MachineMax.LOGGER.warn("在部件{}的模型中未找到质心定位点{}，未对子部件的交互体积进行偏移调整。", type.name, this.massCenterLocator);
+                }
+                shape.correctAxes(massCenter);//调整碰撞体位置，使模型原点对齐质心(必须在创建完成碰撞体积后进行！)
+                //TODO:重新计算并调节转动惯量
+            }
             return shape;
         });
     }

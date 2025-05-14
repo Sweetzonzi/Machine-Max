@@ -34,7 +34,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("resourceType.machine_max.assembly.cycle_variant", "Cycle Part Variant");
 
         //提示信息
-        this.add("message.machine_max.leaving_vehicle", "Hold %1$s %2$s/0.50s to leave the vehicle.");
+        this.add("message.machine_max.leaving_vehicle", "Hold [%1$s] %2$s/0.50s to leave the vehicle.");
+        this.add("message.machine_max.watch_interact_box_info", "Press [%1$s] to interact with %2$s");
         this.add("tooltip.machinemax.crossbar.interact", "Interact to disassemble:");
         this.add("tooltip.machinemax.spray_can.interact", "Interact to paint:");
     }

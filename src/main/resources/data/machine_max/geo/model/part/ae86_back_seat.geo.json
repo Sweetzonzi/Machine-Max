@@ -16,8 +16,8 @@
 					"pivot": [0, -27, 0],
 					"locators": {
 						"AttachPoint": [0, 0, 0],
-						"LeftSeatPoint": [11, -5, -2],
-						"RightSeatPoint": [-11, -5, -2]
+						"LeftSeatPoint": [11, -15, -2],
+						"RightSeatPoint": [-11, -15, -2]
 					}
 				},
 				{
@@ -166,11 +166,6 @@
 					]
 				},
 				{
-					"name": "mmPartBody_BackSeat",
-					"parent": "BackSeat",
-					"pivot": [0, 0, 0]
-				},
-				{
 					"name": "CollisionShape",
 					"parent": "root",
 					"pivot": [0, 0, 0],
@@ -185,6 +180,30 @@
 							"size": [33, 4, 13],
 							"pivot": [-0.5, 0, 0],
 							"rotation": [65, 0, 0],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "LeftInteractShape",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-17.5, -7, -8],
+							"size": [17, 18, 18],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "RightInteractShape",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [0.5, -7, -8],
+							"size": [17, 18, 18],
 							"uv": {}
 						}
 					]

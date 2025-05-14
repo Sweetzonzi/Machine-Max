@@ -13,7 +13,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class MMPayloadRegistry {
     @SubscribeEvent
-    public static void register(final RegisterPayloadHandlersEvent event){
+    public static void register(final RegisterPayloadHandlersEvent event) {
         final PayloadRegistrar input = event.registrar("input:1.0.0");
         final PayloadRegistrar sync = event.registrar("sync:1.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.0.0");
@@ -32,6 +32,14 @@ public class MMPayloadRegistry {
                 new DirectionalPayloadHandler<>(
                         RegularInputPayload::clientHandler,
                         RegularInputPayload::serverHandler
+                )
+        );
+        input.playBidirectional(//子系统交互
+                SubsystemInteractPayload.TYPE,
+                SubsystemInteractPayload.STREAM_CODEC,
+                new DirectionalPayloadHandler<>(
+                        SubsystemInteractPayload::clientHandler,
+                        SubsystemInteractPayload::serverHandler
                 )
         );
         sync.playToClient(//通知客户端创建载具

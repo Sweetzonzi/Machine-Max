@@ -82,6 +82,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public final Map<String, AbstractConnector> allConnectors = HashMap.newHashMap(1);
     public final Map<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
     public final Map<String, Set<AbstractSubsystem>> subsystemHitBoxes = new HashMap<>();
+    public final Map<String, AbstractSubsystem> subsystemInteractBoxes = new HashMap<>();
     public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
 
     /**

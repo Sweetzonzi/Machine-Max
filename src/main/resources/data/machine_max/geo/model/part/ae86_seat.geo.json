@@ -16,7 +16,7 @@
 					"pivot": [0, 0, 0],
 					"locators": {
 						"AttachPoint": [0, 0, 0],
-						"SeatPoint": [0, -5, -3]
+						"SeatPoint": [0, -15, -3]
 					}
 				},
 				{
@@ -260,6 +260,18 @@
 							"size": [11, 4, 13],
 							"pivot": [8.5, -1.5, -0.5],
 							"rotation": [70, 0, 0],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "InteractShape",
+					"parent": "root",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-6.5, -9, -9],
+							"size": [13, 22, 16],
 							"uv": {}
 						}
 					]

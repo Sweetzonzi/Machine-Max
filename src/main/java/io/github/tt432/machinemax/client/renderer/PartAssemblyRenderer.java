@@ -77,6 +77,10 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         }
     }
 
+    public void renderInteractBoxes(){
+        //TODO: 实现交互判定区的渲染
+    }
+
     public void renderAttachPoints(PartType partType, String variant, Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
         Iterator<Map.Entry<AbstractConnector, PhysicsRigidBody>> iterator = attachPoints.entrySet().iterator();

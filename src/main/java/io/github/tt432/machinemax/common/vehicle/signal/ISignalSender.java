@@ -11,7 +11,7 @@ public interface ISignalSender {
      * 在此填入各个信号名对应的接收者名列表，用于自动组织信号传输关系。<p>
      * Return a map of signal names to a list of receiver names here, to automatically organize signal transfer.
      *
-     * @return 信号名称->接收者名称列表 Map of signal names to a list of receiver names.
+     * @return 信号频道->接收者名称列表 Map of signal channels to a list of receiver names.
      */
     Map<String, List<String>> getTargetNames();
 
@@ -67,7 +67,7 @@ public interface ISignalSender {
     }
 
     /**
-     * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
+     * 将信号发送到所有接收此信号的目标，所有目标在同一频道收到同数值的信号
      *
      * @param signalChannel             信号频道名
      * @param signalValue               信号值

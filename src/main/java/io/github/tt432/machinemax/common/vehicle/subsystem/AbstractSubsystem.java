@@ -140,8 +140,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
             //被清除动态设置的信号传输目标，防止信号传输到已分离部件的子系统
             //使用迭代器的remove方法
             this.callbackTargets.entrySet().removeIf(entry -> entry.getValue() instanceof AbstractSubsystem subsystem && subsystem.getPart().vehicle != this.getPart().vehicle);
-            if (this instanceof ISignalSender && this instanceof ISignalReceiver callbackListener)
-                callbackListener.clearCallbackChannel();
+            this.clearCallbackChannel();
         }
     }
 

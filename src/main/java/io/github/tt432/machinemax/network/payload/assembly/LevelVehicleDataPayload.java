@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 
-//TODO:改成Configuration Task或许更好？但是它能够在玩家主动切换维度时而不是仅在登录时进行吗？
+//TODO:改成Configuration Task或许更好？通过net.minecraft.network.protocol.game.ClientboundStartConfigurationPacket
 public record LevelVehicleDataPayload(
         ResourceKey<Level> dimension,//载具数据包的维度 The dimension of the vehicle data packet
         Set<VehicleData> vehicles,//维度内所有载具信息 All vehicle data in the dimension

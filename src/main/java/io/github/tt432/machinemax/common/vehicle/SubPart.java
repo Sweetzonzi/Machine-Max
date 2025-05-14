@@ -9,15 +9,16 @@ import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.TaskSubmitOffice;
-import com.jme3.bullet.collision.AfMode;
-import com.jme3.bullet.collision.ManifoldPoints;
-import com.jme3.bullet.collision.PhysicsCollisionObject;
-import com.jme3.bullet.collision.PhysicsRayTestResult;
+import com.jme3.bullet.collision.*;
+import com.jme3.bullet.collision.shapes.CollisionShape;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
+import io.github.tt432.machinemax.common.registry.MMAttachments;
+import io.github.tt432.machinemax.common.vehicle.attr.InteractBoxAttr;
 import io.github.tt432.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
@@ -27,10 +28,10 @@ import io.github.tt432.machinemax.util.ShapeHelper;
 import io.github.tt432.machinemax.util.formula.Dynamic;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -41,6 +42,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollisionObjectTicker {
@@ -50,8 +53,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public SubPart parent;
     public Transform massCenterTransform = new Transform();
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
-    public final PhysicsRigidBody body;
-    public final CompoundCollisionShape collisionShape;
+    public final PhysicsRigidBody body;//物理对象
+    public final InteractBoxes interactBoxes;//交互判定
+    public final CompoundCollisionShape collisionShape;//碰撞形状
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
     //流体动力相关参数
@@ -63,6 +67,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         this.name = name;
         this.attr = attr;
         this.collisionShape = attr.getCollisionShape(part.variant, part.type);
+        if (!attr.interactBoxes.isEmpty())
+            this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape(part.variant, part.type));
+        else this.interactBoxes = null;
         this.body = new PhysicsRigidBody(name, this, this.collisionShape, attr.mass);
         this.body.setFriction(1.0f);
         this.body.setAnisotropicFriction(PhysicsHelperKt.toBVector3f(attr.friction), AfMode.basic);
@@ -84,7 +91,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public void addToLevel() {
         this.bindBody(body, part.level.getPhysicsLevel(), true,
                 (body -> {
-                    body.addCollisionCallback(this);//TODO:写接触规则
+                    body.addCollisionCallback(this);
                     body.addPhysicsTicker(this);
                     body.setProtectGravity(true);
                     body.setSleepingThresholds(0.1f, 0.1f);
@@ -409,5 +416,80 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     }
 
     public void mcTick(@NotNull PhysicsCollisionObject pco, @NotNull Level level) {
+    }
+
+    public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implements PhysicsHost, PhysicsCollisionObjectTicker, PhysicsCollisionListener {
+
+        public final SubPart subPart;
+        public final CompoundCollisionShape interactBoxShape;
+        public final PhysicsRigidBody body;
+
+        public InteractBoxes(SubPart subPart, Map<String, InteractBoxAttr> boxes, CompoundCollisionShape interactBoxShape) {
+            this.subPart = subPart;
+            this.interactBoxShape = interactBoxShape;
+            for (Map.Entry<String, InteractBoxAttr> entry : boxes.entrySet()) {
+                String name = entry.getKey();
+                InteractBox interactBox = new InteractBox(subPart, name, entry.getValue());
+                this.put(name, interactBox);
+            }
+            this.body = new PhysicsRigidBody(name, this, interactBoxShape);
+            this.body.setKinematic(true);
+            this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_NO_COLLISION);
+            this.body.setCollideWithGroups(VehicleManager.COLLISION_GROUP_NONE);
+            bindBody(this.body, getPhysicsLevel(), true, body -> {
+                body.addPhysicsTicker(this);
+                return null;
+            });
+        }
+
+        @Override
+        public void postPhysicsTick(@NotNull PhysicsCollisionObject body, @NotNull PhysicsLevel level) {
+            PhysicsCollisionObjectTicker.super.postPhysicsTick(body, level);
+            Vector3f position = subPart.body.getPhysicsLocation(null);
+            Quaternion rotation = subPart.body.getPhysicsRotation(null);
+            if (body instanceof PhysicsRigidBody rigidBody) {
+                rigidBody.setPhysicsLocation(position);
+                rigidBody.setPhysicsRotation(rotation);
+                getPhysicsLevel().getWorld().contactTest(this.body, this);
+            }
+        }
+
+        @Override
+        public void collision(PhysicsCollisionEvent event) {
+            PhysicsRigidBody entityHitBox;
+            int interactBoxIndex;
+            if (event.getObjectA() == this.body) {
+                entityHitBox = (PhysicsRigidBody) event.getObjectB();
+                interactBoxIndex = event.getIndex0();
+            } else if (event.getObjectB() == this.body) {
+                entityHitBox = (PhysicsRigidBody) event.getObjectA();
+                interactBoxIndex = event.getIndex1();
+            } else return;//事件与交互判定无关时提前返回
+            if (entityHitBox.getOwner() instanceof LivingEntity entity) {
+                InteractBox interactBox = getInteractBox(interactBoxIndex);
+                InteractBox.InteractMode mode = interactBox.interactMode;
+                if (mode == InteractBox.InteractMode.FAST && entity.hasData(MMAttachments.getENTITY_EYESIGHT())) {
+                    var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
+                    eyesight.addFastInteractBox(interactBox);
+                }
+            }
+        }
+
+        public InteractBox getInteractBox(long childShapeId) {
+            String name = subPart.attr.interactBoxNames.get(childShapeId);
+            return this.get(name);
+        }
+
+        public InteractBox getInteractBox(int contactPointIndex) {
+            long childShapeId = this.interactBoxShape.findChild(contactPointIndex).getShape().nativeId();
+            return getInteractBox(childShapeId);
+        }
+
+        @NotNull
+        @Override
+        public PhysicsLevel getPhysicsLevel() {
+            return subPart.getPhysicsLevel();
+        }
+
     }
 }

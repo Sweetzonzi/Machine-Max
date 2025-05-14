@@ -14,6 +14,10 @@ public interface ISignalReceiver {
         return getSignalInputChannels().computeIfAbsent(channelName, k -> new SignalChannel());
     }
 
+    default Object getSignalValueFrom(String channelName, ISignalSender sender) {
+        return getSignalChannel(channelName).get(sender);
+    }
+
     default void clearCallbackChannel() {
         if (getSignalInputChannels().containsKey("callback")) getSignalInputChannels().get("callback").clear();
         if (getSignalInputChannels().containsKey("speed_feedback")) getSignalInputChannels().get("speed_feedback").clear();
