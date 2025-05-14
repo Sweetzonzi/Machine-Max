@@ -1,16 +1,15 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.TransmissionSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.ISignalReceiver;
 import io.github.tt432.machinemax.common.vehicle.signal.ISignalSender;
 import io.github.tt432.machinemax.common.vehicle.signal.MechPowerSignal;
-import io.github.tt432.machinemax.common.vehicle.signal.Signals;
+import io.github.tt432.machinemax.common.vehicle.signal.SignalChannel;
 
 import java.util.*;
 
-public class TransmissionSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
+public class TransmissionSubsystem extends AbstractSubsystem{
     public final TransmissionSubsystemAttr attr;
     private final float TOTAL_POWER_WEIGHT;
 
@@ -35,14 +34,14 @@ public class TransmissionSubsystem extends AbstractSubsystem implements ISignalR
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
-        clearCallbackSignals();
+        clearCallbackChannel();
     }
 
     private void distributePower() {
         double totalPower = 0.0;
         float averageSpeed = 0.0F;
         int count = 0;
-        Signals powerSignal = getSignals("power");
+        SignalChannel powerSignal = getSignalChannel("power");
         for (Map.Entry<ISignalSender, Object> entry : powerSignal.entrySet()) {
             if (entry.getValue() instanceof MechPowerSignal power) {
                 totalPower += power.getPower();//计算收到的总功率
@@ -68,7 +67,7 @@ public class TransmissionSubsystem extends AbstractSubsystem implements ISignalR
     private void updateFeedback() {
         float speed = 0;
         int count = 0;
-        Signals speedSignal = getSignals("speed_feedback");
+        SignalChannel speedSignal = getSignalChannel("speed_feedback");
         if (!speedSignal.values().isEmpty()) {
             for (Object value : speedSignal.values()) {
                 if (value instanceof Float f) {

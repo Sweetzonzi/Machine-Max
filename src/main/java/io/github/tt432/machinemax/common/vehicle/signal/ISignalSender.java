@@ -15,18 +15,18 @@ public interface ISignalSender {
      */
     Map<String, List<String>> getTargetNames();
 
-    Map<String, Map<String, ISignalReceiver>> getTargets();//信号名称->接收者名称->接收者 Signal key -> receiver hitBoxName -> receiver
+    Map<String, Map<String, ISignalReceiver>> getTargets();//信号频道名称->接收者名称->接收者 Signal channel name -> receiver name -> receiver
 
     default Map<String, Set<ISignalReceiver>> getCallbackTargets() {
         return Map.of();
     }
 
-    default void addCallbackTarget(String signalKey, ISignalReceiver target) {
-        getCallbackTargets().computeIfAbsent(signalKey, k -> new HashSet<>()).add(target);
+    default void addCallbackTarget(String signalChannel, ISignalReceiver target) {
+        getCallbackTargets().computeIfAbsent(signalChannel, k -> new HashSet<>()).add(target);
     }
 
-    default void removeCallbackTarget(String signalKey, ISignalReceiver target) {
-        getCallbackTargets().computeIfAbsent(signalKey, k -> new HashSet<>()).remove(target);
+    default void removeCallbackTarget(String signalChannel, ISignalReceiver target) {
+        getCallbackTargets().computeIfAbsent(signalChannel, k -> new HashSet<>()).remove(target);
     }
 
     default void clearCallbackTargets() {
@@ -43,14 +43,14 @@ public interface ISignalSender {
         for (Map.Entry<String, Map<String, ISignalReceiver>> entry : getTargets().entrySet()) {
             entry.getValue().forEach((receiverName, signalReceiver) -> {
                 var emptySignal = new EmptySignal();
-                signalReceiver.getSignalInputs().computeIfAbsent(entry.getKey(), k -> new Signals()).put(this, emptySignal);
+                signalReceiver.getSignalInputChannels().computeIfAbsent(entry.getKey(), k -> new SignalChannel()).put(this, emptySignal);
                 signalReceiver.onSignalUpdated(entry.getKey(), this);
             });
         }
         for (Map.Entry<String, Set<ISignalReceiver>> entry : getCallbackTargets().entrySet()) {
             entry.getValue().forEach((signalReceiver) -> {
                 var emptySignal = new EmptySignal();
-                signalReceiver.getSignalInputs().computeIfAbsent(entry.getKey(), k -> new Signals()).put(this, emptySignal);
+                signalReceiver.getSignalInputChannels().computeIfAbsent(entry.getKey(), k -> new SignalChannel()).put(this, emptySignal);
                 signalReceiver.onSignalUpdated(entry.getKey(), this);
             });
         }
@@ -59,27 +59,27 @@ public interface ISignalSender {
     /**
      * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
      *
-     * @param signalKey   信号名称
+     * @param signalChannel   信号频道名称
      * @param signalValue 信号值
      */
-    default void sendSignalToAllTargets(String signalKey, Object signalValue) {
-        sendSignalToAllTargets(signalKey, signalValue, false);
+    default void sendSignalToAllTargets(String signalChannel, Object signalValue) {
+        sendSignalToAllTargets(signalChannel, signalValue, false);
     }
 
     /**
      * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
      *
-     * @param signalKey                 信号名称
+     * @param signalChannel             信号频道名
      * @param signalValue               信号值
      * @param requiresImmediateCallback 是否需要即时回调
      */
-    default void sendSignalToAllTargets(String signalKey, Object signalValue, boolean requiresImmediateCallback) {
-        if (getTargets().containsKey(signalKey))
-            getTargets().get(signalKey).forEach((receiverName, signalReceiver) -> {
-                signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
-                signalReceiver.onSignalUpdated(signalKey, this);
+    default void sendSignalToAllTargets(String signalChannel, Object signalValue, boolean requiresImmediateCallback) {
+        if (getTargets().containsKey(signalChannel))
+            getTargets().get(signalChannel).forEach((receiverName, signalReceiver) -> {
+                signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
+                signalReceiver.onSignalUpdated(signalChannel, this);
                 if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
-                    callbackSender.sendImmediateCallback(signalKey, (ISignalReceiver) this);
+                    callbackSender.sendImmediateCallback(signalChannel, (ISignalReceiver) this);
                 }
             });
     }
@@ -87,30 +87,30 @@ public interface ISignalSender {
     /**
      * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
      *
-     * @param targetName  接收者名称
-     * @param signalKey   信号名称
-     * @param signalValue 信号值
+     * @param targetName    接收者名称
+     * @param signalChannel 信号名称
+     * @param signalValue   信号值
      */
-    default void sendSignalToTarget(String targetName, String signalKey, Object signalValue) {
-        sendSignalToTarget(targetName, signalKey, signalValue, false);
+    default void sendSignalToTarget(String targetName, String signalChannel, Object signalValue) {
+        sendSignalToTarget(targetName, signalChannel, signalValue, false);
     }
 
     /**
      * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
      *
      * @param targetName                接收者名称
-     * @param signalKey                 信号名称
+     * @param signalChannel                 信号名称
      * @param signalValue               信号值
      * @param requiresImmediateCallback 是否需要即时回调
      */
-    default void sendSignalToTarget(String targetName, String signalKey, Object signalValue, boolean requiresImmediateCallback) {
-        if (getTargets().containsKey(signalKey)) {
-            ISignalReceiver signalReceiver = getTargets().get(signalKey).get(targetName);
+    default void sendSignalToTarget(String targetName, String signalChannel, Object signalValue, boolean requiresImmediateCallback) {
+        if (getTargets().containsKey(signalChannel)) {
+            ISignalReceiver signalReceiver = getTargets().get(signalChannel).get(targetName);
             if (signalReceiver != null) {
-                signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
-                signalReceiver.onSignalUpdated(signalKey, this);
+                signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
+                signalReceiver.onSignalUpdated(signalChannel, this);
                 if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
-                    callbackSender.sendImmediateCallback(signalKey, (ISignalReceiver) this);
+                    callbackSender.sendImmediateCallback(signalChannel, (ISignalReceiver) this);
                 }
             }
         }
@@ -121,24 +121,24 @@ public interface ISignalSender {
      *
      * @param callbackListener 回调监听器
      */
-    default void sendImmediateCallback(String signalKey, ISignalReceiver callbackListener) {
-        sendCallbackToListener("callback", callbackListener, signalKey);//发回收到的信号类型，尝试握手
+    default void sendImmediateCallback(String signalChannel, ISignalReceiver callbackListener) {
+        sendCallbackToListener("callback", callbackListener, signalChannel);//发回收到的信号类型，尝试握手
     }
 
-    default void sendCallbackToAllListeners(String signalKey, Object signalValue) {
+    default void sendCallbackToAllListeners(String signalChannel, Object signalValue) {
         if (this instanceof ISignalReceiver) {
-            var targets = getCallbackTargets().computeIfAbsent(signalKey, k -> new HashSet<>());
+            var targets = getCallbackTargets().computeIfAbsent(signalChannel, k -> new HashSet<>());
             for (ISignalReceiver target : targets) {
-                target.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
-                target.onSignalUpdated(signalKey, this);
+                target.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
+                target.onSignalUpdated(signalChannel, this);
             }
         }
     }
 
-    default void sendCallbackToListener(String signalKey, ISignalReceiver receiver, Object signalValue) {
+    default void sendCallbackToListener(String signalChannel, ISignalReceiver receiver, Object signalValue) {
         if (this instanceof ISignalReceiver) {
-            receiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals()).put(this, signalValue);
-            receiver.onSignalUpdated(signalKey, this);
+            receiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
+            receiver.onSignalUpdated(signalChannel, this);
         }
     }
 
@@ -173,8 +173,8 @@ public interface ISignalSender {
                 targets.add(ownerPart);
             } else if (subSystems.containsKey(targetName)) {
                 AbstractSubsystem subSystem = subSystems.get(targetName);
-                if (subSystem instanceof ISignalReceiver) {
-                    targets.add((ISignalReceiver) subSystem);
+                if (subSystem != null) {
+                    targets.add(subSystem);
                 }
             } else if (ports.containsKey(targetName)) {
                 SignalPort signalPort = ports.get(targetName);

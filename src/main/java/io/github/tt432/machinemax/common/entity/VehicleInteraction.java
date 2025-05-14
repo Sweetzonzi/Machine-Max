@@ -47,12 +47,10 @@ public class VehicleInteraction {
         if (part != null && !event.getEntity().isShiftKeyDown()) {
             for (AbstractSubsystem subSystem : part.subsystems.values()) {
                 if (subSystem instanceof SeatSubsystem seatSubSystem && !seatSubSystem.occupied) {
-                    boolean success = seatSubSystem.setPassenger(event.getEntity());
-                    if (success) {
-                        event.setCancellationResult(InteractionResult.SUCCESS);
-                        event.setCanceled(true);
-                        return;
-                    }
+                    seatSubSystem.onInteract(event.getEntity());
+                    event.setCancellationResult(InteractionResult.SUCCESS);
+                    event.setCanceled(true);
+                    return;
                 }
             }
         }

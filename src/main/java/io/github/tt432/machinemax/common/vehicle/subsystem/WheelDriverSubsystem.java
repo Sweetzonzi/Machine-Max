@@ -15,11 +15,10 @@ import io.github.tt432.machinemax.common.vehicle.signal.*;
 import jme3utilities.math.MyQuaternion;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
+public class WheelDriverSubsystem extends AbstractSubsystem {
     public final WheelDriverSubsystemAttr attr;
     public final SpecialConnector connector;
     private final float MAX_SPEED;
@@ -62,7 +61,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
         float totalPower = 0f;
         float speed = 0f;
         int i = 0;
-        Signals powers = getSignals("power");
+        SignalChannel powers = getSignalChannel("power");
         for (Map.Entry<ISignalSender, Object> entry : powers.entrySet()) {
             i++;
             if (entry.getValue() instanceof MechPowerSignal power) {
@@ -135,15 +134,15 @@ public class WheelDriverSubsystem extends AbstractSubsystem implements ISignalRe
     }
 
     private Signal<?> getControlInput() {
-        Signals controlSignals = new Signals();
+        SignalChannel controlChannels = new SignalChannel();
         //获取控制信号
         for (String signalKey : attr.controlSignalKeys) {
-            controlSignals = getSignals(signalKey);//获取目标速度信号(马达，仅控制速度)
-            if (!controlSignals.isEmpty() && !(controlSignals.getFirst() instanceof EmptySignal)) break;
+            controlChannels = getSignalChannel(signalKey);//获取目标速度信号(马达，仅控制速度)
+            if (!controlChannels.isEmpty() && !(controlChannels.getFirst() instanceof EmptySignal)) break;
         }
-        if (controlSignals.getFirst() instanceof WheelControlSignal wheelControlSignal) {//若输入为原始移动输入信号
+        if (controlChannels.getFirst() instanceof WheelControlSignal wheelControlSignal) {//若输入为原始移动输入信号
             return wheelControlSignal;
-        } else if (controlSignals.getFirst() instanceof MoveInputSignal moveInputSignal)
+        } else if (controlChannels.getFirst() instanceof MoveInputSignal moveInputSignal)
             return new WheelControlSignal(Pair.of(
                     moveInputSignal.getMoveInput()[2] / 100f,
                     (float) moveInputSignal.getMoveInput()[4]

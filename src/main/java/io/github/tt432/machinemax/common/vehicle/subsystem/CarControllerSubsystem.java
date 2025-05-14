@@ -10,7 +10,7 @@ import lombok.Getter;
 import java.util.*;
 
 @Getter
-public class CarControllerSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
+public class CarControllerSubsystem extends AbstractSubsystem{
     public final CarControllerSubsystemAttr attr;
     public byte[] moveInput;
     public byte[] moveInputConflict;
@@ -62,7 +62,7 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
-        clearCallbackSignals();
+        clearCallbackChannel();
         for (String signalKey : attr.engineControlOutputTargets.keySet()) {
             sendSignalToAllTargets(signalKey, new EmptySignal(), true);
         }
@@ -81,11 +81,10 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
      * @see CarControllerSubsystem#onVehicleStructureChanged()
      */
     @Override
-    public void onSignalUpdated(String signalKey, ISignalSender sender) {
-        ISignalReceiver.super.onSignalUpdated(signalKey, sender);
-        Object signalValue = getSignals(signalKey).get(sender);
+    public void onSignalUpdated(String channelName, ISignalSender sender) {
+        Object signalValue = getSignalChannel(channelName).get(sender);
         if (this.isActive()) {
-            if (signalKey.equals("callback") && signalValue instanceof String callbackValue) {
+            if (channelName.equals("callback") && signalValue instanceof String callbackValue) {
                 if (sender instanceof WheelDriverSubsystem wheel) {
                     if (wheel.getPart().vehicle != this.getPart().vehicle) wheels.remove(signalValue);
                     else {
@@ -166,9 +165,9 @@ public class CarControllerSubsystem extends AbstractSubsystem implements ISignal
         byte[] moveInput = null;
         byte[] moveInputConflict = null;
         boolean hasMoveInput = false;
-        for (String inputKey : attr.controlInputKeys) {//遍历输入信号 Iterate over input signals
-            Signals signals = getSignals(inputKey);
-            for (Object signal : signals.values()) {
+        for (String inputKey : attr.controlInputKeys) {//遍历输入信号 Iterate over input signalChannel
+            SignalChannel signalChannel = getSignalChannel(inputKey);
+            for (Object signal : signalChannel.values()) {
                 if (signal instanceof MoveInputSignal moveInputSignal) {//找到移动输入信号 Find move input signal
                     moveInput = moveInputSignal.getMoveInput();
                     moveInputConflict = moveInputSignal.getMoveInputConflict();

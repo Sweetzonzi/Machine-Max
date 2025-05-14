@@ -11,7 +11,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.vehicle.attr.InteractBoxAttr;
-import io.github.tt432.machinemax.common.vehicle.subsystem.IInteractableSubsystem;
+import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import org.jetbrains.annotations.NotNull;
@@ -21,7 +21,7 @@ public class InteractBox implements PhysicsHost, PhysicsCollisionObjectTicker {
     public final SubPart subPart;
     public final InteractMode interactMode;
     public final PhysicsCollisionObject body;
-    public IInteractableSubsystem subsystem;
+    public AbstractSubsystem subsystem;
 
     public enum InteractMode {
         FAST,

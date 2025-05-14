@@ -1,7 +1,7 @@
 package io.github.tt432.machinemax.common.vehicle;
 
 import io.github.tt432.machinemax.common.vehicle.signal.ISignalReceiver;
-import io.github.tt432.machinemax.common.vehicle.signal.Signals;
+import io.github.tt432.machinemax.common.vehicle.signal.SignalChannel;
 import io.github.tt432.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import lombok.Getter;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentMap;
 public class SubsystemController implements ISignalReceiver {
     public final String name = "vehicle";
     public final VehicleCore CORE;
-    public final ConcurrentMap<String, Signals> signals = new ConcurrentHashMap<>();//可查可改
+    public final ConcurrentMap<String, SignalChannel> channels = new ConcurrentHashMap<>();//可查可改
     public final ConcurrentMap<String, Object> resources = new ConcurrentHashMap<>();//可查可改
     public final Set<AbstractSubsystem> allSubsystems = new HashSet<>();
 
@@ -60,14 +60,14 @@ public class SubsystemController implements ISignalReceiver {
     }
 
     @Override
-    public ConcurrentMap<String, Signals> getSignalInputs() {
-        return signals;
+    public ConcurrentMap<String, SignalChannel> getSignalInputChannels() {
+        return channels;
     }
 
     public void destroy(){
         allSubsystems.forEach(AbstractSubsystem::onDetach);
         allSubsystems.clear();
-        signals.clear();
+        channels.clear();
         resources.clear();
     }
 }

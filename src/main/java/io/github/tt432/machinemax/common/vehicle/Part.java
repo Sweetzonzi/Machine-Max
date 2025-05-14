@@ -82,7 +82,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public final Map<String, AbstractConnector> allConnectors = HashMap.newHashMap(1);
     public final Map<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
     public final Map<String, Set<AbstractSubsystem>> subsystemHitBoxes = new HashMap<>();
-    public final ConcurrentMap<String, Signals> signals = new ConcurrentHashMap<>();//部件内共享的信号
+    public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
 
     /**
      * <p>创建新部件，使用指定变体</p>
@@ -489,8 +489,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     @Override
-    public ConcurrentMap<String, Signals> getSignalInputs() {
-        return signals;
+    public ConcurrentMap<String, SignalChannel> getSignalInputChannels() {
+        return signalChannels;
     }
 
     @Nullable

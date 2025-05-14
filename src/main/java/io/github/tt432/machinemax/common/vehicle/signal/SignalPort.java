@@ -17,7 +17,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     public final AbstractConnector owner;
     public final Map<String, List<String>> targetNames;//接收哪些信号
     public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//将信号发给哪些目标
-    public ConcurrentMap<String, Signals> signalInputs = new ConcurrentHashMap<>();//仅应被查询
+    public ConcurrentMap<String, SignalChannel> signalInputs = new ConcurrentHashMap<>();//仅应被查询
 
     /**
      * 为部件对接口创建信号传输端口
@@ -32,18 +32,18 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     }
 
     @Override
-    public void onSignalUpdated(String signalKey, ISignalSender sender) {
+    public void onSignalUpdated(String channelName, ISignalSender sender) {
         if (owner instanceof AbstractConnector ownerConnector
                 && ownerConnector.attachedConnector != null
-                && ownerConnector.attachedConnector.signalPort.getTargets().containsKey(signalKey)) {
-            ownerConnector.attachedConnector.signalPort.getTargets().get(signalKey).forEach((receiverName, signalReceiver) -> {
-                Signals currentSignals = signalInputs.get(signalKey);
-                Signals receiverSignals = signalReceiver.getSignalInputs().computeIfAbsent(signalKey, k -> new Signals());
+                && ownerConnector.attachedConnector.signalPort.getTargets().containsKey(channelName)) {
+            ownerConnector.attachedConnector.signalPort.getTargets().get(channelName).forEach((receiverName, signalReceiver) -> {
+                SignalChannel currentChannels = signalInputs.get(channelName);
+                SignalChannel receiverChannels = signalReceiver.getSignalInputChannels().computeIfAbsent(channelName, k -> new SignalChannel());
                 // 仅在实际发生变更时传播
-                if (!receiverSignals.equals(currentSignals)) {
-                    receiverSignals.putAll(currentSignals);
-                    for (ISignalSender trueSender : currentSignals.keySet()) {
-                        signalReceiver.onSignalUpdated(signalKey, trueSender);
+                if (!receiverChannels.equals(currentChannels)) {
+                    receiverChannels.putAll(currentChannels);
+                    for (ISignalSender trueSender : currentChannels.keySet()) {
+                        signalReceiver.onSignalUpdated(channelName, trueSender);
                     }
                 }
             });
@@ -54,7 +54,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
      * 对接口连接时，立即为对方更新一次信号
      */
     public void onConnectorAttach() {
-        for (Map.Entry<String, Signals> entry : signalInputs.entrySet()) onSignalUpdated(entry.getKey(), this);
+        for (Map.Entry<String, SignalChannel> entry : signalInputs.entrySet()) onSignalUpdated(entry.getKey(), this);
     }
 
     /**
@@ -66,7 +66,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
             for (Map.Entry<String, Map<String, ISignalReceiver>> entry : targets.entrySet()) {//遍历输出的信号
                 for (ISignalReceiver receiver : entry.getValue().values()) {//遍历信号的输出目标
                     //从输出目标的信号输入中移除本端口的信号输出
-                    receiver.getSignalInputs().remove(entry.getKey());
+                    receiver.getSignalInputChannels().remove(entry.getKey());
                     if (receiver instanceof ISignalSender sender) {
                         sender.clearCallbackTargets();//由于动力反馈信号等是接收到动力输入后额外添加的，因此需要额外移除
                     }

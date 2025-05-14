@@ -1,6 +1,5 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.EngineSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
@@ -9,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EngineSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
+public class EngineSubsystem extends AbstractSubsystem{
     public final EngineSubsystemAttr attr;
     public final double MAX_ROT_SPEED;//最大转速(rad/s)
     public final double MAX_TORQUE_SPEED;//最大扭矩转速(rad/s)
@@ -51,7 +50,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
         Object speedFeedback = null;
-        for (Map.Entry<ISignalSender, Object> entry: getSignals("speed_feedback").entrySet()){
+        for (Map.Entry<ISignalSender, Object> entry: getSignalChannel("speed_feedback").entrySet()){
             if (entry.getValue() instanceof EmptySignal || entry.getValue() instanceof Float){
                 speedFeedback = entry.getValue();
             }
@@ -120,13 +119,13 @@ public class EngineSubsystem extends AbstractSubsystem implements ISignalReceive
     private void updateThrottleInput() {
         double powerControlInput = -1;
         for (String inputKey : attr.throttleInputKeys) {
-            Signals signals = getSignals(inputKey);
-            Object signal = signals.getFirst();
+            SignalChannel signalChannel = getSignalChannel(inputKey);
+            Object signal = signalChannel.getFirst();
             if (signal instanceof Float) {
-                powerControlInput = (float) signals.getFirst();
+                powerControlInput = (float) signalChannel.getFirst();
                 break;
             } else if (signal instanceof MoveInputSignal) {
-                powerControlInput = Math.abs(((MoveInputSignal) signals.getFirst()).getMoveInput()[2] / 100f);
+                powerControlInput = Math.abs(((MoveInputSignal) signalChannel.getFirst()).getMoveInput()[2] / 100f);
                 break;
             }
         }

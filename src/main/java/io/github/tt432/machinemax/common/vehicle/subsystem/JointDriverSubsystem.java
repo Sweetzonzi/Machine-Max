@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JointDriverSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
+public class JointDriverSubsystem extends AbstractSubsystem{
     public final JointDriverSubsystemAttr attr;
     public final SpecialConnector connector;
     private final Float[] powerAllocation = new Float[6];
@@ -181,15 +181,15 @@ public class JointDriverSubsystem extends AbstractSubsystem implements ISignalRe
         Float[] positionInput = new Float[6];
         for (int axis : attr.axisParams.keySet()) {
             MotorAttr axisAttr = attr.axisParams.get(axis);
-            Signals targetSpeed = new Signals();
-            Signals targetPosition = new Signals();
+            SignalChannel targetSpeed = new SignalChannel();
+            SignalChannel targetPosition = new SignalChannel();
             //获取控制信号
             for (String signalKey : axisAttr.targetSpeedSignalKey()) {
-                targetSpeed = getSignals(signalKey);//获取目标速度信号(马达，仅控制速度)
+                targetSpeed = getSignalChannel(signalKey);//获取目标速度信号(马达，仅控制速度)
                 if (!targetSpeed.isEmpty() && !(targetSpeed.getFirst() instanceof EmptySignal)) break;
             }
             for (String signalKey : axisAttr.targetPositionSignalKey()) {
-                targetPosition = getSignals(signalKey);//获取目标位置信号(伺服电机，试图达到目标位置)
+                targetPosition = getSignalChannel(signalKey);//获取目标位置信号(伺服电机，试图达到目标位置)
                 if (!targetPosition.isEmpty() && !(targetPosition.getFirst() instanceof EmptySignal)) break;
             }
             //按类型处理控制信号
@@ -214,7 +214,7 @@ public class JointDriverSubsystem extends AbstractSubsystem implements ISignalRe
 
     private void distributePower() {
         double totalPower = 0.0;
-        Signals powers = getSignals("power");
+        SignalChannel powers = getSignalChannel("power");
         for (Map.Entry<ISignalSender, Object> entry : powers.entrySet()) {
             if (entry.getValue() instanceof MechPowerSignal power) {
                 totalPower += (Math.signum(power.getSpeed())) * power.getPower();//计算收到的总功率(考虑转速方向)

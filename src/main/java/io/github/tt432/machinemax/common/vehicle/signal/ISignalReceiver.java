@@ -1,23 +1,21 @@
 package io.github.tt432.machinemax.common.vehicle.signal;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Function;
 
 public interface ISignalReceiver {
     String getName();
 
-    ConcurrentMap<String, Signals> getSignalInputs();
+    ConcurrentMap<String, SignalChannel> getSignalInputChannels();
 
-    default void onSignalUpdated(String signalKey, ISignalSender sender) {
+    default void onSignalUpdated(String channelName, ISignalSender sender) {
     }
 
-    default Signals getSignals(String signalKey) {
-        return getSignalInputs().computeIfAbsent(signalKey, k -> new Signals());
+    default SignalChannel getSignalChannel(String channelName) {
+        return getSignalInputChannels().computeIfAbsent(channelName, k -> new SignalChannel());
     }
 
-    default void clearCallbackSignals() {
-        if (getSignalInputs().containsKey("callback")) getSignalInputs().get("callback").clear();
-        if (getSignalInputs().containsKey("speed_feedback")) getSignalInputs().get("speed_feedback").clear();
+    default void clearCallbackChannel() {
+        if (getSignalInputChannels().containsKey("callback")) getSignalInputChannels().get("callback").clear();
+        if (getSignalInputChannels().containsKey("speed_feedback")) getSignalInputChannels().get("speed_feedback").clear();
     }
 }

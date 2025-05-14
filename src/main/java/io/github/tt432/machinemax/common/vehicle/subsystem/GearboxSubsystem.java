@@ -1,6 +1,5 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
-import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.GearboxSubsystemAttr;
@@ -13,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import java.util.*;
 
 @Getter
-public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
+public class GearboxSubsystem extends AbstractSubsystem{
     public final GearboxSubsystemAttr attr;
     public final double[] gearRatios;//各级实际传动比率 Actual transmission ratio of each gear
     public final int minPositiveGear;
@@ -52,7 +51,7 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
             if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof MMPartEntity) {
                 String gear = gearNames.get(currentGear);
                 if (!clutched || remainingSwitchTime > 0.0f) gear = "N";
-                Object engineSpeed = getPart().vehicle.subSystemController.getSignals("engine_speed").getFirst();
+                Object engineSpeed = getPart().vehicle.subSystemController.getSignalChannel("engine_speed").getFirst();
                 float engineRPM = engineSpeed instanceof Float f ? (float) (f / Math.PI * 30f) : 0.0f;
                 Minecraft.getInstance().player.displayClientMessage(Component.empty().append("Gear: " + gear + " Speed: " + String.format("%.1f", getPart().vehicle.getVelocity().length() * 3.6f) + " km/h RPM: " + String.format("%.0f", engineRPM)).withColor(engineRPM > 6500 ? 0xff0000 : 0xffffff), true);
             }
@@ -106,7 +105,7 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
         double totalPower = 0.0;
         double averageSpeed = 0.0;
         int count = 0;
-        Signals powerSignal = getSignals("power");
+        SignalChannel powerSignal = getSignalChannel("power");
         for (Map.Entry<ISignalSender, Object> entry : powerSignal.entrySet()) {
             if (entry.getValue() instanceof MechPowerSignal power) {
                 totalPower += power.getPower();//计算收到的总功率
@@ -129,7 +128,7 @@ public class GearboxSubsystem extends AbstractSubsystem implements ISignalReceiv
             return;
         }
         float speed;
-        Signals speedSignal = getSignals("speed_feedback");
+        SignalChannel speedSignal = getSignalChannel("speed_feedback");
         if (!speedSignal.values().isEmpty()) {
             for (Object value : speedSignal.values()) {
                 if (value instanceof Float f) {

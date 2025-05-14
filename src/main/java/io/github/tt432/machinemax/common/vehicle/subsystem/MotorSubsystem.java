@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
+public class MotorSubsystem extends AbstractSubsystem{
     public final MotorSubsystemAttr attr;
     public double rotSpeed;//当前转速(rad/s)
     public double throttleInput;//当前油门输入（0~1）
@@ -30,7 +30,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
         Object speedFeedback = null;
-        for (Map.Entry<ISignalSender, Object> entry: getSignals("speed_feedback").entrySet()){
+        for (Map.Entry<ISignalSender, Object> entry: getSignalChannel("speed_feedback").entrySet()){
             if (entry.getValue() instanceof EmptySignal || entry.getValue() instanceof Float){
                 speedFeedback = entry.getValue();
             }
@@ -89,12 +89,12 @@ public class MotorSubsystem extends AbstractSubsystem implements ISignalReceiver
     private void updateThrottleInput() {
         double powerControlInput = 0;
         for (String inputKey : attr.throttleInputKeys) {
-            Signals signals = getSignals(inputKey);
-            if (signals.getFirst() instanceof Float) {
-                powerControlInput = (float) signals.getFirst();
+            SignalChannel signalChannel = getSignalChannel(inputKey);
+            if (signalChannel.getFirst() instanceof Float) {
+                powerControlInput = (float) signalChannel.getFirst();
                 break;
-            } else if (signals.getFirst() instanceof MoveInputSignal) {
-                powerControlInput = Math.abs(((MoveInputSignal) signals.getFirst()).getMoveInput()[2] / 100f);
+            } else if (signalChannel.getFirst() instanceof MoveInputSignal) {
+                powerControlInput = Math.abs(((MoveInputSignal) signalChannel.getFirst()).getMoveInput()[2] / 100f);
                 break;
             }
         }

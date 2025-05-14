@@ -1,7 +1,5 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
-import cn.solarmoon.spark_core.physics.SparkMathKt;
-import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.client.input.KeyBinding;
 import io.github.tt432.machinemax.client.input.RawInputHandler;
@@ -11,7 +9,6 @@ import io.github.tt432.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.tt432.machinemax.mixin_interface.IEntityMixin;
-import io.github.tt432.machinemax.util.MMMath;
 import io.github.tt432.machinemax.util.data.KeyInputMapping;
 import lombok.Getter;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -24,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver, ISignalSender {
+public class SeatSubsystem extends AbstractSubsystem{
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
     public AbstractConnector seatLocator;
@@ -75,10 +72,19 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
         }
     }
 
-    public boolean setPassenger(LivingEntity passenger) {
-        if (passenger == null || occupied || passenger.isRemoved() || passenger.isDeadOrDying()) {
-            return false;
-        } else if (owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getRidingSubsystem() == null) {
+    @Override
+    public void onInteract(LivingEntity entity) {
+        super.onInteract(entity);
+        setPassenger(entity);
+    }
+
+    @Override
+    public void onSignalUpdated(String channelName, ISignalSender sender) {
+        super.onSignalUpdated(channelName, sender);
+    }
+
+    public void setPassenger(LivingEntity passenger) {
+        if (owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getRidingSubsystem() == null) {
             if (!passenger.level().isClientSide) passenger.startRiding(owner.getPart().entity, true);
             occupied = true;
             this.passenger = passenger;
@@ -92,8 +98,7 @@ public class SeatSubsystem extends AbstractSubsystem implements ISignalReceiver,
                                 String.format("%.2f", Math.clamp(0.05 * RawInputHandler.keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0), 0.0, 0.5))
                         ), true
                 );
-            return true;
-        } else return false;
+        }
     }
 
     public void removePassenger() {
