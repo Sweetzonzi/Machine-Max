@@ -17,7 +17,7 @@ public class InteractBox implements ISignalSender {
     public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//信号频道名->接收者名称->接收者
     public final SubPart subPart;
     public final InteractMode interactMode;
-
+    //TODO:是否处于启用状态的开关
     public enum InteractMode {
         FAST,
         ACCURATE
@@ -30,6 +30,9 @@ public class InteractBox implements ISignalSender {
         this.interactMode = InteractMode.valueOf(attr.mode().toUpperCase());
     }
 
+    //TODO:载具结构发生变化时重新确定连接的子系统
+
+    //TODO:回调？
     public void interact(LivingEntity entity){
         for (Map.Entry<String, Map<String, ISignalReceiver>> entry : targets.entrySet()){
             String channelName = entry.getKey();
