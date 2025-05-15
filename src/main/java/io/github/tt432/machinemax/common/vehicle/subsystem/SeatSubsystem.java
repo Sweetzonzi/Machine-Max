@@ -56,28 +56,27 @@ public class SeatSubsystem extends AbstractSubsystem {
     @Override
     public void onTick() {
         super.onTick();
+        if (tickCount % 40 == 0) MachineMax.LOGGER.debug("占用：{} ,{}正在乘坐", occupied, passenger);
         if (passenger != null && this.owner.getPart() instanceof Part part) {
             if (passenger.isRemoved() || passenger.isDeadOrDying()) {
                 removePassenger();
                 return;
             }
             if (part.entity != null && passenger.getVehicle() != part.entity) {
-                if (!passenger.level().isClientSide) passenger.startRiding(part.entity, true);
+                if (!passenger.level().isClientSide)
+                    passenger.startRiding(part.entity, true);
                 passenger.resetFallDistance();//防止摔死
-                if (tickCount % 40 == 0) MachineMax.LOGGER.debug("{} 开始乘坐 {},{}", passenger.getName(), this.name,tickCount);
-                Vector3f pos = MMMath.relPointWorldPos(seatLocator.subPartTransform.getTranslation(), part.rootSubPart.body);
-                passenger.setPos(SparkMathKt.toVec3(pos));
+//                Vector3f pos = MMMath.relPointWorldPos(seatLocator.subPartTransform.getTranslation(), part.rootSubPart.body);
+//                passenger.setPos(SparkMathKt.toVec3(pos));
             } else if (part.entity == null) {
                 removePassenger();
             } else {
                 passenger.resetFallDistance();//防止摔死
-                if (tickCount % 40 == 0) MachineMax.LOGGER.debug("{} 正在乘坐 {},{}", passenger.getName(), this.name,tickCount);
-                Vector3f pos = MMMath.relPointWorldPos(seatLocator.subPartTransform.getTranslation(), part.rootSubPart.body);
-                passenger.setPos(SparkMathKt.toVec3(pos));
+//                Vector3f pos = MMMath.relPointWorldPos(seatLocator.subPartTransform.getTranslation(), part.rootSubPart.body);
+//                passenger.setPos(SparkMathKt.toVec3(pos));
             }
         } else {
             resetSignalOutputs();
-            removePassenger();
         }
     }
 
@@ -85,12 +84,13 @@ public class SeatSubsystem extends AbstractSubsystem {
     public void onInteract(LivingEntity entity) {
         super.onInteract(entity);
         setPassenger(entity);
-        MachineMax.LOGGER.debug("{} 尝试乘坐 {}", entity.getName(), this.name);
+        MachineMax.LOGGER.debug("{} 尝试乘坐 {}", entity, this.name);
     }
 
     @Override
     public void onSignalUpdated(String channelName, ISignalSender sender) {
         super.onSignalUpdated(channelName, sender);
+        MachineMax.LOGGER.debug("{} 接收到信号 {} 来自 {}", this.name, channelName, sender.getPart().name);
         if (!occupied) {//如果此座椅已有乘客，则忽略信号
             Object signal = getSignalValueFrom(channelName, sender);
             if (signal instanceof InteractSignal interactSignal) {
@@ -102,7 +102,8 @@ public class SeatSubsystem extends AbstractSubsystem {
 
     public void setPassenger(LivingEntity passenger) {
         if (owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getRidingSubsystem() == null) {
-            if (!passenger.level().isClientSide) passenger.startRiding(owner.getPart().entity, true);
+            if (!getPart().level.isClientSide)
+                passenger.startRiding(owner.getPart().entity, true);
             occupied = true;
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setRidingSubsystem(this);

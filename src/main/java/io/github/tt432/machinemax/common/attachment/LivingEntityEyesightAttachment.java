@@ -48,6 +48,8 @@ public class LivingEntityEyesightAttachment {
     private final ConcurrentSkipListSet<PhysicsRigidBody> sortedTargets = new ConcurrentSkipListSet<>();
     private final CopyOnWriteArraySet<InteractBox> fastInteractBoxes = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArraySet<InteractBox> accurateInteractBoxes = new CopyOnWriteArraySet<>();
+    private final CopyOnWriteArraySet<InteractBox> fastInteractBoxCache = new CopyOnWriteArraySet<>();
+    private final CopyOnWriteArraySet<InteractBox> accurateInteractBoxCache = new CopyOnWriteArraySet<>();
     private HashMap<PhysicsRigidBody, PhysicsRayTestResult> targetsCache = new HashMap<>(2);
     private List<PhysicsRigidBody> sortedTargetsCache = new LinkedList<>();
     private double eyesightRange;
@@ -88,6 +90,10 @@ public class LivingEntityEyesightAttachment {
                             }
                         }
                 );
+                eyesight.fastInteractBoxCache.clear();
+                eyesight.accurateInteractBoxCache.clear();
+                eyesight.fastInteractBoxCache.addAll(eyesight.fastInteractBoxes);
+                eyesight.accurateInteractBoxCache.addAll(eyesight.accurateInteractBoxes);
                 eyesight.sortedTargetsCache = eyesight.sortedTargets.stream().toList();
                 eyesight.targetsCache = new HashMap<>(eyesight.targets);
                 return null;
@@ -172,7 +178,7 @@ public class LivingEntityEyesightAttachment {
         if (!sortedTargetsCache.isEmpty()) {
             for (PhysicsRigidBody body : sortedTargetsCache) {
                 if (body.getOwner() != null && body.getOwner() instanceof SubPart.InteractBoxes) {
-                    for (InteractBox interactBox : accurateInteractBoxes) {
+                    for (InteractBox interactBox : accurateInteractBoxCache) {
                         if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE) return interactBox;
                     }
                 } else return null;
@@ -182,8 +188,8 @@ public class LivingEntityEyesightAttachment {
     }
 
     public InteractBox getFastInteractBox() {
-        if (!fastInteractBoxes.isEmpty()) {
-            return fastInteractBoxes.iterator().next();
+        if (!fastInteractBoxCache.isEmpty()) {
+            return fastInteractBoxCache.iterator().next();
         }
         return null;
     }
