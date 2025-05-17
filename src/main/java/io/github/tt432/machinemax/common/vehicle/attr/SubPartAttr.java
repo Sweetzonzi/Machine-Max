@@ -37,6 +37,7 @@ public class SubPartAttr {
     public final Vec3 friction;
     public final float slipAdaptation;
     public final float rollingFriction;
+    public final float restitution;
     public final String blockCollision;
     public final float stepHeight;
     public final boolean climbAssist;
@@ -58,6 +59,7 @@ public class SubPartAttr {
             Vec3.CODEC.optionalFieldOf("friction", new Vec3(0.9, 1.5, 0.9)).forGetter(SubPartAttr::getFriction),
             Codec.FLOAT.optionalFieldOf("slip_adaptation", 0.5f).forGetter(SubPartAttr::getSlipAdaptation),
             Codec.FLOAT.optionalFieldOf("rolling_friction", 0.01f).forGetter(SubPartAttr::getRollingFriction),
+            Codec.FLOAT.optionalFieldOf("restitution", 0.1f).forGetter(SubPartAttr::getRestitution),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
             Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
@@ -80,6 +82,7 @@ public class SubPartAttr {
             Vec3 friction,
             float slipAdaptation,
             float rollingFriction,
+            float restitution,
             String blockCollision,
             float stepHeight,
             boolean climbAssist,
@@ -95,6 +98,7 @@ public class SubPartAttr {
         this.friction = friction;
         this.slipAdaptation = slipAdaptation;
         this.rollingFriction = rollingFriction;
+        this.restitution = restitution;
         this.blockCollision = blockCollision;
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;

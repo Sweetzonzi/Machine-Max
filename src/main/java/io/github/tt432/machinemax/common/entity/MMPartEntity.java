@@ -221,7 +221,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     public boolean canCollideWith(@NotNull Entity entity) {
-        return !(entity instanceof Player);
+        return false;
     }
 
     @Override

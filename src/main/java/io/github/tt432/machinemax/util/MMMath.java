@@ -39,9 +39,10 @@ public class MMMath {
     }
 
     public static Vector3f getLinearVelocityLocal(PhysicsRigidBody obj){
+        //TODO:检查逻辑
         Vector3f result = obj.getLinearVelocity(null);//获取物体质心在世界坐标系下的线速度
-        Quaternion localToWorld = obj.getPhysicsRotation(null); //获取物体相对世界坐标的四元数
-        MyQuaternion.rotateInverse(localToWorld, result, result);//旋转世界坐标系向量到刚体自身坐标系
+        Quaternion worldToLocal = obj.getPhysicsRotation(null); //获取物体相对世界坐标的四元数
+        MyQuaternion.rotateInverse(worldToLocal, result, result);//旋转世界坐标系向量到刚体自身坐标系
         return result;
     }
 
@@ -50,13 +51,16 @@ public class MMMath {
         Vector3f relAngularVel = obj.getAngularVelocityLocal(null);//获取物体相对自身坐标系的三轴角速度
         // 计算旋转带来的额外速度
         Vector3f extraVelocity = new Vector3f();
-        relAngularVel.cross(relPointPos, null);
-        return result.add(extraVelocity);
+        relAngularVel.cross(relPointPos, extraVelocity);
+        return result.addLocal(extraVelocity);
     }
 
     public static Vector3f relPointWorldVel(Vector3f relPointPos, PhysicsRigidBody obj){
-        Vector3f relPointVel = relPointLocalVel(relPointPos, obj);//获取相对位置的速度
-        Quaternion localToWorld = obj.getPhysicsRotation(null).normalizeLocal(); //获取物体相对世界坐标的四元数
-        return MyQuaternion.rotate(localToWorld, relPointVel, null);
+        Vector3f result = obj.getLinearVelocity(null);//获取物体质心在世界坐标系下的线速度
+        Vector3f relAngularVel = obj.getAngularVelocity(null);//获取物体在世界坐标系的三轴角速度
+        // 计算旋转带来的额外速度
+        Vector3f extraVelocity = new Vector3f();
+        relAngularVel.cross(localVectorToWorldVector(relPointPos, obj), extraVelocity);
+        return result.addLocal(extraVelocity);
     }
 }
