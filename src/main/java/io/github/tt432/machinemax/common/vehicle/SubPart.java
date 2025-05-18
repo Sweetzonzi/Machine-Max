@@ -208,9 +208,15 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 //计算碰撞法线方向上的速度(考虑冲量影响)
                 float blockArmor = ArmorUtil.getBlockArmor(part.level, blockState, blockPos);
                 float subPartArmor = part.type.thickness.get(childShapeId);
+                double partMass = body.getMass();//等效质量，考虑连接部件的影响
+                for (AbstractConnector connector : this.connectors.values()) {
+                    if (connector.hasPart())
+                        partMass += (0.3 * connector.attachedConnector.subPart.body.getMass());
+                }
+                partMass += 0.05 * part.vehicle.totalMass - body.getMass();
                 double contactNormalSpeed = Math.abs(contactVel.dot(normal)) + ManifoldPoints.getAppliedImpulse(manifoldPointId) / body.getMass();
                 double restitution = body.getRestitution() * other.getRestitution();//TODO:考虑二者护甲差距调整此系数
-                double contactEnergy = 0.5 * body.getMass() * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
+                double contactEnergy = 0.5 * partMass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
                 float blockDurability = 30 * blockState.getDestroySpeed(part.level, other.blockPos);
                 double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);//方块吸收的碰撞能量
                 double partEnergy = contactEnergy * blockArmor / (subPartArmor + blockArmor);//部件吸收的碰撞能量
@@ -225,7 +231,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                         });
                     }
                     //根据方块被破坏实际消耗的能量调整部件吸收的能量，但不全额作用为反冲量以提升操控流畅性
-                    double actualPartEnergy = 0.3 * partEnergy * ((250 * blockDurability) / blockEnergy);
+                    double actualPartEnergy = 0.1 * partEnergy * ((250 * blockDurability) / blockEnergy);
                     //部件减速
                     getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_" + blockPos + "_block_impulse", PPhase.PRE, () -> {
                         body.applyImpulse(normal.mult((float) (Math.sqrt(2 * actualPartEnergy * body.getMass()))),

@@ -1,13 +1,13 @@
 {
   "name": "ae86_back_seat",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
   "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-    "default": "machine_max:part/ae86_back_seat.geo"//若无变体，可缩减，即"variants": "machine_max:part/ae86_hull.geo"
+    "default": "machine_max:example_pack/model/ae86_back_seat.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_hull.geo.json"
   },
   "textures": [//部件贴图列表，不同变体模型应共享一张贴图
-    "machine_max:textures/part/ae86_1.png",
-    "machine_max:textures/part/ae86_2.png",
-    "machine_max:textures/part/ae86_3.png",
-    "machine_max:textures/part/ae86_4.png"
+    "machine_max:example_pack/texture/ae86_1.png",
+    "machine_max:example_pack/texture/ae86_2.png",
+    "machine_max:example_pack/texture/ae86_3.png",
+    "machine_max:example_pack/texture/ae86_4.png"
   ],
   "basic_durability": 50.0,//部件基础生命值
   "subsystems": {

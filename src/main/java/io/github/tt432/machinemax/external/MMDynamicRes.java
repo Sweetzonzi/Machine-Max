@@ -21,7 +21,6 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -42,7 +41,7 @@ public class MMDynamicRes {
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
-    public static final Path VEHICLES = NAMESPACE.resolve("vehicles");//载具包根文件夹
+    public static final Path VEHICLES = NAMESPACE.resolve("custom_packs");//载具包根文件夹
 
     /**注册热重载事件*/
     public static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
@@ -69,7 +68,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("texture")));
             packUp(packName, Exist(root.resolve("font")));
             //各种MM配置
-            packUp(packName, Exist(root.resolve("part")));
+            packUp(packName, Exist(root.resolve("model")));
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("blueprint")));
@@ -104,26 +103,44 @@ public class MMDynamicRes {
     /**自动生成测试包*/
     private static void GenerateTestPack() {
         //拿到存在的路径
-        Path testpack = Exist(VEHICLES.resolve("testpack"));
-        Path partFolder = Exist(testpack.resolve("part"));
-        Path partTypeFolder = Exist(testpack.resolve("part_type"));
-        Path script = Exist(testpack.resolve("script"));
-        Path blueprint = Exist(testpack.resolve("blueprint"));
-        Path lang = Exist(testpack.resolve("lang"));
-        Path texture = Exist(testpack.resolve("texture"));
-        Path content = Exist(testpack.resolve("content"));
-        Path font = Exist(testpack.resolve("font"));
-        Path color = Exist(testpack.resolve("color"));
+        Path examplePack = Exist(VEHICLES.resolve("example_pack"));
+        Path partModelFolder = Exist(examplePack.resolve("model"));
+        Path partTypeFolder = Exist(examplePack.resolve("part_type"));
+        Path script = Exist(examplePack.resolve("script"));
+        Path blueprint = Exist(examplePack.resolve("blueprint"));
+        Path lang = Exist(examplePack.resolve("lang"));
+        Path texture = Exist(examplePack.resolve("texture"));
+        Path content = Exist(examplePack.resolve("content"));
+        Path font = Exist(examplePack.resolve("font"));
+        Path color = Exist(examplePack.resolve("color"));
 
         //设置默认测试包的路径、名字、内容
-        createDefaultFile(partFolder.resolve("test_cube_vpack.geo.json"), TestPackProvider.part(), true);
-        createDefaultFile(partTypeFolder.resolve("test_cube_vpack.json"), TestPackProvider.part_type(), true);
+        //模型文件
+        createDefaultFile(partModelFolder.resolve("test_cube.geo.json"), TestPackProvider.partModel_TestCube(), true);
+        createDefaultFile(partModelFolder.resolve("ae86_back_seat.geo.json"), TestPackProvider.partModel_BackSeat(), true);
+        createDefaultFile(partModelFolder.resolve("ae86_seat.geo.json"), TestPackProvider.partModel_Seat(), true);
+        createDefaultFile(partModelFolder.resolve("ae86_hull.geo.json"), TestPackProvider.partModel_Hull(), true);
+        createDefaultFile(partModelFolder.resolve("ae86_chassis_all_terrain.geo.json"), TestPackProvider.partModel_Chassis(), true);
+        createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_right.geo.json"), TestPackProvider.partModel_RightWheel(), true);
+        createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), TestPackProvider.partModel_LeftWheel(), true);
+        //部件定义文件
+        createDefaultFile(partTypeFolder.resolve("test_cube.json"), TestPackProvider.partType_TestCube(), true);
+        createDefaultFile(partTypeFolder.resolve("ae86_back_seat.json"), TestPackProvider.partType_BackSeat(), true);
+        createDefaultFile(partTypeFolder.resolve("ae86_seat.json"), TestPackProvider.partType_Seat(), true);
+        createDefaultFile(partTypeFolder.resolve("ae86_hull.json"), TestPackProvider.partType_Hull(), true);
+        createDefaultFile(partTypeFolder.resolve("ae86_chassis_all_terrain.json"), TestPackProvider.partType_Chassis(), true);
+        createDefaultFile(partTypeFolder.resolve("ae86_wheel_all_terrain.json"), TestPackProvider.partType_Wheel(), true);
+        //蓝图文件
         createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
         //自定义翻译
         createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(), true);
         createDefaultFile(lang.resolve("en_us.json"), TestPackProvider.en_us(), true);
         //自带测试材质
-        createDefaultFileByBase64(texture.resolve("test_cube_vpack.png"), TestPackProvider.test_cube_vpack_png_base64(), true);
+        createDefaultFileByBase64(texture.resolve("test_cube.png"), TestPackProvider.test_cube_png_base64(), true);
+        createDefaultFileByBase64(texture.resolve("ae86_1.png"), TestPackProvider.ae86_1_png_base64(), true);
+        createDefaultFileByBase64(texture.resolve("ae86_2.png"), TestPackProvider.ae86_2_png_base64(), true);
+        createDefaultFileByBase64(texture.resolve("ae86_3.png"), TestPackProvider.ae86_3_png_base64(), true);
+        createDefaultFileByBase64(texture.resolve("ae86_4.png"), TestPackProvider.ae86_4_png_base64(), true);
         //自定义文本文件
         createDefaultFile(content.resolve("test.txt"), TestPackProvider.content_txt(), true);
         //自定义字体文件
@@ -159,7 +176,7 @@ public class MMDynamicRes {
                         });
                     }
 
-                    case "part" -> {
+                    case "model" -> {
                         // 首先决定载具包中variants的格式定义
 //                    fileName = fileRealName; //删去资源路径后缀 .json
 //                    location = ResourceLocation.tryBuild(MOD_ID, "part/%s".formatted(fileName));  //使用默认的路径格式 machine_max:part/test_cube.geo

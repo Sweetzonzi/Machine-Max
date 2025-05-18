@@ -203,7 +203,7 @@ public class MMPartItem extends Item {
     }
 
     public static PartType getPartType(ItemStack stack, Level level) {
-        PartType partType = null;
+        PartType partType;
         if (stack.has(MMDataComponents.getPART_TYPE())) {
             //从物品Component中获取部件类型
             partType = MMRegistries.getRegistryAccess(level).registry(PartType.PART_REGISTRY_KEY).get().get(stack.get(MMDataComponents.getPART_TYPE()));
