@@ -46,8 +46,8 @@ public class SubPartAttr {
     public final Map<String, ConnectorAttr> connectors;
     public final DragAttr aeroDynamic;
 
-    public final Map<String, CompoundCollisionShape> hitBoxShape = new HashMap<>();//不同变体零件模型的碰撞体积
-    public final Map<String, CompoundCollisionShape> interactBoxShape = new HashMap<>();//不同变体零件模型的交互体积
+    public final ConcurrentMap<String, CompoundCollisionShape> hitBoxShape = new ConcurrentHashMap<>();//不同变体零件模型的碰撞体积
+    public final ConcurrentMap<String, CompoundCollisionShape> interactBoxShape = new ConcurrentHashMap<>();//不同变体零件模型的交互体积
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();//碰撞体子形状id对应的交互判定区名称
     public final Map<String, Transform> massCenterTransforms = new HashMap<>();
 

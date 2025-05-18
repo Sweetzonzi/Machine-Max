@@ -1,0 +1,36 @@
+{
+  "name": "ae86_wheel_all_terrain",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
+  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
+    "left": "machine_max:part/ae86_wheel_all_terrain_left.geo",
+    "right": "machine_max:part/ae86_wheel_all_terrain_right.geo"
+  },
+  "textures": [//部件贴图列表，不同变体模型必须共享一张贴图，否则请创建新的部件而非部件变体
+    "machine_max:textures/part/ae86_1.png",
+    "machine_max:textures/part/ae86_2.png",
+    "machine_max:textures/part/ae86_3.png",
+    "machine_max:textures/part/ae86_4.png"
+  ],
+  "basic_durability": 50.0,//部件基础生命值
+  "sub_parts": {//零件(子部件)列表
+    "ae86_wheel_all_terrain": {//零件(子部件)名称
+      "mass": 50.0,//零件质量(kg)
+      "friction": [0.9, 2.0, 0.9],//各向异性摩擦系数[侧向, 前向, 疑似无用]
+      "restitution": 0.5,//弹性系数(0~1)
+      "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
+      "collision_height": 1.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
+      "climb_assist": true,//(可选)是否开启自动攀爬辅助，开启后会在自动攀爬时提供额外的速度，默认关闭(false)
+      "hit_boxes": {//碰撞形状属性，包括骨骼名称、形状类型、材质、厚度等
+        "root": {//骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
+          "type": "cylinder"//碰撞形状类型，支持box、sphere、cylinder
+        }
+      },
+      "connectors": {//子部件用于与其他零件连接的对接口列表
+        "chassis_connection": {//接口名称
+          "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
+          "type": "AttachPoint"//对接口类型，支持AttachPoint和Special
+        }
+      },
+      "aero_dynamic": {}
+    }
+  }
+}

@@ -1,4 +1,8 @@
 {
+  "item.machine_max.crossbar_item": "Crossbar",
+  "item.machine_max.spray_can_item": "Spray Can",
+  "item.machine_max.test_car_spawner": "Test Car Spawner",
+  "item.machine_max.vehicle_recorder_item": "Vehicle Recorder",
   "message.machine_max.leaving_vehicle": "Hold [%1$s] %2$s/0.50s to leave the vehicle.",
   "message.machine_max.watch_interact_box_info": "Press [%1$s] to interact with %2$s",
   "resourceType.category.machine_max.assembly": "Machine Max:Assembly",

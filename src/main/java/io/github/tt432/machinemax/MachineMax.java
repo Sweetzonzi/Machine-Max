@@ -9,8 +9,6 @@ import io.github.tt432.machinemax.common.registry.*;
 import io.github.tt432.machinemax.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import org.lwjgl.openal.AL10;
-import org.lwjgl.openal.ALC;
 import org.slf4j.Logger;
 
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
@@ -45,7 +43,8 @@ public class MachineMax {
         MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令
         MMVisualEffects.register();//注册所有视觉效果
-        bus.addListener(MMDynamicRes::init);//CommonSetup时读取外部资源文件，可行，但材质丢失，需要手动重载资源包
+        MMDynamicRes.initResources();//初始化外部资源文件
+        bus.addListener(MMDynamicRes::init);//CommonSetup时读取外部数据文件
         bus.addListener(MMDynamicRes::registerReloadListeners);
     }
 

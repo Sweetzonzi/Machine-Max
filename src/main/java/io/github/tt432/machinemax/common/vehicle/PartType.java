@@ -17,6 +17,8 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Getter
 public class PartType {
@@ -31,10 +33,10 @@ public class PartType {
     public final Map<String, SubPartAttr> subParts;
     public final ResourceLocation registryKey;
 
-    public final Map<Long, String> hitBoxes = new HashMap<>();//碰撞体子形状id对应的碰撞判定区名称
-    public final Map<Long, Float> thickness = new HashMap<>();//碰撞体子形状id对应的材料厚度
-    public final Map<Long, Float> damageReduction = new HashMap<>();//碰撞体子形状id对应的线性伤害减免
-    public final Map<Long, Float> damageMultiplier = new HashMap<>();//碰撞体子形状id对应的伤害倍率
+    public final ConcurrentMap<Long, String> hitBoxes = new ConcurrentHashMap<>();//碰撞体子形状id对应的碰撞判定区名称
+    public final ConcurrentMap<Long, Float> thickness = new ConcurrentHashMap<>();//碰撞体子形状id对应的材料厚度
+    public final ConcurrentMap<Long, Float> damageReduction = new ConcurrentHashMap<>();//碰撞体子形状id对应的线性伤害减免
+    public final ConcurrentMap<Long, Float> damageMultiplier = new ConcurrentHashMap<>();//碰撞体子形状id对应的伤害倍率
     //编解码器
     public static final Codec<Map<String, ResourceLocation>> VARIANT_MAP_CODEC = Codec.either(
             // 尝试解析为单个ResourceLocation（单值模式）

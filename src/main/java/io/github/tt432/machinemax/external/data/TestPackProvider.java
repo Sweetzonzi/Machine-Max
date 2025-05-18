@@ -354,7 +354,13 @@ public class TestPackProvider {
         return """
                 {
                   "item.machine_max.example_pack.blueprint.test_blue_print.json": "测试蓝图",
-                  "machine_max.tab.blueprint": "自定义蓝图"
+                  "machine_max.tab.blueprint": "自定义蓝图",
+                  "machine_max.item.test_cube": "测试方块",
+                  "machine_max.item.ae86_chassis_all_terrain": "AE86全地形车架",
+                  "machine_max.item.ae86_wheel_all_terrain": "AE86全地形轮",
+                  "machine_max.item.ae86_back_seat": "AE86后排座椅",
+                  "machine_max.item.ae86_seat": "AE86座椅",
+                  "machine_max.item.ae86_hull": "AE86车壳"
                 }
                 """;
     }
@@ -363,7 +369,13 @@ public class TestPackProvider {
         return """
                 {
                   "item.machine_max.example_pack.blueprint.test_blue_print.json": "Test BluePrint",
-                  "machine_max.tab.blueprint": "Custom BluePrints"
+                  "machine_max.tab.blueprint": "Custom BluePrints",
+                  "machine_max.item.test_cube": "Test Cube",
+                  "machine_max.item.ae86_chassis_all_terrain": "AE86 All Terrain Chassis",
+                  "machine_max.item.ae86_wheel_all_terrain": "AE86 All Terrain Wheel",
+                  "machine_max.item.ae86_back_seat": "AE86 Back Seat",
+                  "machine_max.item.ae86_seat": "AE86 Seat",
+                  "machine_max.item.ae86_hull": "AE86 Hull"
                 }
                 """;
     }

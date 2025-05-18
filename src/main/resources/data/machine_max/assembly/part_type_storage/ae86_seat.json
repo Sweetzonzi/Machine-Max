@@ -1,0 +1,63 @@
+{
+  "name": "ae86_seat",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
+  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
+    "default": "machine_max:example_pack/model/ae86_seat.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_hull.geo.json"
+  },
+  "textures": [//部件贴图列表，不同变体模型应共享一张贴图
+    "machine_max:example_pack/texture/ae86_1.png",
+    "machine_max:example_pack/texture/ae86_2.png",
+    "machine_max:example_pack/texture/ae86_3.png",
+    "machine_max:example_pack/texture/ae86_4.png"
+  ],
+  "basic_durability": 25.0,//部件基础生命值
+  "subsystems": {
+    "seat": {
+      "type": "machine_max:seat", //子系统类型
+      "sub_part": "ae86_seat", //子系统所属零件名称
+      "connector": "seat_point", //乘坐点对接口名称，乘客将被定位于此对接口
+      "allow_use_items": false, //(可选)是否允许乘客执行开启物品栏、使用物品等操作，默认false
+      "move_outputs": {
+        "move_control": ["chassis_connection"] //将控制信号转发给与底盘连接的对接口
+      },
+      "regular_outputs": {
+        "regular_control": ["vehicle", "chassis_connection"] //将控制信号转发给载具本身及与底盘连接的对接口
+      },
+      "view_outputs": {
+        "view_control": ["chassis_connection"] //将控制信号转发给与底盘连接的对接口
+      }
+    }
+  },
+  "sub_parts": {//零件(子部件)列表
+    "ae86_seat": {//零件(子部件)名称
+      "mass": 25.0,//零件质量(kg)
+      "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
+        "CollisionShape": {//值:碰撞形状属性
+          "type": "box",//碰撞形状类型，支持box、sphere、cylinder
+          "rha": 1 //(可选)暂时无实际作用，计划影响护甲水平
+        }
+      },
+      "interact_boxes": {//交互判定区列表
+        "seat": {//键:交互判定区名称
+          "bone": "InteractShape",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+          "signal_targets": {
+              "interact": ["seat"] //将交互信号转发给座椅子系统
+          },
+          "interact_mode": "accurate" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
+        }
+      },
+      "connectors": {//子部件用于与其他零件连接的对接口列表
+        "chassis_connection": {//接口名称
+          "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
+          "type": "AttachPoint" //对接口类型，支持AttachPoint和Special
+        },
+        "seat_point": {//接口名称
+          "locator": "SeatPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
+          "type": "AttachPoint",//对接口类型，支持AttachPoint和Special
+          "variant": ["LivingEntity"],//对接口可连接的部件变体类型，留空以接受所有类型的变体(例如轮胎的左右轮变体)
+          "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
+        }
+      },
+      "aero_dynamic": {}
+    }
+  }
+}

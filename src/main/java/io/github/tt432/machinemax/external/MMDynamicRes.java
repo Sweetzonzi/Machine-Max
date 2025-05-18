@@ -10,7 +10,6 @@ import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
 import io.github.tt432.machinemax.external.data.TestPackProvider;
 import io.github.tt432.machinemax.external.parse.OBoneParse;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.language.LanguageManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -27,17 +26,19 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 
 import static io.github.tt432.machinemax.MachineMax.LOGGER;
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 
 public class MMDynamicRes {
-    public static HashMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new HashMap<>(); //所有当下读取的外部资源
-    public static HashMap<ResourceLocation, PartType> PART_TYPES = new HashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
-    public static HashMap<ResourceLocation, OModel> O_MODELS = new HashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
-    public static HashMap<ResourceLocation, VehicleData> BLUEPRINTS = new HashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
-    public static HashMap<ResourceLocation, JsonElement> COLORS = new HashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
+    public static ConcurrentMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new ConcurrentHashMap<>(); //所有当下读取的外部资源
+    public static ConcurrentMap<ResourceLocation, PartType> PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
+    public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
+    public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
+    public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
 
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
@@ -55,16 +56,25 @@ public class MMDynamicRes {
         loadData();
     }
 
-    /**
-     * 外部包加载过程
-     */
-    public static void loadTextures() {
-        LOGGER.warn("开始从外部包读取贴图...");
-        //清理之前的数据，避免刷新时发生重复的注册
+    public static void reload() {
+        initResources();
+        loadData();
+    }
+
+    public static void initResources() {
         EXTERNAL_RESOURCE.clear();
         PART_TYPES.clear();
         OBoneParse.clear();
         BLUEPRINTS.clear();
+        loadResources();
+    }
+
+    /**
+     * 外部包加载过程
+     */
+    public static void loadResources() {
+        LOGGER.info("开始从外部包读取资源文件...");
+        //清理之前的数据，避免刷新时发生重复的注册
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
@@ -83,30 +93,19 @@ public class MMDynamicRes {
      * 外部包加载过程
      */
     public static void loadData() {
-        LOGGER.warn("开始从外部包读取配置...");
-        //清理之前的数据，避免刷新时发生重复的注册
-        EXTERNAL_RESOURCE.clear();
-        PART_TYPES.clear();
-        OBoneParse.clear();
-        BLUEPRINTS.clear();
+        LOGGER.info("开始从外部包读取配置...");
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
         GenerateTestPack(); //自动生成测试包
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
-            //资源类数据先加载
-            packUp(packName, Exist(root.resolve("content")));
-            packUp(packName, Exist(root.resolve("lang")));
-            packUp(packName, Exist(root.resolve("texture")));
-            packUp(packName, Exist(root.resolve("font")));
             //各种MM配置
             packUp(packName, Exist(root.resolve("model")));
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("blueprint")));
             packUp(packName, Exist(root.resolve("color")));
-
         }
     }
 
@@ -118,7 +117,7 @@ public class MMDynamicRes {
 
         @Override
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
-            loadData();// 重新读取
+            MMDynamicRes.reload();// 重新读取
             if (Minecraft.getInstance().player instanceof Player player)
                 player.sendSystemMessage(Component.literal("[%s]: 外部载具包已重载!".formatted(MOD_ID)));
         }
@@ -142,41 +141,41 @@ public class MMDynamicRes {
 
         //设置默认测试包的路径、名字、内容
         //模型文件
-        createDefaultFile(partModelFolder.resolve("test_cube.geo.json"), TestPackProvider.partModel_TestCube(), true);
-        createDefaultFile(partModelFolder.resolve("ae86_back_seat.geo.json"), TestPackProvider.partModel_BackSeat(), true);
-        createDefaultFile(partModelFolder.resolve("ae86_seat.geo.json"), TestPackProvider.partModel_Seat(), true);
-        createDefaultFile(partModelFolder.resolve("ae86_hull.geo.json"), TestPackProvider.partModel_Hull(), true);
-        createDefaultFile(partModelFolder.resolve("ae86_chassis_all_terrain.geo.json"), TestPackProvider.partModel_Chassis(), true);
-        createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_right.geo.json"), TestPackProvider.partModel_RightWheel(), true);
-        createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), TestPackProvider.partModel_LeftWheel(), true);
+        createDefaultFile(partModelFolder.resolve("test_cube.geo.json"), TestPackProvider.partModel_TestCube(), false);
+        createDefaultFile(partModelFolder.resolve("ae86_back_seat.geo.json"), TestPackProvider.partModel_BackSeat(), false);
+        createDefaultFile(partModelFolder.resolve("ae86_seat.geo.json"), TestPackProvider.partModel_Seat(), false);
+        createDefaultFile(partModelFolder.resolve("ae86_hull.geo.json"), TestPackProvider.partModel_Hull(), false);
+        createDefaultFile(partModelFolder.resolve("ae86_chassis_all_terrain.geo.json"), TestPackProvider.partModel_Chassis(), false);
+        createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_right.geo.json"), TestPackProvider.partModel_RightWheel(), false);
+        createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), TestPackProvider.partModel_LeftWheel(), false);
         //部件定义文件
-        createDefaultFile(partTypeFolder.resolve("test_cube.json"), TestPackProvider.partType_TestCube(), true);
-        //TODO:疑似会带来运行稳定性的问题，待排查
-//        createDefaultFile(partTypeFolder.resolve("ae86_back_seat.json"), TestPackProvider.partType_BackSeat(), true);
-//        createDefaultFile(partTypeFolder.resolve("ae86_seat.json"), TestPackProvider.partType_Seat(), true);
-//        createDefaultFile(partTypeFolder.resolve("ae86_hull.json"), TestPackProvider.partType_Hull(), true);
-//        createDefaultFile(partTypeFolder.resolve("ae86_chassis_all_terrain.json"), TestPackProvider.partType_Chassis(), true);
-//        createDefaultFile(partTypeFolder.resolve("ae86_wheel_all_terrain.json"), TestPackProvider.partType_Wheel(), true);
+        createDefaultFile(partTypeFolder.resolve("test_cube.json"), TestPackProvider.partType_TestCube(), false);
+        //TODO:更容易造成物理线程的BoundingBox计算出错，获得一个巨大的AABB尺寸，原因不明，通过减少使用现场计算的AABB转而使用缓存缓解了此问题，但仍需修复
+        createDefaultFile(partTypeFolder.resolve("ae86_back_seat.json"), TestPackProvider.partType_BackSeat(), false);
+        createDefaultFile(partTypeFolder.resolve("ae86_seat.json"), TestPackProvider.partType_Seat(), false);
+        createDefaultFile(partTypeFolder.resolve("ae86_hull.json"), TestPackProvider.partType_Hull(), false);
+        createDefaultFile(partTypeFolder.resolve("ae86_chassis_all_terrain.json"), TestPackProvider.partType_Chassis(), false);
+        createDefaultFile(partTypeFolder.resolve("ae86_wheel_all_terrain.json"), TestPackProvider.partType_Wheel(), false);
         //蓝图文件
         createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
         //自定义翻译
-        createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(), true);
-        createDefaultFile(lang.resolve("en_us.json"), TestPackProvider.en_us(), true);
+        createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(), false);
+        createDefaultFile(lang.resolve("en_us.json"), TestPackProvider.en_us(), false);
         //自带测试材质
-        createDefaultFileByBase64(texture.resolve("test_cube.png"), TestPackProvider.test_cube_png_base64(), true);
-        createDefaultFileByBase64(texture.resolve("ae86_1.png"), TestPackProvider.ae86_1_png_base64(), true);
-        createDefaultFileByBase64(texture.resolve("ae86_2.png"), TestPackProvider.ae86_2_png_base64(), true);
-        createDefaultFileByBase64(texture.resolve("ae86_3.png"), TestPackProvider.ae86_3_png_base64(), true);
-        createDefaultFileByBase64(texture.resolve("ae86_4.png"), TestPackProvider.ae86_4_png_base64(), true);
+        createDefaultFileByBase64(texture.resolve("test_cube.png"), TestPackProvider.test_cube_png_base64(), false);
+        createDefaultFileByBase64(texture.resolve("ae86_1.png"), TestPackProvider.ae86_1_png_base64(), false);
+        createDefaultFileByBase64(texture.resolve("ae86_2.png"), TestPackProvider.ae86_2_png_base64(), false);
+        createDefaultFileByBase64(texture.resolve("ae86_3.png"), TestPackProvider.ae86_3_png_base64(), false);
+        createDefaultFileByBase64(texture.resolve("ae86_4.png"), TestPackProvider.ae86_4_png_base64(), false);
         //自定义文本文件
-        createDefaultFile(content.resolve("test.html"), TestPackProvider.content_html(), true);
+        createDefaultFile(content.resolve("test.html"), TestPackProvider.content_html(), false);
         //自定义字体文件
         createDefaultFile(font.resolve("test_font.json"), TestPackProvider.test_font_json(), true);
         copyResourceToFile("/bell.ttf", font.resolve("bell.ttf"), true);
         copyResourceToFile("/bellb.ttf", font.resolve("bellb.ttf"), true);
         copyResourceToFile("/belli.ttf", font.resolve("belli.ttf"), true);
 
-        createDefaultFile(color.resolve("color_palette.json"), TestPackProvider.color_palette_json(), true);
+        createDefaultFile(color.resolve("color_palette.json"), TestPackProvider.color_palette_json(), false);
     }
 
 

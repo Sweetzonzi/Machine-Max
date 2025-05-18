@@ -1,6 +1,8 @@
 package io.github.tt432.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.PPhase;
 import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.registry.MMVisualEffects;
@@ -178,14 +180,16 @@ public class VehicleManager {
     @SubscribeEvent//加载服务端世界时加载载具核心数据
     public static void loadVehicleData(LevelEvent.Load event) {
         Level level = (Level) event.getLevel();
-//        PhysicsLevel physicsLevel = level.getPhysicsLevel();
-//        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//临时碰撞平面
+        PhysicsLevel physicsLevel = level.getPhysicsLevel();
+        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            physicsLevel.getWorld().useDeterministicDispatch(true);//启用确定计算顺序以保证客户端服务端一致性
+            physicsLevel.getWorld().useScr(true);//补偿弹性系数以改善小物体的碰撞精度
 //            Plane plane = new Plane(Vector3f.UNIT_Y, -60);
 //            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
 //            PhysicsRigidBody body = new PhysicsRigidBody("ground", null, shape, PhysicsBody.massForStatic);
 //            physicsLevel.getWorld().add(body);
-//            return null;
-//        });
+            return null;
+        });
         ResourceKey<Level> dimension = level.dimension();
         if (!level.isClientSide()) loadVehicles(level);
         else if (Minecraft.getInstance().getConnection() != null) {

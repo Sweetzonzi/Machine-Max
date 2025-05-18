@@ -77,18 +77,12 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
 
     @Override
     public void prePhysicsTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull PhysicsLevel physicsLevel) {
-        if (body != null) {
-            if (!this.hasPart()) {//更新判定点位置姿态
-                body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
-                body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
-            } else {
-                removeAllBodies();
-                this.body = null;
-            }
-        } else if (!hasPart()) {
-            createAttachPointBody(
-                    MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
-                    subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+        if (!this.hasPart()) {//更新判定点位置姿态
+            body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
+            body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+        } else {
+            removeAllBodies();
+            this.body = null;
         }
     }
 
@@ -229,6 +223,13 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                 attachedConnector.signalPort.onConnectorDetach();
             }
             detachJoint();
+            //重建部件连接点
+            this.createAttachPointBody(
+                    MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
+                    subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+            attachedConnector.createAttachPointBody(
+                    MMMath.relPointWorldPos(attachedConnector.subPartTransform.getTranslation(), attachedConnector.subPart.body),
+                    attachedConnector.subPart.body.getPhysicsRotation(null).mult(attachedConnector.subPartTransform.getRotation()));
             this.attachedConnector.attachedConnector = null;
             this.attachedConnector = null;
         } else if (internal)
@@ -330,7 +331,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     }
 
     private void createAttachPointBody(Vector3f position, Quaternion rotation) {
-        if (!internal) {//为与外部部件连接的接口创建碰撞判定，供玩家通过视线选取
+        if (!internal && this.body == null) {//为与外部部件连接的接口创建碰撞判定，供玩家通过视线选取
             body = new PhysicsRigidBody(name, this, shape, PhysicsBody.massForStatic);
             body.setProtectGravity(true);
             body.setGravity(Vector3f.ZERO);

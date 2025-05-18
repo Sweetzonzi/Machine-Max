@@ -37,5 +37,10 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("message.machine_max.watch_interact_box_info", "按[%1$s]键与%2$s互动");
         this.add("tooltip.machinemax.crossbar.interact", "互动以拆除：");
         this.add("tooltip.machinemax.spray_can.interact", "互动以喷涂：");
+        //物品
+        this.add("item.machine_max.crossbar_item", "撬棍");
+        this.add("item.machine_max.spray_can_item", "喷漆罐");
+        this.add("item.machine_max.test_car_spawner", "测试车辆生成器");
+        this.add("item.machine_max.vehicle_recorder_item", "载具设计记录器");
     }
 }

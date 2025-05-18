@@ -233,6 +233,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     //根据方块被破坏实际消耗的能量调整部件吸收的能量，但不全额作用为反冲量以提升操控流畅性
                     double actualPartEnergy = 0.1 * partEnergy * ((250 * blockDurability) / blockEnergy);
                     //部件减速
+                    ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);//重置默认冲量，采用计算结果
                     getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_" + blockPos + "_block_impulse", PPhase.PRE, () -> {
                         body.applyImpulse(normal.mult((float) (Math.sqrt(2 * actualPartEnergy * body.getMass()))),
                                 worldContactPoint.subtract(body.getPhysicsLocation(null)));
@@ -343,7 +344,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     //TODO:部件伤害
                     //部件减速
                     getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_entity_impulse", PPhase.PRE, () -> {
-                        body.applyImpulse(impulseVec.mult(-0.1f), worldContactPoint.subtract(body.getPhysicsLocation(null)));
+                        body.applyImpulse(impulseVec.mult(-0.2f), worldContactPoint.subtract(body.getPhysicsLocation(null)));
                         return null;
                     });
                     //实体击退与伤害
@@ -357,7 +358,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                             level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
                                     SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.AMBIENT, 1f, 1f);
                         }
-                        entity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.2 / entityMass)).add(0, 0.1f, 0)));
+                        entity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.1 / entityMass)).add(0, 0.1f, 0)));
                         return null;
                     });
                 }
@@ -400,13 +401,13 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             } else return;
         } else return;
         if (partBody.getOwner() instanceof SubPart subPart && subPart.GROUND_COLLISION_ONLY) {//仅与地面方块碰撞的零件遭遇方块时
-            float terrainHeight = terrain.boundingBox(null).getMax(null).y;
-            float y0 = ShapeHelper.getShapeMinY(partBody, 0.1f) + 0.1f;//计算部件最低点高度
+            float terrainHeight = terrain.cachedBoundingBox.getMax(null).y;
+            float y0 = ShapeHelper.getShapeMinY(partBody, 0.2f) + 0.1f;//计算部件最低点高度
             if (terrainHeight > y0) {//若地形高于于部件最低位置，则视情况修改碰撞检测结果
                 float height = terrainHeight - y0;//部件最低点与地形的高度差
                 BlockPos highestBlockPos = terrain.blockPos.above();
                 while (height <= subPart.stepHeight && subPart.getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
-                    height = subPart.getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).boundingBox(null).getMax(null).y - y0;
+                    height = subPart.getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - y0;
                     highestBlockPos = highestBlockPos.above();
                 }
                 if (height <= subPart.stepHeight) {
@@ -493,7 +494,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         }
         //攀爬辅助处理
         if (this.GROUND_COLLISION_ONLY && stepHeight > 0 && attr.climbAssist) {
-            float y0 = ShapeHelper.getShapeMinY(this.body, 0.1f);
+            float y0 = ShapeHelper.getShapeMinY(this.body, 0.2f);
             Vector3f start = this.body.getPhysicsLocation(null);
             start.set(1, y0 - 1);
             var end = start.add(0f, 1 + stepHeight, 0f);
@@ -508,14 +509,14 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             for (var hit : test) {//寻找部件下最低的方块
                 if (hit.getCollisionObject() instanceof PhysicsRigidBody terrain && terrain.name.equals("terrain")) {
                     terrainsUnder = terrain;
-                    height = Math.max(terrain.boundingBox(null).getMax(null).y - y0, height);
+                    height = Math.max(terrain.cachedBoundingBox.getMax(null).y - y0, height);
                     break;
                 }
             }
             if (terrainsUnder != null) {//若接地/轮子质心竖直投影方向有方块，寻找投影方向连续方块的最高点
                 BlockPos highestBlockPos = terrainsUnder.blockPos.above();
                 while (height <= stepHeight && getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
-                    height = Math.max(getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).boundingBox(null).getMax(null).y - y0, height);
+                    height = Math.max(getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - y0, height);
                     highestBlockPos = highestBlockPos.above();
                 }
             }

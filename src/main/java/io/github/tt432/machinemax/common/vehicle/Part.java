@@ -208,7 +208,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public void onPostPhysicsTick() {
         if (entity != null && !entity.isRemoved()) {//更新实体包围盒
             List<BoundingBox> boxes = new ArrayList<>();
-            for (SubPart subPart : subParts.values()) boxes.add(subPart.body.boundingBox(null));
+            for (SubPart subPart : subParts.values()) boxes.add(subPart.body.cachedBoundingBox);
             entity.boundingBoxes.set(boxes);
         }
     }
