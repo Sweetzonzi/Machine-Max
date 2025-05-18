@@ -7,53 +7,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class TestPackProvider {
+
     public static String partModel_TestCube() {
-        return """
-                {
-                	"format_version": "1.12.0",
-                	"minecraft:geometry": [
-                		{
-                			"description": {
-                				"identifier": "geometry.test_cube_vpack",
-                				"texture_width": 64,
-                				"texture_height": 64,
-                				"visible_bounds_width": 3,
-                				"visible_bounds_height": 13.5,
-                				"visible_bounds_offset": [0, 6.25, 0]
-                			},
-                			"bones": [
-                				{
-                					"name": "Root",
-                					"pivot": [0, 0, 0],
-                					"cubes": [
-                						{
-                							"origin": [-8, -8, -8],
-                							"size": [16, 16, 16],
-                							"uv": {
-                								"north": {"uv": [0, 0], "uv_size": [16, 16]},
-                								"east": {"uv": [0, 16], "uv_size": [16, 16]},
-                								"south": {"uv": [16, 0], "uv_size": [16, 16]},
-                								"west": {"uv": [16, 16], "uv_size": [16, 16]},
-                								"down": {"uv": [0, 32], "uv_size": [16, 16]},
-                								"up": {"uv": [32, 16], "uv_size": [16, -16]}
-                							}
-                						}
-                					],
-                					"locators": {
-                						"AttachPoint_North": [0, 0, -8],
-                						"attachPoint_South": [0, 0, 8],
-                						"AttachPoint_Top": [0, 8, 0],
-                						"AttachPoint_Bottom": [0, -8, 0],
-                						"AttachPoint_West": [8, 0, 0],
-                						"AttachPoint_East": [-8, 0, 0],
-                						"MassCenter": [0, 0, 0]
-                					}
-                				}
-                			]
-                		}
-                	]
-                }
-                """;
+        return readResourceFile("data/machine_max/geo/model/part/test_cube.geo.json");
     }
 
     public static String partModel_BackSeat() {
@@ -81,500 +37,27 @@ public class TestPackProvider {
     }
 
     public static String partType_TestCube() {
-        return """
-                {
-                  "name": "test_cube",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
-                  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-                    "default": "machine_max:example_pack/model/test_cube.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/test_cube.geo.json"
-                  },
-                  "textures": [//部件贴图列表，不同变体模型必须共享一张贴图，否则请创建新的部件而非部件变体
-                    "machine_max:example_pack/texture/test_cube.png"
-                  ],
-                  "basic_durability": 10.0,//部件基础生命值
-                  "sub_parts": {//零件(子部件)列表
-                    "cube": {//零件(子部件)名称
-                      "mass": 1000.0,//零件质量(kg)
-                      "hit_boxes": {//碰撞形状属性，包括骨骼名称、形状类型、材质、厚度等
-                        "Root": {//骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
-                          "type": "box"//碰撞形状类型，支持box、sphere、cylinder
-                        }
-                      },
-                      "connectors": {//子部件用于与其他零件连接的对接口列表
-                        "north": {//接口名称
-                          "locator": "AttachPoint_North",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-                          "type": "AttachPoint", //对接口类型，支持AttachPoint和Special
-                          "collide_between_parts": true //是否允许子部件之间碰撞
-                        },
-                        "east": {
-                          "locator": "AttachPoint_East",
-                          "type": "AttachPoint",
-                          "collide_between_parts": true
-                        },
-                        "south": {
-                          "locator": "attachPoint_South",
-                          "type": "AttachPoint",
-                          "collide_between_parts": true
-                        },
-                        "west": {
-                          "locator": "AttachPoint_West",
-                          "type": "AttachPoint",
-                          "collide_between_parts": true
-                        },
-                        "top": {
-                          "locator": "AttachPoint_Top",
-                          "type": "AttachPoint",
-                          "collide_between_parts": true
-                        },
-                        "bottom": {
-                          "locator": "AttachPoint_Bottom",
-                          "type": "AttachPoint",
-                          "collide_between_parts": true
-                        }
-                      },
-                      "aero_dynamic": {}
-                    }
-                  }
-                }
-                """;
+        return readResourceFile("data/machine_max/assembly/part_type_storage/test_cube.json");
     }
 
     public static String partType_BackSeat() {
-        return """
-                {
-                  "name": "ae86_back_seat",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
-                  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-                    "default": "machine_max:example_pack/model/ae86_back_seat.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_hull.geo.json"
-                  },
-                  "textures": [//部件贴图列表，不同变体模型应共享一张贴图
-                    "machine_max:example_pack/texture/ae86_1.png",
-                    "machine_max:example_pack/texture/ae86_2.png",
-                    "machine_max:example_pack/texture/ae86_3.png",
-                    "machine_max:example_pack/texture/ae86_4.png"
-                  ],
-                  "basic_durability": 50.0,//部件基础生命值
-                  "subsystems": {
-                    "left_seat": {
-                      "type": "machine_max:seat",
-                      "sub_part": "ae86_back_seat",
-                      "connector": "left_seat_point",
-                      "allow_use_items": true
-                    },
-                    "right_seat": {
-                      "type": "machine_max:seat",
-                      "sub_part": "ae86_back_seat",
-                      "connector": "right_seat_point",
-                      "allow_use_items": true
-                    }
-                  },
-                  "sub_parts": {//零件(子部件)列表
-                    "ae86_back_seat": {//零件(子部件)名称
-                      "mass": 50.0,//零件质量(kg)
-                      "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
-                        "CollisionShape": {//值:碰撞形状属性
-                          "type": "box",//碰撞形状类型，支持box、sphere、cylinder
-                          "rha": 1 //(可选)暂时无实际作用，计划影响护甲水平
-                        }
-                      },
-                      "interact_boxes": {//交互判定区列表
-                        "left_seat": {//键:交互判定区名称
-                          "bone": "LeftInteractShape",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
-                          "signal_targets": {
-                            "interact": ["left_seat"] //将交互信号转发给座椅子系统
-                          },
-                          "interact_mode": "accurate" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
-                        },
-                        "right_seat": {//键:交互判定区名称
-                          "bone": "RightInteractShape",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
-                          "signal_targets": {
-                            "interact": ["right_seat"] //将交互信号转发给座椅子系统
-                          },
-                          "interact_mode": "accurate" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
-                        }
-                      },
-                      "connectors": {//子部件用于与其他零件连接的对接口列表
-                        "chassis_connection": {//接口名称
-                          "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-                          "type": "AttachPoint",//对接口类型，支持AttachPoint和Special
-                          "variant": [],//对接口可连接的部件变体类型，留空以接受所有类型的变体(例如轮胎的左右轮变体)
-                          "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
-                        },
-                        "left_seat_point": {//接口名称
-                          "locator": "LeftSeatPoint",
-                          "type": "AttachPoint",
-                          "variant": ["LivingEntity"],
-                          "breakable": false
-                        },
-                        "right_seat_point": {
-                          "locator": "RightSeatPoint",
-                          "type": "AttachPoint",
-                          "variant": ["LivingEntity"],
-                          "breakable": false
-                        }
-                      },
-                      "aero_dynamic": {}
-                    }
-                  }
-                }
-                """;
+        return readResourceFile("data/machine_max/assembly/part_type_storage/ae86_back_seat.json");
     }
 
     public static String partType_Seat() {
-        return """
-                {
-                  "name": "ae86_seat",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
-                  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-                    "default": "machine_max:example_pack/model/ae86_seat.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_hull.geo.json"
-                  },
-                  "textures": [//部件贴图列表，不同变体模型应共享一张贴图
-                    "machine_max:example_pack/texture/ae86_1.png",
-                    "machine_max:example_pack/texture/ae86_2.png",
-                    "machine_max:example_pack/texture/ae86_3.png",
-                    "machine_max:example_pack/texture/ae86_4.png"
-                  ],
-                  "basic_durability": 25.0,//部件基础生命值
-                  "subsystems": {
-                    "seat": {
-                      "type": "machine_max:seat", //子系统类型
-                      "sub_part": "ae86_seat", //子系统所属零件名称
-                      "connector": "seat_point", //乘坐点对接口名称，乘客将被定位于此对接口
-                      "allow_use_items": false, //(可选)是否允许乘客执行开启物品栏、使用物品等操作，默认false
-                      "move_outputs": {
-                        "move_control": ["chassis_connection"] //将控制信号转发给与底盘连接的对接口
-                      },
-                      "regular_outputs": {
-                        "regular_control": ["vehicle", "chassis_connection"] //将控制信号转发给载具本身及与底盘连接的对接口
-                      },
-                      "view_outputs": {
-                        "view_control": ["chassis_connection"] //将控制信号转发给与底盘连接的对接口
-                      }
-                    }
-                  },
-                  "sub_parts": {//零件(子部件)列表
-                    "ae86_seat": {//零件(子部件)名称
-                      "mass": 25.0,//零件质量(kg)
-                      "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
-                        "CollisionShape": {//值:碰撞形状属性
-                          "type": "box",//碰撞形状类型，支持box、sphere、cylinder
-                          "rha": 1 //(可选)暂时无实际作用，计划影响护甲水平
-                        }
-                      },
-                      "interact_boxes": {//交互判定区列表
-                        "seat": {//键:交互判定区名称
-                          "bone": "InteractShape",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
-                          "signal_targets": {
-                              "interact": ["seat"] //将交互信号转发给座椅子系统
-                          },
-                          "interact_mode": "accurate" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
-                        }
-                      },
-                      "connectors": {//子部件用于与其他零件连接的对接口列表
-                        "chassis_connection": {//接口名称
-                          "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-                          "type": "AttachPoint" //对接口类型，支持AttachPoint和Special
-                        },
-                        "seat_point": {//接口名称
-                          "locator": "SeatPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-                          "type": "AttachPoint",//对接口类型，支持AttachPoint和Special
-                          "variant": ["LivingEntity"],//对接口可连接的部件变体类型，留空以接受所有类型的变体(例如轮胎的左右轮变体)
-                          "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
-                        }
-                      },
-                      "aero_dynamic": {}
-                    }
-                  }
-                }
-                """;
+        return readResourceFile("data/machine_max/assembly/part_type_storage/ae86_seat.json");
     }
 
     public static String partType_Hull() {
-        return """
-                {
-                  "name": "ae86_hull",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
-                  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-                    "default": "machine_max:example_pack/model/ae86_hull.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_hull.geo.json"
-                  },
-                  "textures": [//部件贴图列表，不同变体模型应共享一张贴图
-                    "machine_max:example_pack/texture/ae86_1.png",
-                    "machine_max:example_pack/texture/ae86_2.png",
-                    "machine_max:example_pack/texture/ae86_3.png",
-                    "machine_max:example_pack/texture/ae86_4.png"
-                  ],
-                  "basic_durability": 150.0,//部件基础生命值
-                  "sub_parts": {//零件(子部件)列表
-                    "ae86_hull": {//零件(子部件)名称
-                      "mass": 200.0,//零件质量(kg)
-                      "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
-                      "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
-                        "CollisionShape": {//值:碰撞形状属性
-                          "type": "box",//碰撞形状类型，支持box、sphere、cylinder
-                          "rha": 5 //(可选)暂时无实际作用，计划影响护甲水平
-                        }
-                      },
-                      "connectors": {//子部件用于与其他零件连接的对接口列表
-                        "chassis_connection": {//接口名称
-                          "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-                          "type": "AttachPoint",//对接口类型，支持AttachPoint和Special
-                          "variant": [],//对接口可连接的部件变体类型，留空以接受所有类型的变体(例如轮胎的左右轮变体)
-                          "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
-                        }
-                      },
-                      "aero_dynamic": {
-                        "priority": 1
-                      }
-                    }
-                  }
-                }
-                """;
+        return readResourceFile("data/machine_max/assembly/part_type_storage/ae86_hull.json");
     }
 
     public static String partType_Chassis() {
-        return """
-                {
-                  "name": "ae86_chassis_all_terrain",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
-                  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-                    "default": "machine_max:example_pack/model/ae86_chassis_all_terrain.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_chassis_all_terrain.geo.json"
-                  },
-                  "textures": [//部件贴图列表，不同变体模型应共享一张贴图
-                    "machine_max:example_pack/texture/ae86_1.png",
-                    "machine_max:example_pack/texture/ae86_2.png",
-                    "machine_max:example_pack/texture/ae86_3.png",
-                    "machine_max:example_pack/texture/ae86_4.png"
-                  ],
-                  "basic_durability": 100.0,//部件基础生命值
-                  "subsystems": {
-                    "car_controller": {
-                      "type": "machine_max:car_controller",
-                      "manual_gear_shift": false,//(可选，默认false)是否强制手动挡
-                      "control_inputs": ["move_control"],
-                      "engine_outputs": {
-                        "engine_control": ["engine"]
-                      },
-                      "wheel_outputs": {
-                        "wheel_control": [
-                          "left_front_wheel_driver",
-                          "right_front_wheel_driver",
-                          "left_back_wheel_driver",
-                          "right_back_wheel_driver"]
-                      },
-                      "gearbox_outputs": {
-                        "gearbox_control": ["gearbox"]
-                      }
-                    },
-                    "engine": {
-                      "type": "machine_max:engine", //子系统类型
-                      "max_power": 125000,//最大功率(W)
-                      "power_output": "gearbox",//功率输出目标，可填写任意本部件内其他子系统名称、部件对接口名称，或“part”，或“vehicle”
-                      "speed_outputs": {//转速信号输出目标及信号名称，同上，但可以有多个
-                        "engine_speed": ["part", "vehicle"]
-                      }
-                    },
-                    "gearbox": {
-                      "type": "machine_max:gearbox",
-                      "final_ratio": 15.0, //最终变速比，用于整体缩放变速箱减速比
-                      "power_output": "transmission"
-                    },
-                    "transmission": {
-                      "type": "machine_max:transmission",
-                      "power_outputs": { //动力输出目标及权重
-                        "left_front_wheel_driver": 1.0,
-                        "right_front_wheel_driver": 1.0,
-                        "left_back_wheel_driver": 1.0,
-                        "right_back_wheel_driver": 1.0
-                      }
-                    },
-                    "left_front_wheel_driver": {
-                      "type": "machine_max:wheel_driver",
-                      "connector": "left_front_wheel"
-                    },
-                    "right_front_wheel_driver": {
-                      "type": "machine_max:wheel_driver",
-                      "connector": "right_front_wheel"
-                    },
-                    "left_back_wheel_driver": {
-                      "type": "machine_max:wheel_driver",
-                      "connector": "left_back_wheel"
-                    },
-                    "right_back_wheel_driver": {
-                      "type": "machine_max:wheel_driver",
-                      "connector": "right_back_wheel"
-                    }
-                  },
-                  "sub_parts": {//零件(子部件)列表
-                    "ae86_chassis_all_terrain": {//零件(子部件)名称
-                      "mass": 500.0,//零件质量(kg)
-                      "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
-                      "collision_height": 2.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
-                      "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
-                      "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
-                        "mmCollision_Box_Chassis": {//值:碰撞形状属性
-                          "type": "box",//碰撞形状类型，支持box、sphere、cylinder
-                          "rha": 10 //(可选，默认5)暂时无实际作用，计划影响护甲水平
-                        }
-                      },
-                      "connectors": {//子部件用于与其他零件连接的对接口列表
-                        "left_front_wheel": {//接口名称
-                          "locator": "LeftFrontWheel",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-                          "type": "Special",//对接口类型，支持AttachPoint和Special
-                          "variant": ["left"],//对接口可连接的部件变体类型，留空以接受所有类型的变体(例如轮胎的左右轮变体)
-                          "joint_attrs": {//关节属性，目前仅在关节类型为Special时生效
-                            "y": {
-                              "lower_limit": 1.0,
-                              "upper_limit": -1.0,
-                              "stiffness": 15000,//刚度系数(N/m)
-                              "damping": 2000 //阻尼系数(N/(m/s))
-                            },
-                            "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
-                              "lower_limit": 1.0, //关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
-                              "upper_limit": -1.0, //当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
-                              "damping": 10
-                            },
-                            "yr": {
-                              "lower_limit": -45.0,
-                              "upper_limit": 45.0,
-                              "stiffness": 4000,
-                              "damping": 200
-                            }
-                          },
-                          "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
-                        },
-                        "left_back_wheel": {
-                          "locator": "LeftBackWheel",
-                          "type": "Special",
-                          "variant": ["left"],
-                          "joint_attrs": {
-                            "y": {
-                              "lower_limit": 1.0,
-                              "upper_limit": -1.0,
-                              "stiffness": 15000,
-                              "damping": 2000
-                            },
-                            "xr": {
-                              "lower_limit": 1.0,
-                              "upper_limit": -1.0,
-                              "damping": 10
-                            }
-                          }
-                        },
-                        "right_front_wheel": {
-                          "locator": "RightFrontWheel",
-                          "type": "Special",
-                          "variant": ["right"],
-                          "joint_attrs": {
-                            "y": {
-                              "lower_limit": 1.0,
-                              "upper_limit": -1.0,
-                              "stiffness": 15000,
-                              "damping": 2000
-                            },
-                            "xr": {
-                              "lower_limit": 1.0,
-                              "upper_limit": -1.0,
-                              "damping": 10
-                            },
-                            "yr": {
-                              "lower_limit": -45.0,
-                              "upper_limit": 45.0,
-                              "stiffness": 4000,
-                              "damping": 200
-                            }
-                          },
-                          "breakable": false
-                        },
-                        "right_back_wheel": {
-                          "locator": "RightBackWheel",
-                          "type": "Special",
-                          "variant": ["right"],
-                          "joint_attrs": {
-                            "y": {
-                              "lower_limit": 1.0,
-                              "upper_limit": -1.0,
-                              "stiffness": 15000,
-                              "damping": 2000
-                            },
-                            "xr": {
-                              "lower_limit": 1.0,
-                              "upper_limit": -1.0,
-                              "damping": 10
-                            }
-                          }
-                        },
-                        "hull": {
-                          "locator": "Hull",
-                          "type": "Special"
-                        },
-                        "driver_seat": {
-                          "locator": "DriverSeat",
-                          "type": "Special",
-                          "signal_targets": {
-                            "move_control": [
-                              "car_controller",//向控制器传输标准移动输入信号，如转向、加速、刹车等
-                              "engine",//备用控制链路，优先级低于控制器，当车辆控制器失效时可继续控制
-                              "left_front_wheel_driver",
-                              "right_front_wheel_driver",
-                              "left_back_wheel_driver",
-                              "right_back_wheel_driver"
-                            ],
-                            "regular_control": ["car_controller"]//向车辆控制器传输一般按键输入信号，如换挡、离合器控制等
-                          }
-                        },
-                        "copilot_seat": {
-                          "locator": "CopilotSeat",
-                          "type": "Special"
-                        },
-                        "back_seat": {
-                          "locator": "BackSeat",
-                          "type": "Special"
-                        }
-                      },
-                      "aero_dynamic": {
-                        "center": [0.0, 0.7, 0.0],
-                        "effective_range": [5.0, 5.0, 5.0]
-                      }
-                    }
-                  }
-                }
-                """;
+        return readResourceFile("data/machine_max/assembly/part_type_storage/ae86_chassis_all_terrain.json");
     }
 
     public static String partType_Wheel() {
-        return """
-                {
-                  "name": "ae86_wheel_all_terrain",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
-                  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-                    "left": "machine_max:example_pack/model/ae86_wheel_all_terrain_left.geo.json",
-                    "right": "machine_max:example_pack/model/ae86_wheel_all_terrain_right.geo.json"
-                  },
-                  "textures": [//部件贴图列表，不同变体模型必须共享一张贴图，否则请创建新的部件而非部件变体
-                    "machine_max:example_pack/texture/ae86_1.png",
-                    "machine_max:example_pack/texture/ae86_2.png",
-                    "machine_max:example_pack/texture/ae86_3.png",
-                    "machine_max:example_pack/texture/ae86_4.png"
-                  ],
-                  "basic_durability": 50.0,//部件基础生命值
-                  "sub_parts": {//零件(子部件)列表
-                    "ae86_wheel_all_terrain": {//零件(子部件)名称
-                      "mass": 50.0,//零件质量(kg)
-                      "friction": [1.2, 2.0, 1.2],//各向异性摩擦系数[侧向, 前向, 疑似无用]
-                      "restitution": 0.5,//弹性系数(0~1)
-                      "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
-                      "collision_height": 1.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
-                      "climb_assist": true,//(可选)是否开启自动攀爬辅助，开启后会在自动攀爬时提供额外的速度，默认关闭(false)
-                      "hit_boxes": {//碰撞形状属性，包括骨骼名称、形状类型、材质、厚度等
-                        "root": {//骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
-                          "type": "cylinder"//碰撞形状类型，支持box、sphere、cylinder
-                        }
-                      },
-                      "connectors": {//子部件用于与其他零件连接的对接口列表
-                        "chassis_connection": {//接口名称
-                          "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-                          "type": "AttachPoint"//对接口类型，支持AttachPoint和Special
-                        }
-                      },
-                      "aero_dynamic": {}
-                    }
-                  }
-                }
-                """;
+        return readResourceFile("data/machine_max/assembly/part_type_storage/ae86_wheel_all_terrain.json");
     }
 
     public static String blueprint() {
@@ -824,7 +307,7 @@ public class TestPackProvider {
                     }
                   ],
                   "vehicle_name": "Vehicle",
-                  "tooltip": "machine_max:testpack/content/test.txt",
+                  "tooltip": "machine_max:example_pack/content/test.txt",
                   "uuid": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
                   "pos": [
                     -16.61766990025838,
@@ -870,7 +353,7 @@ public class TestPackProvider {
     public static String zh_cn() {
         return """
                 {
-                  "item.machine_max.testpack.blueprint.test_blue_print.json": "测试蓝图",
+                  "item.machine_max.example_pack.blueprint.test_blue_print.json": "测试蓝图",
                   "machine_max.tab.blueprint": "自定义蓝图"
                 }
                 """;
@@ -879,7 +362,7 @@ public class TestPackProvider {
     public static String en_us() {
         return """
                 {
-                  "item.machine_max.testpack.blueprint.test_blue_print.json": "Test BluePrint",
+                  "item.machine_max.example_pack.blueprint.test_blue_print.json": "Test BluePrint",
                   "machine_max.tab.blueprint": "Custom BluePrints"
                 }
                 """;
