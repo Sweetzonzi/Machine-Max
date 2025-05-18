@@ -17,6 +17,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 
@@ -43,12 +44,20 @@ public class MMDynamicRes {
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
     public static final Path VEHICLES = NAMESPACE.resolve("custom_packs");//载具包根文件夹
 
-    /**注册热重载事件*/
+    /**
+     * 注册热重载事件
+     */
     public static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new MMDynamicRes.DataPackReloader());
     }
 
-    /**外部包加载过程*/
+    public static void init(FMLCommonSetupEvent event) {
+        loadData();
+    }
+
+    /**
+     * 外部包加载过程
+     */
     public static void loadData() {
         LOGGER.warn("开始从外部包读取配置！！");
         //清理之前的数据，避免刷新时发生重复的注册
@@ -78,7 +87,7 @@ public class MMDynamicRes {
         if (Minecraft.getInstance().getLanguageManager() instanceof LanguageManager langManager) {
             System.out.printf("当前语言系统编号 CODE: %s \n", langManager.getSelected());
             System.out.println("下面是所有支持的语言系统编号: ");
-            langManager.getLanguages().forEach((code, info)-> {
+            langManager.getLanguages().forEach((code, info) -> {
                 System.out.printf("CODE: %s INFO: %s \n", code, info);
             });
 
@@ -100,7 +109,9 @@ public class MMDynamicRes {
         }
     }
 
-    /**自动生成测试包*/
+    /**
+     * 自动生成测试包
+     */
     private static void GenerateTestPack() {
         //拿到存在的路径
         Path examplePack = Exist(VEHICLES.resolve("example_pack"));
@@ -125,10 +136,10 @@ public class MMDynamicRes {
         createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), TestPackProvider.partModel_LeftWheel(), true);
         //部件定义文件
         createDefaultFile(partTypeFolder.resolve("test_cube.json"), TestPackProvider.partType_TestCube(), true);
-//        createDefaultFile(partTypeFolder.resolve("ae86_back_seat.json"), TestPackProvider.partType_BackSeat(), true);
-//        createDefaultFile(partTypeFolder.resolve("ae86_seat.json"), TestPackProvider.partType_Seat(), true);
+        createDefaultFile(partTypeFolder.resolve("ae86_back_seat.json"), TestPackProvider.partType_BackSeat(), true);
+        createDefaultFile(partTypeFolder.resolve("ae86_seat.json"), TestPackProvider.partType_Seat(), true);
         createDefaultFile(partTypeFolder.resolve("ae86_hull.json"), TestPackProvider.partType_Hull(), true);
-//        createDefaultFile(partTypeFolder.resolve("ae86_chassis_all_terrain.json"), TestPackProvider.partType_Chassis(), true);
+        createDefaultFile(partTypeFolder.resolve("ae86_chassis_all_terrain.json"), TestPackProvider.partType_Chassis(), true);
         createDefaultFile(partTypeFolder.resolve("ae86_wheel_all_terrain.json"), TestPackProvider.partType_Wheel(), true);
         //蓝图文件
         createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
@@ -153,7 +164,9 @@ public class MMDynamicRes {
     }
 
 
-    /**对一个载具包子目录的解析 packName是载具包名称 categoryPath是子目录*/
+    /**
+     * 对一个载具包子目录的解析 packName是载具包名称 categoryPath是子目录
+     */
     private static void packUp(String packName, Path categoryPath) {
         String category = categoryPath.getFileName().toString();
         for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
@@ -169,7 +182,7 @@ public class MMDynamicRes {
                         PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
                         //测试数据是否成功录入
                         partType.getConnectorIterator().forEachRemaining((c) -> {
-                            LOGGER.info("连接器队列: " +c);
+                            LOGGER.info("连接器队列: " + c);
                         });
                         partType.getPartOutwardConnectors().forEach((a, b) -> {
                             LOGGER.info("接口名称: %s 类型: %s".formatted(a, b));
@@ -184,7 +197,8 @@ public class MMDynamicRes {
                         OBoneParse.register(location, json);
                     }
 
-                    case "script" -> {}
+                    case "script" -> {
+                    }
                     case "blueprint" -> {
                         VehicleData data = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
                         BLUEPRINTS.put(location, data);
@@ -219,8 +233,10 @@ public class MMDynamicRes {
 
     }
 
-    /**保证路径存在，否则创建这个文件夹*/
-    private static Path Exist(Path path){
+    /**
+     * 保证路径存在，否则创建这个文件夹
+     */
+    private static Path Exist(Path path) {
         if (!Files.exists(path)) {
             try {
                 Files.createDirectory(path);
@@ -276,8 +292,9 @@ public class MMDynamicRes {
     }
 
 
-
-    /**获取一个路径下所有的子目录，第二个是过滤器（比如Files::isDirectory 是拿到所有子文件夹）*/
+    /**
+     * 获取一个路径下所有的子目录，第二个是过滤器（比如Files::isDirectory 是拿到所有子文件夹）
+     */
     private static List<Path> listPaths(Path path, Predicate<Path> predicate) {
         try {
             return Files.list(path)
@@ -291,6 +308,7 @@ public class MMDynamicRes {
 
     /**
      * 将文件内容读取到字节数组输入流（自动关闭资源）
+     *
      * @param file 要读取的文件对象
      * @return ByteArrayInputStream 或 null（读取失败时）
      */
@@ -305,15 +323,17 @@ public class MMDynamicRes {
     }
 
 
-    /**将文件名称的.xxx后缀部分去掉*/
+    /**
+     * 将文件名称的.xxx后缀部分去掉
+     */
     public static String getRealName(String str) {
         return str.contains(".") ? str.substring(0, str.lastIndexOf('.')) : str;
     }
 
 
-
     /**
      * 将类路径资源文件复制到指定文件系统路径
+     *
      * @param resourcePath 资源路径 (e.g. "config/default.properties")
      * @param targetPath   目标文件系统路径
      * @param overwrite    是否覆盖已存在文件

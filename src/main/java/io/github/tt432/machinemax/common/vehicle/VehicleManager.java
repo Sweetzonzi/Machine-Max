@@ -5,6 +5,7 @@ import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.registry.MMAttachments;
 import io.github.tt432.machinemax.common.registry.MMVisualEffects;
 import io.github.tt432.machinemax.common.vehicle.data.VehicleData;
+import io.github.tt432.machinemax.external.MMDynamicRes;
 import io.github.tt432.machinemax.network.payload.assembly.ClientRequestVehicleDataPayload;
 import io.github.tt432.machinemax.network.payload.assembly.LevelVehicleDataPayload;
 import io.github.tt432.machinemax.network.payload.assembly.VehicleCreatePayload;

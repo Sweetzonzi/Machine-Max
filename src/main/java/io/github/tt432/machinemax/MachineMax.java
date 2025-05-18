@@ -31,8 +31,6 @@ public class MachineMax {
 
     public MachineMax(IEventBus bus) {
         REGISTER.register(bus);
-        MMDynamicRes.loadData();//读取外部资源文件
-        bus.addListener(MMDynamicRes::registerReloadListeners);
         bus.addListener(RawInputHandler::init);
         bus.addListener(CameraController::init);
         MMDataRegistries.register();//注册所有自定义注册器
@@ -47,6 +45,9 @@ public class MachineMax {
         MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令
         MMVisualEffects.register();//注册所有视觉效果
+//        MMDynamicRes.loadData();//读取外部资源文件
+        bus.addListener(MMDynamicRes::init);//CommonSetup时读取外部资源文件，可行，但材质丢失，需要手动重载资源包
+        bus.addListener(MMDynamicRes::registerReloadListeners);
     }
 
 }
