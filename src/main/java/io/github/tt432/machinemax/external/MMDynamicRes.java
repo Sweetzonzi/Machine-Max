@@ -58,8 +58,32 @@ public class MMDynamicRes {
     /**
      * 外部包加载过程
      */
+    public static void loadTextures() {
+        LOGGER.warn("开始从外部包读取贴图...");
+        //清理之前的数据，避免刷新时发生重复的注册
+        EXTERNAL_RESOURCE.clear();
+        PART_TYPES.clear();
+        OBoneParse.clear();
+        BLUEPRINTS.clear();
+        //保证 主路径、载具包根路径 存在
+        Exist(NAMESPACE);
+        Exist(VEHICLES);
+        GenerateTestPack(); //自动生成测试包
+        for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
+            String packName = root.getFileName().toString();
+            //资源类数据先加载
+            packUp(packName, Exist(root.resolve("content")));
+            packUp(packName, Exist(root.resolve("lang")));
+            packUp(packName, Exist(root.resolve("texture")));
+            packUp(packName, Exist(root.resolve("font")));
+        }
+    }
+
+    /**
+     * 外部包加载过程
+     */
     public static void loadData() {
-        LOGGER.warn("开始从外部包读取配置！！");
+        LOGGER.warn("开始从外部包读取配置...");
         //清理之前的数据，避免刷新时发生重复的注册
         EXTERNAL_RESOURCE.clear();
         PART_TYPES.clear();
@@ -84,15 +108,6 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("color")));
 
         }
-        if (Minecraft.getInstance().getLanguageManager() instanceof LanguageManager langManager) {
-            System.out.printf("当前语言系统编号 CODE: %s \n", langManager.getSelected());
-            System.out.println("下面是所有支持的语言系统编号: ");
-            langManager.getLanguages().forEach((code, info) -> {
-                System.out.printf("CODE: %s INFO: %s \n", code, info);
-            });
-
-        }
-
     }
 
     public static class DataPackReloader extends SimplePreparableReloadListener<Void> {
@@ -136,11 +151,12 @@ public class MMDynamicRes {
         createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), TestPackProvider.partModel_LeftWheel(), true);
         //部件定义文件
         createDefaultFile(partTypeFolder.resolve("test_cube.json"), TestPackProvider.partType_TestCube(), true);
-        createDefaultFile(partTypeFolder.resolve("ae86_back_seat.json"), TestPackProvider.partType_BackSeat(), true);
-        createDefaultFile(partTypeFolder.resolve("ae86_seat.json"), TestPackProvider.partType_Seat(), true);
-        createDefaultFile(partTypeFolder.resolve("ae86_hull.json"), TestPackProvider.partType_Hull(), true);
-        createDefaultFile(partTypeFolder.resolve("ae86_chassis_all_terrain.json"), TestPackProvider.partType_Chassis(), true);
-        createDefaultFile(partTypeFolder.resolve("ae86_wheel_all_terrain.json"), TestPackProvider.partType_Wheel(), true);
+        //TODO:疑似会带来运行稳定性的问题，待排查
+//        createDefaultFile(partTypeFolder.resolve("ae86_back_seat.json"), TestPackProvider.partType_BackSeat(), true);
+//        createDefaultFile(partTypeFolder.resolve("ae86_seat.json"), TestPackProvider.partType_Seat(), true);
+//        createDefaultFile(partTypeFolder.resolve("ae86_hull.json"), TestPackProvider.partType_Hull(), true);
+//        createDefaultFile(partTypeFolder.resolve("ae86_chassis_all_terrain.json"), TestPackProvider.partType_Chassis(), true);
+//        createDefaultFile(partTypeFolder.resolve("ae86_wheel_all_terrain.json"), TestPackProvider.partType_Wheel(), true);
         //蓝图文件
         createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
         //自定义翻译
@@ -181,12 +197,12 @@ public class MMDynamicRes {
                         PartType partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
                         PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
                         //测试数据是否成功录入
-                        partType.getConnectorIterator().forEachRemaining((c) -> {
-                            LOGGER.info("连接器队列: " + c);
-                        });
-                        partType.getPartOutwardConnectors().forEach((a, b) -> {
-                            LOGGER.info("接口名称: %s 类型: %s".formatted(a, b));
-                        });
+//                        partType.getConnectorIterator().forEachRemaining((c) -> {
+//                            LOGGER.info("连接器队列: " + c);
+//                        });
+//                        partType.getPartOutwardConnectors().forEach((a, b) -> {
+//                            LOGGER.info("接口名称: %s 类型: %s".formatted(a, b));
+//                        });
                     }
 
                     case "model" -> {
