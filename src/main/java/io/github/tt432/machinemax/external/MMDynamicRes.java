@@ -142,7 +142,7 @@ public class MMDynamicRes {
         createDefaultFileByBase64(texture.resolve("ae86_3.png"), TestPackProvider.ae86_3_png_base64(), true);
         createDefaultFileByBase64(texture.resolve("ae86_4.png"), TestPackProvider.ae86_4_png_base64(), true);
         //自定义文本文件
-        createDefaultFile(content.resolve("test.txt"), TestPackProvider.content_txt(), true);
+        createDefaultFile(content.resolve("test.html"), TestPackProvider.content_txt(), true);
         //自定义字体文件
         createDefaultFile(font.resolve("test_font.json"), TestPackProvider.test_font_json(), true);
         copyResourceToFile("/bell.ttf", font.resolve("bell.ttf"), true);

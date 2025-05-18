@@ -1,4 +1,4 @@
-package io.github.tt432.machinemax.external.htlike;
+package io.github.tt432.machinemax.external.html;
 
 import java.util.Stack;
 import java.util.ArrayList;
@@ -7,7 +7,7 @@ import java.util.List;
 public class HtmlLikeParser {
 
     public static HtNode parse(String input) {
-        input = "<root>" + input + "</root>";
+        input = "<root>" + input + "</root>"; // 包裹根标签
 
         Stack<TagHtNode> stack = new Stack<>();
         StringBuilder textBuffer = new StringBuilder();
@@ -19,99 +19,96 @@ public class HtmlLikeParser {
             char currentChar = input.charAt(index);
 
             if (currentChar == '<') {
+                // 遇到标签时，处理已缓存的文本内容
                 if (textBuffer.length() > 0) {
-                    String text = textBuffer.toString().trim();
-                    if (!text.isEmpty()) {
-                        addTextNode(stack, text);
-                    }
+                    String text = textBuffer.toString(); // 删除.trim()保留原始空格
+                    addTextNode(stack, text);
                     textBuffer.setLength(0);
                 }
 
+                // 处理标签
                 boolean isClosingTag = false;
-                index++;
+                index++; // 跳过'<'
 
+                // 判断是否为闭合标签
                 if (index < length && input.charAt(index) == '/') {
                     isClosingTag = true;
                     index++;
                 }
 
+                // 提取标签名（标签内部仍保留trim处理）
                 int endIndex = input.indexOf('>', index);
-                if (endIndex == -1) throw new IllegalArgumentException("未闭合的标签");
-                String tagName = input.substring(index, endIndex).trim();
+                if (endIndex == -1) throw new IllegalArgumentException("Unclosed tag");
+                String tagName = input.substring(index, endIndex).trim(); // 标签名去前后空格
                 index = endIndex + 1;
 
                 if (isClosingTag) {
-                    if (stack.isEmpty()) throw new IllegalArgumentException("多余的关闭标签: </" + tagName + ">");
+                    // 闭合标签：校验栈并构建层级
+                    if (stack.isEmpty()) throw new IllegalArgumentException("Extra closing tag: </" + tagName + ">");
                     TagHtNode currentTag = stack.pop();
 
                     if (!currentTag.getTagName().equals(tagName)) {
-                        throw new IllegalArgumentException("标签不匹配: <" + currentTag.getTagName() + "> vs </" + tagName + ">");
+                        throw new IllegalArgumentException("Tag mismatch: <" + currentTag.getTagName() + "> vs </" + tagName + ">");
                     }
 
-                    if (stack.isEmpty()) {
-                        root = currentTag;
-                    }
-                    // 删除错误添加子节点的代码
+                    if (stack.isEmpty()) root = currentTag;
                 } else {
+                    // 开始标签：入栈并建立父子关系
                     TagHtNode newTag = new TagHtNode(tagName);
-                    if (!stack.isEmpty()) {
-                        stack.peek().addChild(newTag);
-                    }
+                    if (!stack.isEmpty()) stack.peek().addChild(newTag);
                     stack.push(newTag);
                 }
             } else {
+                // 非标签字符：缓存文本内容
                 textBuffer.append(currentChar);
                 index++;
             }
         }
 
+        // 处理末尾的文本内容
         if (textBuffer.length() > 0) {
-            String text = textBuffer.toString().trim();
-            if (!text.isEmpty()) {
-                addTextNode(stack, text);
-            }
+            String text = textBuffer.toString();
+            addTextNode(stack, text);
         }
 
+        // 校验未闭合标签
         if (root == null && !stack.isEmpty()) {
-            throw new IllegalArgumentException("存在未闭合的标签: <" + stack.peek().getTagName() + ">");
+            throw new IllegalArgumentException("Unclosed tag: <" + stack.peek().getTagName() + ">");
         }
         return root;
     }
 
     private static void addTextNode(Stack<TagHtNode> stack, String text) {
         if (!stack.isEmpty()) {
+            // 记录文本所在的所有外层标签
             List<String> enclosingTags = new ArrayList<>();
-            for (TagHtNode tag : stack) {
-                enclosingTags.add(tag.getTagName());
-            }
+            for (TagHtNode tag : stack) enclosingTags.add(tag.getTagName());
             stack.peek().addChild(new TextHtNode(text, enclosingTags));
         } else {
-            throw new IllegalArgumentException("文本不在标签内: \"" + text + "\"");
+            throw new IllegalArgumentException("Orphan text: \"" + text + "\"");
         }
     }
 
     public static void main(String[] args) {
-        String input = "<italic><test_font>This is a test</test_font><tag2>I am text2</tag2></italic>";
+        String input = "<italic><test_font>        This is a test   </test_font><tag2>I am text2</tag2></italic>";
         try {
             HtNode root = parse(input);
             printTree(root, 0);
         } catch (Exception e) {
-            System.err.println("解析失败: " + e.getMessage());
+            System.err.println("Parse failed: " + e.getMessage());
         }
     }
 
-    private static void printTree(HtNode htNode, int indent) {
+    private static void printTree(HtNode node, int indent) {
         String padding = "  ".repeat(indent);
-        if (htNode.isText()) {
-            TextHtNode textNode = (TextHtNode) htNode;
+        if (node.isText()) {
+            TextHtNode textNode = (TextHtNode) node;
             System.out.println(padding + "Text: \"" + textNode.getText() + "\"");
             System.out.println(padding + "Enclosing Tags: " + textNode.getEnclosingTags());
         } else {
-            TagHtNode tagNode = (TagHtNode) htNode;
+            TagHtNode tagNode = (TagHtNode) node;
             System.out.println(padding + "Tag: <" + tagNode.getTagName() + ">");
-            for (HtNode child : tagNode.getChildren()) {
-                printTree(child, indent + 1);
-            }
+            for (HtNode child : tagNode.getChildren()) printTree(child, indent + 1);
         }
     }
 }

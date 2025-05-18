@@ -28,11 +28,8 @@ public class StyleProvider {
 
         }
         switch (tag) {
-            case "s" -> {
-                return Component.literal(" ").append(input);
-            }
             case "t" -> {
-                return Component.literal("  ").append(input);
+                return Component.literal("   ").append(input);
             }
             case "br" -> {
                 return input.append("\n");

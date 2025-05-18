@@ -307,7 +307,7 @@ public class TestPackProvider {
                     }
                   ],
                   "vehicle_name": "Vehicle",
-                  "tooltip": "machine_max:example_pack/content/test.txt",
+                  "tooltip": "machine_max:example_pack/content/test.html",
                   "uuid": "29aa4eb8-74ba-4595-8a95-fd00bfdf8a62",
                   "pos": [
                     -16.61766990025838,
@@ -370,10 +370,10 @@ public class TestPackProvider {
 
     public static String content_txt() {
         return "\n" +
-                "<c.9BE868><f.test_font>This</f.test_font></c.9BE868><s><f.test_font>is a demonstration blueprint, an off-road vehicle</f.test_font></s>\n" +
+                "<c.9BE868><f.test_font>This </f.test_font></c.9BE868><f.test_font>is a demonstration blueprint, an off-road vehicle</f.test_font>\n" +
                 "\n" +
                 "\n" +
-                "<italic>这是一个演示蓝图，一台越野车      Maker:</italic><s><c.my_red>XXX</c.my_red></s>\n";
+                "<italic> 这是一个演示蓝图，一台越野车             </italic>Maker:<c.my_red> XXX</c.my_red>\n";
     }
 
     public static String test_font_json() {
