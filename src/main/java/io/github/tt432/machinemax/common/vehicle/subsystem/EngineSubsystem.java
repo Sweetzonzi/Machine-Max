@@ -1,5 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.EngineSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
@@ -8,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EngineSubsystem extends AbstractSubsystem{
+public class EngineSubsystem extends AbstractSubsystem {
     public final EngineSubsystemAttr attr;
     public final double MAX_ROT_SPEED;//最大转速(rad/s)
     public final double MAX_TORQUE_SPEED;//最大扭矩转速(rad/s)
@@ -50,8 +51,8 @@ public class EngineSubsystem extends AbstractSubsystem{
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
         Object speedFeedback = null;
-        for (Map.Entry<ISignalSender, Object> entry: getSignalChannel("speed_feedback").entrySet()){
-            if (entry.getValue() instanceof EmptySignal || entry.getValue() instanceof Float){
+        for (Map.Entry<ISignalSender, Object> entry : getSignalChannel("speed_feedback").entrySet()) {
+            if (entry.getValue() instanceof EmptySignal || entry.getValue() instanceof Float) {
                 speedFeedback = entry.getValue();
             }
             break;
@@ -68,8 +69,8 @@ public class EngineSubsystem extends AbstractSubsystem{
             //TODO:如何和转动惯量属性挂钩？
             rotSpeed = 0.95 * rotSpeed + 0.05 * feedback;
             if (rotSpeed > 0) rotSpeed = Math.max(rotSpeed, 0.1 * BASE_ROT_SPEED);
-            sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
+            sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率信号
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速信号
         } else {
             //没有转速反馈信号时，直接取用引擎转速
             rotSpeed += netTorque / (7 * attr.inertia) / 60f;

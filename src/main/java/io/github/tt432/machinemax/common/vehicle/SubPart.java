@@ -224,8 +224,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                             return null;
                         });
                     }
-                    //根据方块被破坏实际消耗的能量调整部件吸收的能量
-                    double actualPartEnergy = partEnergy * ((100 * blockDurability) / blockEnergy);
+                    //根据方块被破坏实际消耗的能量调整部件吸收的能量，但不全额作用为反冲量以提升操控流畅性
+                    double actualPartEnergy = 0.3 * partEnergy * ((250 * blockDurability) / blockEnergy);
                     //部件减速
                     getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_" + blockPos + "_block_impulse", PPhase.PRE, () -> {
                         body.applyImpulse(normal.mult((float) (Math.sqrt(2 * actualPartEnergy * body.getMass()))),
