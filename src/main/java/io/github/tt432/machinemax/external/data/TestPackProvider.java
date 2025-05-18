@@ -368,7 +368,7 @@ public class TestPackProvider {
                 """;
     }
 
-    public static String content_txt() {
+    public static String content_html() {
         return "\n" +
                 "<c.9BE868><f.test_font>This </f.test_font></c.9BE868><f.test_font>is a demonstration blueprint, an off-road vehicle</f.test_font>\n" +
                 "\n" +
