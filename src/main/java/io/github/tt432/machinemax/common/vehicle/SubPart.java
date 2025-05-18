@@ -213,7 +213,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     if (connector.hasPart())
                         partMass += (0.3 * connector.attachedConnector.subPart.body.getMass());
                 }
-                partMass += 0.05 * part.vehicle.totalMass - body.getMass();
+                partMass += 0.05 * (part.vehicle.totalMass - body.getMass());
                 double contactNormalSpeed = Math.abs(contactVel.dot(normal)) + ManifoldPoints.getAppliedImpulse(manifoldPointId) / body.getMass();
                 double restitution = body.getRestitution() * other.getRestitution();//TODO:考虑二者护甲差距调整此系数
                 double contactEnergy = 0.5 * partMass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
@@ -334,7 +334,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                         if (connector.hasPart())
                             partMass += 0.3 * connector.attachedConnector.subPart.body.getMass();
                     }
-                    partMass += 0.05 * part.vehicle.totalMass - body.getMass();
+                    partMass += 0.05 * (part.vehicle.totalMass - body.getMass());
                     float restitution = (float) Math.sqrt(body.getRestitution());
                     double miu = (entityMass * partMass / (partMass + entityMass));
                     double contactEnergy = 0.5 * miu * contactNormalSpeed * contactNormalSpeed * (1 - restitution * restitution);
@@ -349,7 +349,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     //实体击退与伤害
                     other.setLinearVelocity(other.getLinearVelocity(null).add(impulseVec.mult((float) (1f / entityMass))));
                     ((TaskSubmitOffice) level).submitDeduplicatedTask(entity.getStringUUID() + "_entity_collision_damage", PPhase.PRE, () -> {
-                        entity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.05 / entityMass)).add(0, 0.1f, 0)));
                         float damage = (float) (contactEnergy * miu / (100 * entityMass));
                         if (damage > 1) {
                             if (!level.isClientSide) {
@@ -358,6 +357,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                             level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
                                     SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.AMBIENT, 1f, 1f);
                         }
+                        entity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.2 / entityMass)).add(0, 0.1f, 0)));
                         return null;
                     });
                 }
