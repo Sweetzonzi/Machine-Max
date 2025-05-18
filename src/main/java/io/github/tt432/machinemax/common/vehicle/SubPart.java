@@ -208,9 +208,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 //计算碰撞法线方向上的速度(考虑冲量影响)
                 float blockArmor = ArmorUtil.getBlockArmor(part.level, blockState, blockPos);
                 float subPartArmor = part.type.thickness.get(childShapeId);
-                double contactNormalSpeed = Math.abs(contactVel.dot(normal) + ManifoldPoints.getAppliedImpulse(manifoldPointId) / body.getMass());
+                double contactNormalSpeed = Math.abs(contactVel.dot(normal)) + ManifoldPoints.getAppliedImpulse(manifoldPointId) / body.getMass();
                 double restitution = body.getRestitution() * other.getRestitution();//TODO:考虑二者护甲差距调整此系数
-                double contactEnergy = 0.5 * attr.mass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
+                double contactEnergy = 0.5 * body.getMass() * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
                 float blockDurability = 30 * blockState.getDestroySpeed(part.level, other.blockPos);
                 double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);//方块吸收的碰撞能量
                 double partEnergy = contactEnergy * blockArmor / (subPartArmor + blockArmor);//部件吸收的碰撞能量
@@ -225,7 +225,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                         });
                     }
                     //根据方块被破坏实际消耗的能量调整部件吸收的能量
-                    double actualPartEnergy = partEnergy * ((250 * blockDurability) / blockEnergy);
+                    double actualPartEnergy = partEnergy * ((100 * blockDurability) / blockEnergy);
                     //部件减速
                     getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_" + blockPos + "_block_impulse", PPhase.PRE, () -> {
                         body.applyImpulse(normal.mult((float) (Math.sqrt(2 * actualPartEnergy * body.getMass()))),
@@ -261,7 +261,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 ((TaskSubmitOffice) level).submitDeduplicatedTask(part.uuid + "_" + name + "_slide_sound", PPhase.PRE, () -> {
                     level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
                             blockState.getSoundType(part.level, blockPos, null).getStepSound(), SoundSource.BLOCKS,
-                            (float) (0.5f * (1f - Math.exp(-0.1 * body.getLinearVelocity(null).length()))), 0.8f);
+                            (float) (0.5f * (1f - Math.exp(-0.1 * (body.getLinearVelocity(null).length() - 2)))), 0.75f);
                     return null;
                 });
             }
@@ -344,7 +344,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     other.setLinearVelocity(other.getLinearVelocity(null).add(impulseVec.mult((float) (1f / entityMass))));
                     ((TaskSubmitOffice) level).submitDeduplicatedTask(entity.getStringUUID() + "_entity_collision_damage", PPhase.PRE, () -> {
                         entity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.05 / entityMass)).add(0, 0.1f, 0)));
-                        float damage = (float) (contactEnergy * miu / (250 * entityMass));
+                        float damage = (float) (contactEnergy * miu / (100 * entityMass));
                         if (damage > 1) {
                             if (!level.isClientSide) {
                                 entity.hurt(level.damageSources().flyIntoWall(), damage);
@@ -518,7 +518,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 var ang = Math.atan2(height, 1);
                 float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 1.75f);
                 float horizontalVelScale = (float) Math.cos(ang);
-                body.setLinearVelocity(new Vector3f(horizontalVelScale * vel.x, (float) (0.7 * vel.y + extraVel), horizontalVelScale * vel.z));
+                body.setLinearVelocity(new Vector3f(horizontalVelScale * vel.x, (float) (0.3 * vel.y + extraVel), horizontalVelScale * vel.z));
             }
         }
     }

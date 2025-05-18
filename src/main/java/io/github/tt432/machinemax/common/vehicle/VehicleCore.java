@@ -107,6 +107,22 @@ public class VehicleCore {
      * 主线程tick，默认tps=20
      */
     public void tick() {
+        //保持激活与控制量更新
+        Vec3 newPos = new Vec3(0, 0, 0);
+        Vec3 newVel = new Vec3(0, 0, 0);
+        for (Part part : partMap.values()) {
+            Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null));
+            Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.body.getLinearVelocity(null));
+            newPos = newPos.add(partPos);//计算载具形心位置
+            newVel = newVel.add(partVel);//计算载具形心速度
+            if (inLoadedChunk && !isRemoved) part.onTick();
+        }
+        this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
+        this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
+        if (partMap.values().isEmpty() || this.position.y < -1024) {
+            VehicleManager.removeVehicle(this);//移除掉出世界的载具
+            return;
+        }
         if (inLoadedChunk && !isRemoved) {//TODO:如果在已加载区块内，或速度大于某个阈值
             if (!loaded) {
                 if (loadFromSavedData) {
@@ -118,18 +134,6 @@ public class VehicleCore {
                     loaded = true;
                 }
             }
-            //保持激活与控制量更新
-            Vec3 newPos = new Vec3(0, 0, 0);
-            Vec3 newVel = new Vec3(0, 0, 0);
-            for (Part part : partMap.values()) {
-                Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null));
-                Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.body.getLinearVelocity(null));
-                part.onTick();
-                newPos = newPos.add(partPos);//计算载具形心位置
-                newVel = newVel.add(partVel);//计算载具形心速度
-            }
-            this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
-            this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
             if (!level.isClientSide && syncCountDown <= 0) {
                 syncSubParts(null);//同步零件位置姿态速度
                 syncCountDown = Math.max((int) (40 * Math.pow(2, -0.1 * velocity.length())), 2);//速度越大，同步冷却时间越短
@@ -138,9 +142,6 @@ public class VehicleCore {
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
         }
-
-        if (partMap.values().isEmpty() || this.position.y < -1024)
-            VehicleManager.removeVehicle(this);//移除掉出世界的载具
         tickCount++;
         if (syncCountDown > 0) syncCountDown--;
     }
@@ -265,9 +266,9 @@ public class VehicleCore {
         for (AbstractConnector connector : part.allConnectors.values()) {//连接部件内信号端口的传输关系
             if (connector.signalPort != null) connector.signalPort.setTargetFromNames();
         }
-        for (SubPart subPart : part.subParts.values()){//连接部件内交互判定区的信号传输关系
+        for (SubPart subPart : part.subParts.values()) {//连接部件内交互判定区的信号传输关系
             if (subPart.interactBoxes != null)
-                for (InteractBox interactBox : subPart.interactBoxes.values()){
+                for (InteractBox interactBox : subPart.interactBoxes.values()) {
                     interactBox.setTargetFromNames();
                 }
         }
