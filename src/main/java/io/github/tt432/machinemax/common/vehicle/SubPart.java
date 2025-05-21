@@ -31,11 +31,9 @@ import io.github.tt432.machinemax.util.mechanic.MassUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -108,7 +106,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     body.addPhysicsTicker(this);
                     body.setProtectGravity(true);
                     body.setSleepingThresholds(0.1f, 0.1f);
-                    body.setDamping(0.01f, 0.01f);
                     return null;
                 }));
     }
@@ -189,7 +186,10 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         for (AbstractSubsystem subsystem : subsystems) subsystem.onCollide(pcoA, pcoB, manifoldPointId);
         //与方块碰撞时
         if (other.getCollisionGroup() == VehicleManager.COLLISION_GROUP_BLOCK) {
-            if (other.userIndex() <= 0) return;//忽略即将过期方块的碰撞
+            if (other.userIndex() <= 0) {
+                ManifoldPoints.setAppliedImpulse(manifoldPointId, 0);
+                return;//忽略即将过期方块的碰撞
+            }
             BlockState blockState = (BlockState) other.getUserObject();
             BlockPos blockPos = other.blockPos;
             //调用子系统碰撞回调
@@ -217,16 +217,26 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 double contactNormalSpeed = Math.abs(contactVel.dot(normal)) + ManifoldPoints.getAppliedImpulse(manifoldPointId) / body.getMass();
                 double restitution = body.getRestitution() * other.getRestitution();//TODO:考虑二者护甲差距调整此系数
                 double contactEnergy = 0.5 * partMass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
-                float blockDurability = 30 * blockState.getDestroySpeed(part.level, other.blockPos);
+                float blockDurability;
+                //软质吸能地面方块更不易被破坏，特殊处理沙土雪等软质地面方块的耐久度
+                if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SNOW) || blockState.is(BlockTags.SAND)) {
+                    blockDurability = 100 * blockState.getDestroySpeed(part.level, other.blockPos);
+                } else if (blockState.is(BlockTags.WOOL)) {//吸能材料超高耐久度
+                    blockDurability = 200 * blockState.getDestroySpeed(part.level, other.blockPos);
+                } else {//一般方块
+                    blockDurability = 30 * blockState.getDestroySpeed(part.level, other.blockPos);
+                }
                 double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);//方块吸收的碰撞能量
-                double partEnergy = contactEnergy * blockArmor / (subPartArmor + blockArmor);//部件吸收的碰撞能量
+                double partEnergy = contactEnergy - blockEnergy;//部件吸收的碰撞能量
                 if (blockEnergy > 250 * blockDurability) {//能量能够一次摧毁则摧毁,计算额外冲量使部件减速
                     //摧毁方块
                     other.setContactResponse(false);
                     other.setUserIndex(0);
+                    //被摧毁的方块掉落为物品的概率，方块吸收的碰撞能量恰好与耐久度相同时必定掉落，掉落率随能量增加而递减
+                    double blockDropRate = Math.exp(1 - (blockEnergy / (250 * blockDurability)));
                     if (!level.isClientSide) {
                         ((TaskSubmitOffice) level).submitDeduplicatedTask(other.blockPos.toShortString(), PPhase.PRE, () -> {
-                            level.destroyBlock(other.blockPos, false);
+                            level.destroyBlock(other.blockPos, Math.random() < blockDropRate);
                             return null;
                         });
                     }
@@ -253,27 +263,30 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             float friction2 = pcoB.getFriction();
             float slip = (float) 1 - ((other.userIndex2()) * (1 - attr.slipAdaptation) / 100);//潮湿与打滑带来的修正系数
             //通常粒子效果
-            if (contactVel.length() > 1f || body.getLinearVelocity(null).length() > 2f) {
+            float speed = body.getLinearVelocity(null).length();
+            if (contactVel.length() > 1f) {
                 if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SAND) || blockState.is(BlockTags.SNOW)) {
-                    ((TaskSubmitOffice) level).submitImmediateTask(PPhase.PRE, () -> {
-                        //飞溅草石
-                        level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockState),
-                                worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
-                                contactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
-                                contactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
-                                contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
-                        return null;
-                    });
+                    if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
+                        ((TaskSubmitOffice) level).submitImmediateTask(PPhase.PRE, () -> {
+                            //飞溅草石
+                            level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockState),
+                                    worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
+                                    contactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
+                                    contactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
+                                    contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
+                            return null;
+                        });
+                    }
                 }
                 ((TaskSubmitOffice) level).submitDeduplicatedTask(part.uuid + "_" + name + "_slide_sound", PPhase.PRE, () -> {
-                    level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
+                    level.playLocalSound(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
                             blockState.getSoundType(part.level, blockPos, null).getStepSound(), SoundSource.BLOCKS,
-                            (float) (0.5f * (1f - Math.exp(-0.1 * (body.getLinearVelocity(null).length() - 2)))), 0.75f);
+                            (float) (0.3f * (1f - Math.exp(-0.1 * (body.getLinearVelocity(null).length() - 2)))), 0.75f, false);
                     return null;
                 });
             }
             if (contactVel.length() > 1f && impactAngle > 60f && impactAngle < 120f) {//打滑时
-                slip = (float) (Math.pow(slip, 1f + 5 * contactVel.length()) * 0.9f);//根据打滑情况额外降低摩擦系数
+                slip = (float) (Math.pow(slip, 0.5 * (contactVel.length() - 1)) * 0.9f);//根据打滑情况额外降低摩擦系数
                 //TODO:漂移音效
             }
             //重设摩擦系数
@@ -294,73 +307,74 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                             this.body, other, contactVel, normal, worldContactPoint, impactAngle, childShapeId, manifoldPointId
                     );
                 }
-                if (entity instanceof ItemEntity) return;
-                //原版投射物处理
-                if (entity instanceof Projectile projectile && !projectile.isRemoved() && part.getEntity() != null) {
-                    IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
-                    if (mixinProjectile.machine_Max$getHitSubPart() == null && projectile.getDeltaMovement().length() > 0) {//若投射物还未与任何零件碰撞过
-                        var start = PhysicsHelperKt.toBVector3f(projectile.getEyePosition().subtract(projectile.getDeltaMovement()));
-                        var end = PhysicsHelperKt.toBVector3f(projectile.getEyePosition().add(projectile.getDeltaMovement()));
-                        var results = getPhysicsLevel().getWorld().rayTest(start, end);
-                        for (PhysicsRayTestResult result : results) {//遍历射线检测结果
-                            if (result.getCollisionObject() == this.body) {//若命中本零件
-                                HitResult hitResult = new EntityHitResult(part.getEntity(), SparkMathKt.toVec3(worldContactPoint));
-                                if (!EventHooks.onProjectileImpact(projectile, hitResult)) {//若命中事件未被取消
-                                    mixinProjectile.machine_Max$setHitPoint(start.add(end.subtract(start).mult(result.getHitFraction())));
-                                    mixinProjectile.machine_Max$setHitNormal(result.getHitNormalLocal(null));
-                                    mixinProjectile.machine_Max$setHitBoxId(childShapeId);
-                                    mixinProjectile.machine_Max$setHitSubPart(this);
-                                    ((TaskSubmitOffice) part.level).submitDeduplicatedTask(projectile.getStringUUID(), PPhase.POST, () -> {
-                                        ((IProjectileMixin) projectile).machine_Max$manualProjectileHit(hitResult);
-                                        return null;
-                                    });
+                switch (entity) {
+                    //原版投射物处理
+                    case Projectile projectile when !projectile.isRemoved() && part.getEntity() != null -> {
+                        IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
+                        if (mixinProjectile.machine_Max$getHitSubPart() == null && projectile.getDeltaMovement().length() > 0) {//若投射物还未与任何零件碰撞过
+                            var start = PhysicsHelperKt.toBVector3f(projectile.getEyePosition().subtract(projectile.getDeltaMovement()));
+                            var end = PhysicsHelperKt.toBVector3f(projectile.getEyePosition().add(projectile.getDeltaMovement()));
+                            var results = getPhysicsLevel().getWorld().rayTest(start, end);
+                            for (PhysicsRayTestResult result : results) {//遍历射线检测结果
+                                if (result.getCollisionObject() == this.body) {//若命中本零件
+                                    HitResult hitResult = new EntityHitResult(part.getEntity(), SparkMathKt.toVec3(worldContactPoint));
+                                    if (!EventHooks.onProjectileImpact(projectile, hitResult)) {//若命中事件未被取消
+                                        mixinProjectile.machine_Max$setHitPoint(start.add(end.subtract(start).mult(result.getHitFraction())));
+                                        mixinProjectile.machine_Max$setHitNormal(result.getHitNormalLocal(null));
+                                        mixinProjectile.machine_Max$setHitBoxId(childShapeId);
+                                        mixinProjectile.machine_Max$setHitSubPart(this);
+                                        ((TaskSubmitOffice) part.level).submitDeduplicatedTask(projectile.getStringUUID(), PPhase.POST, () -> {
+                                            ((IProjectileMixin) projectile).machine_Max$manualProjectileHit(hitResult);
+                                            return null;
+                                        });
+                                    }
+                                    break;
                                 }
-                                break;
                             }
                         }
                     }
-                } else if (entity instanceof LivingEntity
-                        && !entity.isRemoved()
-                        && !((LivingEntity) entity).isDeadOrDying()
-                        && !entity.hasImpulse
-                        && !(entity.getVehicle() instanceof MMPartEntity)) {
-                    //不处理相对速度不足的碰撞
-                    if (contactVel.subtract(PhysicsHelperKt.toBVector3f(entity.getDeltaMovement().scale(20))).length() < 4f) {
-                        return;
-                    }
-                    float contactNormalSpeed = body.getLinearVelocity(null).dot(normal);//直接取接触点碰撞速度似乎不准确
-                    double entityMass = MassUtil.getEntityMass(entity);
-                    double partMass = body.getMass();
-                    for (AbstractConnector connector : this.connectors.values()) {
-                        if (connector.hasPart())
-                            partMass += 0.3 * connector.attachedConnector.subPart.body.getMass();
-                    }
-                    partMass += 0.05 * (part.vehicle.totalMass - body.getMass());
-                    float restitution = (float) Math.sqrt(body.getRestitution());
-                    double miu = (entityMass * partMass / (partMass + entityMass));
-                    double contactEnergy = 0.5 * miu * contactNormalSpeed * contactNormalSpeed * (1 - restitution * restitution);
-                    float impulse = (float) miu * (1 + restitution) * contactNormalSpeed;
-                    Vector3f impulseVec = normal.mult(impulse);
-                    //TODO:部件伤害
-                    //部件减速
-                    getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_entity_impulse", PPhase.PRE, () -> {
-                        body.applyImpulse(impulseVec.mult(-0.2f), worldContactPoint.subtract(body.getPhysicsLocation(null)));
-                        return null;
-                    });
-                    //实体击退与伤害
-                    other.setLinearVelocity(other.getLinearVelocity(null).add(impulseVec.mult((float) (1f / entityMass))));
-                    ((TaskSubmitOffice) level).submitDeduplicatedTask(entity.getStringUUID() + "_entity_collision_damage", PPhase.PRE, () -> {
-                        float damage = (float) (contactEnergy * miu / (100 * entityMass));
-                        if (damage > 1) {
-                            if (!level.isClientSide) {
-                                entity.hurt(level.damageSources().flyIntoWall(), damage);
-                            }
-                            level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
-                                    SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.AMBIENT, 1f, 1f);
+                    case LivingEntity livingEntity when !entity.isRemoved() && !livingEntity.isDeadOrDying() && !entity.hasImpulse && !(entity.getVehicle() instanceof MMPartEntity) -> {
+                        //不处理相对速度不足的碰撞
+                        if (contactVel.subtract(PhysicsHelperKt.toBVector3f(entity.getDeltaMovement().scale(20))).length() < 4f) {
+                            return;
                         }
-                        entity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.1 / entityMass)).add(0, 0.1f, 0)));
-                        return null;
-                    });
+                        float contactNormalSpeed = body.getLinearVelocity(null).dot(normal);//直接取接触点碰撞速度似乎不准确
+
+                        double entityMass = MassUtil.getEntityMass(entity);
+                        double partMass = body.getMass();
+                        for (AbstractConnector connector : this.connectors.values()) {
+                            if (connector.hasPart())
+                                partMass += 0.3 * connector.attachedConnector.subPart.body.getMass();
+                        }
+                        partMass += 0.05 * (part.vehicle.totalMass - body.getMass());
+                        float restitution = (float) Math.sqrt(body.getRestitution());
+                        double miu = (entityMass * partMass / (partMass + entityMass));
+                        double contactEnergy = 0.5 * miu * contactNormalSpeed * contactNormalSpeed * (1 - restitution * restitution);
+                        float impulse = (float) miu * (1 + restitution) * contactNormalSpeed;
+                        Vector3f impulseVec = normal.mult(impulse);
+                        //TODO:部件伤害
+                        //部件减速
+                        getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_entity_impulse", PPhase.PRE, () -> {
+                            body.applyImpulse(impulseVec.mult(-0.3f), worldContactPoint.subtract(body.getPhysicsLocation(null)));
+                            return null;
+                        });
+                        //实体击退与伤害
+                        other.setLinearVelocity(other.getLinearVelocity(null).add(impulseVec.mult((float) (1f / entityMass))));
+                        ((TaskSubmitOffice) level).submitDeduplicatedTask(entity.getStringUUID() + "_entity_collision_damage", PPhase.PRE, () -> {
+                            float damage = (float) (contactEnergy * miu / (100 * entityMass));
+                            if (damage > 1) {
+                                if (!level.isClientSide) {
+                                    entity.hurt(level.damageSources().flyIntoWall(), damage);
+                                }
+                                level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
+                                        SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.AMBIENT, 1f, 1f);
+                            }
+                            entity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.1 / entityMass)).add(0, 0.1f, 0)));
+                            return null;
+                        });
+                    }
+                    default -> {
+                    }
                 }
             }
         }
@@ -402,7 +416,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         } else return;
         if (partBody.getOwner() instanceof SubPart subPart && subPart.GROUND_COLLISION_ONLY) {//仅与地面方块碰撞的零件遭遇方块时
             float terrainHeight = terrain.cachedBoundingBox.getMax(null).y;
-            float y0 = ShapeHelper.getShapeMinY(partBody, 0.2f) + 0.1f;//计算部件最低点高度
+            float y0 = ShapeHelper.getShapeMinY(partBody, 0.2f) - 0.1f;//计算部件最低点高度，稍稍放宽判定以获取更流畅的行驶体验
             if (terrainHeight > y0) {//若地形高于于部件最低位置，则视情况修改碰撞检测结果
                 float height = terrainHeight - y0;//部件最低点与地形的高度差
                 BlockPos highestBlockPos = terrain.blockPos.above();
@@ -420,7 +434,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     @Override
     public void prePhysicsTick(@NotNull PhysicsCollisionObject pco, @NotNull PhysicsLevel physicsLevel) {
         tickCount++;
-        //TODO:排查移动时速度莫名增加的原因，空气阻力方向没问题
         Vector3f vel = this.body.getLinearVelocity(null);
         Vector3f localVel = MMMath.relPointLocalVel(PhysicsHelperKt.toBVector3f(attr.aeroDynamic.center()), this.body);
         Vector3f pos = MMMath.relPointWorldPos(PhysicsHelperKt.toBVector3f(attr.aeroDynamic.center()), this.body);
@@ -523,7 +536,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
                 var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
                 var ang = Math.atan2(height, 1);
-                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 1.75f);
+                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 2f);
                 float horizontalVelScale = (float) Math.cos(ang);
                 body.setLinearVelocity(new Vector3f(horizontalVelScale * vel.x, (float) (0.3 * vel.y + extraVel), horizontalVelScale * vel.z));
             }

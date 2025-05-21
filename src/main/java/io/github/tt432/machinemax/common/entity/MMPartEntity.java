@@ -114,7 +114,9 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                 Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
                 Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
                 long hitBoxId = mixinProjectile.machine_Max$getHitBoxId();
-                return part.onHurt(source, amount, hitSubPart, normal, contactPoint, hitBoxId);
+                return part.onHurt(source, amount, true, hitSubPart, normal,
+                        PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
+                                .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBoxId);
             } else return false;
         } else if (source.getSourcePosition() != null && source.getDirectEntity() instanceof Entity entity) {
             //来自其他实体的伤害处理
@@ -131,7 +133,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                 start = PhysicsHelperKt.toBVector3f(source.getSourcePosition());
                 end = PhysicsHelperKt.toBVector3f(this.position());
             }
-            if (start.subtract(end).length() > 0) {
+            if (end.subtract(start).length() > 0) {
                 var results = level.getWorld().rayTest(start, end);
                 for (var result : results) {
                     PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
@@ -140,7 +142,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                         Vector3f normal = result.getHitNormalLocal(null);
                         Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
                         //将伤害转发给部件进行操作
-                        return subPart.part.onHurt(source, amount, subPart, normal, contactPoint, subPart.collisionShape.findChild(result.triangleIndex()).getShape().nativeId());
+                        return subPart.part.onHurt(source, amount, true, subPart, normal, end.subtract(start).normalize(), contactPoint, subPart.collisionShape.findChild(result.triangleIndex()).getShape().nativeId());
                     }
                 }
             } else {//射线长度有问题时的异常处理
@@ -195,7 +197,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 //            float f1 = Mth.clamp(f, -105.0F, 105.0F);
 //            entityToUpdate.yRotO += f1 - f;
 //            entityToUpdate.setYRot(entityToUpdate.getYRot() + f1 - f);
-//            entityToUpdate.setYHeadRot(this.getYRot() + 180F);
+//            entityToUpdate.setYRot(this.getYRot());
         }
     }
 

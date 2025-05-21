@@ -207,9 +207,14 @@ public class MMPartItem extends Item {
         if (stack.has(MMDataComponents.getPART_TYPE())) {
             //从物品Component中获取部件类型
             partType = MMRegistries.getRegistryAccess(level).registry(PartType.PART_REGISTRY_KEY).get().get(stack.get(MMDataComponents.getPART_TYPE()));
-            if (partType == null)
-                partType = MMDynamicRes.PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));//为null说明是外部包 尝试还原
+            if (partType == null) {
+                if (level.isClientSide) {
+                    partType = MMDynamicRes.PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));//为null说明是外部包 尝试还原
+                } else
+                    partType = MMDynamicRes.SERVER_PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));
+            } else return partType;
         } else throw new IllegalStateException("物品" + stack + "中未找到部件类型数据");//如果物品Component中部件类型为空，则抛出异常
+        if (partType == null) throw new IllegalStateException("未找到物品" + stack + "中存储的数据类型");
         return partType;
     }
 

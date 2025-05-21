@@ -41,6 +41,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -191,7 +192,10 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     public PartType getPT(Level level, ResourceLocation registryKey) {
         PartType pt = level.registryAccess().registry(PartType.PART_REGISTRY_KEY).get().get(registryKey);
-        if (pt == null) pt = MMDynamicRes.PART_TYPES.get(registryKey);//为null说明是外部包 尝试还原
+        if (pt == null) {
+            if (level.isClientSide) pt = MMDynamicRes.PART_TYPES.get(registryKey);//为null说明是外部包 尝试还原
+            else pt = MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
+        }
         return pt;
     }
 
@@ -215,14 +219,30 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     public boolean onHurt(DamageSource source,
                           float damage,
-                          //TODO:伤害来源（模组投射物弹丸等）
+                          boolean vanilla,
                           SubPart subPart,
                           Vector3f normal,
-                          Vector3f contactPoint,
-                          long hitChildShapeNativeId){
-        MachineMax.LOGGER.info("部件{}受到伤害{}，来自{}，命中点{}。", name, damage, source.getDirectEntity(), contactPoint);
-        //TODO:处理伤害
-        if (getEntity()!= null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
+                          Vector3f worldContactSpeed,
+                          Vector3f worldContactPoint,
+                          long hitChildShapeNativeId) {
+        if (getEntity() != null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
+        Vec3 sourcePos = source.getSourcePosition();
+        if (vanilla && sourcePos != null && !level.isClientSide) {//原版伤害处理
+            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * damage / subPart.part.durability)) * 150f);//伤害转化为动量
+            if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
+                knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
+            }
+            float finalKnockBack = knockBack;
+            level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
+                vehicle.activate();
+                subPart.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(subPart.body.getPhysicsLocation(null)));
+                vehicle.syncCountDown = 0;//发生击退时立刻重新同步位置姿态速度
+                return null;
+            });
+            //TODO:处理伤害
+        } else {//甲弹对抗伤害处理
+            //TODO:处理伤害
+        }
         //TODO:发包同步部件和子系统耐久度
         return true;
     }
@@ -402,7 +422,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         });
     }
 
-    private void setTransformRaw(Transform transform){
+    private void setTransformRaw(Transform transform) {
         Transform rootTransform = rootSubPart.body.getTransform(null).invert();
         rootSubPart.body.setPhysicsTransform(transform);
         Transform subPartTransform = new Transform();

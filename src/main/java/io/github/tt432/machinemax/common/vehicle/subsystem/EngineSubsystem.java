@@ -37,6 +37,7 @@ public class EngineSubsystem extends AbstractSubsystem {
 
     @Override
     public void onTick() {
+        super.onTick();
         //TODO:根据转速和油门播放声音
     }
 

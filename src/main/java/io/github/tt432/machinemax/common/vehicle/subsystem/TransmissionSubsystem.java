@@ -28,6 +28,7 @@ public class TransmissionSubsystem extends AbstractSubsystem{
 
     @Override
     public void onPostPhysicsTick() {
+        super.onPostPhysicsTick();
         updateFeedback();
     }
 

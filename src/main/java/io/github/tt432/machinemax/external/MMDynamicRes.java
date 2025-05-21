@@ -21,10 +21,7 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,6 +33,7 @@ import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new ConcurrentHashMap<>(); //所有当下读取的外部资源
     public static ConcurrentMap<ResourceLocation, PartType> PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
+    public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
@@ -64,6 +62,7 @@ public class MMDynamicRes {
     public static void initResources() {
         EXTERNAL_RESOURCE.clear();
         PART_TYPES.clear();
+        SERVER_PART_TYPES.clear();
         OBoneParse.clear();
         BLUEPRINTS.clear();
         loadResources();
@@ -119,7 +118,7 @@ public class MMDynamicRes {
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
             MMDynamicRes.reload();// 重新读取
             if (Minecraft.getInstance().player instanceof Player player)
-                player.sendSystemMessage(Component.literal("[%s]: 外部载具包已重载!".formatted(MOD_ID)));
+                player.sendSystemMessage(Component.literal("[%s]: 内容包模型贴图已重载".formatted(MOD_ID)));
         }
     }
 
@@ -150,14 +149,13 @@ public class MMDynamicRes {
         createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), TestPackProvider.partModel_LeftWheel(), false);
         //部件定义文件
         createDefaultFile(partTypeFolder.resolve("test_cube.json"), TestPackProvider.partType_TestCube(), false);
-        //TODO:更容易造成物理线程的BoundingBox计算出错，获得一个巨大的AABB尺寸，原因不明，通过减少使用现场计算的AABB转而使用缓存缓解了此问题，但仍需修复
         createDefaultFile(partTypeFolder.resolve("ae86_back_seat.json"), TestPackProvider.partType_BackSeat(), false);
         createDefaultFile(partTypeFolder.resolve("ae86_seat.json"), TestPackProvider.partType_Seat(), false);
         createDefaultFile(partTypeFolder.resolve("ae86_hull.json"), TestPackProvider.partType_Hull(), false);
         createDefaultFile(partTypeFolder.resolve("ae86_chassis_all_terrain.json"), TestPackProvider.partType_Chassis(), false);
         createDefaultFile(partTypeFolder.resolve("ae86_wheel_all_terrain.json"), TestPackProvider.partType_Wheel(), false);
         //蓝图文件
-        createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), true);
+        createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), false);
         //自定义翻译
         createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(), false);
         createDefaultFile(lang.resolve("en_us.json"), TestPackProvider.en_us(), false);
@@ -195,6 +193,8 @@ public class MMDynamicRes {
                     case "part_type" -> { //part_type文件夹中的配置
                         PartType partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
                         PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
+                        partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
+                        SERVER_PART_TYPES.put(partType.registryKey, partType);
                         //测试数据是否成功录入
 //                        partType.getConnectorIterator().forEachRemaining((c) -> {
 //                            LOGGER.info("连接器队列: " + c);
@@ -279,7 +279,9 @@ public class MMDynamicRes {
             );
             System.out.printf("文件%s成功: %s%n", canOverwrite ? "覆写" : "创建", targetPath);
         } catch (IOException e) {
-            LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
+            if (e instanceof FileAlreadyExistsException) {
+                LOGGER.info("文件%s已存在，跳过".formatted(targetPath));
+            } else LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
         }
         return targetPath;
     }
@@ -301,7 +303,9 @@ public class MMDynamicRes {
             );
             System.out.printf("文件%s成功: %s%n", canOverwrite ? "覆写" : "创建", targetPath);
         } catch (IOException e) {
-            LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
+            if (e instanceof FileAlreadyExistsException) {
+                LOGGER.info("文件%s已存在，跳过".formatted(targetPath));
+            } else LOGGER.error("创建文件 %s 时发生错误：%s".formatted(targetPath, e));
         }
         return targetPath;
     }

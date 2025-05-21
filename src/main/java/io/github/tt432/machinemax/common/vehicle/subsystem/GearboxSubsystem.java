@@ -42,13 +42,14 @@ public class GearboxSubsystem extends AbstractSubsystem{
         }
         minPositiveGear = tempMinPositiveGear;
         minNegativeGear = tempMinNegativeGear;
+        currentGear = minPositiveGear;
     }
 
     @Override
     public void onTick() {
         super.onTick();
         if (getPart().level.isClientSide) {
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof MMPartEntity) {
+            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof MMPartEntity entity && entity.part.vehicle == this.getPart().vehicle) {
                 String gear = gearNames.get(currentGear);
                 if (!clutched || remainingSwitchTime > 0.0f) gear = "N";
                 Object engineSpeed = getPart().vehicle.subSystemController.getSignalChannel("engine_speed").getFirst();
@@ -66,6 +67,7 @@ public class GearboxSubsystem extends AbstractSubsystem{
 
     @Override
     public void onPostPhysicsTick() {
+        super.onPostPhysicsTick();
         updateFeedback();//更新反馈信号
     }
 

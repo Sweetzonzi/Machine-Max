@@ -11,13 +11,15 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.Map;
+
 //TODO:渐进油门，根据油门开度调整换挡时机
 @Getter
 public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
     public final List<String> controlInputKeys;
     public final Vec3 steeringCenter;
+    public final float steeringRadius;
     public final boolean manualGearShift;
-    public final Map<String, List<String>> engineControlOutputTargets;//信号名和目标名称列表，下同 Signal keys and target hitBoxName list, etc.
+    public final Map<String, List<String>> engineControlOutputTargets;//信号频道和目标名称列表，下同 Signal channels and target hitBoxName list, etc.
     public final Map<String, List<String>> wheelControlOutputTargets;
     public final Map<String, List<String>> gearboxControlOutputTargets;
 
@@ -26,6 +28,7 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.listOf().fieldOf("control_inputs").forGetter(CarControllerSubsystemAttr::getControlInputKeys),
             Vec3.CODEC.optionalFieldOf("steering_center", Vec3.ZERO).forGetter(CarControllerSubsystemAttr::getSteeringCenter),
+            Codec.FLOAT.optionalFieldOf("steering_radius", 5.0f).forGetter(CarControllerSubsystemAttr::getSteeringRadius),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(CarControllerSubsystemAttr::isManualGearShift),
             SIGNAL_TARGETS_CODEC.fieldOf("engine_outputs").forGetter(CarControllerSubsystemAttr::getEngineControlOutputTargets),
             SIGNAL_TARGETS_CODEC.fieldOf("wheel_outputs").forGetter(CarControllerSubsystemAttr::getWheelControlOutputTargets),
@@ -37,6 +40,7 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
             String hitBox,
             List<String> controlInputKeys,
             Vec3 steeringCenter,
+            float steeringRadius,
             boolean manualGearShift,
             Map<String, List<String>> engineControlOutputTargets,
             Map<String, List<String>> wheelControlOutputTargets,
@@ -44,6 +48,7 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
         super(basicDurability, hitBox);
         this.controlInputKeys = controlInputKeys;
         this.steeringCenter = steeringCenter;
+        this.steeringRadius = steeringRadius;
         this.manualGearShift = manualGearShift;
         this.engineControlOutputTargets = engineControlOutputTargets;
         this.wheelControlOutputTargets = wheelControlOutputTargets;

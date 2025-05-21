@@ -15,14 +15,21 @@ import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 
 @Mod(MOD_ID)
 public class MachineMax {
-    //TODO:物品本地化名
     //TODO:物品栏模型渲染
     //TODO:动画支持
+    //TODO:locatorName->subPart->世界坐标
     //TODO:无成员且低速时自动刹车
     //TODO:座椅视角控制
     //TODO:过载与座椅过载吸收/耐受
-    //TODO:组装度，衡量部件固定的牢靠程度
+    //TODO:结构完整性integrity，衡量部件固定的牢靠程度
     //TODO:自定义HUD
+    //TODO:放置载具或部件前检查空间是否足够
+    //TODO:车轮控制修改：刹车与手刹车，输入功率控制转动方向
+    //TODO:传动系统修改：差速器(等扭矩)与差速锁(强制统一转速)
+    //TODO:伤害系统
+    //TODO:带声速和多普勒效应的音效系统
+    //TODO:投射物
+    //TODO:炮塔控制
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器

@@ -57,7 +57,7 @@
           "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
         }
       },
-      "aero_dynamic": {}
+      "aero_dynamic": {} //留空以使用默认值
     }
   }
 }

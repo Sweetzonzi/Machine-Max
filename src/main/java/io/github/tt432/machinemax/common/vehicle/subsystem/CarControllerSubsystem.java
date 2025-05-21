@@ -1,16 +1,18 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
-import com.mojang.datafixers.util.Pair;
+import com.jme3.bullet.joints.New6Dof;
+import com.jme3.math.Vector3f;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.VehicleCore;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.CarControllerSubsystemAttr;
+import io.github.tt432.machinemax.common.vehicle.connector.SpecialConnector;
 import io.github.tt432.machinemax.common.vehicle.signal.*;
 import lombok.Getter;
 
 import java.util.*;
 
 @Getter
-public class CarControllerSubsystem extends AbstractSubsystem{
+public class CarControllerSubsystem extends AbstractSubsystem {
     public final CarControllerSubsystemAttr attr;
     public byte[] moveInput;
     public byte[] moveInputConflict;
@@ -21,9 +23,9 @@ public class CarControllerSubsystem extends AbstractSubsystem{
     float avgEngineMaxTorqueSpeed = 0f;
     int engineCount = 0;
 
-    private final Map<String, ISignalReceiver> engines = new HashMap<>();//控制的发动机接受的信号名和发动机对象映射 Controlled engine receives signal name and engine object mapping
-    private final Map<String, ISignalReceiver> gearboxes = new HashMap<>();//控制的变速箱接受的信号名和变速箱对象映射 Controlled gearbox receives signal name and gearbox object mapping
-    private final Map<String, ISignalReceiver> wheels = new HashMap<>();//控制的轮子接受的信号名和轮子对象映射 Controlled wheel receives signal name and wheel object mapping
+    private final Map<ISignalReceiver, String> engines = new HashMap<>();//控制的发动机其接收控制的信号频道映射 Control engine and its receiving signal channel mapping
+    private final Map<ISignalReceiver, String> gearboxes = new HashMap<>();//控制的变速箱其接收控制的信号频道映射 Control gearbox and its receiving signal channel mapping
+    private final Map<ISignalReceiver, String> wheels = new HashMap<>();//控制的车轮其接收控制的信号频道映射 Control wheel and its receiving signal channel mapping
 
     public CarControllerSubsystem(ISubsystemHost owner, String name, CarControllerSubsystemAttr attr) {
         super(owner, name, attr);
@@ -84,24 +86,24 @@ public class CarControllerSubsystem extends AbstractSubsystem{
     public void onSignalUpdated(String channelName, ISignalSender sender) {
         Object signalValue = getSignalChannel(channelName).get(sender);
         if (this.isActive()) {
-            if (channelName.equals("callback") && signalValue instanceof String callbackValue) {
+            if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
                 if (sender instanceof WheelDriverSubsystem wheel) {
-                    if (wheel.getPart().vehicle != this.getPart().vehicle) wheels.remove(signalValue);
+                    if (wheel.getPart().vehicle != this.getPart().vehicle) wheels.remove(wheel);
                     else {
-                        wheels.put(callbackValue, wheel);
-                        addCallbackTarget(callbackValue, wheel);
+                        wheels.put(wheel, controlChannel);
+                        addCallbackTarget(controlChannel, wheel);
                     }
                 } else if (sender instanceof EngineSubsystem engine) {
-                    if (engine.getPart().vehicle != this.getPart().vehicle) this.engines.remove(signalValue);
+                    if (engine.getPart().vehicle != this.getPart().vehicle) this.engines.remove(engine);
                     else {
-                        engines.put(callbackValue, engine);
-                        addCallbackTarget(callbackValue, engine);
+                        engines.put(engine, controlChannel);
+                        addCallbackTarget(controlChannel, engine);
                         //计算引擎最大转速和最大扭矩转速的平均值 Calculate the average maximum speed and max torque speed of the engine
                         avgEngineMaxTorqueSpeed = 0;
                         avgEngineMaxSpeed = 0;
-                        for (Map.Entry<String, ISignalReceiver> entry : engines.entrySet()) {
-                            avgEngineMaxTorqueSpeed += ((EngineSubsystem) entry.getValue()).attr.maxTorqueRpm;
-                            avgEngineMaxSpeed += ((EngineSubsystem) entry.getValue()).attr.maxRpm;
+                        for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
+                            avgEngineMaxTorqueSpeed += ((EngineSubsystem) entry.getKey()).attr.maxTorqueRpm;
+                            avgEngineMaxSpeed += ((EngineSubsystem) entry.getKey()).attr.maxRpm;
                         }
                         engineCount = engines.size();
                         if (engineCount > 0) {
@@ -114,11 +116,11 @@ public class CarControllerSubsystem extends AbstractSubsystem{
                     }
                 } else if (sender instanceof GearboxSubsystem gearbox) {
                     if (gearbox.getPart().vehicle != this.getPart().vehicle) {
-                        this.gearboxes.remove(signalValue);
+                        this.gearboxes.remove(gearbox);
                         overrideCountDown.remove(gearbox);
                     } else {
-                        gearboxes.put(callbackValue, gearbox);
-                        addCallbackTarget(callbackValue, gearbox);
+                        gearboxes.put(gearbox, controlChannel);
+                        addCallbackTarget(controlChannel, gearbox);
                         overrideCountDown.put(gearbox, 0f);
                     }
                 }
@@ -126,32 +128,28 @@ public class CarControllerSubsystem extends AbstractSubsystem{
                 int tickCount = regularInputSignal.getInputTickCount();
                 switch (regularInputSignal.getInputType()) {
                     case CLUTCH:
-                        for (ISignalReceiver gearbox : gearboxes.values()) {
-                            overrideCountDown.put(gearbox, 2f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
+                        for (ISignalReceiver gearbox : gearboxes.keySet()) {
+                            overrideCountDown.put(gearbox, 1f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
                         }
                         if (tickCount == 0) {//踩离合 Unclutch
-                            for (ISignalReceiver gearbox : gearboxes.values())
+                            for (ISignalReceiver gearbox : gearboxes.keySet())
                                 ((GearboxSubsystem) gearbox).setClutched(false);
-                            System.out.println("Clutch engaged");
                         } else {//松离合 Clutch
-                            for (ISignalReceiver gearbox : gearboxes.values())
+                            for (ISignalReceiver gearbox : gearboxes.keySet())
                                 ((GearboxSubsystem) gearbox).setClutched(true);
-                            System.out.println("Clutch released");
                         }
                         break;
                     case UP_SHIFT://升档 Shift up
-                        for (ISignalReceiver gearbox : gearboxes.values()) {
-                            overrideCountDown.put(gearbox, 5f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
+                        for (ISignalReceiver gearbox : gearboxes.keySet()) {
+                            overrideCountDown.put(gearbox, 3f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
                         }
-                        for (ISignalReceiver gearbox : gearboxes.values()) ((GearboxSubsystem) gearbox).upShift();
-                        System.out.println("Shift up");
+                        for (ISignalReceiver gearbox : gearboxes.keySet()) ((GearboxSubsystem) gearbox).upShift();
                         break;
                     case DOWN_SHIFT://降档 Shift down
-                        for (ISignalReceiver gearbox : gearboxes.values()) {
-                            overrideCountDown.put(gearbox, 5f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
+                        for (ISignalReceiver gearbox : gearboxes.keySet()) {
+                            overrideCountDown.put(gearbox, 3f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
                         }
-                        for (ISignalReceiver gearbox : gearboxes.values()) ((GearboxSubsystem) gearbox).downShift();
-                        System.out.println("Shift down");
+                        for (ISignalReceiver gearbox : gearboxes.keySet()) ((GearboxSubsystem) gearbox).downShift();
                         break;
                     default://忽视其他输入 Ignore other inputs
                         break;
@@ -191,18 +189,21 @@ public class CarControllerSubsystem extends AbstractSubsystem{
             float avgEngineSpeed = 0f;
             byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
-                for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
-                    //TODO:阿克曼转向
-                    sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(Pair.of((float) moveInput[2], (float) moveInput[4])));
+                for (Map.Entry<ISignalReceiver, String> entry : wheels.entrySet()) {
+                    String channel = entry.getValue();
+                    WheelDriverSubsystem wheel = (WheelDriverSubsystem) entry.getKey();
+                    if (wheel.connector.joint != null) {
+                        float steeringInput = ackermannSteering(moveInput[4], wheel.connector);
+                        sendCallbackToListener(channel, wheel, new WheelControlSignal((float) moveInput[2], steeringInput));
+                    }
                 }
                 if (moveInput[2] * speed > 0 || Math.abs(speed) <= 0.5f) {//加速行驶 Accelerate
-                    for (Map.Entry<String, ISignalReceiver> entry : engines.entrySet()) {
-                        sendCallbackToAllListeners(entry.getKey(), 1f);
-                        avgEngineSpeed += (float) ((EngineSubsystem) entry.getValue()).rotSpeed;
+                    for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
+                        sendCallbackToAllListeners(entry.getValue(), 1f);
+                        avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
                     }
                     avgEngineSpeed /= engineCount;
-
-                    for (ISignalReceiver gearbox : gearboxes.values()) {//加速时延迟升档 Delay shifting up when accelerating
+                    for (ISignalReceiver gearbox : gearboxes.keySet()) {//加速时延迟升档 Delay shifting up when accelerating
                         if (overrideCountDown.get(gearbox) <= 0) {
                             ((GearboxSubsystem) gearbox).switchGear(autoGearShift((GearboxSubsystem) gearbox, avgEngineSpeed, 0.85f, moveInput[2]));
                             if (Math.abs(speed) <= 0.5f)//起步时自动松离合 Auto release clutch when starting
@@ -210,29 +211,33 @@ public class CarControllerSubsystem extends AbstractSubsystem{
                         }
                     }
                 } else if (moveInput[2] * speed < 0) {//减速行驶 Brake
-                    for (Map.Entry<String, ISignalReceiver> entry : engines.entrySet()) {
-                        sendCallbackToAllListeners(entry.getKey(), 0f);
-                        avgEngineSpeed += (float) ((EngineSubsystem) entry.getValue()).rotSpeed;
+                    for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
+                        sendCallbackToAllListeners(entry.getValue(), 0f);
+                        avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
                     }
                     avgEngineSpeed /= engineCount;
-
-                    for (ISignalReceiver gearbox : gearboxes.values()) {//减速时积极降档 Shift down early when braking
+                    for (ISignalReceiver gearbox : gearboxes.keySet()) {//减速时积极降档 Shift down early when braking
                         if (overrideCountDown.get(gearbox) <= 0) {
                             ((GearboxSubsystem) gearbox).switchGear(autoGearShift((GearboxSubsystem) gearbox, avgEngineSpeed, 0.5f, moveInput[2]));
                         }
                     }
                 }
             } else {//前进方向输入信号为0 Forward input signal is 0
-                for (Map.Entry<String, ISignalReceiver> entry : engines.entrySet()) {
-                    sendCallbackToAllListeners(entry.getKey(), 0f);
-                    avgEngineSpeed += (float) ((EngineSubsystem) entry.getValue()).rotSpeed;
+                for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
+                    sendCallbackToAllListeners(entry.getValue(), 0f);
+                    avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
                 }
                 avgEngineSpeed /= engineCount;
                 if (Math.abs(speed) < 0.5f) {//速度小于一定程度时，刹车 Brake if the speed is too low
-                    for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
-                        sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(0f, moveInput[4]));
+                    for (Map.Entry<ISignalReceiver, String> entry : wheels.entrySet()) {
+                        String channel = entry.getValue();
+                        WheelDriverSubsystem wheel = (WheelDriverSubsystem) entry.getKey();
+                        if (wheel.connector.joint != null) {
+                            float steeringInput = ackermannSteering(moveInput[4], wheel.connector);
+                            sendCallbackToListener(channel, wheel, new WheelControlSignal(0f, steeringInput));
+                        }
                     }
-                    for (ISignalReceiver gearbox : gearboxes.values()) {
+                    for (ISignalReceiver gearbox : gearboxes.keySet()) {
                         if (overrideCountDown.get(gearbox) <= 0) {
                             ((GearboxSubsystem) gearbox).setClutched(false);//停止传输动力 Stop transmission power
                             ((GearboxSubsystem) gearbox).switchGear(autoGearShift((GearboxSubsystem) gearbox, avgEngineSpeed, 0f, moveInput[2]));
@@ -240,10 +245,15 @@ public class CarControllerSubsystem extends AbstractSubsystem{
                     }
 
                 } else {//速度大于一定程度时，不刹车 Don't brake if the speed is high enough
-                    for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
-                        sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(Pair.of(null, (float) moveInput[4])));
+                    for (Map.Entry<ISignalReceiver, String> entry : wheels.entrySet()) {
+                        String channel = entry.getValue();
+                        WheelDriverSubsystem wheel = (WheelDriverSubsystem) entry.getKey();
+                        if (wheel.connector.joint != null) {
+                            float steeringInput = ackermannSteering(moveInput[4], wheel.connector);
+                            sendCallbackToListener(channel, wheel, new WheelControlSignal(null, steeringInput));
+                        }
                     }
-                    for (ISignalReceiver gearbox : gearboxes.values()) {//溜车时适度降档 Shift down moderately when rolling
+                    for (ISignalReceiver gearbox : gearboxes.keySet()) {//溜车时适度降档 Shift down moderately when rolling
                         if (overrideCountDown.get(gearbox) <= 0) {
                             ((GearboxSubsystem) gearbox).switchGear(autoGearShift((GearboxSubsystem) gearbox, avgEngineSpeed, 0f, moveInput[2]));
                         }
@@ -251,12 +261,12 @@ public class CarControllerSubsystem extends AbstractSubsystem{
                 }
             }
         } else {//无输入信号 No input signal
-            for (Map.Entry<String, ISignalReceiver> entry : engines.entrySet()) {
-                sendCallbackToAllListeners(entry.getKey(), new EmptySignal());
+            for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
+                sendCallbackToAllListeners(entry.getValue(), new EmptySignal());
             }
             if (Math.abs(speed) < 0.5f) {//速度小于一定程度时，刹车 Brake if the speed is too low
-                for (Map.Entry<String, ISignalReceiver> entry : wheels.entrySet()) {
-                    sendCallbackToAllListeners(entry.getKey(), new WheelControlSignal(0f, 0f));
+                for (Map.Entry<ISignalReceiver, String> entry : wheels.entrySet()) {
+                    sendCallbackToAllListeners(entry.getValue(), new WheelControlSignal(0f, 0f));
                 }
             }
         }
@@ -310,8 +320,24 @@ public class CarControllerSubsystem extends AbstractSubsystem{
             else result = gearbox.minNegativeGear;
         }
         if (result != gear)
-            overrideCountDown.put(gearbox, Math.max(0.5f, gearbox.attr.switchTime + 0.05f));//自动切换后一段时间内不自动切换 Cooldown after automatic gear shift
+            overrideCountDown.put(gearbox, Math.max(0.2f, gearbox.attr.switchTime + 0.05f));//自动切换后一段时间内不自动切换 Cooldown after automatic gear shift
         return result;
+    }
+
+    private float ackermannSteering(byte steeringInput, SpecialConnector wheelDrive) {
+        New6Dof joint = wheelDrive.joint;
+        Vector3f pivot = new Vector3f();
+        if (wheelDrive.subPart.body == joint.getBodyA()) joint.getPivotA(pivot);
+        else joint.getPivotB(pivot);
+        if (steeringInput == 0) {
+            return 0;
+        } else {
+            float steeringRadius = attr.steeringRadius / steeringInput * 100f;//实际转向半径(米) Actual steering radius (m)
+            double deltaRadius = pivot.x - attr.steeringCenter.x;
+            deltaRadius *= Math.signum(steeringInput);
+            double deltaForward = pivot.z - attr.steeringCenter.z;
+            return (float) Math.atan(deltaForward / (steeringRadius + deltaRadius));
+        }
     }
 
     @Override

@@ -10,7 +10,7 @@ public class WheelControlSignal extends Signal<Pair<Float, Float>> {
         super(value);
     }
 
-    public WheelControlSignal(float forwardControl, float steeringControl) {
+    public WheelControlSignal(Float forwardControl, Float steeringControl) {
         super(Pair.of(forwardControl, steeringControl));
     }
 

@@ -108,7 +108,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
                     steeringMotor.setMotorEnabled(true);
                     steeringMotor.setServoEnabled(true);
                     steeringMotor.set(MotorParam.MaxMotorForce, MAX_STEERING_FORCE);
-                    steeringMotor.set(MotorParam.ServoTarget, -wheelControlSignal.getSteeringControl());
+                    steeringMotor.set(MotorParam.ServoTarget, wheelControlSignal.getSteeringControl());
                     steeringMotor.set(MotorParam.TargetVelocity, MAX_STEERING_SPEED);
                 } else steeringMotor.setMotorEnabled(false);
             } else {
@@ -123,6 +123,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
 
     @Override
     public void onPostPhysicsTick() {
+        super.onPostPhysicsTick();
         if (this.connector != null && this.connector.joint instanceof New6Dof) {
             Vector3f relativeAngle = getRelativeAngle();
             Vector3f relativeAngularVel = getRelativeAngularVel();

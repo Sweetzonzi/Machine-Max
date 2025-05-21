@@ -59,24 +59,24 @@ object MMCreativeTabs {
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
         if(event.tab == MACHINE_MAX_TAB.get() || event.tab == MACHINE_MAX_BLUEPRINT_TAB) {
             MachineMax.LOGGER.info("Putting parts into creative tab")
-            val list = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
+            val buildInParts = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
             for (partType in MMRegistries.getRegistryAccess(Minecraft.getInstance().level).registry(PartType.PART_REGISTRY_KEY).get()) {
                 val itemStack = ItemStack(MMItems.PART_ITEM)
                 itemStack.set(MMDataComponents.PART_TYPE, partType.registryKey)
                 itemStack.set(MMDataComponents.PART_NAME, partType.name)
                 //TODO:根据零件最大生命值调整物品耐久上限
-                list.add(itemStack)
+                buildInParts.add(itemStack)
             }
-            val list2 = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
-            MMDynamicRes.PART_TYPES.forEach { loc, partType ->
+            val externalParts = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
+            MMDynamicRes.PART_TYPES.forEach { (loc, partType) ->
                 val itemStack = ItemStack(MMItems.PART_ITEM)
                 itemStack.set(MMDataComponents.PART_TYPE, loc)
                 itemStack.set(MMDataComponents.PART_NAME, partType.name)
                 //TODO:根据零件最大生命值调整物品耐久上限
-                list2.add(itemStack)
+                externalParts.add(itemStack)
             }
-            list.forEach{event.accept(it)}
-            list2.forEach{event.accept(it)}
+            buildInParts.forEach{event.accept(it)}
+            externalParts.forEach{event.accept(it)}
         }
     }
 }

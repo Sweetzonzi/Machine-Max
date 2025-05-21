@@ -149,6 +149,7 @@ public class JointDriverSubsystem extends AbstractSubsystem{
 
     @Override
     public void onPostPhysicsTick() {
+        super.onPostPhysicsTick();
         if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
             Vector3f relativePos = getRelativePos();
             Vector3f relativeAngle = getRelativeAngle();

@@ -35,13 +35,13 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
         }
     }
 
-    @ModifyVariable(
-            method = "render*",
-            at = @At(value = "STORE"),
-            ordinal = 0
-    )
-    private boolean modifyShouldSit(boolean original) {
-        // 修改 shouldSit 的值
-        return true;
-    }
+//    @ModifyVariable(
+//            method = "render*",
+//            at = @At(value = "STORE"),
+//            ordinal = 0
+//    )
+//    private boolean modifyShouldSit(boolean original) {
+//        // 修改 shouldSit 的值
+//        return true;
+//    }
 }
