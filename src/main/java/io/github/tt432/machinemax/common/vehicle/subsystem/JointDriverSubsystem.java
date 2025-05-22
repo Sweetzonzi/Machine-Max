@@ -188,26 +188,26 @@ public class JointDriverSubsystem extends AbstractSubsystem{
             //获取控制信号
             for (String signalKey : axisAttr.targetSpeedSignalKey()) {
                 targetSpeed = getSignalChannel(signalKey);//获取目标速度信号(马达，仅控制速度)
-                if (!targetSpeed.isEmpty() && !(targetSpeed.getFirst() instanceof EmptySignal)) break;
+                if (!targetSpeed.isEmpty() && !(targetSpeed.getFirstSignal() instanceof EmptySignal)) break;
             }
             for (String signalKey : axisAttr.targetPositionSignalKey()) {
                 targetPosition = getSignalChannel(signalKey);//获取目标位置信号(伺服电机，试图达到目标位置)
-                if (!targetPosition.isEmpty() && !(targetPosition.getFirst() instanceof EmptySignal)) break;
+                if (!targetPosition.isEmpty() && !(targetPosition.getFirstSignal() instanceof EmptySignal)) break;
             }
             //按类型处理控制信号
             //处理速度控制信号
-            if (targetSpeed.getFirst() instanceof MoveInputSignal moveInputSignal) {//若输入为原始移动输入信号
+            if (targetSpeed.getFirstSignal() instanceof MoveInputSignal moveInputSignal) {//若输入为原始移动输入信号
                 int i = axis;
                 if (axis == 3) i = 2;
                 float speed = Math.signum(moveInputSignal.getMoveInput()[i]) * 300000;//则不限制转速，只控制旋转方向
                 if (speed != 0 || i == 4) speedInput[axis] = Math.clamp(speed, -MAX_SPEED[axis], MAX_SPEED[axis]);
-            } else if (targetSpeed.getFirst() instanceof Float speed)
+            } else if (targetSpeed.getFirstSignal() instanceof Float speed)
                 speedInput[axis] = Math.clamp(speed, -MAX_SPEED[axis], MAX_SPEED[axis]);//若为float信号则设置目标速度
             else speedInput[axis] = null;//若为其他任何类型的信号则不对速度进行控制
             //处理位置控制信号
-            if (targetPosition.getFirst() instanceof MoveInputSignal moveInputSignal) {
+            if (targetPosition.getFirstSignal() instanceof MoveInputSignal moveInputSignal) {
                 positionInput[axis] = (float) moveInputSignal.getMoveInput()[axis] / 100;//若输入为原始移动输入信号则直接设置目标位置
-            } else if (targetPosition.getFirst() instanceof Float position)
+            } else if (targetPosition.getFirstSignal() instanceof Float position)
                 positionInput[axis] = position;//若为float信号则设置目标位置
             else positionInput[axis] = null;//若为其他任何类型的信号则不对位置进行控制
         }

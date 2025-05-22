@@ -122,12 +122,12 @@ public class EngineSubsystem extends AbstractSubsystem {
         double powerControlInput = -1;
         for (String inputKey : attr.throttleInputKeys) {
             SignalChannel signalChannel = getSignalChannel(inputKey);
-            Object signal = signalChannel.getFirst();
+            Object signal = signalChannel.getFirstSignal();
             if (signal instanceof Float) {
-                powerControlInput = (float) signalChannel.getFirst();
+                powerControlInput = (float) signalChannel.getFirstSignal();
                 break;
             } else if (signal instanceof MoveInputSignal) {
-                powerControlInput = Math.abs(((MoveInputSignal) signalChannel.getFirst()).getMoveInput()[2] / 100f);
+                powerControlInput = Math.abs(((MoveInputSignal) signalChannel.getFirstSignal()).getMoveInput()[2] / 100f);
                 break;
             }
         }

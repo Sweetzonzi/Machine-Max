@@ -58,19 +58,35 @@
     },
     "left_front_wheel_driver": {
       "type": "machine_max:wheel_driver", //轮胎驱动子系统，驱动对接口上的部件滚动和转向
-      "connector": "left_front_wheel" //控制的对接口名称
+      "connector": "left_front_wheel", //控制的对接口名称
+      "control_inputs": ["wheel_control", "move_control"]//(可选，默认["wheel_control", "move_control"])接收的控制信号的频道列表，优先级递减
     },
     "right_front_wheel_driver": {
       "type": "machine_max:wheel_driver",
-      "connector": "right_front_wheel"
+      "connector": "right_front_wheel",
+      "steering": {//(可选)轮胎转向相关属性，默认最大转向力矩5000N*m，最大转速3.14rad/s，不反馈转角值到任何频道的任何目标
+        "max_force": 5000,
+        "max_speed": 3.14,
+        "position_outputs": {} //(可选，默认{})转角信号输出频道及目标名称列表
+      }
     },
     "left_back_wheel_driver": {
       "type": "machine_max:wheel_driver",
-      "connector": "left_back_wheel"
+      "connector": "left_back_wheel",
+      "roll": {//(可选)轮胎滚动相关属性，默认最大驱动力矩10000N*m，最大刹车力矩3500N*m，最大手刹车力矩0N*m，最大转速3140rad/s，不反馈转速值到任何频道的任何目标
+        "max_drive_force": 10000.0, //(可选，默认10000)最大驱动力矩(N*m)
+        "max_brake_force": 3500.0, //(可选，默认3500)最大刹车力矩(N*m)
+        "max_hand_brake_force": 2000.0, //(可选，默认0)最大手刹车力矩(N*m)
+        "max_speed": 3140.0, //(可选，默认3140)最大转速(rad/s)
+        "speed_outputs": {} //(可选，默认{})转速信号输出频道及目标名称列表
+      }
     },
     "right_back_wheel_driver": {
       "type": "machine_max:wheel_driver",
-      "connector": "right_back_wheel"
+      "connector": "right_back_wheel",
+      "roll": {
+        "max_hand_brake_force": 2000.0
+      }
     }
   },
   "sub_parts": {//零件(子部件)列表，这是部件运动的最小单元，部件的每个可动部分都应当是一个零件(子部件)

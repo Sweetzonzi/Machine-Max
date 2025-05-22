@@ -26,6 +26,7 @@ public class WheelDriverSubsystemAttr extends AbstractSubsystemAttr {
             WheelRollingAxisAttr.CODEC.optionalFieldOf("roll", new WheelRollingAxisAttr(
                     10000f,
                     1500f,
+                    0f,
                     3140f,
                     Map.of()
             )).forGetter(WheelDriverSubsystemAttr::getRollingAxis),
@@ -69,12 +70,14 @@ public class WheelDriverSubsystemAttr extends AbstractSubsystemAttr {
     public record WheelRollingAxisAttr(
             float maxForce,
             float maxBrakeForce,
+            float maxHandBrakeForce,
             float maxSpeed,
             Map<String, List<String>> speedSignalOutputs
     ) {
         public static final Codec<WheelRollingAxisAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.FLOAT.optionalFieldOf("max_drive_force", 10000f).forGetter(WheelRollingAxisAttr::maxForce),
-                Codec.FLOAT.optionalFieldOf("max_brake_force", 1500f).forGetter(WheelRollingAxisAttr::maxBrakeForce),
+                Codec.FLOAT.optionalFieldOf("max_brake_force", 3500f).forGetter(WheelRollingAxisAttr::maxBrakeForce),
+                Codec.FLOAT.optionalFieldOf("max_hand_brake_force", 0f).forGetter(WheelRollingAxisAttr::maxHandBrakeForce),
                 Codec.FLOAT.optionalFieldOf("max_speed", 3140f).forGetter(WheelRollingAxisAttr::maxSpeed),
                 SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of()).forGetter(WheelRollingAxisAttr::speedSignalOutputs)
         ).apply(instance, WheelRollingAxisAttr::new));

@@ -16,20 +16,22 @@ import org.lwjgl.glfw.GLFW;
 public class KeyBinding {
 
     //本地化用的按键资源路径
-    public static final String FREE_CAM_KEY = "resourceType.machine_max.general.free_cam";
-    public static final String INTERACT_KEY = "resourceType.machine_max.general.interact";
-    public static final String LEAVE_VEHICLE_KEY = "resourceType.machine_max.general.leave_vehicle";
+    public static final String FREE_CAM_KEY = "key.machine_max.general.free_cam";
+    public static final String INTERACT_KEY = "key.machine_max.general.interact";
+    public static final String LEAVE_VEHICLE_KEY = "key.machine_max.general.leave_vehicle";
 
-    public static final String GROUND_FORWARD_KEY = "resourceType.machine_max.ground.forward";
-    public static final String GROUND_BACKWARD_KEY = "resourceType.machine_max.ground.backward";
-    public static final String GROUND_LEFTWARD_KEY = "resourceType.machine_max.ground.leftward";
-    public static final String GROUND_RIGHTWARD_KEY = "resourceType.machine_max.ground.rightward";
-    public static final String GROUND_CLUTCH_KEY = "resourceType.machine_max.ground.clutch";
-    public static final String GROUND_UP_SHIFT_KEY = "resourceType.machine_max.ground.up_shift";
-    public static final String GROUND_DOWN_SHIFT_KEY = "resourceType.machine_max.ground.down_shift";
+    public static final String GROUND_FORWARD_KEY = "key.machine_max.ground.forward";
+    public static final String GROUND_BACKWARD_KEY = "key.machine_max.ground.backward";
+    public static final String GROUND_LEFTWARD_KEY = "key.machine_max.ground.leftward";
+    public static final String GROUND_RIGHTWARD_KEY = "key.machine_max.ground.rightward";
+    public static final String GROUND_CLUTCH_KEY = "key.machine_max.ground.clutch";
+    public static final String GROUND_UP_SHIFT_KEY = "key.machine_max.ground.up_shift";
+    public static final String GROUND_DOWN_SHIFT_KEY = "key.machine_max.ground.down_shift";
+    public static final String GROUND_HAND_BRAKE_KEY = "key.machine_max.ground.hand_brake";
+    public static final String GROUND_TOGGLE_HAND_BRAKE_KEY = "key.machine_max.ground.toggle_hand_brake";
 
-    public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = "resourceType.machine_max.assembly.cycle_connector";
-    public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "resourceType.machine_max.assembly.cycle_variant";
+    public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = "key.machine_max.assembly.cycle_connector";
+    public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "key.machine_max.assembly.cycle_variant";
 
     /**
      * 在此注册所有按键
@@ -48,6 +50,8 @@ public class KeyBinding {
         event.register(KeyBinding.groundClutchKey);//地面载具离合
         event.register(KeyBinding.groundUpShiftKey);//地面载具升档
         event.register(KeyBinding.groundDownShiftKey);//地面载具降档
+        event.register(KeyBinding.groundHandBrakeKey);//地面载具手刹
+        event.register(KeyBinding.groundToggleHandBrakeKey);//地面载具手刹切换
         //船只
 
         //飞行器
@@ -115,6 +119,16 @@ public class KeyBinding {
             KeyCategory.GROUND.getCategory()//键位类型
     );
     public static KeyMapping groundDownShiftKey = new KeyMapping(GROUND_DOWN_SHIFT_KEY,//键位名称
+            KeyCategory.GROUND,//键位冲突类型
+            InputConstants.UNKNOWN,//默认按键无
+            KeyCategory.GROUND.getCategory()//键位类型
+    );
+    public static KeyMapping groundHandBrakeKey = new KeyMapping(GROUND_HAND_BRAKE_KEY,//键位名称
+            KeyCategory.GROUND,//键位冲突类型
+            InputConstants.UNKNOWN,//默认按键无
+            KeyCategory.GROUND.getCategory()//键位类型
+    );
+    public static KeyMapping groundToggleHandBrakeKey = new KeyMapping(GROUND_TOGGLE_HAND_BRAKE_KEY,//键位名称
             KeyCategory.GROUND,//键位冲突类型
             InputConstants.UNKNOWN,//默认按键无
             KeyCategory.GROUND.getCategory()//键位类型

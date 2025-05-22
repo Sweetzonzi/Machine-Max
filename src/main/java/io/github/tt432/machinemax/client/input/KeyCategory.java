@@ -16,7 +16,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     GENERAL {
         @Override
         public String getCategory() {
-            return "resourceType.category.machine_max.general";
+            return "key.category.machine_max.general";
         }
 
         @Override
@@ -33,7 +33,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     GROUND {
         @Override
         public String getCategory() {
-            return "resourceType.category.machine_max.ground";
+            return "key.category.machine_max.ground";
         }
 
         @Override
@@ -55,7 +55,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     SHIP {
         @Override
         public String getCategory() {
-            return "resourceType.category.machine_max.ship";
+            return "key.category.machine_max.ship";
         }
 
         public boolean isActive() {
@@ -76,7 +76,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     PLANE {
         @Override
         public String getCategory() {
-            return "resourceType.category.machine_max.plane";
+            return "key.category.machine_max.plane";
         }
 
         public boolean isActive() {
@@ -97,7 +97,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     MECH {
         @Override
         public String getCategory() {
-            return "resourceType.category.machine_max.mech";
+            return "key.category.machine_max.mech";
         }
 
         public boolean isActive() {
@@ -118,7 +118,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
     ASSEMBLY {
         @Override
         public String getCategory() {
-            return "resourceType.category.machine_max.assembly";
+            return "key.category.machine_max.assembly";
         }
 
         public boolean isActive() {

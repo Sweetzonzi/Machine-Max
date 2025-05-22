@@ -11,18 +11,18 @@ import lombok.Setter;
  *
  * @author 甜粽子
  */
-public class PhysController {
-    @Setter
-    protected byte[] rawMoveInput = new byte[6];//移动输入
-    @Setter
-    protected byte[] moveInputConflict = new byte[6];//移动输入冲突情况
-    protected volatile boolean posNeedsUpdate = false;//是否需要更新位置
+//public class PhysController {
+//    @Setter
+//    protected byte[] rawMoveInput = new byte[6];//移动输入
+//    @Setter
+//    protected byte[] moveInputConflict = new byte[6];//移动输入冲突情况
+//    protected volatile boolean posNeedsUpdate = false;//是否需要更新位置
 //    protected DVector3 posToApply;//新位置
-    protected volatile boolean lVelNeedsUpdate = false;//是否需要更新速度
+//    protected volatile boolean lVelNeedsUpdate = false;//是否需要更新速度
 //    protected DVector3 lVelToApply;//新速度
-    protected volatile boolean rotNeedsUpdate = false;//是否需要更新姿态
+//    protected volatile boolean rotNeedsUpdate = false;//是否需要更新姿态
 //    protected DQuaternion rotToApply;//新姿态
-    protected volatile boolean aVelNeedsUpdate = false;//是否需要更新角速度
+//    protected volatile boolean aVelNeedsUpdate = false;//是否需要更新角速度
 //    protected DVector3 aVelToApply;//新角速度
 //
 //
@@ -183,4 +183,4 @@ public class PhysController {
 //            }
 //        }
 //    }
-}
+//}

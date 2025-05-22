@@ -91,11 +91,11 @@ public class MotorSubsystem extends AbstractSubsystem{
         double powerControlInput = 0;
         for (String inputKey : attr.throttleInputKeys) {
             SignalChannel signalChannel = getSignalChannel(inputKey);
-            if (signalChannel.getFirst() instanceof Float) {
-                powerControlInput = (float) signalChannel.getFirst();
+            if (signalChannel.getFirstSignal() instanceof Float) {
+                powerControlInput = (float) signalChannel.getFirstSignal();
                 break;
-            } else if (signalChannel.getFirst() instanceof MoveInputSignal) {
-                powerControlInput = Math.abs(((MoveInputSignal) signalChannel.getFirst()).getMoveInput()[2] / 100f);
+            } else if (signalChannel.getFirstSignal() instanceof MoveInputSignal) {
+                powerControlInput = Math.abs(((MoveInputSignal) signalChannel.getFirstSignal()).getMoveInput()[2] / 100f);
                 break;
             }
         }

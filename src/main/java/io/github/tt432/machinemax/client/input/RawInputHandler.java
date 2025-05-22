@@ -203,6 +203,25 @@ public class RawInputHandler {
         } else if (keyPressTicks.getOrDefault(KeyBinding.groundDownShiftKey, 0) > 0) {//按键松开且按下持续至少1tick
             keyPressTicks.put(KeyBinding.groundDownShiftKey, 0);
         }
+        //按住手刹
+        if (KeyBinding.groundHandBrakeKey.isDown()) {
+            if (keyPressTicks.getOrDefault(KeyBinding.groundHandBrakeKey, 0) == 0) {//按下时
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 0));
+            }
+            keyPressTicks.put(KeyBinding.groundHandBrakeKey, keyPressTicks.getOrDefault(KeyBinding.groundHandBrakeKey, 0) + 1);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.groundHandBrakeKey, 0) > 0) {//按键松开且按下持续至少1tick
+            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), keyPressTicks.get(KeyBinding.groundHandBrakeKey)));
+            keyPressTicks.put(KeyBinding.groundHandBrakeKey, 0);
+        }
+        //切换手刹
+        if (KeyBinding.groundToggleHandBrakeKey.isDown()) {
+            if (keyPressTicks.getOrDefault(KeyBinding.groundToggleHandBrakeKey, 0) == 0) {//按下时
+                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_HAND_BRAKE.getValue(), 0));
+            }
+            keyPressTicks.put(KeyBinding.groundToggleHandBrakeKey, keyPressTicks.getOrDefault(KeyBinding.groundToggleHandBrakeKey, 0) + 1);
+        } else if (keyPressTicks.getOrDefault(KeyBinding.groundToggleHandBrakeKey, 0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.groundToggleHandBrakeKey, 0);
+        }
         /*
           载具组装
          */

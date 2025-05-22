@@ -11,27 +11,29 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
     @Override
     protected void addTranslations() {
         //Key categories
-        this.add("resourceType.category.machine_max.general", "Machine Max:General");
-        this.add("resourceType.category.machine_max.ground", "Machine Max:Ground");
-        this.add("resourceType.category.machine_max.ship", "Machine Max:Ship");
-        this.add("resourceType.category.machine_max.plane", "Machine Max:Plane");
-        this.add("resourceType.category.machine_max.mech", "Machine Max:Mech");
-        this.add("resourceType.category.machine_max.assembly", "Machine Max:Assembly");
+        this.add("key.category.machine_max.general", "Machine Max:General");
+        this.add("key.category.machine_max.ground", "Machine Max:Ground");
+        this.add("key.category.machine_max.ship", "Machine Max:Ship");
+        this.add("key.category.machine_max.plane", "Machine Max:Plane");
+        this.add("key.category.machine_max.mech", "Machine Max:Mech");
+        this.add("key.category.machine_max.assembly", "Machine Max:Assembly");
         //Key names-General
-        this.add("resourceType.machine_max.general.free_cam", "Free Camera");
-        this.add("resourceType.machine_max.general.interact", "Interact with Vehicle");
-        this.add("resourceType.machine_max.general.leave_vehicle", "Leave Vehicle");
+        this.add("key.machine_max.general.free_cam", "Free Camera");
+        this.add("key.machine_max.general.interact", "Interact with Vehicle");
+        this.add("key.machine_max.general.leave_vehicle", "Leave Vehicle");
         //Key names-Ground
-        this.add("resourceType.machine_max.ground.forward", "Forward");
-        this.add("resourceType.machine_max.ground.backward", "Backward");
-        this.add("resourceType.machine_max.ground.leftward", "Leftward");
-        this.add("resourceType.machine_max.ground.rightward", "Rightward");
-        this.add("resourceType.machine_max.ground.clutch", "Clutch");
-        this.add("resourceType.machine_max.ground.up_shift", "Shift Up");
-        this.add("resourceType.machine_max.ground.down_shift", "Shift Down");
+        this.add("key.machine_max.ground.forward", "Forward");
+        this.add("key.machine_max.ground.backward", "Backward");
+        this.add("key.machine_max.ground.leftward", "Leftward");
+        this.add("key.machine_max.ground.rightward", "Rightward");
+        this.add("key.machine_max.ground.clutch", "Clutch");
+        this.add("key.machine_max.ground.up_shift", "Shift Up");
+        this.add("key.machine_max.ground.down_shift", "Shift Down");
+        this.add("key.machine_max.ground.hand_brake", "Hand Brake (Press)");
+        this.add("key.machine_max.ground.toggle_hand_brake", "Hand Brake (Toggle)");
         //Key names-Assembly
-        this.add("resourceType.machine_max.assembly.cycle_connector", "Cycle Part Connector");
-        this.add("resourceType.machine_max.assembly.cycle_variant", "Cycle Part Variant");
+        this.add("key.machine_max.assembly.cycle_connector", "Cycle Part Connector");
+        this.add("key.machine_max.assembly.cycle_variant", "Cycle Part Variant");
         //Hint messages
         this.add("message.machine_max.leaving_vehicle", "Hold [%1$s] %2$s/0.50s to leave the vehicle.");
         this.add("message.machine_max.watch_interact_box_info", "Press [%1$s] to interact with %2$s");

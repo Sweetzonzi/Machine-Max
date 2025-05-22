@@ -1,5 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.TransmissionSubsystemAttr;
 import io.github.tt432.machinemax.common.vehicle.signal.ISignalReceiver;

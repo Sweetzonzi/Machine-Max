@@ -91,7 +91,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
             /*
              * 地面载具
              */
-            case CLUTCH, UP_SHIFT, DOWN_SHIFT:
+            case CLUTCH, UP_SHIFT, DOWN_SHIFT, HAND_BRAKE, TOGGLE_HAND_BRAKE:
                 handleRegularInputForSeatSubsystem(player, KeyInputMapping.fromValue(payload.key()), payload.tick_count());
                 break;
             /*

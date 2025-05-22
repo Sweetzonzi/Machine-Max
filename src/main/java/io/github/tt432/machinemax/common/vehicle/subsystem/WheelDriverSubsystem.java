@@ -25,6 +25,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
     private final float MAX_STEERING_SPEED;
     private final float MAX_DRIVE_FORCE;
     private final float MAX_BRAKE_FORCE;
+    private final float MAX_HAND_BRAKE_FORCE;
     private final float MAX_STEERING_FORCE;
 
     public WheelDriverSubsystem(ISubsystemHost owner, String name, WheelDriverSubsystemAttr attr) {
@@ -34,6 +35,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
         MAX_STEERING_SPEED = attr.steeringAxis.maxSpeed();
         MAX_DRIVE_FORCE = attr.rollingAxis.maxForce();
         MAX_BRAKE_FORCE = attr.rollingAxis.maxBrakeForce();
+        MAX_HAND_BRAKE_FORCE = attr.rollingAxis.maxHandBrakeForce();
         MAX_STEERING_FORCE = attr.steeringAxis.maxForce();
         if (owner.getPart() != null &&
                 owner.getPart().allConnectors.get(this.attr.controlledConnector) instanceof SpecialConnector specialConnector) {
@@ -61,12 +63,10 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
         //计算收到功率 Calculate received power
         float totalPower = 0f;
         float speed = 0f;
-        int i = 0;
         SignalChannel powers = getSignalChannel("power");
         for (Map.Entry<ISignalSender, Object> entry : powers.entrySet()) {
-            i++;
             if (entry.getValue() instanceof MechPowerSignal power) {
-                totalPower += (Math.signum(power.getSpeed())) * power.getPower();//计算收到的总功率(考虑转速方向) Calculate total power (considering direction of rotation)
+                totalPower += power.getPower();//计算收到的总功率，正功率代表加速，负功率代表减速 Calculate total power, positive power means acceleration, negative power means deceleration
                 speed += power.getSpeed();
                 ISignalSender sender = entry.getKey();
                 if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者 If sender is also receiver, send speed back to sender
@@ -74,8 +74,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
                 }
             }
         }
-        if (i > 0) speed /= i;
-        if (Float.isNaN(totalPower) || Float.isNaN(speed)){
+        if (Float.isNaN(totalPower) || Float.isNaN(speed)) {
             totalPower = 0f;
             speed = 0f;
             MachineMax.LOGGER.error("{}收到机械功率信号不正确，{}", this.getName(), powers);
@@ -84,33 +83,28 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
             Signal<?> controlSignal = getControlInput();
             RotationMotor rollingMotor = joint.getRotationMotor(0);
             RotationMotor steeringMotor = joint.getRotationMotor(1);
-            Vector3f relativeAngularVel = getRelativeAngularVel();
 
             if (this.isActive() && controlSignal instanceof WheelControlSignal wheelControlSignal) {
                 //处理轮胎旋转 Handle rolling
                 rollingMotor.setMotorEnabled(true);
                 float torque = 0;
-                if (speed != 0) torque = totalPower / speed;
-                if (wheelControlSignal.getForwardControl() != null) {//若输入有转动速度信号，根据信号控制 If speed signal is present, control with it
-                    rollingMotor.set(MotorParam.TargetVelocity, wheelControlSignal.getForwardControl() * MAX_SPEED);
-                    if (wheelControlSignal.getForwardControl() * Math.signum(relativeAngularVel.get(0)) < 0
-                            || relativeAngularVel.get(0) == 0) {//加速过程 Accelerating, apply torque
-                        rollingMotor.set(MotorParam.MaxMotorForce, Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE));
-                    } else {//减速过程，发动机阻力也参与减速 If decelerating, apply engine braking as well
-                        rollingMotor.set(MotorParam.MaxMotorForce, MAX_BRAKE_FORCE - Math.clamp(torque, -MAX_DRIVE_FORCE, 0));
-                    }
-                } else {//若输入无转动速度信号，不进行刹车，但溜车且继续应用发动机阻力等 If no speed signal, brake and apply engine braking
-                    rollingMotor.set(MotorParam.TargetVelocity, 0f);
-                    rollingMotor.set(MotorParam.MaxMotorForce, Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE));
+                float brakeTorque = wheelControlSignal.getBrakeControl() * MAX_BRAKE_FORCE;
+                float handBrakeTorque = wheelControlSignal.getHandBrakeControl() * MAX_HAND_BRAKE_FORCE;
+                if (speed != 0) torque = totalPower / Math.abs(speed);//正扭矩代表加速，负扭矩代表减速
+                torque = Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE);//限制最大驱动力 Limit maximum drive force
+                torque -= brakeTorque + handBrakeTorque;//施加刹车力矩 Apply braking torque
+                rollingMotor.set(MotorParam.MaxMotorForce, Math.abs(torque));
+                if (torque > 0) {//加速过程 Accelerating
+                    rollingMotor.set(MotorParam.TargetVelocity, Math.signum(speed) * MAX_SPEED);
+                } else {//减速过程 Decelerating
+                    rollingMotor.set(MotorParam.TargetVelocity, 0);
                 }
                 //处理转向 Handle steering
-                if (wheelControlSignal.getSteeringControl() != null) {
-                    steeringMotor.setMotorEnabled(true);
-                    steeringMotor.setServoEnabled(true);
-                    steeringMotor.set(MotorParam.MaxMotorForce, MAX_STEERING_FORCE);
-                    steeringMotor.set(MotorParam.ServoTarget, wheelControlSignal.getSteeringControl());
-                    steeringMotor.set(MotorParam.TargetVelocity, MAX_STEERING_SPEED);
-                } else steeringMotor.setMotorEnabled(false);
+                steeringMotor.setMotorEnabled(true);
+                steeringMotor.setServoEnabled(true);
+                steeringMotor.set(MotorParam.MaxMotorForce, MAX_STEERING_FORCE);
+                steeringMotor.set(MotorParam.ServoTarget, wheelControlSignal.getSteeringControl());
+                steeringMotor.set(MotorParam.TargetVelocity, MAX_STEERING_SPEED);
             } else {
                 rollingMotor.setMotorEnabled(false);
                 steeringMotor.setMotorEnabled(true);
@@ -140,15 +134,14 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
         //获取控制信号
         for (String signalKey : attr.controlSignalKeys) {
             controlChannels = getSignalChannel(signalKey);//获取目标速度信号(马达，仅控制速度)
-            if (!controlChannels.isEmpty() && !(controlChannels.getFirst() instanceof EmptySignal)) break;
+            if (!controlChannels.isEmpty() && !(controlChannels.getFirstSignal() instanceof EmptySignal)) break;
         }
-        if (controlChannels.getFirst() instanceof WheelControlSignal wheelControlSignal) {//若输入为原始移动输入信号
+        if (controlChannels.getFirstSignal() instanceof WheelControlSignal wheelControlSignal) {//若输入为原始移动输入信号
             return wheelControlSignal;
-        } else if (controlChannels.getFirst() instanceof MoveInputSignal moveInputSignal)
-            return new WheelControlSignal(Pair.of(
+        } else if (controlChannels.getFirstSignal() instanceof MoveInputSignal moveInputSignal)
+            return new WheelControlSignal(
                     moveInputSignal.getMoveInput()[2] / 100f,
-                    (float) moveInputSignal.getMoveInput()[4]
-            )
+                    moveInputSignal.getMoveInput()[4]
             );
         else return new EmptySignal();//若为其他任何类型的信号则不对速度进行控制
     }

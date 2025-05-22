@@ -1,5 +1,6 @@
 package io.github.tt432.machinemax.common.vehicle.subsystem;
 
+import io.github.tt432.machinemax.MachineMax;
 import io.github.tt432.machinemax.common.entity.MMPartEntity;
 import io.github.tt432.machinemax.common.vehicle.ISubsystemHost;
 import io.github.tt432.machinemax.common.vehicle.attr.subsystem.GearboxSubsystemAttr;
@@ -20,7 +21,7 @@ public class GearboxSubsystem extends AbstractSubsystem{
     public final List<String> gearNames;//各级挡位的名称 Names of each gear position
     private int currentGear = 1; //当前挡位 Current gear position
     @Setter
-    private boolean clutched = true;//离合状态，true为正常传动，false为不传动 Clutch status, true for normal transmission, false for no transmission
+    private boolean clutched = false;//离合状态，true为正常传动，false为不传动 Clutch status, true for normal transmission, false for no transmission
     private float remainingSwitchTime = 0.0f;//剩余换挡无动力时间 Remaining no-power time caused by switching gears
 
     public GearboxSubsystem(ISubsystemHost owner, String name, GearboxSubsystemAttr attr) {
@@ -48,15 +49,6 @@ public class GearboxSubsystem extends AbstractSubsystem{
     @Override
     public void onTick() {
         super.onTick();
-        if (getPart().level.isClientSide) {
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof MMPartEntity entity && entity.part.vehicle == this.getPart().vehicle) {
-                String gear = gearNames.get(currentGear);
-                if (!clutched || remainingSwitchTime > 0.0f) gear = "N";
-                Object engineSpeed = getPart().vehicle.subSystemController.getSignalChannel("engine_speed").getFirst();
-                float engineRPM = engineSpeed instanceof Float f ? (float) (f / Math.PI * 30f) : 0.0f;
-                Minecraft.getInstance().player.displayClientMessage(Component.empty().append("Gear: " + gear + " Speed: " + String.format("%.1f", getPart().vehicle.getVelocity().length() * 3.6f) + " km/h RPM: " + String.format("%.0f", engineRPM)).withColor(engineRPM > 6500 ? 0xff0000 : 0xffffff), true);
-            }
-        }
     }
 
     @Override
