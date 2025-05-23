@@ -57,7 +57,7 @@ object MMCreativeTabs {
     @JvmStatic
     @SubscribeEvent
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
-        if(event.tab == MACHINE_MAX_TAB.get() || event.tab == MACHINE_MAX_BLUEPRINT_TAB) {
+        if(event.tab == MACHINE_MAX_TAB.get() || event.tab == MACHINE_MAX_BLUEPRINT_TAB.get()) {
             MachineMax.LOGGER.info("Putting parts into creative tab")
             val buildInParts = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
             for (partType in MMRegistries.getRegistryAccess(Minecraft.getInstance().level).registry(PartType.PART_REGISTRY_KEY).get()) {
