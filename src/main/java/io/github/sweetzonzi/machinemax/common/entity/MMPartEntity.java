@@ -122,11 +122,11 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
             PhysicsLevel level = level().getPhysicsLevel();
             Vector3f start;
             Vector3f end;
-            if (entity instanceof LivingEntity livingEntity) {
+            if (entity instanceof LivingEntity livingEntity && livingEntity.isAlive() && !livingEntity.isRemoved()) {
                 start = PhysicsHelperKt.toBVector3f(livingEntity.getEyePosition());
                 end = PhysicsHelperKt.toBVector3f(
                                 livingEntity.getViewVector(1).normalize()
-                                        .scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)))
+                                        .scale(5))
                         .add(start);
             } else {
                 start = PhysicsHelperKt.toBVector3f(source.getSourcePosition());
