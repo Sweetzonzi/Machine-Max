@@ -115,6 +115,14 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             connector.destroy();
         }
         if (body.isInWorld()) this.removeAllBodies();
+        if (interactBoxes!=null) {
+            for (InteractBox interactBox : interactBoxes.values()) interactBox.destroy();
+            interactBoxes.clear();
+            getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+                getPhysicsLevel().getWorld().removeCollisionObject(interactBoxes.body);
+                return null;
+            });
+        }
     }
 
     @NotNull

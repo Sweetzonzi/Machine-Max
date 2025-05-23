@@ -30,6 +30,7 @@ public class MachineMax {
     //TODO:带声速和多普勒效应的音效系统
     //TODO:投射物
     //TODO:炮塔控制
+    //TODO:载具触发压力板
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器

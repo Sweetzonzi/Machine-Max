@@ -40,6 +40,11 @@ public class InteractBox implements ISignalSender {
         }
     }
 
+    public void destroy(){
+        resetSignalOutputs();
+        targets.clear();
+    }
+
     @Override
     public Part getPart() {
         return subPart.part;

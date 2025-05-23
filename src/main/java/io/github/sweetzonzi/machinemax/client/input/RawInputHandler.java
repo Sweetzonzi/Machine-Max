@@ -114,6 +114,7 @@ public class RawInputHandler {
                     (byte) (rot_x_conflict),
                     (byte) (rot_y_conflict),
                     (byte) (rot_z_conflict)};
+            MachineMax.LOGGER.debug("rot:{}", rot_y_input);
             if (vehicleUuid != null && partUuid != null && subSystemName != null && moveInputs != moveInputCache)
                 PacketDistributor.sendToServer(new MovementInputPayload(
                         vehicleUuid, partUuid, subSystemName, moveInputs, moveInputConflicts));

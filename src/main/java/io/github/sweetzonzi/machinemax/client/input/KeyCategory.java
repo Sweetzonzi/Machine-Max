@@ -38,8 +38,10 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
         public boolean isActive() {
             if (GUI.isActive()) return false;
             Minecraft client = Minecraft.getInstance();
-            if (client.player != null && ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem subSystem) {
-                return subSystem.getPart().vehicle.getMode() == VehicleCore.ControlMode.GROUND;
+            if (client.player != null) {
+                if (((IEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem subSystem)
+                    return subSystem.getPart().vehicle.getMode() == VehicleCore.ControlMode.GROUND;
+                else return true;
             } else return false;
         }
 
