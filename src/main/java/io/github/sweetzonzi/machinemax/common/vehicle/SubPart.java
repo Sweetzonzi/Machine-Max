@@ -221,7 +221,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 float blockDurability;
                 //软质吸能地面方块更不易被破坏，特殊处理沙土雪等软质地面方块的耐久度
                 if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SNOW) || blockState.is(BlockTags.SAND)) {
-                    blockDurability = 100 * (0.1f + blockState.getDestroySpeed(part.level, blockPos));
+                    blockDurability = 200 * (0.1f + blockState.getDestroySpeed(part.level, blockPos));
                 } else if (blockState.is(BlockTags.WOOL)) {//吸能材料超高耐久度
                     blockDurability = 200 * (0.1f + blockState.getDestroySpeed(part.level, blockPos));
                 } else if (blockState.isStickyBlock()) {
