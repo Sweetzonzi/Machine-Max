@@ -18,6 +18,8 @@ public class MachineMax {
     //TODO:物品栏模型渲染
     //TODO:动画支持
     //TODO:locatorName->subPart->世界坐标
+    //TODO:交互系统的反馈信号
+    //TODO:更多异常处理，方便内容包作者排查问题
     //TODO:座椅视角控制
     //TODO:过载与座椅过载吸收/耐受
     //TODO:结构完整性integrity，衡量部件固定的牢靠程度

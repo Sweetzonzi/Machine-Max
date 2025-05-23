@@ -12,6 +12,7 @@ import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import com.jme3.bullet.collision.*;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -250,11 +251,14 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     double finalActualPartEnergy = actualPartEnergy;
                     //部件减速
                     ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);//重置默认冲量，采用计算结果
-                    getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_" + blockPos + "_block_impulse", PPhase.PRE, () -> {
-                        body.applyImpulse(normal.mult((float) (Math.sqrt(2 * finalActualPartEnergy * body.getMass()))),
-                                worldContactPoint.subtract(body.getPhysicsLocation(null)));
-                        return null;
-                    });
+                    Vector3f vel = body.getLinearVelocity(null);
+                    Vector3f aVel = body.getAngularVelocity(null);
+                    Vector3f impulse = normal.mult((float) (Math.sqrt(2 * finalActualPartEnergy * body.getMass())));
+                    Vector3f offset = worldContactPoint.subtract(body.getPhysicsLocation(null));
+                    Matrix3f inertia = body.getInverseInertiaWorld(null);
+                    body.setLinearVelocity(vel.add(impulse.mult(1f / body.getMass())));
+                    Vector3f deltaOmega = inertia.mult(offset.cross(impulse),null);
+                    body.setAngularVelocity(aVel.add(deltaOmega));
                     //TODO:对部件造成伤害
 //                    part.onHurt()
                     return;
