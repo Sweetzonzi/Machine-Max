@@ -14,7 +14,8 @@
     "car_controller": {
       "type": "machine_max:car_controller", //子系统类型
       "manual_gear_shift": false, //(可选，默认false)是否强制手动挡
-      "steering_center": [0,0,2.4036],//转向中心点(m)，对于前轮转向的四轮载具，此位置应取后轮轴中点；对于全轮转向的载具，此位置应取四轮位置的几何中心
+      "auto_hand_brake": true, //(可选，默认true)是否自动在停车和起步时切换手刹车状态
+      "steering_center": [0,0,2.4036],//(可选，默认[0, 0, 0])转向中心点(m)，对于前轮转向的四轮载具，此位置应取后轮轴中点；对于全轮转向的载具，此位置应取四轮位置的几何中心
       "steering_radius": 4.0, //(可选，默认5.0)最小转向半径(m)
       "control_inputs": ["move_control"],
       "engine_outputs": {
@@ -110,8 +111,8 @@
             "y": {
               "lower_limit": 1.0,//关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
               "upper_limit": -1.0,//关节位置上限，当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
-              "stiffness": 10000,//刚度系数(N/m)
-              "damping": 1000 //阻尼系数(N/(m/s))
+              "stiffness": 12500,//刚度系数(N/m)
+              "damping": 2000 //阻尼系数(N/(m/s))
             },
             "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
               "lower_limit": 1.0, //关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
@@ -135,8 +136,8 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 10000,
-              "damping": 1000
+              "stiffness": 12500,
+              "damping": 2000
             },
             "xr": {
               "lower_limit": 1.0,
@@ -153,8 +154,8 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 10000,
-              "damping": 1000
+              "stiffness": 12500,
+              "damping": 2000
             },
             "xr": {
               "lower_limit": 1.0,
@@ -178,8 +179,8 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 10000,
-              "damping": 1000
+              "stiffness": 12500,
+              "damping": 2000
             },
             "xr": {
               "lower_limit": 1.0,
