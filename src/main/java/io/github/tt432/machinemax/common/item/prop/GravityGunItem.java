@@ -1,9 +1,0 @@
-package io.github.tt432.machinemax.common.item.prop;
-
-import net.minecraft.world.item.Item;
-
-public class GravityGunItem extends Item {
-    public GravityGunItem(Properties properties) {
-        super(properties);
-    }
-}
