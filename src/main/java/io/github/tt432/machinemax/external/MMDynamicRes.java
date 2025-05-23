@@ -85,6 +85,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("lang")));
             packUp(packName, Exist(root.resolve("texture")));
             packUp(packName, Exist(root.resolve("font")));
+            packUp(packName, Exist(root.resolve("blueprint")));
         }
     }
 
@@ -103,7 +104,6 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("model")));
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("script")));
-            packUp(packName, Exist(root.resolve("blueprint")));
             packUp(packName, Exist(root.resolve("color")));
         }
     }

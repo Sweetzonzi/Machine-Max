@@ -41,9 +41,6 @@ public class MachineMax {
         MMEntities.register();//注册所有实体
         MMBlockEntities.register();//注册所有方块实体
         MMDataComponents.register();//注册所有物品数据组件
-        MMJavaItems.register(bus);//通过java注册的所有物品
-        MMItems.register();//通过kotlin注册的所有物品
-        MMCreativeTabs.register();//注册所有创造模式物品栏
         MMAttachments.register();//注册所有附件类型
         MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令
@@ -51,6 +48,9 @@ public class MachineMax {
         MMDynamicRes.initResources();//初始化外部资源文件
         bus.addListener(MMDynamicRes::init);//CommonSetup时读取外部数据文件
         bus.addListener(MMDynamicRes::registerReloadListeners);
+        MMJavaItems.register(bus);//通过java注册的所有物品
+        MMItems.register();//通过kotlin注册的所有物品
+        MMCreativeTabs.register();//注册所有创造模式物品栏
     }
 
 }

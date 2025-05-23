@@ -3,9 +3,11 @@ package io.github.tt432.machinemax.common.registry
 import io.github.tt432.machinemax.MachineMax
 import io.github.tt432.machinemax.common.item.MMJavaItems
 import io.github.tt432.machinemax.common.vehicle.PartType
+import io.github.tt432.machinemax.common.vehicle.data.VehicleData
 import io.github.tt432.machinemax.external.MMDynamicRes
 import net.minecraft.client.Minecraft
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.ItemStack
 import net.neoforged.bus.api.SubscribeEvent
@@ -57,7 +59,7 @@ object MMCreativeTabs {
     @JvmStatic
     @SubscribeEvent
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
-        if(event.tab == MACHINE_MAX_TAB.get() || event.tab == MACHINE_MAX_BLUEPRINT_TAB.get()) {
+        if(event.tab == MACHINE_MAX_TAB.get()) {
             MachineMax.LOGGER.info("Putting parts into creative tab")
             val buildInParts = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
             for (partType in MMRegistries.getRegistryAccess(Minecraft.getInstance().level).registry(PartType.PART_REGISTRY_KEY).get()) {

@@ -30,13 +30,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static io.github.tt432.machinemax.MachineMax.LOGGER;
 import static io.github.tt432.machinemax.MachineMax.MOD_ID;
 
 public class MMJavaItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, MOD_ID);
     public static List<DeferredHolder<Item, Item>> BLUEPRINT_EGGS = new ArrayList<>();
     public static DeferredHolder<Item, Item> getBluePrintSpawner(ResourceLocation location, VehicleData vehicleData) {
-//        LOGGER.info("BluePrint SpawnEgg:  "+location+"  has been register.");
+        LOGGER.info("BluePrint SpawnEgg:  "+location+"  has been register.");
         return ITEMS.register(
                 location.getPath(),
                 () -> new Item(new Item.Properties()) {
@@ -115,7 +116,7 @@ public class MMJavaItems {
 
     public static void register(IEventBus modEventBus) {
         MMDynamicRes.BLUEPRINTS.forEach((location, vehicleData) -> {
-            BLUEPRINT_EGGS.add(getBluePrintSpawner(location,vehicleData));
+            BLUEPRINT_EGGS.add(getBluePrintSpawner(location, vehicleData));
         });
         ITEMS.register(modEventBus);
 //        CREATIVE_MODE_TABS.register(modEventBus);
