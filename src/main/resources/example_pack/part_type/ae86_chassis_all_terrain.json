@@ -1,0 +1,227 @@
+{
+  "name": "ae86_chassis_all_terrain",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
+  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
+    "default": "machine_max:example_pack/model/ae86_chassis_all_terrain.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_chassis_all_terrain.geo.json"
+  },
+  "textures": [//部件可用贴图列表，不同变体模型应共享一张贴图
+    "machine_max:example_pack/texture/ae86_1.png",
+    "machine_max:example_pack/texture/ae86_2.png",
+    "machine_max:example_pack/texture/ae86_3.png",
+    "machine_max:example_pack/texture/ae86_4.png"
+  ],
+  "basic_durability": 100.0,//部件基础生命值
+  "subsystems": {
+    "car_controller": {
+      "type": "machine_max:car_controller", //子系统类型
+      "manual_gear_shift": false, //(可选，默认false)是否强制手动挡
+      "auto_hand_brake": true, //(可选，默认true)是否自动在停车和起步时切换手刹车状态
+      "steering_center": [0,0,2.4036],//(可选，默认[0, 0, 0])转向中心点(m)，对于前轮转向的四轮载具，此位置应取后轮轴中点；对于全轮转向的载具，此位置应取四轮位置的几何中心
+      "steering_radius": 4.0, //(可选，默认5.0)最小转向半径(m)
+      "control_inputs": ["move_control"],
+      "engine_outputs": {
+        "engine_control": ["engine"]
+      },
+      "wheel_outputs": {
+        "wheel_control": [
+          "left_front_wheel_driver",
+          "right_front_wheel_driver",
+          "left_back_wheel_driver",
+          "right_back_wheel_driver"]
+      },
+      "gearbox_outputs": {
+        "gearbox_control": ["gearbox"]
+      }
+    },
+    "engine": {
+      "type": "machine_max:engine", //子系统类型
+      "max_power": 125000, //最大功率(W)
+      "power_output": "gearbox", //功率输出目标，可填写任意本部件内其他子系统名称、部件对接口名称，或“part”，或“vehicle”
+      "speed_outputs": { //转速信号输出目标及信号名称，同上，但可以有多个
+        "engine_speed": ["part", "vehicle"]
+      }
+    },
+    "gearbox": {
+      "type": "machine_max:gearbox",
+      "final_ratio": 15.0, //(可选，默认5.0)最终变速比，用于整体缩放变速箱减速比
+      "ratios": [-3.5, 3.5, 2, 1.3, 1.0, 0.8], //(可选，此为默认值)各个挡位的传动比，负代表反向传动即倒挡
+      "switch_time": 0.3, //(可选，默认0.3)换挡时间(s)，不踩离合换挡或自动挡换挡时触发，此时无动力输出，通过手动踩离合换挡可避免
+      "control_inputs": ["gearbox_control"], //(可选，此为默认值)接收的控制信号的频道列表，优先级递减
+      "power_output": "transmission" //功率输出目标，子系统或部件接口名
+    },
+    "transmission": {
+      "type": "machine_max:transmission", //传动系统有细化计划，例如差速器和差速锁等，目前不是最终格式
+      "power_outputs": { //动力输出目标及权重
+        "left_front_wheel_driver": 1.0,
+        "right_front_wheel_driver": 1.0,
+        "left_back_wheel_driver": 1.0,
+        "right_back_wheel_driver": 1.0
+      }
+    },
+    "left_front_wheel_driver": {
+      "type": "machine_max:wheel_driver", //轮胎驱动子系统，驱动对接口上的部件滚动和转向
+      "connector": "left_front_wheel", //控制的对接口名称
+      "control_inputs": ["wheel_control", "move_control"]//(可选，默认["wheel_control", "move_control"])接收的控制信号的频道列表，优先级递减
+    },
+    "right_front_wheel_driver": {
+      "type": "machine_max:wheel_driver",
+      "connector": "right_front_wheel",
+      "steering": {//(可选)轮胎转向相关属性，默认最大转向力矩5000N*m，最大转速3.14rad/s，不反馈转角值到任何频道的任何目标
+        "max_force": 5000,
+        "max_speed": 3.14,
+        "position_outputs": {} //(可选，默认{})转角信号输出频道及目标名称列表
+      }
+    },
+    "left_back_wheel_driver": {
+      "type": "machine_max:wheel_driver",
+      "connector": "left_back_wheel",
+      "roll": {//(可选)轮胎滚动相关属性，默认最大驱动力矩10000N*m，最大刹车力矩3500N*m，最大手刹车力矩0N*m，最大转速3140rad/s，不反馈转速值到任何频道的任何目标
+        "max_drive_force": 10000.0, //(可选，默认10000)最大驱动力矩(N*m)
+        "max_brake_force": 3500.0, //(可选，默认3500)最大刹车力矩(N*m)
+        "max_hand_brake_force": 2000.0, //(可选，默认0)最大手刹车力矩(N*m)
+        "max_speed": 3140.0, //(可选，默认3140)最大转速(rad/s)
+        "speed_outputs": {} //(可选，默认{})转速信号输出频道及目标名称列表
+      }
+    },
+    "right_back_wheel_driver": {
+      "type": "machine_max:wheel_driver",
+      "connector": "right_back_wheel",
+      "roll": {
+        "max_hand_brake_force": 2000.0
+      }
+    }
+  },
+  "sub_parts": {//零件(子部件)列表，这是部件运动的最小单元，部件的每个可动部分都应当是一个零件(子部件)
+    "ae86_chassis_all_terrain": {//零件(子部件)名称
+      "mass": 500.0,//零件质量(kg)
+      "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
+      "collision_height": 2.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
+      "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
+      "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
+        "mmCollision_Box_Chassis": {//值:碰撞形状属性
+          "type": "box",//碰撞形状类型，支持box、sphere、cylinder
+          "rha": 10 //(可选，默认5)暂时无实际作用，计划影响护甲水平
+        }
+      },
+      "connectors": {//子部件用于与其他零件连接的对接口列表
+        "left_front_wheel": {//接口名称
+          "locator": "LeftFrontWheel",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
+          "type": "Special",//对接口类型，支持AttachPoint和Special
+          "variant": ["left"],//对接口可连接的部件变体类型，留空以接受所有类型的变体(例如轮胎的左右轮变体)
+          "joint_attrs": {//关节属性，目前仅在关节类型为Special时生效
+            "y": {
+              "lower_limit": 1.0,//关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
+              "upper_limit": -1.0,//关节位置上限，当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
+              "stiffness": 12500,//刚度系数(N/m)
+              "damping": 2000 //阻尼系数(N/(m/s))
+            },
+            "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
+              "lower_limit": 1.0, //关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
+              "upper_limit": -1.0, //当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
+              "damping": 10
+            },
+            "yr": {
+              "lower_limit": -45.0,
+              "upper_limit": 45.0,
+              "stiffness": 4000,
+              "damping": 200
+            }
+          },
+          "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
+        },
+        "left_back_wheel": {
+          "locator": "LeftBackWheel",
+          "type": "Special",
+          "variant": ["left"],
+          "joint_attrs": {
+            "y": {
+              "lower_limit": 1.0,
+              "upper_limit": -1.0,
+              "stiffness": 12500,
+              "damping": 2000
+            },
+            "xr": {
+              "lower_limit": 1.0,
+              "upper_limit": -1.0,
+              "damping": 10
+            }
+          }
+        },
+        "right_front_wheel": {
+          "locator": "RightFrontWheel",
+          "type": "Special",
+          "variant": ["right"],
+          "joint_attrs": {
+            "y": {
+              "lower_limit": 1.0,
+              "upper_limit": -1.0,
+              "stiffness": 12500,
+              "damping": 2000
+            },
+            "xr": {
+              "lower_limit": 1.0,
+              "upper_limit": -1.0,
+              "damping": 10
+            },
+            "yr": {
+              "lower_limit": -45.0,
+              "upper_limit": 45.0,
+              "stiffness": 4000,
+              "damping": 200
+            }
+          },
+          "breakable": false
+        },
+        "right_back_wheel": {
+          "locator": "RightBackWheel",
+          "type": "Special",
+          "variant": ["right"],
+          "joint_attrs": {
+            "y": {
+              "lower_limit": 1.0,
+              "upper_limit": -1.0,
+              "stiffness": 12500,
+              "damping": 2000
+            },
+            "xr": {
+              "lower_limit": 1.0,
+              "upper_limit": -1.0,
+              "damping": 10
+            }
+          }
+        },
+        "hull": {
+          "locator": "Hull",
+          "type": "Special"
+        },
+        "driver_seat": {
+          "locator": "DriverSeat",
+          "type": "Special",
+          "signal_targets": {
+            "move_control": [
+              "car_controller",//向控制器传输标准移动输入信号，如转向、加速、刹车等
+              "engine",//备用控制链路，优先级低于控制器，当车辆控制器失效时可继续控制
+              "left_front_wheel_driver",
+              "right_front_wheel_driver",
+              "left_back_wheel_driver",
+              "right_back_wheel_driver"
+            ],
+            "regular_control": ["car_controller"]//向车辆控制器传输一般按键输入信号，如换挡、离合器控制等
+          }
+        },
+        "copilot_seat": {
+          "locator": "CopilotSeat",
+          "type": "Special"
+        },
+        "back_seat": {
+          "locator": "BackSeat",
+          "type": "Special"
+        }
+      },
+      "aero_dynamic": { //空气阻力属性
+        "priority": 0, //(可选，默认0)空气阻力计算优先级，值越大优先级越高，优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化
+        "center": [0.0, 0.7, 0.0], //(可选，默认[0,0,0])气动中心位置，空气阻力会作用与相对零件质心偏移此量的位置上，计算来流速度时也会以此点速度计算
+        "effective_range": [5.0, 5.0, 5.0]//(可选，默认[1,1,1])三个方向上的有效计算范围，单位为m，当在对应轴运动方向上的此距离内检测到遮挡时将会降低部件的实际空气阻力系数，以模拟如车壳遮挡整流带来的减阻效果
+      }
+    }
+  }
+}
