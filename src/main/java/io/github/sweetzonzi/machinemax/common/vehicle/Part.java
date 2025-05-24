@@ -40,13 +40,11 @@ import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -227,11 +225,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           Vector3f normal,
                           Vector3f worldContactSpeed,
                           Vector3f worldContactPoint,
-                          long hitChildShapeNativeId) {
+                          @Nullable Long hitChildShapeNativeId) {
         if (getEntity() != null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
         Vec3 sourcePos = source.getSourcePosition();
         if (vanilla && sourcePos != null && !level.isClientSide) {//原版伤害处理
-            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * damage / subPart.part.durability)) * 150f);//伤害转化为动量
+            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / subPart.part.durability))) * 150f);//伤害转化为动量
             if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
                 knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
             }

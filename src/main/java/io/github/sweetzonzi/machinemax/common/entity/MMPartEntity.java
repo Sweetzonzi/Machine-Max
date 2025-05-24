@@ -35,6 +35,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -133,15 +134,35 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                 end = PhysicsHelperKt.toBVector3f(this.position());
             }
             if (end.subtract(start).length() > 0) {
-                var results = level.getWorld().rayTest(start, end);
-                for (var result : results) {
-                    PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
-                    if (body.getOwner() instanceof SubPart subPart) {
-                        //TODO: new一个新的source存储攻击来袭方向
-                        Vector3f normal = result.getHitNormalLocal(null);
-                        Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
-                        //将伤害转发给部件进行操作
-                        return subPart.part.onHurt(source, amount, true, subPart, normal, end.subtract(start).normalize(), contactPoint, subPart.collisionShape.findChild(result.triangleIndex()).getShape().nativeId());
+                if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION)) {//范围伤害处理
+                    SubPart nearest = null;
+                    float nearestDistance = Float.MAX_VALUE;
+                    Vector3f normal = new Vector3f();
+                    Vector3f contactPoint = new Vector3f();
+                    for (SubPart subPart : part.subParts.values()) {
+                        Vector3f delta = subPart.body.tickTransform.getTranslation().subtract(start);
+                        float d = delta.length();
+                        if (d < nearestDistance) {
+                            nearest = subPart;
+                            contactPoint = subPart.body.tickTransform.getTranslation();
+                            normal = delta.multLocal(-1).normalize();
+                            nearestDistance = d;
+                        }
+                    }
+                    if (nearest != null)
+                        return part.onHurt(source, amount, true, nearest, normal, normal.mult(-1), contactPoint, null);
+                    else throw new IllegalStateException("No subpart found for explosion damage.");
+                } else {//一般伤害处理
+                    var results = level.getWorld().rayTest(start, end);
+                    for (var result : results) {
+                        PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
+                        if (body.getOwner() instanceof SubPart subPart) {
+                            //TODO: new一个新的source存储攻击来袭方向
+                            Vector3f normal = result.getHitNormalLocal(null);
+                            Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
+                            //将伤害转发给部件进行操作
+                            return subPart.part.onHurt(source, amount, true, subPart, normal, end.subtract(start).normalize(), contactPoint, subPart.collisionShape.findChild(result.triangleIndex()).getShape().nativeId());
+                        }
                     }
                 }
             } else {//射线长度有问题时的异常处理
