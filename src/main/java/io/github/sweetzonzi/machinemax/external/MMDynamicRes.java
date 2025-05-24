@@ -96,7 +96,6 @@ public class MMDynamicRes {
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
-        GenerateTestPack(); //自动生成测试包
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
             //各种MM配置
