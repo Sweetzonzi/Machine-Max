@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.util.Set;
@@ -23,8 +24,8 @@ public class DynamicPack implements PackResources {
     private String base64 = "";
     private final String packRoot;
     private final ResourceLocation location;
-    private final File file;
-    private final ByteArrayInputStream inputStream;
+    private File file;
+    private ByteArrayInputStream inputStream;
     public DynamicPack(ResourceLocation location, String packRoot, File file) {
         this.location = location;
         this.packRoot = packRoot;
@@ -32,6 +33,11 @@ public class DynamicPack implements PackResources {
         this.inputStream = MMDynamicRes.fileStream(file);
         loadContent();
         loadBase64();
+    }
+    public DynamicPack(ResourceLocation location, String packRoot, String content) {
+        this.location = location;
+        this.packRoot = packRoot;
+        this.setContent(content);
     }
 
     public void loadContent() {
@@ -108,4 +114,11 @@ public class DynamicPack implements PackResources {
     public void close() {}
 
 
+    public void setContent(String content) {
+        this.content = content;
+        // 更新 base64（基于新内容）
+        this.base64 = Base64.getEncoder().encodeToString(content.getBytes());
+        // 更新 inputStream（基于新内容）
+        this.inputStream = new ByteArrayInputStream(content.getBytes());
+    }
 }

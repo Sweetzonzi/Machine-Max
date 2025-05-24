@@ -1,8 +1,7 @@
 package io.github.sweetzonzi.machinemax.external;
 
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
@@ -190,6 +189,7 @@ public class MMDynamicRes {
     private static void packUp(String packName, Path categoryPath) {
         String category = categoryPath.getFileName().toString();
         for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
+            DynamicPack dynamicPack = null;
             String fileName = filePath.getFileName().toString();
             String fileRealName = getRealName(fileName);
             ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, fileName));
@@ -228,10 +228,34 @@ public class MMDynamicRes {
 
                     case "lang" -> {
                         location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //语言翻译系统的标准搜索路径
+                        if (EXTERNAL_RESOURCE.containsKey(location)) {
+                            //已经有该语言的.json翻译表，需要往里面注入
+                            DynamicPack existedPack = EXTERNAL_RESOURCE.get(location);
+
+                            try {
+                                // 解析JSON字符串为JsonObject
+                                JsonObject origin = JsonParser.parseString(existedPack.getContent()).getAsJsonObject();
+                                JsonObject mergeIn = json.getAsJsonObject();
+
+                                // 合并JsonObject（后者覆盖前者）
+                                JsonObject merged = new JsonObject();
+                                mergeJsonObjects(merged, origin);
+                                mergeJsonObjects(merged, mergeIn);
+
+                                // 转换为合并后的JSON字符串
+                                String mergedJson = new GsonBuilder().setPrettyPrinting().create().toJson(merged);
+
+                                // 保存到合并后的JSON到资源覆写
+                                dynamicPack = new DynamicPack(location, category, mergedJson);
+
+                            } catch (JsonSyntaxException | IllegalStateException e) {
+                                LOGGER.error("合并相同翻译表 {}时失败 目标文件位于外部包{}: {}", category, packName, e.getMessage());
+                            }
+                        }
                     }
+                    
                     case "font" -> {
                         location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //字体系统的标准搜索路径
-                        System.out.println("FONT " + location);
                     }
 
                     case "color" -> {
@@ -242,8 +266,7 @@ public class MMDynamicRes {
             } catch (IOException e) {
                 LOGGER.error("读取{}时失败 目标文件位于{}: {}", category, filePath, e.getMessage());
             }
-
-            DynamicPack dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
+            if (dynamicPack == null) dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
             EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
 
 //            //把指定包的文件转换成base64字符串形式    取消注释则会生成镜像base64文件包 在 run/config/machine_max/base64ify
@@ -253,6 +276,12 @@ public class MMDynamicRes {
 //            createDefaultFile(category_base64ify.resolve(fileName+"_base64.txt"), dynamicPack.getBase64(), true);
         }
 
+    }
+
+    private static void mergeJsonObjects(JsonObject target, JsonObject source) {
+        for (Map.Entry<String, JsonElement> entry : source.entrySet()) {
+            target.add(entry.getKey(), entry.getValue());
+        }
     }
 
     /**
