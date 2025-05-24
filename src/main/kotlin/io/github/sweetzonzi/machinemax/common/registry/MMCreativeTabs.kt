@@ -19,9 +19,9 @@ object MMCreativeTabs {
 
     @JvmStatic
     val MACHINE_MAX_TAB = MachineMax.REGISTER.creativeTab()
-        .id("machine_max_tab")
+        .id("machine_max_tab_main")
         .bound(CreativeModeTab.builder()
-            .title(Component.translatable("machine_max.tab.main"))
+            .title(Component.translatable("itemGroup.machine_max.main"))
             .icon { ItemStack(MMItems.PART_ITEM) }
             .displayItems { params, output ->
                 output.accept(MMItems.TEST_CAR_SPAWNER.get())
@@ -34,9 +34,9 @@ object MMCreativeTabs {
 
     @JvmStatic
     val MACHINE_MAX_BLUEPRINT_TAB = MachineMax.REGISTER.creativeTab()
-        .id("machine_max_blueprint_tab")
+        .id("machine_max_tab_blueprint")
         .bound(CreativeModeTab.builder()
-            .title(Component.translatable("machine_max.tab.blueprint"))
+            .title(Component.translatable("itemGroup.machine_max.blueprint"))
             // 动态设置图标：如果蓝图列表为空，则使用 MACHINE_MAX_TAB 的图标
             .icon {
                 if (MMJavaItems.BLUEPRINT_EGGS.isEmpty()) { //判断蓝图注册表是否为空
@@ -58,7 +58,7 @@ object MMCreativeTabs {
     @SubscribeEvent
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
         if(event.tab == MACHINE_MAX_TAB.get() || event.tab == MACHINE_MAX_BLUEPRINT_TAB) {
-            MachineMax.LOGGER.info("Putting parts into creative tab")
+            MachineMax.LOGGER.info("Putting parts into creative tab...")
             val buildInParts = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
             for (partType in MMRegistries.getRegistryAccess(Minecraft.getInstance().level).registry(PartType.PART_REGISTRY_KEY).get()) {
                 val itemStack = ItemStack(MMItems.PART_ITEM)

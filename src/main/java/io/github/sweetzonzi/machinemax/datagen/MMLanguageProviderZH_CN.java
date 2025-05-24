@@ -40,6 +40,9 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("tooltip.machinemax.crossbar.interact", "互动以拆除：");
         this.add("tooltip.machinemax.spray_can.interact", "互动以喷涂：");
         //物品
+        //Item
+        this.add("itemGroup.machine_max.blueprint", "MachineMax: 自定义蓝图");
+        this.add("itemGroup.machine_max.main", "MachineMax: 部件与工具");
         this.add("item.machine_max.crossbar_item", "撬棍");
         this.add("item.machine_max.spray_can_item", "喷漆罐");
         this.add("item.machine_max.test_car_spawner", "测试车辆生成器");

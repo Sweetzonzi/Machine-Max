@@ -40,6 +40,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("tooltip.machinemax.crossbar.interact", "Interact to disassemble:");
         this.add("tooltip.machinemax.spray_can.interact", "Interact to paint:");
         //Item
+        this.add("itemGroup.machine_max.blueprint", "MachineMax: Custom BluePrints");
+        this.add("itemGroup.machine_max.main", "MachineMax: Part and Tools");
         this.add("item.machine_max.crossbar_item", "Crossbar");
         this.add("item.machine_max.spray_can_item", "Spray Can");
         this.add("item.machine_max.test_car_spawner", "Test Car Spawner");

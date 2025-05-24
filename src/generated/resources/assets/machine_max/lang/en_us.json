@@ -3,6 +3,8 @@
   "item.machine_max.spray_can_item": "Spray Can",
   "item.machine_max.test_car_spawner": "Test Car Spawner",
   "item.machine_max.vehicle_recorder_item": "Vehicle Recorder",
+  "itemGroup.machine_max.blueprint": "MachineMax: Custom BluePrints",
+  "itemGroup.machine_max.main": "MachineMax: Part and Tools",
   "key.category.machine_max.assembly": "Machine Max:Assembly",
   "key.category.machine_max.general": "Machine Max:General",
   "key.category.machine_max.ground": "Machine Max:Ground",

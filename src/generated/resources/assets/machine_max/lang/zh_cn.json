@@ -3,6 +3,8 @@
   "item.machine_max.spray_can_item": "喷漆罐",
   "item.machine_max.test_car_spawner": "测试车辆生成器",
   "item.machine_max.vehicle_recorder_item": "载具设计记录器",
+  "itemGroup.machine_max.blueprint": "MachineMax: 自定义蓝图",
+  "itemGroup.machine_max.main": "MachineMax: 部件与工具",
   "key.category.machine_max.assembly": "Machine Max:组装",
   "key.category.machine_max.general": "Machine Max:通用",
   "key.category.machine_max.ground": "Machine Max:地面载具",

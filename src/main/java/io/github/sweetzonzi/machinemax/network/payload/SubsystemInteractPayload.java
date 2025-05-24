@@ -66,7 +66,6 @@ public record SubsystemInteractPayload(
                 if (subPart != null) {
                     InteractBox interactBox = subPart.interactBoxes.get(payload.interactBoxName);
                     if (interactBox != null) context.enqueueWork(() -> interactBox.interact(context.player()));
-                    MachineMax.LOGGER.debug("{}中{}子部件{}的{}交互判定被触发。", vehicle.name, part.name, payload.subPartName, payload.interactBoxName);
                 } else MachineMax.LOGGER.error("{}中未找到子部件{}，无法互动。", part, payload.subPartName);
             } else MachineMax.LOGGER.error("{}中未找到部件{}，无法互动。", vehicle, payload.partUUID);
         } else MachineMax.LOGGER.error("未找到载具{}，无法互动。", payload.partUUID);
