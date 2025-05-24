@@ -7,7 +7,6 @@ import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
-import io.github.sweetzonzi.machinemax.external.data.TestPackProvider;
 import io.github.sweetzonzi.machinemax.external.parse.OBoneParse;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -140,40 +139,49 @@ public class MMDynamicRes {
 
         //设置默认测试包的路径、名字、内容
         //模型文件
-        createDefaultFile(partModelFolder.resolve("test_cube.geo.json"), TestPackProvider.partModel_TestCube(), false);
-        createDefaultFile(partModelFolder.resolve("ae86_back_seat.geo.json"), TestPackProvider.partModel_BackSeat(), false);
-        createDefaultFile(partModelFolder.resolve("ae86_seat.geo.json"), TestPackProvider.partModel_Seat(), false);
-        createDefaultFile(partModelFolder.resolve("ae86_hull.geo.json"), TestPackProvider.partModel_Hull(), false);
-        createDefaultFile(partModelFolder.resolve("ae86_chassis_all_terrain.geo.json"), TestPackProvider.partModel_Chassis(), false);
-        createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_right.geo.json"), TestPackProvider.partModel_RightWheel(), false);
-        createDefaultFile(partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), TestPackProvider.partModel_LeftWheel(), false);
-        //部件定义文件
-        createDefaultFile(partTypeFolder.resolve("test_cube.json"), TestPackProvider.partType_TestCube(), false);
-        createDefaultFile(partTypeFolder.resolve("ae86_back_seat.json"), TestPackProvider.partType_BackSeat(), false);
-        createDefaultFile(partTypeFolder.resolve("ae86_seat.json"), TestPackProvider.partType_Seat(), false);
-        createDefaultFile(partTypeFolder.resolve("ae86_hull.json"), TestPackProvider.partType_Hull(), false);
-        createDefaultFile(partTypeFolder.resolve("ae86_chassis_all_terrain.json"), TestPackProvider.partType_Chassis(), false);
-        createDefaultFile(partTypeFolder.resolve("ae86_wheel_all_terrain.json"), TestPackProvider.partType_Wheel(), false);
-        //蓝图文件
-        createDefaultFile(blueprint.resolve("test_blue_print.json"), TestPackProvider.blueprint(), false);
-        //自定义翻译
-        createDefaultFile(lang.resolve("zh_cn.json"), TestPackProvider.zh_cn(), false);
-        createDefaultFile(lang.resolve("en_us.json"), TestPackProvider.en_us(), false);
-        //自带测试材质
-        createDefaultFileByBase64(texture.resolve("test_cube.png"), TestPackProvider.test_cube_png_base64(), false);
-        createDefaultFileByBase64(texture.resolve("ae86_1.png"), TestPackProvider.ae86_1_png_base64(), false);
-        createDefaultFileByBase64(texture.resolve("ae86_2.png"), TestPackProvider.ae86_2_png_base64(), false);
-        createDefaultFileByBase64(texture.resolve("ae86_3.png"), TestPackProvider.ae86_3_png_base64(), false);
-        createDefaultFileByBase64(texture.resolve("ae86_4.png"), TestPackProvider.ae86_4_png_base64(), false);
-        //自定义文本文件
-        createDefaultFile(content.resolve("test.html"), TestPackProvider.content_html(), false);
-        //自定义字体文件
-        createDefaultFile(font.resolve("test_font.json"), TestPackProvider.test_font_json(), true);
-        copyResourceToFile("/bell.ttf", font.resolve("bell.ttf"), true);
-        copyResourceToFile("/bellb.ttf", font.resolve("bellb.ttf"), true);
-        copyResourceToFile("/belli.ttf", font.resolve("belli.ttf"), true);
+        boolean overwrite = true;
+        copyResourceToFile("/example_pack/model/test_cube.geo.json", partModelFolder.resolve("test_cube.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_back_seat.geo.json", partModelFolder.resolve("ae86_back_seat.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_seat.geo.json", partModelFolder.resolve("ae86_seat.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_hull.geo.json", partModelFolder.resolve("ae86_hull.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_chassis_all_terrain.geo.json", partModelFolder.resolve("ae86_chassis_all_terrain.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_right.geo.json", partModelFolder.resolve("ae86_wheel_all_terrain_right.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_left.geo.json", partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), overwrite);
 
-        createDefaultFile(color.resolve("color_palette.json"), TestPackProvider.color_palette_json(), false);
+        //部件定义文件
+        copyResourceToFile("/example_pack/part_type/test_cube.json", partTypeFolder.resolve("test_cube.json"), overwrite);
+        copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
+        copyResourceToFile("/example_pack/part_type/ae86_seat.json", partTypeFolder.resolve("ae86_seat.json"), overwrite);
+        copyResourceToFile("/example_pack/part_type/ae86_hull.json", partTypeFolder.resolve("ae86_hull.json"), overwrite);
+        copyResourceToFile("/example_pack/part_type/ae86_chassis_all_terrain.json", partTypeFolder.resolve("ae86_chassis_all_terrain.json"), overwrite);
+        copyResourceToFile("/example_pack/part_type/ae86_wheel_all_terrain.json", partTypeFolder.resolve("ae86_wheel_all_terrain.json"), overwrite);
+
+        //蓝图文件
+        copyResourceToFile("/example_pack/blueprint/test_blue_print.json", blueprint.resolve("test_blue_print.json"), overwrite);
+
+        //自定义翻译
+        copyResourceToFile("/example_pack/lang/zh_cn.json", lang.resolve("zh_cn.json"), overwrite);
+        copyResourceToFile("/example_pack/lang/en_us.json", lang.resolve("en_us.json"), overwrite);
+
+        //自带测试材质
+        copyResourceToFile("/example_pack/texture/test_cube.png", texture.resolve("test_cube.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_1.png", texture.resolve("ae86_1.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_2.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_3.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_4.png", texture.resolve("ae86_4.png"), overwrite);
+
+        //自定义文本文件
+        copyResourceToFile("/example_pack/content/test.html", content.resolve("test.html"), overwrite);
+
+        //自定义字体文件
+        copyResourceToFile("/example_pack/font/test_font.json", font.resolve("test_font.json"), overwrite);
+        copyResourceToFile("/example_pack/font/bell.ttf", font.resolve("bell.ttf"), overwrite);
+        copyResourceToFile("/example_pack/font/bellb.ttf", font.resolve("bellb.ttf"), overwrite);
+        copyResourceToFile("/example_pack/font/belli.ttf", font.resolve("belli.ttf"), overwrite);
+
+        //自定义色板
+        copyResourceToFile("/example_pack/color/color_palette.json", color.resolve("color_palette.json"), overwrite);
+
     }
 
 

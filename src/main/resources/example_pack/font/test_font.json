@@ -1,0 +1,11 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "machine_max:bell.ttf",
+      "size": 12,
+      "shift": [0, 0],
+      "oversample": 24.0
+    }
+  ]
+}
