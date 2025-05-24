@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machinemax.common.vehicle;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.util.PPhase;
+import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
 import com.jme3.bullet.joints.New6Dof;
@@ -290,7 +291,8 @@ public class VehicleCore {
                         new PartRemovePayload(this.uuid.toString(), partUuid)
                 );
             }
-            checkAndSplitVehicle();//连通性检查
+            int size = spiltPartNet().size();
+            if (size > 1) MachineMax.LOGGER.debug("载具{}分裂为{}个部分", name, size);//连通性检查
             if (partMap.values().isEmpty()) VehicleManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
             else {
                 this.activate();//重新激活，进行部件移除后的物理计算
@@ -415,20 +417,37 @@ public class VehicleCore {
         this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
         //TODO:连通性检查，如果有部件分离，则创建新的VehicleCore
         //TODO:为分离的部件指定新的VehicleCore
-        checkAndSplitVehicle();
     }
 
-    private void checkAndSplitVehicle() {
-        if (partNet.nodes().isEmpty()) return;
-        // TODO:连通性检查
-        Set<Set<Part>> splitPartNets = new HashSet<>();
+    /**
+     * <p>获取载具部件连接关系图的所有联通子图的集合，用于连通性检查</p>
+     * <p>Get all the connected sub-graphs of the vehicle part connection graph, used for connectivity check.</p>
+     * @return 连通子图集合 Subgraph set
+     */
+    public Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> spiltPartNet() {
+        if (partNet.nodes().isEmpty()) return Set.of();
+        Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> splitPartNets = new HashSet<>();
         Set<Part> visitedParts = new HashSet<>();
         for (Part part : partMap.values()) {
             if (!visitedParts.contains(part)) {
-                Set<Part> spiltPartNet = partNet.adjacentNodes(part);
-                visitedParts.addAll(spiltPartNet);
+                Set<Part> spiltParts = partNet.adjacentNodes(part);//寻找连通子图所有的节点
+                HashSet<Part> parts = new HashSet<>(spiltParts);
+                parts.add(part);
+                MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> splitPartNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
+                for (Part splitPart : parts) {
+                    splitPartNet.addNode(splitPart); // 构建网络节点
+                    for (Pair<AbstractConnector, AttachPointConnector> edge : partNet.incidentEdges(splitPart)) {
+                        EndpointPair<Part> incidentNodes = partNet.incidentNodes(edge);
+                        Part nodeU = incidentNodes.nodeU();
+                        Part nodeV = incidentNodes.nodeV();
+                        splitPartNet.addEdge(nodeU, nodeV, edge); // 构建网络边
+                    }
+                }
+                splitPartNets.add(splitPartNet);
+                visitedParts.addAll(parts);
             }
         }
+        return splitPartNets;
     }
 
     public void setPos(Vec3 pos) {

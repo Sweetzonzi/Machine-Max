@@ -379,7 +379,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                         //实体击退与伤害
                         other.setLinearVelocity(other.getLinearVelocity(null).add(impulseVec.mult((float) (1f / entityMass))));
                         ((TaskSubmitOffice) level).submitDeduplicatedTask(entity.getStringUUID() + "_entity_collision_damage", PPhase.PRE, () -> {
-                            float damage = (float) (contactEnergy * miu / (100 * entityMass));
+                            float damage = (float) (contactEnergy * miu / (250 * entityMass));
                             if (damage > 1) {
                                 if (!level.isClientSide) {
                                     entity.hurt(level.damageSources().flyIntoWall(), damage);

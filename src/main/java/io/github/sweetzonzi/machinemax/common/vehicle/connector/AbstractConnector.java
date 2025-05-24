@@ -213,7 +213,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                     if (!this.subPart.part.level.isClientSide()) {//若是服务端，则向客户端发包通知拆解接口
                         PacketDistributor.sendToPlayersInDimension((ServerLevel) subPart.part.level, new ConnectorDetachPayload(
                                 subPart.part.vehicle.uuid,
-                                new ConnectionData(connection)
+                                List.of(new ConnectionData(connection))
                         ));
                     }
                 }
