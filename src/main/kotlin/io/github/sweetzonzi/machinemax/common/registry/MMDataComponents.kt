@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.common.registry
 
+import cn.solarmoon.spark_core.animation.ItemAnimatable
 import com.mojang.serialization.Codec
 import io.github.sweetzonzi.machinemax.MachineMax
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyCacheComponent
@@ -37,6 +38,15 @@ object MMDataComponents {
         }
 
     @JvmStatic
+    val CUSTOM_ITEM_MODEL = MachineMax.REGISTER.dataComponent<ItemAnimatable>()
+        .id("custom_item_model")
+        .build {
+            it
+                .persistent(Codec.unit(null))
+                .cacheEncoding()
+        }
+
+    @JvmStatic
     val PART_ASSEMBLY_INFO = MachineMax.REGISTER.dataComponent<PartAssemblyInfoComponent>()
         .id("part_assembly_info")
         .build {
@@ -56,7 +66,6 @@ object MMDataComponents {
         .build {
             it
                 .persistent(PartAssemblyCacheComponent.CODEC)
-//                .networkSynchronized(PartAssemblyInfoComponent.STREAM_CODEC)
                 .cacheEncoding()
         }
 }

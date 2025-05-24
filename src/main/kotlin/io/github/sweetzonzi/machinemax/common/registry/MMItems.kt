@@ -1,14 +1,24 @@
 package io.github.sweetzonzi.machinemax.common.registry
 
+import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
+import cn.solarmoon.spark_core.registry.common.SparkCapabilities
 import io.github.sweetzonzi.machinemax.MachineMax
+import io.github.sweetzonzi.machinemax.client.renderer.CustomModelItemRenderer
 import io.github.sweetzonzi.machinemax.common.item.prop.CrossbarItem
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem
 import io.github.sweetzonzi.machinemax.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machinemax.common.item.prop.TestCarSpawnerItem
 import io.github.sweetzonzi.machinemax.common.item.prop.VehicleRecoderItem
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
+import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.fml.common.EventBusSubscriber
+import net.neoforged.fml.common.EventBusSubscriber.Bus
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent
 
+@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = Bus.MOD)
 object MMItems {
     @JvmStatic
     fun register() {
@@ -58,4 +68,23 @@ object MMItems {
     val ROAD_BASE_BLOCK = MachineMax.REGISTER.item<BlockItem>()
         .id("road_base_block")
         .bound { BlockItem(MMBlocks.ROAD_BASE_BLOCK.get(), Item.Properties()) }
+
+    @JvmStatic
+    @SubscribeEvent
+    private fun regCustomModel(event: RegisterClientExtensionsEvent) {
+        //在此注册拥有自定义模型物品的渲染器，物品需要继承ICustomModelItem接口
+        //Register custom model item renderer here, items need to implement ICustomModelItem interface
+        event.registerItem(
+            CustomModelItemExtension(),
+            CROSSBAR_ITEM, SPRAY_CAN_ITEM, PART_ITEM
+        )
+    }
+
+    class CustomModelItemExtension : IClientItemExtensions {
+        private val renderer = CustomModelItemRenderer()
+
+        override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
+            return renderer
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.common.item.prop;
 
+import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
@@ -7,6 +8,7 @@ import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.client.renderer.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyInfoComponent;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
@@ -34,6 +36,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ClipContext;
@@ -45,7 +48,7 @@ import org.joml.Vector3f;
 
 import java.util.List;
 
-public class MMPartItem extends Item {
+public class MMPartItem extends Item implements ICustomModelItem {
     public MMPartItem(Properties properties) {
         super(properties);
         properties.stacksTo(1);
@@ -191,8 +194,12 @@ public class MMPartItem extends Item {
             String connectorName = iterators.getNextConnector();
             ConnectorAttr connectorAttr = connectors.get(connectorName);
             ModelIndex modelIndex = new ModelIndex(partType.variants.get(variant), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
+            if (modelIndex.getModel().getBones().isEmpty())
+                throw new IllegalStateException("未找到部件" + partType.name + "的" + variant + "变体的模型:" + modelIndex.getModelPath());
             var locators = modelIndex.getModel().getLocators();
             OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
+            if (partConnectorLocator == null)
+                throw new NullPointerException("部件" + partType.name + "的" + variant + "变体缺少" + connectorAttr.locatorName() + "定位器");
             Vector3f offset = partConnectorLocator.getOffset().toVector3f();
             Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
             Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
@@ -216,6 +223,37 @@ public class MMPartItem extends Item {
         } else throw new IllegalStateException("物品" + stack + "中未找到部件类型数据");//如果物品Component中部件类型为空，则抛出异常
         if (partType == null) throw new IllegalStateException("未找到物品" + stack + "中存储的数据类型");
         return partType;
+    }
+
+    private static ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, PartType partType, String variant) {
+        var animatable = new ItemAnimatable(itemStack, level);
+        animatable.setModelIndex(
+                new ModelIndex(
+                        partType.variants.get(variant),
+                        partType.textures.getFirst())
+        );
+        itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), animatable);
+        return animatable;
+    }
+
+    @Override
+    public boolean use2dModel(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        return true;
+    }
+
+    @Override
+    public ItemAnimatable getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context) {
+        PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
+        String variant = getPartAssemblyInfo(itemStack, level).variant();
+        ItemAnimatable animatable;
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL())) {
+            animatable = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+            if (animatable.getAnimLevel() != level)
+                animatable = createItemAnimatable(itemStack, level, partType, variant);
+        } else {
+            animatable = createItemAnimatable(itemStack, level, partType, variant);
+        }
+        return animatable;
     }
 
 }
