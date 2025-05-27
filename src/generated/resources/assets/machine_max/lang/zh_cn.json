@@ -1,4 +1,5 @@
 {
+  "error.machine_max.use_part_item": "尝试放置%1$s时出现错误：%2$s",
   "item.machine_max.crossbar_item": "撬棍",
   "item.machine_max.spray_can_item": "喷漆罐",
   "item.machine_max.test_car_spawner": "测试车辆生成器",

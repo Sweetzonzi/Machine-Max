@@ -11,7 +11,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3f;
 
 import java.util.List;
 
@@ -32,9 +31,9 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             if (displayContext == ItemDisplayContext.GUI) {
                 super.renderByItem(stack, displayContext, poseStack, buffer, packedLight, packedOverlay);
             } else {
-                ItemAnimatable itemAnimatable = customModelItem.getRenderInstance(stack, Minecraft.getInstance().level, displayContext);
-                if (itemAnimatable == null) return;
-                this.render(itemAnimatable, 0, itemAnimatable.getPartialTicks(), poseStack, buffer, packedLight);
+//                ItemAnimatable itemAnimatable = customModelItem.getRenderInstance(stack, Minecraft.getInstance().level, displayContext);
+//                if (itemAnimatable == null) return;
+//                this.render(itemAnimatable, 0, itemAnimatable.getPartialTicks(), poseStack, buffer, packedLight);
             }
         }
     }

@@ -37,6 +37,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         //提示信息
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
         this.add("message.machine_max.watch_interact_box_info", "按[%1$s]键与%2$s互动");
+        this.add("error.machine_max.use_part_item", "尝试放置%1$s时出现错误：%2$s");
         this.add("tooltip.machinemax.crossbar.interact", "互动以拆除：");
         this.add("tooltip.machinemax.spray_can.interact", "互动以喷涂：");
         //物品

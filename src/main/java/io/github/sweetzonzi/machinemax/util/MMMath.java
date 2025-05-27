@@ -5,6 +5,8 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import jme3utilities.math.MyQuaternion;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.phys.Vec3;
 
 import static java.lang.Math.exp;
 
@@ -62,5 +64,24 @@ public class MMMath {
         Vector3f extraVelocity = new Vector3f();
         relAngularVel.cross(localVectorToWorldVector(relPointPos, obj), extraVelocity);
         return result.addLocal(extraVelocity);
+    }
+
+    public static Vec3i getClosestAxisAlignedVector(Vec3 vec3) {
+        // 比较每个分量的绝对值大小
+        double absX = Math.abs(vec3.x);
+        double absY = Math.abs(vec3.y);
+        double absZ = Math.abs(vec3.z);
+
+        // 找出绝对值最大的分量
+        if (absX >= absY && absX >= absZ) {
+            // X分量最大
+            return new Vec3i(vec3.x >= 0 ? 1 : -1, 0, 0);
+        } else if (absY >= absX && absY >= absZ) {
+            // Y分量最大
+            return new Vec3i(0, vec3.y >= 0 ? 1 : -1, 0);
+        } else {
+            // Z分量最大
+            return new Vec3i(0, 0, vec3.z >= 0 ? 1 : -1);
+        }
     }
 }

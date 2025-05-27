@@ -66,35 +66,40 @@ public class MMPartItem extends Item implements ICustomModelItem {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if (!level.isClientSide()) {
             ItemStack stack = player.getItemInHand(usedHand);
-            PartType partType = getPartType(stack, level);//获取物品保存的部件类型
-            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
-            String variant = info.variant();//获取物品保存的部件变体
-            String connectorName = info.connector();//获取物品保存的部件接口
-            String connectorType = info.connectorType();//获取物品保存的部件接口类型
-            var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            AbstractConnector targetConnector = eyesight.getConnector();
-            if (targetConnector != null) {//若有可用的接口
-                if (targetConnector.conditionCheck(variant)) {//检查变体条件
-                    //TODO:检查connectorType，骑乘姿态拆卸零件后这一内容会变null
-                    if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
-                        VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
-                        Part part = new Part(partType, variant, level);
-                        targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
-                        vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
+            try {
+                PartType partType = getPartType(stack, level);//获取物品保存的部件类型
+                PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
+                String variant = info.variant();//获取物品保存的部件变体
+                String connectorName = info.connector();//获取物品保存的部件接口
+                String connectorType = info.connectorType();//获取物品保存的部件接口类型
+                var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
+                AbstractConnector targetConnector = eyesight.getConnector();
+                if (targetConnector != null) {//若有可用的接口
+                    if (targetConnector.conditionCheck(variant)) {//检查变体条件
+                        //TODO:检查connectorType，骑乘姿态拆卸零件后这一内容会变null
+                        if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
+                            VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
+                            Part part = new Part(partType, variant, level);
+                            targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
+                            vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
+                        }
                     }
+                } else {
+                    Part part = new Part(partType, variant, level);
+                    part.setTransform(
+                            new Transform(
+                                    PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                            player.getEyePosition(),
+                                            player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                                    Quaternion.IDENTITY
+                            )
+                    );
+                    VehicleManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
                 }
-            } else {
-                Part part = new Part(partType, variant, level);
-                part.setTransform(
-                        new Transform(
-                                PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                                        player.getEyePosition(),
-                                        player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
-                                Quaternion.IDENTITY
-                        )
-                );
-                VehicleManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
+            } catch (Exception e) {
+                MachineMax.LOGGER.error("Error while using part item: {}", stack.getDisplayName(), e);
+                player.sendSystemMessage(Component.translatable("error.machinemax.use_part_item", stack.getDisplayName(), e));
             }
         }
         return super.use(level, player, usedHand);
