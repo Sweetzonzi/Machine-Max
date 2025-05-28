@@ -16,6 +16,7 @@ import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
 @Mod(MOD_ID)
 public class MachineMax {
     //TODO:物品栏模型渲染
+    //TODO:限制安装部件的质量差距/警告
     //TODO:动画支持
     //TODO:locatorName->subPart->世界坐标
     //TODO:交互系统的反馈信号

@@ -108,6 +108,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     body.addPhysicsTicker(this);
                     body.setProtectGravity(true);
                     body.setSleepingThresholds(0.1f, 0.1f);
+                    body.setContactStiffness(1e30f);
                     return null;
                 }));
     }
@@ -214,7 +215,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             }
             //根据碰撞速度、碰撞角、方块硬度和爆炸抗性，摧毁碰撞的方块，同时对自身造成伤害
             //TODO:配置文件开关冲撞可破坏方块
-            if (blockState.getDestroySpeed(part.level, blockPos) >= 0) {//碰撞的方块可破坏时
+            if (attr.blockDamageFactor > 0 && blockState.getDestroySpeed(part.level, blockPos) >= 0) {//碰撞的方块可破坏时
                 //计算碰撞法线方向上的速度(考虑冲量影响)
                 float blockArmor = ArmorUtil.getBlockArmor(part.level, blockState, blockPos);
                 float subPartArmor = part.type.thickness.get(childShapeId);
@@ -238,12 +239,12 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 }
                 double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);//方块吸收的碰撞能量
                 double partEnergy = contactEnergy - blockEnergy;//部件吸收的碰撞能量
-                if (blockEnergy > 250 * blockDurability) {//能量能够一次摧毁则摧毁,计算额外冲量使部件减速
+                if (attr.blockDamageFactor * blockEnergy > 250 * blockDurability) {//能量能够一次摧毁则摧毁,计算额外冲量使部件减速
                     //摧毁方块
                     other.setContactResponse(false);
                     other.setUserIndex(0);
                     //被摧毁的方块掉落为物品的概率，方块吸收的碰撞能量恰好与耐久度相同时必定掉落，掉落率随能量增加而递减
-                    double blockDropRate = Math.exp(1 - (blockEnergy / (250 * blockDurability)));
+                    double blockDropRate = Math.exp(1 - (attr.blockDamageFactor * blockEnergy / (250 * blockDurability)));
                     if (!level.isClientSide) {
                         ((TaskSubmitOffice) level).submitDeduplicatedTask(other.blockPos.toShortString(), PPhase.PRE, () -> {
                             level.destroyBlock(other.blockPos, Math.random() < blockDropRate);
@@ -552,9 +553,10 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
                 var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
                 var ang = Math.atan2(height, 1);
-                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 2f);
+                float mass = body.getMass() + 0.01f * (part.vehicle.totalMass - body.getMass());
+                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 2f) - vel.y;
                 float horizontalVelScale = (float) Math.cos(ang);
-                body.setLinearVelocity(new Vector3f(horizontalVelScale * vel.x, (float) (0.3 * vel.y + extraVel), horizontalVelScale * vel.z));
+                body.applyCentralImpulse(new Vector3f((horizontalVelScale - 1) * vel.x, extraVel, (horizontalVelScale - 1) * vel.z).mult(mass));
             }
         }
     }

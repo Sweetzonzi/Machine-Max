@@ -74,11 +74,16 @@ public class VehicleManager {
         vehicle.onRemoveFromLevel();
     }
 
-    public static void removeAllVehiclesInLevel(Level level) {
-        // 获取该Level中的所有载具
+    public static int removeAllVehiclesInLevel(Level level) {
+        // 获取该Level中的所有物体
         Set<VehicleCore> vehicles = levelVehicles.getOrDefault(level, Set.of());
-        // 遍历并移除所有载具
-        for (VehicleCore vehicle : new HashSet<>(vehicles)) removeVehicle(vehicle);
+        // 遍历并移除所有物体
+        int i = 0;
+        for (VehicleCore vehicle : new HashSet<>(vehicles)) {
+            removeVehicle(vehicle);
+            i++;
+        }
+        return i;
     }
 
     @SubscribeEvent
@@ -202,7 +207,6 @@ public class VehicleManager {
         if (event.getLevel().isClientSide()) {
             MMVisualEffects.getPART_ASSEMBLY().attachPoints.clear();
             MMVisualEffects.getPART_ASSEMBLY().partToAssembly = null;
-            //TODO:检查物理世界清理情况
         }
     }
 

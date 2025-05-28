@@ -38,6 +38,7 @@ public class SubPartAttr {
     public final float slipAdaptation;
     public final float rollingFriction;
     public final float restitution;
+    public final float blockDamageFactor;
     public final String blockCollision;
     public final float stepHeight;
     public final boolean climbAssist;
@@ -60,6 +61,7 @@ public class SubPartAttr {
             Codec.FLOAT.optionalFieldOf("slip_adaptation", 0.5f).forGetter(SubPartAttr::getSlipAdaptation),
             Codec.FLOAT.optionalFieldOf("rolling_friction", 0.01f).forGetter(SubPartAttr::getRollingFriction),
             Codec.FLOAT.optionalFieldOf("restitution", 0.1f).forGetter(SubPartAttr::getRestitution),
+            Codec.FLOAT.optionalFieldOf("block_damage_factor", 1.0f).forGetter(SubPartAttr::getBlockDamageFactor),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
             Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
@@ -83,6 +85,7 @@ public class SubPartAttr {
             float slipAdaptation,
             float rollingFriction,
             float restitution,
+            float blockDamageFactor,
             String blockCollision,
             float stepHeight,
             boolean climbAssist,
@@ -99,6 +102,7 @@ public class SubPartAttr {
         this.slipAdaptation = slipAdaptation;
         this.rollingFriction = rollingFriction;
         this.restitution = restitution;
+        this.blockDamageFactor = blockDamageFactor;
         this.blockCollision = blockCollision;
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
