@@ -9,6 +9,7 @@
     "machine_max:example_pack/texture/ae86_3.png",
     "machine_max:example_pack/texture/ae86_4.png"
   ],
+  "icon": "machine_max:example_pack/icon/ae86_back_seat_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
   "basic_durability": 50.0,//部件基础生命值
   "subsystems": {
     "left_seat": {

@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machinemax.MachineMax
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyCacheComponent
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyInfoComponent
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.item.ItemDisplayContext
 
 object MMDataComponents {
     @JvmStatic
@@ -38,11 +39,11 @@ object MMDataComponents {
         }
 
     @JvmStatic
-    val CUSTOM_ITEM_MODEL = MachineMax.REGISTER.dataComponent<ItemAnimatable>()
+    val CUSTOM_ITEM_MODEL = MachineMax.REGISTER.dataComponent<HashMap<ItemDisplayContext, ItemAnimatable>>()
         .id("custom_item_model")
         .build {
             it
-                .persistent(Codec.unit(null))
+                .persistent(Codec.unit(java.util.HashMap.newHashMap(6)))
                 .cacheEncoding()
         }
 
@@ -51,7 +52,6 @@ object MMDataComponents {
         .id("part_assembly_info")
         .build {
             it
-//                .persistent(PartAssemblyInfoComponent.CODEC)
                 .networkSynchronized(PartAssemblyInfoComponent.STREAM_CODEC)
                 .cacheEncoding()
         }

@@ -46,7 +46,9 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class MMPartItem extends Item implements ICustomModelItem {
     public MMPartItem(Properties properties) {
@@ -230,14 +232,30 @@ public class MMPartItem extends Item implements ICustomModelItem {
         return partType;
     }
 
-    private static ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, PartType partType, String variant) {
+    private static ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, PartType partType, String variant, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
-        animatable.setModelIndex(
-                new ModelIndex(
-                        partType.variants.get(variant),
-                        partType.textures.getFirst())
-        );
-        itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), animatable);
+        HashMap<ItemDisplayContext, ItemAnimatable> customModels;
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+        else customModels = new HashMap<>();
+        if (((ICustomModelItem) itemStack.getItem()).use2dModel(itemStack, level, context) && context == ItemDisplayContext.GUI) {
+            animatable.setModelIndex(
+                    new ModelIndex(
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
+                            partType.textures.getFirst())
+//                          partType.icon)
+            );
+        } else {
+            animatable.setModelIndex(
+                    new ModelIndex(
+                            partType.variants.get(variant),
+                            partType.textures.getFirst())
+            );
+        }
+        if (customModels != null) {
+            customModels.put(context, animatable);
+            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
+        }
         return animatable;
     }
 
@@ -248,17 +266,21 @@ public class MMPartItem extends Item implements ICustomModelItem {
 
     @Override
     public ItemAnimatable getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context) {
-        PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
-        String variant = getPartAssemblyInfo(itemStack, level).variant();
-        ItemAnimatable animatable;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL())) {
-            animatable = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-            if (animatable.getAnimLevel() != level)
-                animatable = createItemAnimatable(itemStack, level, partType, variant);
-        } else {
-            animatable = createItemAnimatable(itemStack, level, partType, variant);
+        try {
+            PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
+            String variant = getPartAssemblyInfo(itemStack, level).variant();
+            ItemAnimatable animatable;
+            if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL())) {
+                animatable = Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).get(context);
+                if (animatable == null || animatable.getAnimLevel() != level)
+                    animatable = createItemAnimatable(itemStack, level, partType, variant, context);
+            } else {
+                animatable = createItemAnimatable(itemStack, level, partType, variant, context);
+            }
+            return animatable;
+        } catch (Exception e) {
+            return null;
         }
-        return animatable;
     }
 
 }

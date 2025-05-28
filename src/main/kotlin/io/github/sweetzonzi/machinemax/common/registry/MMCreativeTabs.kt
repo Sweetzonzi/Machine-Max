@@ -22,7 +22,7 @@ object MMCreativeTabs {
         .id("machine_max_tab_main")
         .bound(CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.machine_max.main"))
-            .icon { ItemStack(MMItems.PART_ITEM) }
+            .icon { ItemStack(MMItems.CROSSBAR_ITEM) }
             .displayItems { params, output ->
                 output.accept(MMItems.TEST_CAR_SPAWNER.get())
                 output.accept(MMItems.CROSSBAR_ITEM.get())

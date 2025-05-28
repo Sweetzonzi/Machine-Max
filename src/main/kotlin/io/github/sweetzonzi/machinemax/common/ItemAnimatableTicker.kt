@@ -15,6 +15,8 @@ object ItemAnimatableTicker {
     private fun itemTick(event: ItemStackInventoryTickEvent) {
         val stack = event.stack
         if (stack.has(MMDataComponents.CUSTOM_ITEM_MODEL))
-            stack.get(MMDataComponents.CUSTOM_ITEM_MODEL)?.inventoryTick(event.entity)
+            stack.get(MMDataComponents.CUSTOM_ITEM_MODEL)?.values?.forEach{
+                it.inventoryTick(event.entity)
+            }
     }
 }
