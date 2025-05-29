@@ -113,7 +113,7 @@
               "lower_limit": 1.0,//关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
               "upper_limit": -1.0,//关节位置上限，当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
               "stiffness": 12500,//刚度系数(N/m)
-              "damping": 2000 //阻尼系数(N/(m/s))
+              "damping": 1000 //阻尼系数(N/(m/s))
             },
             "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
               "lower_limit": 1.0, //关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
@@ -124,7 +124,7 @@
               "lower_limit": -45.0,
               "upper_limit": 45.0,
               "stiffness": 4000,
-              "damping": 200
+              "damping": 20
             }
           },
           "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
@@ -138,7 +138,7 @@
               "lower_limit": 1.0,
               "upper_limit": -1.0,
               "stiffness": 12500,
-              "damping": 2000
+              "damping": 1000
             },
             "xr": {
               "lower_limit": 1.0,
@@ -156,7 +156,7 @@
               "lower_limit": 1.0,
               "upper_limit": -1.0,
               "stiffness": 12500,
-              "damping": 2000
+              "damping": 1000
             },
             "xr": {
               "lower_limit": 1.0,
@@ -167,7 +167,7 @@
               "lower_limit": -45.0,
               "upper_limit": 45.0,
               "stiffness": 4000,
-              "damping": 200
+              "damping": 20
             }
           },
           "breakable": false
@@ -181,7 +181,7 @@
               "lower_limit": 1.0,
               "upper_limit": -1.0,
               "stiffness": 12500,
-              "damping": 2000
+              "damping": 1000
             },
             "xr": {
               "lower_limit": 1.0,
