@@ -107,7 +107,8 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,
                 partProjection.color.getRGB(),
-                partialTick);
+                partialTick,
+                false);
         poseStack.popPose();//结束渲染
     }
 

@@ -13,10 +13,10 @@ object ItemAnimatableTicker {
     @JvmStatic
     @SubscribeEvent
     private fun itemTick(event: ItemStackInventoryTickEvent) {
-        val stack = event.stack
-        if (stack.has(MMDataComponents.CUSTOM_ITEM_MODEL))
-            stack.get(MMDataComponents.CUSTOM_ITEM_MODEL)?.values?.forEach{
-                it.inventoryTick(event.entity)
-            }
+//        val stack = event.stack
+//        if (stack.has(MMDataComponents.CUSTOM_ITEM_MODEL))
+//            stack.get(MMDataComponents.CUSTOM_ITEM_MODEL)?.values?.forEach{
+//                it.inventoryTick(event.entity)
+//            }
     }
 }

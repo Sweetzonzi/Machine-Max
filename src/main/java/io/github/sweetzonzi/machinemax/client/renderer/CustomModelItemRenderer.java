@@ -10,10 +10,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.lighting.LightEngine;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.awt.*;
 import java.util.List;
@@ -40,13 +43,14 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
                 ModelRenderHelperKt.render(
                         itemAnimatable.getModel(),
                         itemAnimatable.getBones(),
-                        poseStack.last().pose().translate(-5.78f,-2.66f,0),
+                        poseStack.last().pose(),
                         poseStack.last().normal(),
                         buffer.getBuffer(RenderType.entityTranslucent(itemAnimatable.getModelIndex().getTextureLocation())),
-                        packedLight,
+                        Brightness.FULL_BRIGHT.pack(),
                         packedOverlay,
                         Color.white.getRGB(),
-                        itemAnimatable.getPartialTicks()
+                        itemAnimatable.getPartialTicks(),
+                        true
                 );
             }
             else {

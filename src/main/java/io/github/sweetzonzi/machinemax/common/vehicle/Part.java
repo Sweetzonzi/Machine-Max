@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
+import cn.solarmoon.spark_core.animation.anim.play.Bone;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
@@ -58,8 +59,9 @@ import java.util.concurrent.ConcurrentMap;
 @Getter
 public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver {
     //渲染属性 Renderer attributes
-    @Setter
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
+    @Setter
+    private BoneGroup bones;//用于储存部件的骨骼组
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
     //常规属性 General attributes
     public VehicleCore vehicle;//所属的VehicleCore
@@ -416,6 +418,16 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         }
     }
 
+    public void setModelIndex(@NotNull ModelIndex modelIndex) {
+        this.modelIndex = modelIndex;
+        this.setBones(new BoneGroup(this));
+    }
+
+    public @NotNull BoneGroup getBones() {
+        if (this.bones == null) bones = new BoneGroup(this);
+        return this.bones;
+    }
+
     public void setTransform(Transform transform) {
         if (vehicle == null || !vehicle.inLevel) {
             setTransformRaw(transform);
@@ -447,12 +459,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Override
     public AnimController getAnimController() {
         return animController;
-    }
-
-    @NotNull
-    @Override
-    public BoneGroup getBones() {
-        return new BoneGroup(this);
     }
 
     @NotNull
@@ -517,9 +523,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         return signalChannels;
     }
 
-    @Nullable
     @Override
-    public Level getAnimLevel() {
+    public @NotNull Level getAnimLevel() {
         return level;
     }
 }

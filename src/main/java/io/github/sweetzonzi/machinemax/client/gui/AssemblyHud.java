@@ -116,7 +116,7 @@ public class AssemblyHud implements LayeredDraw.Layer {
             renderPartProjection(partToAssembly, poseStack, bufferSource, partialTick, camPos, centerX, centerY);
         }
     }
-
+    //未使用，计划用于hud渲染载具
     public void renderPartProjection(PartProjection partProjection, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick, Vec3 camPos, int centerX, int centerY) {
         RenderSystem.applyModelViewMatrix();
         Minecraft.getInstance().font.drawInBatch("test2", 0, 0, Color.RED.getRGB(), true, new Matrix4f().translate(centerX, centerY, 0).rotateZYX(0.4f, 0.4f, 0.4f),
@@ -130,7 +130,8 @@ public class AssemblyHud implements LayeredDraw.Layer {
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,
                 partProjection.color.getRGB(),
-                partialTick
+                partialTick,
+                true
         );
         bufferSource.endBatch();
         RenderSystem.applyModelViewMatrix();

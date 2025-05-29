@@ -397,4 +397,9 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     public PreInput getPreInput() {
         return new PreInput(this);
     }
+
+    @Override
+    public void setBones(@NotNull BoneGroup boneGroup) {
+        //Do nothing
+    }
 }

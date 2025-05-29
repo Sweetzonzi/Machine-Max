@@ -242,8 +242,7 @@ public class MMPartItem extends Item implements ICustomModelItem {
             animatable.setModelIndex(
                     new ModelIndex(
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
-                            partType.textures.getFirst())
-//                          partType.icon)
+                            partType.icon)
             );
         } else {
             animatable.setModelIndex(
