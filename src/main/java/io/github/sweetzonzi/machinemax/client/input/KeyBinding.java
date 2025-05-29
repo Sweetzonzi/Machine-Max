@@ -2,13 +2,19 @@ package io.github.sweetzonzi.machinemax.client.input;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.external.js.EventToJS;
 import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import org.lwjgl.glfw.GLFW;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 @OnlyIn(Dist.CLIENT)
@@ -31,6 +37,9 @@ public class KeyBinding {
 
     public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = "key.machine_max.assembly.cycle_connector";
     public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "key.machine_max.assembly.cycle_variant";
+    public static HashMap<String, Double> INPUT_KEY_MAP = new HashMap<>();
+    public static List<EventToJS> LISTENING_EVENT = new ArrayList<>();
+
 
     /**
      * 在此注册所有按键

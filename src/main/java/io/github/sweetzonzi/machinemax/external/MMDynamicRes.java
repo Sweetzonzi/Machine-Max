@@ -6,6 +6,7 @@ import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.external.parse.OBoneParse;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -35,6 +36,7 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
+    public static ConcurrentMap<ResourceLocation, DynamicPack> MM_SCRIPTS = new ConcurrentHashMap<>(); // 读取为mm自带脚本（并不是星火的）
 
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
@@ -63,6 +65,8 @@ public class MMDynamicRes {
         SERVER_PART_TYPES.clear();
         OBoneParse.clear();
         BLUEPRINTS.clear();
+        MM_SCRIPTS.clear();
+        MMInitialJS.clear();
         loadResources();
     }
 
@@ -103,6 +107,8 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("color")));
         }
+
+        MMInitialJS.register();//注册所有JS形式的初始化配置
     }
 
     public static class DataPackReloader extends SimplePreparableReloadListener<Void> {
@@ -153,6 +159,9 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/part_type/ae86_hull.json", partTypeFolder.resolve("ae86_hull.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_chassis_all_terrain.json", partTypeFolder.resolve("ae86_chassis_all_terrain.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_wheel_all_terrain.json", partTypeFolder.resolve("ae86_wheel_all_terrain.json"), overwrite);
+
+        //MM自带JS文件
+        copyResourceToFile("/example_pack/script/mm_test.js", script.resolve("mm_test.js"), false);
 
         //蓝图文件
         copyResourceToFile("/example_pack/blueprint/test_blue_print.json", blueprint.resolve("test_blue_print.json"), overwrite);
@@ -220,6 +229,8 @@ public class MMDynamicRes {
                     }
 
                     case "script" -> {
+                        dynamicPack = new DynamicPack(location, category, filePath.toFile());
+                        MM_SCRIPTS.put(location, dynamicPack);
                     }
                     case "blueprint" -> {
                         VehicleData data = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
