@@ -48,7 +48,7 @@ import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 public class MMPartItem extends Item implements ICustomModelItem {
     public MMPartItem(Properties properties) {
@@ -266,16 +266,13 @@ public class MMPartItem extends Item implements ICustomModelItem {
     @Override
     public ItemAnimatable getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context) {
         try {
+            Map<ItemDisplayContext, ItemAnimatable> customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+            if (customModels == null) customModels = new HashMap<>();
+            ItemAnimatable animatable = customModels.get(context);
             PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
             String variant = getPartAssemblyInfo(itemStack, level).variant();
-            ItemAnimatable animatable;
-            if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL())) {
-                animatable = Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).get(context);
-                if (animatable == null || animatable.getAnimLevel() != level)
-                    animatable = createItemAnimatable(itemStack, level, partType, variant, context);
-            } else {
+            if (animatable == null || animatable.getAnimLevel() != level)
                 animatable = createItemAnimatable(itemStack, level, partType, variant, context);
-            }
             return animatable;
         } catch (Exception e) {
             return null;

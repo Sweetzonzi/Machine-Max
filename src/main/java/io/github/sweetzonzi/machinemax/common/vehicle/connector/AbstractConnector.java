@@ -176,6 +176,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                         joint.enableSpring(i, true);
                     }
                     if (jointAttr.damping() != null) {
+                        //TODO:限制最大阻尼以确保稳定性
                         joint.set(MotorParam.Damping, i, (float) (jointAttr.damping() * (i <= 2 ? 1 : Math.PI / 180)));
                         joint.enableSpring(i, true);
                     }
