@@ -188,6 +188,8 @@ public class VehicleManager {
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             physicsLevel.getWorld().useDeterministicDispatch(true);//启用确定计算顺序以保证客户端服务端一致性
             physicsLevel.getWorld().useScr(true);//补偿弹性系数以改善小物体的碰撞精度
+            physicsLevel.getWorld().getSolverInfo().setGlobalCfm(1e-5f);
+            physicsLevel.getWorld().getSolverInfo().setNumIterations(25);
 //            Plane plane = new Plane(Vector3f.UNIT_Y, -60);
 //            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
 //            PhysicsRigidBody body = new PhysicsRigidBody("ground", null, shape, PhysicsBody.massForStatic);

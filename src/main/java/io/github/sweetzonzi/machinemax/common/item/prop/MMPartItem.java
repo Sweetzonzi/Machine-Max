@@ -271,7 +271,8 @@ public class MMPartItem extends Item implements ICustomModelItem {
             ItemAnimatable animatable = customModels.get(context);
             PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
             String variant = getPartAssemblyInfo(itemStack, level).variant();
-            if (animatable == null || animatable.getAnimLevel() != level)
+            //为什么会出现itemStack不匹配的情况？
+            if (animatable == null || animatable.getItemStack() != itemStack || animatable.getAnimLevel() != level)
                 animatable = createItemAnimatable(itemStack, level, partType, variant, context);
             return animatable;
         } catch (Exception e) {

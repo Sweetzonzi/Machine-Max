@@ -167,7 +167,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
             if (this instanceof SpecialConnector) {
                 if (jointAttr != null) {
                     float m_eff;//有效质量估算值，用于限制关节刚度和阻尼，避免数值不稳定
-                    float safe = 0.9f;//安全系数
+                    float safe = 0.8f;//安全系数
                     if (i <= 2)//平动轴以两物体质量计算等效质量
                         m_eff = computeEffectiveMass(joint.getBodyA().getMass(), joint.getBodyB().getMass());
                     else {//转动轴以两物体转动惯量计算等效质量
@@ -197,9 +197,14 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                         if (stiffness > 0)//最大阻尼估算值
                             maxDamping = safe * Math.min((float) (2 * Math.sqrt(stiffness * m_eff)), safe * 2 * m_eff * 60f);
                         else maxDamping = safe * 2 * m_eff * 60f;//纯阻尼系统的处理，采用显式欧拉稳定性条件
-                        if (jointAttr.damping() > maxDamping)
+                        if (jointAttr.damping() > maxDamping) {
+                            joint.set(MotorParam.MotorErp, i, 0.1f);
+                            joint.set(MotorParam.StopErp, i, 0.1f);
                             MachineMax.LOGGER.warn("接口{}(部件{})与接口{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.damping(), maxDamping);
+                        }
                         joint.set(MotorParam.Damping, i, Math.min(jointAttr.damping(), maxDamping));
+                        joint.set(MotorParam.MotorCfm, i, 1e-4f);
+                        joint.set(MotorParam.StopCfm, i, 1e-4f);
                         joint.enableSpring(i, true);
                     }
                 }
