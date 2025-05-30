@@ -108,7 +108,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     body.addPhysicsTicker(this);
                     body.setProtectGravity(true);
                     body.setSleepingThresholds(0.1f, 0.1f);
-                    body.setContactStiffness(1e30f);
                     return null;
                 }));
     }

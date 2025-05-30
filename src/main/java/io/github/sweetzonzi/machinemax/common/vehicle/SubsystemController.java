@@ -24,15 +24,27 @@ public class SubsystemController implements ISignalReceiver {
     }
 
     public void tick() {
-        allSubsystems.forEach(AbstractSubsystem::onTick);
+        for (AbstractSubsystem subsystem : allSubsystems){
+            if (subsystem!=null){
+                subsystem.onTick();
+            }
+        }
     }
 
     public void prePhysicsTick() {
-        allSubsystems.forEach(AbstractSubsystem::onPrePhysicsTick);
+        for (AbstractSubsystem subsystem : allSubsystems){
+            if (subsystem!=null){
+                subsystem.onPrePhysicsTick();
+            }
+        }
     }
 
     public void postPhysicsTick() {
-        allSubsystems.forEach(AbstractSubsystem::onPostPhysicsTick);
+        for (AbstractSubsystem subsystem : allSubsystems){
+            if (subsystem!=null){
+                subsystem.onPostPhysicsTick();
+            }
+        }
     }
 
     public void addSubsystems(Collection<AbstractSubsystem> subSystems){

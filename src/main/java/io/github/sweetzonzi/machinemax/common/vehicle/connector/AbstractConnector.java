@@ -198,7 +198,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                             maxDamping = safe * Math.min((float) (2 * Math.sqrt(stiffness * m_eff)), safe * 2 * m_eff * 60f);
                         else maxDamping = safe * 2 * m_eff * 60f;//纯阻尼系统的处理，采用显式欧拉稳定性条件
                         if (jointAttr.damping() > maxDamping) {
-                            joint.set(MotorParam.MotorErp, i, 0.1f);
+                            joint.set(MotorParam.MotorErp, i, 0.3f);
                             joint.set(MotorParam.StopErp, i, 0.1f);
                             MachineMax.LOGGER.warn("接口{}(部件{})与接口{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.damping(), maxDamping);
                         }

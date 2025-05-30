@@ -13,10 +13,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.lighting.LightEngine;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import java.awt.*;
 import java.util.List;
