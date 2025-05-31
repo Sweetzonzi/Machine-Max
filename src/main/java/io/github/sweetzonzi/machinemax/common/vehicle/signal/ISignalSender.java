@@ -59,27 +59,41 @@ public interface ISignalSender {
     /**
      * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
      *
-     * @param signalChannel   信号频道名称
-     * @param signalValue 信号值
+     * @param signalChannel 信号频道名称
+     * @param signalValue   信号值
      */
     default void sendSignalToAllTargets(String signalChannel, Object signalValue) {
-        sendSignalToAllTargets(signalChannel, signalValue, false);
+        sendSignalToAllTargets(signalChannel, signalValue, false, false);
+    }
+
+    /**
+     * 将信号发送到所有接收此信号的目标，所有目标收到同名同数值的信号
+     *
+     * @param signalChannel              信号频道名称
+     * @param signalValue                信号值
+     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
+     */
+    default void sendSignalToAllTargetsWithCallback(String signalChannel, Object signalValue, boolean callbackReturnsSignalValue) {
+        sendSignalToAllTargets(signalChannel, signalValue, true, callbackReturnsSignalValue);
     }
 
     /**
      * 将信号发送到所有接收此信号的目标，所有目标在同一频道收到同数值的信号
      *
-     * @param signalChannel             信号频道名
-     * @param signalValue               信号值
-     * @param requiresImmediateCallback 是否需要即时回调
+     * @param signalChannel              信号频道名
+     * @param signalValue                信号值
+     * @param requiresImmediateCallback  是否需要即时回调
+     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
      */
-    default void sendSignalToAllTargets(String signalChannel, Object signalValue, boolean requiresImmediateCallback) {
+    default void sendSignalToAllTargets(String signalChannel, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
         if (getTargets().containsKey(signalChannel))
             getTargets().get(signalChannel).forEach((receiverName, signalReceiver) -> {
                 signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
                 signalReceiver.onSignalUpdated(signalChannel, this);
                 if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
-                    callbackSender.sendImmediateCallback(signalChannel, (ISignalReceiver) this);
+                    if (callbackReturnsSignalValue)
+                        callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalValue);
+                    else callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalChannel);
                 }
             });
     }
@@ -87,42 +101,74 @@ public interface ISignalSender {
     /**
      * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
      *
+     * @param signalChannel 信号频道
      * @param targetName    接收者名称
-     * @param signalChannel 信号名称
      * @param signalValue   信号值
      */
-    default void sendSignalToTarget(String targetName, String signalChannel, Object signalValue) {
-        sendSignalToTarget(targetName, signalChannel, signalValue, false);
+    default void sendSignalToTarget(String signalChannel, String targetName, Object signalValue) {
+        sendSignalToTarget(signalChannel, targetName, signalValue, false, false);
     }
 
     /**
      * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
      *
-     * @param targetName                接收者名称
-     * @param signalChannel                 信号名称
-     * @param signalValue               信号值
-     * @param requiresImmediateCallback 是否需要即时回调
+     * @param signalChannel              信号频道
+     * @param targetName                 接收者名称
+     * @param signalValue                信号值
+     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
      */
-    default void sendSignalToTarget(String targetName, String signalChannel, Object signalValue, boolean requiresImmediateCallback) {
+    default void sendSignalToTargetWithCallback(String signalChannel, String targetName, Object signalValue, boolean callbackReturnsSignalValue) {
+        sendSignalToTarget(signalChannel, targetName, signalValue, true, callbackReturnsSignalValue);
+    }
+
+    /**
+     * 将信号发送到指定接收者，可用于发送同名不同值信号给不同目标
+     *
+     * @param signalChannel              信号频道
+     * @param targetName                 接收者名称
+     * @param signalValue                信号值
+     * @param requiresImmediateCallback  是否需要即时回调
+     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
+     */
+    default void sendSignalToTarget(String signalChannel, String targetName, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
         if (getTargets().containsKey(signalChannel)) {
             ISignalReceiver signalReceiver = getTargets().get(signalChannel).get(targetName);
             if (signalReceiver != null) {
                 signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
                 signalReceiver.onSignalUpdated(signalChannel, this);
                 if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
-                    callbackSender.sendImmediateCallback(signalChannel, (ISignalReceiver) this);
+                    if (callbackReturnsSignalValue)
+                        callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalValue);
+                    else callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalChannel);
                 }
             }
         }
     }
 
     /**
-     * 发送回调信号给指定监听器，通常用于握手或检查连接状态
+     * <p>若无回调需求请使用 {@link #sendCallbackToListener}</p>
+     * <p>Use {@link #sendCallbackToListener} instead if no callback is required.</p>
      *
-     * @param callbackListener 回调监听器
+     * @param signalChannel 信号频道
+     * @param target        接收者
+     * @param signalValue   信号值
      */
-    default void sendImmediateCallback(String signalChannel, ISignalReceiver callbackListener) {
-        sendCallbackToListener("callback", callbackListener, signalChannel);//发回收到的信号类型，尝试握手
+    @Deprecated
+    default void sendSignalToTarget(String signalChannel, ISignalReceiver target, Object signalValue) {
+        this.sendSignalToTarget(signalChannel, target.getName(), signalValue);
+    }
+
+    /**
+     * <p>将信号发送到指定接收者，可用于发送同名不同值信号给不同目标</p>
+     * <p>Send a signal to a specified receiver, which can be used to send different values of the same signal to different targets.</p>
+     *
+     * @param signalChannel              信号频道
+     * @param target                     接收者
+     * @param signalValue                信号值
+     * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
+     */
+    default void sendSignalToTargetWithCallback(String signalChannel, ISignalReceiver target, Object signalValue, boolean callbackReturnsSignalValue) {
+        this.sendSignalToTarget(signalChannel, target.getName(), signalValue, true, callbackReturnsSignalValue);
     }
 
     default void sendCallbackToAllListeners(String signalChannel, Object signalValue) {

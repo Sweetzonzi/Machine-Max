@@ -68,7 +68,7 @@ public class EngineSubsystem extends AbstractSubsystem {
             feedback = -feedback;
             //TODO:如何和转动惯量属性挂钩？
             rotSpeed = 0.95 * rotSpeed + 0.05 * feedback;
-            if (rotSpeed > 0) rotSpeed = Math.max(rotSpeed, 0.1 * BASE_ROT_SPEED);
+            rotSpeed = Math.max(rotSpeed, 0.1 * BASE_ROT_SPEED);
             sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率信号
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速信号
         } else {

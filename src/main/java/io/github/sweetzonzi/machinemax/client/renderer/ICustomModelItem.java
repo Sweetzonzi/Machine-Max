@@ -5,6 +5,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.joml.Vector3f;
 
 public interface ICustomModelItem {
     /**
@@ -27,13 +28,15 @@ public interface ICustomModelItem {
         return true;
     }
 
-    /**
-     * <p>用于物品栏、掉落物等场景的2D模型资源位置，仅在 {@link #use2dModel} 返回true时生效</p>
-     * <p>ModelResourceLocation used for GUI display, only effective when {@link #use2dModel} returns true</p>
-     *
-     * @return <p>资源位置，null则返回缺省模型(紫黑格子)</p><p>ModelResourceLocation, null for default model(purple black)</p>
-     */
-    default ModelResourceLocation get2dModelResourceLocation() {
-        return null;
+    default Vector3f getRenderOffset(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        return new Vector3f(0.0f, 0.0f, 0.0f);
+    }
+
+    default Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        return new Vector3f(0.0f, 0.0f, 0.0f);
+    }
+
+    default Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        return new Vector3f(1.0f, 1.0f, 1.0f);
     }
 }

@@ -88,10 +88,10 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         this.body.setSpinningFriction(attr.rollingFriction);//旋转摩擦系数（车轮转向）
         this.body.setRestitution(attr.getRestitution());//恢复系数（碰撞能量损耗）
         this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_PART);
-        if (attr.blockCollision.equals("true") || attr.blockCollision.equals("True")) {
+        if (attr.blockCollision == SubPartAttr.BlockCollisionType.TRUE) {
             GROUND_COLLISION_ONLY = false;
             this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
-        } else if (attr.blockCollision.equals("ground") || attr.blockCollision.equals("Ground")) {
+        } else if (attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
             GROUND_COLLISION_ONLY = true;
             this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
         } else {

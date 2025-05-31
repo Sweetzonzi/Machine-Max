@@ -50,8 +50,12 @@
       "power_output": "transmission" //功率输出目标，子系统或部件接口名
     },
     "transmission": {
-      "type": "machine_max:transmission", //传动系统有细化计划，例如差速器和差速锁等，目前不是最终格式
-      "power_outputs": { //动力输出目标及权重
+      "type": "machine_max:transmission", //传动子系统，将接收到的功率分配至各个输出目标
+      "diff_lock": "auto", //(可选，默认auto)是否开启差速锁，差速锁模式(true)下各输出端会有相同的转速，差速器模式(false)下各输出端会有相同的扭矩，自动模式(auto)下根据输出端转速差距自动开关差速锁，手动模式(manual)下根据信号开关差速锁
+      "diff_lock_sensitivity": 1.0, //(可选，默认1.0)差速锁灵敏度，值越大灵敏度越高，统一输出端转速的能力越强
+      "auto_diff_lock_threshold": 10.0, //(可选，默认10.0)自动差速锁启用的转速差距百分比阈值
+      "distribute_inputs": ["diff_lock_control"],//(可选，默认["diff_lock_control"])接收的控制差速锁的信号频道列表，优先级递减
+      "power_outputs": { //动力输出目标及减速比
         "left_front_wheel_driver": 1.0,
         "right_front_wheel_driver": 1.0,
         "left_back_wheel_driver": 1.0,
@@ -93,7 +97,7 @@
   },
   "sub_parts": {//零件(子部件)列表，这是部件运动的最小单元，部件的每个可动部分都应当是一个零件(子部件)
     "ae86_chassis_all_terrain": {//零件(子部件)名称
-      "mass": 500.0,//零件质量(kg)
+      "mass": 600.0,//零件质量(kg)
       "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
       "collision_height": 2.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
       "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
@@ -112,7 +116,7 @@
             "y": {
               "lower_limit": 1.0,//关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
               "upper_limit": -1.0,//关节位置上限，当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
-              "stiffness": 12500,//刚度系数(N/m)
+              "stiffness": 15000,//刚度系数(N/m)
               "damping": 1000 //阻尼系数(N/(m/s))
             },
             "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转

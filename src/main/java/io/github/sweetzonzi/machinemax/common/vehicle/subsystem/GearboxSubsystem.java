@@ -17,7 +17,7 @@ public class GearboxSubsystem extends AbstractSubsystem{
     public final List<String> gearNames;//各级挡位的名称 Names of each gear position
     private int currentGear = 1; //当前挡位 Current gear position
     @Setter
-    private boolean clutched = false;//离合状态，true为正常传动，false为不传动 Clutch status, true for normal transmission, false for no transmission
+    private boolean clutched = true;//离合状态，true为正常传动，false为不传动 Clutch status, true for normal transmission, false for no transmission
     private float remainingSwitchTime = 0.0f;//剩余换挡无动力时间 Remaining no-power time caused by switching gears
 
     public GearboxSubsystem(ISubsystemHost owner, String name, GearboxSubsystemAttr attr) {
@@ -66,10 +66,10 @@ public class GearboxSubsystem extends AbstractSubsystem{
             if (clutched) this.remainingSwitchTime = attr.switchTime;//若未踩离合，开始换挡时间倒计时
             //更新挡位信号
             for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
-                String signalKey = entry.getKey();
+                String signalChannel = entry.getKey();
                 List<String> targets = entry.getValue();
                 for (String targetName : targets) {
-                    sendSignalToTarget(targetName, signalKey, currentGear);
+                    sendSignalToTarget(signalChannel, targetName, currentGear);
                 }
             }
         }
@@ -89,7 +89,7 @@ public class GearboxSubsystem extends AbstractSubsystem{
 
     private void distributePower() {
         if (!clutched || remainingSwitchTime > 0.0f) {
-            sendSignalToTarget(attr.powerOutputTarget, "power", new MechPowerSignal(0.0f, 0f));
+            sendSignalToTarget("power", attr.powerOutputTarget, new MechPowerSignal(0.0f, 0f));
             return;
         }
         double totalPower = 0.0;
@@ -109,7 +109,7 @@ public class GearboxSubsystem extends AbstractSubsystem{
         }
         if (count > 0) averageSpeed /= count;//计算转速平均值
         MechPowerSignal powerSignalToSend = new MechPowerSignal((float) totalPower, (float) (averageSpeed / gearRatios[currentGear]));
-        sendSignalToTarget(attr.powerOutputTarget, "power", powerSignalToSend);//发送功率信号
+        sendSignalToTarget("power", attr.powerOutputTarget, powerSignalToSend);//发送功率信号
     }
 
     private void updateFeedback() {

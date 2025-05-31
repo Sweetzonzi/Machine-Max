@@ -39,7 +39,7 @@ public class SubPartAttr {
     public final float rollingFriction;
     public final float restitution;
     public final float blockDamageFactor;
-    public final String blockCollision;
+    public final BlockCollisionType blockCollision;
     public final float stepHeight;
     public final boolean climbAssist;
     public final Map<String, HitBoxAttr> hitBoxes;
@@ -51,6 +51,10 @@ public class SubPartAttr {
     public final ConcurrentMap<String, CompoundCollisionShape> interactBoxShape = new ConcurrentHashMap<>();//不同变体零件模型的交互体积
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();//碰撞体子形状id对应的交互判定区名称
     public final Map<String, Transform> massCenterTransforms = new HashMap<>();
+
+    public enum BlockCollisionType {
+        TRUE, FALSE, GROUND
+    }
 
     public static final Codec<SubPartAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("parent", "").forGetter(SubPartAttr::getParent),
@@ -103,7 +107,7 @@ public class SubPartAttr {
         this.rollingFriction = rollingFriction;
         this.restitution = restitution;
         this.blockDamageFactor = blockDamageFactor;
-        this.blockCollision = blockCollision;
+        this.blockCollision = BlockCollisionType.valueOf(blockCollision.toUpperCase());
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
         this.hitBoxes = hitBoxes;
@@ -116,8 +120,9 @@ public class SubPartAttr {
      * 获取子部件的碰撞体积 Get collision shape of sub-part<p>
      * 若碰撞体积不存在，则创建并缓存 If collision shape does not exist, create and cache it.<p>
      * 实际创建部件时再生成碰撞体积以避免模型数据未加载的情形 Create collision shape of sub-part when actually creating the part to avoid situations where model data is not loaded.
+     *
      * @param variant 部件变体名
-     * @param type 部件类型
+     * @param type    部件类型
      * @return 碰撞体积
      */
     public CompoundCollisionShape getCollisionShape(String variant, PartType type) {
@@ -263,5 +268,9 @@ public class SubPartAttr {
             }
             return shape;
         });
+    }
+
+    private String getBlockCollision() {
+        return blockCollision.toString().toLowerCase();
     }
 }

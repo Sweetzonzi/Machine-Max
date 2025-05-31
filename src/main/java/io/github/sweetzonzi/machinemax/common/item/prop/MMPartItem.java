@@ -280,4 +280,9 @@ public class MMPartItem extends Item implements ICustomModelItem {
         }
     }
 
+    @Override
+    public Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext == ItemDisplayContext.GUI) return new Vector3f(1);
+        else return new Vector3f(0.3f);
+    }
 }

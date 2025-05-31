@@ -32,27 +32,25 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             int packedLight,
             int packedOverlay) {
         if (stack.getItem() instanceof ICustomModelItem customModelItem) {
-            poseStack.pushPose();
-            poseStack.scale(-1,1,1);
             ItemAnimatable itemAnimatable = customModelItem.getRenderInstance(stack, Minecraft.getInstance().level, displayContext);
             if (itemAnimatable == null) return;
-            if (displayContext == ItemDisplayContext.GUI){
-                ModelRenderHelperKt.render(
-                        itemAnimatable.getModel(),
-                        itemAnimatable.getBones(),
-                        poseStack.last().pose(),
-                        poseStack.last().normal(),
-                        buffer.getBuffer(RenderType.entityTranslucent(itemAnimatable.getModelIndex().getTextureLocation())),
-                        Brightness.FULL_BRIGHT.pack(),
-                        packedOverlay,
-                        Color.white.getRGB(),
-                        itemAnimatable.getPartialTicks(),
-                        true
-                );
-            }
-            else {
-//                this.render(itemAnimatable, 0, itemAnimatable.getPartialTicks(), poseStack, buffer, packedLight);
-            }
+            poseStack.pushPose();
+            if (displayContext == ItemDisplayContext.GUI) poseStack.scale(-1, 1, 1);
+            ModelRenderHelperKt.render(
+                    itemAnimatable.getModel(),
+                    itemAnimatable.getBones(),
+                    poseStack.last().pose()
+                            .translate(customModelItem.getRenderOffset(stack, Minecraft.getInstance().level, displayContext))
+                            .rotateZYX(customModelItem.getRenderRotation(stack, Minecraft.getInstance().level, displayContext))
+                            .scale(customModelItem.getRenderScale(stack, Minecraft.getInstance().level, displayContext)),
+                    poseStack.last().normal(),
+                    buffer.getBuffer(RenderType.entityTranslucent(itemAnimatable.getModelIndex().getTextureLocation())),
+                    Brightness.FULL_BRIGHT.pack(),
+                    packedOverlay,
+                    Color.white.getRGB(),
+                    itemAnimatable.getPartialTicks(),
+                    true
+            );
             poseStack.popPose();
         }
     }
