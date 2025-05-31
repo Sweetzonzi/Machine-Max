@@ -1,13 +1,10 @@
 package io.github.sweetzonzi.machinemax.common.registry
 
-import cn.solarmoon.spark_core.event.ItemStackInventoryTickEvent
-import cn.solarmoon.spark_core.registry.common.SparkCapabilities
 import io.github.sweetzonzi.machinemax.MachineMax
 import io.github.sweetzonzi.machinemax.client.renderer.CustomModelItemRenderer
-import io.github.sweetzonzi.machinemax.common.item.prop.CrossbarItem
+import io.github.sweetzonzi.machinemax.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem
 import io.github.sweetzonzi.machinemax.common.item.prop.SprayCanItem
-import io.github.sweetzonzi.machinemax.common.item.prop.TestCarSpawnerItem
 import io.github.sweetzonzi.machinemax.common.item.prop.VehicleRecoderItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
 import net.minecraft.world.item.BlockItem
@@ -24,13 +21,6 @@ object MMItems {
     fun register() {
     }
 
-    //测试车生成器
-    @JvmStatic
-    val TEST_CAR_SPAWNER = MachineMax.REGISTER.item<TestCarSpawnerItem>()
-        .id("test_car_spawner")
-        .bound { TestCarSpawnerItem(Item.Properties().stacksTo(1)) }
-        .build()
-
     //载具部件物品原型
     @JvmStatic
     val PART_ITEM = MachineMax.REGISTER.item<MMPartItem>()
@@ -40,8 +30,8 @@ object MMItems {
 
     //载具保存物品原型
     @JvmStatic
-    val VEHICLE_RECORDER_ITEM = MachineMax.REGISTER.item<VehicleRecoderItem>()
-        .id("vehicle_recorder_item")
+    val EMPTY_BLUEPRINT = MachineMax.REGISTER.item<VehicleRecoderItem>()
+        .id("empty_vehicle_blueprint")
         .bound {
             VehicleRecoderItem(
                 Item.Properties().stacksTo(1)
@@ -51,15 +41,19 @@ object MMItems {
 
     //撬棍，用于拆卸载具部件，也可作为武器
     @JvmStatic
-    val CROSSBAR_ITEM = MachineMax.REGISTER.item<CrossbarItem>()
-        .id("crossbar_item")
-        .bound { CrossbarItem(Item.Properties().stacksTo(1).durability(1000)) }
+    val CROWBAR_ITEM = MachineMax.REGISTER.item<CrowbarItem>()
+        .id("crowbar")
+        .bound {
+            CrowbarItem(
+                Item.Properties().stacksTo(1).durability(1000)
+            )
+        }
         .build()
 
     //油漆喷罐，为部件切换贴图
     @JvmStatic
     val SPRAY_CAN_ITEM = MachineMax.REGISTER.item<SprayCanItem>()
-        .id("spray_can_item")
+        .id("spray_can")
         .bound { SprayCanItem(Item.Properties().stacksTo(64)) }
         .build()
 
@@ -76,7 +70,7 @@ object MMItems {
         //Register custom model item renderer here, items need to implement ICustomModelItem interface
         event.registerItem(
             CustomModelItemExtension(),
-            CROSSBAR_ITEM, SPRAY_CAN_ITEM, PART_ITEM
+            CROWBAR_ITEM, SPRAY_CAN_ITEM, PART_ITEM, EMPTY_BLUEPRINT
         )
     }
 

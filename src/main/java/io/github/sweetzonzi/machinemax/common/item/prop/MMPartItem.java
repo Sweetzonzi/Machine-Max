@@ -8,7 +8,7 @@ import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.renderer.ICustomModelItem;
+import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyInfoComponent;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
@@ -232,8 +232,10 @@ public class MMPartItem extends Item implements ICustomModelItem {
         return partType;
     }
 
-    private static ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, PartType partType, String variant, ItemDisplayContext context) {
+    public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
+        PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
+        String variant = getPartAssemblyInfo(itemStack, level).variant();
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
@@ -256,28 +258,6 @@ public class MMPartItem extends Item implements ICustomModelItem {
             itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
         }
         return animatable;
-    }
-
-    @Override
-    public boolean use2dModel(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        return true;
-    }
-
-    @Override
-    public ItemAnimatable getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context) {
-        try {
-            Map<ItemDisplayContext, ItemAnimatable> customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-            if (customModels == null) customModels = new HashMap<>();
-            ItemAnimatable animatable = customModels.get(context);
-            PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
-            String variant = getPartAssemblyInfo(itemStack, level).variant();
-            //为什么会出现itemStack不匹配的情况？
-            if (animatable == null || animatable.getItemStack() != itemStack || animatable.getAnimLevel() != level)
-                animatable = createItemAnimatable(itemStack, level, partType, variant, context);
-            return animatable;
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     @Override

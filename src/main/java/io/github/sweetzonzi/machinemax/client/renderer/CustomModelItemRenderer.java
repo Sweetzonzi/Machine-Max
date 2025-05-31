@@ -5,7 +5,7 @@ import cn.solarmoon.spark_core.animation.renderer.IGeoRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -14,6 +14,7 @@ import net.minecraft.util.Brightness;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
 
 import java.awt.*;
 import java.util.List;
@@ -35,7 +36,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             ItemAnimatable itemAnimatable = customModelItem.getRenderInstance(stack, Minecraft.getInstance().level, displayContext);
             if (itemAnimatable == null) return;
             poseStack.pushPose();
-            if (displayContext == ItemDisplayContext.GUI) poseStack.scale(-1, 1, 1);
+            if (displayContext == ItemDisplayContext.GUI) poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
             ModelRenderHelperKt.render(
                     itemAnimatable.getModel(),
                     itemAnimatable.getBones(),

@@ -1,9 +1,8 @@
 {
   "error.machine_max.use_part_item": "尝试放置%1$s时出现错误：%2$s",
-  "item.machine_max.crossbar_item": "撬棍",
-  "item.machine_max.spray_can_item": "喷漆罐",
-  "item.machine_max.test_car_spawner": "测试车辆生成器",
-  "item.machine_max.vehicle_recorder_item": "载具设计记录器",
+  "item.machine_max.crowbar": "撬棍",
+  "item.machine_max.empty_vehicle_blueprint": "空白载具蓝图",
+  "item.machine_max.spray_can": "喷漆罐",
   "itemGroup.machine_max.blueprint": "MachineMax: 自定义蓝图",
   "itemGroup.machine_max.main": "MachineMax: 部件与工具",
   "key.category.machine_max.assembly": "Machine Max:组装",
@@ -26,8 +25,11 @@
   "key.machine_max.ground.rightward": "右转",
   "key.machine_max.ground.toggle_hand_brake": "手刹 (切换)",
   "key.machine_max.ground.up_shift": "升档",
+  "message.machine_max.blueprint_error": "保存蓝图失败:%1$s",
+  "message.machine_max.blueprint_pass": "未选中任何载具，取消保存蓝图",
+  "message.machine_max.blueprint_saved": "蓝图已保存至%1$s",
   "message.machine_max.leaving_vehicle": "长按[%1$s]键%2$s/0.50秒以离开载具",
   "message.machine_max.watch_interact_box_info": "按[%1$s]键与%2$s互动",
-  "tooltip.machinemax.crossbar.interact": "互动以拆除：",
+  "tooltip.machinemax.crowbar.interact": "互动以拆除：",
   "tooltip.machinemax.spray_can.interact": "互动以喷涂："
 }

@@ -1,8 +1,7 @@
 package io.github.sweetzonzi.machinemax.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.sweetzonzi.machinemax.client.renderer.ICustomModelItem;
-import net.minecraft.client.Minecraft;
+import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
@@ -12,7 +11,6 @@ import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ItemRenderer.class)

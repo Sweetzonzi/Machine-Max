@@ -1,22 +1,32 @@
 package io.github.sweetzonzi.machinemax.common.item.prop;
 
+import cn.solarmoon.spark_core.animation.ItemAnimatable;
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.item.IPartInteractableItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
+import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
 
-public class SprayCanItem extends Item implements IPartInteractableItem {
+import java.util.HashMap;
+
+public class SprayCanItem extends Item implements IPartInteractableItem, ICustomModelItem {
     public SprayCanItem(Properties properties) {
         super(properties);
     }
@@ -31,7 +41,7 @@ public class SprayCanItem extends Item implements IPartInteractableItem {
                 part.switchTexture(part.textureIndex + 1);
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));
             } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
-        }else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
+        } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
     }
 
     @Override
@@ -63,5 +73,49 @@ public class SprayCanItem extends Item implements IPartInteractableItem {
     public void stopWatchingPart(@NotNull Player player) {
         if (player.level().isClientSide)
             Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
+    }
+
+    public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
+        var animatable = new ItemAnimatable(itemStack, level);
+        HashMap<ItemDisplayContext, ItemAnimatable> customModels;
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+        else customModels = new HashMap<>();
+        animatable.setModelIndex(
+                new ModelIndex(
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/spray_can.geo"),
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/spray_can.png"))
+        );
+        if (customModels != null) {
+            customModels.put(context, animatable);
+            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
+        }
+        return animatable;
+    }
+
+    @Override
+    public Vector3f getRenderOffset(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext.firstPerson())
+            return new Vector3f(0, 0, 0);
+        else return new Vector3f(0.05f, -0.1f, 0);
+    }
+
+    @Override
+    public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext.firstPerson()
+                ||displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+                || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+            return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
+        return new Vector3f(0, 45, 30).mul((float) (Math.PI/180));
+    }
+
+    @Override
+    public Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+                || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND
+                || displayContext == ItemDisplayContext.GROUND
+                || displayContext == ItemDisplayContext.FIXED)
+            return new Vector3f(0.5f, 0.5f, 0.5f);
+        return ICustomModelItem.super.getRenderScale(itemStack, level, displayContext);
     }
 }

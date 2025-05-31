@@ -38,8 +38,6 @@ public class TransmissionSubsystem extends AbstractSubsystem {
             //视情况更新自动差速锁状态 Update differential lock status automatically
             diffLock = false;
             for (float speed : powerReceivers.values()) {
-                if (getPart().level.isClientSide && physicsTickCount % 60 == 0)
-                    MachineMax.LOGGER.debug("speed delta: {}%", (avgFeedBackSpeed + speed) / avgFeedBackSpeed * 100);
                 if (Math.abs((avgFeedBackSpeed + speed) / avgFeedBackSpeed) > attr.autoDiffLockThreshold / 100f) {
                     diffLock = true;
                     break;

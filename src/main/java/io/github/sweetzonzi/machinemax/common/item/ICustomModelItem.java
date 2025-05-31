@@ -1,11 +1,14 @@
-package io.github.sweetzonzi.machinemax.client.renderer;
+package io.github.sweetzonzi.machinemax.common.item;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
-import net.minecraft.client.resources.model.ModelResourceLocation;
+import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.joml.Vector3f;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public interface ICustomModelItem {
     /**
@@ -16,7 +19,21 @@ public interface ICustomModelItem {
      * @param context   <p>此物品被渲染的场景，如GUI、凋落物、第一人称视角等</p><p>The scene where this item is rendered, such as GUI, falling blocks, first-person view</p>
      * @return 动画体对象 ItemAnimatable instance
      */
-    ItemAnimatable getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context);
+    default ItemAnimatable getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context){
+        try {
+            Map<ItemDisplayContext, ItemAnimatable> customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+            if (customModels == null) customModels = new HashMap<>();
+            ItemAnimatable animatable = customModels.get(context);
+            //为什么会出现itemStack不匹配的情况？
+            if (animatable == null || animatable.getItemStack() != itemStack || animatable.getAnimLevel() != level)
+                animatable = createItemAnimatable(itemStack, level, context);
+            return animatable;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context);
 
     /**
      * <p>是否在特定情况下使用2D模型，例如物品栏、掉落物等场景</p>
