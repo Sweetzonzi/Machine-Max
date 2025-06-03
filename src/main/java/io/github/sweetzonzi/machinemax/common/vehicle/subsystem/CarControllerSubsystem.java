@@ -95,13 +95,13 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         super.onVehicleStructureChanged();
         clearCallbackChannel();
         for (String signalKey : attr.engineControlOutputTargets.keySet()) {
-            sendSignalToAllTargets(signalKey, new EmptySignal(), true);
+            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(),  false);
         }
         for (String signalKey : attr.wheelControlOutputTargets.keySet()) {
-            sendSignalToAllTargets(signalKey, new EmptySignal(), true);
+            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(),  false);
         }
         for (String signalKey : attr.gearboxControlOutputTargets.keySet()) {
-            sendSignalToAllTargets(signalKey, new EmptySignal(), true);
+            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(),  false);
         }
     }
 

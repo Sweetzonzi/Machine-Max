@@ -9,10 +9,13 @@
     "machine_max:example_pack/texture/ae86_3.png",
     "machine_max:example_pack/texture/ae86_4.png"
   ],
+  "icon": "machine_max:example_pack/icon/ae86_hull_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
   "basic_durability": 150.0,//部件基础生命值
   "sub_parts": {//零件(子部件)列表
     "ae86_hull": {//零件(子部件)名称
-      "mass": 200.0,//零件质量(kg)
+      "mass": 300.0,//零件质量(kg)
+      "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
+      "collision_height": 1.0,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
       "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
       "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
         "CollisionShape": {//值:碰撞形状属性

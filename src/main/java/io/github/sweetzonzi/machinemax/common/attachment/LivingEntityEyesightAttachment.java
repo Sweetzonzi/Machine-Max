@@ -81,7 +81,7 @@ public class LivingEntityEyesightAttachment {
                                 if (body.getOwner() instanceof SubPart.InteractBoxes interactBoxes) {
                                     int interactBoxIndex = result.triangleIndex();
                                     InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
-                                    if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE)
+                                    if (interactBox != null && interactBox.interactMode == InteractBox.InteractMode.ACCURATE)
                                         eyesight.accurateInteractBoxes.add(interactBox);
                                 }
                             }
@@ -95,11 +95,11 @@ public class LivingEntityEyesightAttachment {
                 eyesight.targetsCache = new HashMap<>(eyesight.targets);
                 return null;
             });
-            if (entity instanceof Player player && player.isLocalPlayer()){
+            if (entity instanceof Player player && player.isLocalPlayer()) {
                 InteractBox interactBox = eyesight.getAccurateInteractBox();
                 if (interactBox == null) interactBox = eyesight.getFastInteractBox();
                 if (interactBox != null) {
-                    player.displayClientMessage(Component.translatable("message.machine_max.watch_interact_box_info", KeyBinding.generalInteractKey.getTranslatedKeyMessage(),interactBox.name), true);
+                    player.displayClientMessage(Component.translatable("message.machine_max.watch_interact_box_info", KeyBinding.generalInteractKey.getTranslatedKeyMessage(), interactBox.name), true);
                 }
             }
         }

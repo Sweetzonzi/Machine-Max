@@ -13,6 +13,7 @@ import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.math.Transform;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -29,6 +30,8 @@ public class PartProjection implements IAnimatable<PartProjection> {
     public ModelIndex modelIndex;
     private Transform oldTransform;
     private Transform transform;
+    @Setter
+    private BoneGroup bones;
     public Color color = new Color(255, 255, 255, 64);
 
     public PartProjection(PartType partType, Level level, String variant, Transform transform) {
@@ -63,9 +66,8 @@ public class PartProjection implements IAnimatable<PartProjection> {
         return this;
     }
 
-    @Nullable
     @Override
-    public Level getAnimLevel() {
+    public @NotNull Level getAnimLevel() {
         return this.level;
     }
 
@@ -84,6 +86,12 @@ public class PartProjection implements IAnimatable<PartProjection> {
     @Override
     public void setModelIndex(@NotNull ModelIndex modelIndex) {
         this.modelIndex = modelIndex;
+        this.setBones(new BoneGroup(this));
+    }
+
+    public @NotNull BoneGroup getBones() {
+        if (this.bones == null) bones = new BoneGroup(this);
+        return this.bones;
     }
 
     @NotNull
@@ -102,12 +110,6 @@ public class PartProjection implements IAnimatable<PartProjection> {
     @Override
     public IForeignVariableStorage getForeignStorage() {
         return new VariableStorage();
-    }
-
-    @NotNull
-    @Override
-    public BoneGroup getBones() {
-        return new BoneGroup(this);
     }
 
     @NotNull

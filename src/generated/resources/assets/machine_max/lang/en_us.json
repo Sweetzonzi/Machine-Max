@@ -1,8 +1,8 @@
 {
-  "item.machine_max.crossbar_item": "Crossbar",
-  "item.machine_max.spray_can_item": "Spray Can",
-  "item.machine_max.test_car_spawner": "Test Car Spawner",
-  "item.machine_max.vehicle_recorder_item": "Vehicle Recorder",
+  "error.machine_max.use_part_item": "An error occurred while trying to deploy %1$s：%2$s",
+  "item.machine_max.crowbar": "Crowbar",
+  "item.machine_max.empty_vehicle_blueprint": "Empty Vehicle Blueprint",
+  "item.machine_max.spray_can": "Spray Can",
   "itemGroup.machine_max.blueprint": "MachineMax: Custom BluePrints",
   "itemGroup.machine_max.main": "MachineMax: Part and Tools",
   "key.category.machine_max.assembly": "Machine Max:Assembly",
@@ -25,8 +25,11 @@
   "key.machine_max.ground.rightward": "Rightward",
   "key.machine_max.ground.toggle_hand_brake": "Hand Brake (Toggle)",
   "key.machine_max.ground.up_shift": "Shift Up",
+  "message.machine_max.blueprint_error": "Failed to save blueprint: %1$s",
+  "message.machine_max.blueprint_pass": "No vehicle selected, skipping blueprint save",
+  "message.machine_max.blueprint_saved": "Blueprint has been saved to %1$s",
   "message.machine_max.leaving_vehicle": "Hold [%1$s] %2$s/0.50s to leave the vehicle.",
   "message.machine_max.watch_interact_box_info": "Press [%1$s] to interact with %2$s",
-  "tooltip.machinemax.crossbar.interact": "Interact to disassemble:",
+  "tooltip.machinemax.crowbar.interact": "Interact to disassemble:",
   "tooltip.machinemax.spray_can.interact": "Interact to paint:"
 }

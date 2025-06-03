@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.common.item.prop;
 
+import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
@@ -7,6 +8,7 @@ import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyInfoComponent;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
@@ -34,6 +36,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ClipContext;
@@ -43,9 +46,11 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class MMPartItem extends Item {
+public class MMPartItem extends Item implements ICustomModelItem {
     public MMPartItem(Properties properties) {
         super(properties);
         properties.stacksTo(1);
@@ -63,35 +68,40 @@ public class MMPartItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if (!level.isClientSide()) {
             ItemStack stack = player.getItemInHand(usedHand);
-            PartType partType = getPartType(stack, level);//获取物品保存的部件类型
-            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
-            String variant = info.variant();//获取物品保存的部件变体
-            String connectorName = info.connector();//获取物品保存的部件接口
-            String connectorType = info.connectorType();//获取物品保存的部件接口类型
-            var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            AbstractConnector targetConnector = eyesight.getConnector();
-            if (targetConnector != null) {//若有可用的接口
-                if (targetConnector.conditionCheck(variant)) {//检查变体条件
-                    //TODO:检查connectorType，骑乘姿态拆卸零件后这一内容会变null
-                    if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
-                        VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
-                        Part part = new Part(partType, variant, level);
-                        targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
-                        vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
+            try {
+                PartType partType = getPartType(stack, level);//获取物品保存的部件类型
+                PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
+                String variant = info.variant();//获取物品保存的部件变体
+                String connectorName = info.connector();//获取物品保存的部件接口
+                String connectorType = info.connectorType();//获取物品保存的部件接口类型
+                var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
+                AbstractConnector targetConnector = eyesight.getConnector();
+                if (targetConnector != null) {//若有可用的接口
+                    if (targetConnector.conditionCheck(variant)) {//检查变体条件
+                        //TODO:检查connectorType，骑乘姿态拆卸零件后这一内容会变null
+                        if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
+                            VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
+                            Part part = new Part(partType, variant, level);
+                            targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
+                            vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
+                        }
                     }
+                } else {
+                    Part part = new Part(partType, variant, level);
+                    part.setTransform(
+                            new Transform(
+                                    PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                            player.getEyePosition(),
+                                            player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                                    Quaternion.IDENTITY
+                            )
+                    );
+                    VehicleManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
                 }
-            } else {
-                Part part = new Part(partType, variant, level);
-                part.setTransform(
-                        new Transform(
-                                PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                                        player.getEyePosition(),
-                                        player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
-                                Quaternion.IDENTITY
-                        )
-                );
-                VehicleManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
+            } catch (Exception e) {
+                MachineMax.LOGGER.error("Error while using part item: {}", stack.getDisplayName(), e);
+                player.sendSystemMessage(Component.translatable("error.machinemax.use_part_item", stack.getDisplayName(), e));
             }
         }
         return super.use(level, player, usedHand);
@@ -191,8 +201,12 @@ public class MMPartItem extends Item {
             String connectorName = iterators.getNextConnector();
             ConnectorAttr connectorAttr = connectors.get(connectorName);
             ModelIndex modelIndex = new ModelIndex(partType.variants.get(variant), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
+            if (modelIndex.getModel().getBones().isEmpty())
+                throw new IllegalStateException("未找到部件" + partType.name + "的" + variant + "变体的模型:" + modelIndex.getModelPath());
             var locators = modelIndex.getModel().getLocators();
             OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
+            if (partConnectorLocator == null)
+                throw new NullPointerException("部件" + partType.name + "的" + variant + "变体缺少" + connectorAttr.locatorName() + "定位器");
             Vector3f offset = partConnectorLocator.getOffset().toVector3f();
             Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
             Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
@@ -218,4 +232,37 @@ public class MMPartItem extends Item {
         return partType;
     }
 
+    public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
+        var animatable = new ItemAnimatable(itemStack, level);
+        PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
+        String variant = getPartAssemblyInfo(itemStack, level).variant();
+        HashMap<ItemDisplayContext, ItemAnimatable> customModels;
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+        else customModels = new HashMap<>();
+        if (((ICustomModelItem) itemStack.getItem()).use2dModel(itemStack, level, context) && context == ItemDisplayContext.GUI) {
+            animatable.setModelIndex(
+                    new ModelIndex(
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
+                            partType.icon)
+            );
+        } else {
+            animatable.setModelIndex(
+                    new ModelIndex(
+                            partType.variants.get(variant),
+                            partType.textures.getFirst())
+            );
+        }
+        if (customModels != null) {
+            customModels.put(context, animatable);
+            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
+        }
+        return animatable;
+    }
+
+    @Override
+    public Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext == ItemDisplayContext.GUI) return new Vector3f(1);
+        else return new Vector3f(0.3f);
+    }
 }

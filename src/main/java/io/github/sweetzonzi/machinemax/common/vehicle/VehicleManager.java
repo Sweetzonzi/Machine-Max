@@ -74,11 +74,16 @@ public class VehicleManager {
         vehicle.onRemoveFromLevel();
     }
 
-    public static void removeAllVehiclesInLevel(Level level) {
-        // 获取该Level中的所有载具
+    public static int removeAllVehiclesInLevel(Level level) {
+        // 获取该Level中的所有物体
         Set<VehicleCore> vehicles = levelVehicles.getOrDefault(level, Set.of());
-        // 遍历并移除所有载具
-        for (VehicleCore vehicle : new HashSet<>(vehicles)) removeVehicle(vehicle);
+        // 遍历并移除所有物体
+        int i = 0;
+        for (VehicleCore vehicle : new HashSet<>(vehicles)) {
+            removeVehicle(vehicle);
+            i++;
+        }
+        return i;
     }
 
     @SubscribeEvent
@@ -183,6 +188,8 @@ public class VehicleManager {
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             physicsLevel.getWorld().useDeterministicDispatch(true);//启用确定计算顺序以保证客户端服务端一致性
             physicsLevel.getWorld().useScr(true);//补偿弹性系数以改善小物体的碰撞精度
+            physicsLevel.getWorld().getSolverInfo().setGlobalCfm(1e-5f);
+            physicsLevel.getWorld().getSolverInfo().setNumIterations(25);
 //            Plane plane = new Plane(Vector3f.UNIT_Y, -60);
 //            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
 //            PhysicsRigidBody body = new PhysicsRigidBody("ground", null, shape, PhysicsBody.massForStatic);
@@ -202,7 +209,6 @@ public class VehicleManager {
         if (event.getLevel().isClientSide()) {
             MMVisualEffects.getPART_ASSEMBLY().attachPoints.clear();
             MMVisualEffects.getPART_ASSEMBLY().partToAssembly = null;
-            //TODO:检查物理世界清理情况
         }
     }
 

@@ -16,7 +16,7 @@ import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
 
 @Mod(MOD_ID)
 public class MachineMax {
-    //TODO:物品栏模型渲染
+    //TODO:限制带阻尼关节安装部件时的质量差距/警告
     //TODO:动画支持
     //TODO:locatorName->subPart->世界坐标
     //TODO:交互系统的反馈信号
@@ -26,7 +26,6 @@ public class MachineMax {
     //TODO:结构完整性integrity，衡量部件固定的牢靠程度
     //TODO:自定义HUD
     //TODO:放置载具或部件前检查空间是否足够
-    //TODO:传动系统修改：差速器(等扭矩)与差速锁(强制统一转速)
     //TODO:伤害系统
     //TODO:带声速和多普勒效应的音效系统
     //TODO:投射物

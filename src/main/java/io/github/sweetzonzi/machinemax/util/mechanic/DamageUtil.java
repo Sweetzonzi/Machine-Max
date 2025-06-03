@@ -1,4 +1,11 @@
 package io.github.sweetzonzi.machinemax.util.mechanic;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+
 /**
  * 此类中集中收纳了本模组与伤害有关的机理公式，方便管理与调用
  * @author 甜粽子
@@ -21,5 +28,23 @@ public class DamageUtil {
      */
     public static double BulletDamage2Health(float pDamage){
         return pDamage;
+    }
+
+    public static float getMaxBlockDurability(Level level, BlockState blockState, BlockPos blockPos){
+        float blockDurability;
+        //软质吸能地面方块更不易被破坏，特殊处理沙土雪等软质地面方块的耐久度
+        if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SNOW) || blockState.is(BlockTags.SAND)) {
+            blockDurability = 200 * (0.1f + blockState.getDestroySpeed(level, blockPos));
+        } else if (blockState.is(BlockTags.WOOL)) {//吸能材料超高耐久度
+            blockDurability = 200 * (0.1f + blockState.getDestroySpeed(level, blockPos));
+        } else if (blockState.isStickyBlock()) {
+            blockDurability = 1000f;
+        } else {//一般方块
+            blockDurability = 30 * (0.1f + blockState.getDestroySpeed(level, blockPos));
+        }
+        AABB aabb = blockState.getCollisionShape(level, blockPos).bounds();
+        //根据方块体积调整耐久度
+        blockDurability *= (float) (0.25f + 0.75f * aabb.getXsize() * aabb.getYsize() * aabb.getZsize());
+        return blockDurability;
     }
 }

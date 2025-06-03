@@ -27,9 +27,11 @@ import io.github.sweetzonzi.machinemax.mixin_interface.IProjectileMixin;
 import io.github.sweetzonzi.machinemax.util.MMMath;
 import io.github.sweetzonzi.machinemax.util.ShapeHelper;
 import io.github.sweetzonzi.machinemax.util.mechanic.ArmorUtil;
+import io.github.sweetzonzi.machinemax.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machinemax.util.mechanic.DynamicUtil;
 import io.github.sweetzonzi.machinemax.util.mechanic.MassUtil;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
@@ -86,10 +88,10 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         this.body.setSpinningFriction(attr.rollingFriction);//旋转摩擦系数（车轮转向）
         this.body.setRestitution(attr.getRestitution());//恢复系数（碰撞能量损耗）
         this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_PART);
-        if (attr.blockCollision.equals("true") || attr.blockCollision.equals("True")) {
+        if (attr.blockCollision == SubPartAttr.BlockCollisionType.TRUE) {
             GROUND_COLLISION_ONLY = false;
             this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
-        } else if (attr.blockCollision.equals("ground") || attr.blockCollision.equals("Ground")) {
+        } else if (attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
             GROUND_COLLISION_ONLY = true;
             this.body.addCollideWithGroup(VehicleManager.COLLISION_GROUP_BLOCK);
         } else {
@@ -115,7 +117,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             connector.destroy();
         }
         if (body.isInWorld()) this.removeAllBodies();
-        if (interactBoxes!=null) {
+        if (interactBoxes != null) {
             for (InteractBox interactBox : interactBoxes.values()) interactBox.destroy();
             interactBoxes.clear();
             getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
@@ -195,7 +197,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         //与方块碰撞时
         if (other.getCollisionGroup() == VehicleManager.COLLISION_GROUP_BLOCK) {
             if (other.userIndex() <= 0) {
-                ManifoldPoints.setAppliedImpulse(manifoldPointId, 0);
+                other.setContactResponse(false);
                 return;//忽略即将过期方块的碰撞
             }
             BlockState blockState = (BlockState) other.getUserObject();
@@ -212,7 +214,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             }
             //根据碰撞速度、碰撞角、方块硬度和爆炸抗性，摧毁碰撞的方块，同时对自身造成伤害
             //TODO:配置文件开关冲撞可破坏方块
-            if (blockState.getDestroySpeed(part.level, blockPos) >= 0) {//碰撞的方块可破坏时
+            if (attr.blockDamageFactor > 0 && blockState.getDestroySpeed(part.level, blockPos) >= 0) {//碰撞的方块可破坏时
                 //计算碰撞法线方向上的速度(考虑冲量影响)
                 float blockArmor = ArmorUtil.getBlockArmor(part.level, blockState, blockPos);
                 float subPartArmor = part.type.thickness.get(childShapeId);
@@ -226,27 +228,22 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 float restitution = Math.clamp(body.getRestitution() * other.getRestitution(), 0f, 1f);//TODO:考虑二者护甲差距调整此系数
                 ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
                 double contactEnergy = 0.5 * partMass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
-                float blockDurability;
-                //软质吸能地面方块更不易被破坏，特殊处理沙土雪等软质地面方块的耐久度
-                if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SNOW) || blockState.is(BlockTags.SAND)) {
-                    blockDurability = 200 * (0.1f + blockState.getDestroySpeed(part.level, blockPos));
-                } else if (blockState.is(BlockTags.WOOL)) {//吸能材料超高耐久度
-                    blockDurability = 200 * (0.1f + blockState.getDestroySpeed(part.level, blockPos));
-                } else if (blockState.isStickyBlock()) {
-                    blockDurability = 1000f;
-                } else {//一般方块
-                    blockDurability = 30 * (0.1f + blockState.getDestroySpeed(part.level, blockPos));
+                //TODO:根据硬度差距调整能量释放速度
+                double blockDurability = DamageUtil.getMaxBlockDurability(level, blockState, blockPos);
+                //方块有支撑时将强化其耐久度
+                Vec3i supportBlockPos = MMMath.getClosestAxisAlignedVector(SparkMathKt.toVec3(normal.mult(-1)));
+                PhysicsRigidBody supportBlockBody = getPhysicsLevel().getTerrainBlockBodies().get(blockPos.offset(supportBlockPos));
+                if (supportBlockBody != null) {
+                    blockDurability += 0.5 * DamageUtil.getMaxBlockDurability(level, (BlockState) supportBlockBody.getUserObject(), supportBlockBody.blockPos);
                 }
-                //根据方块体积调整耐久度
-                blockDurability *= 0.25f + 0.75f * other.cachedBoundingBox.getXExtent()*other.cachedBoundingBox.getYExtent()*other.cachedBoundingBox.getZExtent();
                 double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);//方块吸收的碰撞能量
                 double partEnergy = contactEnergy - blockEnergy;//部件吸收的碰撞能量
-                if (blockEnergy > 250 * blockDurability) {//能量能够一次摧毁则摧毁,计算额外冲量使部件减速
+                if (attr.blockDamageFactor * blockEnergy > 250 * blockDurability) {//能量能够一次摧毁则摧毁,计算额外冲量使部件减速
                     //摧毁方块
                     other.setContactResponse(false);
                     other.setUserIndex(0);
                     //被摧毁的方块掉落为物品的概率，方块吸收的碰撞能量恰好与耐久度相同时必定掉落，掉落率随能量增加而递减
-                    double blockDropRate = Math.exp(1 - (blockEnergy / (250 * blockDurability)));
+                    double blockDropRate = Math.exp(1 - (attr.blockDamageFactor * blockEnergy / (250 * blockDurability)));
                     if (!level.isClientSide) {
                         ((TaskSubmitOffice) level).submitDeduplicatedTask(other.blockPos.toShortString(), PPhase.PRE, () -> {
                             level.destroyBlock(other.blockPos, Math.random() < blockDropRate);
@@ -258,6 +255,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     if (actualPartEnergy < 0 || Double.isNaN(actualPartEnergy)) actualPartEnergy = 0f;
                     double finalActualPartEnergy = actualPartEnergy;
                     //部件减速
+                    ManifoldPoints.setDistance1(manifoldPointId, 1f);//阻止接触约束计算
                     ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);//重置默认冲量，采用计算结果
                     Vector3f vel = body.getLinearVelocity(null);
                     Vector3f aVel = body.getAngularVelocity(null);
@@ -265,7 +263,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     Vector3f offset = worldContactPoint.subtract(body.getPhysicsLocation(null));
                     Matrix3f inertia = body.getInverseInertiaWorld(null);
                     body.setLinearVelocity(vel.add(impulse.mult(1f / body.getMass())));
-                    Vector3f deltaOmega = inertia.mult(offset.cross(impulse),null);
+                    Vector3f deltaOmega = inertia.mult(offset.cross(impulse), null);
                     body.setAngularVelocity(aVel.add(deltaOmega));
                     //TODO:对部件造成伤害
 //                    part.onHurt()
@@ -554,9 +552,10 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
                 var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
                 var ang = Math.atan2(height, 1);
-                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 2f);
+                float mass = body.getMass() + 0.015f * (part.vehicle.totalMass - body.getMass());
+                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 2f) - vel.y;
                 float horizontalVelScale = (float) Math.cos(ang);
-                body.setLinearVelocity(new Vector3f(horizontalVelScale * vel.x, (float) (0.3 * vel.y + extraVel), horizontalVelScale * vel.z));
+                body.applyCentralImpulse(new Vector3f((horizontalVelScale - 1) * vel.x, extraVel, (horizontalVelScale - 1) * vel.z).mult(mass));
             }
         }
     }

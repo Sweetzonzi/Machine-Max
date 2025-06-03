@@ -26,6 +26,7 @@ public class PartType {
     public final String name;//部件名称(兼做注册id)
     public final Map<String, ResourceLocation> variants;//部件变体(引擎，轮胎，AE86，之类)
     public final List<ResourceLocation> textures;
+    public final ResourceLocation icon;
     public final ResourceLocation animation;
     public final float basicDurability;//部件基础耐久度
     //       public final List<TagKey<Part>> tags,//部件标签(引擎，轮胎，AE86，之类)
@@ -61,6 +62,8 @@ public class PartType {
                     Codec.STRING.fieldOf("name").forGetter(PartType::getName),
                     VARIANT_MAP_CODEC.fieldOf("variants").forGetter(PartType::getVariants),
                     ResourceLocation.CODEC.listOf().fieldOf("textures").forGetter(PartType::getTextures),
+                    ResourceLocation.CODEC.optionalFieldOf("icon",
+                            ResourceLocation.withDefaultNamespace("missingno")).forGetter(PartType::getIcon),
                     ResourceLocation.CODEC.optionalFieldOf("animation",
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty")).forGetter(PartType::getAnimation),
                     Codec.FLOAT.fieldOf("basic_durability").forGetter(PartType::getBasicDurability),
@@ -75,11 +78,12 @@ public class PartType {
             String name = buffer.readUtf();
             Map<String, ResourceLocation> variants = buffer.readJsonWithCodec(VARIANT_MAP_CODEC);
             List<ResourceLocation> textures = buffer.readList(FriendlyByteBuf::readResourceLocation);
+            ResourceLocation icon = buffer.readResourceLocation();
             ResourceLocation animation = buffer.readResourceLocation();
             float basicDurability = buffer.readFloat();
             Map<String, AbstractSubsystemAttr> subsystems = buffer.readJsonWithCodec(AbstractSubsystemAttr.MAP_CODEC);
             Map<String, SubPartAttr> subParts = buffer.readJsonWithCodec(SubPartAttr.MAP_CODEC);
-            return new PartType(name, variants, textures, animation, basicDurability, subsystems, subParts);
+            return new PartType(name, variants, textures, icon, animation, basicDurability, subsystems, subParts);
         }
 
         @Override
@@ -87,6 +91,7 @@ public class PartType {
             buffer.writeUtf(value.name);
             buffer.writeJsonWithCodec(VARIANT_MAP_CODEC, value.variants);
             buffer.writeCollection(value.textures, FriendlyByteBuf::writeResourceLocation);
+            buffer.writeResourceLocation(value.icon);
             buffer.writeResourceLocation(value.animation);
             buffer.writeFloat(value.basicDurability);
             buffer.writeJsonWithCodec(AbstractSubsystemAttr.MAP_CODEC, value.subsystems);
@@ -101,6 +106,7 @@ public class PartType {
             String name,
             Map<String, ResourceLocation> variants,
             List<ResourceLocation> textures,
+            ResourceLocation icon,
             ResourceLocation animation,
             float basicDurability,
 //        List<TagKey<Part>> tags,//部件标签(引擎，轮胎，AE86，之类)
@@ -110,6 +116,7 @@ public class PartType {
         this.name = name;
         this.variants = variants;
         this.textures = textures;
+        this.icon = icon;
         this.animation = animation;
         this.basicDurability = basicDurability;
         this.subsystems = subsystems;

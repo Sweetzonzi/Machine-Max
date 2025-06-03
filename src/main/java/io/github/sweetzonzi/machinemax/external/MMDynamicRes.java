@@ -86,6 +86,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("content")));
             packUp(packName, Exist(root.resolve("lang")));
             packUp(packName, Exist(root.resolve("texture")));
+            packUp(packName, Exist(root.resolve("icon")));
             packUp(packName, Exist(root.resolve("font")));
             packUp(packName, Exist(root.resolve("blueprint")));
         }
@@ -137,6 +138,7 @@ public class MMDynamicRes {
         Path blueprint = Exist(examplePack.resolve("blueprint"));
         Path lang = Exist(examplePack.resolve("lang"));
         Path texture = Exist(examplePack.resolve("texture"));
+        Path icon = Exist(examplePack.resolve("icon"));
         Path content = Exist(examplePack.resolve("content"));
         Path font = Exist(examplePack.resolve("font"));
         Path color = Exist(examplePack.resolve("color"));
@@ -176,6 +178,13 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_2.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_3.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_4.png", texture.resolve("ae86_4.png"), overwrite);
+
+        //自带测试图标
+        copyResourceToFile("/example_pack/icon/ae86_back_seat_icon.png", icon.resolve("ae86_back_seat_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/ae86_seat_icon.png", icon.resolve("ae86_seat_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/ae86_chassis_all_terrain_icon.png", icon.resolve("ae86_chassis_all_terrain_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/ae86_wheel_all_terrain_icon.png", icon.resolve("ae86_wheel_all_terrain_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/ae86_hull_icon.png", icon.resolve("ae86_hull_icon.png"), overwrite);
 
         //自定义文本文件
         copyResourceToFile("/example_pack/content/test.html", content.resolve("test.html"), overwrite);

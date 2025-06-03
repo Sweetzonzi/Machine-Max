@@ -12,6 +12,7 @@ import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.joints.motors.MotorParam;
 import com.jme3.bullet.objects.PhysicsBody;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -165,6 +166,17 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
             JointAttr jointAttr = entry.getValue();//获取轴属性
             if (this instanceof SpecialConnector) {
                 if (jointAttr != null) {
+                    float m_eff;//有效质量估算值，用于限制关节刚度和阻尼，避免数值不稳定
+                    float safe = 0.8f;//安全系数
+                    if (i <= 2)//平动轴以两物体质量计算等效质量
+                        m_eff = computeEffectiveMass(joint.getBodyA().getMass(), joint.getBodyB().getMass());
+                    else {//转动轴以两物体转动惯量计算等效质量
+                        Vector3f axis = joint.getAxis(i - 3, null);
+                        m_eff = computeEffectiveInertia(
+                                computeMomentOfInertia(joint.getBodyA(), axis),
+                                computeMomentOfInertia(joint.getBodyB(), axis)
+                        );
+                    }
                     if (jointAttr.lowerLimit() != null)
                         joint.set(MotorParam.LowerLimit, i, (float) (jointAttr.lowerLimit() * (i <= 2 ? 1 : Math.PI / 180)));
                     if (jointAttr.upperLimit() != null)
@@ -172,11 +184,27 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                     if (jointAttr.equilibrium() != null)
                         joint.set(MotorParam.Equilibrium, i, (float) (jointAttr.equilibrium() * (i <= 2 ? 1 : Math.PI / 180)));
                     if (jointAttr.stiffness() != null) {
-                        joint.set(MotorParam.Stiffness, i, (float) (jointAttr.stiffness() * (i <= 2 ? 1 : Math.PI / 180)));
+                        float maxStiffness = 4 * m_eff / (1f / 60f / 60f);  // 稳定性条件: k_max = 4·m_eff/Δt²
+                        if (jointAttr.stiffness() > maxStiffness)
+                            MachineMax.LOGGER.warn("接口{}(部件{})与接口{}(部件{})的{}轴的刚度值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.stiffness(), maxStiffness);
+                        joint.set(MotorParam.Stiffness, i, Math.min(jointAttr.stiffness(), maxStiffness));
                         joint.enableSpring(i, true);
                     }
                     if (jointAttr.damping() != null) {
-                        joint.set(MotorParam.Damping, i, (float) (jointAttr.damping() * (i <= 2 ? 1 : Math.PI / 180)));
+                        //限制最大阻尼以确保稳定性
+                        float maxDamping;
+                        float stiffness = joint.get(MotorParam.Stiffness, i);
+                        if (stiffness > 0)//最大阻尼估算值
+                            maxDamping = safe * Math.min((float) (2 * Math.sqrt(stiffness * m_eff)), safe * 2 * m_eff * 60f);
+                        else maxDamping = safe * 2 * m_eff * 60f;//纯阻尼系统的处理，采用显式欧拉稳定性条件
+                        if (jointAttr.damping() > maxDamping) {
+                            joint.set(MotorParam.MotorErp, i, 0.5f);
+                            joint.set(MotorParam.StopErp, i, 0.2f);
+                            MachineMax.LOGGER.warn("接口{}(部件{})与接口{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.damping(), maxDamping);
+                        }
+                        joint.set(MotorParam.Damping, i, Math.min(jointAttr.damping(), maxDamping));
+                        joint.set(MotorParam.MotorCfm, i, 1e-4f);
+                        joint.set(MotorParam.StopCfm, i, 1e-4f);
                         joint.enableSpring(i, true);
                     }
                 }
@@ -351,6 +379,49 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                     }
             );
         } else body = null;
+
     }
 
+    // 计算物体绕特定轴的转动惯量
+    private static float computeMomentOfInertia(PhysicsRigidBody body, Vector3f axisWorld) {
+
+        // 静态物体处理
+        if (body.getMass() == 0f) {
+            return Float.MAX_VALUE; // 静态物体视为无穷大惯量
+        }
+
+        // 获取逆转动惯量张量（世界坐标系）
+        Matrix3f invInertiaWorld = new Matrix3f();
+        body.getInverseInertiaWorld(invInertiaWorld);
+
+        // 计算轴方向上的逆转动惯量: (axis^T * invI * axis)
+        Vector3f tmp = new Vector3f();
+        invInertiaWorld.mult(axisWorld, tmp);
+        float invI_axis = axisWorld.dot(tmp);
+
+        // 避免除零错误
+        if (invI_axis <= 1e-6f) return Float.MAX_VALUE;
+
+        return 1f / invI_axis; // 实际转动惯量 = 1 / (axis^T * invI * axis)
+    }
+
+    // 计算等效转动惯量
+    private static float computeEffectiveInertia(float I1, float I2) {
+        // 处理静态物体（无穷大惯量）
+        if (I1 == Float.MAX_VALUE || I1 <= 0) return I2;
+        if (I2 == Float.MAX_VALUE || I2 <= 0) return I1;
+
+        // 标准公式: I_eff = (I1 * I2) / (I1 + I2)
+        return (I1 * I2) / (I1 + I2);
+    }
+
+    // 计算等效质量
+    private static float computeEffectiveMass(float m1, float m2) {
+        // 处理静态物体（无穷大质量）
+        if (m1 == Float.MAX_VALUE || m1 <= 0) return m2;
+        if (m2 == Float.MAX_VALUE || m2 <= 0) return m1;
+
+        // 标准公式: m_eff = (m1 * m2) / (m1 + m2)
+        return (m1 * m2) / (m1 + m2);
+    }
 }

@@ -26,11 +26,11 @@ public class ArmorUtil {
     }
 
     /**
-     * 获取方块护甲水平，护甲公式为：20*lg(1+爆炸抗性)*(方块硬度)
+     * 获取方块护甲水平，护甲公式为：100*lg(0.1+爆炸抗性)*(0.1+方块硬度)
      *
      * @return 给定方块的护甲水平
      */
     public static float getBlockArmor(Level level, BlockState blockState, BlockPos blockPos) {
-        return (float) (10f * (log10(blockState.getBlock().getExplosionResistance() + 1) * (0.1+blockState.getDestroySpeed(level, blockPos))));
+        return (float) (20f * (log10(blockState.getBlock().getExplosionResistance() + 1) * (log10(1.01+blockState.getDestroySpeed(level, blockPos)))));
     }
 }

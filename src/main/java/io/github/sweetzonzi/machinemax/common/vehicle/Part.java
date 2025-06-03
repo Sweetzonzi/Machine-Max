@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
+import cn.solarmoon.spark_core.animation.anim.play.Bone;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
@@ -40,13 +41,11 @@ import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -60,8 +59,9 @@ import java.util.concurrent.ConcurrentMap;
 @Getter
 public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver {
     //渲染属性 Renderer attributes
-    @Setter
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
+    @Setter
+    private BoneGroup bones;//用于储存部件的骨骼组
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
     //常规属性 General attributes
     public VehicleCore vehicle;//所属的VehicleCore
@@ -227,11 +227,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           Vector3f normal,
                           Vector3f worldContactSpeed,
                           Vector3f worldContactPoint,
-                          long hitChildShapeNativeId) {
+                          @Nullable Long hitChildShapeNativeId) {
         if (getEntity() != null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
         Vec3 sourcePos = source.getSourcePosition();
         if (vanilla && sourcePos != null && !level.isClientSide) {//原版伤害处理
-            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * damage / subPart.part.durability)) * 150f);//伤害转化为动量
+            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / subPart.part.durability))) * 150f);//伤害转化为动量
             if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
                 knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
             }
@@ -418,6 +418,16 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         }
     }
 
+    public void setModelIndex(@NotNull ModelIndex modelIndex) {
+        this.modelIndex = modelIndex;
+        this.setBones(new BoneGroup(this));
+    }
+
+    public @NotNull BoneGroup getBones() {
+        if (this.bones == null) bones = new BoneGroup(this);
+        return this.bones;
+    }
+
     public void setTransform(Transform transform) {
         if (vehicle == null || !vehicle.inLevel) {
             setTransformRaw(transform);
@@ -449,12 +459,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Override
     public AnimController getAnimController() {
         return animController;
-    }
-
-    @NotNull
-    @Override
-    public BoneGroup getBones() {
-        return new BoneGroup(this);
     }
 
     @NotNull
@@ -519,9 +523,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         return signalChannels;
     }
 
-    @Nullable
     @Override
-    public Level getAnimLevel() {
+    public @NotNull Level getAnimLevel() {
         return level;
     }
 }
