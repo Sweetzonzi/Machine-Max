@@ -4,8 +4,6 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machinemax.external.js.EventToJS;
-import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machinemax.network.payload.RegularInputPayload;
@@ -139,28 +137,22 @@ public class RawInputHandler {
           通用功能
          */
         //载具交互
-        KeyBinding.INPUT_KEY_MAP.forEach((name, tick) -> {
-            if (tick != 0) KeyBinding.INPUT_KEY_MAP.put(name, tick + 1);
-        });
-        for (EventToJS eventToJS : KeyBinding.LISTENING_EVENT) {
-            eventToJS.call(MMInitialJS.JS_RUNNER, MMInitialJS.JS_SCOPE);
-        }
 
-//        if (KeyBinding.generalInteractKey.isDown()) {
-//            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 0) {//一般互动
-//                if (client.player != null)
-//                    client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
-//            }
-//            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 10) {//长按0.5秒，进入交互模式
-//
-//            }
-//            //按键计时器
-//            keyPressTicks.put(KeyBinding.generalInteractKey, keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) + 1);
-//
-//        } else if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) > 0) {//按键松开且按下持续至少1tick
-//            keyPressTicks.put(KeyBinding.generalInteractKey, 0);//重置计时器
-//            //TODO:退出交互模式
-//        }
+        if (KeyBinding.generalInteractKey.isDown()) {
+            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 0) {//一般互动
+                if (client.player != null)
+                    client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
+            }
+            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 10) {//长按0.5秒，进入交互模式
+
+            }
+            //按键计时器
+            keyPressTicks.put(KeyBinding.generalInteractKey, keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) + 1);
+
+        } else if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.generalInteractKey, 0);//重置计时器
+            //TODO:退出交互模式
+        }
         //离开载具
         if (KeyBinding.generalLeaveVehicleKey.isDown()) {
             if (keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) == 10) {//长按0.5秒，离开载具

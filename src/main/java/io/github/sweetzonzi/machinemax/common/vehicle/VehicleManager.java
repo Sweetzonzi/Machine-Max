@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.ClientRequestVehicleDataPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.LevelVehicleDataPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleCreatePayload;
@@ -30,6 +31,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_RUNNER;
+import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_SCOPE;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class VehicleManager {
@@ -92,16 +96,19 @@ public class VehicleManager {
             vehicleCore.tick();
             updateVehicleChunk(vehicleCore);
         });
+//        Hook.LISTENING_EVENT.get(Hook.Thread.tick).forEach((eventToJS -> eventToJS.call(JS_RUNNER, JS_SCOPE)));
     }
 
     @SubscribeEvent
     public static void onPrePhysicsTick(PhysicsLevelTickEvent.Pre event) {
         levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::prePhysicsTick);
+//        Hook.LISTENING_EVENT.get(Hook.Thread.pre).forEach((eventToJS -> eventToJS.call(JS_RUNNER, JS_SCOPE)));
     }
 
     @SubscribeEvent
     public static void onPostPhysicsTick(PhysicsLevelTickEvent.Post event) {
         levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::postPhysicsTick);
+//        Hook.LISTENING_EVENT.get(Hook.Thread.post).forEach((eventToJS -> eventToJS.call(JS_RUNNER, JS_SCOPE)));
     }
 
     private static void updateVehicleChunk(VehicleCore vehicle) {

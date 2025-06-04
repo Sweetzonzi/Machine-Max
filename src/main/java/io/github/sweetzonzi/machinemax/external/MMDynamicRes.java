@@ -163,7 +163,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/part_type/ae86_wheel_all_terrain.json", partTypeFolder.resolve("ae86_wheel_all_terrain.json"), overwrite);
 
         //MM自带JS文件
-        copyResourceToFile("/example_pack/script/mm_test.js", script.resolve("mm_test.js"), false);
+        copyResourceToFile("/example_pack/script/mm/run/mm_test.js", script.resolve("mm_test.js"), false);
 
         //蓝图文件
         copyResourceToFile("/example_pack/blueprint/test_blue_print.json", blueprint.resolve("test_blue_print.json"), overwrite);

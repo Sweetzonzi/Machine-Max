@@ -2,9 +2,12 @@ package io.github.sweetzonzi.machinemax.external.js;
 
 import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
+import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+
+import java.util.Arrays;
 
 import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 
@@ -16,8 +19,26 @@ public class MMInitialJS {
         if (JS_RUNNER != null) JS_RUNNER.close();
         JS_RUNNER = null;
         JS_SCOPE = null;
-        KeyBinding.INPUT_KEY_MAP.clear();
-        KeyBinding.LISTENING_EVENT.clear();
+        Hook.clear();
+    }
+
+    public static void run(Object[] args) {
+        try {
+            ScriptableObject.putProperty(JS_SCOPE, "args", Context.javaToJS(args, JS_SCOPE,  JS_RUNNER));
+        } catch (Exception e) {
+            LOGGER.error("MMInitialJS Error: " + Arrays.toString(e.getStackTrace()));
+        }
+
+        MMDynamicRes.MM_SCRIPTS.forEach((location, jsPack) -> {
+            try {
+                Object jsObj = JS_RUNNER.evaluateString(
+                        JS_SCOPE, jsPack.getContent(),
+                        "mm_initial_js_run_"+location.getPath(), 1, null);
+//                System.out.println("MMInitialJS Run: "+jsObj);
+            } catch (Exception e) {
+                LOGGER.error("MMInitialJS Error: " + Arrays.toString(e.getStackTrace()));
+            }
+        });
     }
 
     public static void register() {
@@ -31,11 +52,10 @@ public class MMInitialJS {
             try {
                 Object jsObj = JS_RUNNER.evaluateString(
                         JS_SCOPE, jsPack.getContent(),
-                        "mm_initial_js_"+location.getPath(), 1, null);
-                System.out.println("MMInitialJS Run: "+jsObj);
+                        "mm_initial_js_register_"+location.getPath(), 1, null);
+//                System.out.println("MMInitialJS Run: "+jsObj);
             } catch (Exception e) {
-                String msg = e.getMessage();
-                LOGGER.error("MMInitialJS Error: " + msg);
+                LOGGER.error("MMInitialJS Error: " + Arrays.toString(e.getStackTrace()));
             }
         });
     }
