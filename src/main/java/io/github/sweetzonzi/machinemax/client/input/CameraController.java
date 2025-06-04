@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machinemax.client.input;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.event.ComputeCameraPosEvent;
 import net.minecraft.client.Camera;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -42,18 +43,19 @@ public class CameraController {
             yaw = 0.9f * yaw + 0.1f * camera.getEntity().getViewYRot(partialTick);
         }
     }
+
     @SubscribeEvent
-    public static void updateCameraScale(ViewportEvent.ComputeFov event){
+    public static void updateCameraScale(ViewportEvent.ComputeFov event) {
         double scale = 1.0;
         //TODO:视情况调整放大倍率
         double rawFov = event.getFOV();
-        event.setFOV(rawFov/scale);
+        event.setFOV(rawFov / scale);
     }
 
     public static void turnCamera(double yRot, double xRot) {
         //保持与默认旋转视角相同的缩放量（为什么会有缩放？）
-        float f = (float)xRot * 0.15F;
-        float f1 = (float)yRot * 0.15F;
+        float f = (float) xRot * 0.15F;
+        float f1 = (float) yRot * 0.15F;
         pitch += f;
         yaw += f1;
     }
@@ -61,6 +63,8 @@ public class CameraController {
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
         if (client.player != null) {
+//            client.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+//            client.levelRenderer.needsUpdate();
             //TODO:传输相机控制量
 //            boolean isPassenger = client.player.isPassenger();
 //            Entity vehicle = client.player.getVehicle();

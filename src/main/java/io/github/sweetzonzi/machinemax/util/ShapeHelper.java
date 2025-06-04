@@ -18,7 +18,7 @@ public class ShapeHelper {
             BoundingBox boundingBox;
             float height;
             try {
-                boundingBox = pco.boundingBox(null);
+                boundingBox = pco.cachedBoundingBox;
                 height = boundingBox.getMin(null).y;
             } catch (Exception e) {
                 MachineMax.LOGGER.error("{}碰撞箱计算结果异常: ", pco.name, e);

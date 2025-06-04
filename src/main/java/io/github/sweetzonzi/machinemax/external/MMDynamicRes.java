@@ -140,7 +140,7 @@ public class MMDynamicRes {
         //设置默认测试包的路径、名字、内容
         //模型文件
         boolean overwrite = true;
-        copyResourceToFile("/example_pack/model/test_cube.geo.json", partModelFolder.resolve("test_cube.geo.json"), overwrite);
+//        copyResourceToFile("/example_pack/model/test_cube.geo.json", partModelFolder.resolve("test_cube.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_back_seat.geo.json", partModelFolder.resolve("ae86_back_seat.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_seat.geo.json", partModelFolder.resolve("ae86_seat.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_hull.geo.json", partModelFolder.resolve("ae86_hull.geo.json"), overwrite);
@@ -149,7 +149,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_left.geo.json", partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), overwrite);
 
         //部件定义文件
-        copyResourceToFile("/example_pack/part_type/test_cube.json", partTypeFolder.resolve("test_cube.json"), overwrite);
+//        copyResourceToFile("/example_pack/part_type/test_cube.json", partTypeFolder.resolve("test_cube.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_seat.json", partTypeFolder.resolve("ae86_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_hull.json", partTypeFolder.resolve("ae86_hull.json"), overwrite);
@@ -164,7 +164,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/lang/en_us.json", lang.resolve("en_us.json"), overwrite);
 
         //自带测试材质
-        copyResourceToFile("/example_pack/texture/test_cube.png", texture.resolve("test_cube.png"), overwrite);
+//        copyResourceToFile("/example_pack/texture/test_cube.png", texture.resolve("test_cube.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_1.png", texture.resolve("ae86_1.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_2.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_3.png"), overwrite);

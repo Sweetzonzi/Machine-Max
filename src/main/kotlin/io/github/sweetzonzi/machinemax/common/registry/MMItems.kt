@@ -5,7 +5,7 @@ import io.github.sweetzonzi.machinemax.client.renderer.CustomModelItemRenderer
 import io.github.sweetzonzi.machinemax.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem
 import io.github.sweetzonzi.machinemax.common.item.prop.SprayCanItem
-import io.github.sweetzonzi.machinemax.common.item.prop.VehicleRecoderItem
+import io.github.sweetzonzi.machinemax.common.item.prop.EmptyBlueprintItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
@@ -30,10 +30,10 @@ object MMItems {
 
     //载具保存物品原型
     @JvmStatic
-    val EMPTY_BLUEPRINT = MachineMax.REGISTER.item<VehicleRecoderItem>()
+    val EMPTY_BLUEPRINT = MachineMax.REGISTER.item<EmptyBlueprintItem>()
         .id("empty_vehicle_blueprint")
         .bound {
-            VehicleRecoderItem(
+            EmptyBlueprintItem(
                 Item.Properties().stacksTo(1)
             )
         }

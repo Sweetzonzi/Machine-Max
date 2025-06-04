@@ -68,6 +68,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public final CompoundCollisionShape collisionShape;//碰撞形状
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
+    public float bodyMinY = -99999;
     public int tickCount = 0;
     //流体动力相关参数
     private final boolean ENABLE_FLUID_DYNAMIC_SWEEP_TEST = false;//TODO:true时，检测流体遮挡效果时将使用球形扫掠而非射线检测
@@ -432,16 +433,18 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         } else return;
         if (partBody.getOwner() instanceof SubPart subPart && subPart.GROUND_COLLISION_ONLY) {//仅与地面方块碰撞的零件遭遇方块时
             float terrainHeight = terrain.cachedBoundingBox.getMax(null).y;
-            float y0 = ShapeHelper.getShapeMinY(partBody, 0.2f) + 0.05f;//计算部件最低点高度
-            if (terrainHeight > y0) {//若地形高于于部件最低位置，则视情况修改碰撞检测结果
-                float height = terrainHeight - y0;//部件最低点与地形的高度差
-                BlockPos highestBlockPos = terrain.blockPos.above();
-                while (height <= subPart.stepHeight && subPart.getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
-                    height = subPart.getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - y0;
-                    highestBlockPos = highestBlockPos.above();
-                }
-                if (height <= subPart.stepHeight) {
-                    event.setShouldCollide(false);
+            if (terrainHeight > partBody.cachedBoundingBox.getMin(null).y) {
+                float y0 = subPart.bodyMinY + 0.05f;//计算部件最低点高度
+                if (terrainHeight > y0) {//若地形高于于部件最低位置，则视情况修改碰撞检测结果
+                    float height = terrainHeight - y0;//部件最低点与地形的高度差
+                    BlockPos highestBlockPos = terrain.blockPos.above();
+                    while (height <= subPart.stepHeight && subPart.getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
+                        height = subPart.getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - y0;
+                        highestBlockPos = highestBlockPos.above();
+                    }
+                    if (height <= subPart.stepHeight) {
+                        event.setShouldCollide(false);
+                    }
                 }
             }
         }
@@ -522,10 +525,11 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     MMMath.localVectorToWorldVector(PhysicsHelperKt.toBVector3f(attr.aeroDynamic.center()), this.body));
         }
         //攀爬辅助处理
+        if (this.GROUND_COLLISION_ONLY && stepHeight > 0)
+            bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.2f);
         if (this.GROUND_COLLISION_ONLY && stepHeight > 0 && attr.climbAssist) {
-            float y0 = ShapeHelper.getShapeMinY(this.body, 0.2f);
             Vector3f start = this.body.getPhysicsLocation(null);
-            start.set(1, y0 - 1);
+            start.set(1, bodyMinY - 1);
             var end = start.add(0f, 1 + stepHeight, 0f);
             if (start.equals(end)) {
                 MachineMax.LOGGER.error("Same start and end position for climb assist ray test, canceling climb assist.");
@@ -538,14 +542,14 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             for (var hit : test) {//寻找部件下最低的方块
                 if (hit.getCollisionObject() instanceof PhysicsRigidBody terrain && terrain.name.equals("terrain")) {
                     terrainsUnder = terrain;
-                    height = Math.max(terrain.cachedBoundingBox.getMax(null).y - y0, height);
+                    height = Math.max(terrain.cachedBoundingBox.getMax(null).y - bodyMinY, height);
                     break;
                 }
             }
             if (terrainsUnder != null) {//若接地/轮子质心竖直投影方向有方块，寻找投影方向连续方块的最高点
                 BlockPos highestBlockPos = terrainsUnder.blockPos.above();
                 while (height <= stepHeight && getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
-                    height = Math.max(getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - y0, height);
+                    height = Math.max(getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - bodyMinY, height);
                     highestBlockPos = highestBlockPos.above();
                 }
             }

@@ -18,9 +18,9 @@ public class MachineMax {
     //TODO:限制带阻尼关节安装部件时的质量差距/警告
     //TODO:动画支持
     //TODO:locatorName->subPart->世界坐标
-    //TODO:交互系统的反馈信号
+    //TODO:交互系统的反馈信号以及连接多个子系统，依次互动/同时互动？
     //TODO:更多异常处理，方便内容包作者排查问题
-    //TODO:座椅视角控制
+    //TODO:座椅视角控制，强制一或三人称视角
     //TODO:过载与座椅过载吸收/耐受
     //TODO:结构完整性integrity，衡量部件固定的牢靠程度
     //TODO:自定义HUD
@@ -30,6 +30,10 @@ public class MachineMax {
     //TODO:投射物
     //TODO:炮塔控制
     //TODO:载具触发压力板
+    //TODO:允许实体站在刚体上
+    //TODO:地形方块滚动摩擦系数
+    //TODO:常规AE86
+    //TODO:使用supporting vertex计算刚体最低点优化性能
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器

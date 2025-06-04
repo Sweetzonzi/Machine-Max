@@ -63,7 +63,7 @@ public class SubPartAttr {
             Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::getMassCenterLocator),
             Vec3.CODEC.optionalFieldOf("friction", new Vec3(0.5, 0.5, 0.5)).forGetter(SubPartAttr::getFriction),
             Codec.FLOAT.optionalFieldOf("slip_adaptation", 0.5f).forGetter(SubPartAttr::getSlipAdaptation),
-            Codec.FLOAT.optionalFieldOf("rolling_friction", 0.01f).forGetter(SubPartAttr::getRollingFriction),
+            Codec.FLOAT.optionalFieldOf("rolling_friction", 0.1f).forGetter(SubPartAttr::getRollingFriction),
             Codec.FLOAT.optionalFieldOf("restitution", 0.1f).forGetter(SubPartAttr::getRestitution),
             Codec.FLOAT.optionalFieldOf("block_damage_factor", 1.0f).forGetter(SubPartAttr::getBlockDamageFactor),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
