@@ -308,6 +308,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             }
             //重设摩擦系数
             ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, friction1 * friction2 * slip));
+            ManifoldPoints.setCombinedRollingFriction(manifoldPointId, Math.max(0f, body.getRollingFriction() * other.getRollingFriction()));
         } else if (other.getCollisionGroup() == VehicleManager.COLLISION_GROUP_PART) {
             if (other.getOwner() instanceof SubPart otherSubPart) {//与零件碰撞时
                 otherChildShapeId = otherSubPart.collisionShape.findChild(otherHitBoxIndex).getShape().nativeId();
@@ -525,41 +526,45 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     MMMath.localVectorToWorldVector(PhysicsHelperKt.toBVector3f(attr.aeroDynamic.center()), this.body));
         }
         //攀爬辅助处理
-        if (this.GROUND_COLLISION_ONLY && stepHeight > 0)
+        if (this.GROUND_COLLISION_ONLY && stepHeight > 0) {
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.2f);
-        if (this.GROUND_COLLISION_ONLY && stepHeight > 0 && attr.climbAssist) {
-            Vector3f start = this.body.getPhysicsLocation(null);
-            start.set(1, bodyMinY - 1);
-            var end = start.add(0f, 1 + stepHeight, 0f);
-            if (start.equals(end)) {
-                MachineMax.LOGGER.error("Same start and end position for climb assist ray test, canceling climb assist.");
-                //TODO:治标不治本，需要排查原因
-                return;
-            }
-            var test = getPhysicsLevel().getWorld().rayTest(start, end);
-            PhysicsRigidBody terrainsUnder = null;//清空先前记录的地面碰撞体
-            float height = -1;
-            for (var hit : test) {//寻找部件下最低的方块
-                if (hit.getCollisionObject() instanceof PhysicsRigidBody terrain && terrain.name.equals("terrain")) {
-                    terrainsUnder = terrain;
-                    height = Math.max(terrain.cachedBoundingBox.getMax(null).y - bodyMinY, height);
-                    break;
+            if (attr.climbAssist) {
+                Vector3f start = this.body.getPhysicsLocation(null);
+                start.set(1, bodyMinY - 1);
+                var end = start.add(0f, 1 + stepHeight, 0f);
+                if (start.equals(end)) {
+                    MachineMax.LOGGER.error("Same start and end position for climb assist ray test, canceling climb assist.");
+                    //TODO:治标不治本，需要排查原因
+                    return;
                 }
-            }
-            if (terrainsUnder != null) {//若接地/轮子质心竖直投影方向有方块，寻找投影方向连续方块的最高点
-                BlockPos highestBlockPos = terrainsUnder.blockPos.above();
-                while (height <= stepHeight && getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
-                    height = Math.max(getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - bodyMinY, height);
-                    highestBlockPos = highestBlockPos.above();
+                var test = getPhysicsLevel().getWorld().rayTest(start, end);
+                PhysicsRigidBody terrainsUnder = null;//清空先前记录的地面碰撞体
+                float height = -1;
+                for (var hit : test) {//寻找部件下最低的方块
+                    if (hit.getCollisionObject() instanceof PhysicsRigidBody terrain && terrain.name.equals("terrain")) {
+                        terrainsUnder = terrain;
+                        height = Math.max(terrain.cachedBoundingBox.getMax(null).y - bodyMinY, height);
+                        break;
+                    }
                 }
-            }
-            if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
-                var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
-                var ang = Math.atan2(height, 1);
-                float mass = body.getMass() + 0.015f * (part.vehicle.totalMass - body.getMass());
-                float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 2f) - vel.y;
-                float horizontalVelScale = (float) Math.cos(ang);
-                body.applyCentralImpulse(new Vector3f((horizontalVelScale - 1) * vel.x, extraVel, (horizontalVelScale - 1) * vel.z).mult(mass));
+                if (terrainsUnder != null) {//若接地/轮子质心竖直投影方向有方块，寻找投影方向连续方块的最高点
+                    BlockPos highestBlockPos = terrainsUnder.blockPos.above();
+                    while (height <= stepHeight && getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
+                        height = Math.max(getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - bodyMinY, height);
+                        highestBlockPos = highestBlockPos.above();
+                    }
+                }
+                if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
+                    var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
+                    var ang = Math.atan2(height, 1);
+                    float mass = body.getMass() + 0.015f * (part.vehicle.totalMass - body.getMass());
+                    float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 2f) - vel.y;
+                    float horizontalVelScale = (float) Math.cos(ang);
+                    body.applyCentralImpulse(new Vector3f(
+                            -0.85f * (1f - horizontalVelScale) * vel.x,
+                            extraVel,
+                            -0.85f * (1f - horizontalVelScale) * vel.z).mult(mass));
+                }
             }
         }
     }

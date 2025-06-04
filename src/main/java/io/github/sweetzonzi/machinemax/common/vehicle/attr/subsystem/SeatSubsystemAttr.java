@@ -7,16 +7,23 @@ import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import lombok.Getter;
+import net.minecraft.world.phys.Vec3;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Getter
 public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     public final String subpart;
     public final String connector;
     public final boolean renderPassenger;
+    public final Vec3 passengerScale;
     public final boolean allowUseItems;
+    public final boolean allowFirstPersonView;
+    public final boolean allowThirdPersonView;
+    public final Set<String> viewInputs;
     public final Map<String, List<String>> moveSignalTargets;
     public final Map<String, List<String>> viewSignalTargets;
     public final Map<String, List<String>> regularSignalTargets;
@@ -27,7 +34,11 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             Codec.STRING.fieldOf("sub_part").forGetter(SeatSubsystemAttr::getSubpart),
             Codec.STRING.fieldOf("connector").forGetter(SeatSubsystemAttr::getConnector),
             Codec.BOOL.optionalFieldOf("render_passenger", true).forGetter(SeatSubsystemAttr::isRenderPassenger),
-            Codec.BOOL.fieldOf("allow_use_items").forGetter(SeatSubsystemAttr::isAllowUseItems),
+            Vec3.CODEC.optionalFieldOf("passenger_scale", new Vec3(1, 1, 1)).forGetter(SeatSubsystemAttr::getPassengerScale),
+            Codec.BOOL.optionalFieldOf("allow_first_person_view", true).forGetter(SeatSubsystemAttr::isAllowFirstPersonView),
+            Codec.BOOL.optionalFieldOf("allow_third_person_view", true).forGetter(SeatSubsystemAttr::isAllowThirdPersonView),
+            Codec.BOOL.optionalFieldOf("allow_use_items", false).forGetter(SeatSubsystemAttr::isAllowUseItems),
+            Codec.STRING.listOf().optionalFieldOf("view_inputs", List.of()).forGetter(SeatSubsystemAttr::getViewInputs),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("move_outputs", Map.of()).forGetter(SeatSubsystemAttr::getMoveSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("view_outputs", Map.of()).forGetter(SeatSubsystemAttr::getViewSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("regular_outputs", Map.of()).forGetter(SeatSubsystemAttr::getRegularSignalTargets)
@@ -38,16 +49,29 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             String hitBox,
             String subpart,
             String connector,
-            boolean renderPassenger,
+            boolean renderPassenger, Vec3 passengerScale,
+            boolean allowFirstPersonView,
+            boolean allowThirdPersonView,
             boolean allowUseItems,
+            List<String> viewInputs,
             Map<String, List<String>> moveSignalTargets,
             Map<String, List<String>> viewSignalTargets,
             Map<String, List<String>> regularSignalTargets) {
         super(basicDurability, hitBox);
+        //合法性检查
+        if (connector == null || connector.isEmpty())
+            throw new IllegalStateException("error.machine_max.seat_subsystem.no_locator");
+        if (!allowFirstPersonView && !allowThirdPersonView)
+            throw new IllegalArgumentException("error.machine_max.seat_subsystem.no_view");
         this.subpart = subpart;
         this.connector = connector;
         this.renderPassenger = renderPassenger;
+        this.passengerScale = passengerScale;
+        this.allowFirstPersonView = allowFirstPersonView;
+        this.allowThirdPersonView = allowThirdPersonView;
         this.allowUseItems = allowUseItems;
+        this.viewInputs = new HashSet<>();
+        this.viewInputs.addAll(viewInputs);
         this.moveSignalTargets = moveSignalTargets;
         this.viewSignalTargets = viewSignalTargets;
         this.regularSignalTargets = regularSignalTargets;
@@ -66,5 +90,9 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     @Override
     public AbstractSubsystem createSubsystem(ISubsystemHost owner, String name) {
         return new SeatSubsystem(owner, name, this);
+    }
+
+    private List<String> getViewInputs() {
+        return viewInputs.stream().toList();
     }
 }

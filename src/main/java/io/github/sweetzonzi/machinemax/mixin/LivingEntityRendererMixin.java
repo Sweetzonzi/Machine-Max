@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.world.entity.LivingEntity;
+import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,6 +23,8 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
             var oldRot = SparkMathKt.toQuaternionf(seatSubsystem.seatLocator.subPart.body.lastTickTransform.getRotation());
             var actualRot = oldRot.slerp(rot, partialTick);
             poseStack.mulPose(actualRot);
+            Vector3f passengerScale = seatSubsystem.attr.passengerScale.toVector3f();
+            poseStack.scale(passengerScale.x(), passengerScale.y(), passengerScale.z());
         }
     }
 

@@ -18,7 +18,7 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     public final float maxTorqueRpm;
     public final float maxRpm;
     public final double inertia;//发动机系统转动惯量(kg·m²)
-    public final List<Double> dampingFactors;//发动机系统各阶阻力系数，分别为常数项，一次项…递增
+    public final List<Double> dampingFactors;//发动机系统各阶阻力系数，分别为一次项，二次项，…递增
     public final List<String> throttleInputKeys;//优先级从高至低
     public final String powerOutputTarget;
     public final Map<String, List<String>> rpmOutputTargets;
@@ -30,10 +30,10 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.FLOAT.fieldOf("max_power").forGetter(EngineSubsystemAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("base_rpm", 500f).forGetter(EngineSubsystemAttr::getBaseRpm),
-            Codec.FLOAT.optionalFieldOf("max_torque_rpm", 4000f).forGetter(EngineSubsystemAttr::getMaxTorqueRpm),
-            Codec.FLOAT.optionalFieldOf("max_rpm", 7000f).forGetter(EngineSubsystemAttr::getMaxRpm),
-            Codec.DOUBLE.optionalFieldOf("inertia", 0.1).forGetter(EngineSubsystemAttr::getInertia),
-            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(5.0, 0.005, 0.00003)).forGetter(EngineSubsystemAttr::getDampingFactors),
+            Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5500f).forGetter(EngineSubsystemAttr::getMaxTorqueRpm),
+            Codec.FLOAT.optionalFieldOf("max_rpm", 7500f).forGetter(EngineSubsystemAttr::getMaxRpm),
+            Codec.DOUBLE.optionalFieldOf("inertia", 500.0).forGetter(EngineSubsystemAttr::getInertia),
+            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.005, 0.00003)).forGetter(EngineSubsystemAttr::getDampingFactors),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemAttr::getThrottleInputKeys),
             Codec.STRING.fieldOf("power_output").forGetter(EngineSubsystemAttr::getPowerOutputTarget),
             RPM_OUTPUT_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of()).forGetter(EngineSubsystemAttr::getRpmOutputTargets)

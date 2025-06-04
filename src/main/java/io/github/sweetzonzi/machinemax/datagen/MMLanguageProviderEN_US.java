@@ -34,6 +34,10 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         //Key names-Assembly
         this.add("key.machine_max.assembly.cycle_connector", "Cycle Part Connector");
         this.add("key.machine_max.assembly.cycle_variant", "Cycle Part Variant");
+        //Exception handle
+        this.add("error.machine_max.load", "An error occurred when loading external pack file at: %1$s, Reason: ");
+        this.add("error.machine_max.seat_subsystem.no_locator", "Seat subsystem requires a locator (e.g. \"locator\": \"seat_locator\") to define sitting position");
+        this.add("error.machine_max.seat_subsystem.no_view", "Seat subsystem must either allow first person view or third person view");
         //Hint messages
         this.add("message.machine_max.leaving_vehicle", "Hold [%1$s] %2$s/0.50s to leave the vehicle.");
         this.add("message.machine_max.watch_interact_box_info", "Press [%1$s] to interact with %2$s");

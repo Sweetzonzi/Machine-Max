@@ -34,6 +34,10 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         //按键名称-组装
         this.add("key.machine_max.assembly.cycle_connector", "循环部件连接口");
         this.add("key.machine_max.assembly.cycle_variant", "循环部件变体");
+        //内容包异常处理
+        this.add("error.machine_max.load", "加载外部包文件: %1$s 时出错，原因: ");
+        this.add("error.machine_max.seat_subsystem.no_locator", "座椅子系统必须填写定位器名称(如\"locator\": \"seat_locator\")以指定乘客乘坐位置");
+        this.add("error.machine_max.seat_subsystem.no_view", "座椅子系统必须允许乘客使用第一人称视角或第三人称视角之一");
         //提示信息
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
         this.add("message.machine_max.watch_interact_box_info", "按[%1$s]键与%2$s互动");

@@ -2,6 +2,8 @@ package io.github.sweetzonzi.machinemax.client.input;
 
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.event.ComputeCameraPosEvent;
+import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
@@ -63,8 +65,15 @@ public class CameraController {
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
         if (client.player != null) {
-//            client.options.setCameraType(CameraType.THIRD_PERSON_BACK);
-//            client.levelRenderer.needsUpdate();
+            SeatSubsystem seat = ((IEntityMixin) client.player).machine_Max$getRidingSubsystem();
+            if (seat != null) {
+                while ((!seat.attr.allowFirstPersonView && client.options.getCameraType() == CameraType.FIRST_PERSON) ||
+                        (!seat.attr.allowThirdPersonView && (client.options.getCameraType() == CameraType.THIRD_PERSON_BACK
+                                || client.options.getCameraType() == CameraType.THIRD_PERSON_FRONT))) {
+                    client.options.setCameraType(client.options.getCameraType().cycle());
+                    client.levelRenderer.needsUpdate();
+                }
+            }
             //TODO:传输相机控制量
 //            boolean isPassenger = client.player.isPassenger();
 //            Entity vehicle = client.player.getVehicle();

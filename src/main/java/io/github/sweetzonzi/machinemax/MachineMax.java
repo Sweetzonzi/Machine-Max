@@ -31,9 +31,10 @@ public class MachineMax {
     //TODO:炮塔控制
     //TODO:载具触发压力板
     //TODO:允许实体站在刚体上
-    //TODO:地形方块滚动摩擦系数
+    //TODO:内容包之间的依赖关系
+    //TODO:蓝图对内容包的依赖关系
+    //TODO:重修连接点断裂机制，在vehicle中进行，降低发包压力
     //TODO:常规AE86
-    //TODO:使用supporting vertex计算刚体最低点优化性能
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器

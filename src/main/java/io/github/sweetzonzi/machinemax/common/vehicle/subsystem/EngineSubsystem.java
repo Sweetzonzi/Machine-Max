@@ -25,7 +25,6 @@ public class EngineSubsystem extends AbstractSubsystem {
         MAX_ROT_SPEED = attr.maxRpm * Math.PI / 30.0;
         MAX_TORQUE_SPEED = attr.maxTorqueRpm * Math.PI / 30.0;
         BASE_ROT_SPEED = attr.baseRpm * Math.PI / 30.0;
-
         // 计算最大扭矩（基于最大功率点公式 P_max = T_max * ω）
         MAX_TORQUE = attr.maxPower / MAX_TORQUE_SPEED;
         rotSpeed = BASE_ROT_SPEED + 5;
@@ -91,8 +90,8 @@ public class EngineSubsystem extends AbstractSubsystem {
         else if (rotSpeed <= BASE_ROT_SPEED) {
             return rotSpeed / BASE_ROT_SPEED * MAX_TORQUE / 3;
         } else if (rotSpeed <= MAX_TORQUE_SPEED) {//线性上升段：怠速 -> 最大扭矩转速
-            double k = 2 * MAX_TORQUE / MAX_TORQUE_SPEED / 3;
-            return MAX_TORQUE / 3 + rotSpeed * k;
+            double k = 2f / 3f * MAX_TORQUE;
+            return MAX_TORQUE / 3f + (rotSpeed - BASE_ROT_SPEED) / MAX_TORQUE_SPEED * k;
         } else if (rotSpeed <= MAX_ROT_SPEED) {//全功率段
             return attr.maxPower / rotSpeed;
         } else { //超速时动力大幅衰减
@@ -109,7 +108,7 @@ public class EngineSubsystem extends AbstractSubsystem {
     private double calculateDampingTorque(double rotSpeed) {
         double result = 0;
         for (int i = 0; i < attr.dampingFactors.size(); i++) {
-            result += attr.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i);
+            result += attr.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i + 1);
         }
         return Math.signum(rotSpeed) * result;
     }

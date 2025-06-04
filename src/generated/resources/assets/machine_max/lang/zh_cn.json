@@ -1,4 +1,7 @@
 {
+  "error.machine_max.load": "加载外部包文件: %1$s 时出错，原因: ",
+  "error.machine_max.seat_subsystem.no_locator": "座椅子系统必须填写定位器名称(如\"locator\": \"seat_locator\")以指定乘客乘坐位置",
+  "error.machine_max.seat_subsystem.no_view": "座椅子系统必须允许乘客使用第一人称视角或第三人称视角之一",
   "error.machine_max.use_part_item": "尝试放置%1$s时出现错误：%2$s",
   "item.machine_max.crowbar": "撬棍",
   "item.machine_max.empty_vehicle_blueprint": "空白载具蓝图",

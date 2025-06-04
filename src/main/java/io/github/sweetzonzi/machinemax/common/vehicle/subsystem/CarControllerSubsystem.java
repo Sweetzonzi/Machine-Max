@@ -23,6 +23,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     private final Map<ISignalReceiver, Float> overrideCountDown = new HashMap<>();
 
     float avgEngineMaxSpeed = 0f;
+    float avgEngineMinSpeed = 0f;
     float avgEngineMaxTorqueSpeed = 0f;
     int engineCount = 0;
 
@@ -95,13 +96,13 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         super.onVehicleStructureChanged();
         clearCallbackChannel();
         for (String signalKey : attr.engineControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(),  false);
+            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(), false);
         }
         for (String signalKey : attr.wheelControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(),  false);
+            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(), false);
         }
         for (String signalKey : attr.gearboxControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(),  false);
+            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(), false);
         }
     }
 
@@ -128,17 +129,21 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         engines.put(engine, controlChannel);
                         addCallbackTarget(controlChannel, engine);
                         //计算引擎最大转速和最大扭矩转速的平均值 Calculate the average maximum speed and max torque speed of the engine
+                        avgEngineMinSpeed = 0;
                         avgEngineMaxTorqueSpeed = 0;
                         avgEngineMaxSpeed = 0;
                         for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
+                            avgEngineMinSpeed += ((EngineSubsystem) entry.getKey()).attr.baseRpm;
                             avgEngineMaxTorqueSpeed += ((EngineSubsystem) entry.getKey()).attr.maxTorqueRpm;
                             avgEngineMaxSpeed += ((EngineSubsystem) entry.getKey()).attr.maxRpm;
                         }
                         engineCount = engines.size();
                         if (engineCount > 0) {
+                            avgEngineMinSpeed = (float) (avgEngineMinSpeed * Math.PI / engineCount / 30f);
                             avgEngineMaxTorqueSpeed = (float) (avgEngineMaxTorqueSpeed * Math.PI / engineCount / 30f);
                             avgEngineMaxSpeed = (float) (avgEngineMaxSpeed * Math.PI / engineCount / 30f);
                         } else {
+                            avgEngineMinSpeed = 0f;
                             avgEngineMaxTorqueSpeed = 0f;
                             avgEngineMaxSpeed = 0f;
                         }
@@ -241,7 +246,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     }
                     for (ISignalReceiver gearbox : gearboxes.keySet()) {//加速时延迟升档 Delay shifting up when accelerating
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            ((GearboxSubsystem) gearbox).switchGear(autoGearShift((GearboxSubsystem) gearbox, avgEngineSpeed, 0.85f, moveInput[2]));
+                            ((GearboxSubsystem) gearbox).switchGear(autoGearShift((GearboxSubsystem) gearbox, avgEngineSpeed, 0.5f * actualThrottle / 100f, moveInput[2]));
                             //起步时自动松离合 Auto engage clutch when starting
                             if (Math.abs(speed) <= 1f) {
                                 ((GearboxSubsystem) gearbox).setClutched(true);
@@ -258,7 +263,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     avgEngineSpeed /= engineCount;
                     for (ISignalReceiver gearbox : gearboxes.keySet()) {//减速时积极降档 Shift down early when braking
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            ((GearboxSubsystem) gearbox).switchGear(autoGearShift((GearboxSubsystem) gearbox, avgEngineSpeed, 0.5f, moveInput[2]));
+                            ((GearboxSubsystem) gearbox).switchGear(autoGearShift((GearboxSubsystem) gearbox, avgEngineSpeed, 0.5f * actualThrottle / 100f, moveInput[2]));
                         }
                     }
                 }
@@ -347,13 +352,14 @@ public class CarControllerSubsystem extends AbstractSubsystem {
      * @param engineSpeed 引擎转速 Engine speed
      * @param threshold   换挡速度阈值 Gear shift speed threshold
      * @param direction   期望运动方向，正向 > 0，反向 < 0 Expected motion direction, forward > 0, reverse < 0
-     * @return 换挡档位 Gear shift position
+     * @return 换挡档位 Gear shift target
      */
     private int autoGearShift(GearboxSubsystem gearbox, float engineSpeed, float threshold, byte direction) {
         int gear = gearbox.getCurrentGear();
         if (attr.manualGearShift) return gear;//手动变速箱时不自动换挡 Manual gearbox shifting is not automatic
         double ratio = gearbox.gearRatios[gear];
         float index = (engineSpeed - avgEngineMaxTorqueSpeed) / Math.max(0.1f, avgEngineMaxSpeed - avgEngineMaxTorqueSpeed);
+        float index2 = (engineSpeed - avgEngineMinSpeed) / Math.max(0.1f, avgEngineMaxTorqueSpeed - avgEngineMinSpeed);
         int result;
         if (speed > 0.5f) {//前进时输出正转速，正挡 Forward output positive rotational speed, positive gear
             //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
@@ -361,7 +367,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 result = gearbox.minNegativeGear;
             else if (direction > 0) {//加速且转速过高时，升挡 Shift up when accelerating and the speed is high
                 if (index > threshold) result = Math.min(gear + 1, gearbox.gearRatios.length - 1);
-                else if (index < 0) result = Math.max(gear - 1, gearbox.minPositiveGear);
+                else if (index2 < threshold) result = Math.max(gear - 1, gearbox.minPositiveGear);
                 else result = gear;
             } else if (index < threshold) {//减速且降档后转速低于最大引擎转速时，降挡 Shift down when braking and the speed is low after gear downshift
                 int targetGear = Math.max(gear - 1, gearbox.minPositiveGear);
@@ -375,7 +381,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 result = gearbox.minPositiveGear;
             else if (direction < 0) {//加速且转速过高时，升挡 Shift up when accelerating and the speed is high
                 if (index > threshold) result = Math.min(gear - 1, 0);
-                else if (index < 0) result = Math.min(gear + 1, gearbox.minNegativeGear);
+                else if (index2 < threshold) result = Math.min(gear + 1, gearbox.minNegativeGear);
                 else result = gear;
             } else if (index < threshold) {//减速且降档后转速低于最大引擎转速时，降挡 Shift down when braking and the speed is low after gear downshift
                 int targetGear = Math.min(gear + 1, gearbox.minNegativeGear);

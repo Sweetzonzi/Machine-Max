@@ -16,13 +16,21 @@
       "type": "machine_max:seat",
       "sub_part": "ae86_back_seat",
       "connector": "left_seat_point",
-      "allow_use_items": true
+      "render_passenger": true, //(可选,默认true)是否渲染乘客
+      "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
+      "allow_first_person_view": true, //(可选,默认true)是否允许第一人称视角
+      "allow_third_person_view": true, //(可选,默认true)是否允许第三人称视角
+      "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
     },
     "right_seat": {
       "type": "machine_max:seat",
       "sub_part": "ae86_back_seat",
       "connector": "right_seat_point",
-      "allow_use_items": true
+      "render_passenger": true, //(可选,默认true)是否渲染乘客
+      "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
+      "allow_first_person_view": true, //(可选,默认true)是否允许第一人称视角
+      "allow_third_person_view": true, //(可选,默认true)是否允许第三人称视角
+      "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
     }
   },
   "sub_parts": {//零件(子部件)列表

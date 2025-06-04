@@ -16,7 +16,11 @@
       "type": "machine_max:seat", //子系统类型
       "sub_part": "ae86_seat", //子系统所属零件名称
       "connector": "seat_point", //乘坐点对接口名称，乘客将被定位于此对接口
-      "allow_use_items": false, //(可选)是否允许乘客执行开启物品栏、使用物品等操作，默认false
+      "render_passenger": true, //(可选,默认true)是否渲染乘客
+      "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
+      "allow_first_person_view": true, //(可选,默认true)是否允许第一人称视角
+      "allow_third_person_view": true, //(可选,默认true)是否允许第三人称视角
+      "allow_use_items": false, //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
       "move_outputs": {
         "move_control": ["chassis_connection"] //将控制信号转发给与底盘连接的对接口
       },

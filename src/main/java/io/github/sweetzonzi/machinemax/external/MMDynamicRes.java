@@ -4,11 +4,13 @@ import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
+import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.parse.OBoneParse;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
@@ -31,10 +33,14 @@ import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
 public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new ConcurrentHashMap<>(); //所有当下读取的外部资源
     public static ConcurrentMap<ResourceLocation, PartType> PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
+    //TODO:按维度区分，避免不同服务端物理线程获取到相同的对象
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
+    public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
+    public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
+    public static List<MutableComponent> errorMessages = new ArrayList<>(); // 读取过程中出现错误的提示信息
 
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
@@ -63,6 +69,9 @@ public class MMDynamicRes {
         SERVER_PART_TYPES.clear();
         OBoneParse.clear();
         BLUEPRINTS.clear();
+        exceptions.clear();
+        errorFiles.clear();
+        errorMessages.clear();
         loadResources();
     }
 
@@ -262,7 +271,7 @@ public class MMDynamicRes {
                             }
                         }
                     }
-                    
+
                     case "font" -> {
                         location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //字体系统的标准搜索路径
                     }
@@ -272,10 +281,14 @@ public class MMDynamicRes {
                     }
                 }
 
-            } catch (IOException e) {
-                LOGGER.error("读取{}时失败 目标文件位于{}: {}", category, filePath, e.getMessage());
+            } catch (Exception e) {
+                exceptions.add(e);
+                errorFiles.add(filePath.toString());
+                errorMessages.add(Component.translatable(e.getMessage()));
+                LOGGER.error("An error occurred while reading {}, file: {}, skipped. Reason: {}", category, filePath, e.getMessage());
             }
-            if (dynamicPack == null) dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
+            if (dynamicPack == null)
+                dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
             EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
 
 //            //把指定包的文件转换成base64字符串形式    取消注释则会生成镜像base64文件包 在 run/config/machine_max/base64ify

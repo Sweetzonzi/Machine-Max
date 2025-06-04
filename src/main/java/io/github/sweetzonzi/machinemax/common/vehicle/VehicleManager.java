@@ -7,12 +7,17 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.ClientRequestVehicleDataPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.LevelVehicleDataPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleCreatePayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleRemovePayload;
 import io.github.sweetzonzi.machinemax.util.ChunkHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +25,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.ChunkWatchEvent;
@@ -28,6 +34,7 @@ import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.awt.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -154,7 +161,7 @@ public class VehicleManager {
         if (!savedVehicles.isEmpty()) {
             MachineMax.LOGGER.info("正在从维度{}加载{}个载具...", level.dimension().location(), savedVehicles.size());
             int i = 0;
-            try{
+            try {
                 for (VehicleData savedVehicleData : savedVehicles) {
                     try {
                         VehicleCore vehicle = new VehicleCore(level, savedVehicleData);
@@ -167,7 +174,7 @@ public class VehicleManager {
                         MachineMax.LOGGER.error("载具加载失败，出错载具数据：{}", savedVehicleData, e);
                     }
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 level.setData(MMAttachments.getLEVEL_VEHICLES().get(), savedVehicles);
                 MachineMax.LOGGER.error("有载具未能成功加载，已清除出错载具");
             }
@@ -176,7 +183,23 @@ public class VehicleManager {
     }
 
     @SubscribeEvent
+    public static void displayCustomPackError(EntityJoinLevelEvent event) {
+        if (event.getLevel().isClientSide() && event.getEntity() instanceof LocalPlayer player) {
+            for (int i = 0; i < MMDynamicRes.errorFiles.size(); i++) {
+                String file = MMDynamicRes.errorFiles.get(i);
+                MutableComponent message = MMDynamicRes.errorMessages.get(i).withColor(Color.RED.getRGB());
+                player.sendSystemMessage(Component.translatable("error.machine_max.load", file).withColor(Color.WHITE.getRGB()).append(message));
+            }
+        }
+    }
+
+    @SubscribeEvent
     public static void onServerStart(ServerAboutToStartEvent event) {
+        for (int i = 0; i < MMDynamicRes.errorFiles.size(); i++) {
+            String file = MMDynamicRes.errorFiles.get(i);
+            Component message = MMDynamicRes.errorMessages.get(i);
+            event.getServer().sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message));
+        }
         serverAllVehicles.clear();
         levelVehicles.clear();
     }

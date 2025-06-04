@@ -151,6 +151,7 @@ public class TransmissionSubsystem extends AbstractSubsystem {
                 weight = powerReceiverWeights.get(receiver);
                 float power = (float) (totalPower * weight / totalWeight);
                 speed = -0.995f * powerReceivers.get(receiver) + 0.005f * inputSpeed;
+                if (speed == 0f) speed = 0.005f * inputSpeed;
                 MechPowerSignal powerSignalToSend = new MechPowerSignal(power, speed / receiverGearRatio);
                 sendCallbackToListener("power", receiver, powerSignalToSend);//发送功率信号
             }
