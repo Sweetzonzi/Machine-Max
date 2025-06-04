@@ -2,14 +2,12 @@ package io.github.sweetzonzi.machinemax.external.js;
 
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
-import io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
 
-import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_RUNNER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_SCOPE;
 
@@ -30,10 +28,9 @@ public class JSUtils {
         }
     }
 
-    public void hook(String threadString, org.mozilla.javascript.ArrowFunction arrowFunction) {
-        Hook.Thread thread = Hook.Thread.valueOf(threadString);
-        if (!Hook.LISTENING_EVENT.containsKey(thread)) Hook.LISTENING_EVENT.put(thread, new ArrayList<>());
-        Hook.LISTENING_EVENT.get(thread)
+    public void hook(String channel, org.mozilla.javascript.ArrowFunction arrowFunction) {
+        if (!Hook.LISTENING_EVENT.containsKey(channel)) Hook.LISTENING_EVENT.put(channel, new ArrayList<>());
+        Hook.LISTENING_EVENT.get(channel)
                     .add(((args) -> (JS_RUNNER != null && JS_SCOPE != null) ?
                             arrowFunction.call(JS_RUNNER, JS_SCOPE, JS_SCOPE, args) : null
                     ));

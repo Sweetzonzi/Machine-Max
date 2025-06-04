@@ -116,7 +116,8 @@ public class MMDynamicRes {
 
         //公共js库（用于开发时不用覆盖，
         // 所有载具包都可以调用里面封装的库代码，所以为了保证用户所有脚本的正常运行，发布版必须覆盖）
-        copyResourceToFile("/public_scripts/functions.js", PUBLIC_JS_LIBS.resolve("functions.js"), true);
+        copyResourceToFile("/public_scripts/functions.js", PUBLIC_JS_LIBS.resolve("functions.js"), false);
+        copyResourceToFile("/public_scripts/channels.js", PUBLIC_JS_LIBS.resolve("channels.js"), false);
         for (Path jsPackageFile : listPaths(PUBLIC_JS_LIBS, Files::isRegularFile)) {
             try {
                 MM_PUBLIC_SCRIPTS.add(new String(Files.readAllBytes(jsPackageFile)));
@@ -125,6 +126,7 @@ public class MMDynamicRes {
 
         MMInitialJS.register();//注册所有JS形式的初始化配置
     }
+
 
     public static class DataPackReloader extends SimplePreparableReloadListener<Void> {
         @Override
@@ -139,6 +141,11 @@ public class MMDynamicRes {
                 player.sendSystemMessage(Component.literal("[%s]: 内容包模型贴图已重载".formatted(MOD_ID)));
         }
     }
+
+    public static void GenerateChannels(String jsCode) {
+        createDefaultFile(PUBLIC_JS_LIBS.resolve("channels.js"), jsCode, true);
+    }
+
 
     /**
      * 自动生成测试包
