@@ -79,11 +79,18 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
-        animatable.setModelIndex(
-                new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/crowbar.geo"),
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar.png"))
-        );
+        if (context.firstPerson())
+            animatable.setModelIndex(
+                    new ModelIndex(
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/crowbar_first_person.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar_first_person.png"))
+            );
+        else
+            animatable.setModelIndex(
+                    new ModelIndex(
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/crowbar.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar.png"))
+            );
         if (customModels != null) {
             customModels.put(context, animatable);
             itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
@@ -93,19 +100,19 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
 
     @Override
     public Vector3f getRenderOffset(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        if (displayContext==ItemDisplayContext.GUI
-        || displayContext==ItemDisplayContext.FIXED
-        || displayContext==ItemDisplayContext.GROUND)
-            return new Vector3f(-0.1f,-0.05f,0);
+        if (displayContext == ItemDisplayContext.GUI
+                || displayContext == ItemDisplayContext.FIXED
+                || displayContext == ItemDisplayContext.GROUND)
+            return new Vector3f(-0.1f, -0.05f, 0);
         return ICustomModelItem.super.getRenderOffset(itemStack, level, displayContext);
     }
 
     @Override
     public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        if (displayContext==ItemDisplayContext.GUI
-        || displayContext==ItemDisplayContext.FIXED
-        || displayContext==ItemDisplayContext.GROUND)
-            return new Vector3f(0,-85f,-45f).mul((float) (Math.PI/180));
+        if (displayContext == ItemDisplayContext.GUI
+                || displayContext == ItemDisplayContext.FIXED
+                || displayContext == ItemDisplayContext.GROUND)
+            return new Vector3f(0, -85f, -45f).mul((float) (Math.PI / 180));
         return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
     }
 }
