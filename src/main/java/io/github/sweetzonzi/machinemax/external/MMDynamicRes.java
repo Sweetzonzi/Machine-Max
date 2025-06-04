@@ -149,21 +149,24 @@ public class MMDynamicRes {
         //设置默认测试包的路径、名字、内容
         //模型文件
         boolean overwrite = true;
-//        copyResourceToFile("/example_pack/model/test_cube.geo.json", partModelFolder.resolve("test_cube.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_back_seat.geo.json", partModelFolder.resolve("ae86_back_seat.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_seat.geo.json", partModelFolder.resolve("ae86_seat.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_hull.geo.json", partModelFolder.resolve("ae86_hull.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_chassis_all_terrain.geo.json", partModelFolder.resolve("ae86_chassis_all_terrain.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_right.geo.json", partModelFolder.resolve("ae86_wheel_all_terrain_right.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_left.geo.json", partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_chassis.geo.json", partModelFolder.resolve("ae86_chassis.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_wheel_right.geo.json", partModelFolder.resolve("ae86_wheel_right.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_wheel_left.geo.json", partModelFolder.resolve("ae86_wheel_left.geo.json"), overwrite);
 
         //部件定义文件
-//        copyResourceToFile("/example_pack/part_type/test_cube.json", partTypeFolder.resolve("test_cube.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_seat.json", partTypeFolder.resolve("ae86_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_hull.json", partTypeFolder.resolve("ae86_hull.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_chassis_all_terrain.json", partTypeFolder.resolve("ae86_chassis_all_terrain.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_wheel_all_terrain.json", partTypeFolder.resolve("ae86_wheel_all_terrain.json"), overwrite);
+        copyResourceToFile("/example_pack/part_type/ae86_chassis.json", partTypeFolder.resolve("ae86_chassis.json"), overwrite);
+        copyResourceToFile("/example_pack/part_type/ae86_wheel.json", partTypeFolder.resolve("ae86_wheel.json"), overwrite);
 
         //蓝图文件
         copyResourceToFile("/example_pack/blueprint/test_blue_print.json", blueprint.resolve("test_blue_print.json"), overwrite);
@@ -173,17 +176,27 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/lang/en_us.json", lang.resolve("en_us.json"), overwrite);
 
         //自带测试材质
-//        copyResourceToFile("/example_pack/texture/test_cube.png", texture.resolve("test_cube.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_1.png", texture.resolve("ae86_1.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_2.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_3.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_4.png", texture.resolve("ae86_4.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_1.png", texture.resolve("ae86_5.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_6.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_7.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_4.png", texture.resolve("ae86_8.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_4.png", texture.resolve("ae86_9.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_all_terrain_1.png", texture.resolve("ae86_all_terrain_1.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_all_terrain_2.png", texture.resolve("ae86_all_terrain_2.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_all_terrain_3.png", texture.resolve("ae86_all_terrain_3.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_all_terrain_4.png", texture.resolve("ae86_all_terrain_4.png"), overwrite);
 
         //自带测试图标
         copyResourceToFile("/example_pack/icon/ae86_back_seat_icon.png", icon.resolve("ae86_back_seat_icon.png"), overwrite);
         copyResourceToFile("/example_pack/icon/ae86_seat_icon.png", icon.resolve("ae86_seat_icon.png"), overwrite);
         copyResourceToFile("/example_pack/icon/ae86_chassis_all_terrain_icon.png", icon.resolve("ae86_chassis_all_terrain_icon.png"), overwrite);
         copyResourceToFile("/example_pack/icon/ae86_wheel_all_terrain_icon.png", icon.resolve("ae86_wheel_all_terrain_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/ae86_chassis_icon.png", icon.resolve("ae86_chassis_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/ae86_wheel_icon.png", icon.resolve("ae86_wheel_icon.png"), overwrite);
         copyResourceToFile("/example_pack/icon/ae86_hull_icon.png", icon.resolve("ae86_hull_icon.png"), overwrite);
 
         //自定义文本文件

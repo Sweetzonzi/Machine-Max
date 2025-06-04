@@ -3,6 +3,8 @@
   "machine_max.item.test_cube": "Test Cube",
   "machine_max.item.ae86_chassis_all_terrain": "AE86 All Terrain Chassis",
   "machine_max.item.ae86_wheel_all_terrain": "AE86 All Terrain Wheel",
+  "machine_max.item.ae86_chassis": "AE86 Chassis",
+  "machine_max.item.ae86_wheel": "AE86 Wheel",
   "machine_max.item.ae86_back_seat": "AE86 Back Seat",
   "machine_max.item.ae86_seat": "AE86 Seat",
   "machine_max.item.ae86_hull": "AE86 Hull"

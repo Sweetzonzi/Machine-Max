@@ -3,14 +3,19 @@
   "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
     "default": "machine_max:example_pack/model/ae86_hull.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_hull.geo.json"
   },
-  "textures": [//部件贴图列表，不同变体模型应共享一张贴图
+  "textures": [//部件可用贴图列表，不同变体模型应共享一张贴图
     "machine_max:example_pack/texture/ae86_1.png",
     "machine_max:example_pack/texture/ae86_2.png",
     "machine_max:example_pack/texture/ae86_3.png",
-    "machine_max:example_pack/texture/ae86_4.png"
+    "machine_max:example_pack/texture/ae86_4.png",
+    "machine_max:example_pack/texture/ae86_5.png",
+    "machine_max:example_pack/texture/ae86_6.png",
+    "machine_max:example_pack/texture/ae86_7.png",
+    "machine_max:example_pack/texture/ae86_8.png",
+    "machine_max:example_pack/texture/ae86_9.png"
   ],
   "icon": "machine_max:example_pack/icon/ae86_hull_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
-  "basic_durability": 150.0,//部件基础生命值
+  "basic_durability": 50.0,//部件基础生命值
   "sub_parts": {//零件(子部件)列表
     "ae86_hull": {//零件(子部件)名称
       "mass": 300.0,//零件质量(kg)
@@ -34,13 +39,13 @@
       "aero_dynamic": {
         "priority": 1, //(可选，默认0)空气阻力计算优先级，值越大优先级越高，优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化
         "transonic_amplifier": 5.0,//(可选，默认5.0)跨声速段的阻力缩放因子，当来流速度达到0.8~1.2马赫时，阻力系数会逐渐从1x缩放到此倍数
-        "front_drag": [0.1,0.55],//(可选，默认[0.1,1.0])前向各阶阻力系数，默认值下部件在前进时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Z向(前后方向)投影面积，v为前进速度
+        "front_drag": [0.1,0.45],//(可选，默认[0.1,1.0])前向各阶阻力系数，默认值下部件在前进时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Z向(前后方向)投影面积，v为前进速度
         "back_drag": [0.1,0.7],//(可选，默认[0.1,1.0])后向各阶阻力系数，默认值下部件在后退时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Z向(前后方向)投影面积，v为后退速度
         "left_drag": [0.1,1.0],//(可选，默认[0.1,1.0])左向各阶阻力系数，默认值下部件在左移时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Y向(前后方向)投影面积，v为左移速度
         "right_drag": [0.1,1.0],//(可选，默认[0.1,1.0])右向各阶升力系数，默认值下部件在右移时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Y向(前后方向)投影面积，v为右移速度
         "up_drag": [0.1,1.0],//(可选，默认[0.1,1.0])上向各阶阻力系数，默认值下部件在上升时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为X向(前后方向)投影面积，v为上升速度
         "down_drag": [0.1,1.0],//(可选，默认[0.1,1.0])下向各阶阻力系数，默认值下部件在坠落时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为X向(前后方向)投影面积，v为下降速度
-        "x_lift": [],//(可选，默认[])左右后向各阶升力系数，与阻力系数类似，但来流速度以yz向的合速度计算
+        "x_lift": [0.05],//(可选，默认[])左右后向各阶升力系数，与阻力系数类似，但来流速度以yz向的合速度计算
         "y_lift": [],//(可选，默认[])上下向各阶升力系数，但来流速度以xz向的合速度计算
         "z_lift": []//(可选，默认[])前后向各阶升力系数，但来流速度以xy向的合速度计算
       }

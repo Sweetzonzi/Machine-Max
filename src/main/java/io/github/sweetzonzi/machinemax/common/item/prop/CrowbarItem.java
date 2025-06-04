@@ -64,7 +64,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
     @Override
     public void watchingPart(@NotNull Part part, @NotNull Player player) {
         if (player.level().isClientSide)
-            Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.crossbar.interact").append(part.name), true);
+            Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.crowbar.interact").append(part.name), true);
     }
 
     @Override

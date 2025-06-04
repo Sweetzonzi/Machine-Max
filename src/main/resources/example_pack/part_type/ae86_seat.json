@@ -4,10 +4,7 @@
     "default": "machine_max:example_pack/model/ae86_seat.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_hull.geo.json"
   },
   "textures": [//部件贴图列表，不同变体模型应共享一张贴图
-    "machine_max:example_pack/texture/ae86_1.png",
-    "machine_max:example_pack/texture/ae86_2.png",
-    "machine_max:example_pack/texture/ae86_3.png",
-    "machine_max:example_pack/texture/ae86_4.png"
+    "machine_max:example_pack/texture/ae86_all_terrain_1.png"
   ],
   "icon": "machine_max:example_pack/icon/ae86_seat_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
   "basic_durability": 25.0,//部件基础生命值
