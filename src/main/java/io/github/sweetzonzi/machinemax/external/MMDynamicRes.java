@@ -37,11 +37,13 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
     public static ConcurrentMap<ResourceLocation, DynamicPack> MM_SCRIPTS = new ConcurrentHashMap<>(); // 读取为mm自带脚本（并不是星火的）
+    public static List<String> MM_PUBLIC_SCRIPTS = new ArrayList<>(); // 读取为mm自带脚本（并不是星火的）
 
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
     public static final Path VEHICLES = NAMESPACE.resolve("custom_packs");//载具包根文件夹
+    public static final Path PUBLIC_JS_LIBS = NAMESPACE.resolve("public_scripts");//载具包根文件夹
 
     /**
      * 注册热重载事件
@@ -67,6 +69,7 @@ public class MMDynamicRes {
         BLUEPRINTS.clear();
         MM_SCRIPTS.clear();
         MMInitialJS.clear();
+        MM_PUBLIC_SCRIPTS.clear();
         loadResources();
     }
 
@@ -79,6 +82,7 @@ public class MMDynamicRes {
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
+        Exist(PUBLIC_JS_LIBS);
         GenerateTestPack(); //自动生成测试包
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
@@ -100,6 +104,7 @@ public class MMDynamicRes {
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
+        Exist(PUBLIC_JS_LIBS);
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
             //各种MM配置
@@ -107,6 +112,15 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("color")));
+        }
+
+        //公共js库（用于开发时不用覆盖，
+        // 所有载具包都可以调用里面封装的库代码，所以为了保证用户所有脚本的正常运行，发布版必须覆盖）
+        copyResourceToFile("/public_scripts/functions.js", PUBLIC_JS_LIBS.resolve("functions.js"), true);
+        for (Path jsPackageFile : listPaths(PUBLIC_JS_LIBS, Files::isRegularFile)) {
+            try {
+                MM_PUBLIC_SCRIPTS.add(new String(Files.readAllBytes(jsPackageFile)));
+            } catch (Exception ignored) {}
         }
 
         MMInitialJS.register();//注册所有JS形式的初始化配置
@@ -163,7 +177,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/part_type/ae86_wheel_all_terrain.json", partTypeFolder.resolve("ae86_wheel_all_terrain.json"), overwrite);
 
         //MM自带JS文件
-        copyResourceToFile("/example_pack/script/mm/run/mm_test.js", script.resolve("mm_test.js"), false);
+        copyResourceToFile("/example_pack/script/main.js", script.resolve("main.js"), false);
 
         //蓝图文件
         copyResourceToFile("/example_pack/blueprint/test_blue_print.json", blueprint.resolve("test_blue_print.json"), overwrite);

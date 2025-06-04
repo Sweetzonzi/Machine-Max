@@ -25,6 +25,7 @@ public class MMInitialJS {
     public static void run(Object[] args) {
         try {
             ScriptableObject.putProperty(JS_SCOPE, "args", Context.javaToJS(args, JS_SCOPE,  JS_RUNNER));
+//            JS_SCOPE.put("args", JS_SCOPE, args);
         } catch (Exception e) {
             LOGGER.error("MMInitialJS Error: " + Arrays.toString(e.getStackTrace()));
         }
@@ -44,6 +45,11 @@ public class MMInitialJS {
     public static void register() {
         JS_RUNNER = Context.enter();
         JS_SCOPE = JS_RUNNER.initStandardObjects();
+        StringBuilder packages = new StringBuilder();
+        for (String publicScript : MMDynamicRes.MM_PUBLIC_SCRIPTS) {
+            packages.append(publicScript);
+            packages.append("\n");
+        }
 
         ScriptableObject.putProperty(JS_SCOPE, "mm", Context.javaToJS(new JSUtils(), JS_SCOPE,  JS_RUNNER));
         ScriptableObject.putProperty(JS_SCOPE, "signal", Context.javaToJS(new SignalProvider(), JS_SCOPE,  JS_RUNNER));
@@ -51,7 +57,7 @@ public class MMInitialJS {
         MMDynamicRes.MM_SCRIPTS.forEach((location, jsPack) -> {
             try {
                 Object jsObj = JS_RUNNER.evaluateString(
-                        JS_SCOPE, jsPack.getContent(),
+                        JS_SCOPE, packages + jsPack.getContent(),
                         "mm_initial_js_register_"+location.getPath(), 1, null);
 //                System.out.println("MMInitialJS Run: "+jsObj);
             } catch (Exception e) {

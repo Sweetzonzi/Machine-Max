@@ -23,15 +23,27 @@ public class Hook {
         LISTENING_EVENT.clear();
     }
 
+
+    private static void setup(Object... args) {
+        int index = 0;
+        for (Object arg : args) {
+            JS_SCOPE.put("a"+index, JS_SCOPE, arg);
+            index++;
+        }
+    }
+
     public static void run(Hook.Thread thread, Object... args) {
         if (Hook.LISTENING_EVENT.get(thread) instanceof List<EventToJS> li) {
             for (EventToJS eventToJS : li) {
                 try {
+                    JS_SCOPE.put("args", JS_SCOPE, args);
+                    setup(args);
                     eventToJS.call(args);
                 } catch (RuntimeException e) {
                     JS_RUNNER = Context.enter();
                     JS_SCOPE = JS_RUNNER.initStandardObjects();
-                    LOGGER.error("JS钩子在{}出现错误，尝试重启: {}", thread, e.getStackTrace());
+                    setup(args);
+                    LOGGER.error("JS钩子在{}出现错误，尝试重启: {}", thread, e);
                 }
             }
         }
