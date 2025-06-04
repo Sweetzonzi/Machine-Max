@@ -32,6 +32,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -178,6 +179,8 @@ public class LivingEntityEyesightAttachment {
                     for (InteractBox interactBox : accurateInteractBoxCache) {
                         if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE) return interactBox;
                     }
+                } else if (body.getOwner() != null && body.getOwner() instanceof AbstractConnector){
+                    continue;
                 } else return null;
             }
         }
