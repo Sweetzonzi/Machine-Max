@@ -50,6 +50,8 @@ public class MMDynamicRes {
     public static final Path VEHICLES = NAMESPACE.resolve("custom_packs");//载具包根文件夹
     public static final Path PUBLIC_JS_LIBS = NAMESPACE.resolve("public_scripts");//载具包根文件夹
 
+    public static boolean overwrite = true;
+
     /**
      * 注册热重载事件
      */
@@ -129,7 +131,6 @@ public class MMDynamicRes {
         // DYNAMIC: 某些示范代码需要关闭覆盖保证存在文件即可，在生成器中则需要覆盖）
 
         copyResourceToFile("/public_scripts/functions.js", PUBLIC_JS_LIBS.resolve("functions.js"), STATIC);
-        copyResourceToFile("/public_scripts/channels.js", PUBLIC_JS_LIBS.resolve("channels.js"), DYNAMIC);
         for (Path jsPackageFile : listPaths(PUBLIC_JS_LIBS, Files::isRegularFile)) {
             try {
                 MM_PUBLIC_SCRIPTS.add(new String(Files.readAllBytes(jsPackageFile)));
@@ -155,7 +156,7 @@ public class MMDynamicRes {
     }
 
     public static void GenerateChannels(String jsCode) {
-        createDefaultFile(PUBLIC_JS_LIBS.resolve("channels.js"), jsCode, true);
+        createDefaultFile(PUBLIC_JS_LIBS.resolve("channels.js"), jsCode, overwrite);
     }
 
 
@@ -178,7 +179,6 @@ public class MMDynamicRes {
 
         //设置默认测试包的路径、名字、内容
         //模型文件
-        boolean overwrite = true;
         copyResourceToFile("/example_pack/model/ae86_back_seat.geo.json", partModelFolder.resolve("ae86_back_seat.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_seat.geo.json", partModelFolder.resolve("ae86_seat.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_hull.geo.json", partModelFolder.resolve("ae86_hull.geo.json"), overwrite);
@@ -200,7 +200,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/part_type/ae86_wheel.json", partTypeFolder.resolve("ae86_wheel.json"), overwrite);
 
         //MM自带JS文件
-        copyResourceToFile("/example_pack/script/main.js", script.resolve("main.js"), true);
+        copyResourceToFile("/example_pack/script/main.js", script.resolve("main.js"), overwrite);
 
         //蓝图文件
         copyResourceToFile("/example_pack/blueprint/ae86.json", blueprint.resolve("ae86.json"), overwrite);
