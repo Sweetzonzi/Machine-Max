@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machinemax.external.js.hook;
 
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
+import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import org.mozilla.javascript.Context;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_SCOPE;
 public class Hook {
     public static HashMap<String, Double> SIGNAL_MAP = new HashMap<>();
     public static HashMap<String, List<EventToJS>> LISTENING_EVENT = new HashMap<>();
+    public static HashMap<String, String> CHANNEL_DOCUMENT = new HashMap<>();
     public static void clear() {
         SIGNAL_MAP.clear();
         LISTENING_EVENT.clear();
@@ -24,18 +26,31 @@ public class Hook {
         var stack = Thread.currentThread().getStackTrace()[2];
         String className = stack.getClassName();
         String methodName = stack.getMethodName();
-        String channel = className + ":" + methodName;
-        if (!Hook.LISTENING_EVENT.containsKey(channel)) {
-            Hook.LISTENING_EVENT.put(channel, new ArrayList<>());
+        String channel = JSUtils.getSimpleName(className) + ":" + methodName;
+        String argType = "";
+        int argIndex = 0;
+        for (Object arg : args) {
+            argType += JSUtils.getSimpleName(arg.getClass().getTypeName());
+            argType += argIndex != (args.length-1) ? ", ":"";
+            argIndex++;
+        }
+        if (!LISTENING_EVENT.containsKey(channel)) {
+            LISTENING_EVENT.put(channel, new ArrayList<>());
+            CHANNEL_DOCUMENT.put(channel, argType);
             String jsCode = "";
-            int index = 0;
-            for (String c1 : LISTENING_EVENT.keySet()) {
-                jsCode += "var c%s = \"%s\";\n".formatted(index, c1);
-                index++;
+            int docIndex = 0;
+            jsCode += "// 注意！下面的变量均为动态生成。变量仅作为文档和测试使用，发布个人外部包前请检查均使用完整字符串！\n";
+            jsCode += "//      错误用法 mm.hook(c11, (各个参数) => {}); ❌\n";
+            jsCode += "//      正确用法 mm.hook(\"VehicleCore:tick\", (各个参数) => {}); ✅\n";
+            jsCode += "\n// 若因使用不当造成个人外部包失效概不负责\n\n";
+            for (String c : CHANNEL_DOCUMENT.keySet()) {
+                jsCode += "var c%s = \"%s\";\n".formatted(docIndex, c);
+                jsCode += "//param: (%s)\n\n".formatted(CHANNEL_DOCUMENT.get(c));
+                docIndex++;
             }
             MMDynamicRes.GenerateChannels(jsCode);
         }
-        if (Hook.LISTENING_EVENT.get(channel) instanceof List<EventToJS> li) {
+        if (LISTENING_EVENT.get(channel) instanceof List<EventToJS> li) {
             for (EventToJS eventToJS : li) {
                 try {
                     JS_SCOPE.put("args", JS_SCOPE, args);
@@ -49,4 +64,5 @@ public class Hook {
             }
         }
     }
+
 }

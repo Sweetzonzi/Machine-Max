@@ -45,4 +45,9 @@ public class JSUtils {
             player.sendSystemMessage(Component.literal(String.valueOf(object)));
         }
     }
+
+    public static String getSimpleName(String fullClassName) {
+        int lastDotIndex = fullClassName.lastIndexOf('.');
+        return (lastDotIndex == -1) ? fullClassName : fullClassName.substring(lastDotIndex + 1);
+    }
 }
