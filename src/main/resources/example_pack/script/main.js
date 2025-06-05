@@ -1,16 +1,9 @@
-function engineInvoke(subsystem) {
-    if (subsystem.name == "left_front_wheel_driver") {
-        print(subsystem.attr.rollingAxis)
+// 小示范，在F3+T后打印VehicleCore对象的所有类方法信息
+var x = false;
+mm.hook("VehicleCore:prePhysicsTick", (core) => {
+    if (!x) {
+        x = getMethods(core)
+        print("resources/example_pack/script/main.js 小示范运行完毕")
     }
 
-}
-
-mm.hook("tick", (subsystem) => {
-    engineInvoke(subsystem)
-})
-mm.hook("pre", (subsystem) => {
-    engineInvoke(subsystem)
-})
-mm.hook("post", (subsystem) => {
-    engineInvoke(subsystem)
 })
