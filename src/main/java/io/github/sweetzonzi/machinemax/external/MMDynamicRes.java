@@ -6,6 +6,7 @@ import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.external.parse.OBoneParse;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -40,11 +41,14 @@ public class MMDynamicRes {
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
     public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
     public static List<MutableComponent> errorMessages = new ArrayList<>(); // 读取过程中出现错误的提示信息
+    public static ConcurrentMap<ResourceLocation, DynamicPack> MM_SCRIPTS = new ConcurrentHashMap<>(); // 读取为mm自带脚本（并不是星火的）
+    public static List<String> MM_PUBLIC_SCRIPTS = new ArrayList<>(); // 读取为mm自带脚本（并不是星火的）
 
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
     public static final Path VEHICLES = NAMESPACE.resolve("custom_packs");//载具包根文件夹
+    public static final Path PUBLIC_JS_LIBS = NAMESPACE.resolve("public_scripts");//载具包根文件夹
 
     /**
      * 注册热重载事件
@@ -71,6 +75,9 @@ public class MMDynamicRes {
         exceptions.clear();
         errorFiles.clear();
         errorMessages.clear();
+        MM_SCRIPTS.clear();
+        MMInitialJS.clear();
+        MM_PUBLIC_SCRIPTS.clear();
         loadResources();
     }
 
@@ -83,6 +90,7 @@ public class MMDynamicRes {
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
+        Exist(PUBLIC_JS_LIBS);
         GenerateTestPack(); //自动生成测试包
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
@@ -104,6 +112,7 @@ public class MMDynamicRes {
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
+        Exist(PUBLIC_JS_LIBS);
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
             //各种MM配置
@@ -112,7 +121,24 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("color")));
         }
+
+        //公共js库（用于开发时不用覆盖，
+        boolean STATIC = true;
+        // STATIC: 所有载具包都可以调用里面封装的库代码，所以为了保证用户所有脚本的正常运行，发布版必须覆盖）
+        boolean DYNAMIC = false;
+        // DYNAMIC: 某些示范代码需要关闭覆盖保证存在文件即可，在生成器中则需要覆盖）
+
+        copyResourceToFile("/public_scripts/functions.js", PUBLIC_JS_LIBS.resolve("functions.js"), STATIC);
+        copyResourceToFile("/public_scripts/channels.js", PUBLIC_JS_LIBS.resolve("channels.js"), DYNAMIC);
+        for (Path jsPackageFile : listPaths(PUBLIC_JS_LIBS, Files::isRegularFile)) {
+            try {
+                MM_PUBLIC_SCRIPTS.add(new String(Files.readAllBytes(jsPackageFile)));
+            } catch (Exception ignored) {}
+        }
+
+        MMInitialJS.register();//注册所有JS形式的初始化配置
     }
+
 
     public static class DataPackReloader extends SimplePreparableReloadListener<Void> {
         @Override
@@ -127,6 +153,11 @@ public class MMDynamicRes {
                 player.sendSystemMessage(Component.literal("[%s]: 内容包模型贴图已重载".formatted(MOD_ID)));
         }
     }
+
+    public static void GenerateChannels(String jsCode) {
+        createDefaultFile(PUBLIC_JS_LIBS.resolve("channels.js"), jsCode, true);
+    }
+
 
     /**
      * 自动生成测试包
@@ -159,6 +190,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/model/ae86_wheel_left.geo.json", partModelFolder.resolve("ae86_wheel_left.geo.json"), overwrite);
 
         //部件定义文件
+        copyResourceToFile("/example_pack/part_type/test_cube.json", partTypeFolder.resolve("test_cube.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_seat.json", partTypeFolder.resolve("ae86_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_hull.json", partTypeFolder.resolve("ae86_hull.json"), overwrite);
@@ -166,6 +198,9 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/part_type/ae86_wheel_all_terrain.json", partTypeFolder.resolve("ae86_wheel_all_terrain.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_chassis.json", partTypeFolder.resolve("ae86_chassis.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_wheel.json", partTypeFolder.resolve("ae86_wheel.json"), overwrite);
+
+        //MM自带JS文件
+        copyResourceToFile("/example_pack/script/main.js", script.resolve("main.js"), false);
 
         //蓝图文件
         copyResourceToFile("/example_pack/blueprint/ae86.json", blueprint.resolve("ae86.json"), overwrite);
@@ -256,6 +291,8 @@ public class MMDynamicRes {
                     }
 
                     case "script" -> {
+                        dynamicPack = new DynamicPack(location, category, filePath.toFile());
+                        MM_SCRIPTS.put(location, dynamicPack);
                     }
                     case "blueprint" -> {
                         VehicleData data = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();

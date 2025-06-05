@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
+import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.ClientRequestVehicleDataPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.LevelVehicleDataPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleCreatePayload;
@@ -95,6 +96,7 @@ public class VehicleManager {
 
     @SubscribeEvent
     public static void onTick(LevelTickEvent.Post event) {
+        Hook.run(event);
         levelVehicles.computeIfAbsent(event.getLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(vehicleCore -> {
             vehicleCore.tick();
             updateVehicleChunk(vehicleCore);
@@ -103,11 +105,13 @@ public class VehicleManager {
 
     @SubscribeEvent
     public static void onPrePhysicsTick(PhysicsLevelTickEvent.Pre event) {
+        Hook.run(event);
         levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::prePhysicsTick);
     }
 
     @SubscribeEvent
     public static void onPostPhysicsTick(PhysicsLevelTickEvent.Post event) {
+        Hook.run(event);
         levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::postPhysicsTick);
     }
 

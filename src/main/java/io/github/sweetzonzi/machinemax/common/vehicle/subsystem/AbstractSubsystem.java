@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalSender;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
+import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.damagesource.DamageSource;
@@ -48,14 +49,16 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void onTick() {
+        Hook.run(this, tickCount);
         tickCount++;
     }
 
     public void onPrePhysicsTick() {
-
+        Hook.run(this);
     }
 
     public void onPostPhysicsTick() {
+        Hook.run(this, physicsTickCount);
         physicsTickCount++;
     }
 
