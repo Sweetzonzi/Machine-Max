@@ -49,16 +49,16 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void onTick() {
-        Hook.run(this, tickCount);
+//        Hook.run(this, tickCount);
         tickCount++;
     }
 
     public void onPrePhysicsTick() {
-        Hook.run(this);
+//        Hook.run(this);
     }
 
     public void onPostPhysicsTick() {
-        Hook.run(this, physicsTickCount);
+//        Hook.run(this, physicsTickCount);
         physicsTickCount++;
     }
 

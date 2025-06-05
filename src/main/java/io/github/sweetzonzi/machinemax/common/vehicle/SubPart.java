@@ -526,7 +526,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     MMMath.localVectorToWorldVector(PhysicsHelperKt.toBVector3f(attr.aeroDynamic.center()), this.body));
         }
         //攀爬辅助处理
-        if (this.GROUND_COLLISION_ONLY && stepHeight > 0) {
+        if (body.isActive() && this.GROUND_COLLISION_ONLY && stepHeight > 0) {
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.2f);
             if (attr.climbAssist) {
                 Vector3f start = this.body.getPhysicsLocation(null);
@@ -572,7 +572,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public void mcTick(@NotNull PhysicsCollisionObject pco, @NotNull Level level) {
     }
 
-    public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implements PhysicsHost, PhysicsCollisionObjectTicker, PhysicsCollisionListener {
+    public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implements PhysicsHost, PhysicsCollisionObjectTicker {
 
         public final SubPart subPart;
         public final CompoundCollisionShape interactBoxShape;
@@ -588,7 +588,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             }
             this.body = new PhysicsRigidBody(name, this, interactBoxShape);
             this.body.setKinematic(true);
-            this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_NO_COLLISION);
+            this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_INTERACT);
             this.body.setCollideWithGroups(VehicleManager.COLLISION_GROUP_NONE);
             bindBody(this.body, getPhysicsLevel(), true, body -> {
                 body.addPhysicsTicker(this);
@@ -604,28 +604,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             if (body instanceof PhysicsRigidBody rigidBody) {
                 rigidBody.setPhysicsLocation(position);
                 rigidBody.setPhysicsRotation(rotation);
-                getPhysicsLevel().getWorld().contactTest(this.body, this);
-            }
-        }
-
-        @Override
-        public void collision(PhysicsCollisionEvent event) {
-            PhysicsRigidBody entityHitBox;
-            int interactBoxIndex;
-            if (event.getObjectA() == this.body) {
-                entityHitBox = (PhysicsRigidBody) event.getObjectB();
-                interactBoxIndex = event.getIndex0();
-            } else if (event.getObjectB() == this.body) {
-                entityHitBox = (PhysicsRigidBody) event.getObjectA();
-                interactBoxIndex = event.getIndex1();
-            } else return;//事件与交互判定无关时提前返回
-            if (entityHitBox.getOwner() instanceof LivingEntity entity) {
-                InteractBox interactBox = getInteractBox(interactBoxIndex);
-                InteractBox.InteractMode mode = interactBox.interactMode;
-                if (mode == InteractBox.InteractMode.FAST && entity.hasData(MMAttachments.getENTITY_EYESIGHT())) {
-                    var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
-                    eyesight.addFastInteractBox(interactBox);
-                }
             }
         }
 

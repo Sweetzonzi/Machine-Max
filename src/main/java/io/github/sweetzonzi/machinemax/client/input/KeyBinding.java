@@ -32,7 +32,6 @@ public class KeyBinding {
     public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = "key.machine_max.assembly.cycle_connector";
     public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "key.machine_max.assembly.cycle_variant";
 
-
     /**
      * 在此注册所有按键
      */

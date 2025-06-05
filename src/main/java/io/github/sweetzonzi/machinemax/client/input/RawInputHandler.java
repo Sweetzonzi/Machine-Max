@@ -134,7 +134,6 @@ public class RawInputHandler {
           通用功能
          */
         //载具交互
-
         if (KeyBinding.generalInteractKey.isDown()) {
             if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 0) {//一般互动
                 if (client.player != null)

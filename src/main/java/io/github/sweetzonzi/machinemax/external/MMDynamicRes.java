@@ -190,7 +190,6 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/model/ae86_wheel_left.geo.json", partModelFolder.resolve("ae86_wheel_left.geo.json"), overwrite);
 
         //部件定义文件
-        copyResourceToFile("/example_pack/part_type/test_cube.json", partTypeFolder.resolve("test_cube.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_seat.json", partTypeFolder.resolve("ae86_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_hull.json", partTypeFolder.resolve("ae86_hull.json"), overwrite);

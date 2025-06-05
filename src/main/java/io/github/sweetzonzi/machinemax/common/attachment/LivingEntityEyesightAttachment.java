@@ -2,17 +2,18 @@ package io.github.sweetzonzi.machinemax.common.attachment;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.PPhase;
+import com.jme3.bullet.collision.PhysicsCollisionEvent;
+import com.jme3.bullet.collision.PhysicsCollisionListener;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
+import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
-import io.github.sweetzonzi.machinemax.common.vehicle.InteractBox;
-import io.github.sweetzonzi.machinemax.common.vehicle.Part;
-import io.github.sweetzonzi.machinemax.common.vehicle.SubPart;
-import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
+import io.github.sweetzonzi.machinemax.common.vehicle.*;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machinemax.network.payload.SubsystemInteractPayload;
 import lombok.Getter;
@@ -22,8 +23,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -32,7 +31,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -40,8 +38,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 @Getter
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
-public class LivingEntityEyesightAttachment {
+public class LivingEntityEyesightAttachment implements PhysicsCollisionListener {
     public final LivingEntity owner;
+    public final PhysicsGhostObject trigger;
     private final ConcurrentMap<PhysicsRigidBody, PhysicsRayTestResult> targets = new ConcurrentHashMap<>(2);
     private final ConcurrentSkipListSet<PhysicsRigidBody> sortedTargets = new ConcurrentSkipListSet<>();
     private final CopyOnWriteArraySet<InteractBox> fastInteractBoxes = new CopyOnWriteArraySet<>();
@@ -54,6 +53,12 @@ public class LivingEntityEyesightAttachment {
 
     public LivingEntityEyesightAttachment(LivingEntity entity) {
         this.owner = entity;
+        var boundingBox = entity.getBoundingBox();
+        BoxCollisionShape shape = new BoxCollisionShape((float) (boundingBox.getXsize() * 0.5f), (float) (boundingBox.getYsize() * 0.5f), (float) (boundingBox.getZsize() * 0.5f));
+        this.trigger = new PhysicsGhostObject("interact_trigger", entity, shape);
+        this.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
+        this.trigger.setCollisionGroup(VehicleManager.COLLISION_GROUP_NO_COLLISION);
+        this.trigger.setCollideWithGroups(VehicleManager.COLLISION_GROUP_INTERACT);
     }
 
     @SubscribeEvent
@@ -64,13 +69,13 @@ public class LivingEntityEyesightAttachment {
             eyesight.eyesightRange = entity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);//更新射线距离
             if (eyesight.eyesightRange <= 0) return;
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+                eyesight.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
                 Vector3f startPos = PhysicsHelperKt.toBVector3f(entity.getEyePosition());
                 Vector3f endPos = startPos.add(PhysicsHelperKt.toBVector3f(
                         entity.getViewVector(1).normalize().scale(eyesight.eyesightRange)
                 ));
                 eyesight.targets.clear();//清空射线检测结果列表
                 eyesight.sortedTargets.clear();//清空排序后的射线检测结果列表
-                eyesight.fastInteractBoxes.clear();//清空交互判定区列表
                 eyesight.accurateInteractBoxes.clear();//清空交互判定区列表
                 var rayTestResults = level.getPhysicsLevel().getWorld().rayTest(startPos, endPos);
                 rayTestResults.forEach(//获取射线命中物体
@@ -88,12 +93,17 @@ public class LivingEntityEyesightAttachment {
                             }
                         }
                 );
-                eyesight.fastInteractBoxCache.clear();
                 eyesight.accurateInteractBoxCache.clear();
-                eyesight.fastInteractBoxCache.addAll(eyesight.fastInteractBoxes);
                 eyesight.accurateInteractBoxCache.addAll(eyesight.accurateInteractBoxes);
                 eyesight.sortedTargetsCache = eyesight.sortedTargets.stream().toList();
                 eyesight.targetsCache = new HashMap<>(eyesight.targets);
+                eyesight.fastInteractBoxes.clear();//清空交互判定区列表
+                level.getPhysicsLevel().getWorld().contactTest(eyesight.trigger, eyesight);
+                level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
+                    eyesight.fastInteractBoxCache.clear();
+                    eyesight.fastInteractBoxCache.addAll(eyesight.fastInteractBoxes);
+                    return null;
+                });
                 return null;
             });
             if (entity instanceof Player player && player.isLocalPlayer()) {
@@ -102,6 +112,26 @@ public class LivingEntityEyesightAttachment {
                 if (interactBox != null) {
                     player.displayClientMessage(Component.translatable("message.machine_max.watch_interact_box_info", KeyBinding.generalInteractKey.getTranslatedKeyMessage(), interactBox.name), true);
                 }
+            }
+        }
+    }
+
+    @Override
+    public void collision(PhysicsCollisionEvent event) {
+        PhysicsCollisionObject interactHitBox;
+        int interactBoxIndex;
+        if (event.getObjectA() == this.trigger) {
+            interactHitBox = event.getObjectB();
+            interactBoxIndex = event.getIndex1();
+        } else if (event.getObjectB() == this.trigger) {
+            interactHitBox = event.getObjectA();
+            interactBoxIndex = event.getIndex0();
+        } else return;//事件与交互判定无关时提前返回
+        if (interactHitBox.getOwner() instanceof SubPart.InteractBoxes interactBoxes) {
+            InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
+            InteractBox.InteractMode mode = interactBox.interactMode;
+            if (mode == InteractBox.InteractMode.FAST) {
+                this.fastInteractBoxes.add(interactBox);
             }
         }
     }
@@ -179,7 +209,7 @@ public class LivingEntityEyesightAttachment {
                     for (InteractBox interactBox : accurateInteractBoxCache) {
                         if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE) return interactBox;
                     }
-                } else if (body.getOwner() != null && body.getOwner() instanceof AbstractConnector){
+                } else if (body.getOwner() != null && body.getOwner() instanceof AbstractConnector) {
                     continue;
                 } else return null;
             }
@@ -192,11 +222,6 @@ public class LivingEntityEyesightAttachment {
             return fastInteractBoxCache.iterator().next();
         }
         return null;
-    }
-
-
-    public void addFastInteractBox(InteractBox interactBox) {
-        fastInteractBoxes.add(interactBox);
     }
 
     /**

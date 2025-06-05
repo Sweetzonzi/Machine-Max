@@ -15,7 +15,6 @@ import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleCreatePay
 import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleRemovePayload;
 import io.github.sweetzonzi.machinemax.util.ChunkHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -297,7 +296,7 @@ public class VehicleManager {
      * 未使用的碰撞组 #6
      * Unused collision group #6
      */
-    final public static int COLLISION_GROUP_06 = 0x0020;
+    final public static int COLLISION_GROUP_INTERACT = 0x0020;
     /**
      * 未使用的碰撞组 #7
      */
