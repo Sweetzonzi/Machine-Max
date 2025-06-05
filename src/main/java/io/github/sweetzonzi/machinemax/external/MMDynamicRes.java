@@ -115,9 +115,13 @@ public class MMDynamicRes {
         }
 
         //公共js库（用于开发时不用覆盖，
-        // 所有载具包都可以调用里面封装的库代码，所以为了保证用户所有脚本的正常运行，发布版必须覆盖）
-        copyResourceToFile("/public_scripts/functions.js", PUBLIC_JS_LIBS.resolve("functions.js"), false);
-        copyResourceToFile("/public_scripts/channels.js", PUBLIC_JS_LIBS.resolve("channels.js"), false);
+        boolean STATIC = true;
+        // STATIC: 所有载具包都可以调用里面封装的库代码，所以为了保证用户所有脚本的正常运行，发布版必须覆盖）
+        boolean DYNAMIC = false;
+        // DYNAMIC: 某些示范代码需要关闭覆盖保证存在文件即可，在生成器中则需要覆盖）
+
+        copyResourceToFile("/public_scripts/functions.js", PUBLIC_JS_LIBS.resolve("functions.js"), STATIC);
+        copyResourceToFile("/public_scripts/channels.js", PUBLIC_JS_LIBS.resolve("channels.js"), DYNAMIC);
         for (Path jsPackageFile : listPaths(PUBLIC_JS_LIBS, Files::isRegularFile)) {
             try {
                 MM_PUBLIC_SCRIPTS.add(new String(Files.readAllBytes(jsPackageFile)));

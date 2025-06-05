@@ -40,9 +40,13 @@ public class JSUtils {
         System.out.println(object);
     }
 
-    public void print(Object object) {
+    public void print(Object... objects) {
         if (Minecraft.getInstance().player instanceof Player player) {
-            player.sendSystemMessage(Component.literal(String.valueOf(object)));
+            StringBuilder msg = new StringBuilder();
+            for (Object object : objects) {
+                msg.append(String.valueOf(object));
+            }
+            player.sendSystemMessage(Component.literal(msg.toString()));
         }
     }
 

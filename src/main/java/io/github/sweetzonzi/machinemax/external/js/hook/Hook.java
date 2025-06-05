@@ -59,7 +59,7 @@ public class Hook {
                 } catch (RuntimeException e) {
                     JS_RUNNER = Context.enter();
                     JS_SCOPE = JS_RUNNER.initStandardObjects();
-                    LOGGER.error("JS钩子在{}出现错误，尝试重启: {}", channel, e);
+                    LOGGER.error("JS钩子在{}出现错误，尝试重启: {} {}", channel, e, e.getMessage());
                 }
             }
         }
