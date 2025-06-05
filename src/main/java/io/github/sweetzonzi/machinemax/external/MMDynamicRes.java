@@ -37,20 +37,20 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
-    public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
+    public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
     public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
     public static List<MutableComponent> errorMessages = new ArrayList<>(); // 读取过程中出现错误的提示信息
     public static ConcurrentMap<ResourceLocation, DynamicPack> MM_SCRIPTS = new ConcurrentHashMap<>(); // 读取为mm自带脚本（并不是星火的）
-    public static List<String> MM_PUBLIC_SCRIPTS = new ArrayList<>(); // 读取为mm自带脚本（并不是星火的）
+    public static List<String> MM_PUBLIC_SCRIPTS = new ArrayList<>(); // 自带外部公共库的所有js代码会被存在这里
 
     //各个外部路径
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
     public static final Path VEHICLES = NAMESPACE.resolve("custom_packs");//载具包根文件夹
-    public static final Path PUBLIC_JS_LIBS = NAMESPACE.resolve("public_scripts");//载具包根文件夹
+    public static final Path PUBLIC_JS_LIBS = NAMESPACE.resolve("public_scripts");//js外部公共库目录
 
-    public static boolean overwrite = true;
+    public static boolean overwrite = true;//覆写总开关，考虑以后做成用户自定义配置
 
     /**
      * 注册热重载事件
