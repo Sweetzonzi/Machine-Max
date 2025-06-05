@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
-import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.parse.OBoneParse;
@@ -169,7 +168,8 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/part_type/ae86_wheel.json", partTypeFolder.resolve("ae86_wheel.json"), overwrite);
 
         //蓝图文件
-        copyResourceToFile("/example_pack/blueprint/test_blue_print.json", blueprint.resolve("test_blue_print.json"), overwrite);
+        copyResourceToFile("/example_pack/blueprint/ae86.json", blueprint.resolve("ae86.json"), overwrite);
+        copyResourceToFile("/example_pack/blueprint/ae86at.json", blueprint.resolve("ae86at.json"), overwrite);
 
         //自定义翻译
         copyResourceToFile("/example_pack/lang/zh_cn.json", lang.resolve("zh_cn.json"), overwrite);
@@ -198,12 +198,17 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/icon/ae86_chassis_icon.png", icon.resolve("ae86_chassis_icon.png"), overwrite);
         copyResourceToFile("/example_pack/icon/ae86_wheel_icon.png", icon.resolve("ae86_wheel_icon.png"), overwrite);
         copyResourceToFile("/example_pack/icon/ae86_hull_icon.png", icon.resolve("ae86_hull_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/ae86_icon.png", icon.resolve("ae86_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/ae86at_icon.png", icon.resolve("ae86at_icon.png"), overwrite);
 
         //自定义文本文件
-        copyResourceToFile("/example_pack/content/test.html", content.resolve("test.html"), overwrite);
+        copyResourceToFile("/example_pack/content/ae86.html", content.resolve("ae86.html"), overwrite);
+        copyResourceToFile("/example_pack/content/ae86at.html", content.resolve("ae86at.html"), overwrite);
 
         //自定义字体文件
         copyResourceToFile("/example_pack/font/test_font.json", font.resolve("test_font.json"), overwrite);
+        copyResourceToFile("/example_pack/font/yahei.json", font.resolve("yahei.json"), overwrite);
+        copyResourceToFile("/example_pack/font/yahei.ttf", font.resolve("yahei.ttf"), overwrite);
         copyResourceToFile("/example_pack/font/bell.ttf", font.resolve("bell.ttf"), overwrite);
         copyResourceToFile("/example_pack/font/bellb.ttf", font.resolve("bellb.ttf"), overwrite);
         copyResourceToFile("/example_pack/font/belli.ttf", font.resolve("belli.ttf"), overwrite);

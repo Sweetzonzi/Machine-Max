@@ -14,11 +14,24 @@ object MMDataComponents {
     }
 
     /**
-     * 保存在部件物品上的物品类型，用于从物品创建部件
+     * 保存在部件物品上的部件类型，用于从物品创建部件
      */
     @JvmStatic
     val PART_TYPE = MachineMax.REGISTER.dataComponent<ResourceLocation>()
         .id("part_type")
+        .build {
+            it
+                .persistent(ResourceLocation.CODEC)
+                .networkSynchronized(ResourceLocation.STREAM_CODEC)
+                .cacheEncoding()
+        }
+
+    /**
+     * 保存在蓝图物品上的蓝图资源路径，用于重建载具
+     */
+    @JvmStatic
+    val VEHICLE_DATA = MachineMax.REGISTER.dataComponent<ResourceLocation>()
+        .id("vehicle_data")
         .build {
             it
                 .persistent(ResourceLocation.CODEC)

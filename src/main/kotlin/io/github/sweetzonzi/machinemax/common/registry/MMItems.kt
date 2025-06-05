@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machinemax.common.registry
 
 import io.github.sweetzonzi.machinemax.MachineMax
 import io.github.sweetzonzi.machinemax.client.renderer.CustomModelItemRenderer
+import io.github.sweetzonzi.machinemax.common.item.prop.BlueprintItem
 import io.github.sweetzonzi.machinemax.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem
 import io.github.sweetzonzi.machinemax.common.item.prop.SprayCanItem
@@ -26,6 +27,13 @@ object MMItems {
     val PART_ITEM = MachineMax.REGISTER.item<MMPartItem>()
         .id("part_item")
         .bound { MMPartItem(Item.Properties().stacksTo(1)) }
+        .build()
+
+    //载具蓝图物品原型
+    @JvmStatic
+    val BLUEPRINT = MachineMax.REGISTER.item<BlueprintItem>()
+        .id("blueprint")
+        .bound { BlueprintItem(Item.Properties().stacksTo(1)) }
         .build()
 
     //载具保存物品原型
@@ -70,7 +78,7 @@ object MMItems {
         //Register custom model item renderer here, items need to implement ICustomModelItem interface
         event.registerItem(
             CustomModelItemExtension(),
-            CROWBAR_ITEM, SPRAY_CAN_ITEM, PART_ITEM, EMPTY_BLUEPRINT
+            CROWBAR_ITEM, SPRAY_CAN_ITEM, PART_ITEM, BLUEPRINT, EMPTY_BLUEPRINT
         )
     }
 

@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.fml.loading.FMLPaths;
+import org.joml.Vector3f;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,5 +71,13 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem {
         return animatable;
     }
 
-
+    @Override
+    public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext == ItemDisplayContext.GUI
+                || displayContext == ItemDisplayContext.FIXED
+                || displayContext == ItemDisplayContext.GROUND) {
+            return new Vector3f(-15f, -30f, 45f).mul((float) (Math.PI / 180f));
+        }
+        return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
+    }
 }

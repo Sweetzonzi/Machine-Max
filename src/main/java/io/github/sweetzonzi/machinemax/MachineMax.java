@@ -32,7 +32,6 @@ public class MachineMax {
     //TODO:内容包之间的依赖关系
     //TODO:蓝图对内容包的依赖关系
     //TODO:重修连接点断裂机制，在vehicle中进行，降低发包压力
-    //TODO:常规AE86
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器
@@ -53,7 +52,6 @@ public class MachineMax {
         MMDynamicRes.initResources();//初始化外部资源文件
         bus.addListener(MMDynamicRes::init);//CommonSetup时读取外部数据文件
         bus.addListener(MMDynamicRes::registerReloadListeners);
-        MMJavaItems.register(bus);//通过java注册的所有物品
         MMItems.register();//通过kotlin注册的所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
     }

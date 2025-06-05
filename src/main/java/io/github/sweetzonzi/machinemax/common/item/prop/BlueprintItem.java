@@ -1,0 +1,174 @@
+package io.github.sweetzonzi.machinemax.common.item.prop;
+
+import cn.solarmoon.spark_core.animation.ItemAnimatable;
+import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
+import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
+import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
+import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machinemax.external.DynamicPack;
+import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
+import io.github.sweetzonzi.machinemax.external.html.HtNode;
+import io.github.sweetzonzi.machinemax.external.html.HtmlLikeParser;
+import io.github.sweetzonzi.machinemax.external.html.TagHtNode;
+import io.github.sweetzonzi.machinemax.external.html.TextHtNode;
+import io.github.sweetzonzi.machinemax.external.style.StyleProvider;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
+
+import java.util.*;
+
+public class BlueprintItem extends Item implements ICustomModelItem {
+    public BlueprintItem(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+        if (!level.isClientSide()) {
+            VehicleCore vehicle = new VehicleCore(level, getVehicleData(player.getItemInHand(usedHand), level));
+            vehicle.setUuid(UUID.randomUUID());
+            vehicle.setPos(player.position().add(0, 1, 0));
+            VehicleManager.addVehicle(vehicle);
+        }
+        return super.use(level, player, usedHand);
+    }
+
+    /**
+     * 根据物品Component中的部件类型修改物品显示的名称
+     *
+     * @param stack 物品堆
+     * @return 翻译键
+     */
+    @Override
+    public @NotNull Component getName(@NotNull ItemStack stack) {
+        String partName = Objects.requireNonNull(stack.get(MMDataComponents.getVEHICLE_DATA())).toLanguageKey().replace("/", ".");
+        return Component.translatable("item." + partName);
+    }
+
+    private static List<TextHtNode> loadTree(HtNode htNode, List<TextHtNode> cache) {
+        if (htNode.isText()) {
+            TextHtNode textNode = (TextHtNode) htNode;
+            cache.add(textNode);
+        } else {
+            TagHtNode tagNode = (TagHtNode) htNode;
+            for (HtNode child : tagNode.getChildren()) {
+                loadTree(child, cache);
+            }
+        }
+        return cache;
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        //物品栏鼠标自定义信息 （正在筹备）
+//                        vehicleData.authors
+//                        tooltipComponents.add(Component.translatable("tooltip.%s.%s.details".formatted(MOD_ID, MMDynamicRes.getRealName(location.getPath()).replace("/", ".")))); // 支持本地化
+        String tip = getVehicleData(stack, null).tooltip;
+        if (MMDynamicRes.EXTERNAL_RESOURCE.get(ResourceLocation.parse(tip)) instanceof DynamicPack dynamicPack) {
+            tip = dynamicPack.getContent();
+        }
+
+        String[] regexList = {"\r\n", "\n"}; //扫描不同类型系统的回车符
+        boolean contains = false;
+        for (String regex : regexList) {
+            contains = tip.contains(regex);
+            if (contains) { //扫到了就替换成mc形式的回车，并且退出匹配
+                for (String span : tip.split(regex)) {
+                    MutableComponent component = Component.empty();
+                    try {
+                        List<TextHtNode> nodeQueue = loadTree(HtmlLikeParser.parse(span), new ArrayList<>());
+                        for (TextHtNode text : nodeQueue) {
+                            MutableComponent newComp = Component.translatable(text.getText());
+                            if (text.getEnclosingTags() instanceof List<String> list) {
+                                for (String tag : list) {
+                                    newComp = StyleProvider.styleFactory(tag, newComp);
+                                }
+                            }
+                            component = component.append(newComp);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("富文本解析失败: " + e.getMessage());
+                    }
+
+                    tooltipComponents.add(component);
+                }
+                break;
+            }
+        }
+        if (!contains) { //没有任何匹配，全部作为可翻译标题
+            tooltipComponents.add(Component.translatable(tip));
+        }
+
+    }
+
+    public static VehicleData getVehicleData(ItemStack stack, Level level) {
+        VehicleData vehicleData;
+        if (stack.has(MMDataComponents.getVEHICLE_DATA())) {
+            //从物品Component中获取蓝图位置类型
+            vehicleData = MMDynamicRes.BLUEPRINTS.get(stack.get(MMDataComponents.getVEHICLE_DATA()));
+        } else throw new IllegalStateException("物品" + stack + "中未找到蓝图数据");//如果物品Component中蓝图位置为空，则抛出异常
+        if (vehicleData == null)
+            throw new IllegalStateException("未找到" + stack + "中存储的蓝图数据" + stack.get(MMDataComponents.getVEHICLE_DATA()));
+        return vehicleData;
+    }
+
+    public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
+        var animatable = new ItemAnimatable(itemStack, level);
+        VehicleData vehicleData = getVehicleData(itemStack, level);//获取物品保存的部件类型
+        HashMap<ItemDisplayContext, ItemAnimatable> customModels;
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+        else customModels = new HashMap<>();
+        if (((ICustomModelItem) itemStack.getItem()).use2dModel(itemStack, level, context)
+                && context == ItemDisplayContext.GUI
+                && !vehicleData.icon.equals(ResourceLocation.withDefaultNamespace("missingno"))
+        ) {
+            animatable.setModelIndex(
+                    new ModelIndex(
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
+                            vehicleData.icon)
+            );
+        } else {
+            animatable.setModelIndex(
+                    new ModelIndex(
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"))
+            );
+        }
+        if (customModels != null) {
+            customModels.put(context, animatable);
+            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
+        }
+        return animatable;
+    }
+
+    @Override
+    public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (!getRenderInstance(itemStack, level, displayContext).getModelIndex().getModelPath().equals(
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint.geo")
+        )) {
+            return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
+        }
+        if (displayContext == ItemDisplayContext.GUI
+                || displayContext == ItemDisplayContext.FIXED
+                || displayContext == ItemDisplayContext.GROUND) {
+            return new Vector3f(-15f, -30f, 45f).mul((float) (Math.PI / 180f));
+        }
+        return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
+    }
+}

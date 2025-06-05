@@ -1,11 +1,17 @@
 {
-  "item.machine_max.example_pack.blueprint.test_blue_print.json": "测试蓝图",
-  "machine_max.item.test_cube": "测试方块",
-  "machine_max.item.ae86_chassis_all_terrain": "AE86全地形车架",
-  "machine_max.item.ae86_wheel_all_terrain": "AE86全地形轮",
-  "machine_max.item.ae86_chassis": "AE86车架",
-  "machine_max.item.ae86_wheel": "AE86车轮",
-  "machine_max.item.ae86_back_seat": "AE86后排座椅",
-  "machine_max.item.ae86_seat": "AE86座椅",
-  "machine_max.item.ae86_hull": "AE86车壳"
+  "item.machine_max.example_pack.blueprint.ae86.json": "AE86",
+  "item.machine_max.example_pack.blueprint.ae86at.json": "AE86(全地形)",
+  "title.machine_max.blueprint.ae86": "丰田 COROLLA AE86",
+  "title.machine_max.blueprint.ae86at": "丰田 COROLLA AE86(全地形改装)",
+  "description.machine_max.blueprint.ae86": "AE86是丰田出厂的一款小巧、轻量、经济效益取向的小车，在1983年以COROLLA四代的身份投入生产线。丰田在1978年推出的TERCEL，标志着由于汽车科技的进步，小型车由构造简单但成本较高且占空间的FR（前置引擎后轮驱动）转向较复杂但成本较低的FF（前置引擎前轮驱动）发展的开端。",
+  "description.machine_max.blueprint.ae86at": "这辆AE86将传动系统改装为了四轮驱动，并换装了更强大的引擎、相适配的变速箱和全地形轮，越野能力得到大幅强化。",
+  "notes.machine_max.blueprint.ae86": "示例载具蓝图",
+  "author.machine_max.blueprint.ae86": "模型作者: 02bunny 版权所有: MadFlower",
+  "item.machine_max.ae86_chassis_all_terrain": "AE86全地形车架",
+  "item.machine_max.ae86_wheel_all_terrain": "AE86全地形轮",
+  "item.machine_max.ae86_chassis": "AE86车架",
+  "item.machine_max.ae86_wheel": "AE86车轮",
+  "item.machine_max.ae86_back_seat": "AE86后排座椅",
+  "item.machine_max.ae86_seat": "AE86座椅",
+  "item.machine_max.ae86_hull": "AE86车壳"
 }

@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
-
+@Deprecated(forRemoval = true)
 public class MMJavaItems {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(Registries.ITEM, MOD_ID);
     public static List<DeferredHolder<Item, Item>> BLUEPRINT_EGGS = new ArrayList<>();

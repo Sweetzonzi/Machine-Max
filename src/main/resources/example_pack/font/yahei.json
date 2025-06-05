@@ -1,0 +1,11 @@
+{
+  "providers": [
+    {
+      "type": "ttf",
+      "file": "machine_max:yahei.ttf",
+      "size": 10,
+      "shift": [0, 0],
+      "oversample": 24.0
+    }
+  ]
+}

@@ -173,15 +173,15 @@ public class MMPartItem extends Item implements ICustomModelItem {
     }
 
     /**
-     * 根据物品Component中的部件类型修改物品显示的名称
+     * 根据物品Component中的蓝图修改物品显示的名称
      *
      * @param stack 物品堆
      * @return 翻译键
      */
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {
-        String partName = stack.get(MMDataComponents.getPART_NAME());
-        return Component.translatable(MachineMax.MOD_ID + ".item." + partName);
+        String name = stack.get(MMDataComponents.getPART_NAME());
+        return Component.translatable("item." + MachineMax.MOD_ID + "." + name);
     }
 
     public static PartAssemblyCacheComponent getPartAssemblyCache(ItemStack stack, Level level) {
