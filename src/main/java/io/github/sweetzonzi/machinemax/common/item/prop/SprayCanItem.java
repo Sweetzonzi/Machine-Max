@@ -51,9 +51,9 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
             if (part != null) {//提示信息
-                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.spray_can.interact").append(part.name), true);
+                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(part.name), true);
             } else if (eyesight.getEntity() instanceof MMPartEntity partEntity && partEntity.part != null) {
-                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.spray_can.interact").append(partEntity.part.name), true);
+                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(partEntity.part.name), true);
             } else Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
         }
     }
@@ -66,7 +66,7 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
     @Override
     public void watchingPart(@NotNull Part part, @NotNull Player player) {
         if (player.level().isClientSide)
-            Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.spray_can.interact").append(part.name), true);
+            Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(part.name), true);
     }
 
     @Override

@@ -17,7 +17,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -49,10 +48,6 @@ public class RawInputHandler {
 
     public static final HashMap<KeyMapping, Integer> keyPressTicks = HashMap.newHashMap(15);//各个按键被按下的持续时间
 
-    public static void init(FMLClientSetupEvent event) {
-        client = Minecraft.getInstance();
-    }
-
     /**
      * 在每个客户端tick事件后调用，处理按键逻辑。
      *
@@ -60,6 +55,7 @@ public class RawInputHandler {
      */
     @SubscribeEvent
     public static void handleMoveInputs(ClientTickEvent.Post event) {
+        if (client == null) client = Minecraft.getInstance();
         if (client.player != null &&
                 ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem subSystem &&
                 subSystem.owner instanceof Part part) {
@@ -122,6 +118,7 @@ public class RawInputHandler {
 
     @SubscribeEvent
     public static void handleMouseInputs(ClientTickEvent.Post event) {
+        if (client == null) client = Minecraft.getInstance();
         if (client.player == null) return;
         if (KeyBinding.generalFreeCamKey.isDown()) {
             freeCam = true;
@@ -132,7 +129,7 @@ public class RawInputHandler {
 
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Post event) {
-        var client = Minecraft.getInstance();
+        if (client == null) client = Minecraft.getInstance();
         /*
           通用功能
          */

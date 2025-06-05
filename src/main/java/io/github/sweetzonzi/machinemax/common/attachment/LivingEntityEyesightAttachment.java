@@ -202,7 +202,6 @@ public class LivingEntityEyesightAttachment {
     /**
      * 客户端尝试与交互判定区交互，先尝试精确交互，如果没有则尝试快速交互
      */
-    @OnlyIn(Dist.CLIENT)
     public void clientInteract() {
         InteractBox interactBox = getAccurateInteractBox();
         if (interactBox == null) interactBox = getFastInteractBox();

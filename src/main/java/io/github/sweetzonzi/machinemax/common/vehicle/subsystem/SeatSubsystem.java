@@ -99,7 +99,7 @@ public class SeatSubsystem extends AbstractSubsystem {
             ((IEntityMixin) passenger).machine_Max$setRidingSubsystem(this);
             getPart().vehicle.activate();
             //TODO:换成在hud角落常驻显示好了
-            if (passenger.level() instanceof ClientLevel && passenger instanceof Player player)
+            if (passenger.level().isClientSide && passenger instanceof Player player)
                 player.displayClientMessage(
                         Component.translatable("message.machine_max.leaving_vehicle",
                                 KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),

@@ -33,6 +33,6 @@
   "message.machine_max.blueprint_saved": "蓝图已保存至%1$s",
   "message.machine_max.leaving_vehicle": "长按[%1$s]键%2$s/0.50秒以离开载具",
   "message.machine_max.watch_interact_box_info": "按[%1$s]键与%2$s互动",
-  "tooltip.machinemax.crowbar.interact": "互动以拆除：",
-  "tooltip.machinemax.spray_can.interact": "互动以喷涂："
+  "tooltip.machine_max.crowbar.interact": "互动以拆除：",
+  "tooltip.machine_max.spray_can.interact": "互动以喷涂："
 }

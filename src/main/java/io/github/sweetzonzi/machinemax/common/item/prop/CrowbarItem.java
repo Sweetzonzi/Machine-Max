@@ -51,7 +51,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
             if (part != null) {//提示信息
-                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.crossbar.interact").append(part.name), true);
+                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.interact").append(part.name), true);
             } else Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
         }
     }
@@ -64,7 +64,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
     @Override
     public void watchingPart(@NotNull Part part, @NotNull Player player) {
         if (player.level().isClientSide)
-            Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machinemax.crowbar.interact").append(part.name), true);
+            Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.interact").append(part.name), true);
     }
 
     @Override

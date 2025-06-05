@@ -34,13 +34,13 @@ public class DamageUtil {
         float blockDurability;
         //软质吸能地面方块更不易被破坏，特殊处理沙土雪等软质地面方块的耐久度
         if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SNOW) || blockState.is(BlockTags.SAND)) {
-            blockDurability = 200 * (0.1f + blockState.getDestroySpeed(level, blockPos));
+            blockDurability = 200 * (0.01f + blockState.getDestroySpeed(level, blockPos));
         } else if (blockState.is(BlockTags.WOOL)) {//吸能材料超高耐久度
-            blockDurability = 200 * (0.1f + blockState.getDestroySpeed(level, blockPos));
+            blockDurability = 200 * (0.01f + blockState.getDestroySpeed(level, blockPos));
         } else if (blockState.isStickyBlock()) {
             blockDurability = 1000f;
         } else {//一般方块
-            blockDurability = 30 * (0.1f + blockState.getDestroySpeed(level, blockPos));
+            blockDurability = 30 * (0.01f + blockState.getDestroySpeed(level, blockPos));
         }
         AABB aabb = blockState.getCollisionShape(level, blockPos).bounds();
         //根据方块体积调整耐久度

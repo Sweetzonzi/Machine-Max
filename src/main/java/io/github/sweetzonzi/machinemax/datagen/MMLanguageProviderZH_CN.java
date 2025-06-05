@@ -42,8 +42,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
         this.add("message.machine_max.watch_interact_box_info", "按[%1$s]键与%2$s互动");
         this.add("error.machine_max.use_part_item", "尝试放置%1$s时出现错误：%2$s");
-        this.add("tooltip.machinemax.crowbar.interact", "互动以拆除：");
-        this.add("tooltip.machinemax.spray_can.interact", "互动以喷涂：");
+        this.add("tooltip.machine_max.crowbar.interact", "互动以拆除：");
+        this.add("tooltip.machine_max.spray_can.interact", "互动以喷涂：");
         this.add("message.machine_max.blueprint_saved", "蓝图已保存至%1$s");
         this.add("message.machine_max.blueprint_error", "保存蓝图失败:%1$s");
         this.add("message.machine_max.blueprint_pass", "未选中任何载具，取消保存蓝图");

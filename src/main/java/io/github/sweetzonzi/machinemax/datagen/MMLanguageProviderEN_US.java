@@ -42,8 +42,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("message.machine_max.leaving_vehicle", "Hold [%1$s] %2$s/0.50s to leave the vehicle.");
         this.add("message.machine_max.watch_interact_box_info", "Press [%1$s] to interact with %2$s");
         this.add("error.machine_max.use_part_item", "An error occurred while trying to deploy %1$s：%2$s");
-        this.add("tooltip.machinemax.crowbar.interact", "Interact to disassemble:");
-        this.add("tooltip.machinemax.spray_can.interact", "Interact to paint:");
+        this.add("tooltip.machine_max.crowbar.interact", "Interact to disassemble:");
+        this.add("tooltip.machine_max.spray_can.interact", "Interact to paint:");
         this.add("message.machine_max.blueprint_saved", "Blueprint has been saved to %1$s");
         this.add("message.machine_max.blueprint_error", "Failed to save blueprint: %1$s");
         this.add("message.machine_max.blueprint_pass", "No vehicle selected, skipping blueprint save");

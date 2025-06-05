@@ -226,7 +226,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 }
                 partMass += 0.05 * (part.vehicle.totalMass - body.getMass());
                 double contactNormalSpeed = Math.abs(contactVel.dot(normal)) + ManifoldPoints.getAppliedImpulse(manifoldPointId) / body.getMass();
-                float restitution = Math.clamp(body.getRestitution() * other.getRestitution(), 0f, 1f);//TODO:考虑二者护甲差距调整此系数
+                float restitution = Math.clamp(body.getRestitution() * other.getRestitution(), 0f, 1f);//TODO:考虑二者护甲差距调整此系数，决定相加还是相乘
                 ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
                 double contactEnergy = 0.5 * partMass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
                 //TODO:根据硬度差距调整能量释放速度
@@ -235,7 +235,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 Vec3i supportBlockPos = MMMath.getClosestAxisAlignedVector(SparkMathKt.toVec3(normal.mult(-1)));
                 PhysicsRigidBody supportBlockBody = getPhysicsLevel().getTerrainBlockBodies().get(blockPos.offset(supportBlockPos));
                 if (supportBlockBody != null) {
-                    blockDurability += 0.5 * DamageUtil.getMaxBlockDurability(level, (BlockState) supportBlockBody.getUserObject(), supportBlockBody.blockPos);
+                    blockDurability += 0.25 * DamageUtil.getMaxBlockDurability(level, (BlockState) supportBlockBody.getUserObject(), supportBlockBody.blockPos);
                 }
                 double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);//方块吸收的碰撞能量
                 double partEnergy = contactEnergy - blockEnergy;//部件吸收的碰撞能量
@@ -252,7 +252,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                         });
                     }
                     //根据方块被破坏实际消耗的能量调整部件吸收的能量，但不全额作用为反冲量以提升操控流畅性
-                    double actualPartEnergy = 0.1 * partEnergy * ((250 * blockDurability) / blockEnergy);
+                    double actualPartEnergy = 0.4 * partEnergy * ((250 * blockDurability) / blockEnergy);
                     if (actualPartEnergy < 0 || Double.isNaN(actualPartEnergy)) actualPartEnergy = 0f;
                     double finalActualPartEnergy = actualPartEnergy;
                     //部件减速
@@ -260,7 +260,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);//重置默认冲量，采用计算结果
                     Vector3f vel = body.getLinearVelocity(null);
                     Vector3f aVel = body.getAngularVelocity(null);
-                    Vector3f impulse = normal.mult((float) (Math.sqrt(2 * finalActualPartEnergy * body.getMass())));
+                    Vector3f impulse = normal.mult((float) (Math.sqrt(2 * finalActualPartEnergy * partMass)));
                     Vector3f offset = worldContactPoint.subtract(body.getPhysicsLocation(null));
                     Matrix3f inertia = body.getInverseInertiaWorld(null);
                     body.setLinearVelocity(vel.add(impulse.mult(1f / body.getMass())));

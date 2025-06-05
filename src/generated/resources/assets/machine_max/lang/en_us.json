@@ -33,6 +33,6 @@
   "message.machine_max.blueprint_saved": "Blueprint has been saved to %1$s",
   "message.machine_max.leaving_vehicle": "Hold [%1$s] %2$s/0.50s to leave the vehicle.",
   "message.machine_max.watch_interact_box_info": "Press [%1$s] to interact with %2$s",
-  "tooltip.machinemax.crowbar.interact": "Interact to disassemble:",
-  "tooltip.machinemax.spray_can.interact": "Interact to paint:"
+  "tooltip.machine_max.crowbar.interact": "Interact to disassemble:",
+  "tooltip.machine_max.spray_can.interact": "Interact to paint:"
 }

@@ -38,7 +38,6 @@ public class MachineMax {
 
     public MachineMax(IEventBus bus) {
         REGISTER.register(bus);
-        bus.addListener(RawInputHandler::init);
         bus.addListener(CameraController::init);
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块

@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 @Getter
 public class SubsystemController implements ISignalReceiver {
@@ -17,7 +18,7 @@ public class SubsystemController implements ISignalReceiver {
     public final VehicleCore CORE;
     public final ConcurrentMap<String, SignalChannel> channels = new ConcurrentHashMap<>();//可查可改
     public final ConcurrentMap<String, Object> resources = new ConcurrentHashMap<>();//可查可改
-    public final Set<AbstractSubsystem> allSubsystems = new HashSet<>();
+    public final Set<AbstractSubsystem> allSubsystems = new CopyOnWriteArraySet<>();
 
     public SubsystemController(VehicleCore core) {
         CORE = core;
