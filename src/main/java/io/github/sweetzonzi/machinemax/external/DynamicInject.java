@@ -98,7 +98,7 @@ public class DynamicInject {
                    PackCompatibility.COMPATIBLE,
                    FeatureFlagSet.of(),
                    Collections.emptyList(),
-                   false
+                   true
            );
 
            consumer.accept(new Pack(
