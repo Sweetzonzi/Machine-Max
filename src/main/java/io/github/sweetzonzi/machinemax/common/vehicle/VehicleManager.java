@@ -6,7 +6,6 @@ import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
-import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
@@ -235,7 +234,7 @@ public class VehicleManager {
     public static void unloadVehicleData(LevelEvent.Unload event) {
         if (event.getLevel().isClientSide()) {
             VisualEffectHelper.attachPoints.clear();
-            VisualEffectHelper.boundingBoxes.clear();
+            VisualEffectHelper.boundingBox = null;
             VisualEffectHelper.partToAssembly = null;
         }
     }

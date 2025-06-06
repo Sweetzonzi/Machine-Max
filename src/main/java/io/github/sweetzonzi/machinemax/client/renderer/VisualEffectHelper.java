@@ -1,12 +1,9 @@
 package io.github.sweetzonzi.machinemax.client.renderer;
 
 import com.jme3.bullet.objects.PhysicsRigidBody;
-import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
 import io.github.sweetzonzi.machinemax.common.vehicle.visual.RenderableBoundingBox;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -17,6 +14,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class VisualEffectHelper {
     public static PartProjection partToAssembly = null;
+    public static RenderableBoundingBox boundingBox = null;
     public static ConcurrentMap<AbstractConnector, PhysicsRigidBody> attachPoints = new ConcurrentHashMap<>();
-    public static ConcurrentMap<Object, RenderableBoundingBox> boundingBoxes = new ConcurrentHashMap<>();
+
 }

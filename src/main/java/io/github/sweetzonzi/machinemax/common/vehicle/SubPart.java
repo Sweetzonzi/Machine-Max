@@ -527,7 +527,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         }
         //攀爬辅助处理
         if (body.isActive() && this.GROUND_COLLISION_ONLY && stepHeight > 0) {
-            bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.2f);
+            bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
             if (attr.climbAssist) {
                 Vector3f start = this.body.getPhysicsLocation(null);
                 start.set(1, bodyMinY - 1);
@@ -561,9 +561,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 2f) - vel.y;
                     float horizontalVelScale = (float) Math.cos(ang);
                     body.applyCentralImpulse(new Vector3f(
-                            -0.85f * (1f - horizontalVelScale) * vel.x,
+                            -1f * (1f - horizontalVelScale) * vel.x,
                             extraVel,
-                            -0.85f * (1f - horizontalVelScale) * vel.z).mult(mass));
+                            -1f * (1f - horizontalVelScale) * vel.z).mult(mass));
                 }
             }
         }

@@ -13,11 +13,9 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.renderer.PartAssemblyRenderer;
 import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
@@ -35,6 +33,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -119,7 +118,12 @@ public class BlueprintItem extends Item implements ICustomModelItem {
                 );
                 Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
                 Vec3 max = vehicleData.max.add(SparkMathKt.toVec3(transform.getTranslation()));
-                RenderableBoundingBox boundingBox = VisualEffectHelper.boundingBoxes.computeIfAbsent(Pair.of(entity, stack), k -> new RenderableBoundingBox(min, max));
+                RenderableBoundingBox boundingBox;
+                if (VisualEffectHelper.boundingBox != null) boundingBox = VisualEffectHelper.boundingBox;
+                else {
+                    boundingBox = new RenderableBoundingBox(min, max);
+                    VisualEffectHelper.boundingBox = boundingBox;
+                }
                 boundingBox.updateShape(PhysicsHelperKt.toBVector3f(min), PhysicsHelperKt.toBVector3f(max));
                 PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
                         new BoxCollisionShape(boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
@@ -131,8 +135,10 @@ public class BlueprintItem extends Item implements ICustomModelItem {
                     else boundingBox.setColor(Color.GREEN);
                     return null;
                 });
-            } else {
-                VisualEffectHelper.boundingBoxes.remove(stack);
+            } else if (entity instanceof LivingEntity livingEntity) {
+                if (livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BlueprintItem
+                        || livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof BlueprintItem) {
+                } else VisualEffectHelper.boundingBox = null;
             }
         }
     }

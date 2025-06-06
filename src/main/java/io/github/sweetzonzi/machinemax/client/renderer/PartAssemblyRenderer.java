@@ -25,9 +25,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityEvent;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -37,8 +34,6 @@ import org.joml.Vector3f;
 import java.awt.*;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class PartAssemblyRenderer extends VisualEffectRenderer {
 
@@ -120,15 +115,9 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     private void renderBoundingBoxes(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
-        Iterator<Map.Entry<Object, RenderableBoundingBox>> iterator = VisualEffectHelper.boundingBoxes.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<Object, RenderableBoundingBox> entry = iterator.next();
-            RenderableBoundingBox boundingBox = entry.getValue();
-            if (boundingBox == null) {
-                iterator.remove();
-            } else {
-                renderBoundingBox(boundingBox, camPos, poseStack, bufferSource, partialTick);
-            }
+        RenderableBoundingBox boundingBox = VisualEffectHelper.boundingBox;
+        if (boundingBox != null) {
+            renderBoundingBox(boundingBox, camPos, poseStack, bufferSource, partialTick);
         }
     }
 
