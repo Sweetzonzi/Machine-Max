@@ -3,9 +3,12 @@ package io.github.sweetzonzi.machinemax.common.vehicle.data;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machinemax.common.vehicle.Part;
+import io.github.sweetzonzi.machinemax.common.vehicle.SubPart;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
@@ -27,6 +30,8 @@ public class VehicleData {
     public final ResourceLocation icon;
     public final String uuid;
     public final Vec3 pos;
+    public final Vec3 min;
+    public final Vec3 max;
     public final float hp;
     public final Map<String, PartData> parts;
     public final List<ConnectionData> connections;
@@ -37,6 +42,8 @@ public class VehicleData {
             ResourceLocation.CODEC.optionalFieldOf("icon", ResourceLocation.withDefaultNamespace("missingno")).forGetter(VehicleData::getIcon),
             Codec.STRING.fieldOf("uuid").forGetter(VehicleData::getUuid),
             Vec3.CODEC.fieldOf("pos").forGetter(VehicleData::getPos),
+            Vec3.CODEC.optionalFieldOf("min", Vec3.ZERO).forGetter(VehicleData::getMin),
+            Vec3.CODEC.optionalFieldOf("max", Vec3.ZERO).forGetter(VehicleData::getMax),
             Codec.FLOAT.fieldOf("hp").forGetter(VehicleData::getHp),
             PartData.MAP_CODEC.fieldOf("parts").forGetter(VehicleData::getParts),
             ConnectionData.CODEC.listOf().fieldOf("connections").forGetter(VehicleData::getConnections)
@@ -50,14 +57,22 @@ public class VehicleData {
             String tooltip = buffer.readUtf();
             ResourceLocation icon = buffer.readResourceLocation();
             String uuid = buffer.readUtf();
-            double x = buffer.readDouble();
-            double y = buffer.readDouble();
-            double z = buffer.readDouble();
+            double x = buffer.readFloat();
+            double y = buffer.readFloat();
+            double z = buffer.readFloat();
             Vec3 pos = new Vec3(x, y, z);
+            double minX = buffer.readFloat();
+            double minY = buffer.readFloat();
+            double minZ = buffer.readFloat();
+            Vec3 min = new Vec3(minX, minY, minZ);
+            double maxX = buffer.readFloat();
+            double maxY = buffer.readFloat();
+            double maxZ = buffer.readFloat();
+            Vec3 max = new Vec3(maxX, maxY, maxZ);
             float hp = buffer.readFloat();
             Map<String, PartData> parts = buffer.readJsonWithCodec(PartData.MAP_CODEC);
             List<ConnectionData> connections = buffer.readJsonWithCodec(ConnectionData.CODEC.listOf());
-            return new VehicleData(name, tooltip, icon, uuid, pos, hp, parts, connections);
+            return new VehicleData(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
         }
 
         @Override
@@ -66,21 +81,31 @@ public class VehicleData {
             buffer.writeUtf(value.tooltip);
             buffer.writeResourceLocation(value.icon);
             buffer.writeUtf(value.uuid);
-            buffer.writeDouble(value.pos.x);
-            buffer.writeDouble(value.pos.y);
-            buffer.writeDouble(value.pos.z);
+            buffer.writeFloat((float) value.pos.x);
+            buffer.writeFloat((float) value.pos.y);
+            buffer.writeFloat((float) value.pos.z);
+            buffer.writeFloat((float) value.min.x);
+            buffer.writeFloat((float) value.min.y);
+            buffer.writeFloat((float) value.min.z);
+            buffer.writeFloat((float) value.max.x);
+            buffer.writeFloat((float) value.max.y);
+            buffer.writeFloat((float) value.max.z);
             buffer.writeFloat(value.hp);
             buffer.writeJsonWithCodec(PartData.MAP_CODEC, value.parts);
             buffer.writeJsonWithCodec(ConnectionData.CODEC.listOf(), value.connections);
         }
     };
 
-    public VehicleData(String name, String tooltip, ResourceLocation icon, String uuid, Vec3 pos, float hp, Map<String, PartData> parts, List<ConnectionData> connections) {
+    public VehicleData(String name, String tooltip, ResourceLocation icon, String uuid,
+                       Vec3 pos, Vec3 min, Vec3 max,
+                       float hp, Map<String, PartData> parts, List<ConnectionData> connections) {
         this.name = name;
         this.tooltip = tooltip;
         this.icon = icon;
         this.uuid = uuid;
         this.pos = pos;
+        this.min = min;
+        this.max = max;
         this.hp = hp;
         this.parts = parts;
         this.connections = connections;
@@ -97,6 +122,28 @@ public class VehicleData {
         this.icon = ResourceLocation.withDefaultNamespace("missingno");
         this.uuid = vehicle.getUuid().toString();
         this.pos = vehicle.getPosition();
+        float xMin = Float.MAX_VALUE;
+        float yMin = Float.MAX_VALUE;
+        float zMin = Float.MAX_VALUE;
+        float xMax = -Float.MAX_VALUE;
+        float yMax = -Float.MAX_VALUE;
+        float zMax = -Float.MAX_VALUE;
+        Vector3f min = new Vector3f();
+        Vector3f max = new Vector3f();
+        for (Part part : vehicle.partMap.values()) {
+            for (SubPart subPart : part.subParts.values()) {
+                subPart.body.cachedBoundingBox.getMin(min);
+                subPart.body.cachedBoundingBox.getMax(max);
+                if (min.x < xMin) xMin = min.x;
+                if (min.y < yMin) yMin = min.y;
+                if (min.z < zMin) zMin = min.z;
+                if (max.x > xMax) xMax = max.x;
+                if (max.y > yMax) yMax = max.y;
+                if (max.z > zMax) zMax = max.z;
+            }
+        }
+        this.min = new Vec3(xMin, yMin, zMin).subtract(pos);
+        this.max = new Vec3(xMax, yMax, zMax).subtract(pos);
         this.hp = vehicle.getHp();
         this.parts = vehicle.getPartData();
         this.connections = vehicle.getConnectionData();

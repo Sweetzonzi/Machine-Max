@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machinemax.common.vehicle;
+package io.github.sweetzonzi.machinemax.common.vehicle.visual;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
@@ -12,12 +12,12 @@ import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.math.Transform;
+import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import java.awt.*;

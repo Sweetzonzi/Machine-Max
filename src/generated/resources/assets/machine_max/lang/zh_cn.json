@@ -28,6 +28,7 @@
   "key.machine_max.ground.rightward": "右转",
   "key.machine_max.ground.toggle_hand_brake": "手刹 (切换)",
   "key.machine_max.ground.up_shift": "升档",
+  "message.machine_max.blueprint.place_failed": "空间不足，无法部署载具",
   "message.machine_max.blueprint_error": "保存蓝图失败:%1$s",
   "message.machine_max.blueprint_pass": "未选中任何载具，取消保存蓝图",
   "message.machine_max.blueprint_saved": "蓝图已保存至%1$s",

@@ -47,6 +47,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("message.machine_max.blueprint_saved", "Blueprint has been saved to %1$s");
         this.add("message.machine_max.blueprint_error", "Failed to save blueprint: %1$s");
         this.add("message.machine_max.blueprint_pass", "No vehicle selected, skipping blueprint save");
+        this.add("message.machine_max.blueprint.place_failed", "No enough space to deploy vehicle");
         //Item
         this.add("itemGroup.machine_max.blueprint", "MachineMax: Custom BluePrints");
         this.add("itemGroup.machine_max.main", "MachineMax: Part and Tools");

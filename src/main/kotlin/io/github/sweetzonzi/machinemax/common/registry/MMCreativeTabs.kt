@@ -1,8 +1,6 @@
 package io.github.sweetzonzi.machinemax.common.registry
 
 import io.github.sweetzonzi.machinemax.MachineMax
-import io.github.sweetzonzi.machinemax.common.item.MMJavaItems
-import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes
 import net.minecraft.client.Minecraft

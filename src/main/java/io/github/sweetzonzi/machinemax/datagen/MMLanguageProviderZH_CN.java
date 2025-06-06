@@ -47,6 +47,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("message.machine_max.blueprint_saved", "蓝图已保存至%1$s");
         this.add("message.machine_max.blueprint_error", "保存蓝图失败:%1$s");
         this.add("message.machine_max.blueprint_pass", "未选中任何载具，取消保存蓝图");
+        this.add("message.machine_max.blueprint.place_failed", "空间不足，无法部署载具");
         //物品
         //Item
         this.add("itemGroup.machine_max.blueprint", "MachineMax: 自定义蓝图");

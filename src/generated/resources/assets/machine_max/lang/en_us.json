@@ -28,6 +28,7 @@
   "key.machine_max.ground.rightward": "Rightward",
   "key.machine_max.ground.toggle_hand_brake": "Hand Brake (Toggle)",
   "key.machine_max.ground.up_shift": "Shift Up",
+  "message.machine_max.blueprint.place_failed": "No enough space to deploy vehicle",
   "message.machine_max.blueprint_error": "Failed to save blueprint: %1$s",
   "message.machine_max.blueprint_pass": "No vehicle selected, skipping blueprint save",
   "message.machine_max.blueprint_saved": "Blueprint has been saved to %1$s",

@@ -8,7 +8,7 @@
 //import com.mojang.blaze3d.vertex.PoseStack;
 //import com.mojang.blaze3d.vertex.VertexConsumer;
 //import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
-//import io.github.sweetzonzi.machinemax.common.vehicle.PartProjection;
+//import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
 //import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 //import net.minecraft.client.DeltaTracker;
 //import net.minecraft.client.Minecraft;
