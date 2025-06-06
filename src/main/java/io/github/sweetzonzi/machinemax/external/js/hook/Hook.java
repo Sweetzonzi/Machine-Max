@@ -29,6 +29,12 @@ public class Hook {
 
 
     public static Object run(Object... args) {
+        if (SignalProvider.getKeyTicks("backslash") == 2) {
+            MMInitialJS.clear();
+            MMInitialJS.hotReload();
+            MMInitialJS.register();
+            return null;
+        }
         Object readyToReturn = null;
         var currentThread = Thread.currentThread();
         var stack = currentThread.getStackTrace()[2];
@@ -61,12 +67,6 @@ public class Hook {
         if (LISTENING_EVENT.get(channel) instanceof List<EventToJS> li) {
             for (EventToJS eventToJS : li) {
                 try {
-                    if (SignalProvider.getKeyTicks("backslash") == 2) {
-                        MMInitialJS.clear();
-                        MMInitialJS.hotReload();
-                        MMInitialJS.register();
-                        return null;
-                    }
                     JS_SCOPE.put("args", JS_SCOPE, args);
                     JS_SCOPE.put("channel", JS_SCOPE, channel);
                     JS_SCOPE.put("thread", JS_SCOPE, currentThread.getName());
