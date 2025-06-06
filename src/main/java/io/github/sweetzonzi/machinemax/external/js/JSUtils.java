@@ -59,7 +59,8 @@ public class JSUtils {
 
     public void print(Object... objects) {
         StringBuilder msg = new StringBuilder();
-        if (Objects.equals(Thread.currentThread().getName(), "Render thread")) {
+        if (! Objects.equals(Thread.currentThread().getName(), "Server thread")) {
+            //不是服务器的都打印，避免物理进程不响应
             if (Minecraft.getInstance().player instanceof Player player) {
                 for (Object object : objects) {
                     msg.append(object);

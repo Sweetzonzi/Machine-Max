@@ -4,21 +4,23 @@ import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
+import io.github.sweetzonzi.machinemax.external.js.SignalProvider;
 import org.mozilla.javascript.Context;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_RUNNER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_SCOPE;
 
 public class Hook {
-    public static HashMap<String, Double> SIGNAL_MAP = new HashMap<>();
+    public static ConcurrentMap<String, Double> SIGNAL_MAP = new ConcurrentHashMap<>();
     public static HashMap<String, List<EventToJS>> LISTENING_EVENT = new HashMap<>();
     public static HashMap<String, String> CHANNEL_DOCUMENT = new HashMap<>();
-    public static boolean isHotReloading = false;
 
     public static void clear() {
         SIGNAL_MAP.clear();
@@ -59,15 +61,10 @@ public class Hook {
         if (LISTENING_EVENT.get(channel) instanceof List<EventToJS> li) {
             for (EventToJS eventToJS : li) {
                 try {
-                    if (isHotReloading){
-                        return null;
-                    }
-                    if (KeyBinding.JavascriptHotReloadKey.isDown() && (!isHotReloading)) {
-                        isHotReloading = true;
+                    if (SignalProvider.getKeyTicks("backslash") == 2) {
                         MMInitialJS.clear();
                         MMInitialJS.hotReload();
                         MMInitialJS.register();
-                        isHotReloading = false;
                         return null;
                     }
                     JS_SCOPE.put("args", JS_SCOPE, args);

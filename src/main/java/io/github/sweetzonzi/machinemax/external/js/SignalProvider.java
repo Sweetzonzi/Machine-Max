@@ -14,4 +14,10 @@ public class SignalProvider {
         }
         return false;
     }
+    public static Double getKeyTicks(String name) {
+        if (SIGNAL_MAP.get(SignalProvider.key(name)) instanceof Double d) {
+            return d;
+        }
+        return 0.0;
+    }
 }

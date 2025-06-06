@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machinemax.network.payload.RegularInputPayload;
@@ -124,6 +125,13 @@ public class RawInputHandler {
             freeCam = true;
         } else {
             freeCam = false;
+        }
+    }
+
+    @SubscribeEvent
+    public static void runKeyHook(ClientTickEvent.Post event) {
+        for (String name : Hook.SIGNAL_MAP.keySet()) {
+            if (Hook.SIGNAL_MAP.get(name) != 0) Hook.SIGNAL_MAP.put(name,Hook.SIGNAL_MAP.get(name) + 1);
         }
     }
 
