@@ -150,8 +150,6 @@ public class MMDynamicRes {
         @Override
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
             MMDynamicRes.reload();// 重新读取
-            if (Minecraft.getInstance().player instanceof Player player)
-                player.sendSystemMessage(Component.literal("[%s]: 内容包模型贴图已重载".formatted(MOD_ID)));
         }
     }
 

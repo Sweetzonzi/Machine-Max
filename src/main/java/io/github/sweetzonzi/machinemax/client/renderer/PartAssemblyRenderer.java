@@ -12,6 +12,7 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
 import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
@@ -23,6 +24,9 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Brightness;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityEvent;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -38,10 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class PartAssemblyRenderer extends VisualEffectRenderer {
 
-    public PartProjection partToAssembly = null;
-    public ConcurrentMap<AbstractConnector, PhysicsRigidBody> attachPoints = new ConcurrentHashMap<>();
-    public ConcurrentMap<ItemStack, RenderableBoundingBox> boundingBoxes = new ConcurrentHashMap<>();
-    private Player player;
+    private LocalPlayer player;
 
     @Override
     public void tick() {
@@ -58,23 +59,24 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         renderBoundingBoxes(camPos, poseStack, bufferSource, partialTick);
     }
 
+
     public void renderPartToAssembly(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
         if (player.getMainHandItem().getItem() instanceof MMPartItem) {
             ItemStack partItem = player.getMainHandItem();
             PartType partType = MMPartItem.getPartType(partItem, player.level());
             String variant = MMPartItem.getPartAssemblyInfo(partItem, player.level()).variant();
-            if (partToAssembly == null || !partType.equals(partToAssembly.type)) {
-                partToAssembly = new PartProjection(partType, player.level(), variant,
+            if (VisualEffectHelper.partToAssembly == null || !partType.equals(VisualEffectHelper.partToAssembly.type)) {
+                VisualEffectHelper.partToAssembly = new PartProjection(partType, player.level(), variant,
                         new Transform(
                                 PhysicsHelperKt.toBVector3f(player.position()),
                                 Quaternion.IDENTITY
                         ));
             }
-            if (!partToAssembly.variant.equals(variant)) {
-                partToAssembly.setVariant(variant);
+            if (!VisualEffectHelper.partToAssembly.variant.equals(variant)) {
+                VisualEffectHelper.partToAssembly.setVariant(variant);
             }
-            renderPartProjection(partToAssembly, poseStack, bufferSource, partialTick);
+            renderPartProjection(VisualEffectHelper.partToAssembly, poseStack, bufferSource, partialTick);
             renderAttachPoints(partType, variant, camPos, poseStack, bufferSource, partialTick);
         }
     }
@@ -85,7 +87,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     public void renderAttachPoints(PartType partType, String variant, Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
-        Iterator<Map.Entry<AbstractConnector, PhysicsRigidBody>> iterator = attachPoints.entrySet().iterator();
+        Iterator<Map.Entry<AbstractConnector, PhysicsRigidBody>> iterator = VisualEffectHelper.attachPoints.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<AbstractConnector, PhysicsRigidBody> entry = iterator.next();
             AbstractConnector connector = entry.getKey();
@@ -118,9 +120,9 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     private void renderBoundingBoxes(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
-        Iterator<Map.Entry<ItemStack, RenderableBoundingBox>> iterator = boundingBoxes.entrySet().iterator();
+        Iterator<Map.Entry<Object, RenderableBoundingBox>> iterator = VisualEffectHelper.boundingBoxes.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<ItemStack, RenderableBoundingBox> entry = iterator.next();
+            Map.Entry<Object, RenderableBoundingBox> entry = iterator.next();
             RenderableBoundingBox boundingBox = entry.getValue();
             if (boundingBox == null) {
                 iterator.remove();

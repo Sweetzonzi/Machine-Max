@@ -22,10 +22,11 @@ public class JSUtils {
 //    }
 
     public void attachInteract() {
-        if (Minecraft.getInstance().player instanceof Player player) {
-            player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
-
-        }
+        //TODO:换成其他获取方式，弄个Helper类？
+//        if (Minecraft.getInstance().player instanceof Player player) {
+//            player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
+//
+//        }
     }
 
     public void hook(String channel, org.mozilla.javascript.ArrowFunction arrowFunction) {
@@ -41,13 +42,14 @@ public class JSUtils {
     }
 
     public void print(Object... objects) {
-        if (Minecraft.getInstance().player instanceof Player player) {
-            StringBuilder msg = new StringBuilder();
-            for (Object object : objects) {
-                msg.append(String.valueOf(object));
-            }
-            player.sendSystemMessage(Component.literal(msg.toString()));
-        }
+        //TODO:换成其他提示方式
+//        if (Minecraft.getInstance().player instanceof Player player) {
+//            StringBuilder msg = new StringBuilder();
+//            for (Object object : objects) {
+//                msg.append(String.valueOf(object));
+//            }
+//            player.sendSystemMessage(Component.literal(msg.toString()));
+//        }
     }
 
     public static String getSimpleName(String fullClassName) {

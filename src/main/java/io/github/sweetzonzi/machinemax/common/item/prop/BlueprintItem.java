@@ -11,8 +11,10 @@ import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
+import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.renderer.PartAssemblyRenderer;
+import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
@@ -117,7 +119,7 @@ public class BlueprintItem extends Item implements ICustomModelItem {
                 );
                 Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
                 Vec3 max = vehicleData.max.add(SparkMathKt.toVec3(transform.getTranslation()));
-                RenderableBoundingBox boundingBox = MMVisualEffects.getPART_ASSEMBLY().boundingBoxes.computeIfAbsent(stack, k -> new RenderableBoundingBox(min, max));
+                RenderableBoundingBox boundingBox = VisualEffectHelper.boundingBoxes.computeIfAbsent(Pair.of(entity, stack), k -> new RenderableBoundingBox(min, max));
                 boundingBox.updateShape(PhysicsHelperKt.toBVector3f(min), PhysicsHelperKt.toBVector3f(max));
                 PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
                         new BoxCollisionShape(boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
@@ -130,7 +132,7 @@ public class BlueprintItem extends Item implements ICustomModelItem {
                     return null;
                 });
             } else {
-                MMVisualEffects.getPART_ASSEMBLY().boundingBoxes.remove(stack);
+                VisualEffectHelper.boundingBoxes.remove(stack);
             }
         }
     }

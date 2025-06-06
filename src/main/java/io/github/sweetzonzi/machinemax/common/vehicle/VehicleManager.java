@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
@@ -233,8 +234,9 @@ public class VehicleManager {
     @SubscribeEvent//卸载服务端世界时清除相关数据
     public static void unloadVehicleData(LevelEvent.Unload event) {
         if (event.getLevel().isClientSide()) {
-            MMVisualEffects.getPART_ASSEMBLY().attachPoints.clear();
-            MMVisualEffects.getPART_ASSEMBLY().partToAssembly = null;
+            VisualEffectHelper.attachPoints.clear();
+            VisualEffectHelper.boundingBoxes.clear();
+            VisualEffectHelper.partToAssembly = null;
         }
     }
 

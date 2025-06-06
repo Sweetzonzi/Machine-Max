@@ -19,6 +19,7 @@ import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.renderer.PartAssemblyRenderer;
+import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
@@ -90,11 +91,10 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     @Override
     public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
         if (level.isClientSide() && body != null) {
-            PartAssemblyRenderer renderer = MMVisualEffects.getPART_ASSEMBLY();
             if (!this.hasPart()) {
-                renderer.attachPoints.put(this, body);
+                VisualEffectHelper.attachPoints.put(this, body);
             } else {
-                renderer.attachPoints.remove(this);
+                VisualEffectHelper.attachPoints.remove(this);
             }
         }
     }
@@ -348,7 +348,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     public void destroy() {
         detach(true);
         if (subPart.part.level.isClientSide())
-            MMVisualEffects.getPART_ASSEMBLY().attachPoints.remove(this);
+            VisualEffectHelper.attachPoints.remove(this);
         this.removeAllBodies();
     }
 
