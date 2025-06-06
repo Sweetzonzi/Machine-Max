@@ -4,7 +4,6 @@ import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
-import io.github.sweetzonzi.machinemax.external.js.SignalProvider;
 import org.mozilla.javascript.Context;
 
 import java.util.ArrayList;
@@ -63,7 +62,7 @@ public class Hook {
                     if (isHotReloading){
                         return null;
                     }
-                    if (SignalProvider.getKeyStatus("backslash") && (!isHotReloading)) {
+                    if (KeyBinding.JavascriptHotReloadKey.isDown() && (!isHotReloading)) {
                         isHotReloading = true;
                         MMInitialJS.clear();
                         MMInitialJS.hotReload();
