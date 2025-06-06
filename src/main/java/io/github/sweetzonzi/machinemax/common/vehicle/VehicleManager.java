@@ -96,7 +96,6 @@ public class VehicleManager {
 
     @SubscribeEvent
     public static void onTick(LevelTickEvent.Post event) {
-        Hook.run(event);
         levelVehicles.computeIfAbsent(event.getLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(vehicleCore -> {
             vehicleCore.tick();
             updateVehicleChunk(vehicleCore);
@@ -105,13 +104,11 @@ public class VehicleManager {
 
     @SubscribeEvent
     public static void onPrePhysicsTick(PhysicsLevelTickEvent.Pre event) {
-        Hook.run(event);
         levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::prePhysicsTick);
     }
 
     @SubscribeEvent
     public static void onPostPhysicsTick(PhysicsLevelTickEvent.Post event) {
-        Hook.run(event);
         levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::postPhysicsTick);
     }
 

@@ -107,7 +107,6 @@ public class VehicleCore {
      * 主线程tick，默认tps=20
      */
     public void tick() {
-        Hook.run(this, tickCount);
         //保持激活与控制量更新
         Vec3 newPos = new Vec3(0, 0, 0);
         Vec3 newVel = new Vec3(0, 0, 0);
@@ -148,7 +147,6 @@ public class VehicleCore {
     }
 
     public void prePhysicsTick() {
-        Hook.run(this);
         subSystemController.prePhysicsTick();
         for (Part part : partMap.values()) {
             part.onPrePhysicsTick();
@@ -156,7 +154,6 @@ public class VehicleCore {
     }
 
     public void postPhysicsTick() {
-        Hook.run(this);
         subSystemController.postPhysicsTick();
         for (Part part : partMap.values()) {
             part.onPostPhysicsTick();

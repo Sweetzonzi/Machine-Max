@@ -7,7 +7,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
+import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_RUNNER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_SCOPE;
 
@@ -37,17 +39,27 @@ public class JSUtils {
 
     }
     public void log(Object object) {
-        System.out.println(object);
+        LOGGER.info(String.valueOf(object));
     }
 
     public void print(Object... objects) {
-        if (Minecraft.getInstance().player instanceof Player player) {
-            StringBuilder msg = new StringBuilder();
-            for (Object object : objects) {
-                msg.append(String.valueOf(object));
+        StringBuilder msg = new StringBuilder();
+        if (Objects.equals(Thread.currentThread().getName(), "Render thread")) {
+            if (Minecraft.getInstance().player instanceof Player player) {
+                for (Object object : objects) {
+                    msg.append(object);
+                    msg.append(" ");
+                }
+                player.sendSystemMessage(Component.literal(msg.toString()));
             }
-            player.sendSystemMessage(Component.literal(msg.toString()));
+        } else {
+            for (Object object : objects) {
+                msg.append(object);
+                msg.append(" ");
+            }
+            log(msg);
         }
+
     }
 
     public static String getSimpleName(String fullClassName) {

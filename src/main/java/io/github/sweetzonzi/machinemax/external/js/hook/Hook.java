@@ -24,7 +24,8 @@ public class Hook {
 
     public static Object run(Object... args) {
         Object readyToReturn = null;
-        var stack = Thread.currentThread().getStackTrace()[2];
+        var currentThread = Thread.currentThread();
+        var stack = currentThread.getStackTrace()[2];
         String className = stack.getClassName();
         String methodName = stack.getMethodName();
         String channel = JSUtils.getSimpleName(className) + ":" + methodName;
@@ -56,6 +57,7 @@ public class Hook {
                 try {
                     JS_SCOPE.put("args", JS_SCOPE, args);
                     JS_SCOPE.put("channel", JS_SCOPE, channel);
+                    JS_SCOPE.put("thread", JS_SCOPE, currentThread.getName());
                     readyToReturn = eventToJS.call(args);
                 } catch (RuntimeException e) {
                     JS_RUNNER = Context.enter();

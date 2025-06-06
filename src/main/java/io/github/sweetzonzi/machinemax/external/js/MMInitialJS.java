@@ -22,25 +22,6 @@ public class MMInitialJS {
         Hook.clear();
     }
 
-    public static void run(Object[] args) {
-        try {
-            ScriptableObject.putProperty(JS_SCOPE, "args", Context.javaToJS(args, JS_SCOPE,  JS_RUNNER));
-//            JS_SCOPE.put("args", JS_SCOPE, args);
-        } catch (Exception e) {
-            LOGGER.error("MMInitialJS Error: " + Arrays.toString(e.getStackTrace()));
-        }
-
-        MMDynamicRes.MM_SCRIPTS.forEach((location, jsPack) -> {
-            try {
-                Object jsObj = JS_RUNNER.evaluateString(
-                        JS_SCOPE, jsPack.getContent(),
-                        "mm_initial_js_run_"+location.getPath(), 1, null);
-//                System.out.println("MMInitialJS Run: "+jsObj);
-            } catch (Exception e) {
-                LOGGER.error("MMInitialJS Error: " + Arrays.toString(e.getStackTrace()));
-            }
-        });
-    }
 
     public static void register() {
         JS_RUNNER = Context.enter();
