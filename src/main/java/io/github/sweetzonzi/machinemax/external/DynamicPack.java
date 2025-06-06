@@ -22,11 +22,13 @@ import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
 public class DynamicPack implements PackResources {
     private String content = "";
     private String base64 = "";
+    private final String packName;
     private final String packRoot;
     private final ResourceLocation location;
     private File file;
     private ByteArrayInputStream inputStream;
-    public DynamicPack(ResourceLocation location, String packRoot, File file) {
+    public DynamicPack(String packName, ResourceLocation location, String packRoot, File file) {
+        this.packName = packName;
         this.location = location;
         this.packRoot = packRoot;
         this.file = file;
@@ -34,7 +36,8 @@ public class DynamicPack implements PackResources {
         loadContent();
         loadBase64();
     }
-    public DynamicPack(ResourceLocation location, String packRoot, String content) {
+    public DynamicPack(String packName, ResourceLocation location, String packRoot, String content) {
+        this.packName = packName;
         this.location = location;
         this.packRoot = packRoot;
         this.setContent(content);
@@ -68,6 +71,10 @@ public class DynamicPack implements PackResources {
         // 列出所有动态资源（必须实现）
         if (type == PackType.CLIENT_RESOURCES && path.equals(packRoot))
             output.accept(location, () -> inputStream);
+    }
+
+    public String getPackName() {
+        return packName;
     }
 
     public File getFile() {

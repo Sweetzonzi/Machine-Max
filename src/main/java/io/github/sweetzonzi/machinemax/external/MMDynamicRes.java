@@ -291,7 +291,7 @@ public class MMDynamicRes {
                     }
 
                     case "script" -> {
-                        dynamicPack = new DynamicPack(location, category, filePath.toFile());
+                        dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());
                         MM_SCRIPTS.put(location, dynamicPack);
                     }
                     case "blueprint" -> {
@@ -319,7 +319,7 @@ public class MMDynamicRes {
                                 String mergedJson = new GsonBuilder().setPrettyPrinting().create().toJson(merged);
 
                                 // 保存到合并后的JSON到资源覆写
-                                dynamicPack = new DynamicPack(location, category, mergedJson);
+                                dynamicPack = new DynamicPack(packName, location, category, mergedJson);
 
                             } catch (JsonSyntaxException | IllegalStateException e) {
                                 LOGGER.error("合并相同翻译表 {}时失败 目标文件位于外部包{}: {}", category, packName, e.getMessage());
@@ -343,7 +343,7 @@ public class MMDynamicRes {
                 LOGGER.error("An error occurred while reading {}, file: {}, skipped. Reason: {}", category, filePath, e.getMessage());
             }
             if (dynamicPack == null)
-                dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
+                dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
             EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
 
 //            //把指定包的文件转换成base64字符串形式    取消注释则会生成镜像base64文件包 在 run/config/machine_max/base64ify
