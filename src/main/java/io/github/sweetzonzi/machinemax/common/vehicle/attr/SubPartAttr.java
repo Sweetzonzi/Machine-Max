@@ -63,7 +63,7 @@ public class SubPartAttr {
             Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::getMassCenterLocator),
             Vec3.CODEC.optionalFieldOf("friction", new Vec3(0.5, 0.5, 0.5)).forGetter(SubPartAttr::getFriction),
             Codec.FLOAT.optionalFieldOf("slip_adaptation", 0.5f).forGetter(SubPartAttr::getSlipAdaptation),
-            Codec.FLOAT.optionalFieldOf("rolling_friction", 0.5f).forGetter(SubPartAttr::getRollingFriction),
+            Codec.FLOAT.optionalFieldOf("rolling_friction", 0.2f).forGetter(SubPartAttr::getRollingFriction),
             Codec.FLOAT.optionalFieldOf("restitution", 0.1f).forGetter(SubPartAttr::getRestitution),
             Codec.FLOAT.optionalFieldOf("block_damage_factor", 1.0f).forGetter(SubPartAttr::getBlockDamageFactor),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
@@ -213,7 +213,6 @@ public class SubPartAttr {
                     MachineMax.LOGGER.warn("在部件{}中未找到质心定位点{}，未对子部件的碰撞体积进行偏移调整。", type.name, this.massCenterLocator);
                 }
                 shape.correctAxes(massCenter);//调整碰撞体位置，使模型原点对齐质心(必须在创建完成碰撞体积后进行！)
-                //TODO:重新计算并调节转动惯量
             }
             //将结果存入零件属性中 Store result in sub-part attributes
             this.massCenterTransforms.put(variant, massCenter);
