@@ -231,7 +231,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             float avgEngineSpeed = 0f;
             byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
-                if (moveInput[2] * speed > 0 || Math.abs(speed) <= 0.5f) {//加速行驶 Accelerate
+                if (moveInput[2] * speed > 0 || (Math.abs(speed) <= 1f)) {//加速行驶 Accelerate
                     actualThrottle = actualThrottle * (1 - attr.throttleSensitivity) + (Math.abs(moveInput[2])) * attr.throttleSensitivity;
                     actualBrake = actualBrake * (1 - 2 * attr.brakeSensitivity) + 0 * 2 * attr.brakeSensitivity;
                     for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
@@ -282,7 +282,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
                 }
                 avgEngineSpeed /= engineCount;
-                if (Math.abs(speed) < 0.5f) {//速度小于一定程度时，刹车 Brake if the speed is too low
+                if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low
                     actualBrake = actualBrake * (1 - attr.brakeSensitivity) + 1 * attr.brakeSensitivity;
                     if (attr.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                         handBrakeControl = true;
@@ -328,7 +328,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     ((GearboxSubsystem) gearbox).setClutched(false);//停止传输动力 Stop transmission power
                 }
             }
-            if (Math.abs(speed) < 0.5f) {//维持原有信号状态 Maintain the original signal status
+            if (Math.abs(speed) < 1f) {//维持原有信号状态 Maintain the original signal status
                 actualBrake = actualBrake * (1 - 2 * attr.brakeSensitivity) + 0 * 2 * attr.brakeSensitivity;
                 for (Map.Entry<ISignalReceiver, String> entry : wheels.entrySet()) {
                     String channel = entry.getValue();
@@ -361,7 +361,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         float index = (engineSpeed - avgEngineMaxTorqueSpeed) / Math.max(0.1f, avgEngineMaxSpeed - avgEngineMaxTorqueSpeed);
         float index2 = (engineSpeed - avgEngineMinSpeed) / Math.max(0.1f, avgEngineMaxTorqueSpeed - avgEngineMinSpeed);
         int result;
-        if (speed > 0.5f) {//前进时输出正转速，正挡 Forward output positive rotational speed, positive gear
+        if (speed > 1f) {//前进时输出正转速，正挡 Forward output positive rotational speed, positive gear
             //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
             if (engineSpeed * ratio < 0)//最低负挡 Lowest negative gear
                 result = gearbox.minNegativeGear;
@@ -375,7 +375,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     result = targetGear;
                 else result = gear;
             } else result = gear;
-        } else if (speed < -0.5f) {//后退时输出负转速，倒挡 Reverse output negative rotational speed, reverse gear
+        } else if (speed < -1f) {//后退时输出负转速，倒挡 Reverse output negative rotational speed, reverse gear
             //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
             if ((engineSpeed * ratio > 0))//最低正挡 Lowest positive gear
                 result = gearbox.minPositiveGear;

@@ -163,14 +163,14 @@ public class TransmissionSubsystem extends AbstractSubsystem {
                 receiverTotalSpeed -= target.getValue();
             }
             receiverTotalSpeed += 0.005f * inputSpeed;
-            if (receiverTotalSpeed == 0f) receiverTotalSpeed = 0.0005f * inputSpeed;//避免反推出的功率过大
+            if (receiverTotalSpeed == 0f) receiverTotalSpeed = 0.005f * inputSpeed;//避免反推出的功率过大
             float torque = (float) (totalPower / receiverTotalSpeed);//计算输出端扭矩
             for (Map.Entry<ISignalReceiver, Float> target : powerReceivers.entrySet()) {
                 ISignalReceiver receiver = target.getKey();
                 Float receiverGearRatio = powerReceiverGearRatios.get(receiver);
                 if (receiverGearRatio == null || receiverGearRatio == 0f) continue;//跳过减速比非法的功率输出目标
-                float receiverSpeed = -0.995f * target.getValue() + 0.005f * inputSpeed;//避免接收者转速为0时无法起步
-                if (receiverSpeed == 0f) receiverSpeed = 0.005f * inputSpeed;
+                float receiverSpeed = -0.99f * target.getValue() + 0.01f * inputSpeed;//避免接收者转速为0时无法起步
+                if (receiverSpeed == 0f) receiverSpeed = 0.01f * inputSpeed;
                 float power = torque * receiverSpeed;
                 MechPowerSignal powerSignalToSend = new MechPowerSignal(power, receiverSpeed / receiverGearRatio);
                 sendCallbackToListener("power", receiver, powerSignalToSend);//发送功率信号
