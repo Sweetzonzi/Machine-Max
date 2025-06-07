@@ -38,6 +38,7 @@ import io.github.sweetzonzi.machinemax.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -303,7 +304,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                         );
                         break;
                     default:
-                        MachineMax.LOGGER.error("在零件{}中发现不支持的零件接口类型{}。", type.name, connectorEntry.getValue().type());
+                        throw new NullPointerException(Component.translatable("error.machinemax.part.invalid_connector_type", type.name, connectorEntry.getKey(), connectorEntry.getValue().type()).getString());
                 }
                 if (connector != null) {
                     subPart.connectors.put(connectorEntry.getKey(), connector);
@@ -311,7 +312,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                     if (!connector.internal) this.externalConnectors.put(connectorEntry.getKey(), connector);
                 }
             } else
-                MachineMax.LOGGER.error("在部件{}中未找到对应的零件接口Locator:{}。", type.name, connectorEntry.getValue().locatorName());
+                throw new NullPointerException(Component.translatable("error.machinemax.part.connector_locator_not_found", type.name, connectorEntry.getKey(), connectorEntry.getValue().locatorName()).getString());
         }
     }
 
@@ -322,8 +323,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         LinkedHashMap<String, OBone> bones = data.getModel().getBones();//从模型获取所有骨骼
         LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
         for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
-        if (bones.isEmpty())
-            throw new RuntimeException("模型路径" + data.getModelPath() + "中无骨骼，请检查模型文件路径配置。");
         //创建零件
         for (Map.Entry<String, SubPartAttr> subPartEntry : subPartAttrMap.entrySet()) {//遍历部件的零件属性
             SubPart subPart = new SubPart(subPartEntry.getKey(), this, subPartEntry.getValue());//创建零件
@@ -370,7 +369,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                                 connector.subPart.body.setPhysicsTransform(connector.subPart.massCenterTransform);
                                 targetConnector.attach((AttachPointConnector) connector, true);
                             } else
-                                MachineMax.LOGGER.error("零件{}的{}接口与零件{}的{}接口不匹配。", type.name, connector.name, entry2.getKey().name, targetConnector.name);
+                                throw new IllegalArgumentException(Component.translatable("error.machinemax.part.invalid_internal_connector_connection", type.name, connector.name, targetConnector.name).getString());
                         }
                     }
                 }

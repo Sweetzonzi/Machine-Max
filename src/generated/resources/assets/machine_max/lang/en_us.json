@@ -1,4 +1,5 @@
 {
+  "error.machine_max.invalid_resource_location": "Invalid resource location. Only lowercase letters, numbers, hyphens and underscores are allowed.",
   "error.machine_max.load": "An error occurred when loading external pack file at: %1$s, Reason: ",
   "error.machine_max.seat_subsystem.no_locator": "Seat subsystem requires a locator (e.g. \"locator\": \"seat_locator\") to define sitting position",
   "error.machine_max.seat_subsystem.no_view": "Seat subsystem must either allow first person view or third person view",
