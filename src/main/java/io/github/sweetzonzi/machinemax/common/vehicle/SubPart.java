@@ -18,7 +18,6 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.InteractBoxAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
@@ -52,7 +51,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollisionObjectTicker {
@@ -207,11 +205,9 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 //重设碰撞法线方向
                 normal = new Vector3f(0, 1, 0);
                 ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
-                //重新计算接触角
-                impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(contactVel.normalize())));
-                if (Float.isNaN(impactAngle)) impactAngle = 0; // 处理NaN情况
-                ManifoldPoints.setDistance1(manifoldPointId, Math.max(0.02f, 0.015f * Math.abs(normal.dot(contactVel))));
+                ManifoldPoints.setDistance1(manifoldPointId, (float) Math.max(0.02f, 0.005f * Math.pow(Math.abs(normal.dot(contactVel)), 1.5f)));
                 ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
+                return;
             }
             //调用子系统碰撞回调
             for (AbstractSubsystem subsystem : subsystems) {
@@ -569,10 +565,11 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 }
                 if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
                     var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
-                    var ang = Math.atan2(height, 1);
+                    var tgtAng = Math.atan2(height, 1);
+                    var ang = Math.atan2(vel.y, horizonVel);
                     float mass = body.getMass() + 0.015f * (part.vehicle.totalMass - body.getMass());
-                    float extraVel = (float) Math.max(Math.sin(ang) * horizonVel, 2f) - vel.y;
-                    float horizontalVelScale = (float) Math.cos(ang);
+                    float extraVel = (float) Math.max(0, Math.max(Math.sin(tgtAng) * vel.length(), 2f) - vel.y);
+                    float horizontalVelScale = (float) Math.max(0, (Math.cos(tgtAng-ang)));
                     body.applyCentralImpulse(new Vector3f(
                             -1f * (1f - horizontalVelScale) * vel.x,
                             extraVel,
