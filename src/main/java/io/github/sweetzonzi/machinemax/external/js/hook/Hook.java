@@ -1,10 +1,14 @@
 package io.github.sweetzonzi.machinemax.external.js.hook;
 
-import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
+import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
+import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.ScriptableSubsystem;
+import io.github.sweetzonzi.machinemax.external.DynamicPack;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.external.js.SignalProvider;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import org.mozilla.javascript.Context;
 
 import java.util.ArrayList;
@@ -29,6 +33,13 @@ public class Hook {
 
 
     public static Object run(Object... args) {
+        String packName = "";
+        boolean isScriptableSubsystem = false;
+        if (args[0] instanceof ScriptableSubsystem scriptableSubsystem) {
+            isScriptableSubsystem = true;
+            ResourceLocation location = scriptableSubsystem.getPart().type.registryKey;
+            if (MMDynamicRes.EXTERNAL_RESOURCE.get(location) instanceof DynamicPack pack) packName = pack.getPackName();
+        }
         if (SignalProvider.getKeyTicks("backslash") == 2) {
             MMInitialJS.clear();
             MMInitialJS.hotReload();
@@ -66,10 +77,14 @@ public class Hook {
         }
         if (LISTENING_EVENT.get(channel) instanceof List<EventToJS> li) {
             for (EventToJS eventToJS : li) {
+                if (isScriptableSubsystem && (!eventToJS.packName().equals(packName))) return null;
                 try {
                     JS_SCOPE.put("args", JS_SCOPE, args);
                     JS_SCOPE.put("channel", JS_SCOPE, channel);
                     JS_SCOPE.put("thread", JS_SCOPE, currentThread.getName());
+                    JS_SCOPE.put("mc", JS_SCOPE, Minecraft.getInstance());
+                    JS_SCOPE.put("attach", JS_SCOPE, Minecraft.getInstance());
+                    JS_SCOPE.put("sight", JS_SCOPE, MMAttachments.getENTITY_EYESIGHT());
                     readyToReturn = eventToJS.call(args);
                 } catch (RuntimeException e) {
                     JS_RUNNER = Context.enter();

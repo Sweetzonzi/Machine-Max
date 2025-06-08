@@ -202,14 +202,6 @@ public class ScriptableSubsystem extends AbstractSubsystem{
     }
 
     @Override
-    public Part getPart() {
-        if (Hook.run(this) instanceof Part part) {
-            return part;
-        }
-        return super.getPart();
-    }
-
-    @Override
     public void onSignalUpdated(String channelName, ISignalSender sender) {
         super.onSignalUpdated(channelName, sender);
         Hook.run(this, channelName, sender);

@@ -210,6 +210,9 @@ public class LivingEntityEyesightAttachment {
             Part part = subPart.part;
             VehicleCore vehicle = part.vehicle;
             PacketDistributor.sendToServer(new SubsystemInteractPayload(vehicle.uuid.toString(), part.uuid.toString(), subPart.name, interactBox.name));
+            System.out.println("交互成功");
+        } else {
+            System.out.println("交互失败");
         }
     }
 }
