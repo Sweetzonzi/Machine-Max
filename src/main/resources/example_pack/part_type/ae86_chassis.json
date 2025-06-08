@@ -76,8 +76,8 @@
     "right_front_wheel_driver": {
       "type": "machine_max:wheel_driver",
       "connector": "right_front_wheel",
-      "steering": {//(可选)轮胎转向相关属性，默认最大转向力矩5000N*m，最大转速3.14rad/s，不反馈转角值到任何频道的任何目标
-        "max_force": 5000,
+      "steering": {//(可选)轮胎转向相关属性，默认最大转向力矩4000N*m，最大转速3.14rad/s，不反馈转角值到任何频道的任何目标
+        "max_force": 4000,
         "max_speed": 3.14,
         "position_outputs": {} //(可选，默认{})转角信号输出频道及目标名称列表
       }

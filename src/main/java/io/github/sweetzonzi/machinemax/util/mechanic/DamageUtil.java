@@ -37,10 +37,12 @@ public class DamageUtil {
             blockDurability = 200 * (0.01f + blockState.getDestroySpeed(level, blockPos));
         } else if (blockState.is(BlockTags.WOOL)) {//吸能材料超高耐久度
             blockDurability = 200 * (0.01f + blockState.getDestroySpeed(level, blockPos));
+        } else if (blockState.is(BlockTags.LEAVES)) {//脆弱
+            blockDurability = 10 * (0.01f + blockState.getDestroySpeed(level, blockPos));
         } else if (blockState.isStickyBlock()) {
             blockDurability = 1000f;
         } else {//一般方块
-            blockDurability = 30 * (0.01f + blockState.getDestroySpeed(level, blockPos));
+            blockDurability = 100 * (0.01f + blockState.getDestroySpeed(level, blockPos));
         }
         AABB aabb = blockState.getCollisionShape(level, blockPos).bounds();
         //根据方块体积调整耐久度
