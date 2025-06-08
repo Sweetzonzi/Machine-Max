@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.external.js.SignalProvider;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import org.mozilla.javascript.Context;
 
@@ -85,6 +86,7 @@ public class Hook {
                     JS_SCOPE.put("mc", JS_SCOPE, Minecraft.getInstance());
                     JS_SCOPE.put("attach", JS_SCOPE, Minecraft.getInstance());
                     JS_SCOPE.put("sight", JS_SCOPE, MMAttachments.getENTITY_EYESIGHT());
+                    JS_SCOPE.put("Tag", JS_SCOPE, Tag.class);
                     readyToReturn = eventToJS.call(args);
                 } catch (RuntimeException e) {
                     JS_RUNNER = Context.enter();

@@ -1,3 +1,6 @@
+function Nbt() {
+    return mm.nbt()
+}
 function print(arg) {
     mm.print(arg)
 }

@@ -42,6 +42,14 @@ public class MMPayloadRegistry {
                         SubsystemInteractPayload::serverHandler
                 )
         );
+        input.playBidirectional(//JS自定义网络包
+                ScriptablePayload.TYPE,
+                ScriptablePayload.STREAM_CODEC,
+                new DirectionalPayloadHandler<>(
+                        ScriptablePayload::clientHandler,
+                        ScriptablePayload::serverHandler
+                )
+        );
         sync.playToClient(//通知客户端创建载具
                 VehicleCreatePayload.TYPE,
                 VehicleCreatePayload.STREAM_CODEC,

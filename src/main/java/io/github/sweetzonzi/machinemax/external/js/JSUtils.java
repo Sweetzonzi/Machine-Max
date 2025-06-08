@@ -3,9 +3,15 @@ package io.github.sweetzonzi.machinemax.external.js;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.external.js.hook.EventToJS;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
+import io.github.sweetzonzi.machinemax.network.payload.ScriptablePayload;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -28,12 +34,6 @@ public class JSUtils {
 //        return value;
 //    }
 
-    public void attachInteract() {
-        if (Minecraft.getInstance().player instanceof Player player) {
-            player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
-
-        }
-    }
 
     public void hook(String channel, org.mozilla.javascript.ArrowFunction arrowFunction) {
         if (!Hook.LISTENING_EVENT.containsKey(channel)) Hook.LISTENING_EVENT.put(channel, new ArrayList<>());
@@ -76,6 +76,24 @@ public class JSUtils {
             log(msg);
         }
 
+    }
+
+    public void payload(CompoundTag nbt){
+        sendToServer(new ScriptablePayload(nbt));
+    }
+
+    public CompoundTag nbt() {
+        return new CompoundTag();
+    }
+    public CompoundTag copyNbt(CompoundTag from) {
+        return from.copy();
+    }
+
+    public void sendToServer(CustomPacketPayload payload, CustomPacketPayload... payloads) {
+        PacketDistributor.sendToServer(payload, payloads);
+    }
+    public void sendToPlayer(ServerPlayer player, CustomPacketPayload payload, CustomPacketPayload... payloads) {
+        PacketDistributor.sendToPlayer(player, payload, payloads);
     }
 
     public static String getSimpleName(String fullClassName) {
