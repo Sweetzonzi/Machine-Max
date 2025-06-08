@@ -77,8 +77,7 @@ public class Hook {
         }
         if (LISTENING_EVENT.get(channel) instanceof List<EventToJS> li) {
             for (EventToJS eventToJS : li) {
-                if (isScriptableSubsystem ) JS_SCOPE.put("packName", JS_SCOPE, packName);
-                else JS_SCOPE.put("packName", JS_SCOPE, eventToJS.packName());
+                if (isScriptableSubsystem && (!eventToJS.packName().equals(packName))) return null;
                 try {
                     JS_SCOPE.put("args", JS_SCOPE, args);
                     JS_SCOPE.put("channel", JS_SCOPE, channel);
