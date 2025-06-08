@@ -33,13 +33,13 @@ public class Hook {
 
 
     public static Object run(Object... args) {
-        String packName = "";
-        boolean isScriptableSubsystem = false;
-        if (args[0] instanceof ScriptableSubsystem scriptableSubsystem) {
-            isScriptableSubsystem = true;
-            ResourceLocation location = scriptableSubsystem.getPart().type.registryKey;
-            if (MMDynamicRes.EXTERNAL_RESOURCE.get(location) instanceof DynamicPack pack) packName = pack.getPackName();
-        }
+//        String packName = "";
+//        boolean isScriptableSubsystem = false;
+//        if (args[0] instanceof ScriptableSubsystem scriptableSubsystem) {
+//            isScriptableSubsystem = true;
+//            ResourceLocation location = scriptableSubsystem.getPart().type.registryKey;
+//            if (MMDynamicRes.EXTERNAL_RESOURCE.get(location) instanceof DynamicPack pack) packName = pack.getPackName();
+//        }
         if (SignalProvider.getKeyTicks("backslash") == 2) {
             MMInitialJS.clear();
             MMInitialJS.hotReload();
@@ -77,7 +77,7 @@ public class Hook {
         }
         if (LISTENING_EVENT.get(channel) instanceof List<EventToJS> li) {
             for (EventToJS eventToJS : li) {
-                if (isScriptableSubsystem && (!eventToJS.packName().equals(packName))) return null;
+//                if (isScriptableSubsystem && (!eventToJS.packName().equals(packName))) return null;
                 try {
                     JS_SCOPE.put("args", JS_SCOPE, args);
                     JS_SCOPE.put("channel", JS_SCOPE, channel);
