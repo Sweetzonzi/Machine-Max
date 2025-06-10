@@ -3,11 +3,9 @@ package io.github.sweetzonzi.machinemax;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import com.mojang.logging.LogUtils;
 import io.github.sweetzonzi.machinemax.client.input.CameraController;
-import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
-import io.github.sweetzonzi.machinemax.common.item.MMJavaItems;
 import io.github.sweetzonzi.machinemax.common.registry.*;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
-import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
+import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
@@ -54,6 +52,7 @@ public class MachineMax {
         bus.addListener(MMDynamicRes::registerReloadListeners);
         MMItems.register();//通过kotlin注册的所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
+        MMJoystickHandler.init();//游戏手柄读取初始化
     }
 
 }

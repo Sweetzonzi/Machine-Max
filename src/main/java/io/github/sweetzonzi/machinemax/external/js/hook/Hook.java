@@ -8,8 +8,11 @@ import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.external.js.SignalProvider;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
+import org.lwjgl.glfw.GLFW;
 import org.mozilla.javascript.Context;
 
 import java.util.ArrayList;

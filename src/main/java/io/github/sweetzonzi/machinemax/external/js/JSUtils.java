@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.external.js.hook.EventToJS;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.network.payload.ScriptablePayload;
+import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -87,6 +88,25 @@ public class JSUtils {
     }
     public CompoundTag copyNbt(CompoundTag from) {
         return from.copy();
+    }
+
+    public Float toFloat(Object number) {
+        if (number instanceof Double d) {
+            return d.floatValue();
+        }
+        if (number instanceof Long l) {
+            return l.floatValue();
+        }
+        if (number instanceof Short s) {
+            return s.floatValue();
+        }
+        if (number instanceof Integer i) {
+            return i.floatValue();
+        }
+        if (number instanceof Float f) {
+            return f;
+        }
+        return 0f;
     }
 
     public void sendToServer(CustomPacketPayload payload, CustomPacketPayload... payloads) {

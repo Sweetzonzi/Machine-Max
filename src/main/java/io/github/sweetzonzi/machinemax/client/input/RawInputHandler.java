@@ -131,7 +131,10 @@ public class RawInputHandler {
     @SubscribeEvent
     public static void runKeyHook(ClientTickEvent.Post event) {
         for (String name : Hook.SIGNAL_MAP.keySet()) {
-            if (Hook.SIGNAL_MAP.get(name) != 0) Hook.SIGNAL_MAP.put(name,Hook.SIGNAL_MAP.get(name) + 1);
+            if (Hook.SIGNAL_MAP.get(name) instanceof Double d) {
+                if (d != 0) Hook.SIGNAL_MAP.put(name, d+1);
+            }
+
         }
     }
 
