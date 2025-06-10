@@ -55,7 +55,7 @@ public class MMInitialJS {
 
         MMDynamicRes.MM_SCRIPTS.forEach((location, jsPack) -> {
             try {
-                ScriptableObject.putProperty(JS_SCOPE, "mm", Context.javaToJS(new JSUtils(jsPack.getPackName()), JS_SCOPE,  JS_RUNNER));
+                ScriptableObject.putProperty(JS_SCOPE, "mm", Context.javaToJS(new JSUtils(location.toString(), jsPack.getPackName()), JS_SCOPE,  JS_RUNNER));
                 ScriptableObject.putProperty(JS_SCOPE, "signal", Context.javaToJS(new SignalProvider(), JS_SCOPE,  JS_RUNNER));
                 Object jsObj = JS_RUNNER.evaluateString(
                         JS_SCOPE, packages + jsPack.getContent(),

@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.external.js.SignalProvider;
+import io.github.sweetzonzi.machinemax.network.payload.ScriptablePayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -83,13 +84,26 @@ public class Hook {
             for (EventToJS eventToJS : li) {
 //                if (isScriptableSubsystem && (!eventToJS.packName().equals(packName))) return null;
                 try {
+                    String packName = eventToJS.packName();
+                    String location = eventToJS.location();
+                    if (args[0] instanceof ScriptableSubsystem scriptableSubsystem
+                            && !scriptableSubsystem.getPart().type.subsystems.containsKey(location))
+                        return null;
+
+                    if (className.equals(ScriptablePayload.class.getName())) {
+                        if (!args[1].equals(location)) return null;
+                        args = new Object[]{args[0], args[2], args[3], args[4], args[5]};
+                    }
+
+                    JS_SCOPE.put("mm", JS_SCOPE, new JSUtils(location, packName));
                     JS_SCOPE.put("args", JS_SCOPE, args);
                     JS_SCOPE.put("channel", JS_SCOPE, channel);
+                    JS_SCOPE.put("packName", JS_SCOPE, packName);
+                    JS_SCOPE.put("location", JS_SCOPE, location);
                     JS_SCOPE.put("thread", JS_SCOPE, currentThread.getName());
                     JS_SCOPE.put("mc", JS_SCOPE, Minecraft.getInstance());
                     JS_SCOPE.put("attach", JS_SCOPE, Minecraft.getInstance());
                     JS_SCOPE.put("sight", JS_SCOPE, MMAttachments.getENTITY_EYESIGHT());
-                    JS_SCOPE.put("Tag", JS_SCOPE, Tag.class);
                     readyToReturn = eventToJS.call(args);
                 } catch (RuntimeException e) {
                     JS_RUNNER = Context.enter();

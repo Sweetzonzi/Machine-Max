@@ -1,8 +1,12 @@
 package io.github.sweetzonzi.machinemax.external.js;
 
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
+import io.github.sweetzonzi.machinemax.common.vehicle.Part;
+import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.external.js.hook.EventToJS;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
+import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
+import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machinemax.network.payload.ScriptablePayload;
 import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import net.minecraft.client.Minecraft;
@@ -10,20 +14,26 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_RUNNER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_SCOPE;
 
 public class JSUtils {
+    private final String location;
     private final String packName;
-    public JSUtils(String packName) {
+    private Minecraft client = null;
+    public JSUtils(String location, String packName) {
+        this.location = location;
         this.packName = packName;
     }
 
@@ -49,6 +59,11 @@ public class JSUtils {
                         @Override
                         public String packName() {
                             return packName;
+                        }
+
+                        @Override
+                        public String location() {
+                            return location;
                         }
                     }
                     ));
@@ -79,8 +94,8 @@ public class JSUtils {
 
     }
 
-    public void payload(CompoundTag nbt){
-        sendToServer(new ScriptablePayload(nbt));
+    public void payload(String to, CompoundTag nbt){
+        sendToServer(new ScriptablePayload(location, to, nbt));
     }
 
     public CompoundTag nbt() {
