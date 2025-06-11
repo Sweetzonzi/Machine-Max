@@ -1,29 +1,43 @@
 package io.github.sweetzonzi.machinemax.external.js.hook;
 
+import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.JSUtils;
+import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
+import io.github.sweetzonzi.machinemax.external.js.SignalProvider;
 import org.mozilla.javascript.Context;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_RUNNER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_SCOPE;
 
 public class Hook {
-    public static HashMap<String, Double> SIGNAL_MAP = new HashMap<>();
+    public static ConcurrentMap<String, Double> SIGNAL_MAP = new ConcurrentHashMap<>();
     public static HashMap<String, List<EventToJS>> LISTENING_EVENT = new HashMap<>();
     public static HashMap<String, String> CHANNEL_DOCUMENT = new HashMap<>();
+
     public static void clear() {
         SIGNAL_MAP.clear();
         LISTENING_EVENT.clear();
     }
 
 
-    public static void run(Object... args) {
-        var stack = Thread.currentThread().getStackTrace()[2];
+    public static Object run(Object... args) {
+        if (SignalProvider.getKeyTicks("backslash") == 2) {
+            MMInitialJS.clear();
+            MMInitialJS.hotReload();
+            MMInitialJS.register();
+            return null;
+        }
+        Object readyToReturn = null;
+        var currentThread = Thread.currentThread();
+        var stack = currentThread.getStackTrace()[2];
         String className = stack.getClassName();
         String methodName = stack.getMethodName();
         String channel = JSUtils.getSimpleName(className) + ":" + methodName;
@@ -55,7 +69,8 @@ public class Hook {
                 try {
                     JS_SCOPE.put("args", JS_SCOPE, args);
                     JS_SCOPE.put("channel", JS_SCOPE, channel);
-                    eventToJS.call(args);
+                    JS_SCOPE.put("thread", JS_SCOPE, currentThread.getName());
+                    readyToReturn = eventToJS.call(args);
                 } catch (RuntimeException e) {
                     JS_RUNNER = Context.enter();
                     JS_SCOPE = JS_RUNNER.initStandardObjects();
@@ -63,6 +78,7 @@ public class Hook {
                 }
             }
         }
+        return readyToReturn;
     }
 
 }

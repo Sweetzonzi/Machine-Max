@@ -290,7 +290,7 @@ public class MMDynamicRes {
                     }
 
                     case "script" -> {
-                        dynamicPack = new DynamicPack(location, category, filePath.toFile());
+                        dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());
                         MM_SCRIPTS.put(location, dynamicPack);
                     }
                     case "blueprint" -> {
@@ -318,7 +318,7 @@ public class MMDynamicRes {
                                 String mergedJson = new GsonBuilder().setPrettyPrinting().create().toJson(merged);
 
                                 // 保存到合并后的JSON到资源覆写
-                                dynamicPack = new DynamicPack(location, category, mergedJson);
+                                dynamicPack = new DynamicPack(packName, location, category, mergedJson);
 
                             } catch (JsonSyntaxException | IllegalStateException e) {
                                 LOGGER.error("合并相同翻译表 {}时失败 目标文件位于外部包{}: {}", category, packName, e.getMessage());

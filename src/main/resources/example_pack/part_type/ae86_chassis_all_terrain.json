@@ -10,6 +10,9 @@
   "icon": "machine_max:example_pack/icon/ae86_chassis_all_terrain_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
   "basic_durability": 100.0,//部件基础生命值
   "subsystems": {
+    "scriptable": {
+      "type": "machine_max:scriptable"//子系统类型
+    },
     "car_controller": {
       "type": "machine_max:car_controller", //子系统类型
       "manual_gear_shift": false, //(可选，默认false)是否强制手动挡

@@ -6,4 +6,5 @@ import org.mozilla.javascript.Scriptable;
 
 public interface EventToJS {
     Object call(Object... args);
+    String packName();
 }
