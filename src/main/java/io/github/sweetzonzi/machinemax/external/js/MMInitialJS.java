@@ -27,10 +27,10 @@ public class MMInitialJS {
         String msg = "Javascript热重载运行完毕";
         if (! Objects.equals(Thread.currentThread().getName(), "Server thread")) {
             //不是服务器的都打印，避免物理进程不响应
-            if (Minecraft.getInstance().player instanceof Player player) {
-                player.sendSystemMessage(((MutableComponent) Component.literal(msg))
-                        .withStyle(style -> style.withColor(0xFFED6F00)));
-            }
+//            if (Minecraft.getInstance().player instanceof Player player) {
+//                player.sendSystemMessage(Component.literal(msg)
+//                        .withStyle(style -> style.withColor(0xFFED6F00)));
+//            }
         } else {
             LOGGER.info(msg);
         }

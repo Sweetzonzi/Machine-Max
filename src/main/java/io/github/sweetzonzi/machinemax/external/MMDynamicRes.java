@@ -338,7 +338,7 @@ public class MMDynamicRes {
                     throw new IllegalArgumentException("error.machine_max.invalid_resource_location");
                 }
                 if (dynamicPack == null)
-                    dynamicPack = new DynamicPack(location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
+                    dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
                 EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
             } catch (Exception e) {
                 exceptions.add(e);
