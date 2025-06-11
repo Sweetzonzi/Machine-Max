@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machinemax.common.item.IPartInteractableItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
+import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -23,8 +24,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class CrowbarItem extends Item implements IPartInteractableItem, ICustomModelItem {
     public CrowbarItem(Properties properties) {
@@ -38,6 +38,9 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
             if (part != null) {//移除部件
+//                List<AbstractConnector> connectors = new ArrayList<>(part.externalConnectors.values());
+//                Random random = new Random();
+//                part.vehicle.detachConnector(connectors.get(random.nextInt(connectors.size())));
                 part.vehicle.removePart(part);
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));
             } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));

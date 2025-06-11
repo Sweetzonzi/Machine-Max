@@ -63,6 +63,20 @@ public class VehicleManager {
     }
 
     /**
+     * 将因组装拓扑结构改变而分裂出的载具加入载具管理器中
+     *
+     * @param vehicle 载具核心
+     */
+    public static void addSpiltVehicle(VehicleCore vehicle) {
+        levelVehicles.computeIfAbsent(vehicle.level, k -> ConcurrentHashMap.newKeySet()).add(vehicle);
+        if (!vehicle.level.isClientSide()) {
+            serverAllVehicles.put(vehicle.getUuid(), vehicle);
+            saveVehicles((ServerLevel) vehicle.level);//维度内载具发生变更，保存维度载具数据到Level的Attachment
+        } else clientAllVehicles.put(vehicle.getUuid(), vehicle);
+        vehicle.inLevel =true;
+    }
+
+    /**
      * 从载具管理器中移除VehicleCore
      * 并将载具从相应维度移除
      *
@@ -76,7 +90,7 @@ public class VehicleManager {
             saveVehicles((ServerLevel) vehicle.level);//维度内载具发生变更，保存维度载具数据到Level的Attachment
             PacketDistributor.sendToPlayersInDimension(//发包给维度内玩家，通知他们有载具消失
                     (ServerLevel) vehicle.level,
-                    new VehicleRemovePayload(vehicle.level.dimension(), vehicle.uuid.toString()));
+                    new VehicleRemovePayload(vehicle.level.dimension(), vehicle.uuid));
         } else clientAllVehicles.remove(vehicle.getUuid());
         vehicle.onRemoveFromLevel();
     }

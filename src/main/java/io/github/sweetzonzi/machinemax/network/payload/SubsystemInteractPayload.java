@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machinemax.network.payload;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.*;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -17,8 +18,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.UUID;
 
 public record SubsystemInteractPayload(
-        String vehicleUUID,
-        String partUUID,
+        UUID vehicleUUID,
+        UUID partUUID,
         String subPartName,
         String interactBoxName
 ) implements CustomPacketPayload {
@@ -26,9 +27,9 @@ public record SubsystemInteractPayload(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem_interact_payload")
     );
     public static final StreamCodec<ByteBuf, SubsystemInteractPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.STRING_UTF8,
+            UUIDUtil.STREAM_CODEC,
             SubsystemInteractPayload::vehicleUUID,
-            ByteBufCodecs.STRING_UTF8,
+            UUIDUtil.STREAM_CODEC,
             SubsystemInteractPayload::partUUID,
             ByteBufCodecs.STRING_UTF8,
             SubsystemInteractPayload::subPartName,
@@ -57,10 +58,10 @@ public record SubsystemInteractPayload(
     public static void handle(SubsystemInteractPayload payload, IPayloadContext context) {
         VehicleCore vehicle;
         Level level = context.player().level();
-        if (level.isClientSide) vehicle = VehicleManager.clientAllVehicles.get(UUID.fromString(payload.vehicleUUID));
-        else vehicle = VehicleManager.serverAllVehicles.get(UUID.fromString(payload.vehicleUUID));
+        if (level.isClientSide) vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUUID);
+        else vehicle = VehicleManager.serverAllVehicles.get(payload.vehicleUUID);
         if (vehicle != null) {
-            Part part = vehicle.partMap.get(UUID.fromString(payload.partUUID));
+            Part part = vehicle.partMap.get(payload.partUUID);
             if (part != null) {
                 SubPart subPart = part.subParts.get(payload.subPartName);
                 if (subPart != null) {

@@ -220,32 +220,6 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
      */
     public void detach(boolean force) {
         if ((force || !internal) && hasPart()) {
-            if (!internal) {//若是与外部部件连接的接口，则需要移除载具核心中记录的连接关系
-                Pair<AbstractConnector, AttachPointConnector> connection;
-                boolean removed;
-                if (this instanceof AttachPointConnector) {//若是连接点接口
-                    connection = Pair.of(attachedConnector, (AttachPointConnector) this);
-                    removed = subPart.part.vehicle.partNet.removeEdge(connection);
-                    if (!removed && attachedConnector instanceof AttachPointConnector) {
-                        connection = Pair.of(this, (AttachPointConnector) attachedConnector);
-                        removed = subPart.part.vehicle.partNet.removeEdge(connection);
-                    }
-                } else {//若是一般接口
-                    connection = Pair.of(this, (AttachPointConnector) attachedConnector);
-                    removed = subPart.part.vehicle.partNet.removeEdge(connection);
-                }
-                if (!removed)//检查是否成功移除了连接关系
-                    MachineMax.LOGGER.error("零件拆解失败，载具核心中找不到对接口{}与对接口{}的连接关系！", this.getName(), attachedConnector.getName());
-                else {
-                    MachineMax.LOGGER.debug("零件拆解成功，接口{}与接口{}已断开连接！", this.getName(), attachedConnector.getName());
-                    if (!this.subPart.part.level.isClientSide()) {//若是服务端，则向客户端发包通知拆解接口
-                        PacketDistributor.sendToPlayersInDimension((ServerLevel) subPart.part.level, new ConnectorDetachPayload(
-                                subPart.part.vehicle.uuid,
-                                List.of(new ConnectionData(connection))
-                        ));
-                    }
-                }
-            }
             if (this.signalPort != null && attachedConnector.signalPort != null) {
                 this.signalPort.onConnectorDetach();
                 attachedConnector.signalPort.onConnectorDetach();

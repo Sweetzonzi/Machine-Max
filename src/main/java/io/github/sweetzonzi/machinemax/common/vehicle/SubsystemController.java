@@ -3,11 +3,9 @@ package io.github.sweetzonzi.machinemax.common.vehicle;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import lombok.Getter;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -27,8 +25,8 @@ public class SubsystemController implements ISignalReceiver {
 
     public void tick() {
 //        Hook.run(this);
-        for (AbstractSubsystem subsystem : allSubsystems){
-            if (subsystem!=null){
+        for (AbstractSubsystem subsystem : allSubsystems) {
+            if (subsystem != null) {
                 subsystem.onTick();
             }
         }
@@ -36,8 +34,8 @@ public class SubsystemController implements ISignalReceiver {
 
     public void prePhysicsTick() {
 //        Hook.run(this);
-        for (AbstractSubsystem subsystem : allSubsystems){
-            if (subsystem!=null){
+        for (AbstractSubsystem subsystem : allSubsystems) {
+            if (subsystem != null) {
                 subsystem.onPrePhysicsTick();
             }
         }
@@ -45,30 +43,30 @@ public class SubsystemController implements ISignalReceiver {
 
     public void postPhysicsTick() {
 //        Hook.run(this);
-        for (AbstractSubsystem subsystem : allSubsystems){
-            if (subsystem!=null){
+        for (AbstractSubsystem subsystem : allSubsystems) {
+            if (subsystem != null) {
                 subsystem.onPostPhysicsTick();
             }
         }
     }
 
-    public void addSubsystems(Collection<AbstractSubsystem> subSystems){
-        subSystems.forEach(this::addSubsystem);
+    public void addSubsystems(Collection<AbstractSubsystem> subSystems, boolean newlyAdded) {
+        for (AbstractSubsystem subSystem : subSystems) this.addSubsystem(subSystem, newlyAdded);
         allSubsystems.addAll(subSystems);
     }
 
-    public void addSubsystem(AbstractSubsystem subSystem) {
-        subSystem.onAttach();
+    public void addSubsystem(AbstractSubsystem subSystem, boolean newlyAdded) {
+        if (newlyAdded) subSystem.onAttach();
         allSubsystems.add(subSystem);
     }
 
-    public void removeSubsystems(Collection<AbstractSubsystem> subSystems) {
-        subSystems.forEach(this::removeSubsystem);
+    public void removeSubsystems(Collection<AbstractSubsystem> subSystems, boolean transferToAnotherVehicle) {
+        for (AbstractSubsystem subSystem : subSystems) this.removeSubsystem(subSystem, transferToAnotherVehicle);
         allSubsystems.removeAll(subSystems);
     }
 
-    public void removeSubsystem(AbstractSubsystem subSystem) {
-        subSystem.onDetach();
+    public void removeSubsystem(AbstractSubsystem subSystem, boolean transferToAnotherVehicle) {
+        if (!transferToAnotherVehicle) subSystem.onDetach();
         allSubsystems.remove(subSystem);
     }
 
@@ -81,7 +79,7 @@ public class SubsystemController implements ISignalReceiver {
         return channels;
     }
 
-    public void destroy(){
+    public void destroy() {
         allSubsystems.forEach(AbstractSubsystem::onDetach);
         allSubsystems.clear();
         channels.clear();

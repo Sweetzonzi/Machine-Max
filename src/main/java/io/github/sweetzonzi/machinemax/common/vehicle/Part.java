@@ -397,7 +397,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         ));
         //同步客户端
         if (!level.isClientSide()) PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                new PartPaintPayload(vehicle.uuid.toString(), this.uuid.toString(), this.textureIndex));
+                new PartPaintPayload(vehicle.uuid, this.uuid, this.textureIndex));
     }
 
     /**

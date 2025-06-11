@@ -129,9 +129,11 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
         } else return;//事件与交互判定无关时提前返回
         if (interactHitBox.getOwner() instanceof SubPart.InteractBoxes interactBoxes) {
             InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
-            InteractBox.InteractMode mode = interactBox.interactMode;
-            if (mode == InteractBox.InteractMode.FAST) {
-                this.fastInteractBoxes.add(interactBox);
+            if (interactBox!=null) {
+                InteractBox.InteractMode mode = interactBox.interactMode;
+                if (mode == InteractBox.InteractMode.FAST) {
+                    this.fastInteractBoxes.add(interactBox);
+                }
             }
         }
     }
@@ -234,7 +236,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             SubPart subPart = interactBox.subPart;
             Part part = subPart.part;
             VehicleCore vehicle = part.vehicle;
-            PacketDistributor.sendToServer(new SubsystemInteractPayload(vehicle.uuid.toString(), part.uuid.toString(), subPart.name, interactBox.name));
+            PacketDistributor.sendToServer(new SubsystemInteractPayload(vehicle.uuid, part.uuid, subPart.name, interactBox.name));
         }
     }
 }
