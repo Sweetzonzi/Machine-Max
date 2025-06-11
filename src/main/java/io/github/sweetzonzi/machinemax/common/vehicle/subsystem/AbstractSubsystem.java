@@ -64,20 +64,6 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     /**
-     * 子系统对应的碰撞箱与另一个刚体发生碰撞时的原始碰撞信息调用。调用于物理线程。<p>
-     * Called when the hit-box of the subsystem collides with another rigid body. Called on the physics thread.<p>
-     * 推荐使用 {@link AbstractSubsystem#onCollideWithBlock},{@link AbstractSubsystem#onCollideWithPart},{@link AbstractSubsystem#onCollideWithEntity}方法替代。<p>
-     * It is recommended to use the {@link AbstractSubsystem#onCollideWithBlock},{@link AbstractSubsystem#onCollideWithPart},{@link AbstractSubsystem#onCollideWithEntity} methods instead.
-     */
-    @Deprecated//需要手动重新获取各类碰撞信息，不推荐使用
-    public void onCollide(
-            PhysicsCollisionObject pcoA,
-            PhysicsCollisionObject pcoB,
-            long manifoldPointId
-    ) {
-    }
-
-    /**
      * 子系统对应的碰撞箱与方块发生碰撞时调用。调用于物理线程。<p>
      * Called when the hit-box of the subsystem collides with block. Called on the physics thread.
      */
