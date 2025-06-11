@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machinemax.external.js.hook;
 
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
+import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.ScriptableSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.ScriptableSubsystem;
 import io.github.sweetzonzi.machinemax.external.DynamicPack;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
@@ -86,9 +87,10 @@ public class Hook {
                 try {
                     String packName = eventToJS.packName();
                     String location = eventToJS.location();
-                    if (args[0] instanceof ScriptableSubsystem scriptableSubsystem
-                            && !scriptableSubsystem.getPart().type.subsystems.containsKey(location))
-                        return null;
+                    if (args[0] instanceof ScriptableSubsystem scriptableSubsystem) {
+                        String scriptPath = ((ScriptableSubsystemAttr) scriptableSubsystem.getSubSystemAttr()).script;
+                        if (!location.equals(scriptPath)) return null;
+                    }
 
                     if (className.equals(ScriptablePayload.class.getName())) {
                         if (!args[1].equals(location)) return null;
