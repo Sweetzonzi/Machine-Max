@@ -38,6 +38,8 @@ public class ScriptableSubsystem extends AbstractSubsystem{
         if (vehicleCoreUUID != null) {
             PacketDistributor.sendToServer(new ScriptablePayload(vehicleCoreUUID, script, to, nbt));
         }
+        //考虑以后判断是哪个端，让服务器上的ScriptableSubsystem也有发回的能力
+        //PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload)
     }
 
     public interface FetchedScriptableSubsystem {
