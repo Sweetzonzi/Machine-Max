@@ -1,6 +1,10 @@
 package io.github.sweetzonzi.machinemax.network.payload;
 
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
+import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.ScriptableSubsystem;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -34,12 +38,24 @@ public record ScriptablePayload(String from, String to, CompoundTag nbt) impleme
     public static void clientHandler(final ScriptablePayload payload, final IPayloadContext context) {
         Player player = context.player();
         Level level = player.level();
+        receive(payload, level);
         Hook.run(payload.from, payload.to, payload.nbt, context, player, level);
+    }
+
+    private static void receive(ScriptablePayload payload, Level level) {
+        for (VehicleCore core : VehicleManager.levelVehicles.get(level)) {
+            for (AbstractSubsystem subsystem : core.getSubSystemController().getAllSubsystems()) {
+                if (subsystem instanceof ScriptableSubsystem sc && sc.script.equals(payload.to)) {
+                    sc.receiveNbt(payload.from, payload.nbt);
+                }
+            }
+        }
     }
 
     public static void serverHandler(final ScriptablePayload payload, final IPayloadContext context) {
         Player player = context.player();
         Level level = player.level();
+        receive(payload, level);
         Hook.run(payload.from, payload.to, payload.nbt, context, player, level);
         PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload);
     }

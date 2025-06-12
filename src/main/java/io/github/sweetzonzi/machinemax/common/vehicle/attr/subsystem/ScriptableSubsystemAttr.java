@@ -40,6 +40,6 @@ public class ScriptableSubsystemAttr extends AbstractSubsystemAttr {
     @Override
     public AbstractSubsystem createSubsystem(ISubsystemHost owner, String name) {
         Hook.run(this, owner, name);
-        return new ScriptableSubsystem(owner, name, this);
+        return new ScriptableSubsystem(owner, name, this, script);
     }
 }

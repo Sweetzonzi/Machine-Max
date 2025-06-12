@@ -13,8 +13,7 @@ import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalPort;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
@@ -23,8 +22,23 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 public class ScriptableSubsystem extends AbstractSubsystem{
-    public ScriptableSubsystem(ISubsystemHost owner, String name, ScriptableSubsystemAttr attr) {
+    public final String script;
+    public ScriptableSubsystem(ISubsystemHost owner, String name, ScriptableSubsystemAttr attr, String script) {
         super(owner, name, attr);
+        this.script = script;
+    }
+
+    public void receiveNbt(String from, CompoundTag nbt) {
+        Hook.run(this, from, nbt);
+    }
+
+    public interface FetchedScriptableSubsystem {
+        void doAction(ScriptableSubsystem scriptableSubsystem);
+    }
+    public void doActionOnScriptable(String scriptName, FetchedScriptableSubsystem action) {
+        for (AbstractSubsystem subsystem : getPart().getVehicle().getSubSystemController().getAllSubsystems()) {
+            if (subsystem instanceof ScriptableSubsystem sc && sc.script.equals(scriptName)) action.doAction(sc);
+        }
     }
 
     @Override
@@ -181,18 +195,6 @@ public class ScriptableSubsystem extends AbstractSubsystem{
     public void onDisabled() {
         Hook.run(this);
         super.onDisabled();
-    }
-
-    @Override
-    public void onHurt(DamageSource source, float amount) {
-        Hook.run(this, source, amount);
-        super.onHurt(source, amount);
-    }
-
-    @Override
-    public void onInteract(LivingEntity entity) {
-        Hook.run(this, entity);
-        super.onInteract(entity);
     }
 
     @Override
