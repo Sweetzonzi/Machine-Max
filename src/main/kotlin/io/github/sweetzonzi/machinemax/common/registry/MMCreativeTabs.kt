@@ -64,15 +64,13 @@ object MMCreativeTabs {
                 .registry(PartType.PART_REGISTRY_KEY).get()) {
                 val itemStack = ItemStack(MMItems.PART_ITEM)
                 itemStack.set(MMDataComponents.PART_TYPE, partType.registryKey)
-                itemStack.set(MMDataComponents.PART_NAME, partType.name)
                 //TODO:根据零件最大生命值调整物品耐久上限
                 buildInParts.add(itemStack)
             }
             val externalParts = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
-            MMDynamicRes.PART_TYPES.forEach { (loc, partType) ->
+            MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
                 val itemStack = ItemStack(MMItems.PART_ITEM)
                 itemStack.set(MMDataComponents.PART_TYPE, loc)
-                itemStack.set(MMDataComponents.PART_NAME, partType.name)
                 //TODO:根据零件最大生命值调整物品耐久上限
                 externalParts.add(itemStack)
             }

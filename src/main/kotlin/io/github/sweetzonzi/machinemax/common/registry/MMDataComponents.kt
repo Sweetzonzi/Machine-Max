@@ -39,18 +39,6 @@ object MMDataComponents {
                 .cacheEncoding()
         }
 
-    /**
-     * 保存在部件物品上的物品类型，用于从物品创建部件
-     */
-    @JvmStatic
-    val PART_NAME = MachineMax.REGISTER.dataComponent<String>()
-        .id("part_name")
-        .build {
-            it
-                .persistent(Codec.STRING)
-                .cacheEncoding()
-        }
-
     @JvmStatic
     val CUSTOM_ITEM_MODEL = MachineMax.REGISTER.dataComponent<HashMap<ItemDisplayContext, ItemAnimatable>>()
         .id("custom_item_model")

@@ -181,8 +181,10 @@ public class MMPartItem extends Item implements ICustomModelItem {
      */
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {
-        String name = stack.get(MMDataComponents.getPART_NAME());
-        return Component.translatable("item." + MachineMax.MOD_ID + "." + name);
+        ResourceLocation type = stack.get(MMDataComponents.getPART_TYPE());
+        if (type != null) {
+            return Component.translatable("item." + type.toLanguageKey());
+        } else return super.getName(stack);
     }
 
     public static PartAssemblyCacheComponent getPartAssemblyCache(ItemStack stack, Level level) {
