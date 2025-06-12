@@ -94,10 +94,6 @@ public class JSUtils {
 
     }
 
-    public void payload(String to, CompoundTag nbt){
-        sendToServer(new ScriptablePayload(location, to, nbt));
-    }
-
     public CompoundTag nbt() {
         return new CompoundTag();
     }

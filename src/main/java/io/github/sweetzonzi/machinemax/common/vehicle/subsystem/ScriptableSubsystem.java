@@ -12,24 +12,32 @@ import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalSender;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalPort;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
+import io.github.sweetzonzi.machinemax.network.payload.ScriptablePayload;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 public class ScriptableSubsystem extends AbstractSubsystem{
     public final String script;
+    @Getter
+    private UUID vehicleCoreUUID = null;
     public ScriptableSubsystem(ISubsystemHost owner, String name, ScriptableSubsystemAttr attr, String script) {
         super(owner, name, attr);
         this.script = script;
     }
 
-    public void receiveNbt(String from, CompoundTag nbt) {
-        Hook.run(this, from, nbt);
+    public void sendNbt(String to, CompoundTag nbt){
+        if (vehicleCoreUUID != null) {
+            PacketDistributor.sendToServer(new ScriptablePayload(vehicleCoreUUID, script, to, nbt));
+        }
     }
 
     public interface FetchedScriptableSubsystem {
@@ -201,6 +209,7 @@ public class ScriptableSubsystem extends AbstractSubsystem{
     public void onVehicleStructureChanged() {
         Hook.run(this);
         super.onVehicleStructureChanged();
+        vehicleCoreUUID = getPart().getVehicle().getUuid();
     }
 
     @Override

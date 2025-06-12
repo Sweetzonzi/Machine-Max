@@ -55,12 +55,14 @@ public class SignalProvider {
         return li;
     }
 
-    public static boolean gamepadButton(int id, int button) {
+    public static void gamepadFlush() {
         MMJoystickHandler.refreshState();
+    }
+
+    public static boolean gamepadButton(int id, int button) {
         return MMJoystickHandler.factoryGamePadButtonEvent(id, button);
     }
     public static float gamepadAxis(int id, int axis) {
-        MMJoystickHandler.refreshState();
         return MMJoystickHandler.factoryGamePadAxisEvent(id, axis);
     }
 
