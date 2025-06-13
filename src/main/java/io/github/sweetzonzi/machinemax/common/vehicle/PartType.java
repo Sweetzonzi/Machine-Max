@@ -28,7 +28,8 @@ public class PartType {
     public final List<ResourceLocation> textures;
     public final ResourceLocation icon;
     public final ResourceLocation animation;
-    public final float basicDurability;//部件基础耐久度
+    public final float basicDurability;//部件基础耐久度(衡量正常工作的状态)
+    public final float basicIntegrity;//部件基础结构完整度(衡量固定的牢靠程度)
     //       public final List<TagKey<Part>> tags,//部件标签(引擎，轮胎，AE86，之类)
     public final Map<String, AbstractSubsystemAttr> subsystems;//子系统(引擎功能，车门控制，转向…等)
     public final Map<String, SubPartAttr> subParts;
@@ -67,6 +68,7 @@ public class PartType {
                     ResourceLocation.CODEC.optionalFieldOf("animation",
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty")).forGetter(PartType::getAnimation),
                     Codec.FLOAT.fieldOf("basic_durability").forGetter(PartType::getBasicDurability),
+                    Codec.FLOAT.optionalFieldOf("basic_integrity", 100f).forGetter(PartType::getBasicIntegrity),
                     AbstractSubsystemAttr.MAP_CODEC.optionalFieldOf("subsystems", Map.of()).forGetter(PartType::getSubsystems),
                     SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(PartType::getSubParts)
             ).apply(instance, PartType::new))
@@ -81,9 +83,10 @@ public class PartType {
             ResourceLocation icon = buffer.readResourceLocation();
             ResourceLocation animation = buffer.readResourceLocation();
             float basicDurability = buffer.readFloat();
+            float basicIntegrity = buffer.readFloat();
             Map<String, AbstractSubsystemAttr> subsystems = buffer.readJsonWithCodec(AbstractSubsystemAttr.MAP_CODEC);
             Map<String, SubPartAttr> subParts = buffer.readJsonWithCodec(SubPartAttr.MAP_CODEC);
-            return new PartType(name, variants, textures, icon, animation, basicDurability, subsystems, subParts);
+            return new PartType(name, variants, textures, icon, animation, basicDurability, basicIntegrity, subsystems, subParts);
         }
 
         @Override
@@ -94,6 +97,7 @@ public class PartType {
             buffer.writeResourceLocation(value.icon);
             buffer.writeResourceLocation(value.animation);
             buffer.writeFloat(value.basicDurability);
+            buffer.writeFloat(value.basicIntegrity);
             buffer.writeJsonWithCodec(AbstractSubsystemAttr.MAP_CODEC, value.subsystems);
             buffer.writeJsonWithCodec(SubPartAttr.MAP_CODEC, value.subParts);
         }
@@ -109,6 +113,7 @@ public class PartType {
             ResourceLocation icon,
             ResourceLocation animation,
             float basicDurability,
+            float basicIntegrity,
 //        List<TagKey<Part>> tags,//部件标签(引擎，轮胎，AE86，之类)
             Map<String, AbstractSubsystemAttr> subsystems,
             Map<String, SubPartAttr> subParts
@@ -119,6 +124,7 @@ public class PartType {
         this.icon = icon;
         this.animation = animation;
         this.basicDurability = basicDurability;
+        this.basicIntegrity = basicIntegrity;
         this.subsystems = subsystems;
         this.subParts = subParts;
         this.registryKey = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, name);

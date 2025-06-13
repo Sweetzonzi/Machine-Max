@@ -26,7 +26,7 @@ object MMItems {
     @JvmStatic
     val PART_ITEM = MachineMax.REGISTER.item<MMPartItem>()
         .id("part_item")
-        .bound { MMPartItem(Item.Properties().stacksTo(1)) }
+        .bound { MMPartItem(Item.Properties().stacksTo(1).durability(100)) }
         .build()
 
     //载具蓝图物品原型

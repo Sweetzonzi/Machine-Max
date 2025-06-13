@@ -129,7 +129,8 @@ public class SeatSubsystem extends AbstractSubsystem {
     }
 
     public void setMoveInputSignal(byte[] inputs, byte[] conflicts) {
-        if (!attr.moveSignalTargets.isEmpty()) {
+        //TODO:将0~100的byte缩放到0~1的float
+        if (!attr.moveSignalTargets.isEmpty() && active) {
             for (String signalKey : attr.moveSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
             }
@@ -143,7 +144,7 @@ public class SeatSubsystem extends AbstractSubsystem {
     }
 
     public void setRegularInputSignal(KeyInputMapping inputType, int tickCount) {
-        if (!attr.regularSignalTargets.isEmpty()) {
+        if (!attr.regularSignalTargets.isEmpty() && active) {
             for (String signalKey : attr.regularSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
             }
@@ -152,7 +153,7 @@ public class SeatSubsystem extends AbstractSubsystem {
     }
 
     public void setViewInputSignal() {
-        if (!attr.viewSignalTargets.isEmpty()) {
+        if (!attr.viewSignalTargets.isEmpty() && active) {
             for (String signalKey : attr.viewSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new EmptySignal());
             }
