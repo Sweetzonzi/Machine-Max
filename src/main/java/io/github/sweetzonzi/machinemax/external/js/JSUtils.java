@@ -1,28 +1,21 @@
 package io.github.sweetzonzi.machinemax.external.js;
 
-import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
-import io.github.sweetzonzi.machinemax.common.vehicle.Part;
-import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.external.js.hook.EventToJS;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
-import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
-import io.github.sweetzonzi.machinemax.network.payload.ScriptablePayload;
-import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Objects;
-import java.util.UUID;
 
 import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_RUNNER;
@@ -45,6 +38,57 @@ public class JSUtils {
 //        return value;
 //    }
 
+//    public void testBuf(int capacity) {
+//        ByteBuffer inputs_buffer = ByteBuffer.allocate(capacity);
+//        ByteBuffer conflicts_buffer = ByteBuffer.allocate(capacity);
+//        inputs_buffer.putInt(1);
+//        inputs_buffer.putInt(1);
+//        inputs_buffer.putInt(1);
+//        inputs_buffer.putInt(1);
+//        inputs_buffer.putInt(1);
+//
+//        conflicts_buffer.putInt(1);
+//        conflicts_buffer.putInt(1);
+//        conflicts_buffer.putInt(1);
+//        conflicts_buffer.putInt(1);
+//        conflicts_buffer.putInt(1);
+//
+//        inputs_buffer.putDouble(0.344);// 手柄左轴x
+//        inputs_buffer.putDouble(0.644);// 手柄左轴y
+//        inputs_buffer.putDouble(0.544);// 手柄右轴x
+//        inputs_buffer.putDouble(0.144);// 手柄右轴y
+//        byte[] inputs = inputs_buffer.array();
+//        byte[] conflicts = conflicts_buffer.array();
+//    }
+//    public void testStream() {
+//        byte[] input = new byte[]{
+//                (byte) (1),
+//                (byte) (1),
+//                (byte) (0),
+//                (byte) (1),
+//                (byte) (1),
+//                (byte) (1)};
+//        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+//        stream.write(1);
+//        stream.write(1);
+//        stream.write(0);
+//        stream.write(1);
+//        stream.write(1);
+//        stream.write(1);
+//        byte[] get = stream.toByteArray();
+//        System.out.println(get);
+//        System.out.println(Arrays.equals(get, input));// 返回true
+//    }
+
+    public ByteArrayOutputStream BAOStream() {
+       return new ByteArrayOutputStream();
+    }
+    public byte[] BAOBytes(ByteArrayOutputStream input) {
+       return input.toByteArray();
+    }
+    public boolean bytesE(byte[] b1, byte[] b2) {
+       return Arrays.equals(b1, b2);
+    }
 
     public void hook(String channel, org.mozilla.javascript.ArrowFunction arrowFunction) {
         if (!Hook.LISTENING_EVENT.containsKey(channel)) Hook.LISTENING_EVENT.put(channel, new ArrayList<>());

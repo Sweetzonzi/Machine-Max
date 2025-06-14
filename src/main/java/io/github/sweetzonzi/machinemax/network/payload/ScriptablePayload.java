@@ -49,14 +49,12 @@ public record ScriptablePayload(UUID vehicleCoreUUID, String from, String to, Co
     }
 
     private static void receiveNbt(ScriptablePayload payload, IPayloadContext context, Player player, Level level) {
-        for (VehicleCore core : VehicleManager.levelVehicles.get(level)) {
-            for (AbstractSubsystem subsystem : core.getSubSystemController().getAllSubsystems()) {
-                if (subsystem instanceof ScriptableSubsystem sc
-                        && sc.script.equals(payload.to)
-                        && sc.getVehicleCoreUUID().equals(payload.vehicleCoreUUID)
-                ) {
-                    Hook.run(sc, payload.from, payload.nbt, context, player);
-                }
+        for (AbstractSubsystem subsystem : VehicleManager.serverAllVehicles.get(payload.vehicleCoreUUID).getSubSystemController().allSubsystems) {
+            if (subsystem instanceof ScriptableSubsystem sc
+                    && sc.script.equals(payload.to)
+                    && sc.getVehicleCoreUUID().equals(payload.vehicleCoreUUID)
+            ) {
+                Hook.run(sc, payload.from, payload.nbt, context, player);
             }
         }
     }

@@ -4,9 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machinemax.common.vehicle.attr.MotorAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.CarControllerSubsystem;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.ScriptableSubsystem;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 

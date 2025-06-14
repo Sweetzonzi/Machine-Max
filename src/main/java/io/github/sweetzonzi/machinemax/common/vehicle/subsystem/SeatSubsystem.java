@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
+import io.github.sweetzonzi.machinemax.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
@@ -11,7 +12,6 @@ import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.SeatSubsyst
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.util.data.KeyInputMapping;
 import lombok.Getter;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -21,16 +21,18 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class SeatSubsystem extends AbstractSubsystem {
+public class SeatSubsystem extends AbstractSubsystem implements IControllableSubsystem  {
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
     public AbstractConnector seatLocator;
     public LivingEntity passenger;
     public boolean occupied;
+    private final SignalTargetsHolder signalTargetsHolder = new SignalTargetsHolder(this);
 
     public SeatSubsystem(ISubsystemHost owner, String name, SeatSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+        signalTargetsHolder.setUp(attr.moveSignalTargets, attr.viewSignalTargets, attr.regularSignalTargets);
         this.disableVanillaActions = !this.attr.allowUseItems;
     }
 
@@ -120,43 +122,12 @@ public class SeatSubsystem extends AbstractSubsystem {
     }
 
     @Override
+    public SignalTargetsHolder getHolder() {
+        return signalTargetsHolder;
+    }
+    @Override
     public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> result = new HashMap<>(1);
-        result.putAll(attr.moveSignalTargets);
-        result.putAll(attr.regularSignalTargets);
-        result.putAll(attr.viewSignalTargets);
-        return result;
+        return signalTargetsHolder.setUpTargets(new HashMap<>(1));
     }
 
-    public void setMoveInputSignal(byte[] inputs, byte[] conflicts) {
-        if (!attr.moveSignalTargets.isEmpty()) {
-            for (String signalKey : attr.moveSignalTargets.keySet()) {
-                sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
-            }
-            for (int i = 0; i < 6; i++) {
-                if (inputs[i] != 0 && getPart() != null && getPart().vehicle != null) {
-                    break;
-                }
-            }
-            getPart().vehicle.activate();
-        }
-    }
-
-    public void setRegularInputSignal(KeyInputMapping inputType, int tickCount) {
-        if (!attr.regularSignalTargets.isEmpty()) {
-            for (String signalKey : attr.regularSignalTargets.keySet()) {
-                sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
-            }
-            getPart().vehicle.activate();
-        }
-    }
-
-    public void setViewInputSignal() {
-        if (!attr.viewSignalTargets.isEmpty()) {
-            for (String signalKey : attr.viewSignalTargets.keySet()) {
-                sendSignalToAllTargets(signalKey, new EmptySignal());
-            }
-            getPart().vehicle.activate();
-        }
-    }
 }

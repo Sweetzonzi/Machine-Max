@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machinemax.network.payload.RegularInputPayload;
+import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import io.github.sweetzonzi.machinemax.util.data.KeyInputMapping;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -21,6 +22,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -40,12 +42,12 @@ public class RawInputHandler {
     static byte[] moveInputConflicts = new byte[6];//相应轴向上的输入冲突
     public static boolean freeCam = false;//自由视角是否激活
 
-    static int trans_x_input = 0;
-    static int trans_y_input = 0;
-    static int trans_z_input = 0;
-    static int rot_x_input = 0;
-    static int rot_y_input = 0;
-    static int rot_z_input = 0;
+//    static int trans_x_input = 0;
+//    static int trans_y_input = 0;
+//    static int trans_z_input = 0;
+//    static int rot_x_input = 0;
+//    static int rot_y_input = 0;
+//    static int rot_z_input = 0;
 
     public static final HashMap<KeyMapping, Integer> keyPressTicks = HashMap.newHashMap(15);//各个按键被按下的持续时间
 
@@ -58,59 +60,53 @@ public class RawInputHandler {
     public static void handleMoveInputs(ClientTickEvent.Post event) {
         if (client == null) client = Minecraft.getInstance();
         if (client.player != null &&
-                ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem subSystem &&
-                subSystem.owner instanceof Part part) {
-            String subSystemName = subSystem.name;
+                ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat &&
+                seat.owner instanceof Part part) {
+            String subSystemName = seat.name;
             UUID vehicleUuid = part.vehicle.uuid;
             UUID partUuid = part.uuid;
-            int trans_x_conflict = 0;
-            int trans_y_conflict = 0;
-            int trans_z_conflict = 0;
-            int rot_x_conflict = 0;
-            int rot_y_conflict = 0;
-            int rot_z_conflict = 0;
+
+            int trans_x_input = 0;
+            int trans_y_input = 0;
+            int trans_z_input = 0;
+            int rot_x_input = 0;
+            int rot_y_input = 0;
+            int rot_z_input = 0;
+
+            MMJoystickHandler.refreshState();
+
             switch (part.vehicle.mode) {
-                case GROUND:
-                    //移动
-                    if (KeyBinding.groundForwardKey.isDown() && KeyBinding.groundBackWardKey.isDown()) {
-                        trans_z_conflict = 1;
-                        trans_z_input = 0;
-                    } else if (KeyBinding.groundForwardKey.isDown()) trans_z_input = 100;
-                    else if (KeyBinding.groundBackWardKey.isDown()) trans_z_input = -100;
-                    else trans_z_input = 0;
-                    //转向
-                    if (KeyBinding.groundLeftwardKey.isDown() && KeyBinding.groundRightwardKey.isDown()) {
-                        rot_y_conflict = 1;
-                        rot_y_input = 0;
-                    } else if (KeyBinding.groundLeftwardKey.isDown()) rot_y_input = 100;
-                    else if (KeyBinding.groundRightwardKey.isDown()) rot_y_input = -100;
-                    else rot_y_input = 0;
-                    break;
-                case SHIP:
-                    break;
-                case PLANE:
+                case GROUND -> {
+                    if (KeyBinding.groundForwardKey.isDown()) trans_z_input += 100;
+                    if (KeyBinding.groundBackWardKey.isDown()) trans_z_input -= 100;
+                    trans_z_input += Math.round((MMJoystickHandler.factoryGamePadAxisEvent(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
+                    trans_z_input -= Math.round((MMJoystickHandler.factoryGamePadAxisEvent(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
+                    if (KeyBinding.groundLeftwardKey.isDown()) rot_y_input += 100;
+                    if (KeyBinding.groundRightwardKey.isDown()) rot_y_input -= 100;
+                    rot_y_input -= Math.round(MMJoystickHandler.factoryGamePadAxisEvent(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
+                }
+                case SHIP -> {}
+                case PLANE -> {
                     //TODO:键盘输入的优先级应当高于视角朝向
-                    break;
-                case MECH:
-                    break;
-                default:
-                    break;
+                }
+                case MECH -> {}
+                default -> {}
             }
             moveInputCache = moveInputs;
             moveInputs = new byte[]{
-                    (byte) (trans_x_input),
-                    (byte) (trans_y_input),
-                    (byte) (trans_z_input),
-                    (byte) (rot_x_input),
-                    (byte) (rot_y_input),
-                    (byte) (rot_z_input)};
-            moveInputConflicts = new byte[]{
-                    (byte) (trans_x_conflict),
-                    (byte) (trans_y_conflict),
-                    (byte) (trans_z_conflict),
-                    (byte) (rot_x_conflict),
-                    (byte) (rot_y_conflict),
-                    (byte) (rot_z_conflict)};
+                    (byte) (Math.clamp(trans_x_input, -100, 100)),
+                    (byte) (Math.clamp(trans_y_input, -100, 100)),
+                    (byte) (Math.clamp(trans_z_input, -100, 100)),
+                    (byte) (Math.clamp(rot_x_input, -100, 100)),
+                    (byte) (Math.clamp(rot_y_input, -100, 100)),
+                    (byte) (Math.clamp(rot_z_input, -100, 100))};
+            moveInputConflicts = new byte[]{ //待删除
+                    (byte) 0,
+                    (byte) 0,
+                    (byte) 0,
+                    (byte) 0,
+                    (byte) 0,
+                    (byte) 0};
             if (vehicleUuid != null && partUuid != null && subSystemName != null && moveInputs != moveInputCache)
                 PacketDistributor.sendToServer(new MovementInputPayload(
                         vehicleUuid, partUuid, subSystemName, moveInputs, moveInputConflicts));
@@ -146,21 +142,21 @@ public class RawInputHandler {
          */
         //载具交互
 
-//        if (KeyBinding.generalInteractKey.isDown()) {
-//            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 0) {//一般互动
-//                if (client.player != null)
-//                    client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
-//            }
-//            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 10) {//长按0.5秒，进入交互模式
-//
-//            }
-//            //按键计时器
-//            keyPressTicks.put(KeyBinding.generalInteractKey, keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) + 1);
-//
-//        } else if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) > 0) {//按键松开且按下持续至少1tick
-//            keyPressTicks.put(KeyBinding.generalInteractKey, 0);//重置计时器
-//            //TODO:退出交互模式
-//        }
+        if (KeyBinding.generalInteractKey.isDown()) {
+            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 0) {//一般互动
+                if (client.player != null)
+                    client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
+            }
+            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 10) {//长按0.5秒，进入交互模式
+
+            }
+            //按键计时器
+            keyPressTicks.put(KeyBinding.generalInteractKey, keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) + 1);
+
+        } else if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) > 0) {//按键松开且按下持续至少1tick
+            keyPressTicks.put(KeyBinding.generalInteractKey, 0);//重置计时器
+            //TODO:退出交互模式
+        }
         //离开载具
         if (KeyBinding.generalLeaveVehicleKey.isDown()) {
             if (keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) == 10) {//长按0.5秒，离开载具

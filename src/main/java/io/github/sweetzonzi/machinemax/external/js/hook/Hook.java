@@ -17,6 +17,7 @@ import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import org.lwjgl.glfw.GLFW;
 import org.mozilla.javascript.Context;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,11 +93,6 @@ public class Hook {
                         if (!location.equals(scriptPath)) return null;
                     }
 
-                    if (className.equals(ScriptablePayload.class.getName())) {
-                        if (!args[1].equals(location)) return null;
-                        args = new Object[]{args[0], args[2], args[3], args[4], args[5]};
-                    }
-
                     JS_SCOPE.put("mm", JS_SCOPE, new JSUtils(location, packName));
                     JS_SCOPE.put("args", JS_SCOPE, args);
                     JS_SCOPE.put("channel", JS_SCOPE, channel);
@@ -110,7 +106,12 @@ public class Hook {
                 } catch (RuntimeException e) {
                     JS_RUNNER = Context.enter();
                     JS_SCOPE = JS_RUNNER.initStandardObjects();
-                    LOGGER.error("JS钩子在{}出现错误，尝试重启: {} {}", channel, e, e.getMessage());
+                    StringBuilder errTrace = new StringBuilder();
+                    for (StackTraceElement element : e.getStackTrace()) {
+                        errTrace.append(element);
+                        errTrace.append("\n");
+                    }
+                    LOGGER.error("JS钩子在{}出现错误，尝试重启: {}\n{}\n{}", channel, e, e.getCause(), errTrace);
                 }
             }
         }
