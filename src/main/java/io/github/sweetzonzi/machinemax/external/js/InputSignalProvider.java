@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machinemax.external.js;
 
 
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
+import io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import org.lwjgl.glfw.GLFW;
 
@@ -10,28 +11,38 @@ import java.util.List;
 
 import static io.github.sweetzonzi.machinemax.external.js.hook.Hook.SIGNAL_MAP;
 
-public class SignalProvider {
+public class InputSignalProvider {
     public static String key(String name) {
         return "key.keyboard."+ name;
     }
 
     public static boolean getKeyStatus(String name) {
-        if (SIGNAL_MAP.get(SignalProvider.key(name)) instanceof Double d) {
-            keyTick(name);
+        if (SIGNAL_MAP.get(InputSignalProvider.key(name)) instanceof Double d) {
+//            keyTick(name);
             return d != 0.0;
         }
         return false;
     }
-    public static Double getKeyTicks(String name) {
-        if (SIGNAL_MAP.get(SignalProvider.key(name)) instanceof Double d) {
-            keyTick(name);
+    public static Double getSignalTicks(String signalName) {
+        if (SIGNAL_MAP.get(signalName) instanceof Double d) {
+//            keyTick(name);
             return d;
         }
         return 0.0;
     }
+    public static Double getKeyDownTicks(String name) {
+        if (SIGNAL_MAP.get(InputSignalProvider.key(name)) instanceof Double d) {
+//            keyTick(name);
+            return d;
+        }
+        return 0.0;
+    }
+    public static Double getKeyUpTicks(String name) {
+        return getKeyDownTicks(name + KeyHooks.INVERSE_NAME);
+    }
 
     public static void keyTick(String name) { //按键按下记录+1
-        signalTick(SignalProvider.key(name));
+        signalTick(InputSignalProvider.key(name));
     }
 
     public static void signalTick(String name) { //信号获取后记录+1

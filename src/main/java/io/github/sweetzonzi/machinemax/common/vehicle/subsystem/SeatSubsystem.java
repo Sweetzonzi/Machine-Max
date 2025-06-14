@@ -101,13 +101,15 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
             ((IEntityMixin) passenger).machine_Max$setRidingSubsystem(this);
             getPart().vehicle.activate();
             //TODO:换成在hud角落常驻显示好了
-            if (passenger.level().isClientSide && passenger instanceof Player player)
-                player.displayClientMessage(
-                        Component.translatable("message.machine_max.leaving_vehicle",
-                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
-                                String.format("%.2f", Math.clamp(0.05 * RawInputHandler.keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0), 0.0, 0.5))
-                        ), true
-                );
+
+            //TODO:考虑删除，下面的状态展示已经挪到RawInput的全新键位事件系统中
+//            if (passenger.level().isClientSide && passenger instanceof Player player)
+//                player.displayClientMessage(
+//                        Component.translatable("message.machine_max.leaving_vehicle",
+//                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
+//                                String.format("%.2f", Math.clamp(0.05 * RawInputHandler.keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0), 0.0, 0.5))
+//                        ), true
+//                );
         }
     }
 

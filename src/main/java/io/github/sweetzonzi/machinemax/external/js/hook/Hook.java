@@ -3,21 +3,13 @@ package io.github.sweetzonzi.machinemax.external.js.hook;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.ScriptableSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.ScriptableSubsystem;
-import io.github.sweetzonzi.machinemax.external.DynamicPack;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
+import io.github.sweetzonzi.machinemax.external.js.InputSignalProvider;
 import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
-import io.github.sweetzonzi.machinemax.external.js.SignalProvider;
-import io.github.sweetzonzi.machinemax.network.payload.ScriptablePayload;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.neoforge.common.damagesource.DamageContainer;
-import org.lwjgl.glfw.GLFW;
 import org.mozilla.javascript.Context;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +39,7 @@ public class Hook {
 //            ResourceLocation location = scriptableSubsystem.getPart().type.registryKey;
 //            if (MMDynamicRes.EXTERNAL_RESOURCE.get(location) instanceof DynamicPack pack) packName = pack.getPackName();
 //        }
-        if (SignalProvider.getKeyTicks("backslash") == 2) {
+        if (InputSignalProvider.getKeyDownTicks("backslash") == 2) {
             MMInitialJS.clear();
             MMInitialJS.hotReload();
             MMInitialJS.register();

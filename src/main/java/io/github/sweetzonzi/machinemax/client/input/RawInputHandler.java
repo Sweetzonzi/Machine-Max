@@ -4,7 +4,7 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
+import io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machinemax.network.payload.RegularInputPayload;
@@ -49,7 +49,6 @@ public class RawInputHandler {
 //    static int rot_y_input = 0;
 //    static int rot_z_input = 0;
 
-    public static final HashMap<KeyMapping, Integer> keyPressTicks = HashMap.newHashMap(15);//各个按键被按下的持续时间
 
     /**
      * 在每个客户端tick事件后调用，处理按键逻辑。
@@ -124,15 +123,6 @@ public class RawInputHandler {
         }
     }
 
-    @SubscribeEvent
-    public static void runKeyHook(ClientTickEvent.Post event) {
-        for (String name : Hook.SIGNAL_MAP.keySet()) {
-            if (Hook.SIGNAL_MAP.get(name) instanceof Double d) {
-                if (d != 0) Hook.SIGNAL_MAP.put(name, d+1);
-            }
-
-        }
-    }
 
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Post event) {
@@ -142,112 +132,86 @@ public class RawInputHandler {
          */
         //载具交互
 
-        if (KeyBinding.generalInteractKey.isDown()) {
-            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 0) {//一般互动
-                if (client.player != null)
-                    client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
-            }
-            if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) == 10) {//长按0.5秒，进入交互模式
+        new KeyHooks.EVENT(KeyBinding.generalInteractKey)
+                .OnKeyDown(() -> {
+                    if (client.player != null) client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
+                });
 
-            }
-            //按键计时器
-            keyPressTicks.put(KeyBinding.generalInteractKey, keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) + 1);
+        new KeyHooks.EVENT(KeyBinding.generalLeaveVehicleKey)
+                .OnKeyHover((tick -> {
+                    if (tick <= 10.0 && tick != 0.0) {
+                        if (client.player != null ) {
+                            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), (int) tick));
+                            if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() != null) client.player.displayClientMessage(
+                                    Component.translatable("message.machine_max.leaving_vehicle",
+                                            KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
+                                            String.format("%.2f", Math.clamp(0.05 * tick, 0.0, 0.5))
+                                    ), true
+                            );
+                        }
 
-        } else if (keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0) > 0) {//按键松开且按下持续至少1tick
-            keyPressTicks.put(KeyBinding.generalInteractKey, 0);//重置计时器
-            //TODO:退出交互模式
-        }
+                    }
+                }))
+                .OnKeyLeave((tick -> {
+                    if (tick == 2.0 && Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
+                        player.displayClientMessage(Component.empty(), true);
+                }));
+
         //离开载具
-        if (KeyBinding.generalLeaveVehicleKey.isDown()) {
-            if (keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) == 10) {//长按0.5秒，离开载具
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), 10));
-            }
-            //按键计时
-            keyPressTicks.put(KeyBinding.generalLeaveVehicleKey, keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) + 1);
-            //离开载具进度显示
-            if (Minecraft.getInstance().player instanceof Player player && (player.getVehicle() != null || ((IEntityMixin) player).machine_Max$getRidingSubsystem() != null))
-                player.displayClientMessage(
-                        Component.translatable("message.machine_max.leaving_vehicle",
-                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
-                                String.format("%.2f", Math.clamp(0.05 * keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0), 0.0, 0.5))
-                        ), true
-                );
-        } else if (keyPressTicks.getOrDefault(KeyBinding.generalLeaveVehicleKey, 0) > 0) {//按键松开且按下持续至少1tick
-            keyPressTicks.put(KeyBinding.generalLeaveVehicleKey, 0);
-            if (Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
-                player.displayClientMessage(Component.empty(), true);
-        }
+
         /*
           地面载具
          */
         //离合
-        if (KeyBinding.groundClutchKey.isDown()) {
-            if (keyPressTicks.getOrDefault(KeyBinding.groundClutchKey, 0) == 0) {//按下时
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 0));
-            }
-            keyPressTicks.put(KeyBinding.groundClutchKey, keyPressTicks.getOrDefault(KeyBinding.groundClutchKey, 0) + 1);
-        } else if (keyPressTicks.getOrDefault(KeyBinding.groundClutchKey, 0) > 0) {//按键松开且按下持续至少1tick
-            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), keyPressTicks.get(KeyBinding.groundClutchKey)));
-            keyPressTicks.put(KeyBinding.groundClutchKey, 0);
-        }
+        new KeyHooks.EVENT(KeyBinding.groundClutchKey)
+                .OnKeyDown(() -> {
+                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 0));
+                })
+                .OnKeyUp(() -> {
+                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 1));
+                });
+
         //升档
-        if (KeyBinding.groundUpShiftKey.isDown()) {
-            if (keyPressTicks.getOrDefault(KeyBinding.groundUpShiftKey, 0) == 0) {//按下时
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.UP_SHIFT.getValue(), 0));
-            }
-            keyPressTicks.put(KeyBinding.groundUpShiftKey, keyPressTicks.getOrDefault(KeyBinding.groundUpShiftKey, 0) + 1);
-        } else if (keyPressTicks.getOrDefault(KeyBinding.groundUpShiftKey, 0) > 0) {//按键松开且按下持续至少1tick
-            keyPressTicks.put(KeyBinding.groundUpShiftKey, 0);
-        }
+        new KeyHooks.EVENT(KeyBinding.groundUpShiftKey)
+                .OnKeyDown(() -> {
+                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.UP_SHIFT.getValue(), 0));
+                });
+
         //降档
-        if (KeyBinding.groundDownShiftKey.isDown()) {
-            if (keyPressTicks.getOrDefault(KeyBinding.groundDownShiftKey, 0) == 0) {//按下时
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.DOWN_SHIFT.getValue(), 0));
-            }
-            keyPressTicks.put(KeyBinding.groundDownShiftKey, keyPressTicks.getOrDefault(KeyBinding.groundDownShiftKey, 0) + 1);
-        } else if (keyPressTicks.getOrDefault(KeyBinding.groundDownShiftKey, 0) > 0) {//按键松开且按下持续至少1tick
-            keyPressTicks.put(KeyBinding.groundDownShiftKey, 0);
-        }
+        new KeyHooks.EVENT(KeyBinding.groundDownShiftKey)
+                .OnKeyDown(() -> {
+                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.DOWN_SHIFT.getValue(), 0));
+                });
+
         //按住手刹
-        if (KeyBinding.groundHandBrakeKey.isDown()) {
-            if (keyPressTicks.getOrDefault(KeyBinding.groundHandBrakeKey, 0) == 0) {//按下时
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 0));
-            }
-            keyPressTicks.put(KeyBinding.groundHandBrakeKey, keyPressTicks.getOrDefault(KeyBinding.groundHandBrakeKey, 0) + 1);
-        } else if (keyPressTicks.getOrDefault(KeyBinding.groundHandBrakeKey, 0) > 0) {//按键松开且按下持续至少1tick
-            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), keyPressTicks.get(KeyBinding.groundHandBrakeKey)));
-            keyPressTicks.put(KeyBinding.groundHandBrakeKey, 0);
-        }
+        new KeyHooks.EVENT(KeyBinding.groundHandBrakeKey)
+                .OnKeyDown(() -> {
+                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 0));
+                })
+                .OnKeyUp(() -> {
+                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 1));
+                });
+
         //切换手刹
-        if (KeyBinding.groundToggleHandBrakeKey.isDown()) {
-            if (keyPressTicks.getOrDefault(KeyBinding.groundToggleHandBrakeKey, 0) == 0) {//按下时
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_HAND_BRAKE.getValue(), 0));
-            }
-            keyPressTicks.put(KeyBinding.groundToggleHandBrakeKey, keyPressTicks.getOrDefault(KeyBinding.groundToggleHandBrakeKey, 0) + 1);
-        } else if (keyPressTicks.getOrDefault(KeyBinding.groundToggleHandBrakeKey, 0) > 0) {//按键松开且按下持续至少1tick
-            keyPressTicks.put(KeyBinding.groundToggleHandBrakeKey, 0);
-        }
+        new KeyHooks.EVENT(KeyBinding.groundToggleHandBrakeKey)
+                .OnKeyDown(() -> {
+                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_HAND_BRAKE.getValue(), 0));
+                });
+
         /*
           载具组装
          */
         //切换部件对接口
-        if (KeyBinding.assemblyCycleConnectorKey.isDown()) {
-            if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleConnectorKey, 0) == 0) {//按下时循环切换配件连接点键时发包服务器
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
-            }
-            keyPressTicks.put(KeyBinding.assemblyCycleConnectorKey, keyPressTicks.getOrDefault(KeyBinding.assemblyCycleConnectorKey, 0) + 1);
-        } else if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleConnectorKey, 0) > 0) {//按键松开且按下持续至少1tick
-            keyPressTicks.put(KeyBinding.assemblyCycleConnectorKey, 0);
-        }
+        new KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey)
+                .OnKeyDown(() -> {
+                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
+                });
+
         //切换部件变体类型
-        if (KeyBinding.assemblyCycleVariantKey.isDown()) {
-            if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleVariantKey, 0) == 0) {//按下时循环切换配件连接点键时发包服务器
-                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
-            }
-            keyPressTicks.put(KeyBinding.assemblyCycleVariantKey, keyPressTicks.getOrDefault(KeyBinding.assemblyCycleVariantKey, 0) + 1);
-        } else if (keyPressTicks.getOrDefault(KeyBinding.assemblyCycleVariantKey, 0) > 0) {//按键松开且按下持续至少1tick
-            keyPressTicks.put(KeyBinding.assemblyCycleVariantKey, 0);
-        }
+        new KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
+                .OnKeyDown(() -> {
+                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
+                });
     }
 
     @SubscribeEvent
