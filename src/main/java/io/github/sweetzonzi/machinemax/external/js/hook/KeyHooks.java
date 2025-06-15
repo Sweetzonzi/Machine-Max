@@ -24,6 +24,7 @@ public class KeyHooks {
 
     private static class _Watcher { //bool观察器，当面对输入连续的true时只返回一次true信号。除非输入被重置否则后续均返回false
         private boolean dead = false;
+        public double lastTick = 0.0;
         public boolean run(boolean input) {
             if (!dead && input) { //首次触发
                 dead = true;
@@ -149,6 +150,29 @@ public class KeyHooks {
         }
 
 
+
+        /**
+         * 注册双击事件处理器
+         * @param doublePressEvent 双击事件处理逻辑
+         * @return 当前EVENT实例（链式调用）
+         */
+        public EVENT OnKeyDoublePress(KeyDoublePressEvent doublePressEvent) {
+            _Watcher wt = fetchWatcher(doublePressEvent);
+            OnKeyUp(()-> {
+                wt.lastTick = 7;//阈值
+            });
+            if (wt.lastTick > 0) wt.lastTick--;
+            OnKeyDown(()->{
+                if (wt.run(wt.lastTick > 0)) {
+                    doublePressEvent.run();
+                    wt.lastTick = 0;
+                }
+            });
+
+            return this;
+        }
+
+
         /**
          * 注册连续长按基础事件处理器（返回完整按下时长tick）
          * @param hoverEvent 长按事件处理器（执行时传入当前完整的按下信号刻度值作为参数）
@@ -215,6 +239,9 @@ public class KeyHooks {
 
         }
         public interface KeyLongPressEvent extends KeyOnceEvent {
+
+        }
+        public interface KeyDoublePressEvent extends KeyOnceEvent {
 
         }
         public interface KeyHoverEvent extends KeyStreamEvent {

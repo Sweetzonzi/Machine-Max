@@ -39,12 +39,17 @@ public class Hook {
 //            ResourceLocation location = scriptableSubsystem.getPart().type.registryKey;
 //            if (MMDynamicRes.EXTERNAL_RESOURCE.get(location) instanceof DynamicPack pack) packName = pack.getPackName();
 //        }
-        if (InputSignalProvider.getKeyDownTicks("backslash") == 2) {
+//        if (InputSignalProvider.getKeyDownTicks("backslash") == 2) {
+//            MMInitialJS.clear();
+//            MMInitialJS.hotReload();
+//            MMInitialJS.register();
+//            return null;
+//        }
+        new KeyHooks.EVENT("backslash").OnKeyDown(() -> {
             MMInitialJS.clear();
             MMInitialJS.hotReload();
             MMInitialJS.register();
-            return null;
-        }
+        });
         Object readyToReturn = null;
         var currentThread = Thread.currentThread();
         var stack = currentThread.getStackTrace()[2];
