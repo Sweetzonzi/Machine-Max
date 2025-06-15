@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machinemax.external.js.hook;
 import com.mojang.blaze3d.platform.InputConstants;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.external.js.InputSignalProvider;
+import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -11,12 +12,30 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 
+import java.util.HashMap;
+
 import static io.github.sweetzonzi.machinemax.external.js.hook.Hook.SIGNAL_MAP;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
 @OnlyIn(Dist.CLIENT)
 public class KeyHooks {
     public final static String INVERSE_NAME = "_inv";
+    private static final HashMap<String, _Watcher> cachedWatchers = new HashMap<>(); // 按频道分配的所有观察器
+
+    private static class _Watcher { //bool观察器，当面对输入连续的true时只返回一次true信号。除非输入被重置否则后续均返回false
+        private boolean dead = false;
+        public boolean run(boolean input) {
+            if (!dead && input) { //首次触发
+                dead = true;
+                return input;
+            }
+            if (dead && !input) //输入重置
+                dead = false;
+
+            return false; //过滤后续的信号
+        }
+
+    }
 
     public static class EVENT {
         private final String keyName;
@@ -34,21 +53,40 @@ public class KeyHooks {
             return InputSignalProvider.getSignalTicks(keyName+INVERSE_NAME);
         }
 
+        private _Watcher fetchWatcher(RootEvent rootEvent) { //通过调用的名称生成频道，自动分配bool观察器
+            var currentThread = Thread.currentThread();
+            var stack = currentThread.getStackTrace()[2];
+            String className = stack.getClassName();
+            String methodName = stack.getMethodName();
+            String channel = JSUtils.getSimpleName(className) + ":" + methodName + ":" + rootEvent.hashCode();
+            if (!cachedWatchers.containsKey(channel)) cachedWatchers.put(channel, new _Watcher());
+            return cachedWatchers.get(channel);
+        }
+
+
         // 如果编辑器提醒你函数类型改成Void，请忽略，因为它们是链式调用设计模式
 
         /**
          * 绑定多类型键盘事件的统一处理方法
          * @param downEvent 按下事件处理器（当按下信号刻度(getDownSignalTick())等于1.0时触发执行）
          * @param upEvent 抬起事件处理器（当抬起信号刻度(getUpSignalTick())等于1.0时触发执行）
-         * @param hoverEvent 长按事件处理器（执行时传入当前按下信号刻度值作为参数）
+         * @param keyLongPressEvent 单次长按事件处理器（按下超过8刻时则触发一次，然后进入休眠，直到按键抬起则停止休眠）
+         * @param hoverEvent 连续长按事件处理器（执行时传入当前按下信号刻度值作为参数）
          * @param leaveEvent 抬起计时事件处理器（执行时传入当前抬起信号刻度值作为参数）
          * @return {@link EVENT} 对象，用于链式调用
          */
-        public EVENT OnAll(KeyDownEvent downEvent, KeyUpEvent upEvent, KeyHoverEvent hoverEvent, KeyLeaveEvent leaveEvent) {
-            if (getDownSignalTick() == 1.0) downEvent.run();
-            if (getUpSignalTick() == 1.0) upEvent.run();
-            hoverEvent.run(getDownSignalTick());
-            leaveEvent.run(getUpSignalTick());
+        public EVENT OnAll(
+                KeyDownEvent downEvent,
+                KeyUpEvent upEvent,
+                KeyLongPressEvent keyLongPressEvent,
+                KeyHoverEvent hoverEvent,
+                KeyLeaveEvent leaveEvent)
+        {
+            OnKeyDown(downEvent);
+            OnKeyUp(upEvent);
+            OnKeyLongPress(keyLongPressEvent);
+            OnKeyHover(hoverEvent);
+            OnKeyLeave(leaveEvent);
             return this;
         }
 
@@ -86,8 +124,33 @@ public class KeyHooks {
             return this;
         }
 
+
         /**
-         * 注册长按基础事件处理器（返回完整按下时长tick）
+         * 注册单次长按事件处理器
+         * @param length 自定义长按刻时阈值
+         * @param longPressEvent 长按事件处理器
+         *（超过自定义刻时执行一次，然后进入休眠，直到按键抬起则停止休眠。没有任何参数传入）
+         * @return {@link EVENT} 对象，用于链式调用
+         */
+        public EVENT OnKeyLongPress(double length, KeyLongPressEvent longPressEvent) {
+            if (fetchWatcher(longPressEvent).run(getDownSignalTick() >= length)) longPressEvent.run();
+            return this;
+        }
+
+
+        /**
+         * 注册单次长按事件处理器
+         * @param longPressEvent 长按事件处理器
+         *（超过8刻时执行一次，然后进入休眠，直到按键抬起则停止休眠。没有任何参数传入）
+         * @return {@link EVENT} 对象，用于链式调用
+         */
+        public EVENT OnKeyLongPress(KeyLongPressEvent longPressEvent) {
+            return OnKeyLongPress(8, longPressEvent);
+        }
+
+
+        /**
+         * 注册连续长按基础事件处理器（返回完整按下时长tick）
          * @param hoverEvent 长按事件处理器（执行时传入当前完整的按下信号刻度值作为参数）
          * @return {@link EVENT} 对象，用于链式调用
          */
@@ -97,7 +160,7 @@ public class KeyHooks {
         }
 
         /**
-         * 注册指定刻度区间内的长按事件处理器（返回区间内相对计时）
+         * 注册指定刻度区间内的连续长按事件处理器（返回区间内相对计时）
          * 规定了一个从from开始到to的区间, 当按键按下且tick在区间中时均会触发，并返回从区间开始的归零计数
          * @param from 区间起始刻度（包含）
          * @param to 区间结束刻度（包含，需大于from）
@@ -111,7 +174,7 @@ public class KeyHooks {
         }
 
         /**
-         * 注册以指定刻度为中心的区间长按事件处理器（返回中心相对计时）
+         * 注册以指定刻度为中心的连续区间长按事件处理器（返回中心相对计时）
          * 规定了一个duration区间, 区间的中心是atTick, 当按键按下且tick在区间中时均会触发，并返回从区间开始的归零计数
          * @param atTick 中心刻度（区间基准点）
          * @param duration 区间总长度（中心两侧各延伸duration/2）
@@ -135,7 +198,9 @@ public class KeyHooks {
             return this;
         }
 
-        private interface KeyEvent {
+        private interface RootEvent {
+        }
+        private interface KeyEvent extends RootEvent{
         }
         private interface KeyOnceEvent extends KeyEvent { //返回一次的事件
             void run();
@@ -147,6 +212,9 @@ public class KeyHooks {
 
         }
         public interface KeyUpEvent extends KeyOnceEvent {
+
+        }
+        public interface KeyLongPressEvent extends KeyOnceEvent {
 
         }
         public interface KeyHoverEvent extends KeyStreamEvent {

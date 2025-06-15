@@ -10,7 +10,6 @@ import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machinemax.network.payload.RegularInputPayload;
 import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import io.github.sweetzonzi.machinemax.util.data.KeyInputMapping;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -24,7 +23,6 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.HashMap;
 import java.util.UUID;
 
 /**
@@ -127,20 +125,23 @@ public class RawInputHandler {
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Post event) {
         if (client == null) client = Minecraft.getInstance();
+
+        if (client.player != null ) {
+
         /*
           通用功能
          */
-        //载具交互
 
-        new KeyHooks.EVENT(KeyBinding.generalInteractKey)
-                .OnKeyDown(() -> {
-                    if (client.player != null) client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
-                });
+            //载具交互
+            new KeyHooks.EVENT(KeyBinding.generalInteractKey)
+                    .OnKeyDown(() -> {
+                        client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
+                    });
 
-        new KeyHooks.EVENT(KeyBinding.generalLeaveVehicleKey)
-                .OnKeyHover((tick -> {
-                    if (tick <= 10.0 && tick != 0.0) {
-                        if (client.player != null ) {
+            //离开载具
+            new KeyHooks.EVENT(KeyBinding.generalLeaveVehicleKey)
+                    .OnKeyHover((tick -> {
+                        if (tick <= 10.0 && tick != 0.0) {
                             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), (int) tick));
                             if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() != null) client.player.displayClientMessage(
                                     Component.translatable("message.machine_max.leaving_vehicle",
@@ -148,70 +149,72 @@ public class RawInputHandler {
                                             String.format("%.2f", Math.clamp(0.05 * tick, 0.0, 0.5))
                                     ), true
                             );
+
                         }
+                    }))
+                    .OnKeyLeave((tick -> {
+                        if (tick == 2.0 && Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
+                            player.displayClientMessage(Component.empty(), true);
+                    }));
 
-                    }
-                }))
-                .OnKeyLeave((tick -> {
-                    if (tick == 2.0 && Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
-                        player.displayClientMessage(Component.empty(), true);
-                }));
 
-        //离开载具
 
         /*
           地面载具
          */
-        //离合
-        new KeyHooks.EVENT(KeyBinding.groundClutchKey)
-                .OnKeyDown(() -> {
-                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 0));
-                })
-                .OnKeyUp(() -> {
-                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 1));
-                });
+            //离合
+            new KeyHooks.EVENT(KeyBinding.groundClutchKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 0));
+                    })
+                    .OnKeyUp(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 1));
+                    });
 
-        //升档
-        new KeyHooks.EVENT(KeyBinding.groundUpShiftKey)
-                .OnKeyDown(() -> {
-                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.UP_SHIFT.getValue(), 0));
-                });
+            //升档
+            new KeyHooks.EVENT(KeyBinding.groundUpShiftKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.UP_SHIFT.getValue(), 0));
+                    });
 
-        //降档
-        new KeyHooks.EVENT(KeyBinding.groundDownShiftKey)
-                .OnKeyDown(() -> {
-                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.DOWN_SHIFT.getValue(), 0));
-                });
+            //降档
+            new KeyHooks.EVENT(KeyBinding.groundDownShiftKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.DOWN_SHIFT.getValue(), 0));
+                    });
 
-        //按住手刹
-        new KeyHooks.EVENT(KeyBinding.groundHandBrakeKey)
-                .OnKeyDown(() -> {
-                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 0));
-                })
-                .OnKeyUp(() -> {
-                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 1));
-                });
+            //按住手刹
+            new KeyHooks.EVENT(KeyBinding.groundHandBrakeKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 0));
+                    })
+                    .OnKeyUp(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 1));
+                    });
 
-        //切换手刹
-        new KeyHooks.EVENT(KeyBinding.groundToggleHandBrakeKey)
-                .OnKeyDown(() -> {
-                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_HAND_BRAKE.getValue(), 0));
-                });
+            //切换手刹
+            new KeyHooks.EVENT(KeyBinding.groundToggleHandBrakeKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_HAND_BRAKE.getValue(), 0));
+                    });
 
         /*
           载具组装
          */
-        //切换部件对接口
-        new KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey)
-                .OnKeyDown(() -> {
-                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
-                });
+            //切换部件对接口
+            new KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
+                    });
 
-        //切换部件变体类型
-        new KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
-                .OnKeyDown(() -> {
-                    PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
-                });
+            //切换部件变体类型
+            new KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
+                    });
+        }
+
+
     }
 
     @SubscribeEvent
