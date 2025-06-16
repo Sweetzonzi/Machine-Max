@@ -4,8 +4,8 @@ import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
-import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
@@ -15,7 +15,6 @@ import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleCreatePay
 import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleRemovePayload;
 import io.github.sweetzonzi.machinemax.util.ChunkHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -64,6 +63,20 @@ public class VehicleManager {
     }
 
     /**
+     * 将因组装拓扑结构改变而分裂出的载具加入载具管理器中
+     *
+     * @param vehicle 载具核心
+     */
+    public static void addSpiltVehicle(VehicleCore vehicle) {
+        levelVehicles.computeIfAbsent(vehicle.level, k -> ConcurrentHashMap.newKeySet()).add(vehicle);
+        if (!vehicle.level.isClientSide()) {
+            serverAllVehicles.put(vehicle.getUuid(), vehicle);
+            saveVehicles((ServerLevel) vehicle.level);//维度内载具发生变更，保存维度载具数据到Level的Attachment
+        } else clientAllVehicles.put(vehicle.getUuid(), vehicle);
+        vehicle.inLevel =true;
+    }
+
+    /**
      * 从载具管理器中移除VehicleCore
      * 并将载具从相应维度移除
      *
@@ -77,7 +90,7 @@ public class VehicleManager {
             saveVehicles((ServerLevel) vehicle.level);//维度内载具发生变更，保存维度载具数据到Level的Attachment
             PacketDistributor.sendToPlayersInDimension(//发包给维度内玩家，通知他们有载具消失
                     (ServerLevel) vehicle.level,
-                    new VehicleRemovePayload(vehicle.level.dimension(), vehicle.uuid.toString()));
+                    new VehicleRemovePayload(vehicle.level.dimension(), vehicle.uuid));
         } else clientAllVehicles.remove(vehicle.getUuid());
         vehicle.onRemoveFromLevel();
     }
@@ -231,8 +244,9 @@ public class VehicleManager {
     @SubscribeEvent//卸载服务端世界时清除相关数据
     public static void unloadVehicleData(LevelEvent.Unload event) {
         if (event.getLevel().isClientSide()) {
-            MMVisualEffects.getPART_ASSEMBLY().attachPoints.clear();
-            MMVisualEffects.getPART_ASSEMBLY().partToAssembly = null;
+            VisualEffectHelper.attachPoints.clear();
+            VisualEffectHelper.boundingBox = null;
+            VisualEffectHelper.partToAssembly = null;
         }
     }
 
@@ -294,7 +308,7 @@ public class VehicleManager {
      * 未使用的碰撞组 #6
      * Unused collision group #6
      */
-    final public static int COLLISION_GROUP_06 = 0x0020;
+    final public static int COLLISION_GROUP_INTERACT = 0x0020;
     /**
      * 未使用的碰撞组 #7
      */

@@ -95,5 +95,10 @@ public class MMPayloadRegistry {
                 SubPartSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(SubPartSyncPayload::handler)
         );
+        sync.playToClient(//运动体的位姿和速度
+                PartSyncPayload.TYPE,
+                PartSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PartSyncPayload::handler)
+        );
     }
 }

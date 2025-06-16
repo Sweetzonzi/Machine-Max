@@ -8,13 +8,18 @@ import io.github.sweetzonzi.machinemax.common.attachment.LivingEntityEyesightAtt
 import io.github.sweetzonzi.machinemax.common.item.IPartInteractableItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
+import io.github.sweetzonzi.machinemax.common.registry.MMItems;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
+import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
+import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -23,8 +28,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class CrowbarItem extends Item implements IPartInteractableItem, ICustomModelItem {
     public CrowbarItem(Properties properties) {
@@ -33,26 +37,39 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+    public InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand usedHand) {
         if (!player.level().isClientSide) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
             if (part != null) {//移除部件
+//                List<AbstractConnector> connectors = new ArrayList<>(part.externalConnectors.values());
+//                Random random = new Random();
+//                part.vehicle.detachConnector(connectors.get(random.nextInt(connectors.size())));
+                PartType partType = part.type;
+                float durability = part.durability;
                 part.vehicle.removePart(part);
+                ItemStack itemStack = new ItemStack(MMItems.getPART_ITEM());
+                itemStack.set(MMDataComponents.getPART_TYPE(), partType.registryKey);
+                itemStack.set(DataComponents.MAX_DAMAGE, (int) partType.basicDurability);
+                itemStack.set(DataComponents.DAMAGE, (int) Math.clamp(partType.basicDurability - durability, 0, Math.ceil(partType.basicDurability)-1));
+                if (!player.addItem(itemStack)) {//尝试直接放入物品栏，失败则掉落为实体
+                    Entity itemStackEntity = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), itemStack);
+                    level.addFreshEntity(itemStackEntity);
+                }
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));
             } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
         } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int portId, boolean isSelected) {
+    public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int portId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (isSelected && level.isClientSide() && entity instanceof Player player) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
             if (part != null) {//提示信息
-                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.interact").append(part.name), true);
-            } else Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
+                player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.interact").append(part.name), true);
+            } else player.displayClientMessage(Component.empty(), true);
         }
     }
 
@@ -64,13 +81,13 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
     @Override
     public void watchingPart(@NotNull Part part, @NotNull Player player) {
         if (player.level().isClientSide)
-            Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.interact").append(part.name), true);
+            player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.interact").append(part.name), true);
     }
 
     @Override
     public void stopWatchingPart(@NotNull Player player) {
         if (player.level().isClientSide)
-            Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
+            player.displayClientMessage(Component.empty(), true);
     }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {

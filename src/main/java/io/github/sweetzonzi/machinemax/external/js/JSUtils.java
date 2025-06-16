@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machinemax.external.js;
 
+import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.external.js.hook.EventToJS;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
-import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -24,7 +24,6 @@ import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_SCOPE;
 public class JSUtils {
     private final String location;
     private final String packName;
-    private Minecraft client = null;
     public JSUtils(String location, String packName) {
         this.location = location;
         this.packName = packName;
@@ -38,53 +37,12 @@ public class JSUtils {
 //        return value;
 //    }
 
-//    public void testBuf(int capacity) {
-//        ByteBuffer inputs_buffer = ByteBuffer.allocate(capacity);
-//        ByteBuffer conflicts_buffer = ByteBuffer.allocate(capacity);
-//        inputs_buffer.putInt(1);
-//        inputs_buffer.putInt(1);
-//        inputs_buffer.putInt(1);
-//        inputs_buffer.putInt(1);
-//        inputs_buffer.putInt(1);
+    public void attachInteract() {
+        //TODO:换成其他获取方式，弄个Helper类？
+//        if (Minecraft.getInstance().player instanceof Player player) {
+//            player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
 //
-//        conflicts_buffer.putInt(1);
-//        conflicts_buffer.putInt(1);
-//        conflicts_buffer.putInt(1);
-//        conflicts_buffer.putInt(1);
-//        conflicts_buffer.putInt(1);
-//
-//        inputs_buffer.putDouble(0.344);// 手柄左轴x
-//        inputs_buffer.putDouble(0.644);// 手柄左轴y
-//        inputs_buffer.putDouble(0.544);// 手柄右轴x
-//        inputs_buffer.putDouble(0.144);// 手柄右轴y
-//        byte[] inputs = inputs_buffer.array();
-//        byte[] conflicts = conflicts_buffer.array();
-//    }
-//    public void testStream() {
-//        byte[] input = new byte[]{
-//                (byte) (1),
-//                (byte) (1),
-//                (byte) (0),
-//                (byte) (1),
-//                (byte) (1),
-//                (byte) (1)};
-//        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-//        stream.write(1);
-//        stream.write(1);
-//        stream.write(0);
-//        stream.write(1);
-//        stream.write(1);
-//        stream.write(1);
-//        byte[] get = stream.toByteArray();
-//        System.out.println(get);
-//        System.out.println(Arrays.equals(get, input));// 返回true
-//    }
-
-    public ByteArrayOutputStream BAOStream() {
-       return new ByteArrayOutputStream();
-    }
-    public byte[] BAOBytes(ByteArrayOutputStream input) {
-       return input.toByteArray();
+//        }
     }
     public boolean bytesE(byte[] b1, byte[] b2) {
        return Arrays.equals(b1, b2);

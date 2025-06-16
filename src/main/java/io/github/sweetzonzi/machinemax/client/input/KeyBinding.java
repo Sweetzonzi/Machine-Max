@@ -33,7 +33,6 @@ public class KeyBinding {
     public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "key.machine_max.assembly.cycle_variant";
     public static final String SCRIPT_HOT_RELOAD_KEY = "key.machine_max.assembly.hot_reload";
 
-
     /**
      * 在此注册所有按键
      */

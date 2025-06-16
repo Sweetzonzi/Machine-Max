@@ -180,12 +180,6 @@ public class ScriptableSubsystem extends AbstractSubsystem implements IControlla
     }
 
     @Override
-    public void onCollide(PhysicsCollisionObject pcoA, PhysicsCollisionObject pcoB, long manifoldPointId) {
-        Hook.run(this, pcoA, pcoB, manifoldPointId);
-        super.onCollide(pcoA, pcoB, manifoldPointId);
-    }
-
-    @Override
     public void onCollideWithBlock(PhysicsRigidBody subPartBody, PhysicsRigidBody blockBody, BlockPos blockPos, BlockState blockState, Vector3f relativeVelocity, Vector3f normal, Vector3f contactPoint, float impartAngle, long hitChildShapeNativeId, long manifoldPointId) {
         Hook.run(this, subPartBody, blockBody, blockPos, blockState, relativeVelocity, normal, contactPoint, impartAngle, hitChildShapeNativeId, manifoldPointId);
         super.onCollideWithBlock(subPartBody, blockBody, blockPos, blockState, relativeVelocity, normal, contactPoint, impartAngle, hitChildShapeNativeId, manifoldPointId);

@@ -21,7 +21,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
     @NotNull
     @Override
     public ResourceLocation getTextureLocation(@NotNull MMPartEntity entity) {
-        if(entity.part!=null) return entity.part.modelIndex.getTextureLocation();
+        if (entity.part != null) return entity.part.modelIndex.getTextureLocation();
         else return null;
     }
 
@@ -29,6 +29,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
     public void render(@NotNull MMPartEntity entity, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
         if (entity.part == null || entity.part.rootSubPart == null || entity.part.modelIndex == null) return;
         var worldMatrix = entity.part.getWorldPositionMatrix(partialTick);
+        Color color = entity.part.isDestroyed() ? new Color(32, 32, 32, 255) : Color.WHITE;
         poseStack.pushPose();//开始渲染
         ModelRenderHelperKt.render(
                 entity.part.getModel(),
@@ -38,7 +39,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 bufferSource.getBuffer(getRenderType(entity)),
                 packedLight,
                 OverlayTexture.NO_OVERLAY,
-                new Color(255,255,255,255).getRGB(),
+                color.getRGB(),
                 partialTick,
                 false);
         poseStack.popPose();//结束渲染

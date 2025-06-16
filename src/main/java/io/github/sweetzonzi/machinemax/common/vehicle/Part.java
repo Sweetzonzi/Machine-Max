@@ -15,6 +15,7 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
+import cn.solarmoon.spark_core.util.Key;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Quaternion;
@@ -33,11 +34,13 @@ import io.github.sweetzonzi.machinemax.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
+import io.github.sweetzonzi.machinemax.network.payload.PartSyncPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.PartPaintPayload;
 import io.github.sweetzonzi.machinemax.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -64,7 +67,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     private BoneGroup bones;//用于储存部件的骨骼组
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
     //常规属性 General attributes
-    public VehicleCore vehicle;//所属的VehicleCore
+    public volatile VehicleCore vehicle;//所属的VehicleCore
     @Nullable
     public MMPartEntity entity;//用于渲染模型以及和原版内容进行交互的的实体对象
     public String name;
@@ -72,7 +75,9 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public final Level level;
     public final String variant;
     public final UUID uuid;
-    public float durability;
+    public volatile boolean destroyed = false;
+    public volatile float durability;
+    public volatile float integrity;
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
     public final AnimController animController = new AnimController(this);
@@ -110,6 +115,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.level = level;
         this.uuid = UUID.randomUUID();
         this.durability = partType.basicDurability;
+        this.integrity = partType.basicIntegrity;
         float totalMass = 0;
         for (SubPartAttr subPart : partType.subParts.values()) {
             totalMass += subPart.mass;
@@ -172,6 +178,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 type.textures.get(textureIndex % type.textures.size()));//获取部件第一个可用纹理作为默认纹理
         this.uuid = UUID.fromString(data.uuid);
         this.durability = data.durability;
+        this.integrity = data.integrity;
         float totalMass = 0;
         for (SubPartAttr subPart : type.subParts.values()) {
             totalMass += subPart.mass;
@@ -206,6 +213,10 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (this.entity == null || this.entity.isRemoved()) {
             if (!level.isClientSide()) refreshPartEntity();
         }
+        if (!destroyed && durability <= 0) {
+            durability = 0;
+            onDestroyed();
+        }
     }
 
     public void onPrePhysicsTick() {
@@ -222,7 +233,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     public boolean onHurt(DamageSource source,
                           float damage,
-                          boolean vanilla,
+                          IPhysicsProjectile projectileSource,
                           SubPart subPart,
                           Vector3f normal,
                           Vector3f worldContactSpeed,
@@ -230,8 +241,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           @Nullable Long hitChildShapeNativeId) {
         if (getEntity() != null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
         Vec3 sourcePos = source.getSourcePosition();
-        if (vanilla && sourcePos != null && !level.isClientSide) {//原版伤害处理
-            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / subPart.part.durability))) * 150f);//伤害转化为动量
+        float armor = type.thickness.getOrDefault(hitChildShapeNativeId, 0.1f);
+        float armorPierce = 0;
+        //击退处理与特殊逻辑
+        if (projectileSource == null && sourcePos != null && !level.isClientSide) {//原版伤害处理
+            //冲击效果
+            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / this.type.basicDurability))) * 150f);//伤害转化为动量
             if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
                 knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
             }
@@ -244,12 +259,46 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 vehicle.syncCountDown = 0;//发生击退时立刻重新同步位置姿态速度
                 return null;
             });
-            //TODO:处理伤害
-        } else {//甲弹对抗伤害处理
-            //TODO:处理伤害
+            //换算穿甲值
+            armorPierce = damage / 2f;
+        } else if (projectileSource != null && sourcePos != null) {//甲弹对抗处理
+            //TODO:冲击击退效果在SubPart接触时处理
+            //获取穿甲值
+            try {
+                armorPierce = damage;
+                //TODO:研究一下Key是怎么用的
+//                armorPierce = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
+            } catch (Exception e) {
+                armorPierce = 0f;
+                MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", subPart.part.name);
+            }
         }
-        //TODO:发包同步部件和子系统耐久度
-        return true;
+        //线性减伤处理
+        float impactDamage = damage - type.damageReduction.getOrDefault(hitChildShapeNativeId, 0f);
+        //TODO:削减结构完整性并视情况击落部件
+        armorPierce *= -normal.dot(worldContactSpeed.normalize());//考虑入射角影响
+        //甲弹对抗处理
+        if (armorPierce > armor) {
+            impactDamage *= type.getDamageMultiplier().getOrDefault(hitChildShapeNativeId, 1f);
+            //TODO:对子系统造成伤害
+            //对部件造成伤害
+            durability -= impactDamage;
+            //TODO:发包同步部件和子系统耐久度
+            if (!level.isClientSide)
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartSyncPayload(vehicle.uuid, uuid, durability, integrity));
+            return true;
+        } else {
+            //未能击穿时
+            //TODO:取决于设置，造成部分伤害或完全无伤
+            return false;
+        }
+    }
+
+    public void onDestroyed() {
+        destroyed = true;
+        for (AbstractSubsystem subsystem : subsystems.values()) {
+            subsystem.setActive(false);
+        }
     }
 
     public void refreshPartEntity() {
@@ -284,34 +333,29 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                         PhysicsHelperKt.toBVector3f(locator.getOffset()).subtract(subPart.massCenterTransform.getTranslation()),
                         SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z)).mult(subPart.massCenterTransform.getRotation().inverse())
                 );
-                AbstractConnector connector = null;
-                switch (connectorEntry.getValue().type()) {
-                    case "AttachPoint"://连接点接口
-                        connector = new AttachPointConnector(
-                                connectorEntry.getKey(),
-                                connectorEntry.getValue(),
-                                subPart,
-                                posRot
-                        );
-                        break;
-                    case "Special"://6自由度自定义关节接口
-                        connector = new SpecialConnector(
-                                connectorEntry.getKey(),
-                                connectorEntry.getValue(),
-                                subPart,
-                                posRot
-                        );
-                        break;
-                    default:
-                        MachineMax.LOGGER.error("在零件{}中发现不支持的零件接口类型{}。", type.name, connectorEntry.getValue().type());
-                }
-                if (connector != null) {
-                    subPart.connectors.put(connectorEntry.getKey(), connector);
-                    this.allConnectors.put(connectorEntry.getKey(), connector);
-                    if (!connector.internal) this.externalConnectors.put(connectorEntry.getKey(), connector);
-                }
+                AbstractConnector connector = switch (connectorEntry.getValue().type()) {
+                    case "AttachPoint" ->//连接点接口
+                            new AttachPointConnector(
+                                    connectorEntry.getKey(),
+                                    connectorEntry.getValue(),
+                                    subPart,
+                                    posRot
+                            );
+                    case "Special" ->//6自由度自定义关节接口
+                            new SpecialConnector(
+                                    connectorEntry.getKey(),
+                                    connectorEntry.getValue(),
+                                    subPart,
+                                    posRot
+                            );
+                    default ->
+                            throw new NullPointerException(Component.translatable("error.machinemax.part.invalid_connector_type", type.name, connectorEntry.getKey(), connectorEntry.getValue().type()).getString());
+                };
+                subPart.connectors.put(connectorEntry.getKey(), connector);
+                this.allConnectors.put(connectorEntry.getKey(), connector);
+                if (!connector.internal) this.externalConnectors.put(connectorEntry.getKey(), connector);
             } else
-                MachineMax.LOGGER.error("在部件{}中未找到对应的零件接口Locator:{}。", type.name, connectorEntry.getValue().locatorName());
+                throw new NullPointerException(Component.translatable("error.machinemax.part.connector_locator_not_found", type.name, connectorEntry.getKey(), connectorEntry.getValue().locatorName()).getString());
         }
     }
 
@@ -322,8 +366,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         LinkedHashMap<String, OBone> bones = data.getModel().getBones();//从模型获取所有骨骼
         LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
         for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
-        if (bones.isEmpty())
-            throw new RuntimeException("模型路径" + data.getModelPath() + "中无骨骼，请检查模型文件路径配置。");
         //创建零件
         for (Map.Entry<String, SubPartAttr> subPartEntry : subPartAttrMap.entrySet()) {//遍历部件的零件属性
             SubPart subPart = new SubPart(subPartEntry.getKey(), this, subPartEntry.getValue());//创建零件
@@ -370,7 +412,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                                 connector.subPart.body.setPhysicsTransform(connector.subPart.massCenterTransform);
                                 targetConnector.attach((AttachPointConnector) connector, true);
                             } else
-                                MachineMax.LOGGER.error("零件{}的{}接口与零件{}的{}接口不匹配。", type.name, connector.name, entry2.getKey().name, targetConnector.name);
+                                throw new IllegalArgumentException(Component.translatable("error.machinemax.part.invalid_internal_connector_connection", type.name, connector.name, targetConnector.name).getString());
                         }
                     }
                 }
@@ -398,7 +440,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         ));
         //同步客户端
         if (!level.isClientSide()) PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                new PartPaintPayload(vehicle.uuid.toString(), this.uuid.toString(), this.textureIndex));
+                new PartPaintPayload(vehicle.uuid, this.uuid, this.textureIndex));
     }
 
     /**

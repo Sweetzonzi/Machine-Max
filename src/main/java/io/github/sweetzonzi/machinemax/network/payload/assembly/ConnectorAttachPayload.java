@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.PartData;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -30,7 +31,7 @@ public record ConnectorAttachPayload(
 
         @Override
         public @NotNull ConnectorAttachPayload decode(@NotNull FriendlyByteBuf buffer) {
-            UUID vehicleUuid = UUID.fromString(buffer.readUtf());
+            UUID vehicleUuid = buffer.readUUID();
             List<ConnectionData> connections = buffer.readJsonWithCodec(ConnectionData.CODEC.listOf());
             boolean hasNewPart = buffer.readBoolean();
             PartData partData = null;
@@ -40,7 +41,7 @@ public record ConnectorAttachPayload(
 
         @Override
         public void encode(@NotNull FriendlyByteBuf buffer, @NotNull ConnectorAttachPayload value) {
-            buffer.writeUtf(value.vehicleUuid.toString());
+            buffer.writeUUID(value.vehicleUuid);
             buffer.writeJsonWithCodec(ConnectionData.CODEC.listOf(), value.connections);
             buffer.writeBoolean(value.hasNewPart);
             if (value.hasNewPart && value.partData != null) buffer.writeJsonWithCodec(PartData.CODEC, value.partData);

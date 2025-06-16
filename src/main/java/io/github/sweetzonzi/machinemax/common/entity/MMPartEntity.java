@@ -48,6 +48,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -114,7 +115,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                 Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
                 Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
                 long hitBoxId = mixinProjectile.machine_Max$getHitBoxId();
-                return part.onHurt(source, amount, true, hitSubPart, normal,
+                return part.onHurt(source, amount, null, hitSubPart, normal,
                         PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
                                 .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBoxId);
             } else return false;
@@ -134,7 +135,8 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                 end = PhysicsHelperKt.toBVector3f(this.position());
             }
             if (end.subtract(start).length() > 0) {
-                if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION)) {//范围伤害处理
+                if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION)) {
+                    //范围伤害处理
                     SubPart nearest = null;
                     float nearestDistance = Float.MAX_VALUE;
                     Vector3f normal = new Vector3f();
@@ -149,9 +151,15 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                             nearestDistance = d;
                         }
                     }
-                    if (nearest != null)
-                        return part.onHurt(source, amount, true, nearest, normal, normal.mult(-1), contactPoint, null);
-                    else throw new IllegalStateException("No subpart found for explosion damage.");
+                    if (nearest != null) {
+                        long hitBoxId = -1;
+                        float maxThickness = -1;
+                        for (Map.Entry<Long, Float> entry : part.type.thickness.entrySet()) {
+                            if (entry.getValue() > maxThickness)
+                                hitBoxId = entry.getKey();
+                        }
+                        return part.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBoxId);
+                    } else throw new IllegalStateException("No subpart found for explosion damage.");
                 } else {//一般伤害处理
                     var results = level.getWorld().rayTest(start, end);
                     for (var result : results) {
@@ -161,7 +169,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                             Vector3f normal = result.getHitNormalLocal(null);
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
                             //将伤害转发给部件进行操作
-                            return subPart.part.onHurt(source, amount, true, subPart, normal, end.subtract(start).normalize(), contactPoint, subPart.collisionShape.findChild(result.triangleIndex()).getShape().nativeId());
+                            return subPart.part.onHurt(source, amount, null, subPart, normal, end.subtract(start).normalize(), contactPoint, subPart.collisionShape.findChild(result.triangleIndex()).getShape().nativeId());
                         }
                     }
                 }

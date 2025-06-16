@@ -132,4 +132,5 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
         return signalTargetsHolder.setUpTargets(new HashMap<>(1));
     }
 
+    //TODO: setMoveInputSignal 将0~100的byte缩放到0~1的float
 }

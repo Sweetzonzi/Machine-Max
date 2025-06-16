@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
+import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
@@ -134,7 +135,8 @@ public class MMDynamicRes {
         for (Path jsPackageFile : listPaths(PUBLIC_JS_LIBS, Files::isRegularFile)) {
             try {
                 MM_PUBLIC_SCRIPTS.add(new String(Files.readAllBytes(jsPackageFile)));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
 
         MMInitialJS.register();//注册所有JS形式的初始化配置
@@ -150,8 +152,6 @@ public class MMDynamicRes {
         @Override
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
             MMDynamicRes.reload();// 重新读取
-            if (Minecraft.getInstance().player instanceof Player player)
-                player.sendSystemMessage(Component.literal("[%s]: 内容包模型贴图已重载".formatted(MOD_ID)));
         }
     }
 
@@ -190,7 +190,6 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/model/ae86_wheel_left.geo.json", partModelFolder.resolve("ae86_wheel_left.geo.json"), overwrite);
 
         //部件定义文件
-        copyResourceToFile("/example_pack/part_type/test_cube.json", partTypeFolder.resolve("test_cube.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_seat.json", partTypeFolder.resolve("ae86_seat.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_hull.json", partTypeFolder.resolve("ae86_hull.json"), overwrite);
@@ -336,16 +335,18 @@ public class MMDynamicRes {
                         COLORS.put(location, json);
                     }
                 }
-
+                if (location == null) {
+                    throw new IllegalArgumentException("error.machine_max.invalid_resource_location");
+                }
+                if (dynamicPack == null)
+                    dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
+                EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
             } catch (Exception e) {
                 exceptions.add(e);
                 errorFiles.add(filePath.toString());
                 errorMessages.add(Component.translatable(e.getMessage()));
                 LOGGER.error("An error occurred while reading {}, file: {}, skipped. Reason: {}", category, filePath, e.getMessage());
             }
-            if (dynamicPack == null)
-                dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
-            EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
 
 //            //把指定包的文件转换成base64字符串形式    取消注释则会生成镜像base64文件包 在 run/config/machine_max/base64ify
 //            Path master_base64ify = Exist(NAMESPACE.resolve("base64ify"));
@@ -353,7 +354,6 @@ public class MMDynamicRes {
 //            Path category_base64ify = Exist(root_base64ify.resolve(category));
 //            createDefaultFile(category_base64ify.resolve(fileName+"_base64.txt"), dynamicPack.getBase64(), true);
         }
-
     }
 
     private static void mergeJsonObjects(JsonObject target, JsonObject source) {

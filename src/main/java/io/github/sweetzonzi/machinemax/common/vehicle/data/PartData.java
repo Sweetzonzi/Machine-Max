@@ -28,6 +28,7 @@ public class PartData {
     public final int textureIndex;
     public final String uuid;
     public final float durability;
+    public final float integrity;
     public final Map<String, PosRotVelVel> subPartTransforms;
 
     public static final Codec<PartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -37,6 +38,7 @@ public class PartData {
             Codec.INT.fieldOf("textureIndex").forGetter(PartData::getTextureIndex),
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),
             Codec.FLOAT.fieldOf("durability").forGetter(PartData::getDurability),
+            Codec.FLOAT.optionalFieldOf("integrity", 100f).forGetter(PartData::getIntegrity),
             PosRotVelVel.MAP_CODEC.fieldOf("subPartTransforms").forGetter(PartData::getSubPartTransforms)
     ).apply(instance, PartData::new));
 
@@ -61,8 +63,9 @@ public class PartData {
             int textureIndex = buffer.readInt();
             String uuid = buffer.readUtf();
             float durability = buffer.readFloat();
+            float integrity = buffer.readFloat();
             Map<String, PosRotVelVel> subPartTransforms = buffer.readJsonWithCodec(PosRotVelVel.MAP_CODEC);
-            return new PartData(registryKey, name, variant, textureIndex, uuid, durability, subPartTransforms);
+            return new PartData(registryKey, name, variant, textureIndex, uuid, durability, integrity, subPartTransforms);
         }
 
         @Override
@@ -73,18 +76,20 @@ public class PartData {
             buffer.writeInt(value.textureIndex);
             buffer.writeUtf(value.uuid);
             buffer.writeFloat(value.durability);
+            buffer.writeFloat(value.integrity);
             buffer.writeJsonWithCodec(PosRotVelVel.MAP_CODEC, value.subPartTransforms);
         }
 
     };
 
-    public PartData(ResourceLocation registryKey, String name, String variant, int textureIndex, String uuid, float durability, Map<String, PosRotVelVel> subPartTransforms) {
+    public PartData(ResourceLocation registryKey, String name, String variant, int textureIndex, String uuid, float durability, float integrity, Map<String, PosRotVelVel> subPartTransforms) {
         this.registryKey = registryKey;
         this.name = name;
         this.variant = variant;
         this.textureIndex = textureIndex;
         this.uuid = uuid;
         this.durability = durability;
+        this.integrity = integrity;
         this.subPartTransforms = subPartTransforms;
         //校验数据
         for (Map.Entry<String, PosRotVelVel> entry : subPartTransforms.entrySet()) {
@@ -118,6 +123,7 @@ public class PartData {
         this.textureIndex = part.textureIndex;
         this.uuid = part.getUuid().toString();
         this.durability = part.durability;
+        this.integrity = part.integrity;
         this.subPartTransforms = HashMap.newHashMap(1);
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {
             this.subPartTransforms.put(entry.getKey(), new PosRotVelVel(

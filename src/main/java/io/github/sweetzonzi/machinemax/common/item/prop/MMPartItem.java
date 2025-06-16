@@ -8,13 +8,13 @@ import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyInfoComponent;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machinemax.common.registry.MMRegistries;
-import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
@@ -26,6 +26,7 @@ import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.network.payload.RegularInputPayload;
 import io.github.sweetzonzi.machinemax.util.data.KeyInputMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -48,7 +49,6 @@ import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class MMPartItem extends Item implements ICustomModelItem {
     public MMPartItem(Properties properties) {
@@ -66,8 +66,9 @@ public class MMPartItem extends Item implements ICustomModelItem {
      */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+        ItemStack stack = player.getItemInHand(usedHand);
+        stack.set(DataComponents.MAX_DAMAGE, getMaxDamage(stack));
         if (!level.isClientSide()) {
-            ItemStack stack = player.getItemInHand(usedHand);
             try {
                 PartType partType = getPartType(stack, level);//获取物品保存的部件类型
                 PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
@@ -76,18 +77,22 @@ public class MMPartItem extends Item implements ICustomModelItem {
                 String connectorType = info.connectorType();//获取物品保存的部件接口类型
                 var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
                 AbstractConnector targetConnector = eyesight.getConnector();
+                int damage = stack.getDamageValue();
+                float durability = Math.clamp(partType.basicDurability - damage + 1, 1f, partType.basicDurability);
                 if (targetConnector != null) {//若有可用的接口
                     if (targetConnector.conditionCheck(variant)) {//检查变体条件
                         //TODO:检查connectorType，骑乘姿态拆卸零件后这一内容会变null
                         if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
                             Part part = new Part(partType, variant, level);
+                            part.durability = durability;
                             targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
                         }
                     }
                 } else {
                     Part part = new Part(partType, variant, level);
+                    part.durability = durability;
                     part.setTransform(
                             new Transform(
                                     PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
@@ -101,7 +106,7 @@ public class MMPartItem extends Item implements ICustomModelItem {
                 }
             } catch (Exception e) {
                 MachineMax.LOGGER.error("Error while using part item: {}", stack.getDisplayName(), e);
-                player.sendSystemMessage(Component.translatable("error.machinemax.use_part_item", stack.getDisplayName(), e));
+                player.sendSystemMessage(Component.translatable("error.machine_max.use_part_item", stack.getDisplayName(), e));
             }
         }
         return super.use(level, player, usedHand);
@@ -126,8 +131,8 @@ public class MMPartItem extends Item implements ICustomModelItem {
                         message.append("目标接口:" + targetConnector.name + "部件接口:" + connectorName);
                         if (!variant.equals("default") && partType.variants.size() > 1)
                             message.append(" 部件变体类型:" + variant);
-                        if (MMVisualEffects.getPART_ASSEMBLY().partToAssembly != null) {
-                            MMVisualEffects.getPART_ASSEMBLY().partToAssembly.setTransform(
+                        if (VisualEffectHelper.partToAssembly != null) {
+                            VisualEffectHelper.partToAssembly.setTransform(
                                     targetConnector.mergeTransform(new Transform(
                                             PhysicsHelperKt.toBVector3f(info.offset()),
                                             SparkMathKt.toBQuaternion(info.rotation())
@@ -146,8 +151,8 @@ public class MMPartItem extends Item implements ICustomModelItem {
                 }
             } else {
                 message.append("未选中可用的部件接口，右键将直接放置零件");
-                if (MMVisualEffects.getPART_ASSEMBLY().partToAssembly != null)
-                    MMVisualEffects.getPART_ASSEMBLY().partToAssembly.setTransform(
+                if (VisualEffectHelper.partToAssembly != null)
+                    VisualEffectHelper.partToAssembly.setTransform(
                             entity instanceof LivingEntity livingEntity ?
                                     new Transform(
                                             PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
@@ -180,8 +185,24 @@ public class MMPartItem extends Item implements ICustomModelItem {
      */
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {
-        String name = stack.get(MMDataComponents.getPART_NAME());
-        return Component.translatable("item." + MachineMax.MOD_ID + "." + name);
+        ResourceLocation type = stack.get(MMDataComponents.getPART_TYPE());
+        if (type != null) {
+            return Component.translatable("item." + type.toLanguageKey());
+        } else return super.getName(stack);
+    }
+
+    @Override
+    public boolean isDamageable(@NotNull ItemStack stack) {
+        return true;
+    }
+
+    @Override
+    public int getMaxDamage(@NotNull ItemStack stack) {
+        ResourceLocation type = stack.get(MMDataComponents.getPART_TYPE());
+        PartType partType = MMDynamicRes.PART_TYPES.get(type);
+        if (partType != null) {
+            return (int) Math.ceil(partType.basicDurability);
+        } else return super.getMaxDamage(stack);
     }
 
     public static PartAssemblyCacheComponent getPartAssemblyCache(ItemStack stack, Level level) {

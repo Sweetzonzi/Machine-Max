@@ -31,7 +31,7 @@ public class WheelDriverSubsystemAttr extends AbstractSubsystemAttr {
                     Map.of()
             )).forGetter(WheelDriverSubsystemAttr::getRollingAxis),
             WheelSteeringAxisAttr.CODEC.optionalFieldOf("steering", new WheelSteeringAxisAttr(
-                    5000f,
+                    4000f,
                     3.14f,
                     Map.of()
             )).forGetter(WheelDriverSubsystemAttr::getSteeringAxis)

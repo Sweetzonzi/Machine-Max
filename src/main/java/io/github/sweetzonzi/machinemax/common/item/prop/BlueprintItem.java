@@ -2,12 +2,24 @@ package io.github.sweetzonzi.machinemax.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.TaskSubmitOffice;
+import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.objects.PhysicsGhostObject;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Transform;
+import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machinemax.common.vehicle.visual.RenderableBoundingBox;
 import io.github.sweetzonzi.machinemax.external.DynamicPack;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.html.HtNode;
@@ -20,16 +32,24 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class BlueprintItem extends Item implements ICustomModelItem {
     public BlueprintItem(Properties properties) {
@@ -39,12 +59,88 @@ public class BlueprintItem extends Item implements ICustomModelItem {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if (!level.isClientSide()) {
-            VehicleCore vehicle = new VehicleCore(level, getVehicleData(player.getItemInHand(usedHand), level));
-            vehicle.setUuid(UUID.randomUUID());
-            vehicle.setPos(player.position().add(0, 1, 0));
-            VehicleManager.addVehicle(vehicle);
+            //TODO:检查AABB尺寸位置是否正确，似乎有微妙偏移
+            //TODO:检查与地形的碰撞
+            ItemStack stack = player.getItemInHand(usedHand);
+            VehicleData vehicleData = getVehicleData(stack, level);
+            Transform transform = new Transform(
+                    PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                            player.getEyePosition(),
+                            player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                    Quaternion.IDENTITY
+            );
+            Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
+            Vec3 max = vehicleData.max.add(SparkMathKt.toVec3(transform.getTranslation()));
+            com.jme3.math.Vector3f shape = new com.jme3.math.Vector3f((float) (max.x - min.x), (float) (max.y - min.y), (float) (max.z - min.z)).mult(0.5f);
+            PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
+                    new BoxCollisionShape(shape));
+            testGhost.setPhysicsLocation(transform.getTranslation());
+            PhysicsLevel physicsLevel = level.getPhysicsLevel();
+            TaskSubmitOffice taskLevel = (TaskSubmitOffice) level;
+            physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_blueprint", PPhase.PRE, () -> {
+                int contact = physicsLevel.getWorld().contactTest(testGhost, null);
+                if (contact == 0) {
+                    taskLevel.submitImmediateTask(PPhase.PRE, () -> {
+                        VehicleCore vehicle = new VehicleCore(level, vehicleData);
+                        vehicle.setUuid(UUID.randomUUID());
+                        vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
+                        VehicleManager.addVehicle(vehicle);
+                        return null;
+                    });
+                } else
+                    taskLevel.submitImmediateTask(PPhase.PRE, () -> {
+                        player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
+                        return null;
+                    });
+                return null;
+            });
         }
         return super.use(level, player, usedHand);
+    }
+
+    @Override
+    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
+        super.inventoryTick(stack, level, entity, slotId, isSelected);
+        if (level.isClientSide) {
+            VehicleData vehicleData = getVehicleData(stack, level);
+            if (isSelected) {
+                Transform transform = entity instanceof LivingEntity livingEntity ?
+                        new Transform(
+                                PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                        entity.getEyePosition(),
+                                        entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
+                                Quaternion.IDENTITY
+                        ) : new Transform(
+                        PhysicsHelperKt.toBVector3f(entity.position()),
+                        Quaternion.IDENTITY
+                );
+                Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
+                Vec3 max = vehicleData.max.add(SparkMathKt.toVec3(transform.getTranslation()));
+                RenderableBoundingBox boundingBox;
+                if (VisualEffectHelper.boundingBox != null) boundingBox = VisualEffectHelper.boundingBox;
+                else {
+                    boundingBox = new RenderableBoundingBox(min, max);
+                    VisualEffectHelper.boundingBox = boundingBox;
+                }
+                boundingBox.updateShape(PhysicsHelperKt.toBVector3f(min), PhysicsHelperKt.toBVector3f(max));
+                PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
+                        new BoxCollisionShape(boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
+                testGhost.setPhysicsLocation(transform.getTranslation());
+                PhysicsLevel physicsLevel = level.getPhysicsLevel();
+                physicsLevel.submitImmediateTask(PPhase.PRE, () -> {
+                    int contact = physicsLevel.getWorld().contactTest(testGhost, null);
+                    if (contact > 0) boundingBox.setColor(Color.RED);
+                    else boundingBox.setColor(Color.GREEN);
+                    return null;
+                });
+            } else if (entity instanceof LivingEntity livingEntity) {
+                if (livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof BlueprintItem
+                        || livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof BlueprintItem) {
+                } else VisualEffectHelper.boundingBox = null;
+            }
+        }
     }
 
     /**

@@ -14,12 +14,13 @@ import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AttachPointConnector;
+import io.github.sweetzonzi.machinemax.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.ConnectorAttachPayload;
+import io.github.sweetzonzi.machinemax.network.payload.assembly.ConnectorDetachPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.PartRemovePayload;
 import io.github.sweetzonzi.machinemax.network.payload.SubPartSyncPayload;
 import io.github.sweetzonzi.machinemax.util.MMMath;
@@ -43,8 +44,6 @@ public class VehicleCore {
     public final MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
     //存储所有部件
     public final ConcurrentMap<UUID, Part> partMap = new java.util.concurrent.ConcurrentHashMap<>();
-    //存储所有连接关系
-    public final List<ConnectionData> connectionList = new java.util.ArrayList<>();
     public String name = "Vehicle";//载具名称
     public final Level level;//载具所在世界
     @Setter
@@ -83,6 +82,7 @@ public class VehicleCore {
         this.uuid = UUID.fromString(savedData.uuid);
         this.hp = savedData.hp;
         this.position = savedData.pos;
+        this.name = savedData.name;
         try {
             //重建部件
             for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level));
@@ -101,6 +101,36 @@ public class VehicleCore {
             onRemoveFromLevel();//移除数据出错的载具
             throw e;
         }
+    }
+
+    /**
+     * <p>载具因拓扑结构发生变化而分裂为多个部分时使用的构造方法</p>
+     * <p>Method used to create a new vehicle when the topology of the vehicle changes and splits into multiple parts</p>
+     *
+     * @param uuid    新载具的UUID UUID of the new Vehicle
+     * @param partNet 新载具的拓扑结构 Structure of the new Vehicle
+     */
+    public VehicleCore(Level level, UUID uuid, MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> partNet, VehicleCore oldVehicle) {
+        this.level = level;
+        this.uuid = uuid;
+        this.name = oldVehicle.name;
+        this.position = oldVehicle.position;
+        //TODO:调整hp
+        for (Part part : partNet.nodes()) {
+            oldVehicle.subSystemController.removeSubsystems(part.subsystems.values(), true);
+            oldVehicle.partMap.remove(part.uuid);
+            oldVehicle.partNet.removeNode(part);
+            this.partMap.put(part.uuid, part);
+            this.partNet.addNode(part);
+            part.vehicle = this;
+            this.subSystemController.addSubsystems(part.subsystems.values(), false);
+        }
+        for (Pair<AbstractConnector, AttachPointConnector> edge : partNet.edges()) {
+            EndpointPair<Part> connectedParts = partNet.incidentNodes(edge);
+            this.partNet.addEdge(connectedParts, edge);
+        }
+        this.updateTotalMass();
+        this.subSystemController.onVehicleStructureChanged();
     }
 
     /**
@@ -251,6 +281,13 @@ public class VehicleCore {
         });
     }
 
+    public void updateTotalMass() {
+        this.totalMass = 0;
+        for (Part part : partMap.values()) {
+            this.totalMass += part.totalMass;
+        }
+    }
+
     /**
      * 将部件添加到载具中
      * 已有载具应使用{@link VehicleCore#attachConnector}方法添加部件并连接部件接口
@@ -272,40 +309,54 @@ public class VehicleCore {
                     interactBox.setTargetFromNames();
                 }
         }
-        this.totalMass += part.totalMass;
+        this.updateTotalMass();
         partMap.put(part.uuid, part);
         partNet.addNode(part);
-        subSystemController.addSubsystems(part.subsystems.values());
+        subSystemController.addSubsystems(part.subsystems.values(), true);
     }
 
     public void removePart(Part part) {
+        removePart(part, Map.of());
+    }
+
+    public void removePart(Part part, Map<UUID, UUID> spiltVehicles) {
         if (partMap.containsValue(part)) {
-            String partUuid = part.getUuid().toString();
-            subSystemController.removeSubsystems(part.subsystems.values());
-            this.totalMass -= part.totalMass;
+            UUID partUuid = part.getUuid();
+            subSystemController.removeSubsystems(part.subsystems.values(), true);
             partNet.removeNode(part);
             partMap.remove(part.uuid, part);
             part.destroy();
-            if (inLevel && !level.isClientSide()) {//发包客户端移除部件
-                PacketDistributor.sendToPlayersInDimension(
-                        (ServerLevel) this.level,
-                        new PartRemovePayload(this.uuid.toString(), partUuid)
-                );
+            var spiltPartNets = partNetSpiltCheck();
+            if (inLevel) {//发包客户端移除部件
+                if (!level.isClientSide()) {
+                    if (spiltPartNets.size() <= 1) {
+                        PacketDistributor.sendToPlayersInDimension(
+                                (ServerLevel) this.level,
+                                new PartRemovePayload(this.uuid, partUuid, Map.of())
+                        );
+                    } else {
+                        PacketDistributor.sendToPlayersInDimension(
+                                (ServerLevel) this.level,
+                                new PartRemovePayload(this.uuid, partUuid, serverHandleSpilt(spiltPartNets))
+                        );
+                    }
+                } else {
+                    clientHandleSpilt(spiltPartNets, spiltVehicles);
+                }
             }
-            int size = spiltPartNet().size();
-            if (size > 1) MachineMax.LOGGER.debug("载具{}分裂为{}个部分", name, size);//连通性检查
             if (partMap.values().isEmpty()) VehicleManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
             else {
                 this.activate();//重新激活，进行部件移除后的物理计算
                 this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
             }
+            this.updateTotalMass();
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, part.name);
     }
 
-    public void removePart(UUID uuid) {
+    public void removePart(UUID uuid, Map<UUID, UUID> spiltVehicles) {
         if (partMap.containsKey(uuid)) {
             Part part = partMap.get(uuid);
-            this.removePart(part);
+            this.removePart(part, spiltVehicles);
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, uuid.toString());
     }
 
@@ -411,21 +462,104 @@ public class VehicleCore {
         return result;
     }
 
-    public void detachConnector(AbstractConnector connector1, AbstractConnector connector2) {
-        if (connector2 instanceof AttachPointConnector) connector1.detach(false);
-        else if (connector1 instanceof AttachPointConnector) connector2.detach(false);
-        else throw new IllegalArgumentException("要拆解的对接口之一必须是AttachPointConnector类型");
+    public void detachConnector(AbstractConnector connector) {
+        detachConnectors(List.of(connector));
+    }
+
+    public void detachConnectors(List<AbstractConnector> connectors) {
+        List<Pair<AbstractConnector, AttachPointConnector>> connections = new ArrayList<>();
+        for (AbstractConnector connector : connectors) {
+            if (connector.subPart.part.vehicle == this) {
+                if (!connector.internal) {//若是与外部部件连接的接口，则需要移除载具核心中记录的连接关系
+                    if (connector.hasPart()) {
+                        if (connector instanceof SpecialConnector)
+                            connections.add(Pair.of(connector, (AttachPointConnector) connector.attachedConnector));
+                        else connections.add(Pair.of(connector.attachedConnector, (AttachPointConnector) connector));
+                    } else
+                        MachineMax.LOGGER.warn("载具{}的接口{}未连接到任何部件，无法断开连接", this.name, connector.name);
+                } else MachineMax.LOGGER.warn("载具{}的接口{}为内部接口，无法断开连接", this.name, connector.name);
+            } else MachineMax.LOGGER.error("接口{}不属于载具{}，无法断开连接", connector.name, this.name);
+        }
+        detachConnections(connections);
+    }
+
+    private void detachConnections(List<Pair<AbstractConnector, AttachPointConnector>> connections) {
+        detachConnections(connections, Map.of());
+    }
+
+    /**
+     * <p>断开载具中指定的连接关系并检查连通性，若分裂为多个部分则相应创建新载具</p>
+     * <p>Detach the specified connection relationship in the vehicle and check connectivity. If the connectivity is split into multiple parts, new vehicles are created accordingly.</p>
+     *
+     * @param connections
+     * @param spiltVehicles
+     */
+    public void detachConnections(List<Pair<AbstractConnector, AttachPointConnector>> connections, Map<UUID, UUID> spiltVehicles) {
+        List<ConnectionData> connectionsToRemove = new ArrayList<>();
+        for (Pair<AbstractConnector, AttachPointConnector> connection : connections) {
+            connection.getFirst().detach(false);
+            boolean removed = partNet.removeEdge(connection);
+            if (!removed && connection.getSecond() instanceof AttachPointConnector attachPoint)
+                removed = partNet.removeEdge(Pair.of(connection.getSecond(), attachPoint));
+            if (removed && !level.isClientSide()) connectionsToRemove.add(new ConnectionData(connection));
+            if (!removed) MachineMax.LOGGER.error("载具{}中未找到连接关系{}，无法移除", this.name, connection);
+        }
+        var spiltPartNets = partNetSpiltCheck();
+        if (!level.isClientSide()) {//若是服务端，则向客户端发包通知拆解接口
+            if (spiltPartNets.size() <= 1) {//未分裂为多个载具
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new ConnectorDetachPayload(
+                        uuid, connectionsToRemove, Map.of()));
+            } else {//分裂为至少两个部分
+                //发包通知客户端拆除接口，并将分裂出的新载具UUID一同传输
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new ConnectorDetachPayload(
+                        uuid, connectionsToRemove, serverHandleSpilt(spiltPartNets)));
+            }
+        } else {//客户端行为，仅应被载具断开连接的网络包调用
+            clientHandleSpilt(spiltPartNets, spiltVehicles);
+        }
+        this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
-        //TODO:连通性检查，如果有部件分离，则创建新的VehicleCore
-        //TODO:为分离的部件指定新的VehicleCore
+    }
+
+    private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> spiltPartNets) {
+        Map<UUID, UUID> spiltVehiclesToSend = new HashMap<>();
+        Iterator<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> iterator = spiltPartNets.iterator();
+        while (iterator.hasNext()) {
+            MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> network = iterator.next();
+            UUID uuid = UUID.randomUUID();
+            //最后一个网络视作此载具本身，不参与分裂
+            if (iterator.hasNext()) {
+                VehicleCore newVehicle = new VehicleCore(level, uuid, network, this);
+                VehicleManager.addSpiltVehicle(newVehicle);
+                spiltVehiclesToSend.put(network.nodes().iterator().next().uuid, uuid);
+            }
+        }
+        //TODO:调整hp
+        return spiltVehiclesToSend;
+    }
+
+    private void clientHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> spiltPartNets, Map<UUID, UUID> spiltVehicles) {
+        for (Map.Entry<UUID, UUID> entry : spiltVehicles.entrySet()) {
+            Part part = partMap.get(entry.getKey());
+            UUID spiltVehicleUUID = entry.getValue();
+            for (var vehicle : spiltPartNets) {
+                if (vehicle.nodes().contains(part)) {
+                    //为分离的部件指定新的VehicleCore
+                    VehicleCore spiltVehicle = new VehicleCore(level, spiltVehicleUUID, vehicle, this);
+                    VehicleManager.addSpiltVehicle(spiltVehicle);
+                    break;//处理下一个被分离的部件
+                }
+            }
+        }
     }
 
     /**
      * <p>获取载具部件连接关系图的所有联通子图的集合，用于连通性检查</p>
      * <p>Get all the connected sub-graphs of the vehicle part connection graph, used for connectivity check.</p>
+     *
      * @return 连通子图集合 Subgraph set
      */
-    public Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> spiltPartNet() {
+    public Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> partNetSpiltCheck() {
         if (partNet.nodes().isEmpty()) return Set.of();
         Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> splitPartNets = new HashSet<>();
         Set<Part> visitedParts = new HashSet<>();

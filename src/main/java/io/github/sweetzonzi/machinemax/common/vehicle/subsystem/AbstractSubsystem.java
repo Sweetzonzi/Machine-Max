@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.AbstractSub
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -25,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Getter
-abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender{
+abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender {
 
     public final String name;
     public final AbstractSubsystemAttr subSystemAttr;
@@ -38,7 +39,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public final ConcurrentMap<String, Float> resourceOutputs = new ConcurrentHashMap<>();
 
     public volatile boolean active = true;
-    public float durability;//子系统耐久度
+    public volatile boolean destroyed = false;
+    public volatile float durability;//子系统耐久度
     public int tickCount = 0;
     public int physicsTickCount = 0;
 
@@ -54,6 +56,14 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     public void onTick() {
         tickCount++;
+        if (!this.isDestroyed() && this.durability <= 0) {
+            //摧毁耐久度归零的子系统
+            this.onDestroyed();
+        } else if (this.isDestroyed() && !getPart().isDestroyed() && this.durability >= 0.3 * subSystemAttr.basicDurability) {
+            //重新激活修复到一定程度的子系统
+            this.destroyed = false;
+            this.setActive(true);
+        }
     }
 
     public void onPrePhysicsTick() {
@@ -61,20 +71,6 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     public void onPostPhysicsTick() {
         physicsTickCount++;
-    }
-
-    /**
-     * 子系统对应的碰撞箱与另一个刚体发生碰撞时的原始碰撞信息调用。调用于物理线程。<p>
-     * Called when the hit-box of the subsystem collides with another rigid body. Called on the physics thread.<p>
-     * 推荐使用 {@link AbstractSubsystem#onCollideWithBlock},{@link AbstractSubsystem#onCollideWithPart},{@link AbstractSubsystem#onCollideWithEntity}方法替代。<p>
-     * It is recommended to use the {@link AbstractSubsystem#onCollideWithBlock},{@link AbstractSubsystem#onCollideWithPart},{@link AbstractSubsystem#onCollideWithEntity} methods instead.
-     */
-    @Deprecated//需要手动重新获取各类碰撞信息，不推荐使用
-    public void onCollide(
-            PhysicsCollisionObject pcoA,
-            PhysicsCollisionObject pcoB,
-            long manifoldPointId
-    ) {
     }
 
     /**
@@ -128,15 +124,23 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public void onDisabled() {
     }
 
+    public void onActive() {
+    }
+
     public void onHurt(DamageSource source, float amount) {
+    }
+
+    public void onDestroyed() {
+        this.setActive(false);
     }
 
     /**
      * <p>子系统被实体交互时调用，调用于主线程</p>
      * <p>Called when the subsystem is interacted with an entity. Called on the main thread.</p>
+     *
      * @param entity 交互的实体
      */
-    public void onInteract(LivingEntity entity){
+    public void onInteract(LivingEntity entity) {
     }
 
     public void onVehicleStructureChanged() {
@@ -151,5 +155,15 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public Part getPart() {
         if (owner instanceof Part part) return part;
         else return null;
+    }
+
+    public void setActive(boolean active) {
+        if (active && !this.active) {
+            this.active = true;
+            this.onActive();
+        } else if (!active && this.active) {
+            this.active = false;
+            this.onDisabled();
+        }
     }
 }
