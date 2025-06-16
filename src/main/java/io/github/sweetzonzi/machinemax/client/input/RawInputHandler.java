@@ -152,8 +152,8 @@ public class RawInputHandler {
 
                         }
                     }))
-                    .OnKeyLeave((tick -> {
-                        if (tick == 2.0 && Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
+                    .OnKeyUp((() -> {
+                        if (Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
                             player.displayClientMessage(Component.empty(), true);
                     }));
 

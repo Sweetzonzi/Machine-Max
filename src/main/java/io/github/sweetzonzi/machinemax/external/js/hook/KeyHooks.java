@@ -279,7 +279,8 @@ public class KeyHooks {
          */
         public EVENT OnKeyLeave(KeyLeaveEvent leaveEvent) {
             children.forEach((child)-> child.OnKeyLeave(leaveEvent));
-            leaveEvent.run(getUpSignalTick());
+            if (getUpSignalTick() > 0)
+                leaveEvent.run(getUpSignalTick() - 1);
             return this;
         }
 
