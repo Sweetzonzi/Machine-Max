@@ -125,9 +125,11 @@ public class RawInputHandler {
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Post event) {
         if (client == null) client = Minecraft.getInstance();
-        new KeyHooks.EVENT(KeyBinding.generalInteractKey)
+        new KeyHooks.EVENT("e")
                 .OnKeyTriplePress(()->{
-                    System.out.println("F三连击");
+                    if (KeyHooks.WITH_LEFT_CTRL()) {
+                        System.out.println("弹射跳伞");
+                    }
                 });
         if (client.player != null ) {
 

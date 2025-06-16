@@ -25,7 +25,12 @@ import static io.github.sweetzonzi.machinemax.external.js.hook.Hook.HOOK_SIGNAL_
 public class KeyHooks {
     public final static String INVERSE_NAME = "_inv";
     private static final HashMap<String, _Watcher> cachedWatchers = new HashMap<>(); // 按频道分配的所有观察器
-
+    public static boolean WITH_LEFT_CTRL() {return new EVENT("left.control").isHover();}
+    public static boolean WITH_RIGHT_CTRL() {return new EVENT("right.control").isHover();}
+    public static boolean WITH_LEFT_SHIFT() {return new EVENT("left.shift").isHover();}
+    public static boolean WITH_RIGHT_SHIFT() {return new EVENT("right.shift").isHover();}
+    public static boolean WITH_LEFT_ALT() {return new EVENT("left.alt").isHover();}
+    public static boolean WITH_RIGHT_ALT() {return new EVENT("right.alt").isHover();}
     private static class _Watcher { //bool观察器，当面对输入连续的true时只返回一次true信号。除非输入被重置否则后续均返回false
         private boolean dead = false;
         public double lastTick = 0.0;
@@ -71,6 +76,9 @@ public class KeyHooks {
         public EVENT(String keyName) {
             this.keyName = InputSignalProvider.key(keyName);
         }
+        public EVENT(InputConstants.Key key) {
+            this.keyName = key.getName();
+        }
         public EVENT(KeyMapping mapping) {
             this.mapping = mapping;
             this.keyName = mapping.getKey().getName();
@@ -86,6 +94,21 @@ public class KeyHooks {
         private double getUpSignalTick() {
             return InputSignalProvider.getSignalTicks(keyName+INVERSE_NAME);
         }
+        /**
+         * 为当前按键是否按下
+         * @return {@link Boolean} 对象
+         */
+        public boolean isHover() {
+            return getDownSignalTick() > 0;
+        }
+        /**
+         * 为当前按键是否抬起
+         * @return {@link Boolean} 对象
+         */
+        public boolean isLeave() {
+            return getUpSignalTick() > 0;
+        }
+
 
         private _Watcher fetchWatcher(RootEvent rootEvent) { //通过调用的名称生成频道，自动分配bool观察器
             var currentThread = Thread.currentThread();
@@ -257,7 +280,7 @@ public class KeyHooks {
          */
         public EVENT OnKeyHover(KeyHoverEvent hoverEvent) {
             children.forEach((child) -> child.OnKeyHover(hoverEvent));
-            if (getDownSignalTick() > 0)
+            if (isHover())
                 hoverEvent.run(getDownSignalTick() - 1);
             return this;
         }
@@ -300,7 +323,7 @@ public class KeyHooks {
          */
         public EVENT OnKeyLeave(KeyLeaveEvent leaveEvent) {
             children.forEach((child)-> child.OnKeyLeave(leaveEvent));
-            if (getUpSignalTick() > 0)
+            if (isLeave())
                 leaveEvent.run(getUpSignalTick() - 1);
             return this;
         }
