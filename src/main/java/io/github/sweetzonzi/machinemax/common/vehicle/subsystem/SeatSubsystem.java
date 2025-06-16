@@ -133,4 +133,5 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
     }
 
     //TODO: setMoveInputSignal 将0~100的byte缩放到0~1的float
+    //TODO: setMoveInputSignal 已经挪到了 SignalTargetsHolder 工具包
 }
