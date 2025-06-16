@@ -23,7 +23,6 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.HashMap;
 import java.util.UUID;
 
 /**
@@ -186,6 +185,8 @@ public class RawInputHandler {
 
             //按住手刹
             new KeyHooks.EVENT(KeyBinding.groundHandBrakeKey)
+                    .addChild(new KeyHooks.EVENT( // 模仿尘埃拉力：手柄B键也会触发
+                            new KeyHooks.GamePadSetting(0, KeyHooks.GamePadSetting.GType.Button, GLFW.GLFW_GAMEPAD_BUTTON_B)))
                     .OnKeyDown(() -> {
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 0));
                     })

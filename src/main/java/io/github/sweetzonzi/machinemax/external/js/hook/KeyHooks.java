@@ -14,7 +14,9 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static io.github.sweetzonzi.machinemax.external.js.hook.Hook.HOOK_SIGNAL_MAP;
 
@@ -64,6 +66,7 @@ public class KeyHooks {
         private final String keyName;
         private KeyMapping mapping = null;
         private GamePadSetting gamePadSetting = null;
+        private List<EVENT> children = new ArrayList<>();
 
         public EVENT(String keyName) {
             this.keyName = InputSignalProvider.key(keyName);
@@ -101,6 +104,7 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnAxis(GamePadAxisEvent axisEvent) {
+            children.forEach((child) -> child.OnAxis(axisEvent));
             if (gamePadSetting instanceof GamePadSetting setting && GLFW.glfwJoystickPresent(setting.jid))
                 axisEvent.run(InputSignalProvider.getSignalTicks(keyName));
             return this;
@@ -118,13 +122,20 @@ public class KeyHooks {
          * @param leaveEvent 抬起计时事件处理器（执行时传入当前抬起信号刻度值作为参数）
          * @return {@link EVENT} 对象，用于链式调用
          */
-        public EVENT OnAll(
+        public EVENT OnKeyAll(
                 KeyDownEvent downEvent,
                 KeyUpEvent upEvent,
                 KeyLongPressEvent keyLongPressEvent,
                 KeyHoverEvent hoverEvent,
                 KeyLeaveEvent leaveEvent)
         {
+            children.forEach((child) -> child.OnKeyAll(
+                    downEvent,
+                    upEvent,
+                    keyLongPressEvent,
+                    hoverEvent,
+                    leaveEvent
+            ));
             OnKeyDown(downEvent);
             OnKeyUp(upEvent);
             OnKeyLongPress(keyLongPressEvent);
@@ -139,6 +150,7 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnKeyDown(KeyDownEvent downEvent) {
+            children.forEach((child) -> child.OnKeyDown(downEvent));
             if (getDownSignalTick() == 1.0) downEvent.run();
             return this;
         }
@@ -152,6 +164,7 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnKeyDownAtTick(double atTick, KeyDownEvent downEvent) {
+            children.forEach((child) -> child.OnKeyDownAtTick(atTick, downEvent));
             if (getDownSignalTick() == atTick) downEvent.run();
             return this;
         }
@@ -163,6 +176,7 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnKeyUp(KeyUpEvent upEvent) {
+            children.forEach((child) -> child.OnKeyUp(upEvent));
             if (getUpSignalTick() == 1.0) upEvent.run();
             return this;
         }
@@ -176,6 +190,7 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnKeyLongPress(double length, KeyLongPressEvent longPressEvent) {
+            children.forEach((child) -> child.OnKeyLongPress(length, longPressEvent));
             if (fetchWatcher(longPressEvent).run(getDownSignalTick() >= length)) longPressEvent.run();
             return this;
         }
@@ -188,6 +203,7 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnKeyLongPress(KeyLongPressEvent longPressEvent) {
+            children.forEach((child) -> child.OnKeyLongPress(longPressEvent));
             return OnKeyLongPress(8, longPressEvent);
         }
 
@@ -199,6 +215,7 @@ public class KeyHooks {
          * @return 当前EVENT实例（链式调用）
          */
         public EVENT OnKeyDoublePress(KeyDoublePressEvent doublePressEvent) {
+            children.forEach((child) -> child.OnKeyDoublePress(doublePressEvent));
             _Watcher wt = fetchWatcher(doublePressEvent);
             OnKeyUp(()-> {
                 wt.lastTick = 7;//阈值
@@ -221,6 +238,7 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnKeyHover(KeyHoverEvent hoverEvent) {
+            children.forEach((child) -> child.OnKeyHover(hoverEvent));
             hoverEvent.run(getDownSignalTick());
             return this;
         }
@@ -234,6 +252,7 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnKeyHoverFromToDuration(double from, double to, KeyHoverEvent downEvent) {
+            children.forEach((child) -> child.OnKeyHoverFromToDuration(from, to, downEvent));
             double kt = getDownSignalTick();
             if (from < to && kt >= from && kt <= to) downEvent.run(kt - from);
             return this;
@@ -248,6 +267,7 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnKeyHoverAtDuration(double atTick, double duration, KeyHoverEvent downEvent) {
+            children.forEach((child) -> child.OnKeyHoverAtDuration(atTick, duration, downEvent));
             double kt = getDownSignalTick();
             if (kt >= atTick - (duration/2) && kt <= atTick + (duration/2)) downEvent.run(kt - (duration/2));
             return this;
@@ -260,7 +280,20 @@ public class KeyHooks {
          * @return {@link EVENT} 对象，用于链式调用
          */
         public EVENT OnKeyLeave(KeyLeaveEvent leaveEvent) {
+            children.forEach((child)-> child.OnKeyLeave(leaveEvent));
             leaveEvent.run(getUpSignalTick());
+            return this;
+        }
+
+
+        /**
+         * 连接一个事件体作为孩子事件体，让自己绑定的接口传递给所有孩子
+         * 用于让一个写好的功能应用在不同类型的触发条件，并且避免了重复的绑定代码
+         * @param child 孩子事件体
+         * @return {@link EVENT} 对象，用于链式调用
+         */
+        public EVENT addChild(EVENT child) {
+            children.add(child);
             return this;
         }
 
