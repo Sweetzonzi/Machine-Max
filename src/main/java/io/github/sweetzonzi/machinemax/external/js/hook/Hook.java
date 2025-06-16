@@ -4,7 +4,6 @@ import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.ScriptableSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.ScriptableSubsystem;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
-import io.github.sweetzonzi.machinemax.external.js.InputSignalProvider;
 import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import net.minecraft.client.Minecraft;
@@ -21,12 +20,12 @@ import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_RUNNER;
 import static io.github.sweetzonzi.machinemax.external.js.MMInitialJS.JS_SCOPE;
 
 public class Hook {
-    public static ConcurrentMap<String, Double> SIGNAL_MAP = new ConcurrentHashMap<>();
+    public static ConcurrentMap<String, Double> HOOK_SIGNAL_MAP = new ConcurrentHashMap<>();//会自增的信号
     public static HashMap<String, List<EventToJS>> LISTENING_EVENT = new HashMap<>();
     public static HashMap<String, String> CHANNEL_DOCUMENT = new HashMap<>();
 
     public static void clear() {
-        SIGNAL_MAP.clear();
+        HOOK_SIGNAL_MAP.clear();
         LISTENING_EVENT.clear();
     }
 

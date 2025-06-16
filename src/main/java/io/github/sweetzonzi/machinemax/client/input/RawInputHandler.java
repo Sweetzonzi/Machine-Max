@@ -76,11 +76,11 @@ public class RawInputHandler {
                 case GROUND -> {
                     if (KeyBinding.groundForwardKey.isDown()) trans_z_input += 100;
                     if (KeyBinding.groundBackWardKey.isDown()) trans_z_input -= 100;
-                    trans_z_input += Math.round((MMJoystickHandler.factoryGamePadAxisEvent(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
-                    trans_z_input -= Math.round((MMJoystickHandler.factoryGamePadAxisEvent(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
+                    trans_z_input += Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
+                    trans_z_input -= Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
                     if (KeyBinding.groundLeftwardKey.isDown()) rot_y_input += 100;
                     if (KeyBinding.groundRightwardKey.isDown()) rot_y_input -= 100;
-                    rot_y_input -= Math.round(MMJoystickHandler.factoryGamePadAxisEvent(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
+                    rot_y_input -= Math.round(MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
                 }
                 case SHIP -> {}
                 case PLANE -> {

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.external.js.InputSignalProvider;
 import io.github.sweetzonzi.machinemax.external.js.JSUtils;
+import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -11,10 +12,11 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 
-import static io.github.sweetzonzi.machinemax.external.js.hook.Hook.SIGNAL_MAP;
+import static io.github.sweetzonzi.machinemax.external.js.hook.Hook.HOOK_SIGNAL_MAP;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
 @OnlyIn(Dist.CLIENT)
@@ -38,13 +40,41 @@ public class KeyHooks {
 
     }
 
+    public static class GamePadSetting {
+        public enum GType {
+            Axis,
+            Button
+        }
+        public final int jid;
+        public final GType type;
+        public final int GLFW_ID;
+
+        public GamePadSetting(int jid, GType type, int GLFW_ID) {
+            this.jid = jid;
+            this.type = type;
+            this.GLFW_ID = GLFW_ID;
+        }
+
+        public String getKeyName () {
+            return "gamepad_"+jid+"."+type+"."+GLFW_ID;
+        }
+    }
+
     public static class EVENT {
         private final String keyName;
+        private KeyMapping mapping = null;
+        private GamePadSetting gamePadSetting = null;
+
         public EVENT(String keyName) {
             this.keyName = InputSignalProvider.key(keyName);
         }
         public EVENT(KeyMapping mapping) {
+            this.mapping = mapping;
             this.keyName = mapping.getKey().getName();
+        }
+        public EVENT(GamePadSetting gamePadSetting) {
+            this.gamePadSetting = gamePadSetting;
+            this.keyName = gamePadSetting.getKeyName();
         }
 
         private double getDownSignalTick() {
@@ -62,6 +92,18 @@ public class KeyHooks {
             String channel = JSUtils.getSimpleName(className) + ":" + methodName + ":" + rootEvent.hashCode();
             if (!cachedWatchers.containsKey(channel)) cachedWatchers.put(channel, new _Watcher());
             return cachedWatchers.get(channel);
+        }
+
+
+        /**
+         * 注册游戏手柄轴量、杆量的事件处理器
+         * @param axisEvent 返回 -100 到 100 的杆量，持续调用
+         * @return {@link EVENT} 对象，用于链式调用
+         */
+        public EVENT OnAxis(GamePadAxisEvent axisEvent) {
+            if (gamePadSetting instanceof GamePadSetting setting && GLFW.glfwJoystickPresent(setting.jid))
+                axisEvent.run(InputSignalProvider.getSignalTicks(keyName));
+            return this;
         }
 
 
@@ -226,6 +268,11 @@ public class KeyHooks {
         }
         private interface KeyEvent extends RootEvent{
         }
+        private interface GamePadEvent extends RootEvent{
+        }
+        public interface GamePadAxisEvent extends GamePadEvent{
+            void run(double status);
+        }
         private interface KeyOnceEvent extends KeyEvent { //返回一次的事件
             void run();
         }
@@ -258,25 +305,52 @@ public class KeyHooks {
         InputConstants.Key inputKey = InputConstants.getKey(event.getKey(), event.getScanCode());
         String keyName = inputKey.getName();
         double value = event.getAction();
-        if (!SIGNAL_MAP.containsKey(keyName)) SIGNAL_MAP.put(keyName, 0.0);
+        if (!HOOK_SIGNAL_MAP.containsKey(keyName)) HOOK_SIGNAL_MAP.put(keyName, 0.0);
         if (value == 0) {
-            SIGNAL_MAP.put(keyName, value);
-            SIGNAL_MAP.put(keyName+INVERSE_NAME, 1.0);
+            HOOK_SIGNAL_MAP.put(keyName, value);
+            HOOK_SIGNAL_MAP.put(keyName+INVERSE_NAME, 1.0);
         }
         if (value == 1) {
-            SIGNAL_MAP.put(keyName, value);
-            SIGNAL_MAP.put(keyName+INVERSE_NAME, 0.0);
+            HOOK_SIGNAL_MAP.put(keyName, value);
+            HOOK_SIGNAL_MAP.put(keyName+INVERSE_NAME, 0.0);
         }
 
     }
 
     @SubscribeEvent
     public static void runKeyHook(ClientTickEvent.Post event) {
-        for (String name : Hook.SIGNAL_MAP.keySet()) {
-            if (Hook.SIGNAL_MAP.get(name) instanceof Double d) {
-                if (d != 0) Hook.SIGNAL_MAP.put(name, d+1);
+        for (String name : HOOK_SIGNAL_MAP.keySet()) {
+            if (HOOK_SIGNAL_MAP.get(name) instanceof Double d) {
+                if (d != 0) HOOK_SIGNAL_MAP.put(name, d+1);
             }
 
+        }
+
+        MMJoystickHandler.refreshState();
+
+        for (int jid = 0; jid < MMJoystickHandler.buttonStates.length; jid++) {
+            if (MMJoystickHandler.buttonStates[jid] == null) continue;
+            for (int buttonId = 0; buttonId < MMJoystickHandler.buttonStates[jid].length; buttonId++) {
+                boolean status = MMJoystickHandler.isButtonPressed(jid, buttonId);
+                String keyName = new GamePadSetting(jid, GamePadSetting.GType.Button, buttonId).getKeyName();
+                String invKeyName = keyName + INVERSE_NAME;
+                if (! HOOK_SIGNAL_MAP.containsKey(keyName)) HOOK_SIGNAL_MAP.put(keyName, 0.0);
+                if (! HOOK_SIGNAL_MAP.containsKey(invKeyName)) HOOK_SIGNAL_MAP.put(invKeyName, 0.0);
+                HOOK_SIGNAL_MAP.put(keyName, status ? HOOK_SIGNAL_MAP.get(keyName) + 1.0 : 0.0);
+                HOOK_SIGNAL_MAP.put(invKeyName, status ? 0.0 : HOOK_SIGNAL_MAP.get(invKeyName) + 1.0);
+            }
+        }
+        for (int jid = 0; jid < MMJoystickHandler.axisStates.length; jid++) {
+            if (MMJoystickHandler.axisStates[jid] == null) continue;
+            for (int axisId = 0; axisId < MMJoystickHandler.axisStates[jid].length; axisId++) {
+                float status = MMJoystickHandler.getAxisState(jid, axisId);
+                String keyName = new GamePadSetting(jid, GamePadSetting.GType.Axis, axisId).getKeyName();
+                String invKeyName = keyName + INVERSE_NAME;
+                if (! HOOK_SIGNAL_MAP.containsKey(keyName)) HOOK_SIGNAL_MAP.put(keyName, 0.0);
+                if (! HOOK_SIGNAL_MAP.containsKey(invKeyName)) HOOK_SIGNAL_MAP.put(invKeyName, 0.0);
+                HOOK_SIGNAL_MAP.replace(keyName, Math.floor(status * 100));
+                HOOK_SIGNAL_MAP.replace(invKeyName, -Math.floor(status * 100));
+            }
         }
     }
 

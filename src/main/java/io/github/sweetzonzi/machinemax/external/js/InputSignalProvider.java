@@ -9,7 +9,7 @@ import org.lwjgl.glfw.GLFW;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.github.sweetzonzi.machinemax.external.js.hook.Hook.SIGNAL_MAP;
+import static io.github.sweetzonzi.machinemax.external.js.hook.Hook.HOOK_SIGNAL_MAP;
 
 public class InputSignalProvider {
     public static String key(String name) {
@@ -17,21 +17,22 @@ public class InputSignalProvider {
     }
 
     public static boolean getKeyStatus(String name) {
-        if (SIGNAL_MAP.get(InputSignalProvider.key(name)) instanceof Double d) {
+        if (HOOK_SIGNAL_MAP.get(InputSignalProvider.key(name)) instanceof Double d) {
 //            keyTick(name);
             return d != 0.0;
         }
         return false;
     }
     public static Double getSignalTicks(String signalName) {
-        if (SIGNAL_MAP.get(signalName) instanceof Double d) {
+        if (HOOK_SIGNAL_MAP.get(signalName) instanceof Double d) {
 //            keyTick(name);
             return d;
         }
         return 0.0;
     }
+
     public static Double getKeyDownTicks(String name) {
-        if (SIGNAL_MAP.get(InputSignalProvider.key(name)) instanceof Double d) {
+        if (HOOK_SIGNAL_MAP.get(InputSignalProvider.key(name)) instanceof Double d) {
 //            keyTick(name);
             return d;
         }
@@ -46,7 +47,7 @@ public class InputSignalProvider {
     }
 
     public static void signalTick(String name) { //信号获取后记录+1
-        if (Hook.SIGNAL_MAP.get(name) != 0) Hook.SIGNAL_MAP.put(name,Hook.SIGNAL_MAP.get(name) + 1);
+        if (Hook.HOOK_SIGNAL_MAP.get(name) != 0) Hook.HOOK_SIGNAL_MAP.put(name,Hook.HOOK_SIGNAL_MAP.get(name) + 1);
     }
 
     public static void gamepadInit() {
@@ -71,10 +72,10 @@ public class InputSignalProvider {
     }
 
     public static boolean gamepadButton(int id, int button) {
-        return MMJoystickHandler.factoryGamePadButtonEvent(id, button);
+        return MMJoystickHandler.isButtonPressed(id, button);
     }
     public static float gamepadAxis(int id, int axis) {
-        return MMJoystickHandler.factoryGamePadAxisEvent(id, axis);
+        return MMJoystickHandler.getAxisState(id, axis);
     }
 
     public static final int

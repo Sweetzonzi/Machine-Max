@@ -10,9 +10,9 @@ import java.nio.FloatBuffer;
 public class MMJoystickHandler {
 
     // 用于存储每个手柄的按钮状态
-    private static final boolean[][] buttonStates = new boolean[GLFW.GLFW_JOYSTICK_LAST][];
+    public static final boolean[][] buttonStates = new boolean[GLFW.GLFW_JOYSTICK_LAST][];
     // 用于存储每个手柄的摇杆（轴）状态
-    private static final float[][] axisStates = new float[GLFW.GLFW_JOYSTICK_LAST][];
+    public static final float[][] axisStates = new float[GLFW.GLFW_JOYSTICK_LAST][];
 
     /**
      * 初始化 GLFW 和设置手柄回调函数
@@ -129,14 +129,5 @@ public class MMJoystickHandler {
         return GLFW.glfwGetJoystickAxes(jid);
     }
 
-    public static boolean factoryGamePadButtonEvent(int joyID, int button) {
-        boolean joyButtonState = false;
-        joyButtonState = isButtonPressed(joyID, button);
-        return joyButtonState;
-    }
-    public static float factoryGamePadAxisEvent(int joyID, int axis) {
-        float joyAxisState = 0.0f;
-        joyAxisState = getAxisState(joyID, axis);
-        return joyAxisState;
-    }
+
 }
