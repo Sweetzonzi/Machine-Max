@@ -230,6 +230,27 @@ public class KeyHooks {
 
 
         /**
+         * 注册三连击事件处理器
+         * @param triplePressEvent 三连击事件处理逻辑
+         * @return 当前EVENT实例（链式调用）
+         */
+        public EVENT OnKeyTriplePress(KeyTriplePressEvent triplePressEvent) {
+            children.forEach((child) -> child.OnKeyTriplePress(triplePressEvent));
+            _Watcher wt = fetchWatcher(triplePressEvent);
+            int w = 12; //惰性阈值
+            if (getUpSignalTick() == 1.0) wt.lastTick += w;
+            if (wt.lastTick > 0) wt.lastTick -= 1;
+            if (getDownSignalTick() == 1.0) {
+                if (wt.run(wt.lastTick > w * 1.24)) { //防卫阈值
+                    triplePressEvent.run();
+                    wt.lastTick = 0;
+                }
+            }
+            return this;
+        }
+
+
+        /**
          * 注册连续长按基础事件处理器（返回完整按下时长tick）
          * @param hoverEvent 长按事件处理器（执行时传入当前完整的按下信号刻度值作为参数）
          * @return {@link EVENT} 对象，用于链式调用
@@ -321,6 +342,9 @@ public class KeyHooks {
 
         }
         public interface KeyDoublePressEvent extends KeyOnceEvent {
+
+        }
+        public interface KeyTriplePressEvent extends KeyOnceEvent {
 
         }
         public interface KeyHoverEvent extends KeyStreamEvent {
