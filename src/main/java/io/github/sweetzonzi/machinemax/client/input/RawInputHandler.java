@@ -141,7 +141,7 @@ public class RawInputHandler {
             //离开载具
             new KeyHooks.EVENT(KeyBinding.generalLeaveVehicleKey)
                     .OnKeyHover((tick -> {
-                        if (tick <= 10.0 && tick != 0.0) {
+                        if (tick <= 10.0) {
                             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), (int) tick));
                             if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() != null) client.player.displayClientMessage(
                                     Component.translatable("message.machine_max.leaving_vehicle",

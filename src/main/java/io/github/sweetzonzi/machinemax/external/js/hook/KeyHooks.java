@@ -217,16 +217,13 @@ public class KeyHooks {
         public EVENT OnKeyDoublePress(KeyDoublePressEvent doublePressEvent) {
             children.forEach((child) -> child.OnKeyDoublePress(doublePressEvent));
             _Watcher wt = fetchWatcher(doublePressEvent);
-            OnKeyUp(()-> {
-                wt.lastTick = 7;//阈值
-            });
+            if (getUpSignalTick() == 1.0) wt.lastTick = 7;//阈值
             if (wt.lastTick > 0) wt.lastTick--;
-            OnKeyDown(()->{
+            if (getDownSignalTick() == 1.0)
                 if (wt.run(wt.lastTick > 0)) {
                     doublePressEvent.run();
                     wt.lastTick = 0;
                 }
-            });
 
             return this;
         }
@@ -239,7 +236,8 @@ public class KeyHooks {
          */
         public EVENT OnKeyHover(KeyHoverEvent hoverEvent) {
             children.forEach((child) -> child.OnKeyHover(hoverEvent));
-            hoverEvent.run(getDownSignalTick());
+            if (getDownSignalTick() > 0)
+                hoverEvent.run(getDownSignalTick() - 1);
             return this;
         }
 
