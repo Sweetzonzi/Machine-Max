@@ -1,25 +1,19 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
-import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machinemax.common.vehicle.HitBox;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalSender;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
-import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +23,7 @@ import java.util.concurrent.ConcurrentMap;
 abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender {
 
     public final String name;
-    public final AbstractSubsystemAttr subSystemAttr;
+    public final AbstractSubsystemAttr attr;
     public final ISubsystemHost owner;
 
     public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//信号频道名->接收者名称->接收者
@@ -46,7 +40,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     protected AbstractSubsystem(ISubsystemHost owner, String name, AbstractSubsystemAttr attr) {
         this.owner = owner;
-        this.subSystemAttr = attr;
+        this.attr = attr;
         this.name = name;
         this.durability = attr.basicDurability;
         if (this instanceof ISignalSender signalSender) {
@@ -59,7 +53,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         if (!this.isDestroyed() && this.durability <= 0) {
             //摧毁耐久度归零的子系统
             this.onDestroyed();
-        } else if (this.isDestroyed() && !getPart().isDestroyed() && this.durability >= 0.3 * subSystemAttr.basicDurability) {
+        } else if (this.isDestroyed() && !getPart().isDestroyed() && this.durability >= 0.3 * attr.basicDurability) {
             //重新激活修复到一定程度的子系统
             this.destroyed = false;
             this.setActive(true);
@@ -86,7 +80,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
             Vector3f normal,
             Vector3f contactPoint,
             float impartAngle,
-            long hitChildShapeNativeId,
+            HitBox hitBox,
             long manifoldPointId) {
     }
 
@@ -97,8 +91,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
             Vector3f normal,
             Vector3f contactPoint,
             float impartAngle,
-            long childShapeNativeId,
-            long otherChildShapeNativeId,
+            HitBox hitBox,
+            HitBox otherHitBox,
             long manifoldPointId
     ) {
     }
@@ -110,7 +104,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
             Vector3f normal,
             Vector3f contactPoint,
             float impartAngle,
-            long hitChildShapeNativeId,
+            HitBox hitBox,
             long manifoldPointId
     ) {
     }

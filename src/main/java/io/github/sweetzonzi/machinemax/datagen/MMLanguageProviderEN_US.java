@@ -37,6 +37,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         //Custom pack exception handle
         this.add("error.machine_max.load", "An error occurred when loading external pack file at: %1$s, Reason: ");
         this.add("error.machine_max.invalid_resource_location", "Invalid resource location. Only lowercase letters, numbers, hyphens and underscores are allowed.");
+        this.add("error.machine_max.subpart.zero_mass", "Sub-part mass must be greater than zero");
+        this.add("error.machinemax.part.subsystem_hitbox_not_found", "Failed to find hit-box %3$s for subsystem %2$s in part %1$s");
         this.add("error.machine_max.seat_subsystem.no_locator", "Seat subsystem requires a locator (e.g. \"locator\": \"seat_locator\") to define sitting position");
         this.add("error.machine_max.seat_subsystem.no_view", "Seat subsystem must either allow first person view or third person view");
 

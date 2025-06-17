@@ -22,7 +22,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
     @Override
     public ResourceLocation getTextureLocation(@NotNull MMPartEntity entity) {
         if (entity.part != null) return entity.part.modelIndex.getTextureLocation();
-        else return null;
+        else return ResourceLocation.withDefaultNamespace("missingno");
     }
 
     @Override
@@ -30,6 +30,8 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         if (entity.part == null || entity.part.rootSubPart == null || entity.part.modelIndex == null) return;
         var worldMatrix = entity.part.getWorldPositionMatrix(partialTick);
         Color color = entity.part.isDestroyed() ? new Color(32, 32, 32, 255) : Color.WHITE;
+        int overlay = OverlayTexture.NO_OVERLAY;
+        if (entity.part.hurtMarked) overlay = OverlayTexture.pack(10, 10);
         poseStack.pushPose();//开始渲染
         ModelRenderHelperKt.render(
                 entity.part.getModel(),
@@ -38,7 +40,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 poseStack.last().normal(),
                 bufferSource.getBuffer(getRenderType(entity)),
                 packedLight,
-                OverlayTexture.NO_OVERLAY,
+                overlay,
                 color.getRGB(),
                 partialTick,
                 false);

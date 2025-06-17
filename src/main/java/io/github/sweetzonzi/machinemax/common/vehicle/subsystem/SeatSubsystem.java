@@ -11,7 +11,6 @@ import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.SeatSubsyst
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.util.data.KeyInputMapping;
 import lombok.Getter;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -36,7 +35,7 @@ public class SeatSubsystem extends AbstractSubsystem {
 
     @Override
     public void onAttach() {
-        SeatSubsystemAttr attr = (SeatSubsystemAttr) subSystemAttr;
+        SeatSubsystemAttr attr = (SeatSubsystemAttr) this.attr;
         if (owner.getPart() != null) {
             seatLocator = owner.getPart().allConnectors.get(attr.connector);
             if (seatLocator == null)

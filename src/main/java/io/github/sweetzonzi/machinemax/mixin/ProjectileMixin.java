@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machinemax.mixin;
 
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machinemax.common.vehicle.HitBox;
 import io.github.sweetzonzi.machinemax.common.vehicle.SubPart;
 import io.github.sweetzonzi.machinemax.mixin_interface.IProjectileMixin;
 import net.minecraft.world.entity.Entity;
@@ -15,7 +16,7 @@ import org.spongepowered.asm.mixin.Unique;
 @Mixin(Projectile.class)
 abstract public class ProjectileMixin extends Entity implements IProjectileMixin {
     @Unique
-    private long machine_Max$hitBoxId = -1;
+    private HitBox machine_Max$hitBox = null;
     @Unique
     private Vector3f machine_Max$normal = null;
     @Unique
@@ -35,12 +36,12 @@ abstract public class ProjectileMixin extends Entity implements IProjectileMixin
         onHit(hitResult);
     }
 
-    public long machine_Max$getHitBoxId() {
-        return machine_Max$hitBoxId;
+    public HitBox machine_Max$getHitBox() {
+        return machine_Max$hitBox;
     }
 
-    public void machine_Max$setHitBoxId(long index) {
-        machine_Max$hitBoxId = index;
+    public void machine_Max$setHitBox(HitBox hitBox) {
+        machine_Max$hitBox = hitBox;
     }
 
     public Vector3f machine_Max$getHitPoint() {

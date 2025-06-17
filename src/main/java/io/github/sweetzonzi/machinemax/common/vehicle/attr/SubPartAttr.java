@@ -17,6 +17,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import lombok.Getter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -50,6 +51,7 @@ public class SubPartAttr {
     public final ConcurrentMap<String, CompoundCollisionShape> hitBoxShape = new ConcurrentHashMap<>();//不同变体零件模型的碰撞体积
     public final ConcurrentMap<String, CompoundCollisionShape> interactBoxShape = new ConcurrentHashMap<>();//不同变体零件模型的交互体积
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();//碰撞体子形状id对应的交互判定区名称
+    public final ConcurrentMap<Long, String> hitBoxNames = new ConcurrentHashMap<>();//碰撞体子形状id对应的碰撞判定区名称
     public final Map<String, Transform> massCenterTransforms = new HashMap<>();
 
     public enum BlockCollisionType {
@@ -99,6 +101,7 @@ public class SubPartAttr {
             DragAttr aeroDynamic
     ) {
         this.parent = parent;
+        if (mass <= 0) throw new IllegalArgumentException("error.machine_max.subpart.zero_mass");
         this.mass = mass;
         this.projectedArea = projectedArea;
         this.massCenterLocator = massCenterLocator;
@@ -149,10 +152,7 @@ public class SubPartAttr {
                                 BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
                                 org.joml.Vector3f rotation = cube.getRotation().toVector3f();
                                 Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
-                                type.hitBoxes.put(boxShape.nativeId(), hitBoxName);
-                                type.thickness.put(boxShape.nativeId(), rha);
-                                type.damageReduction.put(boxShape.nativeId(), damageReduction);
-                                type.damageMultiplier.put(boxShape.nativeId(), damageMultiplier);
+                                hitBoxNames.put(boxShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         boxShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
@@ -162,10 +162,7 @@ public class SubPartAttr {
                         case "sphere"://取方块的x轴尺寸作为球直径
                             for (OCube cube : bone.getCubes()) {
                                 SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().x / 2));
-                                type.hitBoxes.put(ballShape.nativeId(), hitBoxName);
-                                type.thickness.put(ballShape.nativeId(), rha);
-                                type.damageReduction.put(ballShape.nativeId(), damageReduction);
-                                type.damageMultiplier.put(ballShape.nativeId(), damageMultiplier);
+                                hitBoxNames.put(ballShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         ballShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())));
@@ -177,10 +174,7 @@ public class SubPartAttr {
                                 org.joml.Vector3f rotation = cube.getRotation().toVector3f();
                                 Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                                 CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size, 0);
-                                type.hitBoxes.put(cylinderShape.nativeId(), hitBoxName);
-                                type.thickness.put(cylinderShape.nativeId(), rha);
-                                type.damageReduction.put(cylinderShape.nativeId(), damageReduction);
-                                type.damageMultiplier.put(cylinderShape.nativeId(), damageMultiplier);
+                                hitBoxNames.put(cylinderShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         cylinderShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),

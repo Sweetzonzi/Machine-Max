@@ -191,9 +191,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         float impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(contactVel.normalize())));
         if (Float.isNaN(impactAngle)) impactAngle = 0; // 处理NaN情况
         //获取参与碰撞的子系统
-        childShapeId = collisionShape.findChild(hitBoxIndex).getShape().nativeId();
-        String hitBoxName = part.type.hitBoxes.get(childShapeId);
-        var subsystems = part.subsystemHitBoxes.get(hitBoxName);
+        HitBox hitBox = this.getHitBox(hitBoxIndex);
+        var subsystems = hitBox.getSubsystems().values();
         //与方块碰撞时
         if (other.getCollisionGroup() == VehicleManager.COLLISION_GROUP_BLOCK) {
             //忽略即将过期方块的碰撞
@@ -247,7 +246,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             //调用子系统碰撞回调
             for (AbstractSubsystem subsystem : subsystems) {
                 subsystem.onCollideWithBlock(
-                        this.body, other, blockPos, blockState, contactVel, normal, worldContactPoint, impactAngle, childShapeId, manifoldPointId
+                        this.body, other, blockPos, blockState, contactVel, normal, worldContactPoint, impactAngle, hitBox, manifoldPointId
                 );
                 if (other.userIndex() <= 0) {
                     other.setContactResponse(false);
@@ -260,7 +259,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             if (attr.blockDamageFactor > 0 && blockState.getDestroySpeed(part.level, blockPos) >= 0) {
                 //计算碰撞法线方向上的速度(考虑冲量影响)
                 float blockArmor = ArmorUtil.getBlockArmor(part.level, blockState, blockPos);
-                float subPartArmor = part.type.thickness.get(childShapeId);
+                float subPartArmor = hitBox.getRHA();
                 double contactNormalSpeed = Math.abs(contactVel.dot(normal)) + ManifoldPoints.getAppliedImpulse(manifoldPointId) / body.getMass();
                 float restitution = Math.clamp(body.getRestitution() * other.getRestitution(), 0f, 1f);//TODO:考虑二者护甲差距调整此系数，决定相加还是相乘
                 ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
@@ -336,11 +335,11 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         } else if (other.getCollisionGroup() == VehicleManager.COLLISION_GROUP_PART) {
             if (other.getOwner() instanceof SubPart otherSubPart) {
                 //与零件碰撞时
-                otherChildShapeId = otherSubPart.collisionShape.findChild(otherHitBoxIndex).getShape().nativeId();
+                HitBox otherHitBox = otherSubPart.getHitBox(otherHitBoxIndex);
                 //调用子系统碰撞回调
                 for (AbstractSubsystem subsystem : subsystems) {
                     subsystem.onCollideWithPart(
-                            this.body, other, contactVel, normal, worldContactPoint, impactAngle, childShapeId, otherChildShapeId, manifoldPointId
+                            this.body, other, contactVel, normal, worldContactPoint, impactAngle, hitBox, otherHitBox, manifoldPointId
                     );
                 }
             } else if (other.getOwner() instanceof Entity entity) {
@@ -348,7 +347,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 //调用子系统碰撞回调
                 for (AbstractSubsystem subsystem : subsystems) {
                     subsystem.onCollideWithEntity(
-                            this.body, other, contactVel, normal, worldContactPoint, impactAngle, childShapeId, manifoldPointId
+                            this.body, other, contactVel, normal, worldContactPoint, impactAngle, hitBox, manifoldPointId
                     );
                 }
                 switch (entity) {
@@ -365,7 +364,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                                     if (!EventHooks.onProjectileImpact(projectile, hitResult)) {//若命中事件未被取消
                                         mixinProjectile.machine_Max$setHitPoint(start.add(end.subtract(start).mult(result.getHitFraction())));
                                         mixinProjectile.machine_Max$setHitNormal(result.getHitNormalLocal(null));
-                                        mixinProjectile.machine_Max$setHitBoxId(childShapeId);
+                                        mixinProjectile.machine_Max$setHitBox(hitBox);
                                         mixinProjectile.machine_Max$setHitSubPart(this);
                                         ((TaskSubmitOffice) part.level).submitDeduplicatedTask(projectile.getStringUUID(), PPhase.POST, () -> {
                                             ((IProjectileMixin) projectile).machine_Max$manualProjectileHit(hitResult);
@@ -601,6 +600,16 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     }
 
     public void mcTick(@NotNull PhysicsCollisionObject pco, @NotNull Level level) {
+    }
+
+    @NotNull
+    public HitBox getHitBox(int contactPointIndex) {
+        return getHitBox(this.collisionShape.findChild(contactPointIndex).getShape().nativeId());
+    }
+
+    @NotNull
+    public HitBox getHitBox(long childShapeId) {
+        return part.hitBoxes.get(attr.getHitBoxNames().get(childShapeId));
     }
 
     public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implements PhysicsHost, PhysicsCollisionObjectTicker {

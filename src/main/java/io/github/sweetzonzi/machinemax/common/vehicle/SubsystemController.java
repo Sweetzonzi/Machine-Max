@@ -24,7 +24,6 @@ public class SubsystemController implements ISignalReceiver {
     }
 
     public void tick() {
-//        Hook.run(this);
         for (AbstractSubsystem subsystem : allSubsystems) {
             if (subsystem != null) {
                 subsystem.onTick();
@@ -33,7 +32,6 @@ public class SubsystemController implements ISignalReceiver {
     }
 
     public void prePhysicsTick() {
-//        Hook.run(this);
         for (AbstractSubsystem subsystem : allSubsystems) {
             if (subsystem != null) {
                 subsystem.onPrePhysicsTick();
@@ -42,7 +40,6 @@ public class SubsystemController implements ISignalReceiver {
     }
 
     public void postPhysicsTick() {
-//        Hook.run(this);
         for (AbstractSubsystem subsystem : allSubsystems) {
             if (subsystem != null) {
                 subsystem.onPostPhysicsTick();

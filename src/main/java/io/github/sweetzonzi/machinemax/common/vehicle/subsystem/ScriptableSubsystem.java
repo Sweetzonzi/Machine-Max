@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
-import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machinemax.common.vehicle.HitBox;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
@@ -36,11 +36,11 @@ public class ScriptableSubsystem extends AbstractSubsystem{
     }
 
     @Override
-    public AbstractSubsystemAttr getSubSystemAttr() {
+    public AbstractSubsystemAttr getAttr() {
         if (Hook.run(this) instanceof AbstractSubsystemAttr attr) {
             return attr;
         }
-        return super.getSubSystemAttr();
+        return super.getAttr();
     }
 
     @Override
@@ -142,21 +142,21 @@ public class ScriptableSubsystem extends AbstractSubsystem{
     }
 
     @Override
-    public void onCollideWithBlock(PhysicsRigidBody subPartBody, PhysicsRigidBody blockBody, BlockPos blockPos, BlockState blockState, Vector3f relativeVelocity, Vector3f normal, Vector3f contactPoint, float impartAngle, long hitChildShapeNativeId, long manifoldPointId) {
-        Hook.run(this, subPartBody, blockBody, blockPos, blockState, relativeVelocity, normal, contactPoint, impartAngle, hitChildShapeNativeId, manifoldPointId);
-        super.onCollideWithBlock(subPartBody, blockBody, blockPos, blockState, relativeVelocity, normal, contactPoint, impartAngle, hitChildShapeNativeId, manifoldPointId);
+    public void onCollideWithBlock(PhysicsRigidBody subPartBody, PhysicsRigidBody blockBody, BlockPos blockPos, BlockState blockState, Vector3f relativeVelocity, Vector3f normal, Vector3f contactPoint, float impartAngle, HitBox hitBox, long manifoldPointId) {
+        Hook.run(this, subPartBody, blockBody, blockPos, blockState, relativeVelocity, normal, contactPoint, impartAngle, hitBox, manifoldPointId);
+        super.onCollideWithBlock(subPartBody, blockBody, blockPos, blockState, relativeVelocity, normal, contactPoint, impartAngle, hitBox, manifoldPointId);
     }
 
     @Override
-    public void onCollideWithPart(PhysicsRigidBody subPartBody, PhysicsRigidBody otherSubPartBody, Vector3f relativeVelocity, Vector3f normal, Vector3f contactPoint, float impartAngle, long childShapeNativeId, long otherChildShapeNativeId, long manifoldPointId) {
-        Hook.run(this, subPartBody, otherSubPartBody, relativeVelocity, normal, contactPoint, impartAngle, childShapeNativeId, otherChildShapeNativeId, manifoldPointId);
-        super.onCollideWithPart(subPartBody, otherSubPartBody, relativeVelocity, normal, contactPoint, impartAngle, childShapeNativeId, otherChildShapeNativeId, manifoldPointId);
+    public void onCollideWithEntity(PhysicsRigidBody subPartBody, PhysicsRigidBody entityBody, Vector3f relativeVelocity, Vector3f normal, Vector3f contactPoint, float impartAngle, HitBox hitBox, long manifoldPointId) {
+        Hook.run(this, subPartBody, entityBody, relativeVelocity, normal, contactPoint, impartAngle, hitBox, manifoldPointId);
+        super.onCollideWithEntity(subPartBody, entityBody, relativeVelocity, normal, contactPoint, impartAngle, hitBox, manifoldPointId);
     }
 
     @Override
-    public void onCollideWithEntity(PhysicsRigidBody subPartBody, PhysicsRigidBody entityBody, Vector3f relativeVelocity, Vector3f normal, Vector3f contactPoint, float impartAngle, long hitChildShapeNativeId, long manifoldPointId) {
-        Hook.run(this, subPartBody, entityBody, relativeVelocity, normal, contactPoint, impartAngle, hitChildShapeNativeId, manifoldPointId);
-        super.onCollideWithEntity(subPartBody, entityBody, relativeVelocity, normal, contactPoint, impartAngle, hitChildShapeNativeId, manifoldPointId);
+    public void onCollideWithPart(PhysicsRigidBody subPartBody, PhysicsRigidBody otherSubPartBody, Vector3f relativeVelocity, Vector3f normal, Vector3f contactPoint, float impartAngle, HitBox hitBox, HitBox otherHitBox, long manifoldPointId) {
+        Hook.run(this, subPartBody, otherSubPartBody, relativeVelocity, normal, contactPoint, impartAngle, hitBox, otherHitBox, manifoldPointId);
+        super.onCollideWithPart(subPartBody, otherSubPartBody, relativeVelocity, normal, contactPoint, impartAngle, hitBox, otherHitBox, manifoldPointId);
     }
 
     @Override
