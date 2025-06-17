@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.external.js.InputSignalProvider;
 import io.github.sweetzonzi.machinemax.external.js.JSUtils;
 import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
+import lombok.Getter;
 import net.minecraft.client.KeyMapping;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -25,12 +26,22 @@ import static io.github.sweetzonzi.machinemax.external.js.hook.Hook.HOOK_SIGNAL_
 public class KeyHooks {
     public final static String INVERSE_NAME = "_inv";
     private static final HashMap<String, _Watcher> cachedWatchers = new HashMap<>(); // 按频道分配的所有观察器
-    public static boolean WITH_LEFT_CTRL() {return new EVENT("left.control").isHover();}
-    public static boolean WITH_RIGHT_CTRL() {return new EVENT("right.control").isHover();}
-    public static boolean WITH_LEFT_SHIFT() {return new EVENT("left.shift").isHover();}
-    public static boolean WITH_RIGHT_SHIFT() {return new EVENT("right.shift").isHover();}
-    public static boolean WITH_LEFT_ALT() {return new EVENT("left.alt").isHover();}
-    public static boolean WITH_RIGHT_ALT() {return new EVENT("right.alt").isHover();}
+
+    @Getter
+    public enum Combination{
+        LEFT_CTRL(new EVENT("left.control")),
+        RIGHT_CTRL(new EVENT("right.control")),
+        LEFT_SHIFT(new EVENT("left.shift")),
+        RIGHT_SHIFT(new EVENT("right.shift")),
+        LEFT_ALT(new EVENT("left.alt")),
+        RIGHT_ALT(new EVENT("right.alt")),
+        ;
+        private final EVENT event;
+        Combination(EVENT s) {
+            event = s;
+        }
+    }
+
     private static class _Watcher { //bool观察器，当面对输入连续的true时只返回一次true信号。除非输入被重置否则后续均返回false
         private boolean dead = false;
         public double lastTick = 0.0;
@@ -71,7 +82,8 @@ public class KeyHooks {
         private final String keyName;
         private KeyMapping mapping = null;
         private GamePadSetting gamePadSetting = null;
-        private List<EVENT> children = new ArrayList<>();
+        private final List<EVENT> children = new ArrayList<>();
+        private final List<Combination> combinationKeys = new ArrayList<>();
 
         public EVENT(String keyName) {
             this.keyName = InputSignalProvider.key(keyName);
@@ -94,6 +106,8 @@ public class KeyHooks {
         private double getUpSignalTick() {
             return InputSignalProvider.getSignalTicks(keyName+INVERSE_NAME);
         }
+
+
         /**
          * 为当前按键是否按下
          * @return {@link Boolean} 对象
@@ -101,6 +115,8 @@ public class KeyHooks {
         public boolean isHover() {
             return getDownSignalTick() > 0;
         }
+
+
         /**
          * 为当前按键是否抬起
          * @return {@link Boolean} 对象
@@ -109,6 +125,32 @@ public class KeyHooks {
             return getUpSignalTick() > 0;
         }
 
+
+        /**
+         * 按键类事件的放行过滤器
+         * @return {@link Boolean} 对象
+         */
+        private boolean isPassed () {
+            boolean pass = true;
+            for (Combination ck : combinationKeys) {
+                if (!ck.event.isHover()) { // 绑定的按键未按下
+                    pass = false; // 不予通过
+                }
+            }
+            if (pass) { //上方过滤器通过再交予该过滤器，节省性能
+                for (Combination value : Combination.values()) {
+                    if (
+                            !combinationKeys.isEmpty() && // 排除没有绑定任何组合键的情况
+                                    !combinationKeys.contains(value) && value.event.isHover()// 并且未绑定的部分被按下
+                    ) {
+                        pass = false; // 不予通过
+                    }
+
+                }
+            }
+
+            return pass;
+        }
 
         private _Watcher fetchWatcher(RootEvent rootEvent) { //通过调用的名称生成频道，自动分配bool观察器
             var currentThread = Thread.currentThread();
@@ -159,11 +201,13 @@ public class KeyHooks {
                     hoverEvent,
                     leaveEvent
             ));
-            OnKeyDown(downEvent);
-            OnKeyUp(upEvent);
-            OnKeyLongPress(keyLongPressEvent);
-            OnKeyHover(hoverEvent);
-            OnKeyLeave(leaveEvent);
+            if (isPassed()) {
+                OnKeyDown(downEvent);
+                OnKeyUp(upEvent);
+                OnKeyLongPress(keyLongPressEvent);
+                OnKeyHover(hoverEvent);
+                OnKeyLeave(leaveEvent);
+            }
             return this;
         }
 
@@ -174,7 +218,7 @@ public class KeyHooks {
          */
         public EVENT OnKeyDown(KeyDownEvent downEvent) {
             children.forEach((child) -> child.OnKeyDown(downEvent));
-            if (getDownSignalTick() == 1.0) downEvent.run();
+            if (isPassed() && getDownSignalTick() == 1.0) downEvent.run();
             return this;
         }
 
@@ -188,7 +232,7 @@ public class KeyHooks {
          */
         public EVENT OnKeyDownAtTick(double atTick, KeyDownEvent downEvent) {
             children.forEach((child) -> child.OnKeyDownAtTick(atTick, downEvent));
-            if (getDownSignalTick() == atTick) downEvent.run();
+            if (isPassed() && getDownSignalTick() == atTick) downEvent.run();
             return this;
         }
 
@@ -200,7 +244,7 @@ public class KeyHooks {
          */
         public EVENT OnKeyUp(KeyUpEvent upEvent) {
             children.forEach((child) -> child.OnKeyUp(upEvent));
-            if (getUpSignalTick() == 1.0) upEvent.run();
+            if (isPassed() && getUpSignalTick() == 1.0) upEvent.run();
             return this;
         }
 
@@ -214,7 +258,7 @@ public class KeyHooks {
          */
         public EVENT OnKeyLongPress(double length, KeyLongPressEvent longPressEvent) {
             children.forEach((child) -> child.OnKeyLongPress(length, longPressEvent));
-            if (fetchWatcher(longPressEvent).run(getDownSignalTick() >= length)) longPressEvent.run();
+            if (isPassed() && fetchWatcher(longPressEvent).run(getDownSignalTick() >= length)) longPressEvent.run();
             return this;
         }
 
@@ -244,8 +288,9 @@ public class KeyHooks {
             if (wt.lastTick > 0) wt.lastTick--;
             if (getDownSignalTick() == 1.0)
                 if (wt.run(wt.lastTick > 0)) {
-                    doublePressEvent.run();
                     wt.lastTick = 0;
+                    if (isPassed())
+                        doublePressEvent.run();
                 }
 
             return this;
@@ -260,13 +305,16 @@ public class KeyHooks {
         public EVENT OnKeyTriplePress(KeyTriplePressEvent triplePressEvent) {
             children.forEach((child) -> child.OnKeyTriplePress(triplePressEvent));
             _Watcher wt = fetchWatcher(triplePressEvent);
-            int w = 12; //惰性阈值
-            if (getUpSignalTick() == 1.0) wt.lastTick += w;
+            double Inertia = 12; //惰性阈值
+            double Defense  = 1.24; //防卫阈值
+            if (getUpSignalTick() == 1.0) wt.lastTick += Inertia;
             if (wt.lastTick > 0) wt.lastTick -= 1;
             if (getDownSignalTick() == 1.0) {
-                if (wt.run(wt.lastTick > w * 1.24)) { //防卫阈值
-                    triplePressEvent.run();
+                if (wt.run(wt.lastTick > Inertia * Defense)) {
                     wt.lastTick = 0;
+                    if (isPassed())
+                        triplePressEvent.run();
+
                 }
             }
             return this;
@@ -280,7 +328,7 @@ public class KeyHooks {
          */
         public EVENT OnKeyHover(KeyHoverEvent hoverEvent) {
             children.forEach((child) -> child.OnKeyHover(hoverEvent));
-            if (isHover())
+            if (isPassed() && isHover())
                 hoverEvent.run(getDownSignalTick() - 1);
             return this;
         }
@@ -296,7 +344,7 @@ public class KeyHooks {
         public EVENT OnKeyHoverFromToDuration(double from, double to, KeyHoverEvent downEvent) {
             children.forEach((child) -> child.OnKeyHoverFromToDuration(from, to, downEvent));
             double kt = getDownSignalTick();
-            if (from < to && kt >= from && kt <= to) downEvent.run(kt - from);
+            if (isPassed() && from < to && kt >= from && kt <= to) downEvent.run(kt - from);
             return this;
         }
 
@@ -311,7 +359,7 @@ public class KeyHooks {
         public EVENT OnKeyHoverAtDuration(double atTick, double duration, KeyHoverEvent downEvent) {
             children.forEach((child) -> child.OnKeyHoverAtDuration(atTick, duration, downEvent));
             double kt = getDownSignalTick();
-            if (kt >= atTick - (duration/2) && kt <= atTick + (duration/2)) downEvent.run(kt - (duration/2));
+            if (isPassed() && kt >= atTick - (duration/2) && kt <= atTick + (duration/2)) downEvent.run(kt - (duration/2));
             return this;
         }
 
@@ -323,7 +371,7 @@ public class KeyHooks {
          */
         public EVENT OnKeyLeave(KeyLeaveEvent leaveEvent) {
             children.forEach((child)-> child.OnKeyLeave(leaveEvent));
-            if (isLeave())
+            if (isPassed() && isLeave())
                 leaveEvent.run(getUpSignalTick() - 1);
             return this;
         }
@@ -337,6 +385,29 @@ public class KeyHooks {
          */
         public EVENT addChild(EVENT child) {
             children.add(child);
+            return this;
+        }
+
+
+        /**
+         * 添加一个组合键到 combinationKeys 集合，
+         * 当集合里所有组合键都被触发时，那些事件处理器才能触发
+         * @param combination 一个组合键
+         * @return {@link EVENT} 对象，用于链式调用
+         */
+        public EVENT with(Combination combination) {
+            combinationKeys.add(combination);
+            return this;
+        }
+
+        /**
+         * 清理所有的连接关系，包括了所有的子事件体和所有组合键均被清空
+         * 在它下面定义的事件恢复为初始状态
+         * @return {@link EVENT} 对象，用于链式调用刷新后的该键位
+         */
+        public EVENT flush() {
+            children.clear();
+            combinationKeys.clear();
             return this;
         }
 

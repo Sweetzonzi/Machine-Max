@@ -25,6 +25,8 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.UUID;
 
+import static io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks.Combination.*;
+
 /**
  * 按键逻辑与发包
  *
@@ -125,12 +127,25 @@ public class RawInputHandler {
     @SubscribeEvent
     public static void handleNormalInputs(ClientTickEvent.Post event) {
         if (client == null) client = Minecraft.getInstance();
+
+        // TODO: 策略组的事件体测试区
         new KeyHooks.EVENT("e")
+                .with(LEFT_CTRL)
                 .OnKeyTriplePress(()->{
-                    if (KeyHooks.WITH_LEFT_CTRL()) {
-                        System.out.println("弹射跳伞");
-                    }
-                });
+                    System.out.println("弹射跳伞");
+                })
+                .flush() //与上方的绑定断开
+                .with(LEFT_SHIFT)
+                .OnKeyTriplePress(()->{
+                    System.out.println("抛离武器挂架");
+                })
+                .flush() //与上方的绑定断开
+                .with(LEFT_CTRL)
+                .with(LEFT_SHIFT)
+                .OnKeyTriplePress(()->{
+                    System.out.println("同时按下组合键的E键三连击情况");
+                })
+        ;
         if (client.player != null ) {
 
         /*
