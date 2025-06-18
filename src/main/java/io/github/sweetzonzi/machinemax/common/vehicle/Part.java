@@ -231,7 +231,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           HitBox hitBox) {
         if (getEntity() != null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
         Vec3 sourcePos = source.getSourcePosition();
-        float armor = hitBox.getRHA();//TODO:部件被摧毁时的等效护甲衰减
+        float armor = hitBox.getRHA(this);
         float armorPenetration = 0;
         //击退处理与特殊逻辑
         if (projectileSource == null && sourcePos != null && !level.isClientSide) {//原版伤害处理

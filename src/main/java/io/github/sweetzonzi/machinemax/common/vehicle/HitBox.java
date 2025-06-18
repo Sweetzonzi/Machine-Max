@@ -28,8 +28,8 @@ public class HitBox {
         return attr.damageMultiplier();
     }
 
-    public float getRHA() {
-        return attr.RHA();
+    public float getRHA(Part part) {
+        return attr.RHA() * (part.destroyed? 0.5f : 1.0f);
     }
 
     public boolean hasAngleEffect() {

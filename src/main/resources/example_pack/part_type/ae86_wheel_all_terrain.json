@@ -31,8 +31,7 @@
           "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
           "type": "AttachPoint"//对接口类型，支持AttachPoint和Special
         }
-      },
-      "aero_dynamic": {}
+      }
     }
   }
 }

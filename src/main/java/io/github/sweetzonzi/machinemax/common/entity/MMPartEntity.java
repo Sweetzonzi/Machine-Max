@@ -155,7 +155,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                         HitBox hitBox = null;
                         float maxThickness = -1;
                         for (String hitBoxName : nearest.attr.hitBoxNames.values()) {
-                            if (part.hitBoxes.get(hitBoxName).getRHA() > maxThickness)
+                            if (part.hitBoxes.get(hitBoxName).getRHA(part) > maxThickness)
                                 hitBox = part.hitBoxes.get(hitBoxName);
                         }
                         return part.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBox);

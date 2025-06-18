@@ -18,14 +18,12 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -42,7 +40,8 @@ public class SubPartAttr {
     public final Map<String, HitBoxAttr> hitBoxes;
     public final Map<String, InteractBoxAttr> interactBoxes;
     public final Map<String, ConnectorAttr> connectors;
-    public final DragAttr aeroDynamic;
+    public final int hydroPriority;
+    public final Map<String, HydrodynamicAttr> hydrodynamics;
 
     public final ConcurrentMap<String, CompoundCollisionShape> hitBoxShape = new ConcurrentHashMap<>();//不同变体零件模型的碰撞体积
     public final ConcurrentMap<String, CompoundCollisionShape> interactBoxShape = new ConcurrentHashMap<>();//不同变体零件模型的交互体积
@@ -66,7 +65,8 @@ public class SubPartAttr {
             HitBoxAttr.MAP_CODEC.optionalFieldOf("hit_boxes", Map.of()).forGetter(SubPartAttr::getHitBoxes),
             InteractBoxAttr.MAP_CODEC.optionalFieldOf("interact_boxes", Map.of()).forGetter(SubPartAttr::getInteractBoxes),
             ConnectorAttr.MAP_CODEC.optionalFieldOf("connectors", Map.of()).forGetter(SubPartAttr::getConnectors),
-            DragAttr.CODEC.fieldOf("aero_dynamic").forGetter(SubPartAttr::getAeroDynamic)
+            Codec.INT.optionalFieldOf("hydro_priority", 0).forGetter(SubPartAttr::getHydroPriority),
+            HydrodynamicAttr.MAP_CODEC.optionalFieldOf("hydrodynamics", Map.of("", HydrodynamicAttr.DEFAULT)).forGetter(SubPartAttr::getHydrodynamics)
     ).apply(instance, SubPartAttr::new));
 
     public static final Codec<Map<String, SubPartAttr>> MAP_CODEC = Codec.unboundedMap(
@@ -85,7 +85,8 @@ public class SubPartAttr {
             Map<String, HitBoxAttr> hitBoxes,
             Map<String, InteractBoxAttr> interactBoxes,
             Map<String, ConnectorAttr> connectors,
-            DragAttr aeroDynamic
+            int hydroPriority,
+            Map<String, HydrodynamicAttr> hydrodynamics
     ) {
         this.parent = parent;
         if (mass <= 0) throw new IllegalArgumentException("error.machine_max.subpart.zero_mass");
@@ -99,7 +100,8 @@ public class SubPartAttr {
         this.hitBoxes = hitBoxes;
         this.interactBoxes = interactBoxes;
         this.connectors = connectors;
-        this.aeroDynamic = aeroDynamic;
+        this.hydroPriority = hydroPriority;
+        this.hydrodynamics = hydrodynamics;
     }
 
     /**
@@ -126,7 +128,11 @@ public class SubPartAttr {
                 String locatorName = connectorAttr.locatorName();
                 addLocator(variant, locatorName, locators);
             }
-            //TODO:从AeroDynamic中提取气动中心定位点
+            //将从流体动力属性中的定位器添加进定位器列表
+            for (Map.Entry<String, HydrodynamicAttr> hydrodynamicEntry : hydrodynamics.entrySet()){
+                String locatorName = hydrodynamicEntry.getKey();
+                addLocator(variant, locatorName, locators);
+            }
             for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {//若找到了对应的碰撞形状骨骼
                     String hitBoxName = hitBoxEntry.getValue().hitBoxName();
@@ -264,6 +270,7 @@ public class SubPartAttr {
     }
 
     private void addLocator(String variant, String locatorName, Map<String, OLocator> locators) {
+        if (locatorName.isEmpty()) return;//无名定位器不处理
         OLocator locator = locators.get(locatorName);
         org.joml.Vector3f rotation = locator.getRotation().toVector3f();
         Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
