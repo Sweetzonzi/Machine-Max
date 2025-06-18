@@ -85,7 +85,7 @@ public class Hook {
                     String packName = eventToJS.packName();
                     String location = eventToJS.location();
                     if (args[0] instanceof ScriptableSubsystem scriptableSubsystem) {
-                        String scriptPath = ((ScriptableSubsystemAttr) scriptableSubsystem.getSubSystemAttr()).script;
+                        String scriptPath = ((ScriptableSubsystemAttr) scriptableSubsystem.getAttr()).script;
                         if (!location.equals(scriptPath)) return null;
                     }
 
