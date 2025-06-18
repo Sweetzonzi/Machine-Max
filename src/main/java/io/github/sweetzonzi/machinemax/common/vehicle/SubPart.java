@@ -245,8 +245,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 ManifoldPoints.getLateralFrictionDir2(manifoldPointId, lateral2);
                 lateral1 = lateral1.normalize();
                 lateral2 = lateral2.normalize();
-                lateral1.multLocal((float) (-partMass / 50f * MMMath.sigmoid(Math.abs(lateral1.dot(contactVel)))));
-                lateral2.multLocal((float) (-partMass / 50f * MMMath.sigmoid(Math.abs(lateral2.dot(contactVel)))));
+                lateral1.multLocal((float) (partMass / 60f * MMMath.sigmoidSignum(Math.abs(lateral1.dot(contactVel)))));
+                lateral2.multLocal((float) (partMass / 60f * MMMath.sigmoidSignum(Math.abs(lateral2.dot(contactVel)))));
                 if (level.isClientSide && Math.random() < 0.01)
                     MachineMax.LOGGER.debug("lateral1:{}, lateral2:{}", lateral1, lateral2);
                 body.applyCentralImpulse(lateral1);
