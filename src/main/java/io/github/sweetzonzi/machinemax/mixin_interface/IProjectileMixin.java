@@ -1,15 +1,16 @@
 package io.github.sweetzonzi.machinemax.mixin_interface;
 
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machinemax.common.vehicle.HitBox;
 import io.github.sweetzonzi.machinemax.common.vehicle.SubPart;
 import net.minecraft.world.phys.HitResult;
 
 public interface IProjectileMixin {
     void machine_Max$manualProjectileHit(HitResult hitResult);
 
-    long machine_Max$getHitBoxId();
+    HitBox machine_Max$getHitBox();
 
-    void machine_Max$setHitBoxId(long index);
+    void machine_Max$setHitBox(HitBox hitBox);
 
     Vector3f machine_Max$getHitPoint();
 

@@ -23,10 +23,7 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.registry.MMEntities;
-import io.github.sweetzonzi.machinemax.common.vehicle.Part;
-import io.github.sweetzonzi.machinemax.common.vehicle.SubPart;
-import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machinemax.common.vehicle.*;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.mixin_interface.IProjectileMixin;
@@ -37,7 +34,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
@@ -114,10 +110,10 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
             if (hitSubPart != null) {//如果命中了部件
                 Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
                 Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
-                long hitBoxId = mixinProjectile.machine_Max$getHitBoxId();
+                HitBox hitBox = mixinProjectile.machine_Max$getHitBox();
                 return part.onHurt(source, amount, null, hitSubPart, normal,
                         PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
-                                .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBoxId);
+                                .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBox);
             } else return false;
         } else if (source.getSourcePosition() != null && source.getDirectEntity() instanceof Entity entity) {
             //来自其他实体的伤害处理
@@ -152,13 +148,13 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                         }
                     }
                     if (nearest != null) {
-                        long hitBoxId = -1;
+                        HitBox hitBox = null;
                         float maxThickness = -1;
-                        for (Map.Entry<Long, Float> entry : part.type.thickness.entrySet()) {
-                            if (entry.getValue() > maxThickness)
-                                hitBoxId = entry.getKey();
+                        for (String hitBoxName : nearest.attr.hitBoxNames.values()) {
+                            if (part.hitBoxes.get(hitBoxName).getRHA() > maxThickness)
+                                hitBox = part.hitBoxes.get(hitBoxName);
                         }
-                        return part.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBoxId);
+                        return part.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBox);
                     } else throw new IllegalStateException("No subpart found for explosion damage.");
                 } else {//一般伤害处理
                     var results = level.getWorld().rayTest(start, end);
@@ -168,8 +164,9 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
                             //TODO: new一个新的source存储攻击来袭方向
                             Vector3f normal = result.getHitNormalLocal(null);
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
+                            HitBox hitBox = subPart.getHitBox(result.triangleIndex());
                             //将伤害转发给部件进行操作
-                            return subPart.part.onHurt(source, amount, null, subPart, normal, end.subtract(start).normalize(), contactPoint, subPart.collisionShape.findChild(result.triangleIndex()).getShape().nativeId());
+                            return subPart.part.onHurt(source, amount, null, subPart, normal, end.subtract(start).normalize(), contactPoint, hitBox);
                         }
                     }
                 }

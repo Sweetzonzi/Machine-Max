@@ -37,6 +37,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         //内容包异常处理
         this.add("error.machine_max.load", "加载外部包文件: %1$s 时出错，原因: ");
         this.add("error.machine_max.invalid_resource_location", "文件资源路径非法，仅允许小写英文字母、数字、下划线和连字符");
+        this.add("error.machine_max.subpart.zero_mass", "零件质量必须大于零");
+        this.add("error.machinemax.part.subsystem_hitbox_not_found", "未能在部件%1$s中为子系统%2$s找到碰撞体积%3$s");
         this.add("error.machine_max.seat_subsystem.no_locator", "座椅子系统必须填写定位器名称(如\"locator\": \"seat_locator\")以指定乘客乘坐位置");
         this.add("error.machine_max.seat_subsystem.no_view", "座椅子系统必须允许乘客使用第一人称视角或第三人称视角之一");
         //组装异常处理

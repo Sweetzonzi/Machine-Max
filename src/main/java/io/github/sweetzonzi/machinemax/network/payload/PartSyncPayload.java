@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machinemax.network.payload;
 
+import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
@@ -10,6 +12,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,6 +58,11 @@ public record PartSyncPayload(
             Part part = vehicle.partMap.get(payload.partUUID);
             if (part != null) {
                 context.enqueueWork(() -> {
+                    if (part.durability > payload.durability) {
+                        //标记受伤
+                        part.hurtMarked = true;
+                        part.oHurtMarked = true;
+                    }
                     part.durability = payload.durability;
                     part.integrity = payload.integrity;
                 });

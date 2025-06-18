@@ -110,8 +110,12 @@
       "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
       "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
         "mmCollision_Box_Chassis": {//值:碰撞形状属性
+          "name": "chassis",//(可选，默认"part")碰撞箱名称，供子系统等查找
           "type": "box",//碰撞形状类型，支持box、sphere、cylinder
-          "rha": 10 //(可选，默认5)暂时无实际作用，计划影响护甲水平
+          "angle_effect": true,//(可选，默认true)等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度
+          "un_penetrate_damage": false,//(可选，默认false)攻击未能完全击穿护甲时是否仍然造成部分伤害
+          "un_penetrate_damage_factor": 1.0,//(可选，默认1.0)仅在un_penetrate_damage为true时生效，攻击未能完全击穿护甲时，伤害为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor
+          "rha": 10 //(可选，默认1)暂时无实际作用，计划影响护甲水平
         }
       },
       "connectors": {//子部件用于与其他零件连接的对接口列表

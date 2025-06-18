@@ -9,17 +9,23 @@ import java.util.Map;
 public record HitBoxAttr(
         String hitBoxName,
         String shapeType,
+        boolean angleEffect,
         float RHA,
         float damageReduction,
-        float damageMultiplier
+        float damageMultiplier,
+        boolean unPenetrateDamage,
+        float unPenetrateDamageFactor
 ) {
 
     public static final Codec<HitBoxAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.optionalFieldOf("hit_box", "part").forGetter(HitBoxAttr::hitBoxName),
+            Codec.STRING.optionalFieldOf("name", "part").forGetter(HitBoxAttr::hitBoxName),
             Codec.STRING.fieldOf("type").forGetter(HitBoxAttr::shapeType),
+            Codec.BOOL.optionalFieldOf("angle_effect", true).forGetter(HitBoxAttr::angleEffect),
             Codec.FLOAT.optionalFieldOf("rha", 1.0f).forGetter(HitBoxAttr::RHA),
             Codec.FLOAT.optionalFieldOf("damage_reduction", 0.0f).forGetter(HitBoxAttr::damageReduction),
-            Codec.FLOAT.optionalFieldOf("damage_multiplier", 1.0f).forGetter(HitBoxAttr::damageMultiplier)
+            Codec.FLOAT.optionalFieldOf("damage_multiplier", 1.0f).forGetter(HitBoxAttr::damageMultiplier),
+            Codec.BOOL.optionalFieldOf("un_penetrate_damage", false).forGetter(HitBoxAttr::unPenetrateDamage),
+            Codec.FLOAT.optionalFieldOf("un_penetrate_damage_factor", 1.0f).forGetter(HitBoxAttr::unPenetrateDamageFactor)
     ).apply(instance, HitBoxAttr::new));
 
     public static final Codec<Map<String, HitBoxAttr>> MAP_CODEC = Codec.unboundedMap(

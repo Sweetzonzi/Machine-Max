@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.AnimController;
-import cn.solarmoon.spark_core.animation.anim.play.Bone;
 import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
@@ -15,7 +14,6 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
-import cn.solarmoon.spark_core.util.Key;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Quaternion;
@@ -63,6 +61,8 @@ import java.util.concurrent.ConcurrentMap;
 public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver {
     //渲染属性 Renderer attributes
     public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
+    public volatile boolean hurtMarked = false;
+    public volatile boolean oHurtMarked = false;
     @Setter
     private BoneGroup bones;//用于储存部件的骨骼组
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
@@ -81,7 +81,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
     public final AnimController animController = new AnimController(this);
-    public final float totalMass;
+    public float totalMass;
     //Molang变量存储 Molang variable storage
     public ITempVariableStorage tempStorage = new VariableStorage();
     public IScopedVariableStorage scopedStorage = new VariableStorage();
@@ -90,8 +90,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public final Map<String, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<String, AbstractConnector> allConnectors = HashMap.newHashMap(1);
     public final Map<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
-    public final Map<String, Set<AbstractSubsystem>> subsystemHitBoxes = new HashMap<>();
-    public final Map<String, AbstractSubsystem> subsystemInteractBoxes = new HashMap<>();
+    public final ConcurrentHashMap<String, HitBox> hitBoxes = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
 
     /**
@@ -116,14 +115,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.uuid = UUID.randomUUID();
         this.durability = partType.basicDurability;
         this.integrity = partType.basicIntegrity;
-        float totalMass = 0;
-        for (SubPartAttr subPart : partType.subParts.values()) {
-            totalMass += subPart.mass;
-            for (HitBoxAttr hitBox : subPart.hitBoxes.values())
-                subsystemHitBoxes.put(hitBox.hitBoxName(), new HashSet<>());//用于容纳与特定判定区绑定的子系统
-        }
-        this.totalMass = totalMass;
         this.rootSubPart = createSubPart(type.subParts);//创建子部件并指定根子部件
+        updateMass();
     }
 
     /**
@@ -179,14 +172,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.uuid = UUID.fromString(data.uuid);
         this.durability = data.durability;
         this.integrity = data.integrity;
-        float totalMass = 0;
-        for (SubPartAttr subPart : type.subParts.values()) {
-            totalMass += subPart.mass;
-            for (HitBoxAttr hitBox : subPart.hitBoxes.values())
-                subsystemHitBoxes.put(hitBox.hitBoxName(), new HashSet<>());//用于容纳与特定判定区绑定的子系统
-        }
-        this.totalMass = totalMass;
         this.rootSubPart = createSubPart(type.subParts);//重建子部件并指定根子部件
+        updateMass();//更新部件总质量
         for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {//遍历保存的子部件位置、旋转、速度数据
             SubPart subPart = subParts.get(entry.getKey());//获取已重建的子部件
             if (subPart != null) {//设定子部件body的位置、旋转、速度
@@ -217,6 +204,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             durability = 0;
             onDestroyed();
         }
+        if (oHurtMarked) oHurtMarked = false;
+        else if (hurtMarked) hurtMarked = false;
     }
 
     public void onPrePhysicsTick() {
@@ -238,11 +227,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           Vector3f normal,
                           Vector3f worldContactSpeed,
                           Vector3f worldContactPoint,
-                          @Nullable Long hitChildShapeNativeId) {
+                          HitBox hitBox) {
         if (getEntity() != null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
         Vec3 sourcePos = source.getSourcePosition();
-        float armor = type.thickness.getOrDefault(hitChildShapeNativeId, 0.1f);
-        float armorPierce = 0;
+        float armor = hitBox.getRHA();
+        float armorPenetration = 0;
         //击退处理与特殊逻辑
         if (projectileSource == null && sourcePos != null && !level.isClientSide) {//原版伤害处理
             //冲击效果
@@ -259,37 +248,54 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 vehicle.syncCountDown = 0;//发生击退时立刻重新同步位置姿态速度
                 return null;
             });
-            //换算穿甲值
-            armorPierce = damage / 2f;
+            //换算穿深
+            armorPenetration = damage / 2f;
         } else if (projectileSource != null && sourcePos != null) {//甲弹对抗处理
-            //TODO:冲击击退效果在SubPart接触时处理
-            //获取穿甲值
+            //获取穿深
             try {
-                armorPierce = damage;
+                armorPenetration = damage;
                 //TODO:研究一下Key是怎么用的
-//                armorPierce = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
+//                armorPenetration = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
             } catch (Exception e) {
-                armorPierce = 0f;
+                armorPenetration = damage / 2f;
                 MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", subPart.part.name);
             }
         }
+//        if (source.getDirectEntity() != null && !level.isClientSide)
+//            MachineMax.LOGGER.debug("{} hit by {}, damage: {}, angle: {}", name, source.getDirectEntity().getDisplayName().getString(), damage, Math.acos(-normal.dot(worldContactSpeed.normalize())) * 180 / Math.PI);
         //线性减伤处理
-        float impactDamage = damage - type.damageReduction.getOrDefault(hitChildShapeNativeId, 0f);
+        float impactDamage = damage - hitBox.getDamageReduction();
         //TODO:削减结构完整性并视情况击落部件
-        armorPierce *= -normal.dot(worldContactSpeed.normalize());//考虑入射角影响
+        if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
         //甲弹对抗处理
-        if (armorPierce > armor) {
-            impactDamage *= type.getDamageMultiplier().getOrDefault(hitChildShapeNativeId, 1f);
+        if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
+            if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
+                impactDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
+            impactDamage *= hitBox.getDamageMultiplier();
             //TODO:对子系统造成伤害
             //对部件造成伤害
-            durability -= impactDamage;
-            //TODO:发包同步部件和子系统耐久度
-            if (!level.isClientSide)
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartSyncPayload(vehicle.uuid, uuid, durability, integrity));
+            float finalDamage = impactDamage;
+            level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+                //TODO:对子系统造成伤害
+                if (!level.isClientSide) durability -= finalDamage;
+                //TODO:对载具造成伤害
+                //TODO:模组伤害的冲击击退效果
+                return null;
+            });
+            level.getPhysicsLevel().submitDeduplicatedTask("part_sync_" + uuid.toString(), PPhase.PRE, () -> {
+                level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//去重后加入任务队列，确保造成伤害后再进行同步
+                    //包同步部件和子系统耐久度
+                    if (!level.isClientSide) {
+                        hurtMarked = true;
+                        PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartSyncPayload(vehicle.uuid, uuid, durability, integrity));
+                    }
+                    return null;
+                });
+                return null;
+            });
             return true;
         } else {
-            //未能击穿时
-            //TODO:取决于设置，造成部分伤害或完全无伤
+            //TODO:模组伤害的冲击击退效果
             return false;
         }
     }
@@ -313,11 +319,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             String name = entry.getKey();
             AbstractSubsystemAttr attr = entry.getValue();
             AbstractSubsystem subsystem = attr.createSubsystem(this, name);
-            subsystems.put(name, subsystem);
-            subsystemHitBoxes.computeIfPresent(attr.hitBox, (k, v) -> {
-                v.add(subsystem);
-                return v;
-            });
+            subsystems.put(name, subsystem);//部件内的子系统
         }
     }
 
@@ -374,7 +376,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 if (rootSubPart == null) rootSubPart = subPart;//记录第一个根零件
                 else MachineMax.LOGGER.error("仅允许存在一个根零件，请检查模型文件{}。", type);
             } else subPartMap.put(subPart, subPartEntry.getValue().parent);//记录子部件的父子关系
-            subPart.body.setMass(subPartEntry.getValue().mass > 0 ? subPartEntry.getValue().mass : 1);//设置质量
+            subPart.body.setMass(subPartEntry.getValue().mass > 0 ? subPartEntry.getValue().mass : 20);//设置质量
             subPart.body.setCcdSweptSphereRadius(subPart.collisionShape.maxRadius());//设置CCD半径
             //计算/设置零件三轴投影面积，用于阻力计算
             BoundingBox boundingBox = subPart.collisionShape.boundingBox(new Vector3f(), Quaternion.IDENTITY, null);
@@ -391,9 +393,21 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             subPart.projectedArea = new Vec3(xArea, yArea, zArea);
             //创建零件对接口
             createConnectors(subPart, subPartEntry.getValue(), locators);
+            for (HitBoxAttr hitBoxAttr : subPart.attr.hitBoxes.values()) {
+                hitBoxes.put(hitBoxAttr.hitBoxName(), new HitBox(subPart, hitBoxAttr));//创建命中碰撞区属性
+            }
         }
         //创建部件内子系统
         createSubsystems(type.subsystems);//创建子系统，赋予部件实际功能
+        for (Map.Entry<String, AbstractSubsystem> entry : subsystems.entrySet()) {
+            String name = entry.getKey();
+            AbstractSubsystem subsystem = entry.getValue();
+            HitBox hitBox = hitBoxes.get(subsystem.attr.hitBox);
+            if (hitBox != null) {
+                hitBox.getSubsystems().put(name, subsystem);//碰撞箱与子系统绑定
+            } else if (!subsystem.attr.hitBox.isEmpty())
+                MachineMax.LOGGER.warn(Component.translatable("error.machinemax.part.subsystem_hitbox_not_found", type.name, name, subsystem.attr.hitBox).getString());
+        }
         //设置零件的父子关系，连接内部关节
         for (Map.Entry<SubPart, String> entry : subPartMap.entrySet()) {
             SubPart subPart = entry.getKey();
@@ -441,6 +455,14 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         //同步客户端
         if (!level.isClientSide()) PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
                 new PartPaintPayload(vehicle.uuid, this.uuid, this.textureIndex));
+    }
+
+    public void updateMass() {
+        float totalMass = 0;
+        for (SubPartAttr subPart : type.subParts.values()) {
+            totalMass += subPart.mass;
+        }
+        this.totalMass = totalMass;
     }
 
     /**

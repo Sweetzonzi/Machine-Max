@@ -38,7 +38,7 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
 
     @Override
     public void onAttach() {
-        SeatSubsystemAttr attr = (SeatSubsystemAttr) subSystemAttr;
+        SeatSubsystemAttr attr = (SeatSubsystemAttr) this.attr;
         if (owner.getPart() != null) {
             seatLocator = owner.getPart().allConnectors.get(attr.connector);
             if (seatLocator == null)
