@@ -1657,7 +1657,10 @@
 							"rotation": [10, 0, 0],
 							"uv": {}
 						}
-					]
+					],
+					"locators": {
+						"EngineDamageSmoke": [0, 10, -31]
+					}
 				},
 				{
 					"name": "rot",

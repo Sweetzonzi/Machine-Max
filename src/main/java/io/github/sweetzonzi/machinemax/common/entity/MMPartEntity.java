@@ -20,6 +20,9 @@ import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Matrix3f;
+import com.jme3.math.Matrix4f;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.registry.MMEntities;
@@ -28,6 +31,7 @@ import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.mixin_interface.IProjectileMixin;
 import io.github.sweetzonzi.machinemax.util.MMMath;
+import jme3utilities.math.MyMath;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -204,9 +208,12 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
-        if (entity instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat)
-            return SparkMathKt.toVec3(MMMath.localVectorToWorldVector(seat.seatLocator.subPartTransform.getTranslation(), seat.seatLocator.subPart.body));
-        else return new Vec3(0, 0, 0);
+        if (entity instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+            Vector3f rawRelPos = seat.getSeatPointLocalTransform().getTranslation();
+            Matrix3f pose = seat.getSeatPointWorldTransform().getRotation().toRotationMatrix();
+            Vector3f relPos = pose.mult(rawRelPos, null);
+            return SparkMathKt.toVec3(relPos);
+        } else return new Vec3(0, 0, 0);
     }
 
     @Override

@@ -12,8 +12,7 @@
   "subsystems": {
     "left_seat": {
       "type": "machine_max:seat",
-      "sub_part": "ae86_back_seat",
-      "connector": "left_seat_point",
+      "seat_point_locator": "LeftSeatPoint",//乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
       "render_passenger": true, //(可选,默认true)是否渲染乘客
       "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
       "allow_first_person_view": true, //(可选,默认true)是否允许第一人称视角
@@ -22,8 +21,7 @@
     },
     "right_seat": {
       "type": "machine_max:seat",
-      "sub_part": "ae86_back_seat",
-      "connector": "right_seat_point",
+      "seat_point_locator": "RightSeatPoint",//乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
       "render_passenger": true, //(可选,默认true)是否渲染乘客
       "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
       "allow_first_person_view": true, //(可选,默认true)是否允许第一人称视角
@@ -64,18 +62,6 @@
           "type": "AttachPoint",//对接口类型，支持AttachPoint和Special
           "variant": [],//对接口可连接的部件变体类型，留空以接受所有类型的变体(例如轮胎的左右轮变体)
           "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
-        },
-        "left_seat_point": {//接口名称
-          "locator": "LeftSeatPoint",
-          "type": "AttachPoint",
-          "variant": ["LivingEntity"],
-          "breakable": false
-        },
-        "right_seat_point": {
-          "locator": "RightSeatPoint",
-          "type": "AttachPoint",
-          "variant": ["LivingEntity"],
-          "breakable": false
         }
       },
       "aero_dynamic": { //空气阻力属性

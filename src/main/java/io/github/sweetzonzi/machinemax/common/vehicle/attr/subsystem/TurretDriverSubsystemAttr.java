@@ -17,7 +17,7 @@ public class TurretDriverSubsystemAttr extends AbstractSubsystemAttr {
     public static final MapCodec<TurretDriverSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
-            Codec.STRING.fieldOf("connector").forGetter(TurretDriverSubsystemAttr::getControlledConnector),
+            Codec.STRING.fieldOf("locator").forGetter(TurretDriverSubsystemAttr::getControlledConnector),
             MotorAttr.CODEC.fieldOf("roll").forGetter(TurretDriverSubsystemAttr::getPitchAxis),
             MotorAttr.CODEC.fieldOf("steering").forGetter(TurretDriverSubsystemAttr::getYawAxis)
     ).apply(instance, TurretDriverSubsystemAttr::new

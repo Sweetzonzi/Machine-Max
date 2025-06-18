@@ -15,8 +15,7 @@
 					"name": "root",
 					"pivot": [0, 0, 0],
 					"locators": {
-						"AttachPoint": [0, 0, 0],
-						"SeatPoint": [0, -5, -1]
+						"AttachPoint": [0, 0, 0]
 					}
 				},
 				{
@@ -262,7 +261,10 @@
 							"rotation": [70, 0, 0],
 							"uv": {}
 						}
-					]
+					],
+					"locators": {
+						"SeatPoint": [0, -5, -1]
+					}
 				},
 				{
 					"name": "InteractShape",

@@ -154,7 +154,7 @@ public class PartType {
     }
 
     /**
-     * @return 部件所有外部对接口名称与对应的接口属性 The external connectors of the part and their corresponding connector attributes.
+     * @return 部件所有外部对接口名称与对应的接口属性 The external connectors of the part and their corresponding locator attributes.
      */
     public Map<String, ConnectorAttr> getPartOutwardConnectors() {
         Map<String, ConnectorAttr> partConnectors = new HashMap<>(1);//获取部件所有外部对接口名称与类型

@@ -13,6 +13,7 @@ import java.util.Map;
 
 @Getter
 public class EngineSubsystemAttr extends AbstractSubsystemAttr {
+    public final String particleLocator;
     public final float maxPower;
     public final float baseRpm;
     public final float maxTorqueRpm;
@@ -28,6 +29,7 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     public static final MapCodec<EngineSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
+            Codec.STRING.optionalFieldOf("particle_locator", "").forGetter(EngineSubsystemAttr::getParticleLocator),
             Codec.FLOAT.fieldOf("max_power").forGetter(EngineSubsystemAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("base_rpm", 500f).forGetter(EngineSubsystemAttr::getBaseRpm),
             Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5500f).forGetter(EngineSubsystemAttr::getMaxTorqueRpm),
@@ -42,6 +44,7 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     public EngineSubsystemAttr(
             float basicDurability,
             String hitBox,
+            String particleLocator,
             float maxPower,
             float baseRpm,
             float maxTorqueRpm,
@@ -52,6 +55,7 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
             String powerOutputTarget,
             Map<String, List<String>> rpmOutputTargets) {
         super(basicDurability, hitBox);
+        this.particleLocator = particleLocator;
         this.maxPower = maxPower;
         this.baseRpm = baseRpm;
         this.maxTorqueRpm = maxTorqueRpm;

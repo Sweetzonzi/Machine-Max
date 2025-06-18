@@ -38,14 +38,16 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("error.machine_max.load", "An error occurred when loading external pack file at: %1$s, Reason: ");
         this.add("error.machine_max.invalid_resource_location", "Invalid resource location. Only lowercase letters, numbers, hyphens and underscores are allowed.");
         this.add("error.machine_max.subpart.zero_mass", "Sub-part mass must be greater than zero");
-        this.add("error.machinemax.part.subsystem_hitbox_not_found", "Failed to find hit-box %3$s for subsystem %2$s in part %1$s");
+        this.add("error.machine_max.subpart.empty_hit_boxes", "Sub-part must have at least one hit-box");
+        this.add("error.machine_max.subpart.locator_not_found", "Locator %1$s not found in part model");
+        this.add("error.machine_max.part.subsystem_hitbox_not_found", "Failed to find hit-box %3$s for subsystem %2$s in part %1$s");
         this.add("error.machine_max.seat_subsystem.no_locator", "Seat subsystem requires a locator (e.g. \"locator\": \"seat_locator\") to define sitting position");
         this.add("error.machine_max.seat_subsystem.no_view", "Seat subsystem must either allow first person view or third person view");
 
         //Part assembly exception handle
-        this.add("error.machinemax.part.connector_locator_not_found", "Failed to find connector %2$s's locator %3$s in the model of part %1$");
-        this.add("error.machinemax.part.invalid_connector_type", "Invalid connector type: \"%3$s\" in part: %1$: %2$s, must be \"Special\" or \"AttachPoint\"");
-        this.add("error.machinemax.part.invalid_internal_connector_connection", "Illegal internal connector connection between %2$s and %3$s in part %1$s. Only at most one \"Special\" connector is allowed");
+        this.add("error.machine_max.part.connector_locator_not_found", "Failed to find locator %2$s's locator %3$s in the model of part %1$");
+        this.add("error.machine_max.part.invalid_connector_type", "Invalid locator type: \"%3$s\" in part: %1$: %2$s, must be \"Special\" or \"AttachPoint\"");
+        this.add("error.machine_max.part.invalid_internal_connector_connection", "Illegal internal locator connection between %2$s and %3$s in part %1$s. Only at most one \"Special\" locator is allowed");
         //Hint messages
         this.add("message.machine_max.leaving_vehicle", "Hold [%1$s] %2$s/0.50s to leave the vehicle.");
         this.add("message.machine_max.watch_interact_box_info", "Press [%1$s] to interact with %2$s");

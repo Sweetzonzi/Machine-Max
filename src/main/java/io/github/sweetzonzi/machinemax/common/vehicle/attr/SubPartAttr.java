@@ -16,6 +16,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
+import jme3utilities.math.MyMath;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
@@ -24,22 +25,17 @@ import org.joml.Quaternionf;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Getter
 public class SubPartAttr {
-
     public final String parent;
     public final float mass;
     public final Vec3 projectedArea;
     public final String massCenterLocator;
-    public final Vec3 friction;
-    public final float slipAdaptation;
-    public final float rollingFriction;
-    public final float restitution;
-    public final float blockDamageFactor;
     public final BlockCollisionType blockCollision;
     public final float stepHeight;
     public final boolean climbAssist;
@@ -52,7 +48,8 @@ public class SubPartAttr {
     public final ConcurrentMap<String, CompoundCollisionShape> interactBoxShape = new ConcurrentHashMap<>();//不同变体零件模型的交互体积
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();//碰撞体子形状id对应的交互判定区名称
     public final ConcurrentMap<Long, String> hitBoxNames = new ConcurrentHashMap<>();//碰撞体子形状id对应的碰撞判定区名称
-    public final Map<String, Transform> massCenterTransforms = new HashMap<>();
+    public final ConcurrentMap<String, ConcurrentMap<String, Transform>> locatorTransforms = new ConcurrentHashMap<>();//定位器相对质心的变换
+    public final Map<String, Transform> massCenterTransforms = new HashMap<>();//不同变体部件质心定位器的变换
 
     public enum BlockCollisionType {
         TRUE, FALSE, GROUND
@@ -60,20 +57,15 @@ public class SubPartAttr {
 
     public static final Codec<SubPartAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("parent", "").forGetter(SubPartAttr::getParent),
-            Codec.FLOAT.fieldOf("mass").forGetter(SubPartAttr::getMass),
+            Codec.FLOAT.optionalFieldOf("mass", -1f).forGetter(SubPartAttr::getMass),
             Vec3.CODEC.optionalFieldOf("projected_area", Vec3.ZERO).forGetter(SubPartAttr::getProjectedArea),
             Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::getMassCenterLocator),
-            Vec3.CODEC.optionalFieldOf("friction", new Vec3(0.5, 0.5, 0.5)).forGetter(SubPartAttr::getFriction),
-            Codec.FLOAT.optionalFieldOf("slip_adaptation", 0.5f).forGetter(SubPartAttr::getSlipAdaptation),
-            Codec.FLOAT.optionalFieldOf("rolling_friction", 0.2f).forGetter(SubPartAttr::getRollingFriction),
-            Codec.FLOAT.optionalFieldOf("restitution", 0.1f).forGetter(SubPartAttr::getRestitution),
-            Codec.FLOAT.optionalFieldOf("block_damage_factor", 1.0f).forGetter(SubPartAttr::getBlockDamageFactor),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
             Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
-            HitBoxAttr.MAP_CODEC.fieldOf("hit_boxes").forGetter(SubPartAttr::getHitBoxes),
-            InteractBoxAttr.MAP_CODEC.optionalFieldOf("interact_boxes", new HashMap<>()).forGetter(SubPartAttr::getInteractBoxes),
-            ConnectorAttr.MAP_CODEC.fieldOf("connectors").forGetter(SubPartAttr::getConnectors),
+            HitBoxAttr.MAP_CODEC.optionalFieldOf("hit_boxes", Map.of()).forGetter(SubPartAttr::getHitBoxes),
+            InteractBoxAttr.MAP_CODEC.optionalFieldOf("interact_boxes", Map.of()).forGetter(SubPartAttr::getInteractBoxes),
+            ConnectorAttr.MAP_CODEC.optionalFieldOf("connectors", Map.of()).forGetter(SubPartAttr::getConnectors),
             DragAttr.CODEC.fieldOf("aero_dynamic").forGetter(SubPartAttr::getAeroDynamic)
     ).apply(instance, SubPartAttr::new));
 
@@ -87,11 +79,6 @@ public class SubPartAttr {
             float mass,
             Vec3 projectedArea,
             String massCenterLocator,
-            Vec3 friction,
-            float slipAdaptation,
-            float rollingFriction,
-            float restitution,
-            float blockDamageFactor,
             String blockCollision,
             float stepHeight,
             boolean climbAssist,
@@ -105,14 +92,10 @@ public class SubPartAttr {
         this.mass = mass;
         this.projectedArea = projectedArea;
         this.massCenterLocator = massCenterLocator;
-        this.friction = friction;
-        this.slipAdaptation = slipAdaptation;
-        this.rollingFriction = rollingFriction;
-        this.restitution = restitution;
-        this.blockDamageFactor = blockDamageFactor;
         this.blockCollision = BlockCollisionType.valueOf(blockCollision.toUpperCase());
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
+        if (hitBoxes.isEmpty()) throw new IllegalArgumentException("error.machine_max.subpart.empty_hit_boxes");
         this.hitBoxes = hitBoxes;
         this.interactBoxes = interactBoxes;
         this.connectors = connectors;
@@ -136,15 +119,21 @@ public class SubPartAttr {
                     type.variants.getOrDefault(variant, type.variants.get("default")),//获取部件模型路径
                     type.textures.getFirst());//获取部件第一个可用纹理作为默认纹理
             LinkedHashMap<String, OBone> bones = modelIndex.getModel().getBones();//从模型获取所有骨骼
-            LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
+            LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
+            //将表示部件连接点的定位器添加进定位器列表
+            for (ConnectorAttr connectorAttr : connectors.values()) {
+                String locatorName = connectorAttr.locatorName();
+                addLocator(variant, locatorName, locators);
+            }
+            //TODO:从AeroDynamic中提取气动中心定位点
             for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {//若找到了对应的碰撞形状骨骼
                     String hitBoxName = hitBoxEntry.getValue().hitBoxName();
-                    float rha = hitBoxEntry.getValue().RHA();
-                    float damageReduction = hitBoxEntry.getValue().damageReduction();
-                    float damageMultiplier = hitBoxEntry.getValue().damageMultiplier();
                     OBone bone = bones.get(hitBoxEntry.getKey());
+                    for (String locatorName : bone.getLocators().keySet()) {//获取碰撞骨骼中的定位器
+                        addLocator(variant, locatorName, locators);
+                    }
                     switch (hitBoxEntry.getValue().shapeType()) {
                         case "box"://与方块的尺寸匹配
                             for (OCube cube : bone.getCubes()) {
@@ -203,6 +192,13 @@ public class SubPartAttr {
                             PhysicsHelperKt.toBVector3f(locator.getOffset()),
                             SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
                     );
+                    //重新计算并调节定位器相对质心的变换 Recalculate and adjust locator transforms relative to mass center
+                    for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.computeIfAbsent(variant, v1 -> new ConcurrentHashMap<>()).entrySet()) {
+                        String locatorName = locatorTransform.getKey();
+                        Transform transform = locatorTransform.getValue();
+                        MyMath.combine(massCenter.invert(), transform, transform);
+                        locatorTransforms.get(variant).put(locatorName, transform);
+                    }
                 } else {
                     MachineMax.LOGGER.warn("在部件{}中未找到质心定位点{}，未对子部件的碰撞体积进行偏移调整。", type.name, this.massCenterLocator);
                 }
@@ -265,5 +261,16 @@ public class SubPartAttr {
 
     private String getBlockCollision() {
         return blockCollision.toString().toLowerCase();
+    }
+
+    private void addLocator(String variant, String locatorName, Map<String, OLocator> locators) {
+        OLocator locator = locators.get(locatorName);
+        org.joml.Vector3f rotation = locator.getRotation().toVector3f();
+        Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
+        Transform transform = new Transform(
+                PhysicsHelperKt.toBVector3f(locator.getOffset()),
+                SparkMathKt.toBQuaternion(quaternion)
+        );
+        locatorTransforms.computeIfAbsent(variant, v1 -> new ConcurrentHashMap<>()).put(locatorName, transform);
     }
 }

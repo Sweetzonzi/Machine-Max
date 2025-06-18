@@ -22,6 +22,15 @@ public class MMMath {
     }
 
     /**
+     * 计算sigmoid函数的值
+     * @param a 输入值
+     * @return sigmoid函数的结果，介于[0,1]之间
+     */
+    public static double sigmoid(double a){
+        return 1 / (1 + Math.exp(-a));
+    }
+
+    /**
      * 将相对物体质心一点的位置坐标转为相对世界原点的位置坐标
      * @param relPointPos 相对物体质心的位置坐标
      * @param obj 物体

@@ -1,11 +1,10 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
-import io.github.sweetzonzi.machinemax.MachineMax;
+import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
-import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
@@ -23,7 +22,6 @@ import java.util.Map;
 public class SeatSubsystem extends AbstractSubsystem {
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
-    public AbstractConnector seatLocator;
     public LivingEntity passenger;
     public boolean occupied;
 
@@ -31,16 +29,6 @@ public class SeatSubsystem extends AbstractSubsystem {
         super(owner, name, attr);
         this.attr = attr;
         this.disableVanillaActions = !this.attr.allowUseItems;
-    }
-
-    @Override
-    public void onAttach() {
-        SeatSubsystemAttr attr = (SeatSubsystemAttr) this.attr;
-        if (owner.getPart() != null) {
-            seatLocator = owner.getPart().allConnectors.get(attr.connector);
-            if (seatLocator == null)
-                MachineMax.LOGGER.error("在部件{}中找不到名为{}的对接口作为座椅子系统的乘坐点", owner.getPart().name, attr.connector);
-        } else MachineMax.LOGGER.error("无法为{}的座椅子系统找到部件", owner);
     }
 
     @Override
@@ -129,7 +117,7 @@ public class SeatSubsystem extends AbstractSubsystem {
 
     public void setMoveInputSignal(byte[] inputs, byte[] conflicts) {
         //TODO:将0~100的byte缩放到0~1的float
-        if (!attr.moveSignalTargets.isEmpty() && active) {
+        if (!attr.moveSignalTargets.isEmpty() && isActive()) {
             for (String signalKey : attr.moveSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
             }
@@ -143,7 +131,7 @@ public class SeatSubsystem extends AbstractSubsystem {
     }
 
     public void setRegularInputSignal(KeyInputMapping inputType, int tickCount) {
-        if (!attr.regularSignalTargets.isEmpty() && active) {
+        if (!attr.regularSignalTargets.isEmpty() && isActive()) {
             for (String signalKey : attr.regularSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
             }
@@ -152,11 +140,21 @@ public class SeatSubsystem extends AbstractSubsystem {
     }
 
     public void setViewInputSignal() {
-        if (!attr.viewSignalTargets.isEmpty() && active) {
+        if (!attr.viewSignalTargets.isEmpty() && isActive()) {
             for (String signalKey : attr.viewSignalTargets.keySet()) {
                 sendSignalToAllTargets(signalKey, new EmptySignal());
             }
             getPart().vehicle.activate();
         }
+    }
+
+    public Transform getSeatPointWorldTransform() {
+        String locatorName = attr.locator;
+        return getPart().getLocatorWorldTransform(locatorName);
+    }
+
+    public Transform getSeatPointLocalTransform() {
+        String locatorName = attr.locator;
+        return getPart().getLocatorLocalTransform(locatorName);
     }
 }

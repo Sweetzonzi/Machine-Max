@@ -83,7 +83,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
             RotationMotor rollingMotor = joint.getRotationMotor(0);
             RotationMotor steeringMotor = joint.getRotationMotor(1);
 
-            if (this.isActive() && controlSignal instanceof WheelControlSignal wheelControlSignal) {
+            if (this.isActive() && !isDestroyed() && controlSignal instanceof WheelControlSignal wheelControlSignal) {
                 //处理轮胎旋转 Handle rolling
                 rollingMotor.setMotorEnabled(true);
                 float torque = 0;
