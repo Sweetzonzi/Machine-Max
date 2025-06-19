@@ -7,11 +7,11 @@
   "description.machine_max.blueprint.ae86at": "This AE86 has been upgraded with a four-wheel-drive drivetrain, a more powerful engine, a matching gearbox, and all-terrain tires, giving it significantly enhanced off-road capability.",
   "notes.machine_max.blueprint.ae86": "EXAMPLE VEHICLE BLUEPRINT",
   "author.machine_max.blueprint.ae86": "Author: 02bunny   Copyright owner: MadFlower",
-  "item.machine_max.ae86_chassis_all_terrain": "AE86 All Terrain Chassis",
-  "item.machine_max.ae86_wheel_all_terrain": "AE86 All Terrain Wheel",
-  "item.machine_max.ae86_chassis": "AE86 Chassis",
-  "item.machine_max.ae86_wheel": "AE86 Wheel",
-  "item.machine_max.ae86_back_seat": "AE86 Back Seat",
-  "item.machine_max.ae86_seat": "AE86 Seat",
-  "item.machine_max.ae86_hull": "AE86 Hull"
+  "machine_max.ae86_chassis_all_terrain": "AE86 All Terrain Chassis",
+  "machine_max.ae86_wheel_all_terrain": "AE86 All Terrain Wheel",
+  "machine_max.ae86_chassis": "AE86 Chassis",
+  "machine_max.ae86_wheel": "AE86 Wheel",
+  "machine_max.ae86_back_seat": "AE86 Back Seat",
+  "machine_max.ae86_seat": "AE86 Seat",
+  "machine_max.ae86_hull": "AE86 Hull"
 }

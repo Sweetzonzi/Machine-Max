@@ -8,14 +8,15 @@
     "machine_max:example_pack/texture/ae86_all_terrain_2.png"
   ],
   "icon": "machine_max:example_pack/icon/ae86_chassis_all_terrain_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
-  "basic_durability": 100.0,//部件基础生命值
+  "basic_durability": 100.0,//(可选，默认20.0)部件基础生命值，降至0时部件的所有子系统会瘫痪
+  "basic_integrity": 150.0,//(可选，默认50.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
   "subsystems": {
     "scriptable": {
       "type": "machine_max:scriptable"//子系统类型
     },
     "car_controller": {
       "type": "machine_max:car_controller", //子系统类型
-      "basic_durability": 100, //(可选，默认100)子系统基础耐久度，降至0时会瘫痪
+      "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
       "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
       "manual_gear_shift": false, //(可选，默认false)是否强制手动挡
       "auto_hand_brake": true, //(可选，默认true)是否自动在停车和起步时切换手刹车状态
@@ -38,7 +39,7 @@
     },
     "engine": {
       "type": "machine_max:engine", //子系统类型
-      "basic_durability": 70, //(可选，默认100)子系统基础耐久度，降至0时会瘫痪
+      "basic_durability": 70, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
       "hit_box": "chassis",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
       "max_power": 187500, //最大功率(W)
       "base_rpm": 500, //(可选，默认500)怠速转速(rpm)，此转速下的满油门扭矩输出仅为最大扭矩的三分之一
@@ -51,7 +52,7 @@
     },
     "gearbox": {//T50五速手动变速箱，针对越野改装更换了主减速比
       "type": "machine_max:gearbox",
-      "basic_durability": 100, //(可选，默认100)子系统基础耐久度，降至0时会瘫痪
+      "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
       "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
       "final_ratio": 25.0, //(可选，默认5.0)最终变速比(主减速比)，用于整体缩放变速箱减速比
       "ratios": [-3.768, 3.285, 1.894, 1.275, 1.000, 0.861], //(可选，默认[-3.5, 3.5, 2, 1.3, 1.0, 0.8])各个挡位的传动比，负代表反向传动即倒挡
@@ -61,7 +62,7 @@
     },
     "transmission": {//针对越野需求改装过的传动系统，四轮驱动
       "type": "machine_max:transmission", //传动子系统，将接收到的功率分配至各个输出目标
-      "basic_durability": 100, //(可选，默认100)子系统基础耐久度，降至0时会瘫痪
+      "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
       "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
       "diff_lock": "auto", //(可选，默认auto)是否开启差速锁，差速锁模式(true)下各输出端会有相同的转速，差速器模式(false)下各输出端会有相同的扭矩，自动模式(auto)下根据输出端转速差距自动开关差速锁，手动模式(manual)下根据信号开关差速锁
       "diff_lock_sensitivity": 0.75, //(可选，默认1.0)差速锁灵敏度，值越大灵敏度越高，统一输出端转速的能力越强
@@ -76,14 +77,14 @@
     },
     "left_front_wheel_driver": {
       "type": "machine_max:wheel_driver", //轮胎驱动子系统，驱动对接口上的部件滚动和转向
-      "basic_durability": 100, //(可选，默认100)子系统基础耐久度，降至0时会瘫痪
+      "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
       "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
       "connector": "left_front_wheel", //控制的对接口名称
       "control_inputs": ["wheel_control", "move_control"]//(可选，默认["wheel_control", "move_control"])接收的控制信号的频道列表，优先级递减
     },
     "right_front_wheel_driver": {
       "type": "machine_max:wheel_driver",
-      "basic_durability": 100, //(可选，默认100)子系统基础耐久度，降至0时会瘫痪
+      "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
       "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
       "connector": "right_front_wheel",
       "steering": {//(可选)轮胎转向相关属性，默认最大转向力矩4000N*m，最大转速3.14rad/s，不反馈转角值到任何频道的任何目标
@@ -94,7 +95,7 @@
     },
     "left_back_wheel_driver": {
       "type": "machine_max:wheel_driver",
-      "basic_durability": 100, //(可选，默认100)子系统基础耐久度，降至0时会瘫痪
+      "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
       "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
       "connector": "left_back_wheel",
       "roll": {//(可选)轮胎滚动相关属性，默认最大驱动力矩10000N*m，最大刹车力矩3500N*m，最大手刹车力矩0N*m，最大转速3140rad/s，不反馈转速值到任何频道的任何目标
@@ -107,7 +108,7 @@
     },
     "right_back_wheel_driver": {
       "type": "machine_max:wheel_driver",
-      "basic_durability": 100, //(可选，默认100)子系统基础耐久度，降至0时会瘫痪
+      "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
       "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
       "connector": "right_back_wheel",
       "roll": {
@@ -243,9 +244,9 @@
           "type": "Special"
         }
       },
-      "hydro_priority": 1, //(可选，默认0)空气阻力计算优先级，值越大优先级越高，优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化
+      "hydro_priority": 0, //(可选，默认0)空气阻力计算优先级，值越大优先级越高，优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化
       "hydrodynamics": { //(可选，默认单点质心位置计算流体动力)流体动力计算定位点列表，键值对的键名为空字符串时表示以质心位置计算
-        "": {//流体动力计算点定位器名，空字符串代表质心
+        "AeroDynamicCenter": {//流体动力计算点定位器名，空字符串代表质心
           "effective_range": [5.0, 5.0, 5.0]//(可选，默认[1,1,1])三个方向上的有效计算范围，单位为m，当在对应轴运动方向上的此距离内检测到遮挡时将会降低部件的实际空气阻力系数，以模拟如车壳遮挡整流带来的减阻效果
         }
       }

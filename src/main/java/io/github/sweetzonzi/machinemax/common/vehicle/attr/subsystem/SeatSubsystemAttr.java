@@ -26,9 +26,9 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, List<String>> moveSignalTargets;
     public final Map<String, List<String>> viewSignalTargets;
     public final Map<String, List<String>> regularSignalTargets;
-
+    //TODO:是否无视命中情况转嫁乘客伤害到部件
     public static final MapCodec<SeatSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.optionalFieldOf("seat_point_locator","").forGetter(SeatSubsystemAttr::getLocator),
             Codec.BOOL.optionalFieldOf("render_passenger", true).forGetter(SeatSubsystemAttr::isRenderPassenger),

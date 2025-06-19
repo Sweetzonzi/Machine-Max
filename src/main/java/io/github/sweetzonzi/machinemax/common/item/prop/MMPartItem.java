@@ -187,7 +187,7 @@ public class MMPartItem extends Item implements ICustomModelItem {
     public @NotNull Component getName(@NotNull ItemStack stack) {
         ResourceLocation type = stack.get(MMDataComponents.getPART_TYPE());
         if (type != null) {
-            return Component.translatable("item." + type.toLanguageKey());
+            return Component.translatable(type.toLanguageKey());
         } else return super.getName(stack);
     }
 

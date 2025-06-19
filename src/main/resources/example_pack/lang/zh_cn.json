@@ -7,11 +7,11 @@
   "description.machine_max.blueprint.ae86at": "这辆AE86将传动系统改装为了四轮驱动，并换装了更强大的引擎、相适配的变速箱和全地形轮，越野能力得到大幅强化。",
   "notes.machine_max.blueprint.ae86": "示例载具蓝图",
   "author.machine_max.blueprint.ae86": "模型作者: 02bunny 版权所有: MadFlower",
-  "item.machine_max.ae86_chassis_all_terrain": "AE86全地形车架",
-  "item.machine_max.ae86_wheel_all_terrain": "AE86全地形轮",
-  "item.machine_max.ae86_chassis": "AE86车架",
-  "item.machine_max.ae86_wheel": "AE86车轮",
-  "item.machine_max.ae86_back_seat": "AE86后排座椅",
-  "item.machine_max.ae86_seat": "AE86座椅",
-  "item.machine_max.ae86_hull": "AE86车壳"
+  "machine_max.ae86_chassis_all_terrain": "AE86全地形车架",
+  "machine_max.ae86_wheel_all_terrain": "AE86全地形轮",
+  "machine_max.ae86_chassis": "AE86车架",
+  "machine_max.ae86_wheel": "AE86车轮",
+  "machine_max.ae86_back_seat": "AE86后排座椅",
+  "machine_max.ae86_seat": "AE86座椅",
+  "machine_max.ae86_hull": "AE86车壳"
 }

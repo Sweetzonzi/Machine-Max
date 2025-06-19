@@ -2499,6 +2499,7 @@
 					"locators": {
 						"LeftFrontWheel": [28, 0, -34],
 						"MassCenter": [0, 0, 0],
+						"AeroDynamicCenter": [0, 19, 0],
 						"RightFrontWheel": [-28, 0, -34],
 						"LeftBackWheel": [28, 0, 40],
 						"RightBackWheel": [-28, 0, 40],

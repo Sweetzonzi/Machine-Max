@@ -17,13 +17,10 @@ import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
 public class MachineMax {
     //TODO:限制带阻尼关节安装部件时的质量差距/警告
     //TODO:动画支持
-    //TODO:locatorName->subPart->世界坐标
     //TODO:交互系统的反馈信号以及连接多个子系统，依次互动/同时互动？
     //TODO:过载与座椅过载吸收/耐受
-    //TODO:结构完整性integrity，衡量部件固定的牢靠程度
     //TODO:自定义HUD
     //TODO:放置载具或部件前检查空间是否足够
-    //TODO:伤害系统
     //TODO:带声速和多普勒效应的音效系统
     //TODO:投射物
     //TODO:炮塔控制
@@ -31,7 +28,6 @@ public class MachineMax {
     //TODO:允许实体站在刚体上
     //TODO:内容包之间的依赖关系
     //TODO:蓝图对内容包的依赖关系
-    //TODO:重修连接点断裂机制，在vehicle中进行，降低发包压力
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器

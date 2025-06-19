@@ -8,7 +8,8 @@
     "machine_max:example_pack/texture/ae86_1.png"
   ],
   "icon": "machine_max:example_pack/icon/ae86_wheel_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
-  "basic_durability": 30.0,//部件基础生命值
+  "basic_durability": 30.0,//(可选，默认20.0)部件基础生命值，降至0时部件的所有子系统会瘫痪
+  "basic_integrity": 50.0,//(可选，默认50.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
   "sub_parts": {//零件(子部件)列表
     "ae86_wheel": {//零件(子部件)名称
       "mass": 50.0,//零件质量(kg)

@@ -16,7 +16,7 @@ public class ScriptableSubsystemAttr extends AbstractSubsystemAttr {
         Hook.run(this, basicDurability, hitBox);
     }
     public static final MapCodec<ScriptableSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox)
     ).apply(instance, ScriptableSubsystemAttr::new));
 

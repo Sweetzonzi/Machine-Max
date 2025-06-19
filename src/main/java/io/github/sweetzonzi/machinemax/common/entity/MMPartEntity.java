@@ -34,6 +34,7 @@ import io.github.sweetzonzi.machinemax.util.MMMath;
 import jme3utilities.math.MyMath;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
@@ -179,6 +180,18 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
             }
             return false;//未能命中任何部件碰撞箱则不处理伤害
         } else return false;
+    }
+
+    @Override
+    public Component getDisplayName() {
+        if (part != null) return Component.translatable(part.type.registryKey.toLanguageKey());
+        return super.getDisplayName();
+    }
+
+    @Override
+    public @NotNull Component getName() {
+        if (part != null) return Component.translatable(part.type.registryKey.toLanguageKey());
+        return super.getName();
     }
 
     @Override
