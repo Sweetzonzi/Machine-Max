@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
+import io.github.sweetzonzi.machinemax.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
@@ -19,15 +20,17 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class SeatSubsystem extends AbstractSubsystem {
+public class SeatSubsystem extends AbstractSubsystem implements IControllableSubsystem  {
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
     public LivingEntity passenger;
     public boolean occupied;
+    private final SignalTargetsHolder signalTargetsHolder = new SignalTargetsHolder(this);
 
     public SeatSubsystem(ISubsystemHost owner, String name, SeatSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+        signalTargetsHolder.setUp(attr.moveSignalTargets, attr.viewSignalTargets, attr.regularSignalTargets);
         this.disableVanillaActions = !this.attr.allowUseItems;
     }
 
@@ -86,13 +89,15 @@ public class SeatSubsystem extends AbstractSubsystem {
             ((IEntityMixin) passenger).machine_Max$setRidingSubsystem(this);
             getPart().vehicle.activate();
             //TODO:换成在hud角落常驻显示好了
-            if (passenger.level().isClientSide && passenger instanceof Player player)
-                player.displayClientMessage(
-                        Component.translatable("message.machine_max.leaving_vehicle",
-                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
-                                String.format("%.2f", Math.clamp(0.05 * RawInputHandler.keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0), 0.0, 0.5))
-                        ), true
-                );
+
+            //TODO:考虑删除，下面的状态展示已经挪到RawInput的全新键位事件系统中
+//            if (passenger.level().isClientSide && passenger instanceof Player player)
+//                player.displayClientMessage(
+//                        Component.translatable("message.machine_max.leaving_vehicle",
+//                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
+//                                String.format("%.2f", Math.clamp(0.05 * RawInputHandler.keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0), 0.0, 0.5))
+//                        ), true
+//                );
         }
     }
 
@@ -107,45 +112,12 @@ public class SeatSubsystem extends AbstractSubsystem {
     }
 
     @Override
+    public SignalTargetsHolder getHolder() {
+        return signalTargetsHolder;
+    }
+    @Override
     public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> result = new HashMap<>(1);
-        result.putAll(attr.moveSignalTargets);
-        result.putAll(attr.regularSignalTargets);
-        result.putAll(attr.viewSignalTargets);
-        return result;
-    }
-
-    public void setMoveInputSignal(byte[] inputs, byte[] conflicts) {
-        //TODO:将0~100的byte缩放到0~1的float
-        if (!attr.moveSignalTargets.isEmpty() && isActive()) {
-            for (String signalKey : attr.moveSignalTargets.keySet()) {
-                sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
-            }
-            for (int i = 0; i < 6; i++) {
-                if (inputs[i] != 0 && getPart() != null && getPart().vehicle != null) {
-                    break;
-                }
-            }
-            getPart().vehicle.activate();
-        }
-    }
-
-    public void setRegularInputSignal(KeyInputMapping inputType, int tickCount) {
-        if (!attr.regularSignalTargets.isEmpty() && isActive()) {
-            for (String signalKey : attr.regularSignalTargets.keySet()) {
-                sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
-            }
-            getPart().vehicle.activate();
-        }
-    }
-
-    public void setViewInputSignal() {
-        if (!attr.viewSignalTargets.isEmpty() && isActive()) {
-            for (String signalKey : attr.viewSignalTargets.keySet()) {
-                sendSignalToAllTargets(signalKey, new EmptySignal());
-            }
-            getPart().vehicle.activate();
-        }
+        return signalTargetsHolder.setUpTargets(new HashMap<>(1));
     }
 
     public Transform getSeatPointWorldTransform() {

@@ -269,9 +269,10 @@ public class MMDynamicRes {
                 switch (category) {
                     case "part_type" -> { //part_type文件夹中的配置
                         PartType partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
-                        PART_TYPES.put(partType.registryKey, partType); //我暂时把它存在PART_TYPES
+                        location = partType.registryKey;
+                        PART_TYPES.put(location, partType); //我暂时把它存在PART_TYPES
                         partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
-                        SERVER_PART_TYPES.put(partType.registryKey, partType);
+                        SERVER_PART_TYPES.put(location, partType);
                         //测试数据是否成功录入
 //                        partType.getConnectorIterator().forEachRemaining((c) -> {
 //                            LOGGER.info("连接器队列: " + c);

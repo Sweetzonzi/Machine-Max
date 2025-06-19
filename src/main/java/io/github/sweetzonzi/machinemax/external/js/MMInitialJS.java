@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machinemax.external.js;
 
-import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import net.minecraft.client.Minecraft;
@@ -55,8 +54,8 @@ public class MMInitialJS {
 
         MMDynamicRes.MM_SCRIPTS.forEach((location, jsPack) -> {
             try {
-                ScriptableObject.putProperty(JS_SCOPE, "mm", Context.javaToJS(new JSUtils(jsPack.getPackName()), JS_SCOPE,  JS_RUNNER));
-                ScriptableObject.putProperty(JS_SCOPE, "signal", Context.javaToJS(new SignalProvider(), JS_SCOPE,  JS_RUNNER));
+                ScriptableObject.putProperty(JS_SCOPE, "mm", Context.javaToJS(new JSUtils(location.toString(), jsPack.getPackName()), JS_SCOPE,  JS_RUNNER));
+                ScriptableObject.putProperty(JS_SCOPE, "signal", Context.javaToJS(new InputSignalProvider(), JS_SCOPE,  JS_RUNNER));
                 Object jsObj = JS_RUNNER.evaluateString(
                         JS_SCOPE, packages + jsPack.getContent(),
                         "mm_initial_js_register_"+location.getPath(), 1, null);

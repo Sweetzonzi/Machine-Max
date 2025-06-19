@@ -1,30 +1,69 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
+import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
+import io.github.sweetzonzi.machinemax.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machinemax.common.vehicle.HitBox;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.ScriptableSubsystemAttr;
-import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalReceiver;
-import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalSender;
-import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
-import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalPort;
+import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
+import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
+import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
+import io.github.sweetzonzi.machinemax.network.payload.ScriptablePayload;
+import lombok.Getter;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
-public class ScriptableSubsystem extends AbstractSubsystem{
-    public ScriptableSubsystem(ISubsystemHost owner, String name, ScriptableSubsystemAttr attr) {
+
+public class ScriptableSubsystem extends AbstractSubsystem implements IControllableSubsystem {
+    public final ScriptableSubsystemAttr attr;
+    public final String script;
+    @Getter
+    private UUID vehicleCoreUUID = null;
+    private final SignalTargetsHolder signalTargetsHolder = new SignalTargetsHolder(this);
+    public ScriptableSubsystem(ISubsystemHost owner, String name, ScriptableSubsystemAttr attr, String script) {
         super(owner, name, attr);
+        this.attr = attr;
+        this.script = script;
+    }
+
+    @Override
+    public SignalTargetsHolder getHolder() {
+        return signalTargetsHolder;
+    }
+
+    @Override
+    public Map<String, List<String>> getTargetNames() {
+        return signalTargetsHolder.setUpTargets(new HashMap<>(1));
+    }
+
+
+    public void sendNbt(String to, CompoundTag nbt){
+        if (vehicleCoreUUID != null) {
+            PacketDistributor.sendToServer(new ScriptablePayload(vehicleCoreUUID, script, to, nbt));
+        }
+        //考虑以后判断是哪个端，让服务器上的ScriptableSubsystem也有发回的能力
+        //PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload)
+    }
+
+    public interface FetchedScriptableSubsystem {
+        void doAction(ScriptableSubsystem scriptableSubsystem);
+    }
+    public void doActionOnScriptable(String scriptName, FetchedScriptableSubsystem action) {
+        for (AbstractSubsystem subsystem : getPart().getVehicle().getSubSystemController().getAllSubsystems()) {
+            if (subsystem instanceof ScriptableSubsystem sc && sc.script.equals(scriptName)) action.doAction(sc);
+        }
     }
 
     @Override
@@ -178,29 +217,10 @@ public class ScriptableSubsystem extends AbstractSubsystem{
     }
 
     @Override
-    public void onHurt(DamageSource source, float amount) {
-        Hook.run(this, source, amount);
-        super.onHurt(source, amount);
-    }
-
-    @Override
-    public void onInteract(LivingEntity entity) {
-        Hook.run(this, entity);
-        super.onInteract(entity);
-    }
-
-    @Override
     public void onVehicleStructureChanged() {
         Hook.run(this);
         super.onVehicleStructureChanged();
-    }
-
-    @Override
-    public Part getPart() {
-        if (Hook.run(this) instanceof Part part) {
-            return part;
-        }
-        return super.getPart();
+        vehicleCoreUUID = getPart().getVehicle().getUuid();
     }
 
     @Override
@@ -223,13 +243,6 @@ public class ScriptableSubsystem extends AbstractSubsystem{
         Hook.run(this);
     }
 
-    @Override
-    public Map<String, List<String>> getTargetNames() {
-        if (Hook.run(this) instanceof Map map) {
-            return map;
-        }
-        return Map.of();
-    }
 
     @Override
     public void addCallbackTarget(String signalChannel, ISignalReceiver target) {
@@ -253,12 +266,6 @@ public class ScriptableSubsystem extends AbstractSubsystem{
     public void resetSignalOutputs() {
         super.resetSignalOutputs();
         Hook.run(this);
-    }
-
-    @Override
-    public void sendSignalToAllTargets(String signalChannel, Object signalValue) {
-        super.sendSignalToAllTargets(signalChannel, signalValue);
-        Hook.run(this, signalChannel, signalValue);
     }
 
     @Override

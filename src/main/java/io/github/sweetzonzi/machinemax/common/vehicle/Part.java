@@ -248,7 +248,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                         }
                     }
                     //削减部件完整性
-                    integrity = Math.max(integrity - (destroyed ? 0.5f * impact : 0.5f * impact), 0);
+                    integrity = Math.max(integrity - (destroyed ? 0.5f * impact : 0.25f * impact), 0);
                 }
                 accumulatedImpact.clear();
             }

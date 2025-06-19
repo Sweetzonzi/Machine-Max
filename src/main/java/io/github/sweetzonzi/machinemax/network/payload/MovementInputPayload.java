@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.IControllableSubsystem;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -79,8 +80,8 @@ public record MovementInputPayload(
     public static boolean handler(VehicleCore vehicle, final MovementInputPayload payload) {
         if (vehicle != null) {
             if (vehicle.partMap.get(payload.partUUID()) instanceof Part part) {
-                if (part.subsystems.get(payload.subSystemName()) instanceof SeatSubsystem subSystem) {
-                    subSystem.setMoveInputSignal(payload.input(), payload.inputConflict());
+                if (part.subsystems.get(payload.subSystemName()) instanceof IControllableSubsystem subSystem) {
+                    subSystem.getHolder().setMoveInputSignal(payload.input(), payload.inputConflict());
                     return true;
                 } else {
                     MachineMax.LOGGER.warn("Received movement input for non-existent sub-system: {}", payload.subSystemName());
