@@ -58,25 +58,16 @@ public class KeyHooks {
 
     }
 
-    public static class GamePadSetting {
-        public enum GType {
-            Axis,
-            Button
-        }
-        public final int jid;
-        public final GType type;
-        public final int GLFW_ID;
+    public record GamePadSetting(int jid, KeyHooks.GamePadSetting.GType type, int GLFW_ID) {
+            public enum GType {
+                Axis,
+                Button
+            }
 
-        public GamePadSetting(int jid, GType type, int GLFW_ID) {
-            this.jid = jid;
-            this.type = type;
-            this.GLFW_ID = GLFW_ID;
+        public String getKeyName() {
+                return "gamepad_" + jid + "." + type + "." + GLFW_ID;
+            }
         }
-
-        public String getKeyName () {
-            return "gamepad_"+jid+"."+type+"."+GLFW_ID;
-        }
-    }
 
     public static class EVENT {
         private final String keyName;
@@ -171,7 +162,7 @@ public class KeyHooks {
         public EVENT OnAxis(GamePadAxisEvent axisEvent) {
             children.forEach((child) -> child.OnAxis(axisEvent));
             if (gamePadSetting instanceof GamePadSetting setting && GLFW.glfwJoystickPresent(setting.jid))
-                axisEvent.run(InputSignalProvider.getSignalTicks(keyName));
+                axisEvent.run(getDownSignalTick());
             return this;
         }
 
