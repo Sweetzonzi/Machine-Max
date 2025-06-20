@@ -52,7 +52,12 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("message.machine_max.leaving_vehicle", "Hold [%1$s] %2$s/0.50s to leave the vehicle.");
         this.add("message.machine_max.watch_interact_box_info", "Press [%1$s] to interact with %2$s");
         this.add("error.machine_max.use_part_item", "An error occurred while trying to deploy %1$s：%2$s");
-        this.add("tooltip.machine_max.crowbar.interact", "Interact to disassemble:");
+        this.add("tooltip.machine_max.crowbar.safe_disassembly", "Interact to safely disassemble %1$s");
+        this.add("tooltip.machine_max.crowbar.unsafe_disassembly", "Integrity: %1$s/%2$s Interact to force disassemble %3$s (Could damage part)");
+        this.add("tooltip.machine_max.wrench.disassembly", "Integrity: %1$s/%2$s Interact to safely unbolt %3$s");
+        this.add("tooltip.machine_max.wrench.repair", "Integrity: %2$s/%3$s Durability: %4$s/%5$s Interact to repair %1$s");
+        this.add("tooltip.machine_max.wrench.cant_repair", "%1$s has been destroyed, cannot repair. Crouch and interact to unbolt the part");
+        this.add("tooltip.machine_max.wrench.no_need_to_repair", "%1$s is no need to repair");
         this.add("tooltip.machine_max.spray_can.interact", "Interact to paint:");
         this.add("message.machine_max.blueprint_saved", "Blueprint has been saved to %1$s");
         this.add("message.machine_max.blueprint_error", "Failed to save blueprint: %1$s");
@@ -62,6 +67,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("itemGroup.machine_max.blueprint", "MachineMax: Custom BluePrints");
         this.add("itemGroup.machine_max.main", "MachineMax: Part and Tools");
         this.add("item.machine_max.crowbar", "Crowbar");
+        this.add("item.machine_max.wrench", "Wrench");
         this.add("item.machine_max.spray_can", "Spray Can");
         this.add("item.machine_max.empty_vehicle_blueprint", "Empty Vehicle Blueprint");
     }

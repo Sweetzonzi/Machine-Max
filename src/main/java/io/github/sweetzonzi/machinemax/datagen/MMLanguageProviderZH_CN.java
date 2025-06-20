@@ -51,7 +51,12 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
         this.add("message.machine_max.watch_interact_box_info", "按[%1$s]键与%2$s互动");
         this.add("error.machine_max.use_part_item", "尝试放置%1$s时出现错误：%2$s");
-        this.add("tooltip.machine_max.crowbar.interact", "互动以拆除：");
+        this.add("tooltip.machine_max.crowbar.safe_disassembly", "互动以安全拆除%1$s");
+        this.add("tooltip.machine_max.crowbar.unsafe_disassembly", "结构完整性：%1$s/%2$s 互动以强行拆除%3$s (可能损坏部件)");
+        this.add("tooltip.machine_max.wrench.disassembly", "结构完整性：%1$s/%2$s 潜行互动以安全解除%3$s的固定");
+        this.add("tooltip.machine_max.wrench.repair", "结构完整性：%2$s/%3$s 部件耐久：%4$s/%5$s 互动以维修%1$s");
+        this.add("tooltip.machine_max.wrench.cant_repair", "%1$s已被摧毁，无法通过扳手修复，潜行互动以解除固定便于拆除");
+        this.add("tooltip.machine_max.wrench.no_need_to_repair", "%1$s无需修复或固定");
         this.add("tooltip.machine_max.spray_can.interact", "互动以喷涂：");
         this.add("message.machine_max.blueprint_saved", "蓝图已保存至%1$s");
         this.add("message.machine_max.blueprint_error", "保存蓝图失败:%1$s");
@@ -62,6 +67,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("itemGroup.machine_max.blueprint", "MachineMax: 自定义蓝图");
         this.add("itemGroup.machine_max.main", "MachineMax: 部件与工具");
         this.add("item.machine_max.crowbar", "撬棍");
+        this.add("item.machine_max.wrench", "扳手");
         this.add("item.machine_max.spray_can", "喷漆罐");
         this.add("item.machine_max.empty_vehicle_blueprint", "空白载具蓝图");
     }

@@ -7,9 +7,14 @@ import io.github.sweetzonzi.machinemax.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem
 import io.github.sweetzonzi.machinemax.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machinemax.common.item.prop.EmptyBlueprintItem
+import io.github.sweetzonzi.machinemax.common.item.prop.WrenchItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
+import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
+import net.minecraft.world.item.Tier
+import net.minecraft.world.item.Tiers
+import net.minecraft.world.item.component.ItemAttributeModifiers
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.fml.common.EventBusSubscriber.Bus
@@ -33,36 +38,35 @@ object MMItems {
     @JvmStatic
     val BLUEPRINT = MachineMax.REGISTER.item<BlueprintItem>()
         .id("blueprint")
-        .bound { BlueprintItem(Item.Properties().stacksTo(1)) }
+        .bound { BlueprintItem() }
         .build()
 
     //载具保存物品原型
     @JvmStatic
     val EMPTY_BLUEPRINT = MachineMax.REGISTER.item<EmptyBlueprintItem>()
         .id("empty_vehicle_blueprint")
-        .bound {
-            EmptyBlueprintItem(
-                Item.Properties().stacksTo(1)
-            )
-        }
+        .bound { EmptyBlueprintItem() }
         .build()
 
     //撬棍，用于拆卸载具部件，也可作为武器
     @JvmStatic
     val CROWBAR_ITEM = MachineMax.REGISTER.item<CrowbarItem>()
         .id("crowbar")
-        .bound {
-            CrowbarItem(
-                Item.Properties().stacksTo(1).durability(1000)
-            )
-        }
+        .bound { CrowbarItem() }
+        .build()
+
+    //扳手，用于修复和组装载具部件，也可作为武器
+    @JvmStatic
+    val WRENCH_ITEM = MachineMax.REGISTER.item<WrenchItem>()
+        .id("wrench")
+        .bound { WrenchItem() }
         .build()
 
     //油漆喷罐，为部件切换贴图
     @JvmStatic
     val SPRAY_CAN_ITEM = MachineMax.REGISTER.item<SprayCanItem>()
         .id("spray_can")
-        .bound { SprayCanItem(Item.Properties().stacksTo(64)) }
+        .bound { SprayCanItem() }
         .build()
 
     //路基方块

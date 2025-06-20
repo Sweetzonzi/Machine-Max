@@ -173,8 +173,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 type.animation,//获取部件动画路径
                 type.textures.get(textureIndex % type.textures.size()));//获取部件第一个可用纹理作为默认纹理
         this.uuid = UUID.fromString(data.uuid);
-        this.durability = data.durability;
-        this.integrity = data.integrity;
+        this.durability = Math.min(data.durability, type.basicDurability);
+        this.integrity = Math.min(data.integrity, type.basicIntegrity);
         this.rootSubPart = createSubPart(type.subParts);//重建子部件并指定根子部件
         updateMass();//更新部件总质量
         for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {//遍历保存的子部件位置、旋转、速度数据
@@ -207,6 +207,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             onDestroyed();
         }
         if (durability < 0) durability = 0;
+        else if (durability > type.basicDurability) durability = type.basicDurability;
         if (oHurtMarked) oHurtMarked = false;
         else if (hurtMarked) hurtMarked = false;
     }
@@ -248,7 +249,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                         }
                     }
                     //削减部件完整性
-                    integrity = Math.max(integrity - (destroyed ? 0.5f * impact : 0.25f * impact), 0);
+                    integrity = Math.clamp(integrity - (destroyed ? 0.5f * impact : 0.1f * impact), 0, type.basicIntegrity);
                 }
                 accumulatedImpact.clear();
             }
@@ -297,13 +298,13 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", subPart.part.name);
             }
         }
-        if (source.getDirectEntity() != null && !level.isClientSide)
-            if (source.getEntity() instanceof Player player) {
-                float angle = (float) (Math.acos(-normal.dot(worldContactSpeed.normalize())) * 180 / Math.PI);
-                player.sendSystemMessage(Component.literal("命中部件")
-                        .append(Component.translatable(type.registryKey.toLanguageKey())
-                                .append(Component.literal("，原始伤害" + damage + "，护甲厚度" + armor + "，入射角" + angle + "度，等效厚度" + armor / Math.cos(angle / 180 * Math.PI) + "，穿甲值" + armorPenetration + "，耐久度" + durability + "/" + type.basicDurability + "，完整度" + integrity + "/" + type.basicIntegrity))));
-            }
+//        if (source.getDirectEntity() != null && !level.isClientSide)
+//            if (source.getEntity() instanceof Player player) {
+//                float angle = (float) (Math.acos(-normal.dot(worldContactSpeed.normalize())) * 180 / Math.PI);
+//                player.sendSystemMessage(Component.literal("命中部件")
+//                        .append(Component.translatable(type.registryKey.toLanguageKey())
+//                                .append(Component.literal("，原始伤害" + damage + "，护甲厚度" + armor + "，入射角" + angle + "度，等效厚度" + armor / Math.cos(angle / 180 * Math.PI) + "，穿甲值" + armorPenetration + "，耐久度" + durability + "/" + type.basicDurability + "，完整度" + integrity + "/" + type.basicIntegrity))));
+//            }
         //线性减伤处理
         float impactDamage = damage - hitBox.getDamageReduction();
         //累积冲击效果用于削减结构完整性
@@ -335,15 +336,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             level.getPhysicsLevel().submitDeduplicatedTask("part_sync_" + uuid.toString(), PPhase.PRE, () -> {
                 level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//去重后加入任务队列，确保造成伤害后再进行同步
                     //包同步部件和子系统耐久度
-                    if (!level.isClientSide) {
-                        hurtMarked = true;
-                        Map<String, Float> subsystemDurability = new HashMap<>();
-                        for (Map.Entry<String, AbstractSubsystem> entry : hitBox.getSubsystems().entrySet()) {
-                            subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
-                        }
-                        PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                                new PartSyncPayload(vehicle.uuid, uuid, durability, integrity, subsystemDurability));
-                    }
+                    syncStatus(hitBox);
                     return null;
                 });
                 return null;
@@ -352,6 +345,30 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         } else {
             //TODO:模组伤害的冲击击退效果
             return false;
+        }
+    }
+
+    public void syncStatus() {
+        if (!level.isClientSide) {
+            hurtMarked = true;
+            Map<String, Float> subsystemDurability = new HashMap<>();
+            for (Map.Entry<String, AbstractSubsystem> entry : this.getSubsystems().entrySet()) {
+                subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
+            }
+            PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+                    new PartSyncPayload(vehicle.uuid, uuid, durability, integrity, subsystemDurability));
+        }
+    }
+
+    public void syncStatus(HitBox hitBox) {
+        if (!level.isClientSide) {
+            hurtMarked = true;
+            Map<String, Float> subsystemDurability = new HashMap<>();
+            for (Map.Entry<String, AbstractSubsystem> entry : hitBox.getSubsystems().entrySet()) {
+                subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
+            }
+            PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+                    new PartSyncPayload(vehicle.uuid, uuid, durability, integrity, subsystemDurability));
         }
     }
 

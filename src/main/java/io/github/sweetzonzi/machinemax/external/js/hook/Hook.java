@@ -71,6 +71,7 @@ public class Hook {
             jsCode += "//      错误用法 mm.hook(c11, (各个参数) => {}); ❌\n";
             jsCode += "//      正确用法 mm.hook(\"VehicleCore:tick\", (各个参数) => {}); ✅\n";
             jsCode += "\n// 若因使用不当造成个人外部包失效概不负责\n\n";
+            //TODO:这里会崩溃，需要检查
             for (String c : CHANNEL_DOCUMENT.keySet()) {
                 jsCode += "var c%s = \"%s\";\n".formatted(docIndex, c);
                 jsCode += "//param: (%s)\n\n".formatted(CHANNEL_DOCUMENT.get(c));

@@ -16,7 +16,7 @@
   ],
   "icon": "machine_max:example_pack/icon/ae86_chassis_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
   "basic_durability": 75.0,//(可选，默认20.0)部件基础生命值，降至0时部件的所有子系统会瘫痪
-  "basic_integrity": 100.0,//(可选，默认50.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
+  "basic_integrity": 60.0,//(可选，默认15.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
   "subsystems": {
     "car_controller": {
       "type": "machine_max:car_controller", //子系统类型
