@@ -10,15 +10,17 @@ import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 
 public class ScriptableSubsystemAttr extends AbstractSubsystemAttr {
     public final String script;
+
     public ScriptableSubsystemAttr(float basicDurability, String hitBox, String script) {
         super(basicDurability, hitBox);
         this.script = script;
         Hook.run(this, basicDurability, hitBox, script);
     }
+
     public static final MapCodec<ScriptableSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
-            Codec.STRING.fieldOf("script").forGetter(ScriptableSubsystemAttr::getScript)
+            Codec.STRING.optionalFieldOf("script", "").forGetter(ScriptableSubsystemAttr::getScript)
     ).apply(instance, ScriptableSubsystemAttr::new));
 
     private String getScript() {
@@ -38,6 +40,6 @@ public class ScriptableSubsystemAttr extends AbstractSubsystemAttr {
     @Override
     public AbstractSubsystem createSubsystem(ISubsystemHost owner, String name) {
         Hook.run(this, owner, name);
-        return new ScriptableSubsystem(owner, name, this, script);
+        return new ScriptableSubsystem(owner, name, this);
     }
 }
