@@ -27,11 +27,6 @@ public class Hook {
         LISTENING_EVENT.clear();
     }
 
-    private enum RunType {
-        run,
-        replace,
-    }
-
 
     /**
      * 普通的钩子传入方式，JS可以在channel上挂载自定义钩函数，并且拿到args
@@ -53,7 +48,7 @@ public class Hook {
         String methodName = stack.getMethodName();
         String channel = JSUtils.getSimpleName(className) + ":" + methodName;
         _generateDocument(args, channel);
-        return _run(RunType.run, args, channel, currentThread);
+        return _run(args, channel, currentThread);
     }
 
 
@@ -76,36 +71,27 @@ public class Hook {
         String methodName = stack.getMethodName();
         String channel = "REPLACE."+JSUtils.getSimpleName(className) + ":" + methodName + ":" + tag;
         _generateDocument(fakeArgs, channel);
-        Object objFromRun = _run(RunType.replace, fakeArgs, channel, currentThread);
+        Object objFromRun = _run(fakeArgs, channel, currentThread);
         if (objFromRun != null && objFromRun.getClass().isInstance(original)) return (T) objFromRun;
         return original;
     }
     
 
     @Nullable
-    private static Object _run(RunType runType, Object[] args, String channel, Thread currentThread) {
+    private static Object _run(Object[] args, String channel, Thread currentThread) {
         if (LISTENING_EVENT.get(channel) instanceof List<EventToJS> li) {
             for (EventToJS eventToJS : li) {
 //                if (isScriptableSubsystem && (!eventToJS.packName().equals(packName))) return null;
                 try {
                     String packName = eventToJS.packName();
                     String location = eventToJS.location();
-                    switch (runType) {
 
-                        case run -> {
-                            if (args[0] instanceof ScriptableSubsystem scriptableSubsystem) {
-                                String scriptPath = ((ScriptableSubsystemAttr) scriptableSubsystem.getAttr()).script;
-                                if (!location.equals(scriptPath)) return null;
-                            }
-
-                            JS_SCOPE.put("args", JS_SCOPE, args);
-                        }
-                        case replace -> {
-                            JS_SCOPE.put("origin", JS_SCOPE, args[0]);
-                        }
+                    if (args[0] instanceof ScriptableSubsystem scriptableSubsystem) {
+                        String scriptPath = ((ScriptableSubsystemAttr) scriptableSubsystem.getAttr()).script;
+                        if (!location.equals(scriptPath)) return null;
                     }
 
-
+                    JS_SCOPE.put("args", JS_SCOPE, args);
                     JS_SCOPE.put("mm", JS_SCOPE, new JSUtils(location, packName));
                     JS_SCOPE.put("channel", JS_SCOPE, channel);
                     JS_SCOPE.put("packName", JS_SCOPE, packName);
