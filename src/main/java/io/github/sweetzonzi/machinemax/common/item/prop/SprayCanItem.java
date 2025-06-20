@@ -27,8 +27,8 @@ import org.joml.Vector3f;
 import java.util.HashMap;
 
 public class SprayCanItem extends Item implements IPartInteractableItem, ICustomModelItem {
-    public SprayCanItem(Properties properties) {
-        super(properties);
+    public SprayCanItem() {
+        super(new Properties());
     }
 
     @Override

@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.util.HashMap;
 
 public class EmptyBlueprintItem extends Item implements ICustomModelItem {
-    public EmptyBlueprintItem(Properties properties) {
-        super(properties);
+    public EmptyBlueprintItem() {
+        super(new Properties());
     }
 
     @Override
@@ -42,6 +42,7 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem {
                 try {
                     VehicleData.serializeVehicleDataToJson(vehicleData, saveDir);
                     player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_saved", saveDir.toString()));
+                    player.getItemInHand(usedHand).consume(1, player);
                 } catch (IOException e) {
                     MachineMax.LOGGER.error("Failed to save vehicle data to file!", e);
                     player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_error", e));

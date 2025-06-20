@@ -246,8 +246,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 ManifoldPoints.getLateralFrictionDir2(manifoldPointId, lateral2);
                 lateral1 = lateral1.normalize();
                 lateral2 = lateral2.normalize();
-                lateral1.multLocal((float) (partMass / 60f * MMMath.sigmoidSignum(Math.abs(lateral1.dot(contactVel)))));
-                lateral2.multLocal((float) (partMass / 60f * MMMath.sigmoidSignum(Math.abs(lateral2.dot(contactVel)))));
+                lateral1.multLocal((float) (-partMass / 60f * MMMath.sigmoidSignum(lateral1.dot(contactVel))));
+                lateral2.multLocal((float) (-partMass / 60f * MMMath.sigmoidSignum(lateral2.dot(contactVel))));
                 body.applyCentralImpulse(lateral1);
                 body.applyCentralImpulse(lateral2);
                 //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理

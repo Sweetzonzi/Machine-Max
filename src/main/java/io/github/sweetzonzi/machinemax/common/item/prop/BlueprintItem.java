@@ -52,8 +52,8 @@ import java.util.*;
 import java.util.List;
 
 public class BlueprintItem extends Item implements ICustomModelItem {
-    public BlueprintItem(Properties properties) {
-        super(properties);
+    public BlueprintItem() {
+        super(new Properties().stacksTo(1));
     }
 
     @Override

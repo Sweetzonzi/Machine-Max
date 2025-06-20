@@ -108,6 +108,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     public boolean hurt(@NotNull DamageSource source, float amount) {
+        if (this.part == null) return false;
         if (source.getDirectEntity() instanceof Projectile projectile) {
             //来自投射物的伤害处理
             IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
