@@ -4,6 +4,8 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
+import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
@@ -76,12 +78,12 @@ public class RawInputHandler {
 
             switch (part.vehicle.mode) {
                 case GROUND -> {
-                    if (KeyBinding.groundForwardKey.isDown()) trans_z_input += 100;
-                    if (KeyBinding.groundBackWardKey.isDown()) trans_z_input -= 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundForwardKey).isHover()) trans_z_input += 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover()) trans_z_input -= 100;
                     trans_z_input += Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
                     trans_z_input -= Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
-                    if (KeyBinding.groundLeftwardKey.isDown()) rot_y_input += 100;
-                    if (KeyBinding.groundRightwardKey.isDown()) rot_y_input -= 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundLeftwardKey).isHover()) rot_y_input += 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundRightwardKey).isHover()) rot_y_input -= 100;
                     rot_y_input -= Math.round(MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
                 }
                 case SHIP -> {}
@@ -146,6 +148,18 @@ public class RawInputHandler {
                     System.out.println("同时按下组合键的E键三连击情况");
                 })
         ;
+
+
+        /*
+          js功能
+         */
+
+        new KeyHooks.EVENT("backslash").OnKeyDown(() -> { //反斜杠热更新
+            MMInitialJS.clear();
+            MMInitialJS.hotReload();
+            MMInitialJS.register();
+        });
+
         if (client.player != null ) {
 
         /*
