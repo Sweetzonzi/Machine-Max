@@ -19,6 +19,7 @@ import io.github.sweetzonzi.machinemax.common.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machinemax.network.payload.PartSyncPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.ConnectorAttachPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.ConnectorDetachPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.PartRemovePayload;
@@ -58,7 +59,8 @@ public class VehicleCore {
     private Vec3 position = Vec3.ZERO;//位置
     private Vec3 velocity = Vec3.ZERO;//速度
     public float totalMass = 0;//总质量
-    public int syncCountDown = 5;//同步倒计时
+    public int poseSyncCountDown = 5;//位姿同步倒计时
+    public int statusSyncCountDown = 5;//状态同步倒计时
     @Setter
     public boolean inLoadedChunk = false;//是否睡眠
     public boolean loadFromSavedData = false;//是否已加载
@@ -131,6 +133,17 @@ public class VehicleCore {
         }
         this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();
+//        //为分裂出的部件同步状态信息
+//        for(Part part : this.partMap.values()){
+//            if (!level.isClientSide) {
+//                Map<String, Float> subsystemDurability = new HashMap<>();
+//                for (Map.Entry<String, AbstractSubsystem> entry : part.getSubsystems().entrySet()) {
+//                    subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
+//                }
+//                PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+//                        new PartSyncPayload(uuid, part.uuid, part.durability, part.integrity, subsystemDurability));
+//            }
+//        }
     }
 
     /**
@@ -164,16 +177,16 @@ public class VehicleCore {
                     loaded = true;
                 }
             }
-            if (!level.isClientSide && syncCountDown <= 0) {
+            if (!level.isClientSide && poseSyncCountDown <= 0) {
                 syncSubParts(null);//同步零件位置姿态速度
-                syncCountDown = Math.max((int) (40 * Math.pow(2, -0.1 * velocity.length())), 2);//速度越大，同步冷却时间越短
+                poseSyncCountDown = Math.max((int) (40 * Math.pow(2, -0.1 * velocity.length())), 2);//速度越大，同步冷却时间越短
             }
             subSystemController.tick();
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
         }
         tickCount++;
-        if (syncCountDown > 0) syncCountDown--;
+        if (poseSyncCountDown > 0) poseSyncCountDown--;
     }
 
     public void prePhysicsTick() {
@@ -184,9 +197,19 @@ public class VehicleCore {
     }
 
     public void postPhysicsTick() {
+        if (!level.isClientSide && statusSyncCountDown > 0) statusSyncCountDown--;
         subSystemController.postPhysicsTick();
         for (Part part : partMap.values()) {
             part.onPostPhysicsTick();
+            if (!level.isClientSide && statusSyncCountDown <= 0) {
+                Map<String, Float> subsystemDurability = new HashMap<>();
+                for (Map.Entry<String, AbstractSubsystem> entry : part.getSubsystems().entrySet()) {
+                    subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
+                }
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+                        new PartSyncPayload(uuid, part.uuid, part.durability, part.integrity, subsystemDurability));
+                statusSyncCountDown = 120;
+            }
         }
     }
 
@@ -247,7 +270,7 @@ public class VehicleCore {
      * 激活载具所有零件的运动体
      */
     public void activate() {
-        syncCountDown = 0;
+        poseSyncCountDown = 0;
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;
@@ -498,6 +521,7 @@ public class VehicleCore {
         List<ConnectionData> connectionsToRemove = new ArrayList<>();
         for (Pair<AbstractConnector, AttachPointConnector> connection : connections) {
             connection.getFirst().detach(false);
+            this.activate();
             boolean removed = partNet.removeEdge(connection);
             if (!removed && connection.getSecond() instanceof AttachPointConnector attachPoint)
                 removed = partNet.removeEdge(Pair.of(connection.getSecond(), attachPoint));

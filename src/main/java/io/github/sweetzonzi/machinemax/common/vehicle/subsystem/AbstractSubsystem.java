@@ -25,6 +25,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public final String name;
     public final AbstractSubsystemAttr attr;
     public final ISubsystemHost owner;
+    public HitBox hitBox;
 
     public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//信号频道名->接收者名称->接收者
     public final Map<String, Set<ISignalReceiver>> callbackTargets = new HashMap<>();//信号频道名->回调接收者
@@ -56,7 +57,6 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         } else if (this.isDestroyed() && !getPart().isDestroyed() && this.durability >= 0.3 * attr.basicDurability) {
             //重新激活修复到一定程度的子系统
             this.destroyed = false;
-            this.setActive(true);
         }
     }
 
@@ -122,10 +122,11 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void onHurt(DamageSource source, float amount) {
+        this.durability -= amount;
     }
 
     public void onDestroyed() {
-        this.setActive(false);
+        this.destroyed = true;
     }
 
     /**
@@ -149,6 +150,10 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public Part getPart() {
         if (owner instanceof Part part) return part;
         else return null;
+    }
+
+    public boolean isActive() {
+        return active && !this.isDestroyed() && !getPart().isDestroyed();
     }
 
     public void setActive(boolean active) {

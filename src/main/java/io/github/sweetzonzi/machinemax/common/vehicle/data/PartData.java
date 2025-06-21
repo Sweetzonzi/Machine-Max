@@ -38,7 +38,7 @@ public class PartData {
             Codec.INT.fieldOf("textureIndex").forGetter(PartData::getTextureIndex),
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),
             Codec.FLOAT.fieldOf("durability").forGetter(PartData::getDurability),
-            Codec.FLOAT.optionalFieldOf("integrity", 100f).forGetter(PartData::getIntegrity),
+            Codec.FLOAT.optionalFieldOf("integrity", 20f).forGetter(PartData::getIntegrity),
             PosRotVelVel.MAP_CODEC.fieldOf("subPartTransforms").forGetter(PartData::getSubPartTransforms)
     ).apply(instance, PartData::new));
 

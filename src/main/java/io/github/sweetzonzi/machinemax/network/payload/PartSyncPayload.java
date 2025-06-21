@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machinemax.util.data.PosRotVelVel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -24,7 +25,8 @@ public record PartSyncPayload(
         UUID vehicleUUID,//载具UUID
         UUID partUUID,//部件UUID
         float durability,//部件耐久度
-        float integrity//部件完整度
+        float integrity,//部件完整度
+        Map<String, Float> subsystemDurability//子系统耐久度
 ) implements CustomPacketPayload {
     public static final Type<PartSyncPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_sync_payload"));
     public static final StreamCodec<FriendlyByteBuf, PartSyncPayload> STREAM_CODEC = new StreamCodec<>() {
@@ -34,7 +36,8 @@ public record PartSyncPayload(
             UUID partUUID = buffer.readUUID();
             float durability = buffer.readFloat();
             float integrity = buffer.readFloat();
-            return new PartSyncPayload(vehicleUUID, partUUID, durability, integrity);
+            Map<String, Float> subsystemDurability = buffer.readMap(FriendlyByteBuf::readUtf, FriendlyByteBuf::readFloat);
+            return new PartSyncPayload(vehicleUUID, partUUID, durability, integrity, subsystemDurability);
         }
 
         @Override
@@ -43,6 +46,7 @@ public record PartSyncPayload(
             FriendlyByteBuf.writeUUID(buffer, value.partUUID());
             buffer.writeFloat(value.durability());
             buffer.writeFloat(value.integrity());
+            buffer.writeMap(value.subsystemDurability(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeFloat);
         }
     };
 
@@ -62,6 +66,12 @@ public record PartSyncPayload(
                         //标记受伤
                         part.hurtMarked = true;
                         part.oHurtMarked = true;
+                    }
+                    for (Map.Entry<String, Float> entry : payload.subsystemDurability().entrySet()){
+                        String subsystemName = entry.getKey();
+                        float subsystemDurability = entry.getValue();
+                        AbstractSubsystem subsystem = part.subsystems.get(subsystemName);
+                        subsystem.durability = subsystemDurability;
                     }
                     part.durability = payload.durability;
                     part.integrity = payload.integrity;

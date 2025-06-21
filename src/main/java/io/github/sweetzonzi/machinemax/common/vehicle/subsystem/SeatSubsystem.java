@@ -1,12 +1,11 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
-import io.github.sweetzonzi.machinemax.MachineMax;
+import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
 import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
 import io.github.sweetzonzi.machinemax.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
-import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
@@ -24,7 +23,6 @@ import java.util.Map;
 public class SeatSubsystem extends AbstractSubsystem implements IControllableSubsystem  {
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
-    public AbstractConnector seatLocator;
     public LivingEntity passenger;
     public boolean occupied;
     private final SignalTargetsHolder signalTargetsHolder = new SignalTargetsHolder(this);
@@ -34,16 +32,6 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
         this.attr = attr;
         signalTargetsHolder.setUp(attr.moveSignalTargets, attr.viewSignalTargets, attr.regularSignalTargets);
         this.disableVanillaActions = !this.attr.allowUseItems;
-    }
-
-    @Override
-    public void onAttach() {
-        SeatSubsystemAttr attr = (SeatSubsystemAttr) this.attr;
-        if (owner.getPart() != null) {
-            seatLocator = owner.getPart().allConnectors.get(attr.connector);
-            if (seatLocator == null)
-                MachineMax.LOGGER.error("在部件{}中找不到名为{}的对接口作为座椅子系统的乘坐点", owner.getPart().name, attr.connector);
-        } else MachineMax.LOGGER.error("无法为{}的座椅子系统找到部件", owner);
     }
 
     @Override
@@ -132,6 +120,13 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
         return signalTargetsHolder.setUpTargets(new HashMap<>(1));
     }
 
-    //TODO: setMoveInputSignal 将0~100的byte缩放到0~1的float
-    //TODO: setMoveInputSignal 已经挪到了 SignalTargetsHolder 工具包
+    public Transform getSeatPointWorldTransform() {
+        String locatorName = attr.locator;
+        return getPart().getLocatorWorldTransform(locatorName);
+    }
+
+    public Transform getSeatPointLocalTransform() {
+        String locatorName = attr.locator;
+        return getPart().getLocatorLocalTransform(locatorName);
+    }
 }

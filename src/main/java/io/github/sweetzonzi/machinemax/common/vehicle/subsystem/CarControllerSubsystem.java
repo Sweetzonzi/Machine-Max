@@ -62,7 +62,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         }
         updateMoveInputs();
         this.speed = -getPart().rootSubPart.body.getLinearVelocityLocal(null).z;
-        if (active) {
+        if (isActive()) {
             //自动换档与手刹车冷却时间 Auto gear shift cooldown
             for (Map.Entry<ISignalReceiver, Float> entry : overrideCountDown.entrySet()) {
                 if (entry.getValue() > 0) {
@@ -75,7 +75,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        if (active && getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
+        if (isActive() && getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
                 actualSteering = actualSteering * (1 - attr.steeringSensitivity) + (moveInput[4]) * attr.steeringSensitivity;
@@ -115,7 +115,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onSignalUpdated(String channelName, ISignalSender sender) {
         Object signalValue = getSignalChannel(channelName).get(sender);
-        if (this.isActive()) {
+        if (isActive()) {
             if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
                 if (sender instanceof WheelDriverSubsystem wheel) {
                     if (wheel.getPart().vehicle != this.getPart().vehicle) wheels.remove(wheel);

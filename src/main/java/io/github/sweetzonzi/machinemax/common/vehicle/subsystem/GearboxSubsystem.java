@@ -9,7 +9,7 @@ import lombok.Setter;
 import java.util.*;
 
 @Getter
-public class GearboxSubsystem extends AbstractSubsystem{
+public class GearboxSubsystem extends AbstractSubsystem {
     public final GearboxSubsystemAttr attr;
     public final double[] gearRatios;//各级实际传动比率 Actual transmission ratio of each gear
     public final int minPositiveGear;
@@ -109,7 +109,8 @@ public class GearboxSubsystem extends AbstractSubsystem{
         }
         if (count > 0) averageSpeed /= count;//计算转速平均值
         MechPowerSignal powerSignalToSend = new MechPowerSignal((float) totalPower, (float) (averageSpeed / gearRatios[currentGear]));
-        sendSignalToTarget("power", attr.powerOutputTarget, powerSignalToSend);//发送功率信号
+        if (isActive()) sendSignalToTarget("power", attr.powerOutputTarget, powerSignalToSend);//发送功率信号
+        else resetSignalOutputs();
     }
 
     private void updateFeedback() {

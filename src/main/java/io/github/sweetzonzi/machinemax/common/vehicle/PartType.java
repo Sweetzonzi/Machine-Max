@@ -63,8 +63,8 @@ public class PartType {
                             ResourceLocation.withDefaultNamespace("missingno")).forGetter(PartType::getIcon),
                     ResourceLocation.CODEC.optionalFieldOf("animation",
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty")).forGetter(PartType::getAnimation),
-                    Codec.FLOAT.fieldOf("basic_durability").forGetter(PartType::getBasicDurability),
-                    Codec.FLOAT.optionalFieldOf("basic_integrity", 100f).forGetter(PartType::getBasicIntegrity),
+                    Codec.FLOAT.optionalFieldOf("basic_durability",20f).forGetter(PartType::getBasicDurability),
+                    Codec.FLOAT.optionalFieldOf("basic_integrity", 15f).forGetter(PartType::getBasicIntegrity),
                     AbstractSubsystemAttr.MAP_CODEC.optionalFieldOf("subsystems", Map.of()).forGetter(PartType::getSubsystems),
                     SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(PartType::getSubParts)
             ).apply(instance, PartType::new))
@@ -154,7 +154,7 @@ public class PartType {
     }
 
     /**
-     * @return 部件所有外部对接口名称与对应的接口属性 The external connectors of the part and their corresponding connector attributes.
+     * @return 部件所有外部对接口名称与对应的接口属性 The external connectors of the part and their corresponding locator attributes.
      */
     public Map<String, ConnectorAttr> getPartOutwardConnectors() {
         Map<String, ConnectorAttr> partConnectors = new HashMap<>(1);//获取部件所有外部对接口名称与类型

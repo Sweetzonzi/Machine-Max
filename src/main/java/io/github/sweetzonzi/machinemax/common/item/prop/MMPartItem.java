@@ -88,6 +88,7 @@ public class MMPartItem extends Item implements ICustomModelItem {
                             part.durability = durability;
                             targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
+                            stack.consume(1, player);
                         }
                     }
                 } else {
@@ -103,6 +104,7 @@ public class MMPartItem extends Item implements ICustomModelItem {
                             )
                     );
                     VehicleManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
+                    stack.consume(1, player);
                 }
             } catch (Exception e) {
                 MachineMax.LOGGER.error("Error while using part item: {}", stack.getDisplayName(), e);
@@ -187,7 +189,7 @@ public class MMPartItem extends Item implements ICustomModelItem {
     public @NotNull Component getName(@NotNull ItemStack stack) {
         ResourceLocation type = stack.get(MMDataComponents.getPART_TYPE());
         if (type != null) {
-            return Component.translatable("item." + type.toLanguageKey());
+            return Component.translatable(type.toLanguageKey());
         } else return super.getName(stack);
     }
 

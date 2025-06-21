@@ -39,7 +39,7 @@ public class GearboxSubsystemAttr extends AbstractSubsystemAttr {
     }
 
     public static final MapCodec<GearboxSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.FLOAT.optionalFieldOf("final_ratio", 5f).forGetter(GearboxSubsystemAttr::getFinalRatio),
             Codec.list(Codec.FLOAT).optionalFieldOf("ratios", List.of(-3.5f, 3.5f, 2f, 1.3f, 1.0f, 0.8f)).forGetter(GearboxSubsystemAttr::getRatios),

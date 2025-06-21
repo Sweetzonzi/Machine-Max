@@ -1613,6 +1613,7 @@
 					"pivot": [0, 1, 0],
 					"locators": {
 						"MassCenter": [0, 0, 0],
+						"AeroDynamicCenter": [0, 8, 0],
 						"LeftFrontWheel": [17.5, 0.5, -29],
 						"RightFrontWheel": [-17.5, 0.5, -29],
 						"LeftBackWheel": [17.5, 0.5, 32],
@@ -1657,7 +1658,10 @@
 							"rotation": [10, 0, 0],
 							"uv": {}
 						}
-					]
+					],
+					"locators": {
+						"EngineDamageSmoke": [0, 10, -31]
+					}
 				},
 				{
 					"name": "rot",

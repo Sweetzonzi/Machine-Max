@@ -19,10 +19,8 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
     @Inject(method = "setupRotations", at = @At("TAIL"))
     public void setupRotations(T entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale, CallbackInfo ci) {
         if (((IEntityMixin) entity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seatSubsystem) {
-            var rot = SparkMathKt.toQuaternionf(seatSubsystem.seatLocator.subPart.body.tickTransform.getRotation());
-            var oldRot = SparkMathKt.toQuaternionf(seatSubsystem.seatLocator.subPart.body.lastTickTransform.getRotation());
-            var actualRot = oldRot.slerp(rot, partialTick);
-            poseStack.mulPose(actualRot);
+            var actualRot = seatSubsystem.getPart().getLerpedLocatorWorldTransform(seatSubsystem.attr.locator, partialTick).getRotation();
+            poseStack.mulPose(SparkMathKt.toQuaternionf(actualRot));
             Vector3f passengerScale = seatSubsystem.attr.passengerScale.toVector3f();
             poseStack.scale(passengerScale.x(), passengerScale.y(), passengerScale.z());
         }

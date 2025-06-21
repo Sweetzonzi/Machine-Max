@@ -212,7 +212,7 @@ public class VehicleManager {
         for (int i = 0; i < MMDynamicRes.errorFiles.size(); i++) {
             String file = MMDynamicRes.errorFiles.get(i);
             Component message = MMDynamicRes.errorMessages.get(i);
-            event.getServer().sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message));
+            event.getServer().sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message).withColor(Color.red.getRGB()));
         }
         serverAllVehicles.clear();
         levelVehicles.clear();

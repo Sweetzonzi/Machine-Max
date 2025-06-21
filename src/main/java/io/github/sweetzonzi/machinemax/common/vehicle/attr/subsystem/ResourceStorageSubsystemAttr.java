@@ -16,7 +16,7 @@ public class ResourceStorageSubsystemAttr extends AbstractSubsystemAttr {
     public final boolean shared;
 
     public static final MapCodec<ResourceStorageSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.fieldOf("resource_type").forGetter(ResourceStorageSubsystemAttr::getResourceType),
             Codec.FLOAT.optionalFieldOf("max_capacity", 0.0f).forGetter(ResourceStorageSubsystemAttr::getMaxCapacity),

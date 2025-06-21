@@ -16,8 +16,7 @@ import java.util.Set;
 
 @Getter
 public class SeatSubsystemAttr extends AbstractSubsystemAttr {
-    public final String subpart;
-    public final String connector;
+    public final String locator;
     public final boolean renderPassenger;
     public final Vec3 passengerScale;
     public final boolean allowUseItems;
@@ -27,12 +26,11 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, List<String>> moveSignalTargets;
     public final Map<String, List<String>> viewSignalTargets;
     public final Map<String, List<String>> regularSignalTargets;
-
+    //TODO:是否无视命中情况转嫁乘客伤害到部件
     public static final MapCodec<SeatSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
-            Codec.STRING.fieldOf("sub_part").forGetter(SeatSubsystemAttr::getSubpart),
-            Codec.STRING.fieldOf("connector").forGetter(SeatSubsystemAttr::getConnector),
+            Codec.STRING.optionalFieldOf("seat_point_locator","").forGetter(SeatSubsystemAttr::getLocator),
             Codec.BOOL.optionalFieldOf("render_passenger", true).forGetter(SeatSubsystemAttr::isRenderPassenger),
             Vec3.CODEC.optionalFieldOf("passenger_scale", new Vec3(1, 1, 1)).forGetter(SeatSubsystemAttr::getPassengerScale),
             Codec.BOOL.optionalFieldOf("allow_first_person_view", true).forGetter(SeatSubsystemAttr::isAllowFirstPersonView),
@@ -47,8 +45,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     public SeatSubsystemAttr(
             float basicDurability,
             String hitBox,
-            String subpart,
-            String connector,
+            String locator,
             boolean renderPassenger, Vec3 passengerScale,
             boolean allowFirstPersonView,
             boolean allowThirdPersonView,
@@ -59,12 +56,11 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             Map<String, List<String>> regularSignalTargets) {
         super(basicDurability, hitBox);
         //合法性检查
-        if (connector == null || connector.isEmpty())
+        if (locator == null || locator.isEmpty())
             throw new IllegalStateException("error.machine_max.seat_subsystem.no_locator");
         if (!allowFirstPersonView && !allowThirdPersonView)
             throw new IllegalArgumentException("error.machine_max.seat_subsystem.no_view");
-        this.subpart = subpart;
-        this.connector = connector;
+        this.locator = locator;
         this.renderPassenger = renderPassenger;
         this.passengerScale = passengerScale;
         this.allowFirstPersonView = allowFirstPersonView;

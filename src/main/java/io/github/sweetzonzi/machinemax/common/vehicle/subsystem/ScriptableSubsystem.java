@@ -32,10 +32,10 @@ public class ScriptableSubsystem extends AbstractSubsystem implements IControlla
     @Getter
     private UUID vehicleCoreUUID = null;
     private final SignalTargetsHolder signalTargetsHolder = new SignalTargetsHolder(this);
-    public ScriptableSubsystem(ISubsystemHost owner, String name, ScriptableSubsystemAttr attr, String script) {
+    public ScriptableSubsystem(ISubsystemHost owner, String name, ScriptableSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.script = script;
+        this.script = attr.script;
     }
 
     @Override

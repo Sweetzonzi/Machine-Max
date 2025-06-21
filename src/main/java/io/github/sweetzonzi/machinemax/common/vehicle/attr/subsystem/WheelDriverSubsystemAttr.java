@@ -19,7 +19,7 @@ public class WheelDriverSubsystemAttr extends AbstractSubsystemAttr {
     public final WheelSteeringAxisAttr steeringAxis;
 
     public static final MapCodec<WheelDriverSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.fieldOf("connector").forGetter(WheelDriverSubsystemAttr::getControlledConnector),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("wheel_control", "move_control")).forGetter(WheelDriverSubsystemAttr::getControlSignalKeys),

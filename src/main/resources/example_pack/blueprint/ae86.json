@@ -1,387 +1,396 @@
 {
-  "pos": [
-    -7.150931729210747,
-    -59.33359612358941,
-    0.7263843648963504
-  ],
-  "min": [
-    -1.382856580946168,
-    -0.8542709350585938,
-    -3.231716579861313
-  ],
-  "max": [
-    1.383256700303832,
-    1.4554214477539062,
-    3.181613498263687
-  ],
   "hp": 20.0,
   "parts": [
     {
-      "textureIndex": 0,
-      "uuid": "22045431-233c-4b6d-94e9-4c156be1a460",
-      "durability": 75.0,
-      "subPartTransforms": {
-        "ae86_chassis": {
-          "position": [
-            -7.1470337,
-            -59.563244,
-            0.49743214
-          ],
-          "rotation": [
-            -3.9572662E-4,
-            -0.008804348,
-            -2.1145305E-4,
-            0.99996114
-          ],
-          "linearVel": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "angularVel": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      },
-      "registryKey": "machine_max:ae86_chassis",
-      "subpart": "ae86_chassis",
-      "variant": "default"
-    },
-    {
-      "textureIndex": 0,
-      "uuid": "125ed9d3-7dd0-4080-b74b-069b5a990759",
+      "uuid": "a9ab74c4-e225-4ae7-9ace-4c5c9513ad4f",
       "durability": 30.0,
+      "integrity": 50.0,
       "subPartTransforms": {
         "ae86_wheel": {
           "position": [
-            -8.275611,
-            -59.531273,
-            2.4778755
+            0.4094711,
+            -59.531242,
+            -6.404602
           ],
           "rotation": [
-            -5.131092E-4,
-            -0.00550681,
-            5.050361E-5,
-            0.9999847
+            -6.788958E-4,
+            -6.633993E-4,
+            -9.012346E-6,
+            0.9999995
           ],
           "linearVel": [
-            0.0,
-            0.0,
-            0.0
+            2.161214E-4,
+            -7.548928E-5,
+            4.1107676E-4
           ],
           "angularVel": [
-            0.0,
-            0.0,
-            0.0
+            8.7769964E-10,
+            -3.9782695E-5,
+            -9.395067E-10
           ]
         }
       },
       "registryKey": "machine_max:ae86_wheel",
       "subpart": "ae86_wheel",
-      "variant": "left"
+      "variant": "left",
+      "textureIndex": 0
     },
     {
-      "textureIndex": 0,
-      "uuid": "ca83b82e-0974-44a1-9003-00db8786ef82",
-      "durability": 30.0,
-      "subPartTransforms": {
-        "ae86_wheel": {
-          "position": [
-            -8.208677,
-            -59.531235,
-            -1.3340658
-          ],
-          "rotation": [
-            0.091550715,
-            -0.008605234,
-            7.2536437E-4,
-            0.99576294
-          ],
-          "linearVel": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "angularVel": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      },
-      "registryKey": "machine_max:ae86_wheel",
-      "subpart": "ae86_wheel",
-      "variant": "left"
-    },
-    {
-      "textureIndex": 0,
-      "uuid": "4f126e56-f1d9-4dab-90c1-a63025054b3f",
+      "uuid": "39921459-14c1-44ca-a5ca-f9a886081b99",
       "durability": 50.0,
+      "integrity": 75.0,
       "subPartTransforms": {
         "ae86_back_seat": {
           "position": [
-            -7.1677895,
-            -59.1248,
-            1.6844046
+            1.5020342,
+            -59.1246,
+            -7.219258
           ],
           "rotation": [
-            -3.9565732E-4,
-            -0.008809999,
-            -2.2377672E-4,
-            0.9999611
+            -4.7694627E-4,
+            8.157918E-4,
+            -1.822224E-4,
+            0.9999995
           ],
           "linearVel": [
-            0.0,
-            0.0,
-            0.0
+            -2.066182E-4,
+            -7.2821975E-5,
+            9.198871E-5
           ],
           "angularVel": [
-            0.0,
-            0.0,
-            0.0
+            1.9446982E-6,
+            3.2870716E-4,
+            2.134888E-5
           ]
         }
       },
       "registryKey": "machine_max:ae86_back_seat",
       "subpart": "ae86_back_seat",
-      "variant": "default"
+      "variant": "default",
+      "textureIndex": 0
     },
     {
-      "textureIndex": 0,
-      "uuid": "2f377e75-6ac0-42af-a8fc-b8af6ca89950",
+      "uuid": "ea87963e-3589-4aff-8406-267ed0921551",
       "durability": 30.0,
+      "integrity": 50.0,
       "subPartTransforms": {
         "ae86_wheel": {
           "position": [
-            -6.0214424,
-            -59.53124,
-            -1.2955196
+            2.5969374,
+            -59.531242,
+            -6.4081545
           ],
           "rotation": [
-            -0.015148876,
-            -0.008619418,
-            -1.8299338E-6,
-            0.9998481
+            -1.0295134E-5,
+            4.6760467E-4,
+            -4.946953E-5,
+            0.9999999
           ],
           "linearVel": [
-            0.0,
-            0.0,
-            0.0
+            4.28697E-4,
+            2.8654933E-5,
+            -1.9568263E-4
           ],
           "angularVel": [
-            0.0,
-            0.0,
-            0.0
+            1.8323097E-10,
+            3.0408753E-4,
+            -1.8135068E-10
           ]
         }
       },
       "registryKey": "machine_max:ae86_wheel",
       "subpart": "ae86_wheel",
-      "variant": "right"
+      "variant": "right",
+      "textureIndex": 0
     },
     {
-      "textureIndex": 0,
-      "uuid": "e5f4773f-c365-43cd-8c2a-dfc1e9be0a2f",
-      "durability": 30.0,
-      "subPartTransforms": {
-        "ae86_wheel": {
-          "position": [
-            -6.0884943,
-            -59.531254,
-            2.5162935
-          ],
-          "rotation": [
-            0.0013174169,
-            0.046291333,
-            -4.1845862E-5,
-            0.9989271
-          ],
-          "linearVel": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "angularVel": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      },
-      "registryKey": "machine_max:ae86_wheel",
-      "subpart": "ae86_wheel",
-      "variant": "right"
-    },
-    {
-      "textureIndex": 0,
-      "uuid": "0168555e-b26d-4f67-9cee-14c6c7d50c8c",
-      "durability": 25.0,
-      "subPartTransforms": {
-        "ae86_seat": {
-          "position": [
-            -6.588798,
-            -59.000793,
-            0.75686276
-          ],
-          "rotation": [
-            -3.9572443E-4,
-            -0.008809858,
-            -2.2281863E-4,
-            0.9999611
-          ],
-          "linearVel": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "angularVel": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      },
-      "registryKey": "machine_max:ae86_seat",
-      "subpart": "ae86_seat",
-      "variant": "default"
-    },
-    {
-      "textureIndex": 0,
-      "uuid": "5c8090d8-4595-4b2e-954a-2b5b27cb980f",
+      "uuid": "c6357eed-55f1-4dfc-ab0a-5a85d916a8ac",
       "durability": 50.0,
+      "integrity": 75.0,
       "subPartTransforms": {
         "ae86_hull": {
           "position": [
-            -7.1469064,
-            -59.188244,
-            0.49713957
+            1.500079,
+            -59.188232,
+            -8.406695
           ],
           "rotation": [
-            -3.956884E-4,
-            -0.008813003,
-            -2.4144189E-4,
-            0.999961
+            -4.7699126E-4,
+            8.1527926E-4,
+            -1.8379309E-4,
+            0.9999995
           ],
           "linearVel": [
-            0.0,
-            0.0,
-            0.0
+            -6.038548E-4,
+            -7.106364E-5,
+            8.409281E-5
           ],
           "angularVel": [
-            0.0,
-            0.0,
-            0.0
+            1.689864E-6,
+            3.2540562E-4,
+            1.4544001E-5
           ]
         }
       },
       "registryKey": "machine_max:ae86_hull",
       "subpart": "ae86_hull",
-      "variant": "default"
+      "variant": "default",
+      "textureIndex": 0
     },
     {
-      "textureIndex": 0,
-      "uuid": "46f4f00f-4524-4665-842e-c2939e27434e",
+      "uuid": "57e3b699-365f-42ad-a621-db4469ba65ee",
+      "durability": 30.0,
+      "integrity": 50.0,
+      "subPartTransforms": {
+        "ae86_wheel": {
+          "position": [
+            2.5907035,
+            -59.53124,
+            -10.220657
+          ],
+          "rotation": [
+            -4.5306E-4,
+            8.118655E-4,
+            -8.160667E-5,
+            0.9999996
+          ],
+          "linearVel": [
+            -0.0011835331,
+            -5.2660704E-5,
+            -2.712788E-4
+          ],
+          "angularVel": [
+            -2.4600205E-10,
+            2.7098972E-4,
+            -4.2815205E-9
+          ]
+        }
+      },
+      "registryKey": "machine_max:ae86_wheel",
+      "subpart": "ae86_wheel",
+      "variant": "right",
+      "textureIndex": 0
+    },
+    {
+      "uuid": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
+      "durability": 75.0,
+      "integrity": 100.0,
+      "subPartTransforms": {
+        "ae86_chassis": {
+          "position": [
+            1.4999346,
+            -59.563232,
+            -8.406339
+          ],
+          "rotation": [
+            -4.7692202E-4,
+            8.1623445E-4,
+            -1.771597E-4,
+            0.9999995
+          ],
+          "linearVel": [
+            -5.645839E-4,
+            -7.1942806E-5,
+            9.503444E-5
+          ],
+          "angularVel": [
+            2.0381585E-6,
+            3.3888337E-4,
+            2.3256765E-5
+          ]
+        }
+      },
+      "registryKey": "machine_max:ae86_chassis",
+      "subpart": "ae86_chassis",
+      "variant": "default",
+      "textureIndex": 0
+    },
+    {
+      "uuid": "1dfcb2b1-21b2-480d-a37e-4683a36e1ed8",
+      "durability": 30.0,
+      "integrity": 50.0,
+      "subPartTransforms": {
+        "ae86_wheel": {
+          "position": [
+            0.40322328,
+            -59.53124,
+            -10.217077
+          ],
+          "rotation": [
+            8.2565314E-4,
+            8.194765E-4,
+            -6.757364E-5,
+            0.9999993
+          ],
+          "linearVel": [
+            -0.0012011107,
+            9.1433525E-5,
+            4.629825E-4
+          ],
+          "angularVel": [
+            3.9429568E-10,
+            3.3145575E-4,
+            -6.7779116E-14
+          ]
+        }
+      },
+      "registryKey": "machine_max:ae86_wheel",
+      "subpart": "ae86_wheel",
+      "variant": "left",
+      "textureIndex": 0
+    },
+    {
+      "uuid": "38d74ace-7e33-45fa-be9c-0adf863a0fdd",
       "durability": 25.0,
+      "integrity": 50.0,
       "subPartTransforms": {
         "ae86_seat": {
           "position": [
-            -7.713633,
-            -59.000282,
-            0.7370366
+            0.93804944,
+            -59.00029,
+            -8.155957
           ],
           "rotation": [
-            -3.955988E-4,
-            -0.008814618,
-            -2.3122365E-4,
-            0.999961
+            -4.7693608E-4,
+            8.157862E-4,
+            -1.816098E-4,
+            0.9999995
           ],
           "linearVel": [
-            0.0,
-            0.0,
-            0.0
+            -5.127025E-4,
+            -6.584823E-5,
+            2.7205347E-4
           ],
           "angularVel": [
-            0.0,
-            0.0,
-            0.0
+            1.986542E-6,
+            3.2894255E-4,
+            2.0776264E-5
           ]
         }
       },
       "registryKey": "machine_max:ae86_seat",
       "subpart": "ae86_seat",
-      "variant": "default"
+      "variant": "default",
+      "textureIndex": 0
+    },
+    {
+      "uuid": "c9726a90-616f-4eb1-bf23-07483ec7bcd0",
+      "durability": 25.0,
+      "integrity": 50.0,
+      "subPartTransforms": {
+        "ae86_seat": {
+          "position": [
+            2.0630548,
+            -59.000706,
+            -8.157793
+          ],
+          "rotation": [
+            -4.769365E-4,
+            8.1564864E-4,
+            -1.8570271E-4,
+            0.9999995
+          ],
+          "linearVel": [
+            -5.249682E-4,
+            -4.1350722E-5,
+            -9.027532E-5
+          ],
+          "angularVel": [
+            1.9845788E-6,
+            3.2314268E-4,
+            2.577874E-5
+          ]
+        }
+      },
+      "registryKey": "machine_max:ae86_seat",
+      "subpart": "ae86_seat",
+      "variant": "default",
+      "textureIndex": 0
     }
   ],
   "connections": [
     {
-      "PartUuidA": "e5f4773f-c365-43cd-8c2a-dfc1e9be0a2f",
+      "PartUuidA": "ea87963e-3589-4aff-8406-267ed0921551",
       "SubPartNameA": "ae86_wheel",
       "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "22045431-233c-4b6d-94e9-4c156be1a460",
+      "PartUuidS": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
       "SubPartNameS": "ae86_chassis",
       "SpecialConnectorName": "right_back_wheel"
     },
     {
-      "PartUuidA": "2f377e75-6ac0-42af-a8fc-b8af6ca89950",
+      "PartUuidA": "57e3b699-365f-42ad-a621-db4469ba65ee",
       "SubPartNameA": "ae86_wheel",
       "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "22045431-233c-4b6d-94e9-4c156be1a460",
+      "PartUuidS": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
       "SubPartNameS": "ae86_chassis",
       "SpecialConnectorName": "right_front_wheel"
     },
     {
-      "PartUuidA": "ca83b82e-0974-44a1-9003-00db8786ef82",
+      "PartUuidA": "1dfcb2b1-21b2-480d-a37e-4683a36e1ed8",
       "SubPartNameA": "ae86_wheel",
       "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "22045431-233c-4b6d-94e9-4c156be1a460",
+      "PartUuidS": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
       "SubPartNameS": "ae86_chassis",
       "SpecialConnectorName": "left_front_wheel"
     },
     {
-      "PartUuidA": "125ed9d3-7dd0-4080-b74b-069b5a990759",
+      "PartUuidA": "a9ab74c4-e225-4ae7-9ace-4c5c9513ad4f",
       "SubPartNameA": "ae86_wheel",
       "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "22045431-233c-4b6d-94e9-4c156be1a460",
+      "PartUuidS": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
       "SubPartNameS": "ae86_chassis",
       "SpecialConnectorName": "left_back_wheel"
     },
     {
-      "PartUuidA": "4f126e56-f1d9-4dab-90c1-a63025054b3f",
+      "PartUuidA": "39921459-14c1-44ca-a5ca-f9a886081b99",
       "SubPartNameA": "ae86_back_seat",
       "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "22045431-233c-4b6d-94e9-4c156be1a460",
+      "PartUuidS": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
       "SubPartNameS": "ae86_chassis",
       "SpecialConnectorName": "back_seat"
     },
     {
-      "PartUuidA": "0168555e-b26d-4f67-9cee-14c6c7d50c8c",
+      "PartUuidA": "38d74ace-7e33-45fa-be9c-0adf863a0fdd",
       "SubPartNameA": "ae86_seat",
       "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "22045431-233c-4b6d-94e9-4c156be1a460",
-      "SubPartNameS": "ae86_chassis",
-      "SpecialConnectorName": "driver_seat"
-    },
-    {
-      "PartUuidA": "46f4f00f-4524-4665-842e-c2939e27434e",
-      "SubPartNameA": "ae86_seat",
-      "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "22045431-233c-4b6d-94e9-4c156be1a460",
+      "PartUuidS": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
       "SubPartNameS": "ae86_chassis",
       "SpecialConnectorName": "copilot_seat"
     },
     {
-      "PartUuidA": "5c8090d8-4595-4b2e-954a-2b5b27cb980f",
+      "PartUuidA": "c9726a90-616f-4eb1-bf23-07483ec7bcd0",
+      "SubPartNameA": "ae86_seat",
+      "AttachPointConnectorName": "chassis_connection",
+      "PartUuidS": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
+      "SubPartNameS": "ae86_chassis",
+      "SpecialConnectorName": "driver_seat"
+    },
+    {
+      "PartUuidA": "c6357eed-55f1-4dfc-ab0a-5a85d916a8ac",
       "SubPartNameA": "ae86_hull",
       "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "22045431-233c-4b6d-94e9-4c156be1a460",
+      "PartUuidS": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
       "SubPartNameS": "ae86_chassis",
       "SpecialConnectorName": "hull"
     }
   ],
+  "min": [
+    -1.366923858722051,
+    -0.7073012457953567,
+    -3.2259163856506348
+  ],
+  "max": [
+    1.367359350124995,
+    1.4551628960503464,
+    3.174564838409424
+  ],
+  "uuid": "5dbbccb6-d4df-473a-9fa3-515b1da85b7d",
+  "pos": [
+    1.500405838092168,
+    -59.33355797661675,
+    -8.177394390106201
+  ],
   "vehicle_name": "AE86",
   "tooltip": "machine_max:example_pack/content/ae86.html",
-  "icon": "machine_max:example_pack/icon/ae86_icon.png",
-  "uuid": "22045431-233c-4b6d-94e9-4c156be1a460"
+  "icon": "machine_max:example_pack/icon/ae86_icon.png"
 }

@@ -124,7 +124,12 @@ public class TransmissionSubsystem extends AbstractSubsystem {
         }
         totalPower *= Math.signum(inputSpeed);//根据速度方向调整总功率正负
         //计算并分配输出功率 Calculate and distribute output power
-        if (powerReceivers.isEmpty()) return; //无输出目标则不发出功率信号
+        if (powerReceivers.isEmpty() || !isActive()) {
+            for (ISignalReceiver receiver : powerReceivers.keySet()) {
+                sendCallbackToListener("power", receiver, new EmptySignal());
+            }
+            return; //无输出目标则不发出功率信号
+        }
         if (diffLock) {//差速锁模式，限制输出端转速相等
             //TODO:无功率输入时，单个输出端带动其他输出端旋转
             float totalWeight = 0f;

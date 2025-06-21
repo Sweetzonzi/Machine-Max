@@ -44,6 +44,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -78,7 +79,9 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public volatile boolean destroyed = false;
     public volatile float durability;
     public volatile float integrity;
+    public Map<Vector3f, Float> accumulatedImpact = HashMap.newHashMap(8);
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
+    private final Map<String, SubPart> locatorSubPart = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
     public final AnimController animController = new AnimController(this);
     public float totalMass;
@@ -170,8 +173,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 type.animation,//获取部件动画路径
                 type.textures.get(textureIndex % type.textures.size()));//获取部件第一个可用纹理作为默认纹理
         this.uuid = UUID.fromString(data.uuid);
-        this.durability = data.durability;
-        this.integrity = data.integrity;
+        this.durability = Math.min(data.durability, type.basicDurability);
+        this.integrity = Math.min(data.integrity, type.basicIntegrity);
         this.rootSubPart = createSubPart(type.subParts);//重建子部件并指定根子部件
         updateMass();//更新部件总质量
         for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {//遍历保存的子部件位置、旋转、速度数据
@@ -201,15 +204,15 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             if (!level.isClientSide()) refreshPartEntity();
         }
         if (!destroyed && durability <= 0) {
-            durability = 0;
             onDestroyed();
         }
+        if (durability < 0) durability = 0;
+        else if (durability > type.basicDurability) durability = type.basicDurability;
         if (oHurtMarked) oHurtMarked = false;
         else if (hurtMarked) hurtMarked = false;
     }
 
     public void onPrePhysicsTick() {
-
     }
 
     public void onPostPhysicsTick() {
@@ -217,6 +220,40 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             List<BoundingBox> boxes = new ArrayList<>();
             for (SubPart subPart : subParts.values()) boxes.add(subPart.body.cachedBoundingBox);
             entity.boundingBoxes.set(boxes);
+        }
+        if (!level.isClientSide) {
+            if (!accumulatedImpact.isEmpty()) {
+                float impact = 0;
+                Vector3f hitPoint = new Vector3f();
+                for (Map.Entry<Vector3f, Float> entry : accumulatedImpact.entrySet()) {
+                    impact += entry.getValue();
+                    hitPoint.add(entry.getKey().mult(entry.getValue()));
+                }
+                if (impact > 0) {
+                    hitPoint.divideLocal(impact);
+                    if (impact >= integrity) {
+                        //强冲击，立即击落部件
+                        int count = (int) Math.floor(impact / integrity);//计算击落数量
+                        for (int i = 0; i < count; i++) {
+                            AbstractConnector connectorToBreak = null;
+                            float minDistance = Float.MAX_VALUE;
+                            //寻找最近的外部接口并设置为要断开的接口
+                            for (AbstractConnector connector : externalConnectors.values()) {
+                                if (connector.hasPart()) {
+                                    Vector3f connectorWorldPos = connector.subPart.getLocatorWorldPos(connector.attr.locatorName());
+                                    float distance = connectorWorldPos.subtract(hitPoint).lengthSquared();
+                                    if (distance < minDistance) connectorToBreak = connector;
+                                }
+                            }
+                            if (connectorToBreak != null) vehicle.detachConnector(connectorToBreak);
+                        }
+                    }
+                    //削减部件完整性
+                    integrity = Math.clamp(integrity - (destroyed ? 0.5f * impact : 0.1f * impact), 0, type.basicIntegrity);
+                }
+                accumulatedImpact.clear();
+            }
+            if (integrity <= 0 && destroyed) vehicle.removePart(this);
         }
     }
 
@@ -230,7 +267,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           HitBox hitBox) {
         if (getEntity() != null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
         Vec3 sourcePos = source.getSourcePosition();
-        float armor = hitBox.getRHA();
+        float armor = hitBox.getRHA(this);
         float armorPenetration = 0;
         //击退处理与特殊逻辑
         if (projectileSource == null && sourcePos != null && !level.isClientSide) {//原版伤害处理
@@ -245,7 +282,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
                 vehicle.activate();
                 subPart.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(subPart.body.getPhysicsLocation(null)));
-                vehicle.syncCountDown = 0;//发生击退时立刻重新同步位置姿态速度
+                vehicle.poseSyncCountDown = 0;//发生击退时立刻重新同步位置姿态速度
                 return null;
             });
             //换算穿深
@@ -262,33 +299,44 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             }
         }
 //        if (source.getDirectEntity() != null && !level.isClientSide)
-//            MachineMax.LOGGER.debug("{} hit by {}, damage: {}, angle: {}", name, source.getDirectEntity().getDisplayName().getString(), damage, Math.acos(-normal.dot(worldContactSpeed.normalize())) * 180 / Math.PI);
+//            if (source.getEntity() instanceof Player player) {
+//                float angle = (float) (Math.acos(-normal.dot(worldContactSpeed.normalize())) * 180 / Math.PI);
+//                player.sendSystemMessage(Component.literal("命中部件")
+//                        .append(Component.translatable(type.registryKey.toLanguageKey())
+//                                .append(Component.literal("，原始伤害" + damage + "，护甲厚度" + armor + "，入射角" + angle + "度，等效厚度" + armor / Math.cos(angle / 180 * Math.PI) + "，穿甲值" + armorPenetration + "，耐久度" + durability + "/" + type.basicDurability + "，完整度" + integrity + "/" + type.basicIntegrity))));
+//            }
         //线性减伤处理
         float impactDamage = damage - hitBox.getDamageReduction();
-        //TODO:削减结构完整性并视情况击落部件
+        //累积冲击效果用于削减结构完整性
+        float finalImpactDamage = impactDamage;
+        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            if (!level.isClientSide) {
+                accumulatedImpact.put(worldContactPoint, finalImpactDamage);//施加冲击效果尝试击落部件
+            }
+            return null;
+        });
         if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
         //甲弹对抗处理
         if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
             if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
                 impactDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
             impactDamage *= hitBox.getDamageMultiplier();
-            //TODO:对子系统造成伤害
             //对部件造成伤害
             float finalDamage = impactDamage;
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-                //TODO:对子系统造成伤害
-                if (!level.isClientSide) durability -= finalDamage;
-                //TODO:对载具造成伤害
+                if (!level.isClientSide) {
+                    //对子系统造成伤害
+                    hitBox.getSubsystems().values().forEach(subsystem -> subsystem.onHurt(source, finalDamage));
+                    durability -= finalDamage;//对部件造成伤害
+                    //TODO:对载具造成伤害
+                }
                 //TODO:模组伤害的冲击击退效果
                 return null;
             });
             level.getPhysicsLevel().submitDeduplicatedTask("part_sync_" + uuid.toString(), PPhase.PRE, () -> {
                 level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//去重后加入任务队列，确保造成伤害后再进行同步
                     //包同步部件和子系统耐久度
-                    if (!level.isClientSide) {
-                        hurtMarked = true;
-                        PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartSyncPayload(vehicle.uuid, uuid, durability, integrity));
-                    }
+                    syncStatus(hitBox);
                     return null;
                 });
                 return null;
@@ -297,6 +345,30 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         } else {
             //TODO:模组伤害的冲击击退效果
             return false;
+        }
+    }
+
+    public void syncStatus() {
+        if (!level.isClientSide) {
+            hurtMarked = true;
+            Map<String, Float> subsystemDurability = new HashMap<>();
+            for (Map.Entry<String, AbstractSubsystem> entry : this.getSubsystems().entrySet()) {
+                subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
+            }
+            PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+                    new PartSyncPayload(vehicle.uuid, uuid, durability, integrity, subsystemDurability));
+        }
+    }
+
+    public void syncStatus(HitBox hitBox) {
+        if (!level.isClientSide) {
+            hurtMarked = true;
+            Map<String, Float> subsystemDurability = new HashMap<>();
+            for (Map.Entry<String, AbstractSubsystem> entry : hitBox.getSubsystems().entrySet()) {
+                subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
+            }
+            PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+                    new PartSyncPayload(vehicle.uuid, uuid, durability, integrity, subsystemDurability));
         }
     }
 
@@ -320,6 +392,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             AbstractSubsystemAttr attr = entry.getValue();
             AbstractSubsystem subsystem = attr.createSubsystem(this, name);
             subsystems.put(name, subsystem);//部件内的子系统
+            subsystem.hitBox = hitBoxes.get(attr.hitBox);//设置子系统的判定区
         }
     }
 
@@ -351,13 +424,13 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                                     posRot
                             );
                     default ->
-                            throw new NullPointerException(Component.translatable("error.machinemax.part.invalid_connector_type", type.name, connectorEntry.getKey(), connectorEntry.getValue().type()).getString());
+                            throw new NullPointerException(Component.translatable("error.machine_max.part.invalid_connector_type", type.name, connectorEntry.getKey(), connectorEntry.getValue().type()).getString());
                 };
                 subPart.connectors.put(connectorEntry.getKey(), connector);
                 this.allConnectors.put(connectorEntry.getKey(), connector);
                 if (!connector.internal) this.externalConnectors.put(connectorEntry.getKey(), connector);
             } else
-                throw new NullPointerException(Component.translatable("error.machinemax.part.connector_locator_not_found", type.name, connectorEntry.getKey(), connectorEntry.getValue().locatorName()).getString());
+                throw new NullPointerException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.name, connectorEntry.getKey(), connectorEntry.getValue().locatorName()).getString());
         }
     }
 
@@ -382,7 +455,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             BoundingBox boundingBox = subPart.collisionShape.boundingBox(new Vector3f(), Quaternion.IDENTITY, null);
             double xArea, yArea, zArea;
             if (subPart.attr.projectedArea.x <= 0)
-                xArea = 4 * boundingBox.getYExtent() * boundingBox.getZExtent();
+                xArea = 4 * boundingBox.getYExtent() * boundingBox.getZExtent();//半长相乘，还需乘4才能获得真正的面积
             else xArea = subPart.attr.projectedArea.x;
             if (subPart.attr.projectedArea.y <= 0)
                 yArea = 4 * boundingBox.getXExtent() * boundingBox.getZExtent();
@@ -393,8 +466,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             subPart.projectedArea = new Vec3(xArea, yArea, zArea);
             //创建零件对接口
             createConnectors(subPart, subPartEntry.getValue(), locators);
+            //用于从部件查找定位器对应的零件
+            subPart.attr.locatorTransforms.computeIfAbsent(variant, v1 -> new ConcurrentHashMap<>()).keySet().forEach(name -> this.locatorSubPart.put(name, subPart));
+            //创建命中碰撞区属性
             for (HitBoxAttr hitBoxAttr : subPart.attr.hitBoxes.values()) {
-                hitBoxes.put(hitBoxAttr.hitBoxName(), new HitBox(subPart, hitBoxAttr));//创建命中碰撞区属性
+                hitBoxes.put(hitBoxAttr.hitBoxName(), new HitBox(subPart, hitBoxAttr));
             }
         }
         //创建部件内子系统
@@ -406,7 +482,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             if (hitBox != null) {
                 hitBox.getSubsystems().put(name, subsystem);//碰撞箱与子系统绑定
             } else if (!subsystem.attr.hitBox.isEmpty())
-                MachineMax.LOGGER.warn(Component.translatable("error.machinemax.part.subsystem_hitbox_not_found", type.name, name, subsystem.attr.hitBox).getString());
+                MachineMax.LOGGER.warn(Component.translatable("error.machine_max.part.subsystem_hitbox_not_found", type.name, name, subsystem.attr.hitBox).getString());
         }
         //设置零件的父子关系，连接内部关节
         for (Map.Entry<SubPart, String> entry : subPartMap.entrySet()) {
@@ -426,7 +502,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                                 connector.subPart.body.setPhysicsTransform(connector.subPart.massCenterTransform);
                                 targetConnector.attach((AttachPointConnector) connector, true);
                             } else
-                                throw new IllegalArgumentException(Component.translatable("error.machinemax.part.invalid_internal_connector_connection", type.name, connector.name, targetConnector.name).getString());
+                                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.invalid_internal_connector_connection", type.name, connector.name, targetConnector.name).getString());
                         }
                     }
                 }
@@ -463,6 +539,41 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             totalMass += subPart.mass;
         }
         this.totalMass = totalMass;
+    }
+
+    public Transform getLocatorLocalTransform(String locatorName) {
+        SubPart subPart = locatorSubPart.get(locatorName);
+        if (subPart != null) {
+            return subPart.getLocatorLocalTransform(locatorName);
+        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+    }
+
+    public Transform getLerpedLocatorWorldTransform(String locatorName, float partialTick) {
+        SubPart subPart = locatorSubPart.get(locatorName);
+        if (subPart != null) {
+            return subPart.getLerpedLocatorWorldTransform(locatorName, partialTick);
+        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+    }
+
+    public Transform getLocatorWorldTransform(String locatorName) {
+        SubPart subPart = locatorSubPart.get(locatorName);
+        if (subPart != null) {
+            return subPart.getLocatorWorldTransform(locatorName);
+        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+    }
+
+    public Vector3f getLocatorLocalPos(String locatorName) {
+        SubPart subPart = locatorSubPart.get(locatorName);
+        if (subPart != null) {
+            return subPart.getLocatorLocalPos(locatorName);
+        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+    }
+
+    public Vector3f getLocatorWorldPos(String locatorName) {
+        SubPart subPart = locatorSubPart.get(locatorName);
+        if (subPart != null) {
+            return subPart.getLocatorWorldPos(locatorName);
+        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
     }
 
     /**

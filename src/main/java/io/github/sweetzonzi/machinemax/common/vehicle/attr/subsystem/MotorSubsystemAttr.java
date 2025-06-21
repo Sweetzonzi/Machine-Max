@@ -23,7 +23,7 @@ public class MotorSubsystemAttr extends AbstractSubsystemAttr {
     public static final Codec<Map<String, List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
 
     public static final MapCodec<MotorSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 100f).forGetter(AbstractSubsystemAttr::getBasicDurability),
+            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.FLOAT.fieldOf("max_power").forGetter(MotorSubsystemAttr::getMaxPower),
             Codec.DOUBLE.optionalFieldOf("inertia", 0.1).forGetter(MotorSubsystemAttr::getInertia),

@@ -25,6 +25,7 @@ object MMCreativeTabs {
             .icon { ItemStack(MMItems.CROWBAR_ITEM) }
             .displayItems { params, output ->
                 output.accept(MMItems.CROWBAR_ITEM.get())
+                output.accept(MMItems.WRENCH_ITEM.get())
                 output.accept(MMItems.SPRAY_CAN_ITEM.get())
                 output.accept(MMItems.EMPTY_BLUEPRINT.get())
             }
