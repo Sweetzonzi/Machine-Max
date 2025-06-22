@@ -58,18 +58,20 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
                 PartType partType = part.type;
                 float durability = part.durability;
                 if (part.integrity > 0.05 * partType.basicIntegrity || !player.isCreative()) {
-                    float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
-                    float scale = player.getAttackStrengthScale(0.5f);
-                    DamageSource damageSource = level.damageSources().playerAttack(player);
-                    level.getPhysicsLevel().submitDeduplicatedTask("disassembly_" + player.getStringUUID(), PPhase.PRE, () -> {
-                        if (part.entity != null) {
-                            float finalDamage = EnchantmentHelper.modifyDamage((ServerLevel) level, player.getWeaponItem(), part.entity, damageSource, damage);
-                            part.integrity = Math.clamp(part.integrity - finalDamage * scale, 0, part.type.basicIntegrity);
-                            part.entity.hurt(damageSource, finalDamage * scale);
-                            part.syncStatus();
-                        }
-                        return null;
-                    });
+                    if (part.entity != null) {
+                        float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
+                        float scale = player.getAttackStrengthScale(0.5f);
+                        DamageSource damageSource = level.damageSources().playerAttack(player);
+                        float finalDamage = EnchantmentHelper.modifyDamage((ServerLevel) level, player.getWeaponItem(), part.entity, damageSource, damage);
+                        level.getPhysicsLevel().submitDeduplicatedTask("disassembly_" + player.getStringUUID(), PPhase.PRE, () -> {
+                            if (part.entity != null) {
+                                part.integrity = Math.clamp(part.integrity - finalDamage * scale, 0, part.type.basicIntegrity);
+                                part.entity.hurt(damageSource, finalDamage * scale * 2);
+                                part.syncStatus();
+                            }
+                            return null;
+                        });
+                    }
                 } else {
                     part.vehicle.removePart(part);
                     if (!player.isCreative()) {//非创造模式，则尝试获取为物品
@@ -97,7 +99,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
             if (part != null) {//提示信息
-                if (part.integrity > 0.05 * part.type.basicIntegrity || !player.isCreative())
+                if (part.integrity > 0.05 * part.type.basicIntegrity && !player.isCreative())
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.unsafe_disassembly",
                             part.integrity, part.type.basicIntegrity, Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
                 else

@@ -15,6 +15,7 @@ import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -213,14 +214,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     public void onPrePhysicsTick() {
-    }
-
-    public void onPostPhysicsTick() {
-        if (entity != null && !entity.isRemoved()) {//更新实体包围盒
-            List<BoundingBox> boxes = new ArrayList<>();
-            for (SubPart subPart : subParts.values()) boxes.add(subPart.body.cachedBoundingBox);
-            entity.boundingBoxes.set(boxes);
-        }
         if (!level.isClientSide) {
             if (!accumulatedImpact.isEmpty()) {
                 float impact = 0;
@@ -234,6 +227,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                     if (impact >= integrity) {
                         //强冲击，立即击落部件
                         int count = (int) Math.floor(impact / integrity);//计算击落数量
+                        if (integrity <= 0) count = externalConnectors.size();
                         for (int i = 0; i < count; i++) {
                             AbstractConnector connectorToBreak = null;
                             float minDistance = Float.MAX_VALUE;
@@ -253,7 +247,18 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 }
                 accumulatedImpact.clear();
             }
-            if (integrity <= 0 && destroyed) vehicle.removePart(this);
+            if (integrity <= 0 && destroyed) ((TaskSubmitOffice) level).submitImmediateTask(PPhase.PRE, () -> {
+                vehicle.removePart(this);
+                return null;
+            });
+        }
+    }
+
+    public void onPostPhysicsTick() {
+        if (entity != null && !entity.isRemoved()) {//更新实体包围盒
+            List<BoundingBox> boxes = new ArrayList<>();
+            for (SubPart subPart : subParts.values()) boxes.add(subPart.body.cachedBoundingBox);
+            entity.boundingBoxes.set(boxes);
         }
     }
 
@@ -586,11 +591,14 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public void destroy() {
         for (SubPart subPart : subParts.values()) subPart.destroy();
         subsystems.clear();
-        if (this.entity != null) {
-            this.entity.part = null;
-            this.entity.remove(Entity.RemovalReason.DISCARDED);
-            this.entity = null;
-        }
+        ((TaskSubmitOffice) level).submitImmediateTask(PPhase.PRE, () -> {
+            if (this.entity != null) {
+                this.entity.part = null;
+                this.entity.remove(Entity.RemovalReason.DISCARDED);
+                this.entity = null;
+            }
+            return null;
+        });
     }
 
     public void setModelIndex(@NotNull ModelIndex modelIndex) {
