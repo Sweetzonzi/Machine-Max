@@ -68,6 +68,7 @@ public class MMWebApp {
             } finally {
                 server = null; // 清空引用，避免内存泄漏
             }
+            if (browser != null) browser.close();
         }
     }
 }
