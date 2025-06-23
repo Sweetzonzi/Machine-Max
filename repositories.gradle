@@ -12,7 +12,20 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
 //    // js
     compileOnly "org.mozilla:rhino:1.8.0"
-//    implementation("org.mozilla:rhino:1.8.0")
+
+    //netty
+//    compileOnly "io.netty:netty-all:4.2.2.Final"
+    //    implementation("org.mozilla:rhino:1.8.0")
+
+    // jetty网络库
+    jarJar(implementation("org.eclipse.jetty.aggregate:jetty-all:9.4.57.v20241219")) {
+
+    }
+    additionalRuntimeClasspath "org.eclipse.jetty.aggregate:jetty-all:9.4.57.v20241219"
+
+    //内部浏览器
+    compileOnly "com.cinemamod:mcef:2.1.6-1.21.1"
+    runtimeOnly "com.cinemamod:mcef-neoforge:2.1.6-1.21.1"
     // 其它mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib
@@ -23,6 +36,13 @@ dependencies {
 repositories {
     mavenLocal()
     mavenCentral()
+    maven {
+        url = uri('https://mcef-download.cinemamod.com/repositories/releases')
+    }
+    // Optional for snapshot versions
+    maven {
+        url = uri('https://mcef-download.cinemamod.com/repositories/snapshots')
+    }
     maven {
         name = "Progwml6 maven"
         url = "https://dvs1.progwml6.com/files/maven/"
