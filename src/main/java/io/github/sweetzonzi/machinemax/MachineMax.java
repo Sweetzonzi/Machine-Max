@@ -7,7 +7,7 @@ import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
 import io.github.sweetzonzi.machinemax.common.registry.*;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
-import io.github.sweetzonzi.machinemax.web.load.MMWebApp;
+import io.github.sweetzonzi.machinemax.web.MMWebApp;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;

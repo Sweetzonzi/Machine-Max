@@ -12,9 +12,10 @@ public class MMGuiHandler {
     public static void registerHud(RegisterGuiLayersEvent event){
 //        event.registerAboveAll(id("assembly"), new AssemblyHud());
 //        event.registerAboveAll(id("compass"), new CompassHud());
+        event.registerAboveAll(id("web_app"), new WebAppHud());
     }
 
     private static ResourceLocation id(String path){
-        return ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, path);
+        return ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "hud/"+path);
     }
 }

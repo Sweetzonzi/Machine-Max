@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machinemax.web.load;
+package io.github.sweetzonzi.machinemax.web;
 
 import com.cinemamod.mcef.MCEF;
 import com.cinemamod.mcef.MCEFBrowser;
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 
-// 标记为 NeoForge 事件订阅类
+
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 public class MMWebApp {
     private static final Logger logger = LoggerFactory.getLogger(MMWebApp.class);

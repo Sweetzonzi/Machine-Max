@@ -25,7 +25,7 @@ import com.cinemamod.mcef.MCEFBrowser;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
-import io.github.sweetzonzi.machinemax.web.load.MMWebApp;
+import io.github.sweetzonzi.machinemax.web.MMWebApp;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -94,7 +94,6 @@ public class MMWebScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int i, int j, float f) {
         super.render(guiGraphics, i, j, f);
-
         // 禁用深度测试（避免透明物体遮挡问题）
         RenderSystem.disableDepthTest();
 
