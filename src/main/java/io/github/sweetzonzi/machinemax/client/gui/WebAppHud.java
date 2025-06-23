@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machinemax.client.screen.MMWebScreen;
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
 import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
+import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.web.MMWebApp;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -40,14 +41,14 @@ public class WebAppHud implements LayeredDraw.Layer {
     private Minecraft minecraft;
     private int width;
     private int height;
-
     private boolean initialed = false;
+    public static boolean hidden = true;
+
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
-        float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
         minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
-        if (minecraft.screen instanceof MMWebScreen || player == null || MMWebApp.browser == null) return;
+        if (minecraft.screen instanceof MMWebScreen || player == null || MMWebApp.browser == null || hidden) return;
         if (! initialed || width != guiGraphics.guiWidth() || height != guiGraphics.guiHeight()) {
             width = guiGraphics.guiWidth();
             height = guiGraphics.guiHeight();

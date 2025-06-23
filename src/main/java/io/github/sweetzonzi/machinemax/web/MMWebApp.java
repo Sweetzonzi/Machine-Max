@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machinemax.web;
 
-import com.cinemamod.mcef.MCEF;
 import com.cinemamod.mcef.MCEFBrowser;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
+import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.GameShuttingDownEvent;
@@ -20,15 +20,17 @@ public class MMWebApp {
     private static final Logger logger = LoggerFactory.getLogger(MMWebApp.class);
     public static MCEFBrowser browser = null;
     private static Server server = null; // 静态 Server 实例，用于跨线程访问
+    public static int WEB_APP_PORT = Hook.replace(8195,"web_app_port");
+    public static int WS_PORT = Hook.replace(8194,"websocket_port");
+    public static String URL = Hook.replace("http://localhost:%s/".formatted(WEB_APP_PORT), "web_app_running_url");
 
     public static void register() {
         // 启动 Jetty 服务器线程
         Thread jettyThread = new Thread(() -> {
             try {
                 Path webappPath = MMDynamicRes.NAMESPACE.resolve("webapp").resolve("test");
-                logger.info("Webapp 路径: {}", webappPath);
 
-                server = new Server(8195); // 初始化 Jetty 服务器
+                server = new Server(WEB_APP_PORT); // 初始化 Jetty 服务器
 
                 // 配置静态资源处理器
                 ServletContextHandler context = new ServletContextHandler();
@@ -45,9 +47,17 @@ public class MMWebApp {
             } catch (Exception e) {
                 logger.error("Jetty 服务器启动失败", e);
             }
-        }, "Jetty-Server-Thread");
+        }, "MM-Jetty-Server-Thread");
+        Thread wsThread = new Thread(() -> {
+            try {
+                new WebSocketServer(WS_PORT).run();
+            } catch (Exception e) {
+                logger.error("Websocket 服务器启动失败", e);
+            }
+        }, "MM-WebSocket-Thread");
 
-        jettyThread.start(); // 启动线程
+        jettyThread.start(); // 启动http线程
+        wsThread.start(); // 启动ws线程
     }
 
     /**

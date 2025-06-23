@@ -1,6 +1,9 @@
 package io.github.sweetzonzi.machinemax.client.input;
 
+import com.cinemamod.mcef.MCEF;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.client.gui.WebAppHud;
+import io.github.sweetzonzi.machinemax.client.screen.MMWebScreen;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
@@ -12,6 +15,7 @@ import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machinemax.network.payload.RegularInputPayload;
 import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import io.github.sweetzonzi.machinemax.util.data.KeyInputMapping;
+import io.github.sweetzonzi.machinemax.web.MMWebApp;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -162,6 +166,19 @@ public class RawInputHandler {
 
         if (client.player != null ) {
 
+
+            //浏览器页面
+            if (MMWebApp.browser == null) {
+                boolean transparent = true;
+                MMWebApp.browser = MCEF.createBrowser(MMWebApp.URL, transparent);
+                MMWebApp.browser.reload();
+            }
+
+            new KeyHooks.EVENT("o")
+                    .OnKeyDown(() -> {
+                        Minecraft.getInstance().setScreen(new MMWebScreen());
+                    });
+            new KeyHooks.EVENT("h").OnKeyDown(() -> WebAppHud.hidden = !WebAppHud.hidden);
         /*
           通用功能
          */

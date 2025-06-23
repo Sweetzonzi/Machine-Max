@@ -25,6 +25,7 @@ import com.cinemamod.mcef.MCEFBrowser;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
+import io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machinemax.web.MMWebApp;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -35,7 +36,7 @@ import net.minecraft.network.chat.Component;
 public class MMWebScreen extends Screen {
     private static final int BROWSER_DRAW_OFFSET = 20;
 
-
+    private KeyHooks.EVENT reloadButton = new KeyHooks.EVENT("r");
 
     public MMWebScreen() {
         super(Component.literal(""));
@@ -128,6 +129,12 @@ public class MMWebScreen extends Screen {
         RenderSystem.setShaderTexture(0, 0);
         RenderSystem.disableBlend(); // 关闭混合（如果后续不需要）
         RenderSystem.enableDepthTest(); // 恢复深度测试
+
+        reloadButton.OnKeyDown(() -> {
+                    if (MMWebApp.browser != null) {
+                        MMWebApp.browser.reload();
+                    }
+                });
     }
 
     @Override
