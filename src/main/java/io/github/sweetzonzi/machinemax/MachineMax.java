@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
 import io.github.sweetzonzi.machinemax.common.registry.*;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
+import io.github.sweetzonzi.machinemax.web.load.MMWebApp;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
@@ -50,6 +51,7 @@ public class MachineMax {
         MMItems.register();//通过kotlin注册的所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMJoystickHandler.init();//游戏手柄读取初始化
+        MMWebApp.register();//启动所有内嵌web应用
     }
 
 }
