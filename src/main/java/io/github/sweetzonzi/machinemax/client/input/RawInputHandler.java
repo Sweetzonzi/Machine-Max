@@ -124,9 +124,8 @@ public class RawInputHandler {
         if (client == null) client = Minecraft.getInstance();
         if (client.player == null) return;
         Vec3 pos = client.player.position();
-        MMWebApp.sendPacket("x", pos.x);
-        MMWebApp.sendPacket("y", pos.y);
-        MMWebApp.sendPacket("z", pos.z);
+        if (pos.y <= -35) WebAppHud.setStatus("pull_up", WebAppHud.HudStatus.blink);
+        else WebAppHud.setStatus("pull_up", WebAppHud.HudStatus.off);
         if (KeyBinding.generalFreeCamKey.isDown()) {
             freeCam = true;
         } else {

@@ -80,6 +80,7 @@ public class MMWebApp {
                     @Override
                     public void onOpen(WebSocket conn, ClientHandshake handshake) {
                         webSocket = conn;
+                        sendPacket("connected", true);
                     }
 
                     @Override

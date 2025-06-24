@@ -44,6 +44,17 @@ public class WebAppHud implements LayeredDraw.Layer {
     private boolean initialed = false;
     public static boolean hidden = true;
 
+
+    public enum HudStatus {
+        blink,
+        on,
+        off
+    }
+
+    public static void setStatus(String hudTag, HudStatus status) {
+        MMWebApp.sendPacket(hudTag, status.name());
+    }
+
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
         minecraft = Minecraft.getInstance();
