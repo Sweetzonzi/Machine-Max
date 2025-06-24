@@ -24,10 +24,22 @@ public class MMWebApp {
     private static final Logger logger = LoggerFactory.getLogger(MMWebApp.class);
     public static MCEFBrowser browser = null;
     private static Server server = null; // 静态 Server 实例，用于跨线程访问
+    private static WebSocket webSocket = null; // 静态 WebSocket 实例，用于跨线程访问，发送信息
     public static int WEB_APP_PORT = Hook.replace(8195,"web_app_port");
     public static int WS_PORT = Hook.replace(8194,"websocket_port");
     public static String URL = Hook.replace("http://localhost:%s/".formatted(WEB_APP_PORT), "web_app_running_url");
 
+    public interface WsEvent {
+        void doWs(WebSocket ws);
+    }
+
+    public static void runWs(WsEvent event) {
+        try {
+            if (webSocket != null) event.doWs(webSocket);
+        } catch (Exception e) {
+            logger.error("WsEvent 执行失败 ", e);
+        }
+    }
     public static void register() {
         // 启动 Jetty 服务器线程
         Thread jettyThread = new Thread(() -> {
@@ -45,7 +57,7 @@ public class MMWebApp {
 
                 server.setHandler(context);
                 server.start(); // 启动服务器
-                logger.info("Jetty 服务器启动成功，监听端口: 8195");
+                logger.info("Jetty 服务器启动成功，监听端口: {}", WEB_APP_PORT);
                 server.join(); // 阻塞当前线程，等待服务器运行
 
             } catch (Exception e) {
@@ -57,27 +69,27 @@ public class MMWebApp {
                 new WebSocketServer(new InetSocketAddress(WS_PORT)) {
                     @Override
                     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-
+                        webSocket = conn;
                     }
 
                     @Override
                     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-
+                        webSocket = null;
                     }
 
                     @Override
                     public void onMessage(WebSocket conn, String message) {
-                        System.out.println(message);
+                        webSocket = conn;
                     }
 
                     @Override
                     public void onError(WebSocket conn, Exception ex) {
-
+                        webSocket = null;
                     }
 
                     @Override
                     public void onStart() {
-
+                        logger.info("Websocket 服务器启动成功，监听端口: {}", WS_PORT);
                     }
                 }.run();
             } catch (Exception e) {
