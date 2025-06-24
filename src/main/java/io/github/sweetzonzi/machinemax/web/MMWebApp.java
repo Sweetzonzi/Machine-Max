@@ -9,9 +9,13 @@ import net.neoforged.neoforge.event.GameShuttingDownEvent;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.java_websocket.WebSocket;
+import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.server.WebSocketServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetSocketAddress;
 import java.nio.file.Path;
 
 
@@ -48,16 +52,38 @@ public class MMWebApp {
                 logger.error("Jetty 服务器启动失败", e);
             }
         }, "MM-Jetty-Server-Thread");
-        Thread wsThread = new Thread(() -> {
-            try {
-                new WebSocketServer(WS_PORT).run();
-            } catch (Exception e) {
-                logger.error("Websocket 服务器启动失败", e);
-            }
-        }, "MM-WebSocket-Thread");
 
         jettyThread.start(); // 启动http线程
-        wsThread.start(); // 启动ws线程
+
+
+        new WebSocketServer(new InetSocketAddress(WS_PORT)) {
+            @Override
+            public void onOpen(WebSocket conn, ClientHandshake handshake) {
+
+            }
+
+            @Override
+            public void onClose(WebSocket conn, int code, String reason, boolean remote) {
+
+            }
+
+            @Override
+            public void onMessage(WebSocket conn, String message) {
+                System.out.println(message);
+            }
+
+            @Override
+            public void onError(WebSocket conn, Exception ex) {
+
+            }
+
+            @Override
+            public void onStart() {
+
+            }
+        }.run();// 启动ws线程
+
+
     }
 
     /**
