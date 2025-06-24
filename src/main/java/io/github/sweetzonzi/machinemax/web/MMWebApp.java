@@ -52,38 +52,41 @@ public class MMWebApp {
                 logger.error("Jetty 服务器启动失败", e);
             }
         }, "MM-Jetty-Server-Thread");
+        Thread wsThread = new Thread(() -> {
+            try {
+                new WebSocketServer(new InetSocketAddress(WS_PORT)) {
+                    @Override
+                    public void onOpen(WebSocket conn, ClientHandshake handshake) {
+
+                    }
+
+                    @Override
+                    public void onClose(WebSocket conn, int code, String reason, boolean remote) {
+
+                    }
+
+                    @Override
+                    public void onMessage(WebSocket conn, String message) {
+                        System.out.println(message);
+                    }
+
+                    @Override
+                    public void onError(WebSocket conn, Exception ex) {
+
+                    }
+
+                    @Override
+                    public void onStart() {
+
+                    }
+                }.run();
+            } catch (Exception e) {
+                logger.error("Websocket 服务器启动失败", e);
+            }
+        }, "MM-WebSocket-Thread");
 
         jettyThread.start(); // 启动http线程
-
-
-        new WebSocketServer(new InetSocketAddress(WS_PORT)) {
-            @Override
-            public void onOpen(WebSocket conn, ClientHandshake handshake) {
-
-            }
-
-            @Override
-            public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-
-            }
-
-            @Override
-            public void onMessage(WebSocket conn, String message) {
-                System.out.println(message);
-            }
-
-            @Override
-            public void onError(WebSocket conn, Exception ex) {
-
-            }
-
-            @Override
-            public void onStart() {
-
-            }
-        }.run();// 启动ws线程
-
-
+        wsThread.start(); // 启动ws线程
     }
 
     /**
