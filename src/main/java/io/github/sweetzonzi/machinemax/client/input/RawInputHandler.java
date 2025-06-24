@@ -20,6 +20,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -122,6 +123,10 @@ public class RawInputHandler {
     public static void handleMouseInputs(ClientTickEvent.Post event) {
         if (client == null) client = Minecraft.getInstance();
         if (client.player == null) return;
+        Vec3 pos = client.player.position();
+        MMWebApp.sendPacket("x", pos.x);
+        MMWebApp.sendPacket("y", pos.y);
+        MMWebApp.sendPacket("z", pos.z);
         if (KeyBinding.generalFreeCamKey.isDown()) {
             freeCam = true;
         } else {

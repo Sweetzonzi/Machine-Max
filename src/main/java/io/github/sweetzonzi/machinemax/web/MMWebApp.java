@@ -35,27 +35,17 @@ public class MMWebApp {
     public static int WS_PORT = Hook.replace(8194,"websocket_port");
     public static String URL = Hook.replace("http://localhost:%s/".formatted(WEB_APP_PORT), "web_app_running_url");
 
-    public interface WsEvent {
-        void doWs(WebSocket ws);
-    }
-
-    public static void runWs(WsEvent event) {
-        try {
-            if (webSocket != null) event.doWs(webSocket);
-        } catch (Exception e) {
-            logger.error("WsEvent 执行失败 ", e);
-        }
-    }
-    public static void sendWsPack(HashMap<String, String> payload) {
+    public static void sendPacket(String tag, Object... args) {
         try {
             if (webSocket != null) {
+                HashMap<String, Object[]> payload = new HashMap<>();
+                payload.put(tag, args);
                 ObjectMapper objectMapper = new ObjectMapper();
                 byte[] jsonBytes = objectMapper.writeValueAsBytes(payload);
                 webSocket.send(jsonBytes);
             }
-
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            logger.error("WsEvent 执行失败 ", e);
         }
     }
 
