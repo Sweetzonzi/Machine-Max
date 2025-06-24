@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machinemax.web;
 
 import com.cinemamod.mcef.MCEFBrowser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -16,7 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
@@ -40,7 +46,21 @@ public class MMWebApp {
             logger.error("WsEvent 执行失败 ", e);
         }
     }
+    public static void sendWsPack(HashMap<String, String> payload) {
+        try {
+            if (webSocket != null) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                byte[] jsonBytes = objectMapper.writeValueAsBytes(payload);
+                webSocket.send(jsonBytes);
+            }
+
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void register() {
+        System.out.println("启动网络");
         // 启动 Jetty 服务器线程
         Thread jettyThread = new Thread(() -> {
             try {

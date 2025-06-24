@@ -23,6 +23,12 @@ dependencies {
     }
     additionalRuntimeClasspath "org.eclipse.jetty.aggregate:jetty-all:9.4.57.v20241219"
 
+    //网络序列化
+    jarJar(implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")) {
+
+    }
+    additionalRuntimeClasspath "com.fasterxml.jackson.core:jackson-databind:2.15.2"
+
     //内部浏览器
     compileOnly "com.cinemamod:mcef:2.1.6-1.21.1"
     runtimeOnly "com.cinemamod:mcef-neoforge:2.1.6-1.21.1"
