@@ -1,40 +1,17 @@
-package io.github.sweetzonzi.machinemax.client.gui;
+package io.github.sweetzonzi.machinemax.web.hud;
 
-import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Transform;
-import com.jme3.math.Vector3f;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import io.github.sweetzonzi.machinemax.client.screen.MMWebScreen;
-import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
-import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
-import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
-import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.web.MMWebApp;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.util.Brightness;
-import net.minecraft.util.FastColor;
-import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-
-import java.awt.*;
-
 @OnlyIn(Dist.CLIENT)
 public class WebAppHud implements LayeredDraw.Layer {
     private static final int BROWSER_DRAW_OFFSET = 20;
@@ -44,16 +21,6 @@ public class WebAppHud implements LayeredDraw.Layer {
     private boolean initialed = false;
     public static boolean hidden = true;
 
-
-    public enum HudStatus {
-        blink,
-        on,
-        off
-    }
-
-    public static void setStatus(String hudTag, HudStatus status) {
-        MMWebApp.sendPacket(hudTag, status.name());
-    }
 
     @Override
     public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
