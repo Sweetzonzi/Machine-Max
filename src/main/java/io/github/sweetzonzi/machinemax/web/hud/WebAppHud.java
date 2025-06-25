@@ -18,7 +18,7 @@ public class WebAppHud implements LayeredDraw.Layer {
     private Minecraft minecraft;
     private int width;
     private int height;
-    private boolean initialed = false;
+    public static boolean initialed = false;
     public static boolean hidden = true;
 
 

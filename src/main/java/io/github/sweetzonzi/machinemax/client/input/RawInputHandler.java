@@ -167,13 +167,10 @@ public class RawInputHandler {
         });
 
         if (client.player != null ) {
-
-
             //浏览器页面
             if (MMWebApp.browser == null) {
                 boolean transparent = true;
                 MMWebApp.browser = MCEF.createBrowser(Hook.replace(MMWebApp.URL,"web_app_running_url"), transparent);
-                MMWebApp.browser.reload();
             }
 
             new KeyHooks.EVENT("o")
