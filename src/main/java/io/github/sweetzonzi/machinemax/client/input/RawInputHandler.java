@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machinemax.client.input;
 
 import com.cinemamod.mcef.MCEF;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.gui.WebAppHud;
+import io.github.sweetzonzi.machinemax.web.hud.WebAppHud;
 import io.github.sweetzonzi.machinemax.client.screen.MMWebScreen;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
@@ -124,8 +124,6 @@ public class RawInputHandler {
         if (client == null) client = Minecraft.getInstance();
         if (client.player == null) return;
         Vec3 pos = client.player.position();
-        if (pos.y <= -35) WebAppHud.setStatus("pull_up", WebAppHud.HudStatus.blink);
-        else WebAppHud.setStatus("pull_up", WebAppHud.HudStatus.off);
         if (KeyBinding.generalFreeCamKey.isDown()) {
             freeCam = true;
         } else {
@@ -174,7 +172,7 @@ public class RawInputHandler {
             //浏览器页面
             if (MMWebApp.browser == null) {
                 boolean transparent = true;
-                MMWebApp.browser = MCEF.createBrowser(MMWebApp.URL, transparent);
+                MMWebApp.browser = MCEF.createBrowser(Hook.replace(MMWebApp.URL,"web_app_running_url"), transparent);
                 MMWebApp.browser.reload();
             }
 

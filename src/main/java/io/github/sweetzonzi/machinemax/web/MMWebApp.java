@@ -31,9 +31,9 @@ public class MMWebApp {
     public static MCEFBrowser browser = null;
     private static Server server = null; // 静态 Server 实例，用于跨线程访问
     private static WebSocket webSocket = null; // 静态 WebSocket 实例，用于跨线程访问，发送信息
-    public static int WEB_APP_PORT = Hook.replace(8195,"web_app_port");
-    public static int WS_PORT = Hook.replace(8194,"websocket_port");
-    public static String URL = Hook.replace("http://localhost:%s/".formatted(WEB_APP_PORT), "web_app_running_url");
+    public static int WEB_APP_PORT = 8195;
+    public static int WS_PORT = 8194;
+    public static String URL = "http://localhost:%s/".formatted(WEB_APP_PORT);
 
     public static void sendPacket(String tag, Object... args) {
         try {
@@ -54,7 +54,7 @@ public class MMWebApp {
         // 启动 Jetty 服务器线程
         Thread jettyThread = new Thread(() -> {
             try {
-                Path webappPath = MMDynamicRes.NAMESPACE.resolve("webapp").resolve("test");
+                Path webappPath = MMDynamicRes.NAMESPACE.resolve("webapp").resolve("web");
 
                 server = new Server(WEB_APP_PORT); // 初始化 Jetty 服务器
 

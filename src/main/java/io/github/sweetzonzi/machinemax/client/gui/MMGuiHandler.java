@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machinemax.client.gui;
 
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.web.hud.WebAppHud;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
