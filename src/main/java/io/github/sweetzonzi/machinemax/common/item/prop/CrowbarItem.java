@@ -57,7 +57,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
             if (part != null) {
                 PartType partType = part.type;
                 float durability = part.durability;
-                if (part.integrity > 0.05 * partType.basicIntegrity || !player.isCreative()) {
+                if (part.integrity > 0.05 * partType.basicIntegrity && !player.isCreative()) {
                     if (part.entity != null) {
                         float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
                         float scale = player.getAttackStrengthScale(0.5f);

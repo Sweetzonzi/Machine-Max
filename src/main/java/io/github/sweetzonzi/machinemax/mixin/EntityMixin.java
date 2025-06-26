@@ -62,7 +62,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             machine_Max$collideTestShape = new CapsuleCollisionShape(radius, height > 0 ? height : 0.01f);
         }
         List<PhysicsSweepTestResult> results = new ArrayList<>();
-        Vec3 delta = new Vec3(originalVec.x, originalVec.y, originalVec.z);
+        Vec3 delta = new Vec3(vec.x, vec.y, vec.z);
         Vec3 center = aabb.getCenter();
         if (delta.length() < 0.5f) delta = delta.normalize().scale(0.5f);
         machine_Max$sweepTestStart.setTranslation(PhysicsHelperKt.toBVector3f(center));
@@ -93,12 +93,9 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         Vec3 normalComponent = normal.scale(dotProduct);
         // 减去法线方向投影，得到垂直法线方向的向量
         finalVec = vec.subtract(normalComponent);
-        if (originalVec.normalize().dot(normal) > -0.5f) {
+        if (vec.normalize().dot(normal) > -0.5f) {
             //原始向量与法线夹角小于30°时，取原始向量的长度，方便爬坡
-            finalVec = finalVec.normalize().scale(originalVec.length());
-        } else {
-            // 添加法线方向的微小偏移防止卡住
-            finalVec = finalVec.add(normal.scale(1e-3f));
+            finalVec = finalVec.normalize().scale(vec.length());
         }
         // 返回合并后的向量
         cir.setReturnValue(finalVec);

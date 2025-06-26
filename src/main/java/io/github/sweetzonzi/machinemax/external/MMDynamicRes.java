@@ -4,19 +4,17 @@ import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.mojang.serialization.JsonOps;
-import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
+import io.github.sweetzonzi.machinemax.common.crafting.FabricatingRecipe;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.external.parse.OBoneParse;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraft.world.entity.player.Player;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
@@ -38,6 +36,7 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
+    public static ConcurrentMap<ResourceLocation, FabricatingRecipe> CRAFTING_RECIPES = new ConcurrentHashMap<>();
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
     public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
@@ -75,6 +74,7 @@ public class MMDynamicRes {
         SERVER_PART_TYPES.clear();
         OBoneParse.clear();
         BLUEPRINTS.clear();
+        CRAFTING_RECIPES.clear();
         exceptions.clear();
         errorFiles.clear();
         errorMessages.clear();
@@ -104,6 +104,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("icon")));
             packUp(packName, Exist(root.resolve("font")));
             packUp(packName, Exist(root.resolve("blueprint")));
+            packUp(packName, Exist(root.resolve("recipe")));
         }
     }
 
@@ -170,6 +171,7 @@ public class MMDynamicRes {
         Path partTypeFolder = Exist(examplePack.resolve("part_type"));
         Path script = Exist(examplePack.resolve("script"));
         Path blueprint = Exist(examplePack.resolve("blueprint"));
+        Path recipe = Exist(examplePack.resolve("recipe"));
         Path lang = Exist(examplePack.resolve("lang"));
         Path texture = Exist(examplePack.resolve("texture"));
         Path icon = Exist(examplePack.resolve("icon"));
@@ -204,6 +206,9 @@ public class MMDynamicRes {
         //蓝图文件
         copyResourceToFile("/example_pack/blueprint/ae86.json", blueprint.resolve("ae86.json"), overwrite);
         copyResourceToFile("/example_pack/blueprint/ae86at.json", blueprint.resolve("ae86at.json"), overwrite);
+
+        //配方文件
+        copyResourceToFile("/example_pack/recipe/ae86_chassis.json", recipe.resolve("ae86_chassis.json"), overwrite);
 
         //自定义翻译
         copyResourceToFile("/example_pack/lang/zh_cn.json", lang.resolve("zh_cn.json"), overwrite);
@@ -299,6 +304,11 @@ public class MMDynamicRes {
                         BLUEPRINTS.put(location, data);
                     }
 
+                    case "recipe" -> {
+                        FabricatingRecipe recipe = FabricatingRecipe.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
+                        CRAFTING_RECIPES.put(location, recipe);
+                    }
+
                     case "lang" -> {
                         location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //语言翻译系统的标准搜索路径
                         if (EXTERNAL_RESOURCE.containsKey(location)) {
@@ -334,6 +344,7 @@ public class MMDynamicRes {
                     case "color" -> {
                         COLORS.put(location, json);
                     }
+
                 }
                 if (location == null) {
                     throw new IllegalArgumentException("error.machine_max.invalid_resource_location");

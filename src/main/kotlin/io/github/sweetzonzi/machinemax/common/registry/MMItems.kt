@@ -2,19 +2,17 @@ package io.github.sweetzonzi.machinemax.common.registry
 
 import io.github.sweetzonzi.machinemax.MachineMax
 import io.github.sweetzonzi.machinemax.client.renderer.CustomModelItemRenderer
-import io.github.sweetzonzi.machinemax.common.item.prop.BlueprintItem
+import io.github.sweetzonzi.machinemax.common.block.FabricatorBlock
+import io.github.sweetzonzi.machinemax.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machinemax.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem
 import io.github.sweetzonzi.machinemax.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machinemax.common.item.prop.EmptyBlueprintItem
+import io.github.sweetzonzi.machinemax.common.item.prop.FabicatingBlueprintItem
 import io.github.sweetzonzi.machinemax.common.item.prop.WrenchItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
-import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
-import net.minecraft.world.item.Tier
-import net.minecraft.world.item.Tiers
-import net.minecraft.world.item.component.ItemAttributeModifiers
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.fml.common.EventBusSubscriber.Bus
@@ -34,11 +32,25 @@ object MMItems {
         .bound { MMPartItem(Item.Properties().stacksTo(1).durability(100)) }
         .build()
 
+    //部件制造台
+    @JvmStatic
+    val FABRICATOR_BLOCK_ITEM = MachineMax.REGISTER.item<BlockItem>()
+        .id("fabricator")
+        .bound { BlockItem(MMBlocks.FABRICATOR_BLOCK.get(), Item.Properties()) }
+        .build()
+
     //载具蓝图物品原型
     @JvmStatic
-    val BLUEPRINT = MachineMax.REGISTER.item<BlueprintItem>()
-        .id("blueprint")
-        .bound { BlueprintItem() }
+    val VEHICLE_BLUEPRINT = MachineMax.REGISTER.item<VehicleBlueprintItem>()
+        .id("vehicle_blueprint")
+        .bound { VehicleBlueprintItem() }
+        .build()
+
+    //载具蓝图物品原型
+    @JvmStatic
+    val FABRICATING_BLUEPRINT = MachineMax.REGISTER.item<FabicatingBlueprintItem>()
+        .id("fabricating_blueprint")
+        .bound { FabicatingBlueprintItem() }
         .build()
 
     //载具保存物品原型
@@ -82,7 +94,7 @@ object MMItems {
         //Register custom model item renderer here, items need to implement ICustomModelItem interface
         event.registerItem(
             CustomModelItemExtension(),
-            CROWBAR_ITEM, SPRAY_CAN_ITEM, PART_ITEM, BLUEPRINT, EMPTY_BLUEPRINT
+            CROWBAR_ITEM, SPRAY_CAN_ITEM, PART_ITEM, FABRICATING_BLUEPRINT, VEHICLE_BLUEPRINT, EMPTY_BLUEPRINT
         )
     }
 

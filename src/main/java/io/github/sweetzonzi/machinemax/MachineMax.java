@@ -20,12 +20,11 @@ public class MachineMax {
     //TODO:交互系统的反馈信号以及连接多个子系统，依次互动/同时互动？
     //TODO:过载与座椅过载吸收/耐受
     //TODO:自定义HUD
-    //TODO:放置载具或部件前检查空间是否足够
+    //TODO:放置部件前检查空间是否足够
     //TODO:带声速和多普勒效应的音效系统
     //TODO:投射物
     //TODO:炮塔控制
     //TODO:载具触发压力板
-    //TODO:允许实体站在刚体上
     //TODO:内容包之间的依赖关系
     //TODO:蓝图对内容包的依赖关系
     public static final String MOD_ID = "machine_max";
@@ -50,6 +49,7 @@ public class MachineMax {
         MMItems.register();//通过kotlin注册的所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMJoystickHandler.init();//游戏手柄读取初始化
+        MMMenus.MENU_TYPES.register(bus);//注册所有菜单
     }
 
 }

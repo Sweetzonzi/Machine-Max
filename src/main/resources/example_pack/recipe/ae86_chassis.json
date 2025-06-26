@@ -1,0 +1,20 @@
+{
+  "materials": [
+    {
+      "item": {
+        "tag": "c:ingots/copper"
+      },
+      "count": 1
+    },
+    {
+      "item": {
+        "item": "minecraft:gunpowder"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "machine_max:ae86_chassis",
+    "count": 1
+  }
+}

@@ -48,7 +48,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
                     buffer.getBuffer(RenderType.entityTranslucent(itemAnimatable.getModelIndex().getTextureLocation())),
                     Brightness.FULL_BRIGHT.pack(),
                     packedOverlay,
-                    Color.white.getRGB(),
+                    customModelItem.getColor(stack, Minecraft.getInstance().level, displayContext).getRGB(),
                     itemAnimatable.getPartialTicks(),
                     true
             );

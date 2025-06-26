@@ -89,8 +89,9 @@ public class MMPartItem extends Item implements ICustomModelItem {
                             targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
                             stack.consume(1, player);
-                        }
-                    }
+                            return InteractionResultHolder.consume(stack);
+                        } else return InteractionResultHolder.pass(stack);
+                    } else return InteractionResultHolder.pass(stack);
                 } else {
                     Part part = new Part(partType, variant, level);
                     part.durability = durability;
@@ -105,13 +106,14 @@ public class MMPartItem extends Item implements ICustomModelItem {
                     );
                     VehicleManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
                     stack.consume(1, player);
+                    return InteractionResultHolder.consume(stack);
                 }
             } catch (Exception e) {
                 MachineMax.LOGGER.error("Error while using part item: {}", stack.getDisplayName(), e);
                 player.sendSystemMessage(Component.translatable("error.machine_max.use_part_item", stack.getDisplayName(), e));
+                return InteractionResultHolder.fail(stack);
             }
-        }
-        return super.use(level, player, usedHand);
+        } else return InteractionResultHolder.success(stack);
     }
 
 
@@ -263,7 +265,7 @@ public class MMPartItem extends Item implements ICustomModelItem {
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
-        if (((ICustomModelItem) itemStack.getItem()).use2dModel(itemStack, level, context) && context == ItemDisplayContext.GUI) {
+        if (context == ItemDisplayContext.GUI) {
             animatable.setModelIndex(
                     new ModelIndex(
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
