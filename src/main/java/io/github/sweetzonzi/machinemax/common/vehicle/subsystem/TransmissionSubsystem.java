@@ -1,12 +1,14 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
-import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.TransmissionSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
 import lombok.Getter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 public class TransmissionSubsystem extends AbstractSubsystem {

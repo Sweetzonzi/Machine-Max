@@ -6,7 +6,6 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsSweepTestResult;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.math.Transform;
-import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machinemax.common.vehicle.SubPart;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;

@@ -2,10 +2,6 @@ package io.github.sweetzonzi.machinemax.external.js;
 
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.player.Player;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;

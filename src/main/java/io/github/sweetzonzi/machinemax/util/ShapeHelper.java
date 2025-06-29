@@ -2,7 +2,9 @@ package io.github.sweetzonzi.machinemax.util;
 
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
-import com.jme3.bullet.collision.shapes.*;
+import com.jme3.bullet.collision.shapes.EmptyShape;
+import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
+import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Plane;
 import com.jme3.math.Vector3f;

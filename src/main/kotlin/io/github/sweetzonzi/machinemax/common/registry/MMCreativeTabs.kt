@@ -112,11 +112,11 @@ object MMCreativeTabs {
         } else if (event.tab == MACHINE_MAX_FABRICATING_BLUEPRINT_TAB.get()) {
             MachineMax.LOGGER.info("Putting fabricating blueprints into creative tab...")
             val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
-            MMDynamicRes.CRAFTING_RECIPES.forEach { (loc, _) ->
-                val itemStack = ItemStack(MMItems.FABRICATING_BLUEPRINT)
-                itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
-                externalBlueprints.add(itemStack)
-            }
+//            MMDynamicRes.CRAFTING_RECIPES.forEach { (loc, _) ->
+//                val itemStack = ItemStack(MMItems.FABRICATING_BLUEPRINT)
+//                itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
+//                externalBlueprints.add(itemStack)
+//            }
             externalBlueprints.forEach { event.accept(it) }
         }
     }

@@ -25,7 +25,8 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.UUID;
 
-import static io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks.Combination.*;
+import static io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks.Combination.LEFT_CTRL;
+import static io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks.Combination.LEFT_SHIFT;
 
 /**
  * 按键逻辑与发包

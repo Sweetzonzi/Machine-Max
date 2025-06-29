@@ -4,8 +4,8 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.attachment.LivingEntityEyesightAttachment;
+import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.item.IPartInteractableItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
@@ -19,9 +19,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageSources;
-import net.minecraft.world.damagesource.DamageType;
-import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlotGroup;
@@ -38,7 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.awt.*;
-import java.util.*;
+import java.util.HashMap;
 
 public class CrowbarItem extends Item implements IPartInteractableItem, ICustomModelItem {
     public CrowbarItem() {

@@ -5,9 +5,9 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.common.vehicle.HitBox;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
+import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalSender;
-import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
@@ -15,7 +15,9 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 

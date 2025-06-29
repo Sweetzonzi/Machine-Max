@@ -46,8 +46,8 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.awt.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 public class VehicleBlueprintItem extends Item implements ICustomModelItem {
     public VehicleBlueprintItem() {
@@ -60,39 +60,43 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
             //TODO:检查AABB尺寸位置是否正确，似乎有微妙偏移
             //TODO:检查与地形的碰撞
             ItemStack stack = player.getItemInHand(usedHand);
-            VehicleData vehicleData = getVehicleData(stack, level);
-            Transform transform = new Transform(
-                    PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                            player.getEyePosition(),
-                            player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
-                    Quaternion.IDENTITY
-            );
-            Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
-            Vec3 max = vehicleData.max.add(SparkMathKt.toVec3(transform.getTranslation()));
-            com.jme3.math.Vector3f shape = new com.jme3.math.Vector3f((float) (max.x - min.x), (float) (max.y - min.y), (float) (max.z - min.z)).mult(0.5f);
-            PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
-                    new BoxCollisionShape(shape));
-            testGhost.setPhysicsLocation(transform.getTranslation());
-            PhysicsLevel physicsLevel = level.getPhysicsLevel();
-            TaskSubmitOffice taskLevel = (TaskSubmitOffice) level;
-            physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_blueprint", PPhase.PRE, () -> {
-                int contact = physicsLevel.getWorld().contactTest(testGhost, null);
-                if (contact == 0) {
-                    taskLevel.submitImmediateTask(PPhase.PRE, () -> {
-                        VehicleCore vehicle = new VehicleCore(level, vehicleData);
-                        vehicle.setUuid(UUID.randomUUID());
-                        vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
-                        VehicleManager.addVehicle(vehicle);
-                        return null;
-                    });
-                } else
-                    taskLevel.submitImmediateTask(PPhase.PRE, () -> {
-                        player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
-                        return null;
-                    });
-                return null;
-            });
+            try {
+                VehicleData vehicleData = getVehicleData(stack, level);
+                Transform transform = new Transform(
+                        PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                player.getEyePosition(),
+                                player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                        Quaternion.IDENTITY
+                );
+                Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
+                Vec3 max = vehicleData.max.add(SparkMathKt.toVec3(transform.getTranslation()));
+                com.jme3.math.Vector3f shape = new com.jme3.math.Vector3f((float) (max.x - min.x), (float) (max.y - min.y), (float) (max.z - min.z)).mult(0.5f);
+                PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
+                        new BoxCollisionShape(shape));
+                testGhost.setPhysicsLocation(transform.getTranslation());
+                PhysicsLevel physicsLevel = level.getPhysicsLevel();
+                TaskSubmitOffice taskLevel = (TaskSubmitOffice) level;
+                physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_blueprint", PPhase.PRE, () -> {
+                    int contact = physicsLevel.getWorld().contactTest(testGhost, null);
+                    if (contact == 0) {
+                        taskLevel.submitImmediateTask(PPhase.PRE, () -> {
+                            VehicleCore vehicle = new VehicleCore(level, vehicleData);
+                            vehicle.setUuid(UUID.randomUUID());
+                            vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
+                            VehicleManager.addVehicle(vehicle);
+                            return null;
+                        });
+                    } else
+                        taskLevel.submitImmediateTask(PPhase.PRE, () -> {
+                            player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
+                            return null;
+                        });
+                    return null;
+                });
+            } catch (NullPointerException e) {
+                return InteractionResultHolder.fail(stack);
+            }
         }
         return super.use(level, player, usedHand);
     }
@@ -101,42 +105,45 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
         if (level.isClientSide) {
-            VehicleData vehicleData = getVehicleData(stack, level);
-            if (isSelected) {
-                Transform transform = entity instanceof LivingEntity livingEntity ?
-                        new Transform(
-                                PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                                        entity.getEyePosition(),
-                                        entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
-                                Quaternion.IDENTITY
-                        ) : new Transform(
-                        PhysicsHelperKt.toBVector3f(entity.position()),
-                        Quaternion.IDENTITY
-                );
-                Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
-                Vec3 max = vehicleData.max.add(SparkMathKt.toVec3(transform.getTranslation()));
-                RenderableBoundingBox boundingBox;
-                if (VisualEffectHelper.boundingBox != null) boundingBox = VisualEffectHelper.boundingBox;
-                else {
-                    boundingBox = new RenderableBoundingBox(min, max);
-                    VisualEffectHelper.boundingBox = boundingBox;
+            try {
+                VehicleData vehicleData = getVehicleData(stack, level);
+                if (isSelected) {
+                    Transform transform = entity instanceof LivingEntity livingEntity ?
+                            new Transform(
+                                    PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                            entity.getEyePosition(),
+                                            entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
+                                    Quaternion.IDENTITY
+                            ) : new Transform(
+                            PhysicsHelperKt.toBVector3f(entity.position()),
+                            Quaternion.IDENTITY
+                    );
+                    Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
+                    Vec3 max = vehicleData.max.add(SparkMathKt.toVec3(transform.getTranslation()));
+                    RenderableBoundingBox boundingBox;
+                    if (VisualEffectHelper.boundingBox != null) boundingBox = VisualEffectHelper.boundingBox;
+                    else {
+                        boundingBox = new RenderableBoundingBox(min, max);
+                        VisualEffectHelper.boundingBox = boundingBox;
+                    }
+                    boundingBox.updateShape(PhysicsHelperKt.toBVector3f(min), PhysicsHelperKt.toBVector3f(max));
+                    PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
+                            new BoxCollisionShape(boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
+                    testGhost.setPhysicsLocation(transform.getTranslation());
+                    PhysicsLevel physicsLevel = level.getPhysicsLevel();
+                    physicsLevel.submitImmediateTask(PPhase.PRE, () -> {
+                        int contact = physicsLevel.getWorld().contactTest(testGhost, null);
+                        if (contact > 0) boundingBox.setColor(Color.RED);
+                        else boundingBox.setColor(Color.GREEN);
+                        return null;
+                    });
+                } else if (entity instanceof LivingEntity livingEntity) {
+                    if (livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof VehicleBlueprintItem
+                            || livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof VehicleBlueprintItem) {
+                    } else VisualEffectHelper.boundingBox = null;
                 }
-                boundingBox.updateShape(PhysicsHelperKt.toBVector3f(min), PhysicsHelperKt.toBVector3f(max));
-                PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
-                        new BoxCollisionShape(boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
-                testGhost.setPhysicsLocation(transform.getTranslation());
-                PhysicsLevel physicsLevel = level.getPhysicsLevel();
-                physicsLevel.submitImmediateTask(PPhase.PRE, () -> {
-                    int contact = physicsLevel.getWorld().contactTest(testGhost, null);
-                    if (contact > 0) boundingBox.setColor(Color.RED);
-                    else boundingBox.setColor(Color.GREEN);
-                    return null;
-                });
-            } else if (entity instanceof LivingEntity livingEntity) {
-                if (livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof VehicleBlueprintItem
-                        || livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof VehicleBlueprintItem) {
-                } else VisualEffectHelper.boundingBox = null;
+            } catch (NullPointerException ignored) {
             }
         }
     }
@@ -172,7 +179,12 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         //物品栏鼠标自定义信息 （正在筹备）
 //                        vehicleData.authors
 //                        tooltipComponents.add(Component.translatable("tooltip.%s.%s.details".formatted(MOD_ID, MMDynamicRes.getRealName(location.getPath()).replace("/", ".")))); // 支持本地化
-        String tip = getVehicleData(stack, null).tooltip;
+        String tip;
+        try {
+            tip = getVehicleData(stack, null).tooltip;
+        } catch (NullPointerException e){
+            return;
+        }
         if (MMDynamicRes.EXTERNAL_RESOURCE.get(ResourceLocation.parse(tip)) instanceof DynamicPack dynamicPack) {
             tip = dynamicPack.getContent();
         }
@@ -215,29 +227,31 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         if (stack.has(MMDataComponents.getVEHICLE_DATA())) {
             //从物品Component中获取蓝图位置类型
             vehicleData = MMDynamicRes.BLUEPRINTS.get(stack.get(MMDataComponents.getVEHICLE_DATA()));
-        } else throw new IllegalStateException("物品" + stack + "中未找到蓝图数据");//如果物品Component中蓝图位置为空，则抛出异常
+        } else throw new NullPointerException("物品" + stack + "中未找到蓝图数据");//如果物品Component中蓝图位置为空，则抛出异常
         if (vehicleData == null)
-            throw new IllegalStateException("未找到" + stack + "中存储的蓝图数据" + stack.get(MMDataComponents.getVEHICLE_DATA()));
+            throw new NullPointerException("未找到" + stack + "中存储的蓝图数据" + stack.get(MMDataComponents.getVEHICLE_DATA()));
         return vehicleData;
     }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
-        VehicleData vehicleData = getVehicleData(itemStack, level);//获取物品保存的部件类型
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
-        if (((ICustomModelItem) itemStack.getItem()).use2dModel(itemStack, level, context)
-                && context == ItemDisplayContext.GUI
-                && !vehicleData.icon.equals(ResourceLocation.withDefaultNamespace("missingno"))
-        ) {
-            animatable.setModelIndex(
-                    new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
-                            vehicleData.icon)
-            );
-        } else {
+        try {
+            VehicleData vehicleData = getVehicleData(itemStack, level);//获取物品保存的部件类型
+            if (((ICustomModelItem) itemStack.getItem()).use2dModel(itemStack, level, context)
+                    && context == ItemDisplayContext.GUI
+                    && !vehicleData.icon.equals(ResourceLocation.withDefaultNamespace("missingno"))
+            ) {
+                animatable.setModelIndex(
+                        new ModelIndex(
+                                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
+                                vehicleData.icon)
+                );
+            } else throw new NullPointerException();
+        } catch (NullPointerException e) {
             animatable.setModelIndex(
                     new ModelIndex(
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint.geo"),

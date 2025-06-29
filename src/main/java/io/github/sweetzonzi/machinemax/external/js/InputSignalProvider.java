@@ -51,7 +51,7 @@ public class InputSignalProvider {
     }
 
     public static void gamepadInit() {
-        MMJoystickHandler.init();//游戏手柄读取初始化
+//        MMJoystickHandler.init();//游戏手柄读取初始化
     }
 
     public static boolean containsGamepad(int id) { //通过id判断一个手柄是否存在

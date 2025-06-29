@@ -1,27 +1,45 @@
 package io.github.sweetzonzi.machinemax.external;
 
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.JsonOps;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
-import io.github.sweetzonzi.machinemax.common.crafting.FabricatingRecipe;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.external.parse.OBoneParse;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.crafting.*;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
+import javax.annotation.Nullable;
+import java.awt.*;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.file.*;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
@@ -36,7 +54,7 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
-    public static ConcurrentMap<ResourceLocation, FabricatingRecipe> CRAFTING_RECIPES = new ConcurrentHashMap<>();
+    public static List<Pair<ResourceLocation, JsonElement>> CRAFTING_RECIPES = new ArrayList<>();
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
     public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
@@ -51,13 +69,6 @@ public class MMDynamicRes {
     public static final Path PUBLIC_JS_LIBS = NAMESPACE.resolve("public_scripts");//js外部公共库目录
 
     public static boolean overwrite = true;//覆写总开关，考虑以后做成用户自定义配置
-
-    /**
-     * 注册热重载事件
-     */
-    public static void registerReloadListeners(RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener(new MMDynamicRes.DataPackReloader());
-    }
 
     public static void init(FMLCommonSetupEvent event) {
         loadData();
@@ -103,8 +114,6 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("texture")));
             packUp(packName, Exist(root.resolve("icon")));
             packUp(packName, Exist(root.resolve("font")));
-            packUp(packName, Exist(root.resolve("blueprint")));
-            packUp(packName, Exist(root.resolve("recipe")));
         }
     }
 
@@ -120,8 +129,10 @@ public class MMDynamicRes {
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
             //各种MM配置
+            packUp(packName, Exist(root.resolve("blueprint")));
             packUp(packName, Exist(root.resolve("model")));
             packUp(packName, Exist(root.resolve("part_type")));
+            packUp(packName, Exist(root.resolve("recipe")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("color")));
         }
@@ -144,22 +155,122 @@ public class MMDynamicRes {
     }
 
 
+    @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
     public static class DataPackReloader extends SimplePreparableReloadListener<Void> {
+        @Nullable
+        private static ReloadableServerResources serverResources;
+
         @Override
         protected Void prepare(ResourceManager manager, ProfilerFiller profiler) {
+            MMDynamicRes.reload();//异步重新读取资源
             return null;
         }
 
         @Override
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
-            MMDynamicRes.reload();// 重新读取
+            //TODO: 整体转为数据包方案？
+            if (serverResources != null) {
+                //注入自定义配方
+                RecipeManager recipeManager = serverResources.getRecipeManager();
+                registerRecipes(recipeManager, CRAFTING_RECIPES);
+            }
+        }
+
+        public static void sendErrorToPlayer(Player player) {
+            for (int i = 0; i < errorFiles.size(); i++) {
+                String file = errorFiles.get(i);
+                MutableComponent message = errorMessages.get(i).withColor(Color.RED.getRGB());
+                player.sendSystemMessage(Component.translatable("error.machine_max.load", file).withColor(Color.WHITE.getRGB()).append(message));
+            }
+        }
+
+        public static void sendErrorToConsole(MinecraftServer server) {
+            for (int i = 0; i < MMDynamicRes.errorFiles.size(); i++) {
+                String file = MMDynamicRes.errorFiles.get(i);
+                Component message = MMDynamicRes.errorMessages.get(i);
+                server.sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message).withColor(Color.red.getRGB()));
+            }
+        }
+
+        @SubscribeEvent
+        public static void registerServerReloadListeners(AddReloadListenerEvent event) {
+            event.addListener(new MMDynamicRes.DataPackReloader());
+            serverResources = event.getServerResources();//每次reload都会有新的serverResources被创建，因此在这里保存下来最新的
+        }
+
+        public static void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
+            event.registerReloadListener(new MMDynamicRes.DataPackReloader());
+        }
+
+        private void registerRecipes(RecipeManager manager, List<Pair<ResourceLocation, JsonElement>> recipes) {
+            // 使用反射访问RecipeManager内部映射
+            try {
+                // 获取当前不可变集合
+                Field byNameField = RecipeManager.class.getDeclaredField("byName");
+                byNameField.setAccessible(true);
+                Field byTypeField = RecipeManager.class.getDeclaredField("byType");
+                byTypeField.setAccessible(true);
+
+                Map<ResourceLocation, RecipeHolder<?>> currentByName =
+                        (Map<ResourceLocation, RecipeHolder<?>>) byNameField.get(manager);
+                Multimap<RecipeType<?>, RecipeHolder<?>> currentByType =
+                        (Multimap<RecipeType<?>, RecipeHolder<?>>) byTypeField.get(manager);
+
+                // 创建可变副本
+                Map<ResourceLocation, RecipeHolder<?>> newByName = new HashMap<>(currentByName);
+                Multimap<RecipeType<?>, RecipeHolder<?>> newByType = ArrayListMultimap.create();
+
+                // 复制现有数据到新集合
+                for (Map.Entry<RecipeType<?>, Collection<RecipeHolder<?>>> entry : currentByType.asMap().entrySet()) {
+                    newByType.putAll(entry.getKey(), entry.getValue());
+                }
+
+                // 添加新配方
+                for (Pair<ResourceLocation, JsonElement> entry : recipes) {
+                    ResourceLocation id = entry.getFirst();
+                    JsonElement json = entry.getSecond();
+
+                    RecipeHolder<?> recipeHolder = parseRecipe(id, json);
+                    if (recipeHolder != null) {
+                        // 替换同名配方
+                        newByName.put(id, recipeHolder);
+                        // 按类型分组
+                        newByType.put(recipeHolder.value().getType(), recipeHolder);
+                    }
+                }
+
+                // 创建不可变版本
+                Map<ResourceLocation, RecipeHolder<?>> immutableByName = ImmutableMap.copyOf(newByName);
+                Multimap<RecipeType<?>, RecipeHolder<?>> immutableByType = ImmutableMultimap.copyOf(newByType);
+
+                // 更新RecipeManager
+                byNameField.set(manager, immutableByName);
+                byTypeField.set(manager, immutableByType);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException("Failed to register external recipes", e);
+            }
+        }
+
+        @Nullable
+        private RecipeHolder<?> parseRecipe(ResourceLocation id, JsonElement json) {
+            try {
+                // 解析配方对象
+                var recipe = Recipe.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow(JsonParseException::new);
+                return new RecipeHolder<>(id, recipe);
+            } catch (Exception e) {
+                // 记录解析错误
+                exceptions.add(e);
+                errorFiles.add(id.toString());
+                errorMessages.add(Component.translatable(e.getMessage()));
+                LOGGER.error("An error occurred while reading recipe {}, skipped. Reason: {}", id, e.getMessage());
+                return null;
+            }
         }
     }
 
     public static void GenerateChannels(String jsCode) {
         createDefaultFile(PUBLIC_JS_LIBS.resolve("channels.js"), jsCode, overwrite);
     }
-
 
     /**
      * 自动生成测试包
@@ -278,13 +389,6 @@ public class MMDynamicRes {
                         PART_TYPES.put(location, partType); //我暂时把它存在PART_TYPES
                         partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
                         SERVER_PART_TYPES.put(location, partType);
-                        //测试数据是否成功录入
-//                        partType.getConnectorIterator().forEachRemaining((c) -> {
-//                            LOGGER.info("连接器队列: " + c);
-//                        });
-//                        partType.getPartOutwardConnectors().forEach((a, b) -> {
-//                            LOGGER.info("接口名称: %s 类型: %s".formatted(a, b));
-//                        });
                     }
 
                     case "model" -> {
@@ -305,8 +409,7 @@ public class MMDynamicRes {
                     }
 
                     case "recipe" -> {
-                        FabricatingRecipe recipe = FabricatingRecipe.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
-                        CRAFTING_RECIPES.put(location, recipe);
+                        CRAFTING_RECIPES.add(Pair.of(location, json));
                     }
 
                     case "lang" -> {

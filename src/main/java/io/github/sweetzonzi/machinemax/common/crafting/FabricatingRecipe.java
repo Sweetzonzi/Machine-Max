@@ -3,13 +3,10 @@ package io.github.sweetzonzi.machinemax.common.crafting;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machinemax.common.registry.MMItems;
 import lombok.Getter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
@@ -23,7 +20,7 @@ import java.util.List;
 @Getter
 public class FabricatingRecipe implements Recipe<FabricatingInput> {
     private final List<Pair<Ingredient, Integer>> materials;
-    private final FabricatingResult result;
+    private final ItemStack result;
 
     public static final Codec<Pair<Ingredient, Integer>> MATERIAL_CODEC = Codec.pair(
             Ingredient.CODEC.fieldOf("item").codec(),
@@ -32,7 +29,7 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
 
     public static final Codec<FabricatingRecipe> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             MATERIAL_CODEC.listOf().fieldOf("materials").forGetter(FabricatingRecipe::getMaterials),
-            FabricatingResult.CODEC.fieldOf("result").forGetter(FabricatingRecipe::getResult)
+            ItemStack.CODEC.fieldOf("result").forGetter(FabricatingRecipe::getResult)
     ).apply(instance, FabricatingRecipe::new));
 
     public static final StreamCodec<FriendlyByteBuf, FabricatingRecipe> STREAM_CODEC = new StreamCodec<>() {
@@ -47,7 +44,7 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
         }
     };
 
-    public FabricatingRecipe(List<Pair<Ingredient, Integer>> materials, FabricatingResult result) {
+    public FabricatingRecipe(List<Pair<Ingredient, Integer>> materials, ItemStack result) {
         this.materials = materials;
         this.result = result;
     }
@@ -103,9 +100,7 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
 
     @Override
     public @NotNull ItemStack getResultItem(HolderLookup.@NotNull Provider registries) {
-        ItemStack result = new ItemStack(MMItems.getPART_ITEM());
-        result.set(MMDataComponents.getPART_TYPE(), this.getResult().id());
-        return result;
+        return result.copy();
     }
 
     @Override

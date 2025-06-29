@@ -26,10 +26,10 @@ public class RoadBaseBlockEntity extends BlockEntity {
     }
     public static void tick(Level level, BlockPos blockPos, BlockState blockState, RoadBaseBlockEntity blockEntity) {
         //TODO:遍历范围内方块，逐一抬升。此方法不行，另想办法
-//        Vec3 pos = new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+//        Vec3 pos = new Vec3(blockPos.getXOffset(), blockPos.getYOffset(), blockPos.getZOffset());
 //        for(int i = 0; i < 17; i++){
 //            for(int j = 0; j < 17; j++){
-//                BlockState state = level.getBlockState(new BlockPos(blockPos.getX()+i-8, blockPos.getY()+2, blockPos.getZ()+j-8));
+//                BlockState state = level.getBlockState(new BlockPos(blockPos.getXOffset()+i-8, blockPos.getYOffset()+2, blockPos.getZOffset()+j-8));
 //                ((IMixinBlockState)state).machine_Max$setRoadOffset(new Vec3(0,blockEntity.heightData[i*17+j],0));
 //            }
 //        }

@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machinemax.client.gui;
 
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -9,7 +8,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.gui.widget.AnimatableRenderable;
+import io.github.sweetzonzi.machinemax.client.gui.renderable.AnimatableRenderable;
+import io.github.sweetzonzi.machinemax.client.gui.renderable.RenderableAttr;
+import io.github.sweetzonzi.machinemax.common.crafting.FabricatingMenu;
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
@@ -29,12 +30,14 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 import java.awt.*;
+import java.util.Map;
 
 import static io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper.partToAssembly;
 
@@ -52,17 +55,13 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
         super.init();
         //TODO:添加Widgets
         addRenderableOnly(new AnimatableRenderable(
-                new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint.geo"),
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png")),
-                0, 0, -50, true
-        ));
-        addRenderableOnly(new AnimatableRenderable(
-                new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint.geo"),
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png")),
-                150, 150, -15, false
-        ));
+                new RenderableAttr(
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui/speed_hud.geo"),
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui/speed_hud.animation"),
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/gui/speed_hud.png"),
+                        new Vec3(0, 0, -100),
+                        false,
+                        Map.of())));
     }
 
     @Override

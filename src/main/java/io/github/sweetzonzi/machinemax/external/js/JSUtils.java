@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machinemax.external.js;
 
-import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.external.js.hook.EventToJS;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import net.minecraft.client.Minecraft;
@@ -11,8 +10,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;

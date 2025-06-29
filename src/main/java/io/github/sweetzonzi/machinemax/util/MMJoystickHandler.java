@@ -1,12 +1,16 @@
 package io.github.sweetzonzi.machinemax.util;
 
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class MMJoystickHandler {
 
     // 用于存储每个手柄的按钮状态
@@ -17,7 +21,8 @@ public class MMJoystickHandler {
     /**
      * 初始化 GLFW 和设置手柄回调函数
      */
-    public static void init() {
+    @SubscribeEvent
+    public static void init(FMLCommonSetupEvent e) {
         if (!GLFW.glfwInit()) {
             System.out.println("Failed to initialize GLFW");
             return;

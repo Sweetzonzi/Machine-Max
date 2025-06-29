@@ -6,7 +6,10 @@ import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 public class GearboxSubsystem extends AbstractSubsystem {

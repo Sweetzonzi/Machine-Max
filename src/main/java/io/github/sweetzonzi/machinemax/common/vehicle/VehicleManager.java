@@ -8,7 +8,6 @@ import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
-import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.ClientRequestVehicleDataPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.LevelVehicleDataPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleCreatePayload;
@@ -199,21 +198,13 @@ public class VehicleManager {
     @SubscribeEvent
     public static void displayCustomPackError(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide() && event.getEntity() instanceof LocalPlayer player) {
-            for (int i = 0; i < MMDynamicRes.errorFiles.size(); i++) {
-                String file = MMDynamicRes.errorFiles.get(i);
-                MutableComponent message = MMDynamicRes.errorMessages.get(i).withColor(Color.RED.getRGB());
-                player.sendSystemMessage(Component.translatable("error.machine_max.load", file).withColor(Color.WHITE.getRGB()).append(message));
-            }
+            MMDynamicRes.DataPackReloader.sendErrorToPlayer(player);
         }
     }
 
     @SubscribeEvent
     public static void onServerStart(ServerAboutToStartEvent event) {
-        for (int i = 0; i < MMDynamicRes.errorFiles.size(); i++) {
-            String file = MMDynamicRes.errorFiles.get(i);
-            Component message = MMDynamicRes.errorMessages.get(i);
-            event.getServer().sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message).withColor(Color.red.getRGB()));
-        }
+        MMDynamicRes.DataPackReloader.sendErrorToConsole(event.getServer());
         serverAllVehicles.clear();
         levelVehicles.clear();
     }

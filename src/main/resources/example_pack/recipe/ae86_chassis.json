@@ -1,20 +1,19 @@
 {
-  "materials": [
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
     {
-      "item": {
-        "tag": "c:ingots/copper"
-      },
-      "count": 1
+      "tag": "c:ingots/copper"
     },
     {
-      "item": {
-        "item": "minecraft:gunpowder"
-      },
-      "count": 1
+      "item": "minecraft:gunpowder"
     }
   ],
   "result": {
-    "id": "machine_max:ae86_chassis",
-    "count": 1
+    "id": "machine_max:part_item",
+    "count": 1,
+    "components": {
+      "machine_max:part_type": "machine_max:ae86_chassis"
+    }
   }
 }

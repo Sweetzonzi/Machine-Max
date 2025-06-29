@@ -23,7 +23,7 @@ public class TerrainBuilder {
 //        for (int y = chunk.getMinBuildHeight(); y <= getHighestBlockY(chunk); y++) {
 //            for (int x = 0; x <= 15; x++) {
 //                for (int z = 0; z <= 15; z++) {
-//                    BlockPos currentPos = new BlockPos(chunkPos.getX() + x, y, chunkPos.getZ() + z);
+//                    BlockPos currentPos = new BlockPos(chunkPos.getXOffset() + x, y, chunkPos.getZOffset() + z);
 //                    BlockState blockState = chunk.getBlockState(currentPos);
 //                    if (!blockState.isAir()) {
 //                        // 检查与空气的相邻方向

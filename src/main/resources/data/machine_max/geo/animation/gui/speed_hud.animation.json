@@ -1,0 +1,13 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"parallel0": {
+			"loop": true,
+			"bones": {
+				"Pointer": {
+					"rotation": [0, 0, "240*q.engine_speed*180/math.pi/9000"]
+				}
+			}
+		}
+	}
+}
