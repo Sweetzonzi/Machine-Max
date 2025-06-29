@@ -170,6 +170,7 @@ public class RawInputHandler {
             //浏览器页面
             if (MMWebApp.browser == null) {
                 boolean transparent = true;
+                MCEF.getSettings().setUseCache(false);//关闭cache
                 MMWebApp.browser = MCEF.createBrowser(Hook.replace(MMWebApp.URL,"web_app_running_url"), transparent);
             }
 
