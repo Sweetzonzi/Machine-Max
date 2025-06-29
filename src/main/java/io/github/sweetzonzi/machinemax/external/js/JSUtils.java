@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machinemax.external.js;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.external.js.hook.EventToJS;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
+import io.github.sweetzonzi.machinemax.web.MMWebApp;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -46,6 +47,10 @@ public class JSUtils {
     }
     public boolean bytesE(byte[] b1, byte[] b2) {
        return Arrays.equals(b1, b2);
+    }
+
+    public void screenPayload(String tag, Object... args) {
+        MMWebApp.sendPacket(tag, args);
     }
 
     public void hook(String channel, org.mozilla.javascript.ArrowFunction arrowFunction) {

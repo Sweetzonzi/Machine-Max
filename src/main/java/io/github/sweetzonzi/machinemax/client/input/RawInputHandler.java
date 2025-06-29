@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machinemax.client.input;
 
 import com.cinemamod.mcef.MCEF;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.web.hud.HudSmartWidget;
 import io.github.sweetzonzi.machinemax.web.hud.WebAppHud;
 import io.github.sweetzonzi.machinemax.client.screen.MMWebScreen;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
@@ -48,7 +49,7 @@ public class RawInputHandler {
     static byte[] moveInputs = new byte[6];//x,y,z方向的平移和绕x,y,z轴的旋转输入
     static byte[] moveInputConflicts = new byte[6];//相应轴向上的输入冲突
     public static boolean freeCam = false;//自由视角是否激活
-
+    static HudSmartWidget sw_x_line = new HudSmartWidget("x_line");
 //    static int trans_x_input = 0;
 //    static int trans_y_input = 0;
 //    static int trans_z_input = 0;
@@ -137,21 +138,28 @@ public class RawInputHandler {
         if (client == null) client = Minecraft.getInstance();
 
         // TODO: 策略组的事件体测试区
+
         new KeyHooks.EVENT("e")
                 .with(LEFT_CTRL)
                 .OnKeyTriplePress(()->{
-                    System.out.println("弹射跳伞");
+                    System.out.println("闪烁");
+                    sw_x_line.setStatus(HudSmartWidget.HudStatus.blink);
+                    sw_x_line.update();
                 })
                 .flush() //与上方的绑定断开
                 .with(LEFT_SHIFT)
                 .OnKeyTriplePress(()->{
-                    System.out.println("抛离武器挂架");
+                    System.out.println("常亮");
+                    sw_x_line.setStatus(HudSmartWidget.HudStatus.on);
+                    sw_x_line.update();
                 })
                 .flush() //与上方的绑定断开
                 .with(LEFT_CTRL)
                 .with(LEFT_SHIFT)
                 .OnKeyTriplePress(()->{
-                    System.out.println("同时按下组合键的E键三连击情况");
+                    System.out.println("关闭");
+                    sw_x_line.setStatus(HudSmartWidget.HudStatus.off);
+                    sw_x_line.update();
                 })
         ;
 

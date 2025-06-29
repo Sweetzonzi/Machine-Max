@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
@@ -22,7 +23,7 @@ class _HudScreenState extends State<HudScreen> {
   final audioContext =
       AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers).build();
   late AudioPlayer player;
-  var alpha = 0.92;
+  var alpha = 1.0;
 
   @override
   Widget build(BuildContext context) {
@@ -79,16 +80,16 @@ class _HudScreenState extends State<HudScreen> {
           child: Container(
             width: bgSize.width,
             height: bgSize.height,
-            color: Color(0x3F7C1EBE),
+            color: kDebugMode ? Colors.black87 : Color(0x3F7C1EBE),
             child: Opacity(
               opacity: alpha,
               child: Stack(
                 children: [
                   Positioned(
-                    width: hudLength/8,
-                    height: hudLength/8,
+                    width: hudLength / 8,
+                    height: hudLength / 8,
                     child: HudSmartWidget(
-                      payloadTag: "x_line",
+                      payloadTag: "block_cursor",
                       child: SvgPicture.asset("assets/svg/block_cursor.svg"),
                     ),
                   ),
@@ -105,13 +106,20 @@ class _HudScreenState extends State<HudScreen> {
                   Positioned.fill(
                     child: HudSmartWidget(
                       payloadTag: "x_line",
-                      child: CustomPaint(painter: SimpleLinePainter(hudLength/900)),
+                      child: CustomPaint(
+                        painter: SimpleLinePainter(hudLength / 900),
+                      ),
                     ),
                   ),
                   Positioned.fill(
                     child: HudSmartWidget(
                       payloadTag: "round",
-                      child: CustomPaint(painter: HudRoundPainter(hudLength/3, hudLength/260)),
+                      child: CustomPaint(
+                        painter: HudRoundPainter(
+                          hudLength / 3,
+                          hudLength / 260,
+                        ),
+                      ),
                     ),
                   ),
                 ],

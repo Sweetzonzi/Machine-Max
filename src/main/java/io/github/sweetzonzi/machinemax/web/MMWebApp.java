@@ -1,10 +1,8 @@
 package io.github.sweetzonzi.machinemax.web;
 
 import com.cinemamod.mcef.MCEFBrowser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
-import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.GameShuttingDownEvent;
@@ -18,11 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Base64;
 import java.util.HashMap;
-import java.util.Map;
 
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
@@ -30,19 +25,19 @@ public class MMWebApp {
     private static final Logger logger = LoggerFactory.getLogger(MMWebApp.class);
     public static MCEFBrowser browser = null;
     private static Server server = null; // 静态 Server 实例，用于跨线程访问
-    private static WebSocket webSocket = null; // 静态 WebSocket 实例，用于跨线程访问，发送信息
+    private static WebSocket ws = null; // 静态 WebSocket 实例，用于跨线程访问，发送信息
     public static int WEB_APP_PORT = 8195;
     public static int WS_PORT = 8194;
     public static String URL = "http://localhost:%s/".formatted(WEB_APP_PORT);
 
     public static void sendPacket(String tag, Object... args) {
         try {
-            if (webSocket != null) {
+            if (ws != null) {
                 HashMap<String, Object[]> payload = new HashMap<>();
                 payload.put(tag, args);
                 ObjectMapper objectMapper = new ObjectMapper();
                 byte[] jsonBytes = objectMapper.writeValueAsBytes(payload);
-                webSocket.send(jsonBytes);
+                ws.send(jsonBytes);
             }
         } catch (Exception e) {
             logger.error("WsEvent 执行失败 ", e);
@@ -79,23 +74,23 @@ public class MMWebApp {
                 new WebSocketServer(new InetSocketAddress(WS_PORT)) {
                     @Override
                     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-                        webSocket = conn;
+                        ws = conn;
                         sendPacket("connected", true);
                     }
 
                     @Override
                     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-                        webSocket = null;
+                        ws = null;
                     }
 
                     @Override
                     public void onMessage(WebSocket conn, String message) {
-                        webSocket = conn;
+                        ws = conn;
                     }
 
                     @Override
                     public void onError(WebSocket conn, Exception ex) {
-                        webSocket = null;
+                        ws = null;
                     }
 
                     @Override

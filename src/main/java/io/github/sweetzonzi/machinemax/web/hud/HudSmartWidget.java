@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machinemax.web.hud;
 
-import io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machinemax.web.MMWebApp;
 
 /**
@@ -17,5 +16,25 @@ public class HudSmartWidget {
         on,//常亮
         off//熄灭
     }
+    public final String tag;
+    private HudStatus status = HudStatus.off;
+
+    public HudSmartWidget(String tag) {
+        this.tag = tag;
+    }
+    public HudSmartWidget(String tag, HudStatus status) {
+        this.tag = tag;
+        this.status = status;
+    }
+
+    public void setStatus(HudStatus status) {
+        this.status = status;
+    }
+
+    public void update() { //通知前端更新状态
+        MMWebApp.sendPacket("hud","smart", tag, status.name());
+    }
+
+
 
 }

@@ -18,12 +18,9 @@ class Utils {
           isCalling = true;
           for (var event in PAYLOADS.values) {
             if (data is Uint8List) {
-              String jsonString = Utf8Decoder().convert(data);
-              dynamic receivedMap = json.decode(jsonString);
-              if (receivedMap is Map) {
-                Map payload = receivedMap;
-                event.call(payload);
-              }
+              dynamic rawJson = json.decode(Utf8Decoder().convert(data));
+              Map<String, dynamic> payload = Map<String, dynamic>.from(rawJson);
+              event.call(payload);
             }
 
           }

@@ -38,10 +38,10 @@ class _HudSmartWidgetState extends State<HudSmartWidget>
   void initState() {
     super.initState();
     Utils.PAYLOADS[hashCode] = (payload) {
-      // _status = HudStatus.off;
-      List<dynamic>? args = payload[widget.payloadTag];
-      if (args != null) {
-        _status = HudStatus.values.byName(args[0]);
+      _status = HudStatus.off;
+      List<dynamic>? args = payload["hud"];
+      if (args != null && args[0] == "smart" && args[1] == widget.payloadTag) {
+        _status = HudStatus.values.byName(args[2]);
       }
       setState(() {
 
@@ -55,7 +55,7 @@ class _HudSmartWidgetState extends State<HudSmartWidget>
     // 定义动画：从 1→0→1 快速切换（无渐变）
     _opacityAnimation = Tween<double>(
       begin: 2.0 * _switchValue,
-      end: 0.06,
+      end: 0.012,
     ).animate(
       CurvedAnimation(
         parent: _controller,
