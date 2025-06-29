@@ -1,1 +1,0 @@
-flutter build web --output-dir=..\run\config\machine_max\webapp\web
