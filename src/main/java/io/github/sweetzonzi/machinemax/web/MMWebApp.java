@@ -15,13 +15,13 @@ import org.java_websocket.server.WebSocketServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static io.github.sweetzonzi.machinemax.external.MMDynamicRes.Exist;
 import static io.github.sweetzonzi.machinemax.external.MMDynamicRes.NAMESPACE;
@@ -60,14 +60,18 @@ public class MMWebApp {
             try {
                 Exist(NAMESPACE);
                 Path webapp = Exist(NAMESPACE.resolve("webapp"));
-                Path instance = Exist(webapp.resolve("web"));
+                Path old = webapp.resolve("web");
+                Path zipFolder = Exist(webapp.resolve("zip"));
+                Path zipFile = zipFolder.resolve("web.zip");
+                MMDynamicRes.copyResourceToFile("/webapp/web.zip", zipFile, true);
+                MMDynamicRes.unzip(zipFile, webapp, true);
 
                 server = new Server(WEB_APP_PORT); // 初始化 Jetty 服务器
 
                 // 配置静态资源处理器
                 ServletContextHandler context = new ServletContextHandler();
                 context.setContextPath("/");
-                context.setResourceBase(instance.toString());
+                context.setResourceBase(old.toString());
                 context.addServlet(DefaultServlet.class, "/")
                         .setInitParameter("cacheControl", "no-cache, no-store, must-revalidate"); // 强制不缓存
 

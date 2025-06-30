@@ -22,11 +22,20 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 
 import java.io.*;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
@@ -463,6 +472,24 @@ public class MMDynamicRes {
         return str.contains(".") ? str.substring(0, str.lastIndexOf('.')) : str;
     }
 
+    public static void deleteDirectory(Path pathNeedToD) {
+        try (Stream<Path> walkStream = Files.walk(pathNeedToD)) {
+            // 按深度优先反转顺序（先子后父）
+            walkStream.sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path); // 删除文件或空目录
+                        } catch (IOException e) {
+                            throw new RuntimeException("删除失败: " + path, e);
+                        }
+                    });
+            System.out.println("目录删除成功！");
+        } catch (IOException e) {
+            System.err.println("删除目录时出错: " + e.getMessage());
+        }
+        pathNeedToD.toFile().delete();
+    }
+
 
     /**
      * 将类路径资源文件复制到指定文件系统路径
@@ -497,6 +524,86 @@ public class MMDynamicRes {
             e.printStackTrace();
         }
     }
+
+    /**
+     * 解压 ZIP 文件到指定目标路径（支持覆盖控制）
+     *
+     * @param zipPath    待解压的 ZIP 文件路径（如："/data/archive.zip"）
+     * @param targetPath 解压目标路径（如："/backup/extracted"）
+     * @param overwrite  是否覆盖已存在文件
+     * @throws IOException 解压失败时抛出异常
+     */
+    public static void unzip(Path zipPath, Path targetPath, boolean overwrite) throws IOException {
+        // 校验 ZIP 文件是否存在
+        if (!Files.exists(zipPath) || !Files.isRegularFile(zipPath)) {
+            throw new IOException("ZIP 文件不存在或不是普通文件: " + zipPath);
+        }
+
+        // 创建目标目录（若不存在）
+        if (!Files.exists(targetPath)) {
+            Files.createDirectories(targetPath);
+        }
+
+        // 使用 ZipInputStream 读取 ZIP 文件
+        try (ZipInputStream zis = new ZipInputStream(
+                new BufferedInputStream(Files.newInputStream(zipPath)), StandardCharsets.UTF_8)) {
+
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                Path entryTargetPath = targetPath.resolve(entry.getName());
+
+                // 安全校验：防止路径遍历攻击（如 entry 名称包含 ../）
+                if (!isPathSafe(entryTargetPath, targetPath)) {
+                    throw new IOException("非法路径: " + entry.getName() + "（拒绝路径遍历攻击）");
+                }
+
+                if (entry.isDirectory()) {
+                    // 处理目录条目：创建目录（若不存在）
+                    if (!Files.exists(entryTargetPath)) {
+                        Files.createDirectories(entryTargetPath);
+                    }
+                } else {
+                    // 处理文件条目：创建父目录并写入文件
+                    Path parentDir = entryTargetPath.getParent();
+                    if (parentDir != null && !Files.exists(parentDir)) {
+                        Files.createDirectories(parentDir);
+                    }
+
+                    // 跳过已存在文件（除非 overwrite 为 true）
+                    if (Files.exists(entryTargetPath) && !overwrite) {
+                        continue;
+                    }
+
+                    // 写入文件内容
+                    try (OutputStream fos = new BufferedOutputStream(Files.newOutputStream(entryTargetPath))) {
+                        byte[] buffer = new byte[1024];
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
+
+                // 关闭当前条目（必须调用，否则可能读取错误）
+                zis.closeEntry();
+            }
+        }
+    }
+
+    /**
+     * 校验路径是否安全（防止路径遍历攻击）
+     * 确保 entryTargetPath 是 targetPath 的子路径（或相等）
+     */
+    private static boolean isPathSafe(Path entryTargetPath, Path targetPath) {
+        // 转换为绝对路径并标准化（解析 . 和 ..）
+        Path absoluteTarget = targetPath.toAbsolutePath().normalize();
+        Path absoluteEntry = entryTargetPath.toAbsolutePath().normalize();
+
+        // 检查 entry 路径是否以 target 路径开头（即是否是 target 的子路径）
+        return absoluteEntry.startsWith(absoluteTarget);
+    }
+
+    // 示例用法
 
 
 }
