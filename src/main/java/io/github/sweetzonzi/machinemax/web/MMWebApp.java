@@ -60,7 +60,7 @@ public class MMWebApp {
             try {
                 Exist(NAMESPACE);
                 Path webapp = Exist(NAMESPACE.resolve("webapp"));
-                Path old = webapp.resolve("web");
+                Path webFolder = webapp.resolve("web");
                 Path zipFolder = Exist(webapp.resolve("zip"));
                 Path zipFile = zipFolder.resolve("web.zip");
                 MMDynamicRes.copyResourceToFile("/webapp/web.zip", zipFile, true);
@@ -72,7 +72,7 @@ public class MMWebApp {
                 // 配置静态资源处理器
                 ServletContextHandler context = new ServletContextHandler();
                 context.setContextPath("/");
-                context.setResourceBase(old.toString());
+                context.setResourceBase(webFolder.toString());
                 context.addServlet(DefaultServlet.class, "/")
                         .setInitParameter("cacheControl", "no-cache, no-store, must-revalidate"); // 强制不缓存
 

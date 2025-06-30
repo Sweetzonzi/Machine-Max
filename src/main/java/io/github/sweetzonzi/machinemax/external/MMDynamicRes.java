@@ -472,6 +472,11 @@ public class MMDynamicRes {
         return str.contains(".") ? str.substring(0, str.lastIndexOf('.')) : str;
     }
 
+
+    /**
+     * 该方法用于删除文件夹，包括它的所有内容文件
+     * @param pathNeedToD 需要被删除的文件夹的路径
+     */
     public static void deleteDirectory(Path pathNeedToD) {
         try (Stream<Path> walkStream = Files.walk(pathNeedToD)) {
             // 按深度优先反转顺序（先子后父）
