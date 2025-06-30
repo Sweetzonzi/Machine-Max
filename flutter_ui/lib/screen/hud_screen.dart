@@ -52,7 +52,7 @@ class _HudScreenState extends State<HudScreen> {
 
     Widget HudSmartText(String tag, String text, int milliseconds) {
       return HudSmartWidget(
-        payloadTag: tag,
+        widgetName: tag,
         child: Text(text, style: laserFontStyle()),
       );
     }
@@ -89,7 +89,7 @@ class _HudScreenState extends State<HudScreen> {
                     width: hudLength / 8,
                     height: hudLength / 8,
                     child: HudSmartWidget(
-                      payloadTag: "block_cursor",
+                      widgetName: "block_cursor",
                       child: SvgPicture.asset("assets/svg/block_cursor.svg"),
                     ),
                   ),
@@ -105,7 +105,7 @@ class _HudScreenState extends State<HudScreen> {
 
                   Positioned.fill(
                     child: HudSmartWidget(
-                      payloadTag: "x_line",
+                      widgetName: "x_line",
                       child: CustomPaint(
                         painter: SimpleLinePainter(hudLength / 900),
                       ),
@@ -113,7 +113,7 @@ class _HudScreenState extends State<HudScreen> {
                   ),
                   Positioned.fill(
                     child: HudSmartWidget(
-                      payloadTag: "round",
+                      widgetName: "round",
                       child: CustomPaint(
                         painter: HudRoundPainter(
                           hudLength / 3,

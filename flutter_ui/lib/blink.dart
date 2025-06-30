@@ -9,7 +9,7 @@ enum HudStatus {
 }
 
 class HudSmartWidget extends StatefulWidget {
-  final String payloadTag;
+  final String widgetName;
   final Widget child; // 需要闪烁的子组件
   final int milliseconds = 330; // 单次闪烁周期（默认 330ms）
   late final Duration blinkDuration; // 单次闪烁周期（默认 50ms）
@@ -17,7 +17,7 @@ class HudSmartWidget extends StatefulWidget {
 
   HudSmartWidget({
     super.key,
-    required this.payloadTag,
+    required this.widgetName,
     required this.child,
   }){
     this.blinkDuration = Duration(milliseconds: milliseconds);
@@ -40,7 +40,7 @@ class _HudSmartWidgetState extends State<HudSmartWidget>
     Utils.PAYLOADS[hashCode] = (payload) {
       _status = HudStatus.off;
       List<dynamic>? args = payload["hud"];
-      if (args != null && args[0] == "smart" && args[1] == widget.payloadTag) {
+      if (args != null && args[0] == "smart" && args[1] == widget.widgetName) {
         _status = HudStatus.values.byName(args[2]);
       }
       setState(() {
