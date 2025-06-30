@@ -27,6 +27,8 @@
 
 首先你需要先运行下面的命令来打包为web应用
 ```cmd
+cd .\flutter_ui\
+flutter pub get
 flutter build web
 ```
 1. 运行完毕，你会在 flutter_ui/build 中发现多了一个web文件夹（或者被更新
