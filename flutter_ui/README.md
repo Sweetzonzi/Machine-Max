@@ -33,7 +33,7 @@ flutter build web
 ```
 1. 运行完毕，你会在 flutter_ui/build 中发现多了一个web文件夹（或者被更新
 2. 将web文件夹压缩成web.zip文件
-3. 然后将web.zip文件夹复制（或替换）到 src/main/resources/webapp 中
+3. 然后将web.zip文件复制（或替换）到 src/main/resources/webapp 中
 4. 接下来就可以执行模组gradle的Jar打包了
 
 ## 命令帮助
