@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machinemax.web.hud;
+package io.github.sweetzonzi.machinemax.web.widget;
 
 import io.github.sweetzonzi.machinemax.web.MMWebApp;
 
@@ -10,20 +10,22 @@ import io.github.sweetzonzi.machinemax.web.MMWebApp;
  * <br>TODO 控制状态，向前端传入状态名与状态详细配置
  * <br>TODO 写出传入大小、位置等的改变配置的方法
  */
-public class HudSmartWidget {
+
+@FlutterWidget.ID(tag = "hud", category = "smart")
+public class HudSmartWidget extends FlutterWidget{
     public enum HudStatus {//hud显示状态
         blink,//闪烁
         on,//常亮
         off//熄灭
     }
-    public final String tag;
+    public final String widgetName;
     private HudStatus status = HudStatus.off;
 
-    public HudSmartWidget(String tag) {
-        this.tag = tag;
+    public HudSmartWidget(String widgetName) {
+        this.widgetName = widgetName;
     }
-    public HudSmartWidget(String tag, HudStatus status) {
-        this.tag = tag;
+    public HudSmartWidget(String widgetName, HudStatus status) {
+        this.widgetName = widgetName;
         this.status = status;
     }
 
@@ -32,7 +34,7 @@ public class HudSmartWidget {
     }
 
     public void update() { //通知前端更新状态
-        MMWebApp.sendPacket("hud","smart", tag, status.name());
+        super.update(widgetName, status.name());
     }
 
 

@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machinemax.web.hud;
+package io.github.sweetzonzi.machinemax.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;

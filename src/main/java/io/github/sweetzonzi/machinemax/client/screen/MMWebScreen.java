@@ -20,14 +20,11 @@
 
 package io.github.sweetzonzi.machinemax.client.screen;
 
-import com.cinemamod.mcef.MCEF;
-import com.cinemamod.mcef.MCEFBrowser;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machinemax.web.MMWebApp;
-import io.github.sweetzonzi.machinemax.web.hud.WebAppHud;
+import io.github.sweetzonzi.machinemax.client.gui.WebAppHud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;

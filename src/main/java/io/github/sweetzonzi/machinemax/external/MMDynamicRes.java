@@ -365,7 +365,7 @@ public class MMDynamicRes {
     /**
      * 保证路径存在，否则创建这个文件夹
      */
-    private static Path Exist(Path path) {
+    public static Path Exist(Path path) {
         if (!Files.exists(path)) {
             try {
                 Files.createDirectory(path);

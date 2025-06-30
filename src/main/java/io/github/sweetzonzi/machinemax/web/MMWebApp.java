@@ -16,8 +16,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+
+import static io.github.sweetzonzi.machinemax.external.MMDynamicRes.Exist;
+import static io.github.sweetzonzi.machinemax.external.MMDynamicRes.NAMESPACE;
 
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
@@ -37,6 +44,8 @@ public class MMWebApp {
                 payload.put(tag, args);
                 ObjectMapper objectMapper = new ObjectMapper();
                 byte[] jsonBytes = objectMapper.writeValueAsBytes(payload);
+                String jsonString = new String(jsonBytes, StandardCharsets.UTF_8); // 转换为字符串打印
+                logger.info("MMWebApp WebSocket 发送的JSON:\n {}", jsonString);
                 ws.send(jsonBytes);
             }
         } catch (Exception e) {
@@ -49,14 +58,16 @@ public class MMWebApp {
         // 启动 Jetty 服务器线程
         Thread jettyThread = new Thread(() -> {
             try {
-                Path webappPath = MMDynamicRes.NAMESPACE.resolve("webapp").resolve("web");
+                Exist(NAMESPACE);
+                Path webapp = Exist(NAMESPACE.resolve("webapp"));
+                Path instance = Exist(webapp.resolve("web"));
 
                 server = new Server(WEB_APP_PORT); // 初始化 Jetty 服务器
 
                 // 配置静态资源处理器
                 ServletContextHandler context = new ServletContextHandler();
                 context.setContextPath("/");
-                context.setResourceBase(webappPath.toString());
+                context.setResourceBase(instance.toString());
                 context.addServlet(DefaultServlet.class, "/")
                         .setInitParameter("cacheControl", "no-cache, no-store, must-revalidate"); // 强制不缓存
 
