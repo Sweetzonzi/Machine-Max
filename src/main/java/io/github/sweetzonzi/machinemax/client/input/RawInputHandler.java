@@ -178,7 +178,7 @@ public class RawInputHandler {
         if (MMWebApp.browser == null) {
             boolean transparent = true;
             MCEF.getSettings().setUseCache(false);//关闭cache
-            MMWebApp.browser = MCEF.createBrowser(Hook.replace(MMWebApp.URL,"web_app_running_url"), transparent);
+            MMWebApp.browser = MCEF.createBrowser(MMWebApp.URL+"#/hud", transparent);
         }
 
         if (client.player != null ) {

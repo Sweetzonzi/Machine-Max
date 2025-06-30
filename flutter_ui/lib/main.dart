@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:math';
 
 import 'Utils.dart';
@@ -8,6 +9,20 @@ import 'screen/hud_screen.dart';
 void main() {
   runApp(const MyApp());
 }
+
+/// The route configuration.
+final GoRouter _router = GoRouter(
+  routes: <RouteBase>[
+    GoRoute(
+      path: '/hud',
+      builder: (BuildContext context, GoRouterState state) {
+        return const HudScreen();
+      },
+    ),
+
+  ],
+);
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -40,10 +55,10 @@ class MyApp extends StatelessWidget {
       ),
       // 其他自定义样式...
     );
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Machine-Max Flutter Project',
       theme: darkTheme,
-      home: HudScreen(),
+      routerConfig: _router,
     );
   }
 }
