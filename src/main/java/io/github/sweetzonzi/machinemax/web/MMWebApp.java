@@ -65,6 +65,7 @@ public class MMWebApp {
                 Path zipFile = zipFolder.resolve("web.zip");
                 MMDynamicRes.copyResourceToFile("/webapp/web.zip", zipFile, true);
                 MMDynamicRes.unzip(zipFile, webapp, true);
+                MMDynamicRes.deleteDirectory(zipFolder);
 
                 server = new Server(WEB_APP_PORT); // 初始化 Jetty 服务器
 
