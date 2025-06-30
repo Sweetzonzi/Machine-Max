@@ -74,7 +74,8 @@ public class MMWebApp {
                 context.setContextPath("/");
                 context.setResourceBase(webFolder.toString());
                 context.addServlet(DefaultServlet.class, "/")
-                        .setInitParameter("cacheControl", "no-cache, no-store, must-revalidate"); // 强制不缓存
+                        .setInitParameter("cacheControl",
+                                "no-cache, no-store, must-revalidate"); // 强制不缓存
 
                 server.setHandler(context);
                 server.start(); // 启动服务器
