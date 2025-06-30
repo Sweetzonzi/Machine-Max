@@ -2,8 +2,8 @@ package io.github.sweetzonzi.machinemax.client.input;
 
 import com.cinemamod.mcef.MCEF;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.web.hud.HudSmartWidget;
-import io.github.sweetzonzi.machinemax.web.hud.WebAppHud;
+import io.github.sweetzonzi.machinemax.web.widget.HudSmartWidget;
+import io.github.sweetzonzi.machinemax.client.gui.WebAppHud;
 import io.github.sweetzonzi.machinemax.client.screen.MMWebScreen;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
@@ -139,16 +139,16 @@ public class RawInputHandler {
 
         // TODO: 策略组的事件体测试区
 
-        new KeyHooks.EVENT("e")
+        new KeyHooks.EVENT("z")
                 .with(LEFT_CTRL)
-                .OnKeyTriplePress(()->{
+                .OnKeyDown(()->{
                     System.out.println("闪烁");
                     sw_x_line.setStatus(HudSmartWidget.HudStatus.blink);
                     sw_x_line.update();
                 })
                 .flush() //与上方的绑定断开
                 .with(LEFT_SHIFT)
-                .OnKeyTriplePress(()->{
+                .OnKeyDown(()->{
                     System.out.println("常亮");
                     sw_x_line.setStatus(HudSmartWidget.HudStatus.on);
                     sw_x_line.update();
@@ -156,7 +156,7 @@ public class RawInputHandler {
                 .flush() //与上方的绑定断开
                 .with(LEFT_CTRL)
                 .with(LEFT_SHIFT)
-                .OnKeyTriplePress(()->{
+                .OnKeyDown(()->{
                     System.out.println("关闭");
                     sw_x_line.setStatus(HudSmartWidget.HudStatus.off);
                     sw_x_line.update();
@@ -168,20 +168,20 @@ public class RawInputHandler {
           js功能
          */
 
-        new KeyHooks.EVENT("backslash").OnKeyDown(() -> { //反斜杠热更新
+        new KeyHooks.EVENT("backslash").with(LEFT_CTRL).OnKeyDown(() -> { //反斜杠热更新
             MMInitialJS.clear();
             MMInitialJS.hotReload();
             MMInitialJS.register();
         });
 
-        if (client.player != null ) {
-            //浏览器页面
-            if (MMWebApp.browser == null) {
-                boolean transparent = true;
-                MCEF.getSettings().setUseCache(false);//关闭cache
-                MMWebApp.browser = MCEF.createBrowser(Hook.replace(MMWebApp.URL,"web_app_running_url"), transparent);
-            }
+        //浏览器页面
+        if (MMWebApp.browser == null) {
+            boolean transparent = true;
+            MCEF.getSettings().setUseCache(false);//关闭cache
+            MMWebApp.browser = MCEF.createBrowser(Hook.replace(MMWebApp.URL,"web_app_running_url"), transparent);
+        }
 
+        if (client.player != null ) {
             new KeyHooks.EVENT("o")
                     .OnKeyDown(() -> {
                         Minecraft.getInstance().setScreen(new MMWebScreen());
