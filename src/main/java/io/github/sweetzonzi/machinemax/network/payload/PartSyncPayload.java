@@ -1,23 +1,17 @@
 package io.github.sweetzonzi.machinemax.network.payload;
 
-import cn.solarmoon.spark_core.util.PPhase;
-import cn.solarmoon.spark_core.util.TaskSubmitOffice;
-import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machinemax.util.data.PosRotVelVel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 

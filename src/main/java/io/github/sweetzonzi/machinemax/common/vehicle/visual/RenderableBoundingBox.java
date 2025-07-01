@@ -6,7 +6,6 @@ import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Vector3f;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 

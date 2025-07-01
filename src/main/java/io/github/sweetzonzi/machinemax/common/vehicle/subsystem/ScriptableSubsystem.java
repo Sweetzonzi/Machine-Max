@@ -1,22 +1,20 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
-import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
-import io.github.sweetzonzi.machinemax.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machinemax.common.vehicle.HitBox;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
+import io.github.sweetzonzi.machinemax.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.ScriptableSubsystemAttr;
-import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
+import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalReceiver;
+import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalSender;
+import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
+import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalPort;
 import io.github.sweetzonzi.machinemax.external.js.hook.Hook;
-import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
-import io.github.sweetzonzi.machinemax.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machinemax.network.payload.ScriptablePayload;
 import lombok.Getter;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.state.BlockState;

@@ -1,6 +1,6 @@
 {
-  "item.machine_max.example_pack.blueprint.ae86.json": "AE86",
-  "item.machine_max.example_pack.blueprint.ae86at.json": "AE86(All Terrain)",
+  "machine_max.example_pack.blueprint.ae86.json": "AE86",
+  "machine_max.example_pack.blueprint.ae86at.json": "AE86(All Terrain)",
   "title.machine_max.blueprint.ae86": "TOYOTA COROLLA AE86",
   "title.machine_max.blueprint.ae86at": "TOYOTA COROLLA AE86(All Terrain)",
   "description.machine_max.blueprint.ae86": "The AE86 is a compact, lightweight, and economically oriented car produced by Toyota, introduced in 1983 as part of the fourth-generation COROLLA lineup. In 1978, Toyota launched the TERCEL, marking the beginning of a shift in small car design—from the structurally simple but costlier and space-consuming FR (front-engine, rear-wheel-drive) layout to the more complex yet cost-effective FF (front-engine, front-wheel-drive) configuration, driven by advancements in automotive technology.",

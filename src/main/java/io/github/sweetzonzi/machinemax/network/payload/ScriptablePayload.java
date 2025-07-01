@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machinemax.network.payload;
 
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.ScriptableSubsystem;

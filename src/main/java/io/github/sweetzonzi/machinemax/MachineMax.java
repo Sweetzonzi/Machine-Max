@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machinemax;
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import com.mojang.logging.LogUtils;
 import io.github.sweetzonzi.machinemax.client.input.CameraController;
-import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
 import io.github.sweetzonzi.machinemax.common.registry.*;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
@@ -21,12 +20,12 @@ public class MachineMax {
     //TODO:交互系统的反馈信号以及连接多个子系统，依次互动/同时互动？
     //TODO:过载与座椅过载吸收/耐受
     //TODO:自定义HUD
-    //TODO:放置载具或部件前检查空间是否足够
+    //TODO:TAC:Z式部件制造
+    //TODO:放置部件前检查空间是否足够
     //TODO:带声速和多普勒效应的音效系统
     //TODO:投射物
     //TODO:炮塔控制
     //TODO:载具触发压力板
-    //TODO:允许实体站在刚体上
     //TODO:内容包之间的依赖关系
     //TODO:蓝图对内容包的依赖关系
     public static final String MOD_ID = "machine_max";
@@ -45,13 +44,14 @@ public class MachineMax {
         MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令
         MMVisualEffects.register();//注册所有视觉效果
-        MMDynamicRes.initResources();//初始化外部资源文件
+        MMDynamicRes.initResources();//首次启动时读取外部资源文件
         bus.addListener(MMDynamicRes::init);//CommonSetup时读取外部数据文件
-        bus.addListener(MMDynamicRes::registerReloadListeners);
+        bus.addListener(MMDynamicRes.DataPackReloader::registerClientReloadListeners);//服务端的注册Listener位于DataPackReloader中
         MMItems.register();//通过kotlin注册的所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMJoystickHandler.init();//游戏手柄读取初始化
         MMWebApp.register();//启动所有内嵌web应用
+        MMMenus.register(bus);//注册所有菜单
     }
 
 }

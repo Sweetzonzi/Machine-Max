@@ -12,7 +12,9 @@ import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 public class CarControllerSubsystem extends AbstractSubsystem {

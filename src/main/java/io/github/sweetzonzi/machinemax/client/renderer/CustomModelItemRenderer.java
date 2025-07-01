@@ -16,7 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
-import java.awt.*;
 import java.util.List;
 
 public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer implements IGeoRenderer<ItemStack, ItemAnimatable> {
@@ -48,7 +47,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
                     buffer.getBuffer(RenderType.entityTranslucent(itemAnimatable.getModelIndex().getTextureLocation())),
                     Brightness.FULL_BRIGHT.pack(),
                     packedOverlay,
-                    Color.white.getRGB(),
+                    customModelItem.getColor(stack, Minecraft.getInstance().level, displayContext).getRGB(),
                     itemAnimatable.getPartialTicks(),
                     true
             );

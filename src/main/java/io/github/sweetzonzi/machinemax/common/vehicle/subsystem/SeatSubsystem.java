@@ -1,19 +1,15 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
 import com.jme3.math.Transform;
-import io.github.sweetzonzi.machinemax.client.input.KeyBinding;
-import io.github.sweetzonzi.machinemax.client.input.RawInputHandler;
-import io.github.sweetzonzi.machinemax.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
-import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
+import io.github.sweetzonzi.machinemax.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.SeatSubsystemAttr;
+import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalSender;
+import io.github.sweetzonzi.machinemax.common.vehicle.signal.InteractSignal;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
-import io.github.sweetzonzi.machinemax.util.data.KeyInputMapping;
 import lombok.Getter;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 
 import java.util.HashMap;
 import java.util.List;

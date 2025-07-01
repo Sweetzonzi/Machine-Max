@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.joml.Vector3f;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,5 +56,9 @@ public interface ICustomModelItem {
 
     default Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
         return new Vector3f(1.0f, 1.0f, 1.0f);
+    }
+
+    default Color getColor(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        return Color.WHITE;
     }
 }
