@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.client.gui;
 
+import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.gui.renderable.AnimatableRenderable;
 import net.neoforged.api.distmarker.Dist;
@@ -41,7 +42,7 @@ public class MMGuiManager {
     }
 
     @SubscribeEvent
-    private static void onPhysicsTick(LevelTickEvent.Post event) {
+    private static void onPhysicsTick(PhysicsLevelTickEvent.Post event) {
         try {
             if (customHud != null) customHud.physicsTick();
             WeakReference<AnimatableRenderable> ref;

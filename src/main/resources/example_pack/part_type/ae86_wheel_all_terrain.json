@@ -14,6 +14,7 @@
   "sub_parts": {//零件(子部件)列表
     "ae86_wheel_all_terrain": {//零件(子部件)名称
       "mass": 125.0,//零件质量(kg)
+      "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
       "block_collision": "ground",//(可选，默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
       "collision_height": 2,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
       "climb_assist": true,//(可选，默认false)是否开启自动攀爬辅助，开启后会在自动攀爬时提供额外的速度

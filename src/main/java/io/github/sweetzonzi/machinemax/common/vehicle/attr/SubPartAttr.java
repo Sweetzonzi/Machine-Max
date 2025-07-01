@@ -212,6 +212,7 @@ public class SubPartAttr {
             }
             //将结果存入零件属性中 Store result in sub-part attributes
             this.massCenterTransforms.put(variant, massCenter);
+            if (shape.countChildren() <= 0) throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
             return shape;
         });
     }

@@ -1,14 +1,18 @@
 package io.github.sweetzonzi.machinemax.client.gui.renderable;
 
+import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.AnimController;
-import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.anim.play.*;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
+import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
+import cn.solarmoon.spark_core.molang.core.util.StringPool;
+import cn.solarmoon.spark_core.molang.core.value.MolangValue;
+import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.mojang.blaze3d.platform.Lighting;
@@ -16,7 +20,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.math.Axis;
+import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.gui.MMGuiManager;
+import kotlin.Unit;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
@@ -27,21 +33,24 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Brightness;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
+import java.util.List;
 import java.util.Map;
 
 @Getter
 @OnlyIn(Dist.CLIENT)
-public class AnimatableRenderable implements Renderable, IAnimatable<AnimatableRenderable> {
+public class AnimatableRenderable implements Renderable, IAnimatable<Player> {
     private final Minecraft minecraft = Minecraft.getInstance();
     private final RenderableAttr attr;//各种属性，用于恢复默认值
     //三轴偏移
@@ -77,9 +86,6 @@ public class AnimatableRenderable implements Renderable, IAnimatable<AnimatableR
     private ModelIndex modelIndex;
     private BoneGroup boneGroup;
     private final AnimController animController = new AnimController(this);
-    private final ITempVariableStorage tempStorage = new VariableStorage();
-    private final IScopedVariableStorage scopedStorage = new VariableStorage();
-    private final IForeignVariableStorage foreignStorage = new VariableStorage();
     private Matrix4f projectionMatrix;
     private static final Matrix4f VIEW_MATRIX = new Matrix4f().setLookAt(
             0, 0, 10,  // 摄像机位置 (屏幕前方10单位)
@@ -219,7 +225,19 @@ public class AnimatableRenderable implements Renderable, IAnimatable<AnimatableR
         float fontScaleAdjustZ = (float) (1f / attr.scale.z);
         poseStack.scale(fontScaleAdjustX, fontScaleAdjustY, fontScaleAdjustZ);//在保持文字随整体缩放而缩放的的同时，不令其于模型比例失调
         //TODO:文字渲染！
-        Minecraft.getInstance().font.drawInBatch(perspective ? "000" : "005",
+        String text;
+        var evaluator = ExpressionEvaluator.evaluator(getAnimatable());
+        try {
+            double speed = SparkCore.PARSER.parseExpression("q.ground_speed").evalAsDouble(evaluator) * 3.6;
+            text = String.format("%.0f", Math.floor(speed / 100))//百位数
+                    + String.format("%.0f", Math.floor((speed % 100) / 10))//十位数
+                    + String.format("%.0f", Math.floor(speed % 10))//个位数
+                    + " km/h";
+        } catch (Exception e) {
+            text = "000 km/h";
+            if (Math.random() < 0.01) MachineMax.LOGGER.error("eval:", e);
+        }
+        Minecraft.getInstance().font.drawInBatch(text,
                 5, 8,
                 color.getRGB(),
                 false,
@@ -233,15 +251,23 @@ public class AnimatableRenderable implements Renderable, IAnimatable<AnimatableR
 
     public void animTick() {
         getAnimController().tick();
+        var anim = modelIndex.getAnimationSet().getAnimation("parallel0");
+        if (anim != null && animController.getMainAnim() == null) {
+            var animInstance = AnimInstance.create(this, "parallel0", anim, a -> Unit.INSTANCE);
+            getAnimController().getBlendSpace().putIfAbsent("parallel0", new BlendAnimation(animInstance, 1, List.of()));
+            getAnimController().setAnimation("parallel0", 0, a -> Unit.INSTANCE);
+        }
     }
 
     public void physicsTick() {
         getAnimController().physTick();
     }
 
+    @Nullable
     @Override
-    public AnimatableRenderable getAnimatable() {
-        return this;
+    public Player getAnimatable() {
+        if (Minecraft.getInstance().player instanceof Player player) return player;
+        else return null;
     }
 
     @Override
@@ -288,13 +314,37 @@ public class AnimatableRenderable implements Renderable, IAnimatable<AnimatableR
     @NotNull
     @Override
     public SyncerType getSyncerType() {
-        return null;
+        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable) return entityAnimatable.getSyncerType();
+        else return null;
     }
 
     @NotNull
     @Override
     public SyncData getSyncData() {
-        return null;
+        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable) return entityAnimatable.getSyncData();
+        else return null;
     }
 
+    @NotNull
+    @Override
+    public ITempVariableStorage getTempStorage() {
+        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable) return entityAnimatable.getTempStorage();
+        else return new VariableStorage();
+    }
+
+    @NotNull
+    @Override
+    public IScopedVariableStorage getScopedStorage() {
+        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable)
+            return entityAnimatable.getScopedStorage();
+        else return new VariableStorage();
+    }
+
+    @NotNull
+    @Override
+    public IForeignVariableStorage getForeignStorage() {
+        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable)
+            return entityAnimatable.getForeignStorage();
+        else return new VariableStorage();
+    }
 }

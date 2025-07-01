@@ -26,7 +26,7 @@ public class CustomHud implements LayeredDraw.Layer {
         hud.add(new AnimatableRenderable(
                 new RenderableAttr(
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui/speed_hud.geo"),
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui/speed_hud.animation"),
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui"),
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/gui/speed_hud.png"),
                         new Vec3(0,0, -100),
                         new Vec3(0, -25, 0),
@@ -36,11 +36,11 @@ public class CustomHud implements LayeredDraw.Layer {
     }
 
     public void tick() {
-
+        hud.forEach(AnimatableRenderable::animTick);
     }
 
     public void physicsTick() {
-
+        hud.forEach(AnimatableRenderable::physicsTick);
     }
 
     @Override

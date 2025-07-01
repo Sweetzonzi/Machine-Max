@@ -39,6 +39,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.invalid_resource_location", "文件资源路径非法，仅允许小写英文字母、数字、下划线和连字符");
         this.add("error.machine_max.subpart.zero_mass", "零件质量必须大于零");
         this.add("error.machine_max.subpart.empty_hit_boxes", "零件需要至少被指定一个碰撞体积");
+        this.add("error.machine_max.subpart.empty_collision_shape", "零件碰撞形状不能为空");
         this.add("error.machine_max.subpart.locator_not_found", "未能在部件的模型中找到定位器%1$s");
         this.add("error.machine_max.part.subsystem_hitbox_not_found", "未能在部件%1$s中为子系统%2$s找到碰撞体积%3$s");
         this.add("error.machine_max.seat_subsystem.no_locator", "座椅子系统必须填写定位器名称(如\"locator\": \"seat_locator\")以指定乘客乘坐位置");

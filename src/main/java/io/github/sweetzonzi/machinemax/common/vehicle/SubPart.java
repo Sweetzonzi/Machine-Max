@@ -89,8 +89,12 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape(part.variant, part.type));
         else this.interactBoxes = null;
         this.body = new PhysicsRigidBody(name, this, this.collisionShape, attr.mass);
+        Vector3f inverseInertia = new Vector3f();
+        body.getInverseInertiaLocal(inverseInertia);
         //TODO:检查为什么从保存的文件加载时有概率获得一个不正确的转动惯量
-        MachineMax.LOGGER.debug("{} inverse inertia: {}", name, body.getInverseInertiaLocal(null));
+        if (inverseInertia.length() > 5) {
+            MachineMax.LOGGER.error("{} ({})转动惯量异常: {}", name, part.variant, body.getInverseInertiaLocal(null));
+        }
         this.body.setFriction(1.0f);
         this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_PART);
         if (attr.blockCollision == SubPartAttr.BlockCollisionType.TRUE) {

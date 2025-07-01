@@ -44,6 +44,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
     @Inject(method = "collide", at = @At("RETURN"), cancellable = true)
     private void onCollide(Vec3 vec, CallbackInfoReturnable<Vec3> cir) {
         // 获取原版碰撞结果
+        //TODO:一定坡度不下滑，排查速度异常
         Vec3 originalVec = cir.getReturnValue();
         Entity entity = (Entity) (Object) this;
         AABB aabb = entity.getBoundingBox();
@@ -61,7 +62,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             machine_Max$collideTestShape = new CapsuleCollisionShape(radius, height > 0 ? height : 0.01f);
         }
         List<PhysicsSweepTestResult> results = new ArrayList<>();
-        Vec3 delta = new Vec3(vec.x, vec.y, vec.z);
+        Vec3 delta = new Vec3(originalVec.x, originalVec.y, originalVec.z);
         Vec3 center = aabb.getCenter();
         if (delta.length() < 0.5f) delta = delta.normalize().scale(0.5f);
         machine_Max$sweepTestStart.setTranslation(PhysicsHelperKt.toBVector3f(center));
@@ -88,10 +89,10 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         if (hitFraction > 1) return;// 无碰撞结果时直接返回
         // 计算原始向量在法线方向的投影
         Vec3 finalVec;
-        double dotProduct = vec.dot(normal);
+        double dotProduct = originalVec.dot(normal);
         Vec3 normalComponent = normal.scale(dotProduct);
         // 减去法线方向投影，得到垂直法线方向的向量
-        finalVec = vec.subtract(normalComponent);
+        finalVec = originalVec.subtract(normalComponent);
         if (vec.normalize().dot(normal) > -0.5f) {
             //原始向量与法线夹角小于30°时，取原始向量的长度，方便爬坡
             finalVec = finalVec.normalize().scale(vec.length());

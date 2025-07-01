@@ -57,7 +57,7 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
         addRenderableOnly(new AnimatableRenderable(
                 new RenderableAttr(
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui/speed_hud.geo"),
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui/speed_hud.animation"),
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui"),
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/gui/speed_hud.png"),
                         new Vec3(0, 0, -100),
                         false,
