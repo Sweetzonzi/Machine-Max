@@ -2,12 +2,12 @@ import 'package:flutter/cupertino.dart';
 
 import 'Utils.dart';
 
-class BridgeWidget {
+interface class BridgeWidget {
   void receive(List<dynamic> data) {}
   late BridgeAttr attr;
 }
 
-abstract mixin class BridgeWidgetStateMixin implements BridgeWidget{
+abstract mixin class BridgeWidgetStateMixin<T extends StatefulWidget> implements BridgeWidget{
   void initState() {
     Utils.PAYLOADS[hashCode] = (payload) {
       List<dynamic>? args = payload[attr.tag];
