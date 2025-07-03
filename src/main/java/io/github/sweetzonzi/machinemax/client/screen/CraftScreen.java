@@ -31,31 +31,39 @@ public class CraftScreen extends Screen {
 
 
     @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         int width = guiGraphics.guiWidth();
         int height = guiGraphics.guiWidth();
-        int x = 0;
+        int x_startpoint = -(width/2) + 50;
+        int x = x_startpoint;
         int y = 0;
         for (PartType partType : MMDynamicRes.PART_TYPES.values()) {
-            for (ResourceLocation modelLocation : partType.getVariants().values()) {
-                AnimatableRenderable renderable = new AnimatableRenderable(
-                        new RenderableAttr(
-                                modelLocation,
-                                partType.animation,
-                                partType.textures.getFirst(),
-                                new Vec3(x, y, -10),
-                                new Vec3(0, 0, 0),
-                                15,
-                                true,
-                                Map.of()));
+            ResourceLocation modelLocation = partType.getVariants().values().stream().findFirst().get();
+            AnimatableRenderable renderable = new AnimatableRenderable(
+                    new RenderableAttr(
+                            modelLocation,
+                            partType.animation,
+                            partType.textures.getFirst(),
+                            new Vec3(x, y, -10),
+                            new Vec3(0, 210, 0),
+                            15,
+                            false,
+                            Map.of()));
 
-                x += 5;
-                if (x > (width/2) - 50) y += 5;
-
-                renderable.render(guiGraphics, mouseX, mouseY, partialTick);
+            x += 60;
+            if (x > (width/2) - 50) {
+                x = x_startpoint;
+                y += 20;
             }
+
+            renderable.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
 

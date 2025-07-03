@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machinemax.client.input;
 
 import com.cinemamod.mcef.MCEF;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.client.screen.CraftScreen;
 import io.github.sweetzonzi.machinemax.web.widget.HudSmartWidget;
 import io.github.sweetzonzi.machinemax.client.gui.WebAppHud;
 import io.github.sweetzonzi.machinemax.client.screen.MMWebScreen;
@@ -183,6 +184,10 @@ public class RawInputHandler {
         }
 
         if (client.player != null ) {
+            new KeyHooks.EVENT("i")
+                    .OnKeyDown(() -> {
+                        Minecraft.getInstance().setScreen(new CraftScreen());
+                    });
             new KeyHooks.EVENT("o")
                     .OnKeyDown(() -> {
                         Minecraft.getInstance().setScreen(new MMWebScreen());
