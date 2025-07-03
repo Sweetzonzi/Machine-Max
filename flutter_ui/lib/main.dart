@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math';
 
-import 'Utils.dart';
+
 import 'screen/hud_screen.dart';
 
 
@@ -14,10 +14,19 @@ void main() {
 final GoRouter _router = GoRouter(
   routes: <RouteBase>[
     GoRoute(
-      path: '/hud',
+      path: '/',
       builder: (BuildContext context, GoRouterState state) {
         return const HudScreen();
       },
+      routes: <RouteBase>[
+        GoRoute(
+          path: '/hud',
+          builder: (BuildContext context, GoRouterState state) {
+            return const HudScreen();
+          },
+        ),
+
+      ],
     ),
 
   ],

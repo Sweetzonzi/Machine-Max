@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'Utils.dart';
+import 'bridge.dart';
+import 'utils.dart';
 
 enum HudStatus {
   on,
@@ -8,7 +9,8 @@ enum HudStatus {
   blink
 }
 
-class HudSmartWidget extends StatefulWidget {
+
+class HudSmartWidget extends StatefulWidget{
   final String widgetName;
   final Widget child; // 需要闪烁的子组件
   final int milliseconds = 330; // 单次闪烁周期（默认 330ms）
@@ -18,7 +20,7 @@ class HudSmartWidget extends StatefulWidget {
   HudSmartWidget({
     super.key,
     required this.widgetName,
-    required this.child,
+    required this.child
   }){
     this.blinkDuration = Duration(milliseconds: milliseconds);
   }
@@ -28,26 +30,25 @@ class HudSmartWidget extends StatefulWidget {
 }
 
 class _HudSmartWidgetState extends State<HudSmartWidget>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, BridgeWidgetStateMixin {
+  @override
+  late BridgeAttr attr = BridgeAttr(tag: "hud", category: "smart", widgetName: widget.widgetName);
   late AnimationController _controller;
   late Animation<double> _opacityAnimation;
   HudStatus _status = HudStatus.on;
   double _switchValue = 1;
 
   @override
+  void receive(List<dynamic> data) {
+    _status = HudStatus.values.byName(data[0]);
+    setState(() {
+
+    });
+  }
+
+  @override
   void initState() {
     super.initState();
-    Utils.PAYLOADS[hashCode] = (payload) {
-      _status = HudStatus.off;
-      List<dynamic>? args = payload["hud"];
-      if (args != null && args[0] == "smart" && args[1] == widget.widgetName) {
-        _status = HudStatus.values.byName(args[2]);
-      }
-      setState(() {
-
-      });
-    };
-    // 初始化动画控制器（高频重复）
     _controller = AnimationController(
       vsync: this,
       duration: widget.blinkDuration,
