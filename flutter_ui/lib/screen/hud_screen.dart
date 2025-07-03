@@ -149,7 +149,7 @@ class _HudScreenState extends State<HudScreen> {
       await player.setAudioContext(audioContext);
       await player.setPlayerMode(PlayerMode.mediaPlayer);
       await player.setReleaseMode(ReleaseMode.release);
-      await player.setSource(AssetSource("audio/alert.mp3"));
+      await player.setSource(AssetSource("audio/alert.aac"));
       await player.resume().catchError((onError) {
         print('播放失败: $onError');
       });
