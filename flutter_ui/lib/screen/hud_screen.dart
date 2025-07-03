@@ -11,6 +11,7 @@ import 'package:flutter_svg/svg.dart';
 import '../Utils.dart';
 import '../blink.dart';
 import '../painter/hud_painters.dart';
+import '../simulated.dart';
 
 class HudScreen extends StatefulWidget {
   const HudScreen({super.key});
@@ -19,14 +20,14 @@ class HudScreen extends StatefulWidget {
   State<HudScreen> createState() => _HudScreenState();
 }
 
-class _HudScreenState extends State<HudScreen> {
+class _HudScreenState extends State<HudScreen> with FakeMinecraftBackGround{
   final audioContext =
       AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers).build();
   late AudioPlayer player;
   var alpha = 1.0;
 
   @override
-  Widget build(BuildContext context) {
+  Widget backgroundBuild(BuildContext context) {
     var bgSize = MediaQuery.sizeOf(context);
     var hudLength = min(bgSize.width, bgSize.height);
     var widthSide = (bgSize.width - bgSize.height) / 2;
@@ -80,7 +81,7 @@ class _HudScreenState extends State<HudScreen> {
           child: Container(
             width: bgSize.width,
             height: bgSize.height,
-            color: kDebugMode ? Colors.black87 : Color(0x3F7C1EBE),
+            color: Color(0x2AA618AB),
             child: Opacity(
               opacity: alpha,
               child: Stack(

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'bridge.dart';
@@ -30,7 +31,7 @@ class _HudSmartWidgetState extends State<HudSmartWidget>
   );
   late AnimationController _controller;
   late Animation<double> _opacityAnimation;
-  HudStatus _status = HudStatus.on;
+  HudStatus _status = kDebugMode ? HudStatus.on : HudStatus.off;
   double _switchValue = 1;
 
   @override
@@ -75,7 +76,7 @@ class _HudSmartWidgetState extends State<HudSmartWidget>
         _switchValue = 1;
         _controller.reset();
       case HudStatus.off:
-        _switchValue = 0.07;
+        _switchValue = 0.01;
         _controller.reset();
       case HudStatus.blink:
         _switchValue = 1;

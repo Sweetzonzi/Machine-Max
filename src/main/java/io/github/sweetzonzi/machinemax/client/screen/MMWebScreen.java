@@ -20,6 +20,7 @@
 
 package io.github.sweetzonzi.machinemax.client.screen;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import io.github.sweetzonzi.machinemax.external.js.hook.KeyHooks;
@@ -101,8 +102,8 @@ public class MMWebScreen extends Screen {
         // 启用混合模式（关键修复）
         RenderSystem.enableBlend();
         // 设置混合函数：源颜色（纹理）的Alpha与目标颜色（背景）混合
-//        RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        RenderSystem.defaultBlendFunc(); // 等价于 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+//        RenderSystem.defaultBlendFunc(); // 等价于 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         // 设置着色器和纹理
         RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
@@ -129,6 +130,7 @@ public class MMWebScreen extends Screen {
         RenderSystem.setShaderTexture(0, 0);
         RenderSystem.disableBlend(); // 关闭混合（如果后续不需要）
         RenderSystem.enableDepthTest(); // 恢复深度测试
+        RenderSystem.defaultBlendFunc();
 
         reloadButton.OnKeyDown(() -> {
                     if (MMWebApp.browser != null) {
