@@ -16,6 +16,7 @@ public class MMGuis {
     @SubscribeEvent
     public static void registerHud(RegisterGuiLayersEvent event){
         event.registerAboveAll(id("custom_hud"), new CustomHud());
+        event.registerAboveAll(id("web_app"), new WebAppHud());
     }
 
     private static ResourceLocation id(String path){
