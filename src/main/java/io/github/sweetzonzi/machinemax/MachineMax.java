@@ -49,7 +49,7 @@ public class MachineMax {
         bus.addListener(MMDynamicRes.DataPackReloader::registerClientReloadListeners);//服务端的注册Listener位于DataPackReloader中
         MMItems.register();//通过kotlin注册的所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
-        MMJoystickHandler.init();//游戏手柄读取初始化
+        bus.addListener(MMJoystickHandler::init);//游戏手柄读取初始化
         MMWebApp.register();//启动所有内嵌web应用
         MMMenus.register(bus);//注册所有菜单
     }
