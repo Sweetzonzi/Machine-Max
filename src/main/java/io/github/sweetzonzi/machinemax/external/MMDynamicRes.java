@@ -464,6 +464,7 @@ public class MMDynamicRes {
                 if (dynamicPack == null)
                     dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
                 EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
+                LOGGER.info("{}外部包: {} 加载完毕", category, location);
             } catch (Exception e) {
                 exceptions.add(e);
                 errorFiles.add(filePath.toString());
@@ -488,7 +489,7 @@ public class MMDynamicRes {
     /**
      * 保证路径存在，否则创建这个文件夹
      */
-    private static Path Exist(Path path) {
+    public static Path Exist(Path path) {
         if (!Files.exists(path)) {
             try {
                 Files.createDirectory(path);
