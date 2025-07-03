@@ -3,25 +3,16 @@ import 'package:flutter/material.dart';
 import 'bridge.dart';
 import 'utils.dart';
 
-enum HudStatus {
-  on,
-  off,
-  blink
-}
+enum HudStatus { on, off, blink }
 
-
-class HudSmartWidget extends StatefulWidget{
+class HudSmartWidget extends StatefulWidget {
   final String widgetName;
   final Widget child; // 需要闪烁的子组件
   final int milliseconds = 330; // 单次闪烁周期（默认 330ms）
   late final Duration blinkDuration; // 单次闪烁周期（默认 50ms）
-  final double blinkRatio = 0.5;// 闪烁时间占比（0~1，默认 0.5 即亮灭各半）
+  final double blinkRatio = 0.5; // 闪烁时间占比（0~1，默认 0.5 即亮灭各半）
 
-  HudSmartWidget({
-    super.key,
-    required this.widgetName,
-    required this.child
-  }){
+  HudSmartWidget({super.key, required this.widgetName, required this.child}) {
     this.blinkDuration = Duration(milliseconds: milliseconds);
   }
 
@@ -32,7 +23,11 @@ class HudSmartWidget extends StatefulWidget{
 class _HudSmartWidgetState extends State<HudSmartWidget>
     with SingleTickerProviderStateMixin, BridgeWidgetStateMixin {
   @override
-  late BridgeAttr attr = BridgeAttr(tag: "hud", category: "smart", widgetName: widget.widgetName);
+  late BridgeAttr attr = BridgeAttr(
+    tag: "hud",
+    category: "smart",
+    widgetName: widget.widgetName,
+  );
   late AnimationController _controller;
   late Animation<double> _opacityAnimation;
   HudStatus _status = HudStatus.on;
@@ -40,10 +35,7 @@ class _HudSmartWidgetState extends State<HudSmartWidget>
 
   @override
   void receive(List<dynamic> data) {
-    _status = HudStatus.values.byName(data[0]);
-    setState(() {
-
-    });
+    setState(() => _status = HudStatus.values.byName(data[0]));
   }
 
   @override
@@ -66,7 +58,6 @@ class _HudSmartWidgetState extends State<HudSmartWidget>
         ),
       ),
     );
-
   }
 
   @override
@@ -96,10 +87,7 @@ class _HudSmartWidgetState extends State<HudSmartWidget>
       builder: (context, child) {
         // 强制不透明或完全透明（无渐变）
         final opacity = _opacityAnimation.value.clamp(0.0, 1.0);
-        return Opacity(
-          opacity: opacity*_switchValue,
-          child: widget.child,
-        );
+        return Opacity(opacity: opacity * _switchValue, child: widget.child);
       },
     );
   }
