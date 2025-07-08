@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machinemax.client.gui;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.gui.renderable.AnimatableRenderable;
 import io.github.sweetzonzi.machinemax.client.gui.renderable.RenderableAttr;
+import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
@@ -23,16 +24,8 @@ public class CustomHud implements LayeredDraw.Layer {
 
     public CustomHud() {
         MMGuiManager.customHud = this;
-        hud.add(new AnimatableRenderable(
-                new RenderableAttr(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui/speed_hud.geo"),
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui"),
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/gui/speed_hud.png"),
-                        new Vec3(0,0, -100),
-                        new Vec3(0, -25, 0),
-                        15,
-                        true,
-                        Map.of())));
+        hud.add(new AnimatableRenderable(MMDynamicRes.CUSTOM_HUD.get(
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "example_pack/hud/car_hud_third_person.json"))));
     }
 
     public void tick() {

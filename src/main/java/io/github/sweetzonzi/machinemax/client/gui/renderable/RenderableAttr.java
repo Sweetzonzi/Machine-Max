@@ -7,6 +7,7 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
+import java.awt.*;
 import java.util.List;
 import java.util.Map;
 
@@ -45,7 +46,7 @@ public class RenderableAttr {
                 Codec.BOOL.optionalFieldOf("centered", true).forGetter(TextAttr::centered),
                 Codec.BOOL.optionalFieldOf("shadow", false).forGetter(TextAttr::shadow),
 //                ResourceLocation.CODEC.fieldOf("font").forGetter(TextAttr::font),
-                Vec3.CODEC.optionalFieldOf("default_scale", new Vec3(1, 1, 1)).forGetter(TextAttr::scale),
+                Vec3.CODEC.optionalFieldOf("scale", new Vec3(1, 1, 1)).forGetter(TextAttr::scale),
                 Vec3i.CODEC.optionalFieldOf("color", new Vec3i(255, 255, 255)).forGetter(TextAttr::color),
                 Codec.INT.optionalFieldOf("transparency", 255).forGetter(TextAttr::transparency),
                 Vec3i.CODEC.optionalFieldOf("background_color", new Vec3i(0, 0, 0)).forGetter(TextAttr::backgroundColor),
@@ -54,6 +55,14 @@ public class RenderableAttr {
         ).apply(instance, TextAttr::new));
 
         public static final Codec<Map<String, TextAttr>> MAP_CODEC = Codec.unboundedMap(Codec.STRING, TextAttr.CODEC);
+
+        public int getColor() {
+            return new Color(color.getX(), color.getY(), color.getZ(), transparency).getRGB();
+        }
+
+        public int getBackgroundColor() {
+            return new Color(backgroundColor.getX(), backgroundColor.getY(), backgroundColor.getZ(), backgroundTransparency).getRGB();
+        }
     }
 
     public static final Codec<RenderableAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -64,9 +73,9 @@ public class RenderableAttr {
             Vec3.CODEC.optionalFieldOf("rotation", Vec3.ZERO).forGetter(RenderableAttr::getRotation),
             Vec3.CODEC.optionalFieldOf("scale", new Vec3(20, 20, 20)).forGetter(RenderableAttr::getScale),
             Vec3i.CODEC.optionalFieldOf("color", new Vec3i(255, 255, 255)).forGetter(RenderableAttr::getColor),
-            Codec.INT.optionalFieldOf("transparency", 255).forGetter(RenderableAttr::getTransparency),
+            Codec.INT.optionalFieldOf("alpha", 255).forGetter(RenderableAttr::getTransparency),
             Codec.BOOL.optionalFieldOf("perspective", true).forGetter(RenderableAttr::isPerspective),
-            TextAttr.MAP_CODEC.optionalFieldOf("text_attr", Map.of()).forGetter(RenderableAttr::getTextAttr),
+            TextAttr.MAP_CODEC.optionalFieldOf("texts", Map.of()).forGetter(RenderableAttr::getTextAttr),
             Codec.BOOL.optionalFieldOf("enable_scissor", false).forGetter(RenderableAttr::isEnableScissor),
             Codec.INT.optionalFieldOf("scissor_x", 0).forGetter(RenderableAttr::getScissorX),
             Codec.INT.optionalFieldOf("scissor_y", 0).forGetter(RenderableAttr::getScissorY),

@@ -13,6 +13,7 @@ import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import cn.solarmoon.spark_core.molang.core.util.StringPool;
 import cn.solarmoon.spark_core.molang.core.value.MolangValue;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
+import cn.solarmoon.spark_core.molang.engine.runtime.binding.ValueConversions;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.mojang.blaze3d.platform.Lighting;
@@ -32,6 +33,7 @@ import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -45,6 +47,7 @@ import org.joml.Matrix4fStack;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -224,28 +227,47 @@ public class AnimatableRenderable implements Renderable, IAnimatable<Player> {
         float fontScaleAdjustY = (float) (1f / attr.scale.y);
         float fontScaleAdjustZ = (float) (1f / attr.scale.z);
         poseStack.scale(fontScaleAdjustX, fontScaleAdjustY, fontScaleAdjustZ);//在保持文字随整体缩放而缩放的的同时，不令其于模型比例失调
-        //TODO:文字渲染！
-        String text;
+        //渲染所有文本
         var evaluator = ExpressionEvaluator.evaluator(getAnimatable());
-        try {
-            double speed = SparkCore.PARSER.parseExpression("q.ground_speed").evalAsDouble(evaluator) * 3.6;
-            text = String.format("%.0f", Math.floor(speed / 100))//百位数
-                    + String.format("%.0f", Math.floor((speed % 100) / 10))//十位数
-                    + String.format("%.0f", Math.floor(speed % 10))//个位数
-                    + " km/h";
-        } catch (Exception e) {
-            text = "000 km/h";
-            if (Math.random() < 0.01) MachineMax.LOGGER.error("eval:", e);
+        for (Map.Entry<String, RenderableAttr.TextAttr> entry : textAttr.entrySet()) {
+            String locatorName = entry.getKey();
+            RenderableAttr.TextAttr textAttr = entry.getValue();
+            Matrix4f matrix = getSpaceBoneMatrix(locatorName, partialTick);
+            poseStack.pushPose();
+            poseStack.mulPose(matrix);
+            //计算molang表达式
+            List<String> args = new ArrayList<>();
+            for (String arg : textAttr.molangArgs()) {
+                try {
+                    Object value = SparkCore.PARSER.parseExpression(arg).evalUnsafe(evaluator);
+                    if (value instanceof String stringValue) {
+                        args.add(stringValue);
+                    } else if (value instanceof Number) {
+                        args.add(String.valueOf(((Number) value).doubleValue()));
+                    } else if (value instanceof Boolean) {
+                        args.add(String.valueOf(value));
+                    }
+                } catch (Exception e) {
+                    args.add("MOLANG_ERROR" + e);
+                }
+            }
+            String text;
+            if (textAttr.molangArgs().isEmpty()) text = textAttr.key();//无参数直接使用翻译键
+            //否则用解析的molang表达式结果作为参数
+            else text = Component.translatable(textAttr.key(), args.toArray(new Object[0])).getString();
+            //绘制文字
+            //noinspection IntegerDivisionInFloatingPointContext
+            Minecraft.getInstance().font.drawInBatch(text,
+                    textAttr.centered() ? (-Minecraft.getInstance().font.width(text) / 2) : 0, 0,
+                    textAttr.getColor(),
+                    textAttr.shadow(),
+                    poseStack.last().pose().scale(textAttr.scale().toVector3f()),
+                    bufferSource,
+                    Font.DisplayMode.NORMAL,
+                    textAttr.getBackgroundColor(),
+                    Brightness.FULL_BRIGHT.pack());
+            poseStack.popPose();
         }
-        Minecraft.getInstance().font.drawInBatch(text,
-                5, 8,
-                color.getRGB(),
-                false,
-                poseStack.last().pose(),
-                bufferSource,
-                Font.DisplayMode.NORMAL,
-                new Color(0, 0, 0, 0).getRGB(),
-                Brightness.FULL_BRIGHT.pack());
         poseStack.popPose();
     }
 

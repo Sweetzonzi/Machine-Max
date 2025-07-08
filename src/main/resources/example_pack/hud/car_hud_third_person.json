@@ -1,0 +1,17 @@
+{
+  "model": "machine_max:example_pack/model/car_hud_third_person.geo.json",
+  "animation": "machine_max:example_pack/animation/hud",
+  "texture": "machine_max:example_pack/texture/car_hud_third_person.png",
+  "offset": [0, 0, 0],
+  "rotation": [0, 0, 0],
+  "scale": [1, 1, 1],
+  "color": [255, 255, 255],
+  "alpha": 255,
+  "perspective": true,
+  "texts": {},
+  "enable_scissor": false,
+  "scissor_x": 0,
+  "scissor_y": 0,
+  "scissor_width": 0,
+  "scissor_height": 0
+}

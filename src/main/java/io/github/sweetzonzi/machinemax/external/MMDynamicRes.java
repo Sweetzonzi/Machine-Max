@@ -9,11 +9,11 @@ import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.JsonOps;
+import io.github.sweetzonzi.machinemax.client.gui.renderable.RenderableAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
 import io.github.sweetzonzi.machinemax.external.parse.OBoneParse;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -21,7 +21,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.crafting.*;
@@ -31,7 +30,6 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nullable;
 import java.awt.*;
@@ -55,6 +53,7 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
     public static List<Pair<ResourceLocation, JsonElement>> CRAFTING_RECIPES = new ArrayList<>();
+    public static ConcurrentMap<ResourceLocation, RenderableAttr> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
     public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
@@ -82,6 +81,7 @@ public class MMDynamicRes {
     public static void initResources() {
         EXTERNAL_RESOURCE.clear();
         PART_TYPES.clear();
+        CUSTOM_HUD.clear();
         SERVER_PART_TYPES.clear();
         OBoneParse.clear();
         BLUEPRINTS.clear();
@@ -112,6 +112,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("content")));
             packUp(packName, Exist(root.resolve("lang")));
             packUp(packName, Exist(root.resolve("texture")));
+            packUp(packName, Exist(root.resolve("hud")));
             packUp(packName, Exist(root.resolve("icon")));
             packUp(packName, Exist(root.resolve("font")));
         }
@@ -131,6 +132,7 @@ public class MMDynamicRes {
             //各种MM配置
             packUp(packName, Exist(root.resolve("blueprint")));
             packUp(packName, Exist(root.resolve("model")));
+            packUp(packName, Exist(root.resolve("animation")));
             packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("recipe")));
             packUp(packName, Exist(root.resolve("script")));
@@ -278,8 +280,10 @@ public class MMDynamicRes {
     private static void GenerateTestPack() {
         //拿到存在的路径
         Path examplePack = Exist(VEHICLES.resolve("example_pack"));
-        Path partModelFolder = Exist(examplePack.resolve("model"));
+        Path modelFolder = Exist(examplePack.resolve("model"));
+        Path animationFolder = Exist(examplePack.resolve("animation"));
         Path partTypeFolder = Exist(examplePack.resolve("part_type"));
+        Path hudTypeFolder = Exist(examplePack.resolve("hud"));
         Path script = Exist(examplePack.resolve("script"));
         Path blueprint = Exist(examplePack.resolve("blueprint"));
         Path recipe = Exist(examplePack.resolve("recipe"));
@@ -292,15 +296,19 @@ public class MMDynamicRes {
 
         //设置默认测试包的路径、名字、内容
         //模型文件
-        copyResourceToFile("/example_pack/model/ae86_back_seat.geo.json", partModelFolder.resolve("ae86_back_seat.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_seat.geo.json", partModelFolder.resolve("ae86_seat.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_hull.geo.json", partModelFolder.resolve("ae86_hull.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_chassis_all_terrain.geo.json", partModelFolder.resolve("ae86_chassis_all_terrain.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_right.geo.json", partModelFolder.resolve("ae86_wheel_all_terrain_right.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_left.geo.json", partModelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_chassis.geo.json", partModelFolder.resolve("ae86_chassis.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_wheel_right.geo.json", partModelFolder.resolve("ae86_wheel_right.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_wheel_left.geo.json", partModelFolder.resolve("ae86_wheel_left.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/car_hud_third_person.geo.json", modelFolder.resolve("car_hud_third_person.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_back_seat.geo.json", modelFolder.resolve("ae86_back_seat.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_seat.geo.json", modelFolder.resolve("ae86_seat.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_hull.geo.json", modelFolder.resolve("ae86_hull.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_chassis_all_terrain.geo.json", modelFolder.resolve("ae86_chassis_all_terrain.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_right.geo.json", modelFolder.resolve("ae86_wheel_all_terrain_right.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_left.geo.json", modelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_chassis.geo.json", modelFolder.resolve("ae86_chassis.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_wheel_right.geo.json", modelFolder.resolve("ae86_wheel_right.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/ae86_wheel_left.geo.json", modelFolder.resolve("ae86_wheel_left.geo.json"), overwrite);
+
+        //动画文件
+        copyResourceToFile("/example_pack/animation/car_hud_third_person.animation.json", animationFolder.resolve("car_hud_third_person.animation.json"), overwrite);
 
         //部件定义文件
         copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
@@ -310,6 +318,9 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/part_type/ae86_wheel_all_terrain.json", partTypeFolder.resolve("ae86_wheel_all_terrain.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_chassis.json", partTypeFolder.resolve("ae86_chassis.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_wheel.json", partTypeFolder.resolve("ae86_wheel.json"), overwrite);
+
+        //自定义HUD文件
+        copyResourceToFile("/example_pack/hud/car_hud_third_person.json", hudTypeFolder.resolve("car_hud_third_person.json"), overwrite);
 
         //MM自带JS文件
         copyResourceToFile("/example_pack/script/main.js", script.resolve("main.js"), overwrite);
@@ -326,6 +337,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/lang/en_us.json", lang.resolve("en_us.json"), overwrite);
 
         //自带测试材质
+        copyResourceToFile("/example_pack/texture/car_hud_third_person.png", texture.resolve("car_hud_third_person.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_1.png", texture.resolve("ae86_1.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_2.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_3.png"), overwrite);
@@ -378,11 +390,20 @@ public class MMDynamicRes {
             DynamicPack dynamicPack = null;
             String fileName = filePath.getFileName().toString();
             String fileRealName = getRealName(fileName);
-            ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, fileName));
+            String relativePath = categoryPath.relativize(filePath).toString();
+            ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, relativePath));
             try (JsonReader reader = new JsonReader(new FileReader(filePath.toFile()))) {
                 reader.setLenient(true); // 允许非严格JSON
                 JsonElement json = JsonParser.parseReader(reader);
                 switch (category) {
+
+                    case "model" -> {
+                        OBoneParse.register(location, json);
+                    }
+
+                    case "animation" -> {
+                    }
+
                     case "part_type" -> { //part_type文件夹中的配置
                         PartType partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
                         location = partType.registryKey;
@@ -391,21 +412,19 @@ public class MMDynamicRes {
                         SERVER_PART_TYPES.put(location, partType);
                     }
 
-                    case "model" -> {
-                        // 首先决定载具包中variants的格式定义
-//                    fileName = fileRealName; //删去资源路径后缀 .json
-//                    location = ResourceLocation.tryBuild(MOD_ID, "part/%s".formatted(fileName));  //使用默认的路径格式 machine_max:part/test_cube.geo
-                        // 上面被注释则是放弃覆盖，继续使用路径格式 machine_max:testpack/part/test_cube.geo.json
-                        OBoneParse.register(location, json);
-                    }
-
                     case "script" -> {
                         dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());
                         MM_SCRIPTS.put(location, dynamicPack);
                     }
+
                     case "blueprint" -> {
                         VehicleData data = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
                         BLUEPRINTS.put(location, data);
+                    }
+
+                    case "hud" -> {
+                        RenderableAttr attr = RenderableAttr.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
+                        CUSTOM_HUD.put(location, attr);
                     }
 
                     case "recipe" -> {
@@ -468,6 +487,7 @@ public class MMDynamicRes {
 //            Path category_base64ify = Exist(root_base64ify.resolve(category));
 //            createDefaultFile(category_base64ify.resolve(fileName+"_base64.txt"), dynamicPack.getBase64(), true);
         }
+
     }
 
     private static void mergeJsonObjects(JsonObject target, JsonObject source) {
