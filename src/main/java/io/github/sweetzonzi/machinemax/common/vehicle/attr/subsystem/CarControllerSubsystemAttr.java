@@ -27,6 +27,7 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, List<String>> engineControlOutputTargets;//信号频道和目标名称列表，下同 Signal channels and target hitBoxName list, etc.
     public final Map<String, List<String>> wheelControlOutputTargets;
     public final Map<String, List<String>> gearboxControlOutputTargets;
+    public final Map<String, List<String>> speedOutputTargets;
 
     public static final MapCodec<CarControllerSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
@@ -42,7 +43,8 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
             Codec.FLOAT.optionalFieldOf("steering_sensitivity", 20f).forGetter(CarControllerSubsystemAttr::getSteeringSensitivity),
             SIGNAL_TARGETS_CODEC.fieldOf("engine_outputs").forGetter(CarControllerSubsystemAttr::getEngineControlOutputTargets),
             SIGNAL_TARGETS_CODEC.fieldOf("wheel_outputs").forGetter(CarControllerSubsystemAttr::getWheelControlOutputTargets),
-            SIGNAL_TARGETS_CODEC.fieldOf("gearbox_outputs").forGetter(CarControllerSubsystemAttr::getGearboxControlOutputTargets)
+            SIGNAL_TARGETS_CODEC.fieldOf("gearbox_outputs").forGetter(CarControllerSubsystemAttr::getGearboxControlOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSpeedOutputTargets)
     ).apply(instance, CarControllerSubsystemAttr::new));
 
     public CarControllerSubsystemAttr(
@@ -59,7 +61,8 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
             float steeringSensitivity,
             Map<String, List<String>> engineControlOutputTargets,
             Map<String, List<String>> wheelControlOutputTargets,
-            Map<String, List<String>> gearboxControlOutputTargets) {
+            Map<String, List<String>> gearboxControlOutputTargets,
+            Map<String, List<String>> speedOutputTargets) {
         super(basicDurability, hitBox);
         this.controlInputKeys = controlInputKeys;
         this.steeringCenter = steeringCenter;
@@ -73,6 +76,7 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
         this.engineControlOutputTargets = engineControlOutputTargets;
         this.wheelControlOutputTargets = wheelControlOutputTargets;
         this.gearboxControlOutputTargets = gearboxControlOutputTargets;
+        this.speedOutputTargets = speedOutputTargets;
     }
 
     @Override

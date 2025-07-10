@@ -13,5 +13,8 @@
   "machine_max.ae86_wheel": "AE86车轮",
   "machine_max.ae86_back_seat": "AE86后排座椅",
   "machine_max.ae86_seat": "AE86座椅",
-  "machine_max.ae86_hull": "AE86车壳"
+  "machine_max.ae86_hull": "AE86车壳",
+  "hud.machine_max.default_1.speed": "§o%1$s%2$s%3$s",
+  "hud.machine_max.default_1.gear": "§o%1$s",
+  "hud.machine_max.default_1.kmh": "§oKM/H"
 }

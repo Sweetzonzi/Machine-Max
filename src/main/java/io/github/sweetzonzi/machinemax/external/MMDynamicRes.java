@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.external;
 
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -402,6 +403,8 @@ public class MMDynamicRes {
                     }
 
                     case "animation" -> {
+                        OAnimationSet animSet = OAnimationSet.getCODEC().parse(JsonOps.INSTANCE, json).result().orElseThrow();
+                        OAnimationSet.getORIGINS().put(location, animSet);
                     }
 
                     case "part_type" -> { //part_type文件夹中的配置

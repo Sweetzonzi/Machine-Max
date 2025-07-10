@@ -1,7 +1,9 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.signal;
 
+import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
+import io.github.sweetzonzi.machinemax.common.vehicle.SubsystemController;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 
 import java.util.*;
@@ -88,13 +90,7 @@ public interface ISignalSender {
     default void sendSignalToAllTargets(String signalChannel, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
         if (getTargets().containsKey(signalChannel))
             getTargets().get(signalChannel).forEach((receiverName, signalReceiver) -> {
-                signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
-                signalReceiver.onSignalUpdated(signalChannel, this);
-                if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
-                    if (callbackReturnsSignalValue)
-                        callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalValue);
-                    else callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalChannel);
-                }
+                sendSignalToTarget(signalChannel, receiverName, signalValue, requiresImmediateCallback, callbackReturnsSignalValue);
             });
     }
 
@@ -136,6 +132,11 @@ public interface ISignalSender {
             if (signalReceiver != null) {
                 signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
                 signalReceiver.onSignalUpdated(signalChannel, this);
+                if (signalReceiver instanceof SubsystemController vehicle){
+                    vehicle.foreignStorage.setPublic(signalChannel, signalValue);
+                } else if (signalReceiver instanceof Part part) {
+                    ((VariableStorage)part.foreignStorage).setPublic(signalChannel, signalValue);
+                }
                 if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
                     if (callbackReturnsSignalValue)
                         callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalValue);

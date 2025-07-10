@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
@@ -47,20 +48,11 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onTick() {
         super.onTick();
-        if (getPart().level.isClientSide) {
-            if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.getVehicle() instanceof MMPartEntity entity && entity.part.vehicle == this.getPart().vehicle) {
-                String gear = "NO GEARBOX";
-                String handBrake = handBrakeControl ? "ENGAGED" : "OFF";
-                for (ISignalReceiver gbx : gearboxes.keySet()) {
-                    GearboxSubsystem gearbox = (GearboxSubsystem) gbx;
-                    gear = gearbox.gearNames.get(gearbox.getCurrentGear());
-                    if (!gearbox.isClutched() || gearbox.getRemainingSwitchTime() > 0.0f) gear = "N";
-                    break;
-                }
-                Object engineSpeed = getPart().vehicle.subSystemController.getSignalChannel("engine_speed").getFirstSignal();
-                float engineRPM = engineSpeed instanceof Float f ? (float) (f / Math.PI * 30f) : 0.0f;
-                Minecraft.getInstance().player.displayClientMessage(Component.empty().append("Hand brake: " + handBrake + " Gear: " + gear + " Speed: " + String.format("%.1f", getPart().vehicle.getVelocity().length() * 3.6f) + " km/h RPM: " + String.format("%.0f", engineRPM)).withColor(engineRPM > 6500 ? 0xff0000 : 0xffffff), true);
-            }
+        for (Map.Entry<String, List<String>> entry : attr.speedOutputTargets.entrySet()) {
+            String signalChannel = entry.getKey();
+            List<String> targets = entry.getValue();
+            for (String targetName : targets)
+                sendSignalToTarget(signalChannel, targetName, getPart().vehicle.getVelocity().length());
         }
         updateMoveInputs();
         this.speed = -getPart().rootSubPart.body.getLinearVelocityLocal(null).z;

@@ -105,7 +105,7 @@ public class SubPartAttr {
     }
 
     /**
-     * 获取子部件的碰撞体积 Get collision shape of sub-part<p>
+     * 获取子部件的碰撞体积 GetVehicleVariable collision shape of sub-part<p>
      * 若碰撞体积不存在，则创建并缓存 If collision shape does not exist, create and cache it.<p>
      * 实际创建部件时再生成碰撞体积以避免模型数据未加载的情形 Create collision shape of sub-part when actually creating the part to avoid situations where model data is not loaded.
      *

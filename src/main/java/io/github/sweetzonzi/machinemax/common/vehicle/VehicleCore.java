@@ -579,7 +579,7 @@ public class VehicleCore {
 
     /**
      * <p>获取载具部件连接关系图的所有联通子图的集合，用于连通性检查</p>
-     * <p>Get all the connected sub-graphs of the vehicle part connection graph, used for connectivity check.</p>
+     * <p>GetVehicleVariable all the connected sub-graphs of the vehicle part connection graph, used for connectivity check.</p>
      *
      * @return 连通子图集合 Subgraph set
      */

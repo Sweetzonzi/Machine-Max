@@ -14,7 +14,7 @@ import java.util.Map;
 public interface ICustomModelItem {
     /**
      * <p>获取存储有模型、贴图、动画等内容的动画体，用于物品渲染</p>
-     * <p>Get an instance of ItemAnimatable that contains the model, texture, and animation content, for item rendering</p>
+     * <p>GetVehicleVariable an instance of ItemAnimatable that contains the model, texture, and animation content, for item rendering</p>
      *
      * @param itemStack <p>物品堆栈，同类不同物品堆实例可拥有不同的动画体进而拥有不同的模型动画效果</p><p>Item stack, different instances of the same item can have different ItemAnimatable instances to have different model animation effects</p>
      * @param context   <p>此物品被渲染的场景，如GUI、凋落物、第一人称视角等</p><p>The scene where this item is rendered, such as GUI, falling blocks, first-person view</p>

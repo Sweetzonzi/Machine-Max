@@ -3,17 +3,14 @@ package io.github.sweetzonzi.machinemax.client.gui.renderable;
 import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.play.*;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
-import cn.solarmoon.spark_core.molang.core.MolangParser;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
-import cn.solarmoon.spark_core.molang.core.util.StringPool;
-import cn.solarmoon.spark_core.molang.core.value.MolangValue;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
-import cn.solarmoon.spark_core.molang.engine.runtime.binding.ValueConversions;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import com.mojang.blaze3d.platform.Lighting;
@@ -21,7 +18,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.math.Axis;
-import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.gui.MMGuiManager;
 import kotlin.Unit;
 import lombok.Getter;
@@ -44,9 +40,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
+import org.joml.Quaternionf;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -91,8 +89,8 @@ public class AnimatableRenderable implements Renderable, IAnimatable<Player> {
     private final AnimController animController = new AnimController(this);
     private Matrix4f projectionMatrix;
     private static final Matrix4f VIEW_MATRIX = new Matrix4f().setLookAt(
-            0, 0, 10,  // 摄像机位置 (屏幕前方10单位)
-            0, 0, 0,   // 观察点 (屏幕中心)
+            0, 0, 0,  // 摄像机位置 (屏幕前方0单位)
+            0, 0, -0.01f,   // 观察点 (屏幕中心)
             0, 1, 0    // 上方向
     );
 
@@ -124,7 +122,10 @@ public class AnimatableRenderable implements Renderable, IAnimatable<Player> {
     public final void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         MultiBufferSource.BufferSource bufferSource = guiGraphics.bufferSource();
         PoseStack poseStack = guiGraphics.pose();
-        Lighting.setupForEntityInInventory();
+        Lighting.setupForEntityInInventory(new Quaternionf().rotationZYX(
+                (float) (zRot * Math.PI / 180),
+                (float) (yRot * Math.PI / 180),
+                (float) (xRot * Math.PI / 180)));
         if (enableScissor) {//开始裁剪
             int centerX = guiGraphics.guiWidth() / 2 + scissorX;
             int centerY = guiGraphics.guiHeight() / 2 + scissorY;
@@ -144,8 +145,8 @@ public class AnimatableRenderable implements Renderable, IAnimatable<Player> {
             RenderSystem.enableDepthTest();
             RenderSystem.depthMask(true);
             // 设置投影矩阵和ModelView矩阵
-//            double fov = this.minecraft.options.fov().get();
-            double fov = 80;
+            double fov = this.minecraft.options.fov().get();
+//            double fov = 80;
             this.projectionMatrix = new Matrix4f().setPerspective(
                     (float) (fov * Math.PI / 180),
                     (float) this.minecraft.getWindow().getWidth() / (float) this.minecraft.getWindow().getHeight(),
@@ -222,43 +223,53 @@ public class AnimatableRenderable implements Renderable, IAnimatable<Player> {
     private void renderTexts(GuiGraphics guiGraphics, PoseStack poseStack,
                              MultiBufferSource.BufferSource bufferSource, float partialTick) {
         poseStack.pushPose();
-        if (perspective) poseStack.mulPose(Axis.XP.rotationDegrees(180));//透视投影需要翻转文字
-        float fontScaleAdjustX = (float) (1f / attr.scale.x);
-        float fontScaleAdjustY = (float) (1f / attr.scale.y);
-        float fontScaleAdjustZ = (float) (1f / attr.scale.z);
-        poseStack.scale(fontScaleAdjustX, fontScaleAdjustY, fontScaleAdjustZ);//在保持文字随整体缩放而缩放的的同时，不令其于模型比例失调
+        poseStack.scale(-1, -1, 1);
+        if (perspective) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(180));//透视投影需要翻转文字
+        }
         //渲染所有文本
         var evaluator = ExpressionEvaluator.evaluator(getAnimatable());
         for (Map.Entry<String, RenderableAttr.TextAttr> entry : textAttr.entrySet()) {
             String locatorName = entry.getKey();
             RenderableAttr.TextAttr textAttr = entry.getValue();
             Matrix4f matrix = getSpaceBoneMatrix(locatorName, partialTick);
+            var offset = getModel().getLocators().get(locatorName).getOffset().toVector3f();
+            matrix.translate(offset.x, offset.y, offset.z);
             poseStack.pushPose();
             poseStack.mulPose(matrix);
             //计算molang表达式
             List<String> args = new ArrayList<>();
+            int num = textAttr.significand();
+            DecimalFormat df = new DecimalFormat("#"); // 初始化为不保留小数点
+            if (num > 0) {
+                df = new DecimalFormat("#." + "0".repeat(num)); // 如果num大于0，则保留相应数量的有效数字
+            }
             for (String arg : textAttr.molangArgs()) {
                 try {
                     Object value = SparkCore.PARSER.parseExpression(arg).evalUnsafe(evaluator);
                     if (value instanceof String stringValue) {
                         args.add(stringValue);
                     } else if (value instanceof Number) {
-                        args.add(String.valueOf(((Number) value).doubleValue()));
+                        args.add(df.format(((Number) value).doubleValue()));
                     } else if (value instanceof Boolean) {
                         args.add(String.valueOf(value));
-                    }
+                    } else args.add("null");
                 } catch (Exception e) {
                     args.add("MOLANG_ERROR" + e);
                 }
             }
             String text;
-            if (textAttr.molangArgs().isEmpty()) text = textAttr.key();//无参数直接使用翻译键
-            //否则用解析的molang表达式结果作为参数
+            if (textAttr.molangArgs().isEmpty()) text = Component.translatable(textAttr.key()).getString();//无参数直接使用翻译键
+                //否则用解析的molang表达式结果作为参数
             else text = Component.translatable(textAttr.key(), args.toArray(new Object[0])).getString();
             //绘制文字
+            poseStack.pushPose();
+            poseStack.scale(0.05f, 0.05f, (perspective ? -1 : 1) * 0.05f);
+            poseStack.mulPose(Axis.ZP.rotationDegrees(180));
             //noinspection IntegerDivisionInFloatingPointContext
             Minecraft.getInstance().font.drawInBatch(text,
-                    textAttr.centered() ? (-Minecraft.getInstance().font.width(text) / 2) : 0, 0,
+                    textAttr.centered() ? (-Minecraft.getInstance().font.width(text) / 2) : 0,
+                    textAttr.centered() ? (-Minecraft.getInstance().font.lineHeight / 2) : -Minecraft.getInstance().font.lineHeight,
                     textAttr.getColor(),
                     textAttr.shadow(),
                     poseStack.last().pose().scale(textAttr.scale().toVector3f()),
@@ -267,17 +278,22 @@ public class AnimatableRenderable implements Renderable, IAnimatable<Player> {
                     textAttr.getBackgroundColor(),
                     Brightness.FULL_BRIGHT.pack());
             poseStack.popPose();
+            poseStack.popPose();
         }
         poseStack.popPose();
     }
 
     public void animTick() {
         getAnimController().tick();
-        var anim = modelIndex.getAnimationSet().getAnimation("parallel0");
-        if (anim != null && animController.getMainAnim() == null) {
-            var animInstance = AnimInstance.create(this, "parallel0", anim, a -> Unit.INSTANCE);
-            getAnimController().getBlendSpace().putIfAbsent("parallel0", new BlendAnimation(animInstance, 1, List.of()));
-            getAnimController().setAnimation("parallel0", 0, a -> Unit.INSTANCE);
+        var animSet = modelIndex.getAnimationSet().getAnimations();
+        if (!animSet.isEmpty() && animController.getMainAnim() == null) {
+            for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
+                String name = entry.getKey();
+                var anim = entry.getValue();
+                var animInstance = AnimInstance.create(this, name, anim, a -> Unit.INSTANCE);
+                getAnimController().getBlendSpace().putIfAbsent(name, new BlendAnimation(animInstance, 1, List.of()));
+                getAnimController().setAnimation(name, 0, a -> Unit.INSTANCE);
+            }
         }
     }
 

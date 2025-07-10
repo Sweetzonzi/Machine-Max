@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.common.vehicle;
 
+import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
@@ -17,6 +18,7 @@ public class SubsystemController implements ISignalReceiver {
     public final VehicleCore CORE;
     public final ConcurrentMap<String, SignalChannel> channels = new ConcurrentHashMap<>();//可查可改
     public final ConcurrentMap<String, Object> resources = new ConcurrentHashMap<>();//可查可改
+    public final VariableStorage foreignStorage = new VariableStorage();
     public final Set<AbstractSubsystem> allSubsystems = new CopyOnWriteArraySet<>();
 
     public SubsystemController(VehicleCore core) {

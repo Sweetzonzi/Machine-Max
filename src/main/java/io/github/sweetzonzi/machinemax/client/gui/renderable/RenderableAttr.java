@@ -33,13 +33,14 @@ public class RenderableAttr {
             String key,
             boolean centered,
             boolean shadow,
-//            ResourceLocation font,
+//            ResourceLocation font,//TODO:自选字体
             Vec3 scale,
             Vec3i color,
             int transparency,
             Vec3i backgroundColor,
             int backgroundTransparency,
-            List<String> molangArgs
+            List<String> molangArgs,
+            int significand
     ) {
         public static final Codec<TextAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.fieldOf("key").forGetter(TextAttr::key),
@@ -51,7 +52,8 @@ public class RenderableAttr {
                 Codec.INT.optionalFieldOf("transparency", 255).forGetter(TextAttr::transparency),
                 Vec3i.CODEC.optionalFieldOf("background_color", new Vec3i(0, 0, 0)).forGetter(TextAttr::backgroundColor),
                 Codec.INT.optionalFieldOf("background_transparency", 0).forGetter(TextAttr::backgroundTransparency),
-                Codec.STRING.listOf().optionalFieldOf("molang_args", List.of()).forGetter(TextAttr::molangArgs)
+                Codec.STRING.listOf().optionalFieldOf("molang_args", List.of()).forGetter(TextAttr::molangArgs),
+                Codec.INT.optionalFieldOf("significand", 0).forGetter(TextAttr::significand)
         ).apply(instance, TextAttr::new));
 
         public static final Codec<Map<String, TextAttr>> MAP_CODEC = Codec.unboundedMap(Codec.STRING, TextAttr.CODEC);
