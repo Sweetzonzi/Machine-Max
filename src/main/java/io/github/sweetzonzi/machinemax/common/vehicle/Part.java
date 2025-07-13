@@ -1,9 +1,8 @@
 package io.github.sweetzonzi.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.AnimController;
-import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
+import cn.solarmoon.spark_core.animation.anim.play.*;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
@@ -38,6 +37,7 @@ import io.github.sweetzonzi.machinemax.network.payload.PartSyncPayload;
 import io.github.sweetzonzi.machinemax.network.payload.assembly.PartPaintPayload;
 import io.github.sweetzonzi.machinemax.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
+import kotlin.Unit;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.chat.Component;
@@ -211,6 +211,19 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         else if (durability > type.basicDurability) durability = type.basicDurability;
         if (oHurtMarked) oHurtMarked = false;
         else if (hurtMarked) hurtMarked = false;
+        if (this.entity!= null && !this.entity.isRemoved()){
+            getAnimController().tick();
+            var animSet = modelIndex.getAnimationSet().getAnimations();
+            if (!animSet.isEmpty() && animController.getMainAnim() == null) {
+                for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
+                    String name = entry.getKey();
+                    var anim = entry.getValue();
+                    var animInstance = AnimInstance.create(this, name, anim, a -> Unit.INSTANCE);
+                    getAnimController().getBlendSpace().putIfAbsent(name, new BlendAnimation(animInstance, 1, List.of()));
+                    getAnimController().setAnimation(name, 0, a -> Unit.INSTANCE);
+                }
+            }
+        }
     }
 
     public void onPrePhysicsTick() {
@@ -259,6 +272,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             List<BoundingBox> boxes = new ArrayList<>();
             for (SubPart subPart : subParts.values()) boxes.add(subPart.body.cachedBoundingBox);
             entity.boundingBoxes.set(boxes);
+            getAnimController().physTick();
         }
     }
 

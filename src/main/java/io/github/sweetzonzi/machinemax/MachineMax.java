@@ -16,7 +16,10 @@ import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
 public class MachineMax {
     //TODO:限制带阻尼关节安装部件时的质量差距/警告
     //TODO:排查AE86AT左轮胎转动惯量计算BUG
-    //TODO:动画支持
+    //TODO:载具动画控制部件运动
+    //TODO:GUI贴图渲染
+    //TODO:交互可视化
+    //TODO:储物子系统
     //TODO:交互系统的反馈信号以及连接多个子系统，依次互动/同时互动？
     //TODO:过载与座椅过载吸收/耐受
     //TODO:自定义HUD

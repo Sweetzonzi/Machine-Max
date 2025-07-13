@@ -3,6 +3,7 @@
   "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
     "default": "machine_max:example_pack/model/ae86_chassis_all_terrain.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_chassis_all_terrain.geo.json"
   },
+  "animation": "machine_max:example_pack/animation/ae86.animation.json", //(可选，留空则不播放动画)动画文件路径
   "textures": [//部件可用贴图列表，不同变体模型应共享一张贴图
     "machine_max:example_pack/texture/ae86_all_terrain_1.png",
     "machine_max:example_pack/texture/ae86_all_terrain_2.png"
@@ -21,7 +22,7 @@
       "manual_gear_shift": false, //(可选，默认false)是否强制手动挡
       "auto_hand_brake": true, //(可选，默认true)是否自动在停车和起步时切换手刹车状态
       "steering_center": [0,0,2.4036],//(可选，默认[0, 0, 0])转向中心点(m)，对于前轮转向的四轮载具，此位置应取后轮轴中点；对于全轮转向的载具，此位置应取四轮位置的几何中心
-      "steering_radius": 4.0, //(可选，默认5.0)最小转向半径(m)
+      "steering_radius": 5.5, //(可选，默认5.0)最小转向半径(m)
       "control_inputs": ["move_control"],
       "engine_outputs": {
         "engine_control": ["engine"]
@@ -38,6 +39,18 @@
       },
       "speed_outputs": { //(可选，默认将移动速度(m/s)发至部件和载具的vehicle_speed频道)移动速度信号输出频道及目标
         "vehicle_speed": ["part", "vehicle"]
+      },
+      "throttle_outputs": { //(可选，默认将油门[0,1]发至部件和载具的throttle频道)油门信号输出频道及目标
+        "throttle": ["part", "vehicle"]
+      },
+      "brake_outputs": { //(可选，默认将制动程度[0,1]发至部件和载具的brake频道)制动信号输出频道及目标
+        "brake": ["part", "vehicle"]
+      },
+      "steering_outputs": { //(可选，默认将转向程度[-1,1]发至部件和载具的steering频道)转向角度信号输出频道及目标
+        "steering": ["part", "vehicle"]
+      },
+      "handbrake_outputs": { //(可选，默认将手刹程度[0,1]发至部件和载具的handbrake频道)手刹器开关信号输出频道及目标
+        "handbrake": ["part", "vehicle"]
       }
     },
     "engine": {
@@ -72,7 +85,7 @@
       "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
       "diff_lock": "auto", //(可选，默认auto)是否开启差速锁，差速锁模式(true)下各输出端会有相同的转速，差速器模式(false)下各输出端会有相同的扭矩，自动模式(auto)下根据输出端转速差距自动开关差速锁，手动模式(manual)下根据信号开关差速锁
       "diff_lock_sensitivity": 0.75, //(可选，默认1.0)差速锁灵敏度，值越大灵敏度越高，统一输出端转速的能力越强
-      "auto_diff_lock_threshold": 10.0, //(可选，默认10.0)自动差速锁启用的转速差距百分比阈值
+      "auto_diff_lock_threshold": 15.0, //(可选，默认10.0)自动差速锁启用的转速差距百分比阈值
       "distribute_inputs": ["diff_lock_control"],//(可选，默认["diff_lock_control"])接收的控制差速锁的信号频道列表，优先级递减
       "power_outputs": { //动力输出目标及减速比
         "left_front_wheel_driver": 1.0,
@@ -124,7 +137,7 @@
   },
   "sub_parts": {//零件(子部件)列表，这是部件运动的最小单元，部件的每个可动部分都应当是一个零件(子部件)
     "ae86_chassis_all_terrain": {//零件(子部件)名称
-      "mass": 700.0,//零件质量(kg)
+      "mass": 1200.0,//零件质量(kg)
       "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
       "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
       "collision_height": 2.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
@@ -148,7 +161,7 @@
             "y": {
               "lower_limit": 1.0,//关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
               "upper_limit": -1.0,//关节位置上限，当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
-              "stiffness": 17000,//刚度系数(N/m)
+              "stiffness": 25000,//刚度系数(N/m)
               "damping": 1500 //阻尼系数(N/(m/s))
             },
             "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
@@ -172,7 +185,7 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 17000,
+              "stiffness": 25000,
               "damping": 1500
             },
             "xr": {
@@ -189,7 +202,7 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 17000,
+              "stiffness": 25000,
               "damping": 1500
             },
             "xr": {
@@ -213,7 +226,7 @@
             "y": {
               "lower_limit": 1.0,
               "upper_limit": -1.0,
-              "stiffness": 17000,
+              "stiffness": 25000,
               "damping": 1500
             },
             "xr": {

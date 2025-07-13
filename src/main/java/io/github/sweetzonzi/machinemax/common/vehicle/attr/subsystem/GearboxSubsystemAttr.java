@@ -46,7 +46,7 @@ public class GearboxSubsystemAttr extends AbstractSubsystemAttr {
             Codec.FLOAT.optionalFieldOf("switch_time", 0.3f).forGetter(GearboxSubsystemAttr::getSwitchTime),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("gearbox_control")).forGetter(GearboxSubsystemAttr::getRatioControlSignalKeys),
             Codec.STRING.fieldOf("power_output").forGetter(GearboxSubsystemAttr::getPowerOutputTarget),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("gear_outputs", Map.of()).forGetter(GearboxSubsystemAttr::getGearOutputTargets)
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("gear_outputs", Map.of("gear", List.of("part", "vehicle"))).forGetter(GearboxSubsystemAttr::getGearOutputTargets)
     ).apply(instance, GearboxSubsystemAttr::new));
 
     @Override

@@ -72,11 +72,40 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         if (isActive() && getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
-                actualSteering = actualSteering * (1 - attr.steeringSensitivity) + (moveInput[4]) * attr.steeringSensitivity;
+                actualSteering = actualSteering * 0.9f + (moveInput[4]) * 0.1f;
             }
-            actualHandBrake = actualHandBrake * (1 - attr.handBrakeSensitivity) + (handBrakeControl ? 1 : 0) * attr.handBrakeSensitivity;
+            actualHandBrake = actualHandBrake * 0.9f + (handBrakeControl ? 1 : 0) * 0.1f;
             distributeControlSignals();
         } else resetSignalOutputs();
+    }
+
+    @Override
+    public void onPostPhysicsTick() {
+        super.onPostPhysicsTick();
+        for (Map.Entry<String, List<String>> entry : attr.throttleOutputTargets.entrySet()) {
+            String signalChannel = entry.getKey();
+            List<String> targets = entry.getValue();
+            for (String targetName : targets)
+                sendSignalToTarget(signalChannel, targetName, actualThrottle / 100f);
+        }
+        for (Map.Entry<String, List<String>> entry : attr.steeringOutputTargets.entrySet()) {
+            String signalChannel = entry.getKey();
+            List<String> targets = entry.getValue();
+            for (String targetName : targets)
+                sendSignalToTarget(signalChannel, targetName, actualSteering / 100f);
+        }
+        for (Map.Entry<String, List<String>> entry : attr.brakeOutputTargets.entrySet()) {
+            String signalChannel = entry.getKey();
+            List<String> targets = entry.getValue();
+            for (String targetName : targets)
+                sendSignalToTarget(signalChannel, targetName, actualBrake);
+        }
+        for (Map.Entry<String, List<String>> entry : attr.handbrakeOutputTargets.entrySet()) {
+            String signalChannel = entry.getKey();
+            List<String> targets = entry.getValue();
+            for (String targetName : targets)
+                sendSignalToTarget(signalChannel, targetName, actualHandBrake);
+        }
     }
 
     /**
@@ -226,8 +255,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
                 if (moveInput[2] * speed > 0 || (Math.abs(speed) <= 1f)) {//加速行驶 Accelerate
-                    actualThrottle = actualThrottle * (1 - attr.throttleSensitivity) + (Math.abs(moveInput[2])) * attr.throttleSensitivity;
-                    actualBrake = actualBrake * (1 - 2 * attr.brakeSensitivity) + 0 * 2 * attr.brakeSensitivity;
+                    actualThrottle = actualThrottle * 0.9f + (Math.abs(moveInput[2])) * 0.1f;
+                    actualBrake = actualBrake * 0.8f + 0 * 0.2f;
                     for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
                         sendCallbackToAllListeners(entry.getValue(), actualThrottle);
                         avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
@@ -248,8 +277,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         }
                     }
                 } else if (moveInput[2] * speed < 0) {//减速行驶 Brake
-                    actualThrottle = actualThrottle * (1 - 2 * attr.throttleSensitivity) + 0 * 2 * attr.throttleSensitivity;
-                    actualBrake = actualBrake * (1 - attr.brakeSensitivity) + 1 * attr.brakeSensitivity;
+                    actualThrottle = actualThrottle * 0.8f + 0 * 0.2f;
+                    actualBrake = actualBrake * 0.9f + 1 * 0.1f;
                     for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
                         sendCallbackToAllListeners(entry.getValue(), actualThrottle);
                         avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
@@ -270,14 +299,14 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     }
                 }
             } else {//前进方向输入信号为0 Forward input signal is 0
-                actualThrottle = actualThrottle * (1 - attr.throttleSensitivity) + 0 * attr.throttleSensitivity;
+                actualThrottle = actualThrottle * 0.9f + 0 * 0.1f;
                 for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
                     sendCallbackToAllListeners(entry.getValue(), actualThrottle);
                     avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
                 }
                 avgEngineSpeed /= engineCount;
                 if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low
-                    actualBrake = actualBrake * (1 - attr.brakeSensitivity) + 1 * attr.brakeSensitivity;
+                    actualBrake = actualBrake * 0.9f + 1 * 0.1f;
                     if (attr.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                         handBrakeControl = true;
                         overrideCountDown.put(this, 0.5f);
@@ -297,7 +326,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         }
                     }
                 } else {//速度大于一定程度时，不刹车 Don't brake if the speed is high enough
-                    actualBrake = actualBrake * (1 - 2 * attr.brakeSensitivity) + 0 * 2 * attr.brakeSensitivity;
+                    actualBrake = actualBrake * 0.8f + 0 * 0.1f;
                     for (Map.Entry<ISignalReceiver, String> entry : wheels.entrySet()) {
                         String channel = entry.getValue();
                         WheelDriverSubsystem wheel = (WheelDriverSubsystem) entry.getKey();
@@ -323,7 +352,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 }
             }
             if (Math.abs(speed) < 1f) {//维持原有信号状态 Maintain the original signal status
-                actualBrake = actualBrake * (1 - 2 * attr.brakeSensitivity) + 0 * 2 * attr.brakeSensitivity;
+                actualBrake = actualBrake * 0.8f + 0 * 0.2f;
                 for (Map.Entry<ISignalReceiver, String> entry : wheels.entrySet()) {
                     String channel = entry.getValue();
                     WheelDriverSubsystem wheel = (WheelDriverSubsystem) entry.getKey();
@@ -414,6 +443,11 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         Map<String, List<String>> result = new HashMap<>(attr.getEngineControlOutputTargets());
         result.putAll(attr.getGearboxControlOutputTargets());
         result.putAll(attr.getWheelControlOutputTargets());
+        result.putAll(attr.getSpeedOutputTargets());
+        result.putAll(attr.getThrottleOutputTargets());
+        result.putAll(attr.getSteeringOutputTargets());
+        result.putAll(attr.getBrakeOutputTargets());
+        result.putAll(attr.getHandbrakeOutputTargets());
         return result;
     }
 }

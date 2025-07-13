@@ -20,14 +20,14 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
     public final float steeringRadius;
     public final boolean manualGearShift;
     public final boolean autoHandBrake;
-    public final float throttleSensitivity;
-    public final float brakeSensitivity;
-    public final float handBrakeSensitivity;
-    public final float steeringSensitivity;
     public final Map<String, List<String>> engineControlOutputTargets;//信号频道和目标名称列表，下同 Signal channels and target hitBoxName list, etc.
     public final Map<String, List<String>> wheelControlOutputTargets;
     public final Map<String, List<String>> gearboxControlOutputTargets;
     public final Map<String, List<String>> speedOutputTargets;
+    public final Map<String, List<String>> throttleOutputTargets;
+    public final Map<String, List<String>> steeringOutputTargets;
+    public final Map<String, List<String>> brakeOutputTargets;
+    public final Map<String, List<String>> handbrakeOutputTargets;
 
     public static final MapCodec<CarControllerSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
@@ -37,14 +37,14 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
             Codec.FLOAT.optionalFieldOf("steering_radius", 5.0f).forGetter(CarControllerSubsystemAttr::getSteeringRadius),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(CarControllerSubsystemAttr::isManualGearShift),
             Codec.BOOL.optionalFieldOf("auto_hand_brake", true).forGetter(CarControllerSubsystemAttr::isAutoHandBrake),
-            Codec.FLOAT.optionalFieldOf("throttle_sensitivity", 20f).forGetter(CarControllerSubsystemAttr::getThrottleSensitivity),
-            Codec.FLOAT.optionalFieldOf("brake_sensitivity", 20f).forGetter(CarControllerSubsystemAttr::getBrakeSensitivity),
-            Codec.FLOAT.optionalFieldOf("hand_brake_sensitivity", 20f).forGetter(CarControllerSubsystemAttr::getHandBrakeSensitivity),
-            Codec.FLOAT.optionalFieldOf("steering_sensitivity", 20f).forGetter(CarControllerSubsystemAttr::getSteeringSensitivity),
             SIGNAL_TARGETS_CODEC.fieldOf("engine_outputs").forGetter(CarControllerSubsystemAttr::getEngineControlOutputTargets),
             SIGNAL_TARGETS_CODEC.fieldOf("wheel_outputs").forGetter(CarControllerSubsystemAttr::getWheelControlOutputTargets),
             SIGNAL_TARGETS_CODEC.fieldOf("gearbox_outputs").forGetter(CarControllerSubsystemAttr::getGearboxControlOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSpeedOutputTargets)
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSpeedOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("throttle_outputs", Map.of("throttle", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getThrottleOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("steering_outputs", Map.of("steering", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSteeringOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("brake_outputs", Map.of("brake", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getBrakeOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("handbrake_outputs", Map.of("handbrake", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getHandbrakeOutputTargets)
     ).apply(instance, CarControllerSubsystemAttr::new));
 
     public CarControllerSubsystemAttr(
@@ -55,28 +55,28 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
             float steeringRadius,
             boolean manualGearShift,
             boolean autoHandBrake,
-            float throttleSensitivity,
-            float brakeSensitivity,
-            float handBrakeSensitivity,
-            float steeringSensitivity,
             Map<String, List<String>> engineControlOutputTargets,
             Map<String, List<String>> wheelControlOutputTargets,
             Map<String, List<String>> gearboxControlOutputTargets,
-            Map<String, List<String>> speedOutputTargets) {
+            Map<String, List<String>> speedOutputTargets,
+            Map<String, List<String>> throttleOutputTargets,
+            Map<String, List<String>> steeringOutputTargets,
+            Map<String, List<String>> brakeOutputTargets,
+            Map<String, List<String>> handbrakeOutputTargets) {
         super(basicDurability, hitBox);
         this.controlInputKeys = controlInputKeys;
         this.steeringCenter = steeringCenter;
         this.steeringRadius = steeringRadius;
         this.manualGearShift = manualGearShift;
         this.autoHandBrake = autoHandBrake;
-        this.throttleSensitivity = throttleSensitivity/100;
-        this.brakeSensitivity = brakeSensitivity/100;
-        this.handBrakeSensitivity = handBrakeSensitivity/100;
-        this.steeringSensitivity = steeringSensitivity/100;
         this.engineControlOutputTargets = engineControlOutputTargets;
         this.wheelControlOutputTargets = wheelControlOutputTargets;
         this.gearboxControlOutputTargets = gearboxControlOutputTargets;
         this.speedOutputTargets = speedOutputTargets;
+        this.throttleOutputTargets = throttleOutputTargets;
+        this.steeringOutputTargets = steeringOutputTargets;
+        this.brakeOutputTargets = brakeOutputTargets;
+        this.handbrakeOutputTargets = handbrakeOutputTargets;
     }
 
     @Override

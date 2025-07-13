@@ -3,7 +3,6 @@
 	"animations": {
 		"parallel0": {
 			"loop": true,
-			"animation_length": 99999999,
 			"bones": {
 				"Pointer": {
 					"rotation": {

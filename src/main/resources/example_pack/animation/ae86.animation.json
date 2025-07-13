@@ -1,0 +1,22 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.streetcar_gtr.new": {
+			"loop": true,
+			"bones": {
+				"Fire": {
+					"scale": 0
+				},
+				"rot2": {
+					"rotation": [0, 0, "vehicle.get('steering')*225"]
+				},
+				"throttle": {
+					"position": [0, 0, "-1.0*vehicle.get('throttle')"]
+				},
+				"brake": {
+					"position": [0, 0, "-1.0*vehicle.get('brake')"]
+				}
+			}
+		}
+	}
+}

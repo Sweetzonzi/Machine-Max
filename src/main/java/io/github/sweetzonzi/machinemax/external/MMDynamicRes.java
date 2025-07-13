@@ -310,6 +310,7 @@ public class MMDynamicRes {
 
         //动画文件
         copyResourceToFile("/example_pack/animation/example_hud.animation.json", animationFolder.resolve("example_hud.animation.json"), overwrite);
+        copyResourceToFile("/example_pack/animation/ae86.animation.json", animationFolder.resolve("ae86.animation.json"), overwrite);
 
         //部件定义文件
         copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
