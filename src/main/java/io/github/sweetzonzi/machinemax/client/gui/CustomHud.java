@@ -2,44 +2,71 @@ package io.github.sweetzonzi.machinemax.client.gui;
 
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.gui.renderable.AnimatableRenderable;
-import io.github.sweetzonzi.machinemax.client.gui.renderable.RenderableAttr;
+import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
+import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @OnlyIn(Dist.CLIENT)
 public class CustomHud implements LayeredDraw.Layer {
-
-    private final Set<AnimatableRenderable> hud = new CopyOnWriteArraySet<>();
+    //TODO:常驻hud或装备hud？
+    private final ConcurrentMap<ResourceLocation, AnimatableRenderable> vehicleHud = new ConcurrentHashMap<>();
 
     public CustomHud() {
         MMGuiManager.customHud = this;
-        hud.add(new AnimatableRenderable(MMDynamicRes.CUSTOM_HUD.get(
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "example_pack/hud/car_hud_third_person.json"))));
     }
 
     public void tick() {
-        hud.forEach(AnimatableRenderable::animTick);
+        Player player = Minecraft.getInstance().player;
+        CameraType view = Minecraft.getInstance().options.getCameraType();
+        if (player != null) {
+            SeatSubsystem seat = ((IEntityMixin) player).machine_Max$getRidingSubsystem();
+            if (seat != null) {
+                if (view.isFirstPerson()) {
+                    //添加缺少的HUD组件
+                    for (ResourceLocation path : seat.attr.views.firstPersonHud()) {
+                        vehicleHud.computeIfAbsent(path, p -> new AnimatableRenderable(MMDynamicRes.CUSTOM_HUD.get(p)));
+                    }
+                    //移除不匹配的HUD组件
+                    for (Map.Entry<ResourceLocation, AnimatableRenderable> entry : vehicleHud.entrySet()){
+                        if(!seat.attr.views.firstPersonHud().contains(entry.getKey())) vehicleHud.remove(entry.getKey());
+                    }
+                } else {
+                    //添加缺少的HUD组件
+                    for (ResourceLocation path : seat.attr.views.thirdPersonHud()){
+                        vehicleHud.computeIfAbsent(path, p -> new AnimatableRenderable(MMDynamicRes.CUSTOM_HUD.get(p)));
+                    }
+                    //移除不匹配的HUD组件
+                    for (Map.Entry<ResourceLocation, AnimatableRenderable> entry : vehicleHud.entrySet()){
+                        if(!seat.attr.views.thirdPersonHud().contains(entry.getKey())) vehicleHud.remove(entry.getKey());
+                    }
+                }
+                vehicleHud.values().forEach(AnimatableRenderable::animTick);
+            } else vehicleHud.clear();
+        }
     }
 
     public void physicsTick() {
-        hud.forEach(AnimatableRenderable::physicsTick);
+        vehicleHud.values().forEach(AnimatableRenderable::physicsTick);
     }
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
-        if (!hud.isEmpty()) {
-            for (AnimatableRenderable renderable : hud){
+        if (!vehicleHud.isEmpty()) {
+            for (AnimatableRenderable renderable : vehicleHud.values()) {
                 renderable.render(guiGraphics, 0, 0, deltaTracker.getGameTimeDeltaTicks());
             }
         }

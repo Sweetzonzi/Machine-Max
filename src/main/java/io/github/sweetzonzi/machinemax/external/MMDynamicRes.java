@@ -297,7 +297,7 @@ public class MMDynamicRes {
 
         //设置默认测试包的路径、名字、内容
         //模型文件
-        copyResourceToFile("/example_pack/model/car_hud_third_person.geo.json", modelFolder.resolve("car_hud_third_person.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/example_hud.geo.json", modelFolder.resolve("example_hud.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_back_seat.geo.json", modelFolder.resolve("ae86_back_seat.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_seat.geo.json", modelFolder.resolve("ae86_seat.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_hull.geo.json", modelFolder.resolve("ae86_hull.geo.json"), overwrite);
@@ -309,7 +309,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/model/ae86_wheel_left.geo.json", modelFolder.resolve("ae86_wheel_left.geo.json"), overwrite);
 
         //动画文件
-        copyResourceToFile("/example_pack/animation/car_hud_third_person.animation.json", animationFolder.resolve("car_hud_third_person.animation.json"), overwrite);
+        copyResourceToFile("/example_pack/animation/example_hud.animation.json", animationFolder.resolve("example_hud.animation.json"), overwrite);
 
         //部件定义文件
         copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
@@ -321,7 +321,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/part_type/ae86_wheel.json", partTypeFolder.resolve("ae86_wheel.json"), overwrite);
 
         //自定义HUD文件
-        copyResourceToFile("/example_pack/hud/car_hud_third_person.json", hudTypeFolder.resolve("car_hud_third_person.json"), overwrite);
+        copyResourceToFile("/example_pack/hud/example_hud.json", hudTypeFolder.resolve("example_hud.json"), overwrite);
 
         //MM自带JS文件
         copyResourceToFile("/example_pack/script/main.js", script.resolve("main.js"), overwrite);
@@ -338,7 +338,7 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/lang/en_us.json", lang.resolve("en_us.json"), overwrite);
 
         //自带测试材质
-        copyResourceToFile("/example_pack/texture/car_hud_third_person.png", texture.resolve("car_hud_third_person.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/example_hud.png", texture.resolve("example_hud.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_1.png", texture.resolve("ae86_1.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_2.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_3.png"), overwrite);

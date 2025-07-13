@@ -14,6 +14,7 @@ import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
@@ -122,28 +123,9 @@ public class VehicleData {
         this.icon = ResourceLocation.withDefaultNamespace("missingno");
         this.uuid = vehicle.getUuid().toString();
         this.pos = vehicle.getPosition();
-        float xMin = Float.MAX_VALUE;
-        float yMin = Float.MAX_VALUE;
-        float zMin = Float.MAX_VALUE;
-        float xMax = -Float.MAX_VALUE;
-        float yMax = -Float.MAX_VALUE;
-        float zMax = -Float.MAX_VALUE;
-        Vector3f min = new Vector3f();
-        Vector3f max = new Vector3f();
-        for (Part part : vehicle.partMap.values()) {
-            for (SubPart subPart : part.subParts.values()) {
-                subPart.body.cachedBoundingBox.getMin(min);
-                subPart.body.cachedBoundingBox.getMax(max);
-                if (min.x < xMin) xMin = min.x;
-                if (min.y < yMin) yMin = min.y;
-                if (min.z < zMin) zMin = min.z;
-                if (max.x > xMax) xMax = max.x;
-                if (max.y > yMax) yMax = max.y;
-                if (max.z > zMax) zMax = max.z;
-            }
-        }
-        this.min = new Vec3(xMin, yMin, zMin).subtract(pos);
-        this.max = new Vec3(xMax, yMax, zMax).subtract(pos);
+        AABB aabb = vehicle.getAABB();
+        this.min = aabb.getMinPosition().subtract(pos);
+        this.max = aabb.getMaxPosition().subtract(pos);
         this.hp = vehicle.getHp();
         this.parts = vehicle.getPartData();
         this.connections = vehicle.getConnectionData();

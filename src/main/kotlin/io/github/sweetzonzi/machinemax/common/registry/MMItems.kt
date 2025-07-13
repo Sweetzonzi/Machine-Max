@@ -33,11 +33,11 @@ object MMItems {
         .build()
 
     //部件制造台
-    @JvmStatic
-    val FABRICATOR_BLOCK_ITEM = MachineMax.REGISTER.item<BlockItem>()
-        .id("fabricator")
-        .bound { BlockItem(MMBlocks.FABRICATOR_BLOCK.get(), Item.Properties()) }
-        .build()
+//    @JvmStatic
+//    val FABRICATOR_BLOCK_ITEM = MachineMax.REGISTER.item<BlockItem>()
+//        .id("fabricator")
+//        .bound { BlockItem(MMBlocks.FABRICATOR_BLOCK.get(), Item.Properties()) }
+//        .build()
 
     //载具蓝图物品原型
     @JvmStatic
@@ -82,10 +82,10 @@ object MMItems {
         .build()
 
     //路基方块
-    @JvmStatic
-    val ROAD_BASE_BLOCK = MachineMax.REGISTER.item<BlockItem>()
-        .id("road_base_block")
-        .bound { BlockItem(MMBlocks.ROAD_BASE_BLOCK.get(), Item.Properties()) }
+//    @JvmStatic
+//    val ROAD_BASE_BLOCK = MachineMax.REGISTER.item<BlockItem>()
+//        .id("road_base_block")
+//        .bound { BlockItem(MMBlocks.ROAD_BASE_BLOCK.get(), Item.Properties()) }
 
     @JvmStatic
     @SubscribeEvent

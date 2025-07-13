@@ -15,8 +15,15 @@
       "seat_point_locator": "SeatPoint", //乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
       "render_passenger": true, //(可选,默认true)是否渲染乘客
       "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
-      "allow_first_person_view": true, //(可选,默认true)是否允许第一人称视角
-      "allow_third_person_view": true, //(可选,默认true)是否允许第三人称视角
+      "views": {
+        "enable_first_person": true, //(可选,默认true)是否启用第一人称视角
+        "first_person_hud": ["machine_max:example_pack/hud/example_hud.json"],//(可选,默认[])第一人称视角下的HUD组件
+        "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
+        "third_person_hud": ["machine_max:example_pack/hud/example_hud.json"],//(可选,默认[])第三人称视角下的HUD组件
+        "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
+        "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
+        "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率
+      },
       "allow_use_items": false, //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
       "move_outputs": {
         "move_control": ["chassis_connection"] //将控制信号转发给与底盘连接的对接口

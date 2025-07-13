@@ -25,7 +25,7 @@ object MMCreativeTabs {
             .title(Component.translatable("itemGroup.machine_max.main"))
             .icon { ItemStack(MMItems.CROWBAR_ITEM) }
             .displayItems { params, output ->
-                output.accept(MMItems.FABRICATOR_BLOCK_ITEM.get())
+//                output.accept(MMItems.FABRICATOR_BLOCK_ITEM.get())
                 output.accept(MMItems.CROWBAR_ITEM.get())
                 output.accept(MMItems.WRENCH_ITEM.get())
                 output.accept(MMItems.SPRAY_CAN_ITEM.get())

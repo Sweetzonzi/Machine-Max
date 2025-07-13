@@ -1,0 +1,105 @@
+{
+  "model": "machine_max:example_pack/model/example_hud.geo.json",
+  "animation": "machine_max:example_pack/animation/example_hud.animation.json",
+  "texture": "machine_max:example_pack/texture/example_hud.png",
+  "offset": [95, 55, -135], //(可选，默认[0, 0, 0]) 相对屏幕中心的偏移量，透视投影下单位为米，正交投影下单位为像素
+  "rotation": [-25, -30, 0],//(可选，默认[0, 0, 0]) 旋转角度，单位为度
+  "scale": [15, 15, 15],//(可选，默认[20，20，20]) 缩放比例
+  "color": [255, 255, 255], //(可选，默认白色) RGB颜色
+  "alpha": 255, //(可选，默认255) 透明度
+  "perspective": true,//(可选，默认true) 是否采用透视投影渲染
+  "texts": {
+    "0": {//骨骼与定位器名，要求骨骼和定位器名称一致
+      "key": "0",//翻译键，用于翻译文本
+      "centered": true,//(可选，默认true)是否居中显示
+      "shadow": false,//(可选，默认false)是否渲染文字阴影
+      "scale": [0.7, 0.7, 0.7]//(可选，默认[1, 1, 1]) 缩放比例
+    },
+    "1": {
+      "key": "1",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.7, 0.7, 0.7]
+    },
+    "2": {
+      "key": "2",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.7, 0.7, 0.7]
+    },
+    "3": {
+      "key": "3",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.7, 0.7, 0.7]
+    },
+    "4": {
+      "key": "4",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.7, 0.7, 0.7]
+    },
+    "5": {
+      "key": "5",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.7, 0.7, 0.7]
+    },
+    "6": {
+      "key": "6",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.7, 0.7, 0.7]
+    },
+    "7": {
+      "key": "7",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.7, 0.7, 0.7],
+      "color": [255, 0, 0]
+    },
+    "8": {
+      "key": "8",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.7, 0.7, 0.7],
+      "color": [255, 0, 0]
+    },
+    "9": {
+      "key": "9",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.7, 0.7, 0.7],
+      "color": [255, 0, 0]
+    },
+    "gear": {
+      "key": "hud.machine_max.default_1.gear",
+      "centered": true,
+      "shadow": true,
+      "molang_args": ["vehicle.get('gear')??'NO GBX'"]
+    },
+    "kmh": {
+      "key": "hud.machine_max.default_1.kmh",
+      "centered": true,
+      "shadow": true,
+      "scale": [0.8, 0.8, 0.8]
+    },
+    "speed": {
+      "key": "hud.machine_max.default_1.speed",
+      "centered": true,
+      "shadow": true,
+      "scale": [2, 2, 2],
+      "molang_args": [//(可选，默认[]) Molang参数，将用于填充翻译文本预留的参数位置
+        "math.floor((vehicle.get('speed')??q.ground_speed) * 3.6 / 100)",
+        "math.floor(math.mod((vehicle.get('speed')??q.ground_speed) * 3.6, 100) / 10)",
+        "math.floor(math.mod((vehicle.get('speed')??q.ground_speed) * 3.6, 10))"
+      ],
+      "significand": 0 //(可选，默认0) Molang参数计算结果为数字时，保留的小数点后位数
+    }
+  },
+  "enable_scissor": false, //(可选，默认false) 是否启用剪裁矩形，范围外的部分将被裁剪，不渲染
+  "scissor_x": 0, //(可选，默认0) 剪裁矩形中心x坐标(像素)
+  "scissor_y": 0,//(可选，默认0) 剪裁矩形中心y坐标(像素)
+  "scissor_width": 0,//(可选，默认0) 剪裁矩形宽度(像素)
+  "scissor_height": 0 //(可选，默认0) 剪裁矩形高度(像素)
+}

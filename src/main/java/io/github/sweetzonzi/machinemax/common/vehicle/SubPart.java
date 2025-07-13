@@ -645,9 +645,13 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     }
 
     public Transform getLerpedLocatorWorldTransform(String locatorName, float partialTick) {
+        return getLerpedLocatorWorldTransform(locatorName, new Transform(), partialTick);
+    }
+
+    public Transform getLerpedLocatorWorldTransform(String locatorName, Transform offset, float partialTick) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            Transform localTransform = attr.getLocatorTransforms().get(part.variant).get(locatorName);
+            Transform localTransform = MyMath.combine(offset, attr.getLocatorTransforms().get(part.variant).get(locatorName),null);
             Transform pose = MyMath.combine(localTransform, body.tickTransform, null);
             Transform oldPose = MyMath.combine(localTransform, body.lastTickTransform, null);
             return SparkMathKt.lerp(oldPose, pose, partialTick);

@@ -31,6 +31,7 @@ import lombok.Setter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -58,6 +59,8 @@ public class VehicleCore {
     public float hp = 20;//耐久度
     private Vec3 position = Vec3.ZERO;//位置
     private Vec3 velocity = Vec3.ZERO;//速度
+    private Vec3 oldPosition = Vec3.ZERO;//上一帧位置
+    private Vec3 oldVelocity = Vec3.ZERO;//上一帧速度
     public float totalMass = 0;//总质量
     public int poseSyncCountDown = 5;//位姿同步倒计时
     public int statusSyncCountDown = 5;//状态同步倒计时
@@ -72,6 +75,9 @@ public class VehicleCore {
     public ControlMode mode = ControlMode.GROUND;//控制模式
 
     public enum ControlMode {GROUND, PLANE, SHIP, MECH}
+
+    //渲染
+    public float cameraDistance = 4f;//相机距离
 
     public VehicleCore(Level level, Part rootPart) {
         this.level = level;
@@ -99,6 +105,7 @@ public class VehicleCore {
                             null);
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
+            this.cameraDistance = calculateCameraDistance();
         } catch (Exception e) {
             onRemoveFromLevel();//移除数据出错的载具
             throw e;
@@ -133,6 +140,7 @@ public class VehicleCore {
         }
         this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();
+        this.cameraDistance = calculateCameraDistance();
 //        //为分裂出的部件同步状态信息
 //        for(Part part : this.partMap.values()){
 //            if (!level.isClientSide) {
@@ -150,18 +158,26 @@ public class VehicleCore {
      * 主线程tick，默认tps=20
      */
     public void tick() {
+        if (tickCount == 10)
+            this.cameraDistance = calculateCameraDistance();
         //保持激活与控制量更新
         Vec3 newPos = new Vec3(0, 0, 0);
         Vec3 newVel = new Vec3(0, 0, 0);
+        int count = 0;
         for (Part part : partMap.values()) {
-            Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null));
+            Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.tickTransform.getTranslation());
             Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.body.getLinearVelocity(null));
             newPos = newPos.add(partPos);//计算载具形心位置
             newVel = newVel.add(partVel);//计算载具形心速度
+            count++;
             if (inLoadedChunk && !isRemoved) part.onTick();
         }
-        this.position = newPos.scale((double) 1 / partMap.values().size());//更新载具形心位置
-        this.velocity = newVel.scale((double) 1 / partMap.values().size());//更新载具形心速度
+        if (count > 0) {
+            this.oldPosition = this.position;
+            this.oldVelocity = this.velocity;
+            this.position = newPos.scale((double) 1 / count);//更新载具形心位置
+            this.velocity = newVel.scale((double) 1 / count);//更新载具形心速度
+        }
         if (partMap.values().isEmpty() || this.position.y < -1024) {
             VehicleManager.removeVehicle(this);//移除掉出世界的载具
             return;
@@ -371,6 +387,7 @@ public class VehicleCore {
             else {
                 this.activate();//重新激活，进行部件移除后的物理计算
                 this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
+                this.cameraDistance = calculateCameraDistance();
             }
             this.updateTotalMass();
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, part.name);
@@ -419,6 +436,7 @@ public class VehicleCore {
             }
             if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
             this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
+            this.cameraDistance = calculateCameraDistance();
             this.activate();
             if (inLevel && !level.isClientSide()) {
                 comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊对接口在前面，以保证对接口属性得到正确应用
@@ -543,6 +561,7 @@ public class VehicleCore {
         }
         this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
+        this.cameraDistance = calculateCameraDistance();
     }
 
     private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> spiltPartNets) {
@@ -676,5 +695,42 @@ public class VehicleCore {
         List<ConnectionData> result = new ArrayList<>();
         partNet.edges().forEach(connectorPair -> result.add(new ConnectionData(connectorPair)));
         return result;
+    }
+
+    public AABB getAABB() {
+        float xMin = Float.MAX_VALUE;
+        float yMin = Float.MAX_VALUE;
+        float zMin = Float.MAX_VALUE;
+        float xMax = -Float.MAX_VALUE;
+        float yMax = -Float.MAX_VALUE;
+        float zMax = -Float.MAX_VALUE;
+        Vector3f min = new Vector3f();
+        Vector3f max = new Vector3f();
+        for (Part part : this.partMap.values()) {
+            for (SubPart subPart : part.subParts.values()) {
+                subPart.body.cachedBoundingBox.getMin(min);
+                subPart.body.cachedBoundingBox.getMax(max);
+                if (min.x < xMin) xMin = min.x;
+                if (min.y < yMin) yMin = min.y;
+                if (min.z < zMin) zMin = min.z;
+                if (max.x > xMax) xMax = max.x;
+                if (max.y > yMax) yMax = max.y;
+                if (max.z > zMax) zMax = max.z;
+            }
+        }
+        return new AABB(xMin, yMin, zMin, xMax, yMax, zMax);
+    }
+
+    public float calculateCameraDistance() {
+        Vector3f center = PhysicsHelperKt.toBVector3f(this.position);
+        float maxDistance = 4f;
+        for (Part part : this.partMap.values()) {
+            for (SubPart subPart : part.subParts.values()) {
+                float distance = center.distance(subPart.body.getPhysicsLocation(null));
+                float radius = subPart.collisionShape.maxRadius() + distance;
+                if (radius > maxDistance) maxDistance = radius;
+            }
+        }
+        return maxDistance;
     }
 }

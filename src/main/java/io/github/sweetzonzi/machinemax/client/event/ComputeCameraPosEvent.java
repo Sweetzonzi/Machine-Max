@@ -12,7 +12,7 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 public class ComputeCameraPosEvent extends ViewportEvent {
     private Vec3 cameraPos;
 
-    public ComputeCameraPosEvent(Camera camera, double partialTick) {
+    public ComputeCameraPosEvent(Camera camera, float partialTick) {
         super(Minecraft.getInstance().gameRenderer, camera, partialTick);
         cameraPos = camera.getPosition();
     }

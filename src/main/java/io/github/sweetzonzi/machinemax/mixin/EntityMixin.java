@@ -13,6 +13,7 @@ import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.BlockAttachedEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.attachment.AttachmentHolder;
@@ -52,6 +53,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         if (entity instanceof BlockAttachedEntity
                 || entity instanceof MMPartEntity
                 || (aabb.maxX - aabb.minX) * (aabb.maxY - aabb.minY) * (aabb.maxZ - aabb.minZ) < 0.001
+                || (entity instanceof Player player && !player.isAffectedByFluids())
                 || ((IEntityMixin) entity).machine_Max$getRidingSubsystem() != null) return;
         // 调用物理引擎进行碰撞检测
         if (machine_Max$collideTestShape == null) {

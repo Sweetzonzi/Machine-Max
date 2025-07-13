@@ -560,6 +560,13 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
     }
 
+    public Transform getLerpedLocatorWorldTransform(String locatorName, Transform offset, float partialTick) {
+        SubPart subPart = locatorSubPart.get(locatorName);
+        if (subPart != null) {
+            return subPart.getLerpedLocatorWorldTransform(locatorName, offset, partialTick);
+        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+    }
+
     public Transform getLocatorWorldTransform(String locatorName) {
         SubPart subPart = locatorSubPart.get(locatorName);
         if (subPart != null) {

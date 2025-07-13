@@ -3,10 +3,12 @@ package io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import lombok.Getter;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashSet;
@@ -20,21 +22,29 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     public final boolean renderPassenger;
     public final Vec3 passengerScale;
     public final boolean allowUseItems;
-    public final boolean allowFirstPersonView;
-    public final boolean allowThirdPersonView;
+    public final ViewAttr views;
     public final Set<String> viewInputs;
     public final Map<String, List<String>> moveSignalTargets;
     public final Map<String, List<String>> viewSignalTargets;
     public final Map<String, List<String>> regularSignalTargets;
     //TODO:是否无视命中情况转嫁乘客伤害到部件
+
     public static final MapCodec<SeatSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
-            Codec.STRING.optionalFieldOf("seat_point_locator","").forGetter(SeatSubsystemAttr::getLocator),
+            Codec.STRING.optionalFieldOf("seat_point_locator", "").forGetter(SeatSubsystemAttr::getLocator),
             Codec.BOOL.optionalFieldOf("render_passenger", true).forGetter(SeatSubsystemAttr::isRenderPassenger),
             Vec3.CODEC.optionalFieldOf("passenger_scale", new Vec3(1, 1, 1)).forGetter(SeatSubsystemAttr::getPassengerScale),
-            Codec.BOOL.optionalFieldOf("allow_first_person_view", true).forGetter(SeatSubsystemAttr::isAllowFirstPersonView),
-            Codec.BOOL.optionalFieldOf("allow_third_person_view", true).forGetter(SeatSubsystemAttr::isAllowThirdPersonView),
+            ViewAttr.CODEC.optionalFieldOf("views", new ViewAttr(
+                    true,
+                    List.of(),
+                    true,
+                    List.of(),
+                    true,
+                    true,
+                    1.1f,
+                    List.of()
+            )).forGetter(SeatSubsystemAttr::getViews),
             Codec.BOOL.optionalFieldOf("allow_use_items", false).forGetter(SeatSubsystemAttr::isAllowUseItems),
             Codec.STRING.listOf().optionalFieldOf("view_inputs", List.of()).forGetter(SeatSubsystemAttr::getViewInputs),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("move_outputs", Map.of()).forGetter(SeatSubsystemAttr::getMoveSignalTargets),
@@ -47,8 +57,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             String hitBox,
             String locator,
             boolean renderPassenger, Vec3 passengerScale,
-            boolean allowFirstPersonView,
-            boolean allowThirdPersonView,
+            ViewAttr views,
             boolean allowUseItems,
             List<String> viewInputs,
             Map<String, List<String>> moveSignalTargets,
@@ -58,13 +67,14 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
         //合法性检查
         if (locator == null || locator.isEmpty())
             throw new IllegalStateException("error.machine_max.seat_subsystem.no_locator");
-        if (!allowFirstPersonView && !allowThirdPersonView)
+        if (!views.enableFirstPerson() && !views.enableThirdPerson())
             throw new IllegalArgumentException("error.machine_max.seat_subsystem.no_view");
+        if (views.distanceScale() < 0)
+            throw new IllegalArgumentException("error.machine_max.seat_subsystem.invalid_camera_distance");
         this.locator = locator;
         this.renderPassenger = renderPassenger;
         this.passengerScale = passengerScale;
-        this.allowFirstPersonView = allowFirstPersonView;
-        this.allowThirdPersonView = allowThirdPersonView;
+        this.views = views;
         this.allowUseItems = allowUseItems;
         this.viewInputs = new HashSet<>();
         this.viewInputs.addAll(viewInputs);
@@ -91,4 +101,28 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     private List<String> getViewInputs() {
         return viewInputs.stream().toList();
     }
+
+    public record ViewAttr(
+            //TODO:角度限制
+            boolean enableFirstPerson,
+            List<ResourceLocation> firstPersonHud,
+            boolean enableThirdPerson,
+            List<ResourceLocation> thirdPersonHud,
+            boolean followVehicle,
+            boolean focusOnCenter,
+            float distanceScale,
+            List<String> gunnerViews
+    ) {
+        public static final Codec<ViewAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.BOOL.optionalFieldOf("enable_first_person", true).forGetter(ViewAttr::enableFirstPerson),
+                ResourceLocation.CODEC.listOf().optionalFieldOf("first_person_hud", List.of()).forGetter(ViewAttr::firstPersonHud),
+                Codec.BOOL.optionalFieldOf("enable_third_person", true).forGetter(ViewAttr::enableThirdPerson),
+                ResourceLocation.CODEC.listOf().optionalFieldOf("third_person_hud", List.of()).forGetter(ViewAttr::thirdPersonHud),
+                Codec.BOOL.optionalFieldOf("follow_vehicle", true).forGetter(ViewAttr::followVehicle),
+                Codec.BOOL.optionalFieldOf("focus_on_center", true).forGetter(ViewAttr::focusOnCenter),
+                Codec.FLOAT.optionalFieldOf("distance_scale", 1.1f).forGetter(ViewAttr::distanceScale),
+                Codec.STRING.listOf().optionalFieldOf("gunner_views", List.of()).forGetter(ViewAttr::gunnerViews)
+                ).apply(instance, ViewAttr::new));
+    }
 }
+
