@@ -76,7 +76,13 @@
           "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
           "type": "AttachPoint",//对接口类型，支持AttachPoint和Special
           "variant": [],//对接口可连接的部件变体类型，留空以接受所有类型的变体(例如轮胎的左右轮变体)
-          "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
+          "breakable": false, //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
+          "signal_targets": {//向座椅子系统传输来自车门的互动信号
+            "left_front_door_interact": ["left_seat"],
+            "right_front_door_interact": ["right_seat"],
+            "left_back_door_interact": ["left_seat"],
+            "right_back_door_interact": ["right_seat"]
+          }
         }
       },
       "hydro_priority": 0, //(可选，默认0)空气阻力计算优先级，值越大优先级越高，优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化

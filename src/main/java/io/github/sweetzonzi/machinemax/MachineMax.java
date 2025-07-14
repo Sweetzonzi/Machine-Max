@@ -22,7 +22,6 @@ public class MachineMax {
     //TODO:储物子系统
     //TODO:交互系统的反馈信号以及连接多个子系统，依次互动/同时互动？
     //TODO:过载与座椅过载吸收/耐受
-    //TODO:自定义HUD
     //TODO:TAC:Z式部件制造
     //TODO:基本材料物品:结构零件、动力零件、电子零件
     //TODO:放置部件前检查空间是否足够

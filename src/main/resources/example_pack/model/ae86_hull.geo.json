@@ -2384,6 +2384,54 @@
 					]
 				},
 				{
+					"name": "RightFrontDoorInteractZone",
+					"parent": "mmPartBody_Hull",
+					"pivot": [0, 4, 6],
+					"cubes": [
+						{
+							"origin": [-42, -7, -16],
+							"size": [24, 26, 31],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "LeftFrontDoorInteractZone",
+					"parent": "mmPartBody_Hull",
+					"pivot": [0, 4, 6],
+					"cubes": [
+						{
+							"origin": [18, -7, -16],
+							"size": [24, 26, 31],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "LeftBackDoorInteractZone",
+					"parent": "mmPartBody_Hull",
+					"pivot": [0, 4, 37],
+					"cubes": [
+						{
+							"origin": [18, -7, 15],
+							"size": [24, 26, 31],
+							"uv": {}
+						}
+					]
+				},
+				{
+					"name": "RightBackDoorInteractZone",
+					"parent": "mmPartBody_Hull",
+					"pivot": [0, 4, 37],
+					"cubes": [
+						{
+							"origin": [-42, -7, 15],
+							"size": [24, 26, 31],
+							"uv": {}
+						}
+					]
+				},
+				{
 					"name": "Doors",
 					"parent": "Hull",
 					"pivot": [-19.5, -2.75, 1.5]

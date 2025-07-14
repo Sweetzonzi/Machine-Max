@@ -237,7 +237,13 @@
         },
         "hull": {
           "locator": "Hull",
-          "type": "Special"
+          "type": "Special",
+          "signal_targets": {//向各个座椅传输来自车门的互动信号
+            "left_front_door_interact": ["copilot_seat"],
+            "right_front_door_interact": ["driver_seat"],
+            "left_back_door_interact": ["back_seat"],
+            "right_back_door_interact": ["back_seat"]
+          }
         },
         "driver_seat": {
           "locator": "DriverSeat",

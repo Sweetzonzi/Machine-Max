@@ -59,7 +59,13 @@
       "connectors": {//子部件用于与其他零件连接的对接口列表
         "chassis_connection": {//接口名称
           "locator": "AttachPoint",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-          "type": "AttachPoint" //对接口类型，支持AttachPoint和Special
+          "type": "AttachPoint", //对接口类型，支持AttachPoint和Special
+          "signal_targets": {//向座椅子系统传输来自车门的互动信号
+            "left_front_door_interact": ["seat"],
+            "right_front_door_interact": ["seat"],
+            "left_back_door_interact": ["seat"],
+            "right_back_door_interact": ["seat"]
+          }
         }
       },
       "hydro_priority": 0, //(可选，默认0)空气阻力计算优先级，值越大优先级越高，优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化
