@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "e": {
+      "item": "minecraft:furnace_minecart"
+    },
+    "p": {
+      "item": "minecraft:piston"
+    },
+    "i": {
+      "tag": "c:ingots/iron"
+    },
+    "c": {
+      "tag": "c:ingots/copper"
+    }
+  },
+  "pattern": [
+    "ccc",
+    "pep",
+    "iii"
+  ],
+  "result": {
+    "id": "machine_max:mechanic_component_1",
+    "count": 1
+  }
+}

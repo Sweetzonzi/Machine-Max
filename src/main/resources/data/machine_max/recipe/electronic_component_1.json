@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "g": {
+      "tag": "c:ingots/gold"
+    },
+    "p": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "r": {
+      "item": "minecraft:redstone"
+    },
+    "c": {
+      "tag": "c:ingots/copper"
+    }
+  },
+  "pattern": [
+    "rcr",
+    "pgp",
+    "rcr"
+  ],
+  "result": {
+    "id": "machine_max:electronic_component_1",
+    "count": 2
+  }
+}

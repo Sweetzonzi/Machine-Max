@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "r": {
+      "item": "minecraft:redstone"
+    },
+    "p": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "c": {
+      "tag": "c:ingots/copper"
+    }
+  },
+  "pattern": [
+    "crc",
+    "ppp",
+    "ppp"
+  ],
+  "result": {
+    "id": "machine_max:power_component_1",
+    "count": 1
+  }
+}

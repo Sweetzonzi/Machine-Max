@@ -10,7 +10,6 @@ import net.minecraft.world.item.ItemStack
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent
-import kotlin.math.ceil
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 object MMCreativeTabs {
@@ -24,12 +23,37 @@ object MMCreativeTabs {
         .bound(CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.machine_max.main"))
             .icon { ItemStack(MMItems.CROWBAR_ITEM) }
-            .displayItems { params, output ->
+            .displayItems { _, output ->
 //                output.accept(MMItems.FABRICATOR_BLOCK_ITEM.get())
                 output.accept(MMItems.CROWBAR_ITEM.get())
                 output.accept(MMItems.WRENCH_ITEM.get())
                 output.accept(MMItems.SPRAY_CAN_ITEM.get())
                 output.accept(MMItems.EMPTY_BLUEPRINT.get())
+                //材料
+                output.accept(MMItems.STRUCTURAL_COMPONENT_1_ITEM.get())
+                output.accept(MMItems.MECHANIC_COMPONENT_1_ITEM.get())
+                output.accept(MMItems.WEAPON_COMPONENT_1_ITEM.get())
+                output.accept(MMItems.ELECTRONIC_COMPONENT_1_ITEM.get())
+                output.accept(MMItems.POWER_COMPONENT_1_ITEM.get())
+                output.accept(MMItems.ENERGETIC_COMPONENT_1_ITEM.get())
+            }
+        )
+        .build()
+
+    @JvmStatic
+    val MACHINE_MAX_PART_TAB = MachineMax.REGISTER.creativeTab()
+        .id("machine_max_tab_part")
+        .bound(CreativeModeTab.builder()
+            .title(Component.translatable("itemGroup.machine_max.part"))
+            // 动态设置图标
+            .icon {
+                if (MMDynamicRes.PART_TYPES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
+                else {
+                    val randomIndex = (0 until MMDynamicRes.PART_TYPES.size).random() //随机的一个蓝图在图标上展示
+                    val item = ItemStack(MMItems.PART_ITEM)
+                    item.set(MMDataComponents.PART_TYPE, MMDynamicRes.PART_TYPES.keys.toList()[randomIndex])
+                    item
+                }
             }
         )
         .build()
@@ -39,21 +63,7 @@ object MMCreativeTabs {
         .id("machine_max_tab_vehicle_blueprint")
         .bound(CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.machine_max.vehicle_blueprint"))
-            // 动态设置图标：如果蓝图列表为空，则使用 MACHINE_MAX_TAB 的图标
-            .icon {
-//                if (MMJavaItems.BLUEPRINT_EGGS.isEmpty()) { //判断蓝图注册表是否为空
-//                    ItemStack(MMItems.PART_ITEM) // 使用主物品栏的图标
-//                } else {
-//                    val randomIndex = (0 until MMJavaItems.BLUEPRINT_EGGS.size).random() //随机的一个蓝图在图标上展示
-//                    ItemStack(MMJavaItems.BLUEPRINT_EGGS[randomIndex].get())
-//                }
-                ItemStack(MMItems.EMPTY_BLUEPRINT.get())
-            }
-//            .displayItems { params, output ->
-//                for (blueprintEgg in MMJavaItems.BLUEPRINT_EGGS) {
-//                    output.accept(blueprintEgg.get())
-//                }
-//            }
+            .icon {ItemStack(MMItems.EMPTY_BLUEPRINT)}
         )
         .build()
 
@@ -63,27 +73,14 @@ object MMCreativeTabs {
         .bound(CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.machine_max.fabricating_blueprint"))
             // 动态设置图标：如果蓝图列表为空，则使用 MACHINE_MAX_TAB 的图标
-            .icon {
-//                if (MMJavaItems.BLUEPRINT_EGGS.isEmpty()) { //判断蓝图注册表是否为空
-//                    ItemStack(MMItems.PART_ITEM) // 使用主物品栏的图标
-//                } else {
-//                    val randomIndex = (0 until MMJavaItems.BLUEPRINT_EGGS.size).random() //随机的一个蓝图在图标上展示
-//                    ItemStack(MMJavaItems.BLUEPRINT_EGGS[randomIndex].get())
-//                }
-                ItemStack(MMItems.EMPTY_BLUEPRINT.get())
-            }
-//            .displayItems { params, output ->
-//                for (blueprintEgg in MMJavaItems.BLUEPRINT_EGGS) {
-//                    output.accept(blueprintEgg.get())
-//                }
-//            }
+            .icon {ItemStack(MMItems.EMPTY_BLUEPRINT)}
         )
         .build()
 
     @JvmStatic
     @SubscribeEvent
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
-        if (event.tab == MACHINE_MAX_TAB.get()) {
+        if (event.tab == MACHINE_MAX_PART_TAB.get()) {
             MachineMax.LOGGER.info("Putting parts into creative tab...")
             val buildInParts = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
             for (partType in MMRegistries.getRegistryAccess(Minecraft.getInstance().level)

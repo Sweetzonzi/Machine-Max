@@ -64,15 +64,21 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("message.machine_max.blueprint_pass", "未选中任何载具，取消保存蓝图");
         this.add("message.machine_max.blueprint.place_failed", "空间不足，无法部署载具");
         //物品
-        //Item
-        this.add("itemGroup.machine_max.vehicle_blueprint", "MachineMax: 自定义载具蓝图");
+        this.add("itemGroup.machine_max.main", "MachineMax: 工具与材料");
+        this.add("itemGroup.machine_max.part", "MachineMax: 零部件");
+        this.add("itemGroup.machine_max.vehicle_blueprint", "MachineMax: 载具设计图");
         this.add("itemGroup.machine_max.fabricating_blueprint", "MachineMax: 制造蓝图");
-        this.add("itemGroup.machine_max.main", "MachineMax: 部件与工具");
         this.add("block.machine_max.fabricator", "载具制造台");
         this.add("item.machine_max.crowbar", "撬棍");
         this.add("item.machine_max.wrench", "扳手");
         this.add("item.machine_max.spray_can", "喷漆罐");
         this.add("item.machine_max.empty_vehicle_blueprint", "空白载具蓝图");
         this.add("item.machine_max.fabricating_blueprint", "制造蓝图");
+        this.add("item.machine_max.structural_component_1", "初级结构部件");
+        this.add("item.machine_max.mechanic_component_1", "初级机械构件");
+        this.add("item.machine_max.weapon_component_1", "初级武器零件");
+        this.add("item.machine_max.electronic_component_1", "初级电子元件");
+        this.add("item.machine_max.power_component_1", "初级能源组件");
+        this.add("item.machine_max.energetic_component_1", "初级含能材料");
     }
 }

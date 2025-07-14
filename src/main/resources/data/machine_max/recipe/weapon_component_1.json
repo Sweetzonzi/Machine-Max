@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "d": {
+      "item": "minecraft:dispenser"
+    },
+    "h": {
+      "item": "minecraft:hopper"
+    },
+    "p": {
+      "item": "minecraft:piston"
+    },
+    "l": {
+      "item": "minecraft:lever"
+    },
+    "i": {
+      "tag": "c:ingots/iron"
+    }
+  },
+  "pattern": [
+    "idi",
+    "php",
+    "ili"
+  ],
+  "result": {
+    "id": "machine_max:weapon_component_1",
+    "count": 1
+  }
+}

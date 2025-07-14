@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machinemax.common.registry
 
 import io.github.sweetzonzi.machinemax.MachineMax
 import io.github.sweetzonzi.machinemax.client.renderer.CustomModelItemRenderer
-import io.github.sweetzonzi.machinemax.common.block.FabricatorBlock
+import io.github.sweetzonzi.machinemax.common.item.MaterialItem
 import io.github.sweetzonzi.machinemax.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machinemax.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem
@@ -11,7 +11,6 @@ import io.github.sweetzonzi.machinemax.common.item.prop.EmptyBlueprintItem
 import io.github.sweetzonzi.machinemax.common.item.prop.FabicatingBlueprintItem
 import io.github.sweetzonzi.machinemax.common.item.prop.WrenchItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
-import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
@@ -79,6 +78,48 @@ object MMItems {
     val SPRAY_CAN_ITEM = MachineMax.REGISTER.item<SprayCanItem>()
         .id("spray_can")
         .bound { SprayCanItem() }
+        .build()
+
+    //材料:结构部件
+    @JvmStatic
+    val STRUCTURAL_COMPONENT_1_ITEM = MachineMax.REGISTER.item<MaterialItem>()
+        .id("structural_component_1")
+        .bound { MaterialItem() }
+        .build()
+
+    //材料:机械零件
+    @JvmStatic
+    val MECHANIC_COMPONENT_1_ITEM = MachineMax.REGISTER.item<MaterialItem>()
+        .id("mechanic_component_1")
+        .bound { MaterialItem() }
+        .build()
+
+    //材料:武器部件
+    @JvmStatic
+    val WEAPON_COMPONENT_1_ITEM = MachineMax.REGISTER.item<MaterialItem>()
+        .id("weapon_component_1")
+        .bound { MaterialItem() }
+        .build()
+
+    //材料:电子元件
+    @JvmStatic
+    val ELECTRONIC_COMPONENT_1_ITEM = MachineMax.REGISTER.item<MaterialItem>()
+        .id("electronic_component_1")
+        .bound { MaterialItem() }
+        .build()
+
+    //材料:能源组件
+    @JvmStatic
+    val POWER_COMPONENT_1_ITEM = MachineMax.REGISTER.item<MaterialItem>()
+        .id("power_component_1")
+        .bound { MaterialItem() }
+        .build()
+
+    //材料:火控品
+    @JvmStatic
+    val ENERGETIC_COMPONENT_1_ITEM = MachineMax.REGISTER.item<MaterialItem>()
+        .id("energetic_component_1")
+        .bound { MaterialItem() }
         .build()
 
     //路基方块
