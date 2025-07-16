@@ -15,6 +15,8 @@ import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -25,9 +27,10 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.joml.Math;
 import org.joml.Quaternionf;
 
+@OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class CameraController {
-    private static Minecraft client;
+    private static Minecraft client = null;
     private static float pitch = 0;
     private static float yaw = 0;
     private static float roll = 0;
@@ -42,12 +45,13 @@ public class CameraController {
     public static Vec3 aimDirection = new Vec3(1, 0, 0);
     private static float speedDistanceFactor = 0.0f;
 
-    public static void init(FMLClientSetupEvent event) {
-        client = Minecraft.getInstance();
+    public static void init() {
+        if (client == null) client = Minecraft.getInstance();
     }
 
     @SubscribeEvent
     public static void updateCameraPos(ComputeCameraPosEvent event) {
+        init();
         Camera camera = event.getCamera();
         float partialTick = (float) event.getPartialTick();
         var type = client.options.getCameraType();
@@ -65,6 +69,7 @@ public class CameraController {
 
     @SubscribeEvent
     public static void updateCameraDistance(CalculateDetachedCameraDistanceEvent event) {
+        init();
         Camera camera = event.getCamera();
         Entity entity = camera.getEntity();
         if (((IEntityMixin) entity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
@@ -78,6 +83,7 @@ public class CameraController {
 
     @SubscribeEvent
     public static void updateCameraRot(ViewportEvent.ComputeCameraAngles event) {
+        init();
         Camera camera = event.getCamera();
         CameraType type = client.options.getCameraType();
         Entity entity = camera.getEntity();
@@ -132,6 +138,7 @@ public class CameraController {
 
     @SubscribeEvent
     public static void updateCameraScale(ViewportEvent.ComputeFov event) {
+        init();
         double scale = 1.0;
         //TODO:视情况调整放大倍率
         double rawFov = event.getFOV();
@@ -139,6 +146,7 @@ public class CameraController {
     }
 
     public static void turnCamera(double yRot, double xRot) {
+        init();
         //保持与默认旋转视角相同的缩放量（为什么会有缩放？）
         float f = (float) xRot * 0.15F;
         float f1 = (float) yRot * 0.15F;
@@ -152,6 +160,7 @@ public class CameraController {
 
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
+        init();
         if (client.player != null) {
             SeatSubsystem seat = ((IEntityMixin) client.player).machine_Max$getRidingSubsystem();
             if (seat != null) {
@@ -177,6 +186,7 @@ public class CameraController {
 
     @SubscribeEvent
     public static void modifySensitivity(CalculatePlayerTurnEvent event) {
+        init();
         double raw = event.getMouseSensitivity();
         //根据是否处于瞄准等因素调整灵敏度
         if (RawInputHandler.freeCam) raw *= 0.5;

@@ -7,7 +7,7 @@
 //import com.mojang.blaze3d.systems.RenderSystem;
 //import com.mojang.blaze3d.vertex.PoseStack;
 //import com.mojang.blaze3d.vertex.VertexConsumer;
-//import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
+//import io.github.sweetzonzi.machinemax.common.item.prop.PartItem;
 //import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
 //import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 //import net.minecraft.client.DeltaTracker;
@@ -102,10 +102,10 @@
 //    public void renderPartToAssembly(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick, Vec3 camPos, int centerX, int centerY) {
 //        LocalPlayer player = Minecraft.getInstance().player;
 //        if (player == null) return;
-//        if (player.getMainHandItem().getItem() instanceof MMPartItem) {
+//        if (player.getMainHandItem().getItem() instanceof PartItem) {
 //            ItemStack partItem = player.getMainHandItem();
-//            PartType partType = MMPartItem.getPartType(partItem, player.level());
-//            String variant = MMPartItem.getPartAssemblyInfo(partItem, player.level()).variant();
+//            PartType partType = PartItem.getPartType(partItem, player.level());
+//            String variant = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
 //            if (partToAssembly == null || !partType.equals(partToAssembly.type)) {
 //                partToAssembly = new PartProjection(partType, player.level(), variant,
 //                        new Transform(

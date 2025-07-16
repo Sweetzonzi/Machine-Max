@@ -7,7 +7,7 @@ import io.github.sweetzonzi.machinemax.common.attachment.LivingEntityEyesightAtt
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyInfoComponent;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
+import io.github.sweetzonzi.machinemax.common.item.prop.PartItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machinemax.common.registry.MMItems;
@@ -108,9 +108,9 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
                     targetConnector = eyesightBody.getConnector();//获取视线看着的部件对接口
                     if (targetConnector != null && !targetConnector.hasPart()) {
-                        PartType partType = MMPartItem.getPartType(heldItem, level);
-                        PartAssemblyInfoComponent info = MMPartItem.getPartAssemblyInfo(heldItem, level);
-                        PartAssemblyCacheComponent iterators = MMPartItem.getPartAssemblyCache(heldItem, level);
+                        PartType partType = PartItem.getPartType(heldItem, level);
+                        PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, level);
+                        PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem, level);
                         Map<String, ConnectorAttr> partConnectors = partType.getPartOutwardConnectors();
                         int i = partConnectors.size();//设置最大迭代次数
                         var connectors = partType.getPartOutwardConnectors();
@@ -145,9 +145,9 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     }
                     eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
                     targetConnector = eyesightBody.getConnector();//获取视线看着的部件对接口
-                    PartType partType = MMPartItem.getPartType(heldItem, level);
-                    PartAssemblyInfoComponent info = MMPartItem.getPartAssemblyInfo(heldItem, level);
-                    PartAssemblyCacheComponent iterators = MMPartItem.getPartAssemblyCache(heldItem, level);
+                    PartType partType = PartItem.getPartType(heldItem, level);
+                    PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, level);
+                    PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem, level);
                     var connectors = partType.getPartOutwardConnectors();
                     int i = partType.variants.size();//设置最大迭代次数
                     while (i >= 0) {

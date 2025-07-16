@@ -50,8 +50,8 @@ import org.joml.Vector3f;
 import java.util.HashMap;
 import java.util.List;
 
-public class MMPartItem extends Item implements ICustomModelItem {
-    public MMPartItem(Properties properties) {
+public class PartItem extends Item implements ICustomModelItem {
+    public PartItem(Properties properties) {
         super(properties);
         properties.stacksTo(1);
     }

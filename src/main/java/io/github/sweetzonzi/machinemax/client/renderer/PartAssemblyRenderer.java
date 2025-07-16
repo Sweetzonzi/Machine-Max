@@ -12,17 +12,17 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
+import io.github.sweetzonzi.machinemax.common.item.prop.PartItem;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
 import io.github.sweetzonzi.machinemax.common.vehicle.visual.RenderableBoundingBox;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Brightness;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -32,14 +32,13 @@ import org.joml.Vector3f;
 import java.awt.*;
 import java.util.Iterator;
 import java.util.Map;
-
 public class PartAssemblyRenderer extends VisualEffectRenderer {
 
-    private LocalPlayer player;
+    private Player player;
 
     @Override
     public void tick() {
-        player = Minecraft.getInstance().player;
+//        player = Minecraft.getInstance().player;
     }
 
     @Override
@@ -55,10 +54,10 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     public void renderPartToAssembly(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
-        if (player.getMainHandItem().getItem() instanceof MMPartItem) {
+        if (player.getMainHandItem().getItem() instanceof PartItem) {
             ItemStack partItem = player.getMainHandItem();
-            PartType partType = MMPartItem.getPartType(partItem, player.level());
-            String variant = MMPartItem.getPartAssemblyInfo(partItem, player.level()).variant();
+            PartType partType = PartItem.getPartType(partItem, player.level());
+            String variant = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
             if (VisualEffectHelper.partToAssembly == null || !partType.equals(VisualEffectHelper.partToAssembly.type)) {
                 VisualEffectHelper.partToAssembly = new PartProjection(partType, player.level(), variant,
                         new Transform(

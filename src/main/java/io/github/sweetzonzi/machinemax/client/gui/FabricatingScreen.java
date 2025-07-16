@@ -11,7 +11,7 @@ import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.gui.renderable.AnimatableRenderable;
 import io.github.sweetzonzi.machinemax.client.gui.renderable.RenderableAttr;
 import io.github.sweetzonzi.machinemax.common.crafting.FabricatingMenu;
-import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
+import io.github.sweetzonzi.machinemax.common.item.prop.PartItem;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
 import net.minecraft.client.Minecraft;
@@ -181,10 +181,10 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
     public void renderPartToAssembly(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick, int centerX, int centerY) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return;
-        if (player.getMainHandItem().getItem() instanceof MMPartItem) {
+        if (player.getMainHandItem().getItem() instanceof PartItem) {
             ItemStack partItem = player.getMainHandItem();
-            PartType partType = MMPartItem.getPartType(partItem, player.level());
-            String variant = MMPartItem.getPartAssemblyInfo(partItem, player.level()).variant();
+            PartType partType = PartItem.getPartType(partItem, player.level());
+            String variant = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
             if (partToAssembly == null || !partType.equals(partToAssembly.type)) {
                 partToAssembly = new PartProjection(partType, player.level(), variant,
                         new Transform(

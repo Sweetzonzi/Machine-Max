@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machinemax.mixin;
 
 import com.mojang.datafixers.util.Pair;
-import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem;
+import io.github.sweetzonzi.machinemax.common.item.prop.PartItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponents;
@@ -23,7 +23,7 @@ abstract public class RepairItemRecipeMixin {
 
     @Inject(method = "canCombine", at = @At("RETURN"), cancellable = true)
     private static void canCombine(ItemStack stack1, ItemStack stack2, CallbackInfoReturnable<Boolean> cir) {
-        if (stack1.getItem() instanceof MMPartItem && stack2.getItem() instanceof MMPartItem) {
+        if (stack1.getItem() instanceof PartItem && stack2.getItem() instanceof PartItem) {
             if (!stack1.has(MMDataComponents.getPART_TYPE()) || !stack2.has(MMDataComponents.getPART_TYPE())) {
                 cir.setReturnValue(false);
             } else {
@@ -42,7 +42,7 @@ abstract public class RepairItemRecipeMixin {
         if (pair != null) {
             ItemStack itemStack = pair.getFirst();
             ItemStack itemStack1 = pair.getSecond();
-            if (itemStack.getItem() instanceof MMPartItem && itemStack1.getItem() instanceof MMPartItem) {
+            if (itemStack.getItem() instanceof PartItem && itemStack1.getItem() instanceof PartItem) {
                 ResourceLocation partType1 = itemStack.get(MMDataComponents.getPART_TYPE());
                 ResourceLocation partType2 = itemStack1.get(MMDataComponents.getPART_TYPE());
                 if (partType1 != null && partType1.equals(partType2)) {

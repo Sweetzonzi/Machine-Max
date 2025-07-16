@@ -157,7 +157,6 @@ public class MMDynamicRes {
         MMInitialJS.register();//注册所有JS形式的初始化配置
     }
 
-
     @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
     public static class DataPackReloader extends SimplePreparableReloadListener<Void> {
         @Nullable

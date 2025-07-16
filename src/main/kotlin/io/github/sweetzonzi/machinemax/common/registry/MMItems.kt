@@ -5,7 +5,7 @@ import io.github.sweetzonzi.machinemax.client.renderer.CustomModelItemRenderer
 import io.github.sweetzonzi.machinemax.common.item.MaterialItem
 import io.github.sweetzonzi.machinemax.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machinemax.common.item.prop.CrowbarItem
-import io.github.sweetzonzi.machinemax.common.item.prop.MMPartItem
+import io.github.sweetzonzi.machinemax.common.item.prop.PartItem
 import io.github.sweetzonzi.machinemax.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machinemax.common.item.prop.EmptyBlueprintItem
 import io.github.sweetzonzi.machinemax.common.item.prop.FabicatingBlueprintItem
@@ -26,9 +26,13 @@ object MMItems {
 
     //载具部件物品原型
     @JvmStatic
-    val PART_ITEM = MachineMax.REGISTER.item<MMPartItem>()
+    val PART_ITEM = MachineMax.REGISTER.item<PartItem>()
         .id("part_item")
-        .bound { MMPartItem(Item.Properties().stacksTo(1).durability(100)) }
+        .bound {
+            PartItem(
+                Item.Properties().stacksTo(1).durability(100)
+            )
+        }
         .build()
 
     //部件制造台

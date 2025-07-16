@@ -4,11 +4,13 @@ import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.settings.IKeyConflictContext;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 
 import static net.neoforged.neoforge.client.settings.KeyConflictContext.GUI;
-
+@OnlyIn(Dist.CLIENT)
 public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
 
     GENERAL {
