@@ -192,11 +192,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     public PartType getPT(Level level, ResourceLocation registryKey) {
-        PartType pt = level.registryAccess().registry(PartType.PART_REGISTRY_KEY).get().get(registryKey);
-        if (pt == null) {
-            if (level.isClientSide) pt = MMDynamicRes.PART_TYPES.get(registryKey);//为null说明是外部包 尝试还原
-            else pt = MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
-        }
+        PartType pt;
+        if (level.isClientSide) pt = MMDynamicRes.PART_TYPES.get(registryKey);
+        else pt = MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
+        if (pt == null)
+            throw new NullPointerException("部件类型" + registryKey + "不存在，请检查数据。部件列表: " + (level.isClientSide() ? MMDynamicRes.PART_TYPES.keySet() : MMDynamicRes.SERVER_PART_TYPES.keySet()));
         return pt;
     }
 
@@ -211,7 +211,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         else if (durability > type.basicDurability) durability = type.basicDurability;
         if (oHurtMarked) oHurtMarked = false;
         else if (hurtMarked) hurtMarked = false;
-        if (this.entity!= null && !this.entity.isRemoved()){
+        if (this.entity != null && !this.entity.isRemoved()) {
             getAnimController().tick();
             var animSet = modelIndex.getAnimationSet().getAnimations();
             if (!animSet.isEmpty() && animController.getMainAnim() == null) {

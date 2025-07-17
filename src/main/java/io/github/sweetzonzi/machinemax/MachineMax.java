@@ -2,10 +2,8 @@ package io.github.sweetzonzi.machinemax;
 
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import com.mojang.logging.LogUtils;
-import io.github.sweetzonzi.machinemax.client.input.CameraController;
 import io.github.sweetzonzi.machinemax.common.registry.*;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
-import io.github.sweetzonzi.machinemax.util.MMJoystickHandler;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
@@ -16,7 +14,6 @@ import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
 public class MachineMax {
     //TODO:限制带阻尼关节安装部件时的质量差距/警告
     //TODO:排查AE86AT左轮胎转动惯量计算BUG
-    //TODO:载具动画控制部件运动
     //TODO:GUI贴图渲染
     //TODO:交互可视化
     //TODO:储物子系统
@@ -44,7 +41,6 @@ public class MachineMax {
         MMAttachments.register();//注册所有附件类型
         MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令
-        MMVisualEffects.register();//注册所有视觉效果
         MMDynamicRes.initResources();//首次启动时读取外部资源文件
         bus.addListener(MMDynamicRes::init);//CommonSetup时读取外部数据文件
         bus.addListener(MMDynamicRes.DataPackReloader::registerClientReloadListeners);//服务端的注册Listener位于DataPackReloader中

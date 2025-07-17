@@ -57,7 +57,7 @@ public class RawInputHandler {
      * @param event 客户端tick事件对象
      */
     @SubscribeEvent
-    public static void handleMoveInputs(ClientTickEvent.Post event) {
+    public static void handleMoveInputs(ClientTickEvent.Pre event) {
         if (client == null) client = Minecraft.getInstance();
         if (client.player != null &&
                 ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat &&
@@ -85,12 +85,15 @@ public class RawInputHandler {
                     if (KeyBinding.groundRightwardKey.isDown()) rot_y_input -= 100;
                     rot_y_input -= Math.round(MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
                 }
-                case SHIP -> {}
+                case SHIP -> {
+                }
                 case PLANE -> {
                     //TODO:键盘输入的优先级应当高于视角朝向
                 }
-                case MECH -> {}
-                default -> {}
+                case MECH -> {
+                }
+                default -> {
+                }
             }
             moveInputCache = moveInputs;
             moveInputs = new byte[]{
@@ -114,7 +117,7 @@ public class RawInputHandler {
     }
 
     @SubscribeEvent
-    public static void handleMouseInputs(ClientTickEvent.Post event) {
+    public static void handleMouseInputs(ClientTickEvent.Pre event) {
         if (client == null) client = Minecraft.getInstance();
         if (client.player == null) return;
         if (KeyBinding.generalFreeCamKey.isDown()) {
@@ -126,28 +129,27 @@ public class RawInputHandler {
 
 
     @SubscribeEvent
-    public static void handleNormalInputs(ClientTickEvent.Post event) {
+    public static void handleNormalInputs(ClientTickEvent.Pre event) {
         if (client == null) client = Minecraft.getInstance();
-
         // TODO: 策略组的事件体测试区
         new KeyHooks.EVENT("e")
                 .with(LEFT_CTRL)
-                .OnKeyTriplePress(()->{
+                .OnKeyTriplePress(() -> {
                     System.out.println("弹射跳伞");
                 })
                 .flush() //与上方的绑定断开
                 .with(LEFT_SHIFT)
-                .OnKeyTriplePress(()->{
+                .OnKeyTriplePress(() -> {
                     System.out.println("抛离武器挂架");
                 })
                 .flush() //与上方的绑定断开
                 .with(LEFT_CTRL)
                 .with(LEFT_SHIFT)
-                .OnKeyTriplePress(()->{
+                .OnKeyTriplePress(() -> {
                     System.out.println("同时按下组合键的E键三连击情况");
                 })
         ;
-        if (client.player != null ) {
+        if (client.player != null) {
 
         /*
           通用功能
@@ -164,12 +166,13 @@ public class RawInputHandler {
                     .OnKeyHover((tick -> {
                         if (tick <= 10.0) {
                             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), (int) tick));
-                            if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() != null) client.player.displayClientMessage(
-                                    Component.translatable("message.machine_max.leaving_vehicle",
-                                            KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
-                                            String.format("%.2f", Math.clamp(0.05 * tick, 0.0, 0.5))
-                                    ), true
-                            );
+                            if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() != null)
+                                client.player.displayClientMessage(
+                                        Component.translatable("message.machine_max.leaving_vehicle",
+                                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
+                                                String.format("%.2f", Math.clamp(0.05 * tick, 0.0, 0.5))
+                                        ), true
+                                );
 
                         }
                     }))

@@ -8,5 +8,6 @@ object MMVisualEffects {
     val PART_ASSEMBLY = PartAssemblyRenderer()
 
     @JvmStatic
-    fun register() {}
+    fun init() {
+    }
 }

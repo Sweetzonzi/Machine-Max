@@ -158,7 +158,7 @@ public class VehicleCore {
      * 主线程tick，默认tps=20
      */
     public void tick() {
-        if (tickCount == 10)
+        if (tickCount == 20)
             this.cameraDistance = calculateCameraDistance();
         //保持激活与控制量更新
         Vec3 newPos = new Vec3(0, 0, 0);

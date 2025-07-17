@@ -20,6 +20,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -197,7 +198,7 @@ public class VehicleManager {
 
     @SubscribeEvent
     public static void displayCustomPackError(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide() && event.getEntity() instanceof LocalPlayer player) {
+        if (event.getLevel().isClientSide() && event.getEntity() instanceof Player player) {
             MMDynamicRes.DataPackReloader.sendErrorToPlayer(player);
         }
     }

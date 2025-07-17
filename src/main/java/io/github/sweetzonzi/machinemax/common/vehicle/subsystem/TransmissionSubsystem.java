@@ -110,7 +110,7 @@ public class TransmissionSubsystem extends AbstractSubsystem {
     }
 
     private void distributePower() {
-        //接收功率并合并 Merge power from all sources
+        //接收功率并合并 Merge power from all spreadDistances
         double totalPower = 0.0;
         float inputSpeed = 0.0F;
         SignalChannel powerSignal = getSignalChannel("power");
@@ -187,7 +187,7 @@ public class TransmissionSubsystem extends AbstractSubsystem {
 
     /**
      * <p>为提供功率输入的动力源更新反馈速度</p>
-     * <p>Update the feedback speed for the power sources.</p>
+     * <p>Update the feedback speed for the power spreadDistances.</p>
      */
     private void updateFeedback() {
         float speed = 0;

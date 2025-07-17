@@ -20,7 +20,7 @@ public interface ISignalSender {
     Map<String, Map<String, ISignalReceiver>> getTargets();//信号频道名称->接收者名称->接收者 Signal channel name -> receiver name -> receiver
 
     default Map<String, Set<ISignalReceiver>> getCallbackTargets() {
-        return Map.of();
+        return HashMap.newHashMap(1);
     }
 
     default void addCallbackTarget(String signalChannel, ISignalReceiver target) {

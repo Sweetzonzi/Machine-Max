@@ -13,6 +13,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machinemax.common.item.prop.PartItem;
+import io.github.sweetzonzi.machinemax.common.registry.MMVisualEffects;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
@@ -25,6 +26,11 @@ import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -32,13 +38,14 @@ import org.joml.Vector3f;
 import java.awt.*;
 import java.util.Iterator;
 import java.util.Map;
+
 public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     private Player player;
 
     @Override
     public void tick() {
-//        player = Minecraft.getInstance().player;
+        player = Minecraft.getInstance().player;
     }
 
     @Override
