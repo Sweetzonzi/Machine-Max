@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machinemax.common.item.prop;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import io.github.sweetzonzi.machinemax.MachineMax;
+import io.github.sweetzonzi.machinemax.common.sound.SpreadingSoundHelper;
 import io.github.sweetzonzi.machinemax.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
@@ -10,9 +11,11 @@ import io.github.sweetzonzi.machinemax.common.item.IPartInteractableItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
-import net.minecraft.client.Minecraft;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -21,6 +24,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -32,7 +36,7 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(Level level, @NotNull Player player, @NotNull InteractionHand usedHand) {
         if (!level.isClientSide) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
@@ -41,20 +45,25 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
                 part.switchTexture(part.textureIndex + 1);
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));
             } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
-        } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
+        } else {
+            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.withDefaultNamespace("entity.generic.explode"), 1);
+            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.BLOCKS, Vec3.ZERO, Vec3.ZERO, 64f, 1.0f, 1.0f);
+            level.addAlwaysVisibleParticle(ParticleTypes.EXPLOSION, true, 0, 0, 0, 0, 0, 0);
+            return InteractionResultHolder.pass(player.getItemInHand(usedHand));
+        }
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int portId, boolean isSelected) {
+    public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int portId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (isSelected && level.isClientSide() && entity instanceof Player player) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
             if (part != null) {//提示信息
-                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(part.name), true);
+                player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(part.name), true);
             } else if (eyesight.getEntity() instanceof MMPartEntity partEntity && partEntity.part != null) {
-                Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(partEntity.part.name), true);
-            } else Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
+                player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(partEntity.part.name), true);
+            } else player.displayClientMessage(Component.empty(), true);
         }
     }
 
@@ -66,13 +75,13 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
     @Override
     public void watchingPart(@NotNull Part part, @NotNull Player player) {
         if (player.level().isClientSide)
-            Minecraft.getInstance().player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(part.name), true);
+            player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(part.name), true);
     }
 
     @Override
     public void stopWatchingPart(@NotNull Player player) {
         if (player.level().isClientSide)
-            Minecraft.getInstance().player.displayClientMessage(Component.empty(), true);
+            player.displayClientMessage(Component.empty(), true);
     }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
@@ -103,10 +112,10 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
     @Override
     public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
         if (displayContext.firstPerson()
-                ||displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+                || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
                 || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
             return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
-        return new Vector3f(0, 45, 30).mul((float) (Math.PI/180));
+        return new Vector3f(0, 45, 30).mul((float) (Math.PI / 180));
     }
 
     @Override
