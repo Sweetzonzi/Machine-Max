@@ -1,0 +1,8 @@
+{
+  "item.part.painted": {
+    "sounds": [
+      "machine_max:item/part_painted"
+    ],
+    "subtitle": "subtitles.item.spray_can.paint"
+  }
+}

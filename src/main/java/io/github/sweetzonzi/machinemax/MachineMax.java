@@ -47,6 +47,7 @@ public class MachineMax {
         MMItems.register();//通过kotlin注册的所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMMenus.register(bus);//注册所有菜单
+        MMSounds.register();//注册所有音效
     }
 
 }

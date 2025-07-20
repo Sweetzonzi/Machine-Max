@@ -2,8 +2,8 @@ package io.github.sweetzonzi.machinemax.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.common.sound.SpreadingSoundHelper;
 import io.github.sweetzonzi.machinemax.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
@@ -46,7 +46,7 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));
             } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
         } else {
-            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.withDefaultNamespace("entity.generic.explode"), 1);
+            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.painted"), 16);
             SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.BLOCKS, Vec3.ZERO, Vec3.ZERO, 64f, 1.0f, 1.0f);
             level.addAlwaysVisibleParticle(ParticleTypes.EXPLOSION, true, 0, 0, 0, 0, 0, 0);
             return InteractionResultHolder.pass(player.getItemInHand(usedHand));

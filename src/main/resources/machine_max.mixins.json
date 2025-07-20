@@ -18,8 +18,6 @@
     "CameraMixin",
     "ItemRendererMixin",
     "LivingEntityRendererMixin",
-    "MouseHandlerMixin",
-    "SoundEngineMixin",
-    "SoundManagerMixin"
+    "MouseHandlerMixin"
   ]
 }

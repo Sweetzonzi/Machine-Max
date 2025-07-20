@@ -100,10 +100,5 @@ public class MMPayloadRegistry {
                 PartSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartSyncPayload::handler)
         );
-        misc.commonToClient(//播放扩散声音
-                SpreadingSoundPayload.TYPE,
-                SpreadingSoundPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(SpreadingSoundPayload::handler)
-        );
     }
 }
