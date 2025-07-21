@@ -615,7 +615,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                 }
                 if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
                     var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
-                    var speedFactor = 0.5 * Math.exp(-0.25 * horizonVel) + 0.5;//速度越快，能接受的坡度越小
+                    var speedFactor = 0.7 * Math.exp(-0.25 * horizonVel) + 0.3;//速度越快，能接受的坡度越小
                     var ang = Math.max(0, Math.atan2(vel.y, horizonVel));
                     var tgtAng = speedFactor * Math.atan2(height, 1) + (1 - speedFactor) * ang;
                     float mass = body.getMass() + 0.015f * (part.vehicle.totalMass - body.getMass());

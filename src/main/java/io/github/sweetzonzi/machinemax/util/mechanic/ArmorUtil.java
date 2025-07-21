@@ -31,6 +31,6 @@ public class ArmorUtil {
      * @return 给定方块的护甲水平
      */
     public static float getBlockArmor(Level level, BlockState blockState, BlockPos blockPos) {
-        return (float) (20f * (log10(blockState.getBlock().getExplosionResistance() + 1) * (log10(1.001+blockState.getDestroySpeed(level, blockPos)))));
+        return (float) (10f * (log10(blockState.getBlock().getExplosionResistance() + 1) * (log10(1.001+blockState.getDestroySpeed(level, blockPos)))));
     }
 }

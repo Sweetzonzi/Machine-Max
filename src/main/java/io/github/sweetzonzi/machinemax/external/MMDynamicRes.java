@@ -10,6 +10,7 @@ import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.JsonOps;
+import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.gui.renderable.RenderableAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
@@ -113,6 +114,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("content")));
             packUp(packName, Exist(root.resolve("lang")));
             packUp(packName, Exist(root.resolve("texture")));
+            packUp(packName, Exist(root.resolve("mm_sounds")));
             packUp(packName, Exist(root.resolve("hud")));
             packUp(packName, Exist(root.resolve("icon")));
             packUp(packName, Exist(root.resolve("font")));
@@ -387,11 +389,12 @@ public class MMDynamicRes {
      */
     private static void packUp(String packName, Path categoryPath) {
         String category = categoryPath.getFileName().toString();
-        for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
+//        for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
+        for (Path filePath : listAllFiles(categoryPath)) {
             DynamicPack dynamicPack = null;
             String fileName = filePath.getFileName().toString();
             String fileRealName = getRealName(fileName);
-            String relativePath = categoryPath.relativize(filePath).toString();
+            String relativePath = categoryPath.relativize(filePath).toString().replace("\\", "/");
             ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, relativePath));
             try (JsonReader reader = new JsonReader(new FileReader(filePath.toFile()))) {
                 reader.setLenient(true); // 允许非严格JSON
@@ -574,6 +577,21 @@ public class MMDynamicRes {
             LOGGER.error("获取路径列表失败： {}", path, e);
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * 获取一个路径下各层级子目录中的所有文件路径，包括多层嵌套文件夹中的文件
+     */
+    public static List<Path> listAllFiles(Path path) {
+        List<Path> result = new ArrayList<>();
+        try {
+            Files.walk(path)
+                    .filter(Files::isRegularFile)
+                    .forEach(result::add);
+        } catch (IOException e) {
+            LOGGER.error("获取文件路径列表失败： {}", path, e);
+        }
+        return result;
     }
 
     /**
