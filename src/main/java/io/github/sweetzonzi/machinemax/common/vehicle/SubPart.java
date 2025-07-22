@@ -41,8 +41,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -340,7 +338,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     // 与一个物体发生碰撞时会创建3个(4个?)碰撞点，因此在单点处理计算时只取部分能量用于计算伤害
                     //TODO:对方块累积伤害
                     //对部件造成伤害
-                    float partDamage = (float) (0.4 * 0.33 * partEnergy / 500);
+                    float partDamage = (float) (0.2 * 0.33 * partEnergy / 250);
                     if (partDamage > 1)
                         part.onHurt(level.damageSources().flyIntoWall(), partDamage,
                                 null, this, normal, vel, worldContactPoint, hitBox);
@@ -419,7 +417,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                             return;
                         }
                         float contactNormalSpeed = vel.dot(normal);//直接取接触点碰撞速度似乎不准确
-
+                        //计算并分配碰撞能量
                         double entityMass = MassUtil.getEntityMass(entity);
                         double partMass = body.getMass();
                         for (AbstractConnector connector : this.connectors.values()) {

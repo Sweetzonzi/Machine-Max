@@ -20,7 +20,6 @@ public record HitBoxAttr(
         float RHA,
         float damageReduction,
         float damageMultiplier,
-        boolean unPenetrateDamage,
         float unPenetrateDamageFactor
 ) {
 
@@ -37,8 +36,7 @@ public record HitBoxAttr(
             Codec.FLOAT.optionalFieldOf("rha", 1.0f).forGetter(HitBoxAttr::RHA),
             Codec.FLOAT.optionalFieldOf("damage_reduction", 0.0f).forGetter(HitBoxAttr::damageReduction),
             Codec.FLOAT.optionalFieldOf("damage_multiplier", 1.0f).forGetter(HitBoxAttr::damageMultiplier),
-            Codec.BOOL.optionalFieldOf("un_penetrate_damage", false).forGetter(HitBoxAttr::unPenetrateDamage),
-            Codec.FLOAT.optionalFieldOf("un_penetrate_damage_factor", 1.0f).forGetter(HitBoxAttr::unPenetrateDamageFactor)
+            Codec.FLOAT.optionalFieldOf("un_penetrate_damage_factor", 0.0f).forGetter(HitBoxAttr::unPenetrateDamageFactor)
     ).apply(instance, HitBoxAttr::new));
 
     public static final Codec<Map<String, HitBoxAttr>> MAP_CODEC = Codec.unboundedMap(

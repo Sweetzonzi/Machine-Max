@@ -123,7 +123,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public void onActive() {
     }
 
-    public void onHurt(DamageSource source, float amount) {
+    public void onHurt(float amount, Part.PartDamageData data) {
         this.durability -= amount;
     }
 

@@ -20,6 +20,7 @@ import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
+import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.ConnectorAttr;
@@ -60,6 +61,7 @@ import org.joml.Quaternionf;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 @Getter
@@ -83,7 +85,20 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public volatile boolean destroyed = false;
     public volatile float durability;
     public volatile float integrity;
-    public Map<Vector3f, Float> accumulatedImpact = HashMap.newHashMap(8);
+    private final ConcurrentMap<Vector3f, Float> accumulatedImpact = new ConcurrentHashMap<>(8);
+
+    public record PartDamageData(
+            DamageSource source,
+            IPhysicsProjectile projectileSource,
+            SubPart subPart,
+            Vector3f normal,
+            Vector3f worldContactSpeed,
+            Vector3f worldContactPoint,
+            HitBox hitBox
+    ) {
+    }
+
+    private final ConcurrentLinkedQueue<Pair<Float, PartDamageData>> accumulatedDamage = new ConcurrentLinkedQueue<>();
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     private final Map<String, SubPart> locatorSubPart = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
@@ -207,11 +222,10 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (this.entity == null || this.entity.isRemoved()) {
             if (!level.isClientSide()) refreshPartEntity();
         }
-        if (!destroyed && durability <= 0) {
-            onDestroyed();
-        }
-        if (durability < 0) durability = 0;
-        else if (durability > type.basicDurability) durability = type.basicDurability;
+        //处理各线程造成的伤害
+        if (!level.isClientSide()) handleAccumulatedDamage();
+        //判定摧毁
+        if (!destroyed && durability <= 0) onDestroyed();
         if (oHurtMarked) oHurtMarked = false;
         else if (hurtMarked) hurtMarked = false;
         if (this.entity != null && !this.entity.isRemoved()) {
@@ -294,7 +308,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           Vector3f worldContactSpeed,
                           Vector3f worldContactPoint,
                           HitBox hitBox) {
-        if (getEntity() != null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
         Vec3 sourcePos = source.getSourcePosition();
         if (sourcePos == null) sourcePos = SparkMathKt.toVec3(rootSubPart.body.tickTransform.getTranslation());
         Vec3 finalSourcePos = sourcePos;
@@ -329,57 +342,22 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", subPart.part.name);
             }
         }
-//        if (source.getDirectEntity() != null && !level.isClientSide)
-//            if (source.getEntity() instanceof Player player) {
-//                float angle = (float) (Math.acos(-normal.dot(worldContactSpeed.normalize())) * 180 / Math.PI);
-//                player.sendSystemMessage(Component.literal("命中部件")
-//                        .append(Component.translatable(type.registryKey.toLanguageKey())
-//                                .append(Component.literal("，原始伤害" + damage + "，护甲厚度" + armor + "，入射角" + angle + "度，等效厚度" + armor / Math.cos(angle / 180 * Math.PI) + "，穿甲值" + armorPenetration + "，耐久度" + durability + "/" + type.basicDurability + "，完整度" + integrity + "/" + type.basicIntegrity))));
-//            }
         //线性减伤处理
         float impactDamage = damage - hitBox.getDamageReduction();
         //累积冲击效果用于削减结构完整性
-        float finalImpactDamage = impactDamage;
-        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            if (!level.isClientSide) {
-                accumulatedImpact.put(worldContactPoint, finalImpactDamage);//施加冲击效果尝试击落部件
-            }
-            return null;
-        });
+        accumulatedImpact.put(worldContactPoint, impactDamage);
+        //甲弹对抗相关处理
         if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
-        //甲弹对抗处理
+        //击穿判定
         if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
             if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
                 impactDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
             impactDamage *= hitBox.getDamageMultiplier();
             //对部件造成伤害
-            float finalDamage = impactDamage;
-            level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-                if (!level.isClientSide) {
-                    //对子系统造成伤害
-                    hitBox.getSubsystems().values().forEach(subsystem -> subsystem.onHurt(source, finalDamage));
-                    durability -= finalDamage;//对部件造成伤害
-                    //TODO:对载具造成伤害
-                    //播放音效
-                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO, 64f,
-                            (float) ((2 - 2 * Math.min(0.5f * type.basicDurability, finalDamage) / type.basicDurability) * (1f + 0.2f * (Math.random() - 0.5f))),
-                            0.2f + 0.8f * 2 * Math.min(0.5f * type.basicDurability, finalDamage) / type.basicDurability);
-                }
-                //TODO:模组伤害的冲击击退效果
-                return null;
-            });
-            level.getPhysicsLevel().submitDeduplicatedTask("part_sync_" + uuid.toString(), PPhase.PRE, () -> {
-                level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//去重后加入任务队列，确保造成伤害后再进行同步
-                    //包同步部件和子系统耐久度
-                    syncStatus(hitBox);
-                    return null;
-                });
-                return null;
-            });
+            Part.PartDamageData data = new Part.PartDamageData(source, projectileSource, subPart, normal, worldContactSpeed, worldContactPoint, hitBox);
+            accumulateDamage(impactDamage, data);
             return true;
         } else {
-            //TODO:模组伤害的冲击击退效果
             if (!level.isClientSide) {
                 level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
                     //播放命中音效
@@ -394,9 +372,54 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         }
     }
 
+    /**
+     * <p>线程安全地对部件造成伤害，伤害会被在主线程统一处理，参见 {@link #handleAccumulatedDamage()}</p>
+     * <p>Accumulates damage to the part thread safely, which will be handled in the main thread, see {@link #handleAccumulatedDamage()}</p>
+     * @param damage 伤害值 damage value
+     * @param data 伤害源、命中点、判定区等 damage source, hit point, hit box, etc.
+     */
+    private void accumulateDamage(float damage, PartDamageData data) {
+        if (damage > 0) {
+            hurtMarked = true;
+            accumulatedDamage.add(Pair.of(damage, data));
+        }
+    }
+
+    /**
+     * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link #onTick()}</p>
+     * <p>Handles the damage caused by each thread and applies it to the subsystems, which will be handled in the main thread, see {@link #onTick()}</p>
+     */
+    private void handleAccumulatedDamage() {
+        if (!level.isClientSide() && !accumulatedDamage.isEmpty()) {
+            float totalDamage = 0;
+            Vec3 soundPos = Vec3.ZERO;
+            while (!accumulatedDamage.isEmpty()) {
+                Pair<Float, PartDamageData> pair = accumulatedDamage.poll();
+                float damage = pair.getFirst();
+                PartDamageData data = pair.getSecond();
+                //对子系统造成伤害
+                data.hitBox.getSubsystems().values().forEach(subsystem -> subsystem.onHurt(damage, data));
+                totalDamage += damage;
+                soundPos = SparkMathKt.toVec3(data.worldContactPoint);
+            }
+            this.durability = Math.clamp(durability - totalDamage, 0, type.basicDurability);
+            //TODO:对载具造成伤害
+            //发包同步部件与子系统状态
+            syncStatus();
+            //播放音效
+            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"));
+            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, soundPos, Vec3.ZERO, 64f,
+                    (float) ((2 - 2 * Math.min(0.5f * type.basicDurability, totalDamage) / type.basicDurability) * (1f + 0.2f * (Math.random() - 0.5f))),
+                    0.2f + 0.8f * 2 * Math.min(0.5f * type.basicDurability, totalDamage) / type.basicDurability);
+        }
+    }
+
+    /**
+     * <p>立刻发包同步部件与子系统耐久度等数据</p>
+     * <p>Sends a packet to synchronize the durability and other data of the part and its subsystems immediately</p>
+     */
     public void syncStatus() {
         if (!level.isClientSide) {
-            hurtMarked = true;
             Map<String, Float> subsystemDurability = new HashMap<>();
             for (Map.Entry<String, AbstractSubsystem> entry : this.getSubsystems().entrySet()) {
                 subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
@@ -406,24 +429,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         }
     }
 
-    public void syncStatus(HitBox hitBox) {
-        if (!level.isClientSide) {
-            hurtMarked = true;
-            Map<String, Float> subsystemDurability = new HashMap<>();
-            for (Map.Entry<String, AbstractSubsystem> entry : hitBox.getSubsystems().entrySet()) {
-                subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
-            }
-            PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                    new PartSyncPayload(vehicle.uuid, uuid, durability, integrity, subsystemDurability));
-        }
-    }
-
-    public void onDestroyed() {
+    protected void onDestroyed() {
         destroyed = true;
         for (AbstractSubsystem subsystem : subsystems.values()) {
             subsystem.setActive(false);
         }
-        if (level.isClientSide){
+        if (level.isClientSide) {
             SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"));
             SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, getWorldPosition(1), Vec3.ZERO, 64f,
                     (float) (1f + 0.2f * (Math.random() - 0.5f)),
@@ -636,23 +647,28 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     /**
-     * 将部件的所有零件添加到物理世界，开始物理运算
+     * 主线程 Main thread
+     * <p>将部件的所有零件添加到物理世界，开始物理运算</p>
+     * <p>Adds all sub-parts of the part to the physical world and starts the physical calculation.</p>
      */
     public void addToLevel() {
         for (SubPart subPart : subParts.values()) subPart.addToLevel();
     }
 
+    /**
+     * 主线程 Main thread
+     * <p>部件实例被销毁时调用，清除所有子零件、子系统、实体、碰撞箱等</p>
+     * <p>Called when the part instance is destroyed, clears all sub-parts, sub-systems, entities, hit boxes, etc.</p>
+     */
     public void destroy() {
         for (SubPart subPart : subParts.values()) subPart.destroy();
+        subsystems.forEach((name, subsystem) -> subsystem.onDetach());
         subsystems.clear();
-        ((TaskSubmitOffice) level).submitImmediateTask(PPhase.PRE, () -> {
-            if (this.entity != null) {
-                this.entity.part = null;
-                this.entity.remove(Entity.RemovalReason.DISCARDED);
-                this.entity = null;
-            }
-            return null;
-        });
+        if (this.entity != null) {
+            this.entity.part = null;
+            this.entity.remove(Entity.RemovalReason.DISCARDED);
+            this.entity = null;
+        }
     }
 
     public void setModelIndex(@NotNull ModelIndex modelIndex) {

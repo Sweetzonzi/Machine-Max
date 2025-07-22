@@ -37,7 +37,7 @@ public class HitBox {
     }
 
     public boolean hasUnPenetrateDamage() {
-        return attr.unPenetrateDamage();
+        return attr.unPenetrateDamageFactor() > 0.0f;
     }
 
     public float getUnPenetrateDamageFactor() {
