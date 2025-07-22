@@ -77,12 +77,12 @@ public class RawInputHandler {
 
             switch (part.vehicle.mode) {
                 case GROUND -> {
-                    if (KeyBinding.groundForwardKey.isDown()) trans_z_input += 100;
-                    if (KeyBinding.groundBackWardKey.isDown()) trans_z_input -= 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundForwardKey).isHover()) trans_z_input += 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover()) trans_z_input -= 100;
                     trans_z_input += Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
                     trans_z_input -= Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
-                    if (KeyBinding.groundLeftwardKey.isDown()) rot_y_input += 100;
-                    if (KeyBinding.groundRightwardKey.isDown()) rot_y_input -= 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundLeftwardKey).isHover()) rot_y_input += 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundRightwardKey).isHover()) rot_y_input -= 100;
                     rot_y_input -= Math.round(MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
                 }
                 case SHIP -> {
