@@ -339,8 +339,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     //TODO:对方块累积伤害
                     //对部件造成伤害
                     float partDamage = (float) (0.2 * 0.33 * partEnergy / 250);
-                    if (partDamage > 1)
-                        part.onHurt(level.damageSources().flyIntoWall(), partDamage,
+                    if (partDamage > hitBox.getCollisionDamageReduction())
+                        part.onHurt(level.damageSources().flyIntoWall(), partDamage - hitBox.getCollisionDamageReduction(),
                                 null, this, normal, vel, worldContactPoint, hitBox);
                 }
             }
@@ -432,8 +432,8 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                         Vector3f impulseVec = normal.mult(impulse);
                         //部件伤害
                         float partDamage = (float) (0.2 * contactEnergy * miu / (250 * partMass));
-                        if (partDamage > 1)
-                            part.onHurt(level.damageSources().flyIntoWall(), partDamage,
+                        if (partDamage > hitBox.getCollisionDamageReduction())
+                            part.onHurt(level.damageSources().flyIntoWall(), partDamage - hitBox.getCollisionDamageReduction(),
                                     null, this, normal, vel, worldContactPoint, hitBox);
                         //部件减速
                         getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_entity_impulse", PPhase.PRE, () -> {

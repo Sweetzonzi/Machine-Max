@@ -24,6 +24,10 @@ public class HitBox {
         return attr.damageReduction();
     }
 
+    public float getCollisionDamageReduction() {
+        return attr.collisionDamageReduction();
+    }
+
     public float getDamageMultiplier() {
         return attr.damageMultiplier();
     }

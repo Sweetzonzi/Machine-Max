@@ -19,6 +19,7 @@ public record HitBoxAttr(
         boolean angleEffect,
         float RHA,
         float damageReduction,
+        float collisionDamageReduction,
         float damageMultiplier,
         float unPenetrateDamageFactor
 ) {
@@ -35,6 +36,7 @@ public record HitBoxAttr(
             Codec.BOOL.optionalFieldOf("angle_effect", true).forGetter(HitBoxAttr::angleEffect),
             Codec.FLOAT.optionalFieldOf("rha", 1.0f).forGetter(HitBoxAttr::RHA),
             Codec.FLOAT.optionalFieldOf("damage_reduction", 0.0f).forGetter(HitBoxAttr::damageReduction),
+            Codec.FLOAT.optionalFieldOf("collision_damage_reduction", 1.0f).forGetter(HitBoxAttr::damageReduction),
             Codec.FLOAT.optionalFieldOf("damage_multiplier", 1.0f).forGetter(HitBoxAttr::damageMultiplier),
             Codec.FLOAT.optionalFieldOf("un_penetrate_damage_factor", 0.0f).forGetter(HitBoxAttr::unPenetrateDamageFactor)
     ).apply(instance, HitBoxAttr::new));
