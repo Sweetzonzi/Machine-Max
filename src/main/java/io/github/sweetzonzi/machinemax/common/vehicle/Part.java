@@ -11,6 +11,7 @@ import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.PPhase;
@@ -43,6 +44,8 @@ import lombok.Setter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
@@ -228,8 +231,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     public void onPrePhysicsTick() {
         if (!level.isClientSide) {
+            float impact = 0;
             if (!accumulatedImpact.isEmpty()) {
-                float impact = 0;
                 Vector3f hitPoint = new Vector3f();
                 for (Map.Entry<Vector3f, Float> entry : accumulatedImpact.entrySet()) {
                     impact += entry.getValue();
@@ -260,10 +263,17 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 }
                 accumulatedImpact.clear();
             }
-            if (integrity <= 0 && destroyed) ((TaskSubmitOffice) level).submitImmediateTask(PPhase.PRE, () -> {
-                vehicle.removePart(this);
-                return null;
-            });
+            if (integrity <= 0 && destroyed) {
+                float finalImpact = (destroyed ? 0.5f * impact : 0.1f * impact);
+                ((TaskSubmitOffice) level).submitImmediateTask(PPhase.PRE, () -> {
+                    vehicle.removePart(this);
+                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"));
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, getWorldPosition(1), Vec3.ZERO, 64f,
+                            (float) ((2 - Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity) * (1f + 0.2f * (Math.random() - 0.5f))),
+                            0.2f + 0.8f * Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity);
+                    return null;
+                });
+            }
         }
     }
 
@@ -286,10 +296,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           HitBox hitBox) {
         if (getEntity() != null && !getEntity().isRemoved()) getEntity().hurtMarked = true;
         Vec3 sourcePos = source.getSourcePosition();
+        if (sourcePos == null) sourcePos = SparkMathKt.toVec3(rootSubPart.body.tickTransform.getTranslation());
+        Vec3 finalSourcePos = sourcePos;
         float armor = hitBox.getRHA(this);
         float armorPenetration = 0;
         //击退处理与特殊逻辑
-        if (projectileSource == null && sourcePos != null && !level.isClientSide) {//原版伤害处理
+        if (projectileSource == null && !level.isClientSide) {//原版伤害处理
             //冲击效果
             float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / this.type.basicDurability))) * 150f);//伤害转化为动量
             if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
@@ -306,7 +318,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             });
             //换算穿深
             armorPenetration = damage / 2f;
-        } else if (projectileSource != null && sourcePos != null) {//甲弹对抗处理
+        } else if (projectileSource != null) {//甲弹对抗处理
             //获取穿深
             try {
                 armorPenetration = damage;
@@ -348,6 +360,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                     hitBox.getSubsystems().values().forEach(subsystem -> subsystem.onHurt(source, finalDamage));
                     durability -= finalDamage;//对部件造成伤害
                     //TODO:对载具造成伤害
+                    //播放音效
+                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"));
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO, 64f,
+                            (float) ((2 - 2 * Math.min(0.5f * type.basicDurability, finalDamage) / type.basicDurability) * (1f + 0.2f * (Math.random() - 0.5f))),
+                            0.2f + 0.8f * 2 * Math.min(0.5f * type.basicDurability, finalDamage) / type.basicDurability);
                 }
                 //TODO:模组伤害的冲击击退效果
                 return null;
@@ -363,6 +380,16 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             return true;
         } else {
             //TODO:模组伤害的冲击击退效果
+            if (!level.isClientSide) {
+                level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+                    //播放命中音效
+                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"));
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO, 64f,
+                            (float) ((2 - Math.min(7f, damage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
+                            0.1f + 0.4f * Math.min(7f, damage) / 7f);
+                    return null;
+                });
+            }
             return false;
         }
     }
@@ -395,6 +422,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         destroyed = true;
         for (AbstractSubsystem subsystem : subsystems.values()) {
             subsystem.setActive(false);
+        }
+        if (level.isClientSide){
+            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"));
+            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, getWorldPosition(1), Vec3.ZERO, 64f,
+                    (float) (1f + 0.2f * (Math.random() - 0.5f)),
+                    1f);
         }
     }
 

@@ -114,7 +114,7 @@ public class MMDynamicRes {
             packUp(packName, Exist(root.resolve("content")));
             packUp(packName, Exist(root.resolve("lang")));
             packUp(packName, Exist(root.resolve("texture")));
-            packUp(packName, Exist(root.resolve("mm_sounds")));
+            packUp(packName, Exist(root.resolve("sound")));
             packUp(packName, Exist(root.resolve("hud")));
             packUp(packName, Exist(root.resolve("icon")));
             packUp(packName, Exist(root.resolve("font")));
@@ -389,13 +389,12 @@ public class MMDynamicRes {
      */
     private static void packUp(String packName, Path categoryPath) {
         String category = categoryPath.getFileName().toString();
-//        for (Path filePath : listPaths(categoryPath, Files::isRegularFile)) {
         for (Path filePath : listAllFiles(categoryPath)) {
             DynamicPack dynamicPack = null;
             String fileName = filePath.getFileName().toString();
             String fileRealName = getRealName(fileName);
-            String relativePath = categoryPath.relativize(filePath).toString().replace("\\", "/");
-            ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName, category, relativePath));
+            String relativePath = categoryPath.relativize(filePath).toString().replace("\\", "/").toLowerCase();
+            ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName.toLowerCase(), category, relativePath));
             try (JsonReader reader = new JsonReader(new FileReader(filePath.toFile()))) {
                 reader.setLenient(true); // 允许非严格JSON
                 JsonElement json = JsonParser.parseReader(reader);

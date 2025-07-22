@@ -41,6 +41,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
@@ -315,7 +317,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                         });
                     }
                     //根据方块被破坏实际消耗的能量调整部件吸收的能量，但不全额作用为反冲量以提升操控流畅性
-                    double actualPartEnergy = 0.4 * partEnergy * ((250 * blockDurability) / blockEnergy);
+                    double actualPartEnergy = 0.2 * partEnergy * ((250 * blockDurability) / blockEnergy);
                     if (actualPartEnergy < 0 || Double.isNaN(actualPartEnergy)) actualPartEnergy = 0f;
                     double finalActualPartEnergy = actualPartEnergy;
                     //部件减速
@@ -328,13 +330,20 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                     body.setLinearVelocity(vel.add(impulse.mult(1f / body.getMass())));
                     Vector3f deltaOmega = inertia.mult(offset.cross(impulse), null);
                     body.setAngularVelocity(aVel.add(deltaOmega));
-                    //TODO:对部件造成伤害
-//                    part.onHurt()
+                    //对部件造成伤害
+                    float partDamage = (float) (finalActualPartEnergy / 250);
+                    if (partDamage > 1)
+                        part.onHurt(level.damageSources().flyIntoWall(), partDamage,
+                                null, this, normal, vel, worldContactPoint, hitBox);
                     return;
                 } else {//否则以三分之一的能量计算伤害，冲量交给物理引擎处理
                     // 与一个物体发生碰撞时会创建3个(4个?)碰撞点，因此在单点处理计算时只取部分能量用于计算伤害
                     //TODO:对方块累积伤害
-                    //TODO:对部件造成伤害
+                    //对部件造成伤害
+                    float partDamage = (float) (0.4 * 0.33 * partEnergy / 500);
+                    if (partDamage > 1)
+                        part.onHurt(level.damageSources().flyIntoWall(), partDamage,
+                                null, this, normal, vel, worldContactPoint, hitBox);
                 }
             }
             //通常粒子效果
@@ -423,7 +432,11 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
                         double contactEnergy = 0.5 * miu * contactNormalSpeed * contactNormalSpeed * (1 - restitution * restitution);
                         float impulse = (float) miu * (1 + restitution) * contactNormalSpeed;
                         Vector3f impulseVec = normal.mult(impulse);
-                        //TODO:部件伤害
+                        //部件伤害
+                        float partDamage = (float) (0.2 * contactEnergy * miu / (250 * partMass));
+                        if (partDamage > 1)
+                            part.onHurt(level.damageSources().flyIntoWall(), partDamage,
+                                    null, this, normal, vel, worldContactPoint, hitBox);
                         //部件减速
                         getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_entity_impulse", PPhase.PRE, () -> {
                             body.applyImpulse(impulseVec.mult(-0.3f), worldContactPoint.subtract(body.getPhysicsLocation(null)));
@@ -651,7 +664,7 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     public Transform getLerpedLocatorWorldTransform(String locatorName, Transform offset, float partialTick) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            Transform localTransform = MyMath.combine(offset, attr.getLocatorTransforms().get(part.variant).get(locatorName),null);
+            Transform localTransform = MyMath.combine(offset, attr.getLocatorTransforms().get(part.variant).get(locatorName), null);
             Transform pose = MyMath.combine(localTransform, body.tickTransform, null);
             Transform oldPose = MyMath.combine(localTransform, body.lastTickTransform, null);
             return SparkMathKt.lerp(oldPose, pose, partialTick);

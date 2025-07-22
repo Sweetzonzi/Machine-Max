@@ -11,7 +11,6 @@ import io.github.sweetzonzi.machinemax.common.item.IPartInteractableItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -24,7 +23,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -41,14 +39,13 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             Part part = eyesight.getPart();
             if (part != null) {//改变瞄准的部件的涂装
-                //TODO:播放声音与粒子效果
+                //TODO:粒子效果
                 part.switchTexture(part.textureIndex + 1);
+                SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.painted"));
+                SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 24f, (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));
             } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
         } else {
-            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.painted"), 16);
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.BLOCKS, Vec3.ZERO, Vec3.ZERO, 64f, 1.0f, 1.0f);
-            level.addAlwaysVisibleParticle(ParticleTypes.EXPLOSION, true, 0, 0, 0, 0, 0, 0);
             return InteractionResultHolder.pass(player.getItemInHand(usedHand));
         }
     }

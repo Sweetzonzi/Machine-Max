@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machinemax.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.attachment.LivingEntityEyesightAttachment;
@@ -16,6 +17,8 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.damagesource.DamageSource;
@@ -81,6 +84,8 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
                             level.addFreshEntity(itemStackEntity);
                         }
                     }
+                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.removed"));
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 32f, (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
                 }
                 player.resetAttackStrengthTicker();
                 crowbar.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);

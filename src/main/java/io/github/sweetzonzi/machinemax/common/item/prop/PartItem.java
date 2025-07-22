@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.MachineMax;
@@ -30,6 +31,8 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -89,6 +92,8 @@ public class PartItem extends Item implements ICustomModelItem {
                             targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
                             stack.consume(1, player);
+                            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"));
+                            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 32f, (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
                             return InteractionResultHolder.consume(stack);
                         } else return InteractionResultHolder.pass(stack);
                     } else return InteractionResultHolder.pass(stack);
@@ -106,6 +111,8 @@ public class PartItem extends Item implements ICustomModelItem {
                     );
                     VehicleManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
                     stack.consume(1, player);
+                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"));
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 32f, (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
                     return InteractionResultHolder.consume(stack);
                 }
             } catch (Exception e) {

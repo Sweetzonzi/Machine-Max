@@ -4,5 +4,48 @@
       "machine_max:item/part_painted"
     ],
     "subtitle": "subtitles.item.spray_can.paint"
+  },
+  "item.part.removed": {
+    "sounds": [
+      "machine_max:item/part_removed"
+    ],
+    "subtitle": "subtitles.item.part.remove"
+  },
+  "item.part.placed": {
+    "sounds": [
+      "machine_max:item/part_placed"
+    ],
+    "subtitle": "subtitles.item.part.placed"
+  },
+  "part.no_pen": {
+    "sounds": [
+      "machine_max:part/part_no_pen"
+    ],
+    "subtitle": "subtitles.part.hit.no_pen"
+  },
+  "part.penetrate": {
+    "sounds": [
+      "machine_max:part/part_penetrate"
+    ],
+    "subtitle": "subtitles.part.hit.penetrate"
+  },
+  "part.destroyed": {
+    "sounds": [
+      "machine_max:part/part_destroyed"
+    ],
+    "subtitle": "subtitles.part.hit.destroyed"
+  },
+  "part.torn_apart": {
+    "sounds": [
+      "machine_max:part/part_torn_apart"
+    ],
+    "subtitle": "subtitles.part.hit.torn_apart"
+  },
+  "custom_sound": {
+    "sounds": [
+      {
+        "name": "machine_max:empty"
+      }
+    ]
   }
 }
