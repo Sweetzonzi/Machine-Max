@@ -434,6 +434,9 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         for (AbstractSubsystem subsystem : subsystems.values()) {
             subsystem.setActive(false);
         }
+        for(AbstractConnector connector : allConnectors.values()){
+            //TODO:随机锁定/解锁某个关节的自由度
+        }
         if (level.isClientSide) {
             SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"));
             SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, getWorldPosition(1), Vec3.ZERO, 64f,

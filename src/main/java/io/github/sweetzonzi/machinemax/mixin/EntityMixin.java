@@ -6,12 +6,14 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsSweepTestResult;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.math.Transform;
+import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machinemax.common.vehicle.SubPart;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.decoration.BlockAttachedEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
@@ -21,6 +23,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.annotation.Nullable;
@@ -95,9 +98,11 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         Vec3 normalComponent = normal.scale(dotProduct);
         // 减去法线方向投影，得到垂直法线方向的向量
         finalVec = originalVec.subtract(normalComponent);
-        if (vec.normalize().dot(normal) > -0.5f) {
-            //原始向量与法线夹角小于30°时，取原始向量的长度，方便爬坡
-            finalVec = finalVec.normalize().scale(vec.length());
+        float angle = (float) Math.acos(normal.dot(new Vec3(finalVec.x, 0, finalVec.z).normalize()));
+        MachineMax.LOGGER.debug("angle:{}, normal:{}, originalVec:{}, on Ground:{}", angle * 180 / (float) Math.PI, normal, originalVec, entity.onGround());
+        if (angle * 180 / (float) Math.PI > 42f && originalVec.horizontalDistance() > 0.01f) {
+            //原始水平运动方向与法线夹角小于42°时，即爬坡角度小于48°时，水平方向取原始向量的长度，方便爬坡
+            finalVec = new Vec3(originalVec.x, finalVec.horizontalDistance() * (float) Math.tan(angle - Math.PI / 2), originalVec.z);
         }
         // 返回合并后的向量
         cir.setReturnValue(finalVec);
