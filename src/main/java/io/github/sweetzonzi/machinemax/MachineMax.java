@@ -5,6 +5,7 @@ import com.mojang.logging.LogUtils;
 import io.github.sweetzonzi.machinemax.common.registry.*;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
 
@@ -31,7 +32,7 @@ public class MachineMax {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器
 
-    public MachineMax(IEventBus bus) {
+    public MachineMax(IEventBus bus, ModContainer container) {
         REGISTER.register(bus);
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块

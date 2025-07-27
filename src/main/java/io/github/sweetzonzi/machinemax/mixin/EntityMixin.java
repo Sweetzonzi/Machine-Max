@@ -48,7 +48,6 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
     @Inject(method = "collide", at = @At("RETURN"), cancellable = true)
     private void onCollide(Vec3 vec, CallbackInfoReturnable<Vec3> cir) {
         // 获取原版碰撞结果
-        //TODO:一定坡度不下滑，排查速度异常
         Vec3 originalVec = cir.getReturnValue();
         Entity entity = (Entity) (Object) this;
         AABB aabb = entity.getBoundingBox();
@@ -62,7 +61,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         if (machine_Max$collideTestShape == null) {
             double x = (aabb.maxX - aabb.minX) / 2;
             double z = (aabb.maxZ - aabb.minZ) / 2;
-            float radius = (float) Math.sqrt(x * x + z * z);
+            float radius = (float) Math.sqrt(x * x + z * z) * 0.7f;
             float height = (float) (aabb.maxY - aabb.minY - radius * 2);
             machine_Max$collideTestShape = new CapsuleCollisionShape(radius, height > 0 ? height : 0.01f);
         }
@@ -92,19 +91,39 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             }
         }
         if (hitFraction > 1) return;// 无碰撞结果时直接返回
+        if (originalVec.dot(normal) > 0) return;// 运动方向与法线方向相同时不会碰撞，直接返回
         // 计算原始向量在法线方向的投影
         Vec3 finalVec;
         double dotProduct = originalVec.dot(normal);
         Vec3 normalComponent = normal.scale(dotProduct);
         // 减去法线方向投影，得到垂直法线方向的向量
         finalVec = originalVec.subtract(normalComponent);
-        float angle = (float) Math.acos(normal.dot(new Vec3(finalVec.x, 0, finalVec.z).normalize()));
-        MachineMax.LOGGER.debug("angle:{}, normal:{}, originalVec:{}, on Ground:{}", angle * 180 / (float) Math.PI, normal, originalVec, entity.onGround());
-        if (angle * 180 / (float) Math.PI > 42f && originalVec.horizontalDistance() > 0.01f) {
-            //原始水平运动方向与法线夹角小于42°时，即爬坡角度小于48°时，水平方向取原始向量的长度，方便爬坡
-            finalVec = new Vec3(originalVec.x, finalVec.horizontalDistance() * (float) Math.tan(angle - Math.PI / 2), originalVec.z);
+        // 计算运动方向与水平方向的夹角
+        float angle = (float) Math.acos(Math.clamp(finalVec.normalize().dot(new Vec3(finalVec.x, 0, finalVec.z).normalize()), -1, 1));
+//        if (entity instanceof Player)
+//            MachineMax.LOGGER.debug("angle: {}, normal: {}, originalVec: {} ,finalVec: {}", angle, normal, originalVec, finalVec);
+        if (angle * 180 / (float) Math.PI < 45f) {
+            //TODO: 配置文件控制是否全量碰撞或水平方向无碰撞
+            if (true || normal.dot(new Vec3(0, 1, 0)) > 0.7071f) {
+                //爬坡角度小于45°时
+                if (originalVec.horizontalDistanceSqr() > 0.0001f)
+                    //水平方向有运动时，取原始向量的长度，方便爬坡
+                    finalVec = new Vec3(originalVec.x, finalVec.horizontalDistance() * (float) Math.tan(angle), originalVec.z);
+                else
+                    //水平方向无运动时，保持静止
+                    finalVec = new Vec3(0, 0, 0);
+            }
         }
-        // 返回合并后的向量
+        // 若存在方块碰撞导致的向量变化，则返回合并后的向量
+        if (!originalVec.equals(vec)) {
+            double x = finalVec.x * originalVec.x < 0 ? 0 :
+                    finalVec.x > 0 ? Math.min(finalVec.x, originalVec.x) : Math.max(finalVec.x, originalVec.x);
+            double y = finalVec.y * originalVec.y < 0 ? 0 :
+                    finalVec.y > 0 ? Math.min(finalVec.y, originalVec.y) : Math.max(finalVec.y, originalVec.y);
+            double z = finalVec.z * originalVec.z < 0 ? 0 :
+                    finalVec.z > 0 ? Math.min(finalVec.z, originalVec.z) : Math.max(finalVec.z, originalVec.z);
+            finalVec = new Vec3(x, y, z);
+        }
         cir.setReturnValue(finalVec);
     }
 
