@@ -1,9 +1,7 @@
-package io.github.sweetzonzi.machinemax.client.renderer;
+package io.github.sweetzonzi.machinemax.common.visual;
 
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
-import io.github.sweetzonzi.machinemax.common.vehicle.visual.RenderableBoundingBox;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -13,8 +11,7 @@ import java.util.concurrent.ConcurrentMap;
  * <p>This class is used to store objects that are only used for rendering, and to avoid server-side objects to get client-side objects.</p>
  */
 public class VisualEffectHelper {
-    public static PartProjection partToAssembly = null;
+    public static AnimatableParams partToPlace = null;
     public static RenderableBoundingBox boundingBox = null;
     public static ConcurrentMap<AbstractConnector, PhysicsRigidBody> attachPoints = new ConcurrentHashMap<>();
-
 }

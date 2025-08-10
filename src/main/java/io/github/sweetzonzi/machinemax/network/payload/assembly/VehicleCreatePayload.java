@@ -36,7 +36,7 @@ public record VehicleCreatePayload(
 
     public static void handle(VehicleCreatePayload payload, IPayloadContext context) {
         if(payload.dimension == context.player().level().dimension()){
-            VehicleManager.addVehicle(new VehicleCore(context.player().level(), payload.vehicle));
-        } else MachineMax.LOGGER.error("从错误的维度收到载具创建请求: " + payload.dimension);
+            VehicleManager.addVehicle(new VehicleCore(context.player().level(), payload.vehicle, true));
+        } else MachineMax.LOGGER.error("从错误的维度收到载具创建请求: {}", payload.dimension);
     }
 }

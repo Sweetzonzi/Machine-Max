@@ -61,18 +61,8 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
     @Override
     public void onInteract(LivingEntity entity) {
         super.onInteract(entity);
-        setPassenger(entity);
-    }
-
-    @Override
-    public void onSignalUpdated(String channelName, ISignalSender sender) {
-        super.onSignalUpdated(channelName, sender);
         if (!occupied) {//如果此座椅已有乘客，则忽略信号
-            Object signal = getSignalValueFrom(channelName, sender);
-            if (signal instanceof InteractSignal interactSignal) {
-                LivingEntity entity = interactSignal.getEntity();
-                onInteract(entity);
-            }
+            setPassenger(entity);
         }
     }
 

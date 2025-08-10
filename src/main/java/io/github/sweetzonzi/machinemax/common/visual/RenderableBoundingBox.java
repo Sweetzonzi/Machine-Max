@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machinemax.common.vehicle.visual;
+package io.github.sweetzonzi.machinemax.common.visual;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
@@ -31,8 +31,8 @@ public class RenderableBoundingBox extends BoundingBox {
     }
 
     public void updateShape(Vector3f min, Vector3f max) {
-        this.oldMin = new Vec3(min.x, min.y, min.z);
-        this.oldMax = new Vec3(max.x, max.y, max.z);
+        this.oldMin = SparkMathKt.toVec3(getMin(null));
+        this.oldMax = SparkMathKt.toVec3(getMax(null));
         this.setMinMax(min, max);
     }
 

@@ -13,6 +13,7 @@ import java.util.Map;
 @Getter
 public class InteractBox implements ISignalSender {
     public final String name;
+    public final InteractBoxAttr attr;
     public final Map<String, List<String>> targetNames;
     public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//信号频道名->接收者名称->接收者
     public final SubPart subPart;
@@ -26,6 +27,7 @@ public class InteractBox implements ISignalSender {
     public InteractBox(SubPart subPart, String name, InteractBoxAttr attr) {
         this.subPart = subPart;
         this.name = name;
+        this.attr = attr;
         this.targetNames = attr.signalTargets();
         this.interactMode = InteractMode.valueOf(attr.mode().toUpperCase());
     }

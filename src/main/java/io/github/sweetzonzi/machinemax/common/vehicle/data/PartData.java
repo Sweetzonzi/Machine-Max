@@ -6,8 +6,10 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.SubPart;
+import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machinemax.util.data.PosRotVelVel;
 import lombok.Getter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
@@ -30,6 +32,9 @@ public class PartData {
     public final float durability;
     public final float integrity;
     public final Map<String, PosRotVelVel> subPartTransforms;
+    public final Map<String, CompoundTag> subsystemData;
+
+    public static final Codec<Map<String, CompoundTag>> SUBSYSTEM_DATA_CODEC = Codec.unboundedMap(Codec.STRING, CompoundTag.CODEC);
 
     public static final Codec<PartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("registryKey").forGetter(PartData::getRegistryKey),
@@ -39,7 +44,8 @@ public class PartData {
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),
             Codec.FLOAT.fieldOf("durability").forGetter(PartData::getDurability),
             Codec.FLOAT.optionalFieldOf("integrity", 20f).forGetter(PartData::getIntegrity),
-            PosRotVelVel.MAP_CODEC.fieldOf("subPartTransforms").forGetter(PartData::getSubPartTransforms)
+            PosRotVelVel.MAP_CODEC.fieldOf("subPartTransforms").forGetter(PartData::getSubPartTransforms),
+            SUBSYSTEM_DATA_CODEC.optionalFieldOf("SubsystemData", Map.of()).forGetter(PartData::getSubsystemData)
     ).apply(instance, PartData::new));
 
     public static final Codec<Map<String, PartData>> MAP_CODEC = CODEC.listOf().xmap(
@@ -65,7 +71,8 @@ public class PartData {
             float durability = buffer.readFloat();
             float integrity = buffer.readFloat();
             Map<String, PosRotVelVel> subPartTransforms = buffer.readJsonWithCodec(PosRotVelVel.MAP_CODEC);
-            return new PartData(registryKey, name, variant, textureIndex, uuid, durability, integrity, subPartTransforms);
+            Map<String, CompoundTag> subsystemData = buffer.readJsonWithCodec(SUBSYSTEM_DATA_CODEC);
+            return new PartData(registryKey, name, variant, textureIndex, uuid, durability, integrity, subPartTransforms, subsystemData);
         }
 
         @Override
@@ -78,11 +85,11 @@ public class PartData {
             buffer.writeFloat(value.durability);
             buffer.writeFloat(value.integrity);
             buffer.writeJsonWithCodec(PosRotVelVel.MAP_CODEC, value.subPartTransforms);
+            buffer.writeJsonWithCodec(SUBSYSTEM_DATA_CODEC, value.subsystemData);
         }
-
     };
 
-    public PartData(ResourceLocation registryKey, String name, String variant, int textureIndex, String uuid, float durability, float integrity, Map<String, PosRotVelVel> subPartTransforms) {
+    public PartData(ResourceLocation registryKey, String name, String variant, int textureIndex, String uuid, float durability, float integrity, Map<String, PosRotVelVel> subPartTransforms, Map<String, CompoundTag> subsystemData) {
         this.registryKey = registryKey;
         this.name = name;
         this.variant = variant;
@@ -91,6 +98,7 @@ public class PartData {
         this.durability = durability;
         this.integrity = integrity;
         this.subPartTransforms = subPartTransforms;
+        this.subsystemData = subsystemData;
         //校验数据
         for (Map.Entry<String, PosRotVelVel> entry : subPartTransforms.entrySet()) {
             String subPartName = entry.getKey();
@@ -133,5 +141,12 @@ public class PartData {
                     entry.getValue().body.getAngularVelocity(null)
             ));
         }
+        Map<String, CompoundTag> subsystemData = HashMap.newHashMap(1);
+        for (Map.Entry<String, AbstractSubsystem> entry : part.subsystems.entrySet()){
+            String subsystemName = entry.getKey();
+            AbstractSubsystem subsystem = entry.getValue();
+            subsystemData.put(subsystemName, subsystem.saveData(new CompoundTag()));
+        }
+        this.subsystemData = subsystemData;
     }
 }

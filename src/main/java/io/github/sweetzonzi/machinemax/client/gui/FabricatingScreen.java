@@ -1,45 +1,29 @@
 package io.github.sweetzonzi.machinemax.client.gui;
 
-import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Transform;
-import com.jme3.math.Vector3f;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.gui.renderable.AnimatableRenderable;
-import io.github.sweetzonzi.machinemax.client.gui.renderable.RenderableAttr;
+import io.github.sweetzonzi.machinemax.client.renderable.GuiAnimatable;
+import io.github.sweetzonzi.machinemax.common.visual.AnimatableParams;
 import io.github.sweetzonzi.machinemax.common.crafting.FabricatingMenu;
-import io.github.sweetzonzi.machinemax.common.item.prop.PartItem;
-import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
-import io.github.sweetzonzi.machinemax.common.vehicle.visual.PartProjection;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Brightness;
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 import java.awt.*;
 import java.util.Map;
-
-import static io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper.partToAssembly;
 
 /**
  * 参考自TACZ的GunSmithTableScreen
@@ -54,8 +38,8 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
     protected void init() {
         super.init();
         //TODO:添加Widgets
-        addRenderableOnly(new AnimatableRenderable(
-                new RenderableAttr(
+        addRenderableOnly(new GuiAnimatable(
+                new AnimatableParams(
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui/speed_hud.geo"),
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "gui"),
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/gui/speed_hud.png"),
@@ -91,7 +75,6 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
         MultiBufferSource.BufferSource multiBufferSource = guiGraphics.bufferSource();
         PoseStack poseStack = guiGraphics.pose();
 //        renderRays(poseStack, (float) Math.random(), multiBufferSource.getBuffer(RenderType.dragonRays()), centerX, centerY);
-//        renderPartToAssembly(poseStack, multiBufferSource, partialTick, centerX, centerY);
     }
 
     public static void renderRectangle(PoseStack poseStack, float dragonDeathCompletion, VertexConsumer buffer, int x, int y) {
@@ -178,45 +161,4 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
         poseStack.popPose();
     }
 
-    public void renderPartToAssembly(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick, int centerX, int centerY) {
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null) return;
-        if (player.getMainHandItem().getItem() instanceof PartItem) {
-            ItemStack partItem = player.getMainHandItem();
-            PartType partType = PartItem.getPartType(partItem, player.level());
-            String variant = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
-            if (partToAssembly == null || !partType.equals(partToAssembly.type)) {
-                partToAssembly = new PartProjection(partType, player.level(), variant,
-                        new Transform(
-                                new Vector3f(),
-                                Quaternion.IDENTITY
-                        ));
-            }
-            if (!partToAssembly.variant.equals(variant)) {
-                partToAssembly.setVariant(variant);
-            }
-            renderPartProjection(partToAssembly, poseStack, bufferSource, partialTick, centerX, centerY);
-        }
-    }
-
-    //未使用，计划用于hud渲染载具
-    public void renderPartProjection(PartProjection partProjection, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick, int centerX, int centerY) {
-        RenderSystem.applyModelViewMatrix();
-        Minecraft.getInstance().font.drawInBatch("test2", 0, 0, Color.RED.getRGB(), true, new Matrix4f().translate(centerX, centerY, 0).rotateZYX(0.4f, 0.4f, 0.4f),
-                bufferSource, Font.DisplayMode.SEE_THROUGH, new Color(0, 0, 0, 0).getRGB(), Brightness.FULL_BRIGHT.pack());
-        ModelRenderHelperKt.render(
-                partProjection.getModel(),
-                partProjection.getBones(),
-                poseStack.last().pose().translate(centerX, centerY, 0).scale(50),
-                poseStack.last().normal(),
-                bufferSource.getBuffer(RenderType.entityTranslucentEmissive(partProjection.modelIndex.getTextureLocation())),
-                Brightness.FULL_BRIGHT.pack(),
-                OverlayTexture.NO_OVERLAY,
-                partProjection.color.getRGB(),
-                partialTick,
-                true
-        );
-        bufferSource.endBatch();
-        RenderSystem.applyModelViewMatrix();
-    }
 }

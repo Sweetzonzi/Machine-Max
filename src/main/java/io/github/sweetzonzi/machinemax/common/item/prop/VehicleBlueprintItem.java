@@ -12,13 +12,13 @@ import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
+import io.github.sweetzonzi.machinemax.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
-import io.github.sweetzonzi.machinemax.common.vehicle.visual.RenderableBoundingBox;
+import io.github.sweetzonzi.machinemax.common.visual.RenderableBoundingBox;
 import io.github.sweetzonzi.machinemax.external.DynamicPack;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
 import io.github.sweetzonzi.machinemax.external.html.HtNode;
@@ -81,7 +81,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                     int contact = physicsLevel.getWorld().contactTest(testGhost, null);
                     if (contact == 0) {
                         taskLevel.submitImmediateTask(PPhase.PRE, () -> {
-                            VehicleCore vehicle = new VehicleCore(level, vehicleData);
+                            VehicleCore vehicle = new VehicleCore(level, vehicleData, false);
                             vehicle.setUuid(UUID.randomUUID());
                             vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
                             VehicleManager.addVehicle(vehicle);
@@ -182,7 +182,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         String tip;
         try {
             tip = getVehicleData(stack, null).tooltip;
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
             return;
         }
         if (MMDynamicRes.EXTERNAL_RESOURCE.get(ResourceLocation.parse(tip)) instanceof DynamicPack dynamicPack) {

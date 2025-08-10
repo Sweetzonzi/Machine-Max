@@ -44,6 +44,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.part.subsystem_hitbox_not_found", "未能在部件%1$s中为子系统%2$s找到碰撞体积%3$s");
         this.add("error.machine_max.seat_subsystem.no_locator", "座椅子系统必须填写定位器名称(如\"locator\": \"seat_locator\")以指定乘客乘坐位置");
         this.add("error.machine_max.seat_subsystem.no_view", "座椅子系统必须允许乘客使用第一人称视角或第三人称视角之一");
+        this.add("error.machine_max.item_storage_subsystem.invalid_row_num", "储物子系统储物空间行数必须大于1之间");
+        this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "储物子系统储物空间列数必须大于1之间");
         //组装异常处理
         this.add("error.machine_max.part.connector_locator_not_found", "部件%1$的模型中未找到的对接口%2$s的定位器%3$s");
         this.add("error.machine_max.part.invalid_connector_type", "部件%1$的对接口%2$s的类型%3$s非法，必须为\"Special\"或\"AttachPoint\"");

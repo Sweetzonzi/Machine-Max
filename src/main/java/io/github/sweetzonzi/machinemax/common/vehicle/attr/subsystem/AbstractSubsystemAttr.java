@@ -25,7 +25,7 @@ abstract public class AbstractSubsystemAttr {
     public abstract MapCodec<? extends AbstractSubsystemAttr> codec();
 
     public enum SubsystemType {
-        RESOURCE_STORAGE,//资源存储子系统，可指定储存类型、容量等
+        ITEM_STORAGE,//物品存储子系统，可存储物品，可指定容量
         ENGINE,//发动机子系统，可指定最大功率，转速等
         MOTOR,//电动机子系统，与发动机类似，可指定最大功率等
         GEARBOX,//变速箱子系统，可指定多级减速比，自动变速

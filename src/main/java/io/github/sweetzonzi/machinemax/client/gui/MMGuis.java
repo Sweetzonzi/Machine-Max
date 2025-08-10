@@ -10,6 +10,8 @@ import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 import static io.github.sweetzonzi.machinemax.common.registry.MMMenus.FABRICATING_MENU;
+import static io.github.sweetzonzi.machinemax.common.registry.MMMenus.ITEM_STORAGE_SUBSYSTEM_MENU;
+
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class MMGuis {
@@ -25,5 +27,6 @@ public class MMGuis {
     @SubscribeEvent
     private static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(FABRICATING_MENU.get(), FabricatingScreen::new);
+        event.register(ITEM_STORAGE_SUBSYSTEM_MENU.get(), ItemStorageSubsystemScreen::new);
     }
 }

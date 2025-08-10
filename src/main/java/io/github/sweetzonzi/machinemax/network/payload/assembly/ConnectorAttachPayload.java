@@ -57,7 +57,7 @@ public record ConnectorAttachPayload(
         if (vehicle == null) throw new IllegalStateException("未找到载具: " + payload.vehicleUuid);
         if (payload.hasNewPart) {
             if (payload.partData == null) throw new IllegalStateException("载具" + vehicle.name + "应有新部件，但数据包中没有提供新部件数据");
-            Part newPart = new Part(payload.partData, vehicle.level);
+            Part newPart = new Part(payload.partData, vehicle.level, true);
             vehicle.addPart(newPart);
             newPart.addToLevel();
         }

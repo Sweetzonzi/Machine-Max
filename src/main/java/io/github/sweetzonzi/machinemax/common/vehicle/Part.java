@@ -42,6 +42,7 @@ import jme3utilities.math.MyMath;
 import kotlin.Unit;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -178,10 +179,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     /**
      * 从保存或网络传输的数据中重建部件
      *
-     * @param data  保存或网络传输的数据
-     * @param level 部件所在的世界
+     * @param data          保存或网络传输的数据
+     * @param level         部件所在的世界
+     * @param readSavedData 是否从保存的数据中读取部件数据，否则使用默认数据
      */
-    public Part(PartData data, Level level) {
+    public Part(PartData data, Level level, boolean readSavedData) {
         this.name = data.name;
         this.type = getPT(level, data.registryKey);
         this.level = level;
@@ -192,11 +194,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 type.animation,//获取部件动画路径
                 type.textures.get(textureIndex % type.textures.size()));//获取部件第一个可用纹理作为默认纹理
         this.uuid = UUID.fromString(data.uuid);
-        this.durability = Math.min(data.durability, type.basicDurability);
-        this.integrity = Math.min(data.integrity, type.basicIntegrity);
+        this.durability = readSavedData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
+        this.integrity = readSavedData ? Math.min(data.integrity, type.basicIntegrity) : type.basicIntegrity;
         this.rootSubPart = createSubPart(type.subParts);//重建子部件并指定根子部件
-        updateMass();//更新部件总质量
-        for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {//遍历保存的子部件位置、旋转、速度数据
+        //遍历保存的子部件位置、旋转、速度数据
+        for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {
             SubPart subPart = subParts.get(entry.getKey());//获取已重建的子部件
             if (subPart != null) {//设定子部件body的位置、旋转、速度
                 PosRotVelVel posRotVelVel = entry.getValue();
@@ -204,9 +206,21 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 subPart.body.setPhysicsRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
                 subPart.body.setLinearVelocity(posRotVelVel.linearVel());
                 subPart.body.setAngularVelocity(posRotVelVel.angularVel());
+                subPart.body.tickTransform = posRotVelVel.toTransform();
+                subPart.body.lastTickTransform = posRotVelVel.toTransform();
             } else
                 throw new NullPointerException("部件" + name + "的子部件" + entry.getKey() + "不存在，请检查数据。");
         }
+        if (readSavedData) {
+            //加载子系统储存的数据
+            for (Map.Entry<String, CompoundTag> entry : data.subsystemData.entrySet()) {
+                String name = entry.getKey();
+                CompoundTag subsystemData = entry.getValue();
+                AbstractSubsystem subsystem = subsystems.get(name);
+                subsystem.loadData(subsystemData);
+            }
+        }
+        updateMass();//更新部件总质量
     }
 
     public PartType getPT(Level level, ResourceLocation registryKey) {
@@ -375,8 +389,9 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     /**
      * <p>线程安全地对部件造成伤害，伤害会被在主线程统一处理，参见 {@link #handleAccumulatedDamage()}</p>
      * <p>Accumulates damage to the part thread safely, which will be handled in the main thread, see {@link #handleAccumulatedDamage()}</p>
+     *
      * @param damage 伤害值 damage value
-     * @param data 伤害源、命中点、判定区等 damage source, hit point, hit box, etc.
+     * @param data   伤害源、命中点、判定区等 damage source, hit point, hit box, etc.
      */
     private void accumulateDamage(float damage, PartDamageData data) {
         if (damage > 0) {
@@ -434,7 +449,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         for (AbstractSubsystem subsystem : subsystems.values()) {
             subsystem.setActive(false);
         }
-        for(AbstractConnector connector : allConnectors.values()){
+        for (AbstractConnector connector : allConnectors.values()) {
             //TODO:随机锁定/解锁某个关节的自由度
         }
         if (level.isClientSide) {

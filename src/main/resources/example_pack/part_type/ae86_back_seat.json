@@ -42,6 +42,11 @@
         "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率
       },
       "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
+    },
+    "storage": {
+      "type": "machine_max:item_storage",
+      "rows": 2,
+      "columns": 3
     }
   },
   "sub_parts": {//零件(子部件)列表

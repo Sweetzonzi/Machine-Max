@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machinemax.util.data;
 
+import cn.solarmoon.spark_core.physics.SparkMathKt;
+import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -62,4 +64,8 @@ public record PosRotVelVel(
             buffer.writeFloat(data.angularVel.z);
         }
     };
+
+    public Transform toTransform() {
+        return new Transform(position, SparkMathKt.toBQuaternion(rotation));
+    }
 }

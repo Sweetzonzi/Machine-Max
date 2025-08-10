@@ -9,7 +9,7 @@ import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
+import io.github.sweetzonzi.machinemax.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyCacheComponent;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyInfoComponent;
 import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
@@ -142,8 +142,8 @@ public class PartItem extends Item implements ICustomModelItem {
                         message.append("目标接口:" + targetConnector.name + "部件接口:" + connectorName);
                         if (!variant.equals("default") && partType.variants.size() > 1)
                             message.append(" 部件变体类型:" + variant);
-                        if (VisualEffectHelper.partToAssembly != null) {
-                            VisualEffectHelper.partToAssembly.setTransform(
+                        if (VisualEffectHelper.partToPlace != null) {
+                            VisualEffectHelper.partToPlace.setTransform(
                                     targetConnector.mergeTransform(new Transform(
                                             PhysicsHelperKt.toBVector3f(info.offset()),
                                             SparkMathKt.toBQuaternion(info.rotation())
@@ -162,8 +162,8 @@ public class PartItem extends Item implements ICustomModelItem {
                 }
             } else {
                 message.append("未选中可用的部件接口，右键将直接放置零件");
-                if (VisualEffectHelper.partToAssembly != null)
-                    VisualEffectHelper.partToAssembly.setTransform(
+                if (VisualEffectHelper.partToPlace != null)
+                    VisualEffectHelper.partToPlace.setTransform(
                             entity instanceof LivingEntity livingEntity ?
                                     new Transform(
                                             PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(

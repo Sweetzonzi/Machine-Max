@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.renderer.VisualEffectHelper;
+import io.github.sweetzonzi.machinemax.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
@@ -14,9 +14,6 @@ import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleCreatePay
 import io.github.sweetzonzi.machinemax.network.payload.assembly.VehicleRemovePayload;
 import io.github.sweetzonzi.machinemax.util.ChunkHelper;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -34,7 +31,6 @@ import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.awt.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -178,7 +174,7 @@ public class VehicleManager {
             try {
                 for (VehicleData savedVehicleData : savedVehicles) {
                     try {
-                        VehicleCore vehicle = new VehicleCore(level, savedVehicleData);
+                        VehicleCore vehicle = new VehicleCore(level, savedVehicleData, true);
                         vehicle.loadFromSavedData = true;
                         vehicle.setKinematic(true);
                         addVehicle(vehicle);
@@ -238,7 +234,7 @@ public class VehicleManager {
         if (event.getLevel().isClientSide()) {
             VisualEffectHelper.attachPoints.clear();
             VisualEffectHelper.boundingBox = null;
-            VisualEffectHelper.partToAssembly = null;
+            VisualEffectHelper.partToPlace = null;
         }
     }
 

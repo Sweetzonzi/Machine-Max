@@ -14,6 +14,7 @@ public class MMMolangs {
     private static void registerMolangBinding(MolangBindingRegisterEvent event) {
         event.getBindings().put("p", PartBinding.INSTANCE);
         event.getBindings().put("part", PartBinding.INSTANCE);
+        event.getBindings().put("veh", VehicleBinding.INSTANCE);
         event.getBindings().put("vehicle", VehicleBinding.INSTANCE);
     }
 

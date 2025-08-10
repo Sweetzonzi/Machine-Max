@@ -5,13 +5,16 @@ import cn.solarmoon.spark_core.physics.SparkMathKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsSweepTestResult;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
+import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
+import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machinemax.common.vehicle.SubPart;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
+import io.github.sweetzonzi.machinemax.util.MMMath;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.decoration.BlockAttachedEntity;
@@ -77,15 +80,17 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
                 machine_Max$sweepTestEnd, results, 0.1f);
         if (results.isEmpty()) return;// 无碰撞结果时直接返回
         Vec3 normal = new Vec3(0, 1, 0);
+        Vec3 movement = new Vec3(0, 0, 0);
         float hitFraction = Float.MAX_VALUE;
         for (PhysicsSweepTestResult result : results) {
             PhysicsCollisionObject pco = result.getCollisionObject();
             int group = pco.getCollisionGroup();
             if (group == VehicleManager.COLLISION_GROUP_PART) {
-                if (pco.getOwner() instanceof SubPart) {
+                if (pco.getOwner() instanceof SubPart subPart) {
                     if (result.getHitFraction() < hitFraction) {
                         normal = SparkMathKt.toVec3(result.getHitNormalLocal(null).normalize());
                         hitFraction = result.getHitFraction();
+                        movement = SparkMathKt.toVec3(MMMath.worldPointWorldVel(PhysicsHelperKt.toBVector3f(center), subPart.body));
                     }
                 }
             }
@@ -104,7 +109,8 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
 //            MachineMax.LOGGER.debug("angle: {}, normal: {}, originalVec: {} ,finalVec: {}", angle, normal, originalVec, finalVec);
         if (angle * 180 / (float) Math.PI < 45f) {
             //TODO: 配置文件控制是否全量碰撞或水平方向无碰撞
-            if (true || normal.dot(new Vec3(0, 1, 0)) > 0.7071f) {
+            boolean horizontalCollision = true;
+            if (horizontalCollision || normal.dot(new Vec3(0, 1, 0)) > 0.7071f) {
                 //爬坡角度小于45°时
                 if (originalVec.horizontalDistanceSqr() > 0.0001f)
                     //水平方向有运动时，取原始向量的长度，方便爬坡
@@ -114,6 +120,9 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
                     finalVec = new Vec3(0, 0, 0);
             }
         }
+        // 叠加刚体的运动
+        movement = movement.scale(0.05);//速度转为单tick移动量
+        finalVec = finalVec.add(movement.x, movement.y > 0 ? movement.y : 0, movement.z);
         // 若存在方块碰撞导致的向量变化，则返回合并后的向量
         if (!originalVec.equals(vec)) {
             double x = finalVec.x * originalVec.x < 0 ? 0 :

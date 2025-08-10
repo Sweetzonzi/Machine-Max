@@ -8,10 +8,11 @@ import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalSender;
+import io.github.sweetzonzi.machinemax.common.vehicle.signal.InteractSignal;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.SignalChannel;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Getter
-abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender {
+abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender{
 
     public final String name;
     public final AbstractSubsystemAttr attr;
@@ -131,6 +132,16 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         this.destroyed = true;
     }
 
+    @Override
+    public void onSignalUpdated(String channelName, ISignalSender sender) {
+        ISignalReceiver.super.onSignalUpdated(channelName, sender);
+        Object signal = getSignalValueFrom(channelName, sender);
+        if (signal instanceof InteractSignal interactSignal) {
+            LivingEntity entity = interactSignal.getEntity();
+            onInteract(entity);
+        }
+    }
+
     /**
      * <p>子系统被实体交互时调用，调用于主线程</p>
      * <p>Called when the subsystem is interacted with an entity. Called on the main thread.</p>
@@ -166,5 +177,13 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
             this.active = false;
             this.onDisabled();
         }
+    }
+
+    public void loadData(CompoundTag data) {
+        //TODO: 加载子系统生命值
+    }
+
+    public CompoundTag saveData(CompoundTag data) {
+        return data;
     }
 }

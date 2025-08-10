@@ -85,15 +85,16 @@ public class VehicleCore {
         this.addPart(rootPart);
     }
 
-    public VehicleCore(Level level, VehicleData savedData) {
+    public VehicleCore(Level level, VehicleData savedData, boolean readSavedData) {
         this.level = level;
         this.uuid = UUID.fromString(savedData.uuid);
         this.hp = savedData.hp;
         this.position = savedData.pos;
+        this.oldPosition = this.position;
         this.name = savedData.name;
         try {
             //重建部件
-            for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level));
+            for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level, readSavedData));
             //重建连接关系
             for (ConnectionData connectionData : savedData.connections) {
                 Part partA = partMap.get(UUID.fromString(connectionData.PartUuidS));

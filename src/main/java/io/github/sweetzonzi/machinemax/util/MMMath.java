@@ -91,6 +91,14 @@ public class MMMath {
         return result.addLocal(extraVelocity);
     }
 
+    public static Vector3f worldPointWorldVel(Vector3f worldPointPos, PhysicsRigidBody obj) {
+        Vector3f result = obj.getLinearVelocity(null);//获取物体质心在世界坐标系下的线速度
+        Vector3f angularVel = obj.getAngularVelocity(null);
+        Vector3f extraVelocity = new Vector3f();
+        angularVel.cross(worldPointPos.subtract(obj.getPhysicsLocation(null)), extraVelocity);
+        return result.addLocal(extraVelocity);
+    }
+
     public static Vec3i getClosestAxisAlignedVector(Vec3 vec3) {
         // 比较每个分量的绝对值大小
         double absX = Math.abs(vec3.x);

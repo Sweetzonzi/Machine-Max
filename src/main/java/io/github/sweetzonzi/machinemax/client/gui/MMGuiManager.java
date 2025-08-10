@@ -2,7 +2,8 @@ package io.github.sweetzonzi.machinemax.client.gui;
 
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.gui.renderable.AnimatableRenderable;
+import io.github.sweetzonzi.machinemax.client.renderable.ITickableRenderable;
+import io.github.sweetzonzi.machinemax.client.renderable.ModelAnimatable;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -16,22 +17,22 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class MMGuiManager {
-    public static Set<WeakReference<AnimatableRenderable>> animatableWidgets = new CopyOnWriteArraySet<>();
-    public static ReferenceQueue<AnimatableRenderable> referenceQueue = new ReferenceQueue<>();
+    public static Set<WeakReference<ITickableRenderable>> animatableWidgets = new CopyOnWriteArraySet<>();
+    public static ReferenceQueue<ITickableRenderable> referenceQueue = new ReferenceQueue<>();
     public static CustomHud customHud = null;
 
     @SubscribeEvent
     private static void onAnimTick(LevelTickEvent.Post event) {
         try {
             if (customHud != null) customHud.tick();
-            WeakReference<AnimatableRenderable> ref;
-            while ((ref = (WeakReference<AnimatableRenderable>) referenceQueue.poll()) != null) {
+            WeakReference<ITickableRenderable> ref;
+            while ((ref = (WeakReference<ITickableRenderable>) referenceQueue.poll()) != null) {
                 // 从集合中移除已经失效的弱引用
                 animatableWidgets.remove(ref);
             }
 
-            for (WeakReference<AnimatableRenderable> widget : animatableWidgets) {
-                AnimatableRenderable animatable = widget.get();
+            for (WeakReference<ITickableRenderable> widget : animatableWidgets) {
+                ITickableRenderable animatable = widget.get();
                 if (animatable != null) {
                     animatable.animTick();
                 }
@@ -45,14 +46,14 @@ public class MMGuiManager {
     private static void onPhysicsTick(PhysicsLevelTickEvent.Post event) {
         try {
             if (customHud != null) customHud.physicsTick();
-            WeakReference<AnimatableRenderable> ref;
-            while ((ref = (WeakReference<AnimatableRenderable>) referenceQueue.poll()) != null) {
+            WeakReference<ITickableRenderable> ref;
+            while ((ref = (WeakReference<ITickableRenderable>) referenceQueue.poll()) != null) {
                 // 从集合中移除已经失效的弱引用
                 animatableWidgets.remove(ref);
             }
 
-            for (WeakReference<AnimatableRenderable> widget : animatableWidgets) {
-                AnimatableRenderable animatable = widget.get();
+            for (WeakReference<ITickableRenderable> widget : animatableWidgets) {
+                ITickableRenderable animatable = widget.get();
                 if (animatable != null) {
                     animatable.physicsTick();
                 }

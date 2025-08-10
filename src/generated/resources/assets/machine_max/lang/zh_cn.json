@@ -1,6 +1,8 @@
 {
   "block.machine_max.fabricator": "载具制造台",
   "error.machine_max.invalid_resource_location": "文件资源路径非法，仅允许小写英文字母、数字、下划线和连字符",
+  "error.machine_max.item_storage_subsystem.invalid_column_num": "储物子系统储物空间列数必须在1~9之间",
+  "error.machine_max.item_storage_subsystem.invalid_row_num": "储物子系统储物空间行数必须在1~6之间",
   "error.machine_max.load": "加载外部包文件: %1$s 时出错，原因: ",
   "error.machine_max.part.connector_locator_not_found": "部件%1$的模型中未找到的对接口%2$s的定位器%3$s",
   "error.machine_max.part.invalid_connector_type": "部件%1$的对接口%2$s的类型%3$s非法，必须为\"Special\"或\"AttachPoint\"",

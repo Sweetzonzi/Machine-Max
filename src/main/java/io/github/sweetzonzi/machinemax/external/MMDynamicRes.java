@@ -10,8 +10,7 @@ import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.JsonOps;
-import io.github.sweetzonzi.machinemax.MachineMax;
-import io.github.sweetzonzi.machinemax.client.gui.renderable.RenderableAttr;
+import io.github.sweetzonzi.machinemax.common.visual.AnimatableParams;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
@@ -55,7 +54,7 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
     public static List<Pair<ResourceLocation, JsonElement>> CRAFTING_RECIPES = new ArrayList<>();
-    public static ConcurrentMap<ResourceLocation, RenderableAttr> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
+    public static ConcurrentMap<ResourceLocation, AnimatableParams> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
     public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
@@ -428,7 +427,7 @@ public class MMDynamicRes {
                     }
 
                     case "hud" -> {
-                        RenderableAttr attr = RenderableAttr.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
+                        AnimatableParams attr = AnimatableParams.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
                         CUSTOM_HUD.put(location, attr);
                     }
 
