@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.common.item;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -20,7 +21,7 @@ public interface ICustomModelItem {
      * @param context   <p>此物品被渲染的场景，如GUI、凋落物、第一人称视角等</p><p>The scene where this item is rendered, such as GUI, falling blocks, first-person view</p>
      * @return 动画体对象 ItemAnimatable instance
      */
-    default ItemAnimatable getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context){
+    default IAnimatable<?> getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context){
         try {
             Map<ItemDisplayContext, ItemAnimatable> customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
             if (customModels == null) customModels = new HashMap<>();

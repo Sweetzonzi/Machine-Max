@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.client.renderer;
 
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh;
@@ -7,12 +8,14 @@ import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.renderable.ModelAnimatable;
 import io.github.sweetzonzi.machinemax.client.renderable.VehicleAnimatable;
 import io.github.sweetzonzi.machinemax.common.item.prop.PartItem;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
+import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.common.visual.AnimatableParams;
@@ -41,10 +44,15 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     private Player player;
     private ModelAnimatable partToPlace = null;
-//    private VehicleAnimatable vehicle;
+    private VehicleAnimatable vehicle;
+    private VehicleCore vehicleCore;
+
     @Override
     public void tick() {
         player = Minecraft.getInstance().player;
+        if (vehicle != null) {
+            vehicle.setTransform(new Transform().setTranslation(PhysicsHelperKt.toBVector3f(vehicleCore.getPosition())));
+        }
     }
 
     @Override
@@ -68,13 +76,14 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         } else if (VisualEffectHelper.partToPlace != null) {
             partToPlace = new ModelAnimatable(VisualEffectHelper.partToPlace);
         }
-//        if(vehicle != null){
+//        if (vehicle != null) {
 //            poseStack.pushPose();
 //            poseStack.translate(-camPos.x, -camPos.y + 3, -camPos.z);
 //            vehicle.render(poseStack, (MultiBufferSource.BufferSource) bufferSource, partialTick);
 //            poseStack.popPose();
-//        }else if(((IEntityMixin)player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat){
-//            vehicle = new VehicleAnimatable(seat.getPart().vehicle);
+//        } else if (((IEntityMixin) player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+//            vehicleCore = seat.getPart().vehicle;
+//            vehicle = new VehicleAnimatable(vehicleCore);
 //        }
     }
 
@@ -118,6 +127,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
             }
         }
     }
+
     private void renderBoundingBoxes(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
         RenderableBoundingBox boundingBox = VisualEffectHelper.boundingBox;

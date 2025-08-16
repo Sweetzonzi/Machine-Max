@@ -53,13 +53,11 @@ public class CustomHud implements LayeredDraw.Layer {
                         if(!seat.attr.views.thirdPersonHud().contains(entry.getKey())) vehicleHud.remove(entry.getKey());
                     }
                 }
-                vehicleHud.values().forEach(GuiAnimatable::animTick);
             } else vehicleHud.clear();
         }
     }
 
     public void physicsTick() {
-        vehicleHud.values().forEach(GuiAnimatable::physicsTick);
     }
 
     @Override

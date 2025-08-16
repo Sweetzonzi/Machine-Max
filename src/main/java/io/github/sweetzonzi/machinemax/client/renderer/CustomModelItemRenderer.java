@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.client.renderer;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.renderer.IGeoRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
@@ -32,23 +33,23 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             int packedLight,
             int packedOverlay) {
         if (stack.getItem() instanceof ICustomModelItem customModelItem) {
-            ItemAnimatable itemAnimatable = customModelItem.getRenderInstance(stack, Minecraft.getInstance().level, displayContext);
-            if (itemAnimatable == null) return;
+            IAnimatable<?> animatable = customModelItem.getRenderInstance(stack, Minecraft.getInstance().level, displayContext);
+            if (animatable == null) return;
             poseStack.pushPose();
             if (displayContext == ItemDisplayContext.GUI) poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
             ModelRenderHelperKt.render(
-                    itemAnimatable.getModel(),
-                    itemAnimatable.getBones(),
+                    animatable.getModel(),
+                    animatable.getBones(),
                     poseStack.last().pose()
                             .translate(customModelItem.getRenderOffset(stack, Minecraft.getInstance().level, displayContext))
                             .rotateZYX(customModelItem.getRenderRotation(stack, Minecraft.getInstance().level, displayContext))
                             .scale(customModelItem.getRenderScale(stack, Minecraft.getInstance().level, displayContext)),
                     poseStack.last().normal(),
-                    buffer.getBuffer(RenderType.entityTranslucent(itemAnimatable.getModelIndex().getTextureLocation())),
+                    buffer.getBuffer(RenderType.entityTranslucent(animatable.getModelIndex().getTextureLocation())),
                     Brightness.FULL_BRIGHT.pack(),
                     packedOverlay,
                     customModelItem.getColor(stack, Minecraft.getInstance().level, displayContext).getRGB(),
-                    itemAnimatable.getPartialTicks(),
+                    animatable.getPartialTicks(),
                     true
             );
             poseStack.popPose();
