@@ -1,6 +1,6 @@
 package io.github.sweetzonzi.machinemax.client.input;
 
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.MachineMax;

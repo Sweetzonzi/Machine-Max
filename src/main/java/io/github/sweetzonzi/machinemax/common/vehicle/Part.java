@@ -1,8 +1,10 @@
 package io.github.sweetzonzi.machinemax.common.vehicle;
 
+import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.play.*;
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
@@ -10,7 +12,7 @@ import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
@@ -72,7 +74,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public volatile boolean hurtMarked = false;
     public volatile boolean oHurtMarked = false;
     @Setter
-    private BoneGroup bones;//用于储存部件的骨骼组
+    private BonePoseGroup bones;//用于储存部件的骨骼组
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
     //常规属性 General attributes
     public volatile VehicleCore vehicle;//所属的VehicleCore
@@ -87,6 +89,18 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public volatile float durability;
     public volatile float integrity;
     private final ConcurrentMap<Vector3f, Float> accumulatedImpact = new ConcurrentHashMap<>(8);
+
+    @NotNull
+    @Override
+    public Map<String, Vec3> getIkTargetPositions() {
+        return Map.of();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, FabrikChain3D> getIkChains() {
+        return Map.of();
+    }
 
     public record PartDamageData(
             DamageSource source,
@@ -245,13 +259,13 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (this.entity != null && !this.entity.isRemoved()) {
             getAnimController().tick();
             var animSet = modelIndex.getAnimationSet().getAnimations();
-            if (!animSet.isEmpty() && animController.getMainAnim() == null) {
+            if (!animSet.isEmpty() && !animController.isPlayingAnim()) {
                 for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
                     String name = entry.getKey();
                     var anim = entry.getValue();
-                    var animInstance = AnimInstance.create(this, name, anim, a -> Unit.INSTANCE);
-                    getAnimController().getBlendSpace().putIfAbsent(name, new BlendAnimation(animInstance, 1, List.of()));
-                    getAnimController().setAnimation(name, 0, a -> Unit.INSTANCE);
+//                    var animInstance = AnimInstance.create(this, name, anim, a -> Unit.INSTANCE);
+//                    getAnimController().getBlendSpace().putIfAbsent(name, new BlendAnimation(animInstance, 1, List.of()));
+//                    getAnimController().setAnimation(name, 0, a -> Unit.INSTANCE);
                 }
             }
         }
@@ -691,11 +705,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     public void setModelIndex(@NotNull ModelIndex modelIndex) {
         this.modelIndex = modelIndex;
-        this.setBones(new BoneGroup(this));
+        this.setBones(new BonePoseGroup(this));
     }
 
-    public @NotNull BoneGroup getBones() {
-        if (this.bones == null) bones = new BoneGroup(this);
+    public @NotNull BonePoseGroup getBones() {
+        if (this.bones == null) bones = new BonePoseGroup(this);
         return this.bones;
     }
 

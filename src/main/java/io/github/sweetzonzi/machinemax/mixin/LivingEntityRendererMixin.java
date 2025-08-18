@@ -1,6 +1,6 @@
 package io.github.sweetzonzi.machinemax.mixin;
 
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;

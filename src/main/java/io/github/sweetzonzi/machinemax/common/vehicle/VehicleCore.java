@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableNetwork;

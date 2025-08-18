@@ -39,6 +39,7 @@ import org.joml.Vector3f;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class CrowbarItem extends Item implements IPartInteractableItem, ICustomModelItem {
     public CrowbarItem() {
@@ -153,19 +154,19 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         if (context.firstPerson())
             animatable.setModelIndex(
                     new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/crowbar_first_person.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/crowbar_first_person.geo"),
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar_first_person.png"))
             );
         else
             animatable.setModelIndex(
                     new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/crowbar.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/crowbar.geo"),
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar.png"))
             );
         if (customModels != null) {

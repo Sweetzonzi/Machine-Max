@@ -24,6 +24,7 @@ import org.joml.Vector3f;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class EmptyBlueprintItem extends Item implements ICustomModelItem {
     public EmptyBlueprintItem() {
@@ -57,12 +58,12 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem {
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         animatable.setModelIndex(
                 new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint.geo"),
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/blueprint.geo"),
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"))
         );
         if (customModels != null) {

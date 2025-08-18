@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machinemax.common.item.prop;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.TaskSubmitOffice;
@@ -236,7 +236,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         try {
@@ -247,14 +247,14 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
             ) {
                 animatable.setModelIndex(
                         new ModelIndex(
-                                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
+                                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/item_icon_2d_128x.geo"),
                                 vehicleData.icon)
                 );
             } else throw new NullPointerException();
         } catch (NullPointerException e) {
             animatable.setModelIndex(
                     new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/blueprint.geo"),
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"))
             );
         }
@@ -268,7 +268,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
     @Override
     public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
         if (!getRenderInstance(itemStack, level, displayContext).getModelIndex().getModelPath().equals(
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint.geo")
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/blueprint.geo")
         )) {
             return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
         }

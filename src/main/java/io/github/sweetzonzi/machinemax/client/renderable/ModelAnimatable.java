@@ -1,19 +1,22 @@
 package io.github.sweetzonzi.machinemax.client.renderable;
 
+import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.play.*;
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machinemax.common.visual.AnimatableParams;
@@ -47,12 +50,12 @@ import java.util.Map;
 public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable {
     private final Minecraft minecraft = Minecraft.getInstance();
     protected final AnimatableParams params;//各种渲染参数
-    private BoneGroup boneGroup;
+    private BonePoseGroup bonePoseGroup;
     private final AnimController animController = new AnimController(this);
 
     public ModelAnimatable(AnimatableParams params) {
         this.params = params;
-        this.boneGroup = new BoneGroup(this);
+        this.bonePoseGroup = new BonePoseGroup(this);
         create();
     }
 
@@ -151,13 +154,13 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     public void animTick() {
         getAnimController().tick();
         var animSet = getModelIndex().getAnimationSet().getAnimations();
-        if (!animSet.isEmpty() && animController.getMainAnim() == null) {
+        if (!animSet.isEmpty() && !animController.isPlayingAnim()) {
             for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
                 String name = entry.getKey();
                 var anim = entry.getValue();
-                var animInstance = AnimInstance.create(this, name, anim, a -> Unit.INSTANCE);
-                getAnimController().getBlendSpace().putIfAbsent(name, new BlendAnimation(animInstance, 1, List.of()));
-                getAnimController().setAnimation(name, 0, a -> Unit.INSTANCE);
+//                var animInstance = AnimInstance.create(this, name, anim, a -> Unit.INSTANCE);
+//                getAnimController().getBlendSpace().putIfAbsent(name, new BlendAnimation(animInstance, 1, List.of()));
+//                getAnimController().setAnimation(name, 0, a -> Unit.INSTANCE);
             }
         }
     }
@@ -193,14 +196,14 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     }
 
     @Override
-    public void setBones(@NotNull BoneGroup boneGroup) {
-        this.boneGroup = boneGroup;
+    public void setBones(@NotNull BonePoseGroup boneGroup) {
+        this.bonePoseGroup = boneGroup;
     }
 
     @NotNull
     @Override
-    public BoneGroup getBones() {
-        return boneGroup;
+    public BonePoseGroup getBones() {
+        return bonePoseGroup;
     }
 
     @NotNull
@@ -254,6 +257,18 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     @Override
     public void setModelIndex(@NotNull ModelIndex modelIndex) {
         params.setModelIndex(modelIndex);
-        setBones(new BoneGroup(this));
+        setBones(new BonePoseGroup(this));
+    }
+
+    @NotNull
+    @Override
+    public Map<String, Vec3> getIkTargetPositions() {
+        return Map.of();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, FabrikChain3D> getIkChains() {
+        return Map.of();
     }
 }

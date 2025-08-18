@@ -1,16 +1,17 @@
 package io.github.sweetzonzi.machinemax.common.entity;
 
+import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.AnimController;
-import cn.solarmoon.spark_core.animation.anim.play.BoneGroup;
+import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
-import cn.solarmoon.spark_core.entity.attack.CollisionHurtData;
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.BlackBoard;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.preinput.PreInput;
 import cn.solarmoon.spark_core.skill.Skill;
@@ -45,6 +46,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -272,17 +274,6 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
         return true;
     }
 
-    @Nullable
-    @Override
-    public CollisionHurtData getHurtData() {
-        return null;
-    }
-
-    @Override
-    public void pushHurtData(@Nullable CollisionHurtData collisionHurtData) {
-
-    }
-
     @NotNull
     @Override
     public PhysicsLevel getPhysicsLevel() {
@@ -313,7 +304,6 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
         return this;
     }
 
-    @NotNull
     @Override
     public AnimController getAnimController() {
         if (part == null) return new AnimController(this);
@@ -322,9 +312,9 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @NotNull
     @Override
-    public BoneGroup getBones() {
+    public BonePoseGroup getBones() {
         if (part != null) return part.getBones();
-        else return new BoneGroup(this);
+        else return new BonePoseGroup(this);
     }
 
     private void updatePart() {
@@ -420,7 +410,25 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     }
 
     @Override
-    public void setBones(@NotNull BoneGroup boneGroup) {
+    public void setBones(@NotNull BonePoseGroup boneGroup) {
         //Do nothing
+    }
+
+    @NotNull
+    @Override
+    public Map<String, Vec3> getIkTargetPositions() {
+        return Map.of();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, FabrikChain3D> getIkChains() {
+        return Map.of();
+    }
+
+    @NotNull
+    @Override
+    public BlackBoard getAttackData() {
+        return new BlackBoard();
     }
 }

@@ -103,7 +103,7 @@ public class OBoneParse {
                         LinkedHashMap::new
                 ));
 
-        OModel model = new OModel(coord.x(), coord.y(), bones);
+        OModel model = new OModel(coord.x(), coord.y(), bones, new LinkedHashMap<>());
         MMDynamicRes.O_MODELS.put(id, model);
         OModel.getORIGINS().put(id, model);
     }

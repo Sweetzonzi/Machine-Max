@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machinemax;
 
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
+import cn.solarmoon.spark_core.resource.common.MultiModResourceRegistry;
 import com.mojang.logging.LogUtils;
 import io.github.sweetzonzi.machinemax.common.registry.*;
 import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
@@ -33,6 +34,8 @@ public class MachineMax {
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器
 
     public MachineMax(IEventBus bus, ModContainer container) {
+        // 首先注册Spirit of Fight到多mod资源系统
+        MultiModResourceRegistry.INSTANCE.registerModResources(MOD_ID, MachineMax.class);
         REGISTER.register(bus);
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块

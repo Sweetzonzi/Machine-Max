@@ -27,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.util.HashMap;
+import java.util.Objects;
 
 public class SprayCanItem extends Item implements IPartInteractableItem, ICustomModelItem {
     public SprayCanItem() {
@@ -84,12 +85,12 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         animatable.setModelIndex(
                 new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/spray_can.geo"),
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/spray_can.geo"),
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/spray_can.png"))
         );
         if (customModels != null) {

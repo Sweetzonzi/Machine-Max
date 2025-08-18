@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machinemax.client.renderer;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh;
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;

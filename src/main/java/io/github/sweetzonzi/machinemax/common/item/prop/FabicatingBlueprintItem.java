@@ -25,6 +25,7 @@ import org.joml.Vector3f;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class FabicatingBlueprintItem extends Item implements ICustomModelItem {
     public FabicatingBlueprintItem() {
@@ -90,19 +91,19 @@ public class FabicatingBlueprintItem extends Item implements ICustomModelItem {
         var animatable = new ItemAnimatable(itemStack, level);
         PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         if (context == ItemDisplayContext.GUI) {
             animatable.setModelIndex(
                     new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/item_icon_2d_128x.geo"),
                             partType.icon)
             );
         } else {
             animatable.setModelIndex(
                     new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/blueprint.geo"),
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"))
             );
         }

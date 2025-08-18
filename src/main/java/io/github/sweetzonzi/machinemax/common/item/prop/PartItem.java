@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -52,6 +52,7 @@ import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public class PartItem extends Item implements ICustomModelItem {
     public PartItem(Properties properties) {
@@ -269,13 +270,13 @@ public class PartItem extends Item implements ICustomModelItem {
         PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
         String variant = getPartAssemblyInfo(itemStack, level).variant();
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()))
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         if (context == ItemDisplayContext.GUI) {
             animatable.setModelIndex(
                     new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/item_icon_2d_128x.geo"),
                             partType.icon)
             );
         } else {

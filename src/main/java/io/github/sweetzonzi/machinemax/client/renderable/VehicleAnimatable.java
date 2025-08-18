@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machinemax.client.renderable;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;

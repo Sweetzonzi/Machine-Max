@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machinemax.common.visual;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.SparkMathKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Vector3f;
 import lombok.Getter;
