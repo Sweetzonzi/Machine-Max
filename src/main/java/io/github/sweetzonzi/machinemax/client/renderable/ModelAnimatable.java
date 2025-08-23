@@ -7,6 +7,9 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.play.*;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData;
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimationLayer;
+import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
@@ -157,10 +160,8 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
         if (!animSet.isEmpty() && !animController.isPlayingAnim()) {
             for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
                 String name = entry.getKey();
-                var anim = entry.getValue();
-//                var animInstance = AnimInstance.create(this, name, anim, a -> Unit.INSTANCE);
-//                getAnimController().getBlendSpace().putIfAbsent(name, new BlendAnimation(animInstance, 1, List.of()));
-//                getAnimController().setAnimation(name, 0, a -> Unit.INSTANCE);
+                var animInstance = AnimInstance.create(this, name, a -> Unit.INSTANCE);
+                getAnimController().getLayer(DefaultLayer.INSTANCE.getBASE_LAYER()).setAnimation(animInstance, new AnimLayerData());
             }
         }
     }

@@ -5,6 +5,8 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.play.*;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData;
+import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
@@ -262,10 +264,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             if (!animSet.isEmpty() && !animController.isPlayingAnim()) {
                 for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
                     String name = entry.getKey();
-                    var anim = entry.getValue();
-//                    var animInstance = AnimInstance.create(this, name, anim, a -> Unit.INSTANCE);
-//                    getAnimController().getBlendSpace().putIfAbsent(name, new BlendAnimation(animInstance, 1, List.of()));
-//                    getAnimController().setAnimation(name, 0, a -> Unit.INSTANCE);
+                    var animInstance = AnimInstance.create(this, name, a -> Unit.INSTANCE);
+                    getAnimController().getLayer(DefaultLayer.INSTANCE.getBASE_LAYER()).setAnimation(animInstance, new AnimLayerData());
                 }
             }
         }

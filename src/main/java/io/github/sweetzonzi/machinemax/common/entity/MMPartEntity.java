@@ -305,7 +305,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     }
 
     @Override
-    public AnimController getAnimController() {
+    public @NotNull AnimController getAnimController() {
         if (part == null) return new AnimController(this);
         else return part.getAnimController();
     }

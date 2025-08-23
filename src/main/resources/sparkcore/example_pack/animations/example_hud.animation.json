@@ -1,0 +1,15 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"parallel0": {
+			"loop": true,
+			"bones": {
+				"Pointer": {
+					"rotation": {
+						"0.0": [0, 0, "240*(vehicle.get('engine_speed')*30/math.pi??0)/9000"]
+					}
+				}
+			}
+		}
+	}
+}
