@@ -640,42 +640,60 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         SubPart subPart = locatorSubPart.get(locatorName);
         if (subPart != null) {
             return subPart.getLocatorLocalTransform(locatorName);
-        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+        } else {
+            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
+            throw new NullPointerException();
+        }
     }
 
     public Transform getLerpedLocatorWorldTransform(String locatorName, float partialTick) {
         SubPart subPart = locatorSubPart.get(locatorName);
         if (subPart != null) {
             return subPart.getLerpedLocatorWorldTransform(locatorName, partialTick);
-        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+        } else {
+            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
+            throw new NullPointerException();
+        }
     }
 
     public Transform getLerpedLocatorWorldTransform(String locatorName, Transform offset, float partialTick) {
         SubPart subPart = locatorSubPart.get(locatorName);
         if (subPart != null) {
             return subPart.getLerpedLocatorWorldTransform(locatorName, offset, partialTick);
-        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+        } else {
+            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
+            throw new NullPointerException();
+        }
     }
 
     public Transform getLocatorWorldTransform(String locatorName) {
         SubPart subPart = locatorSubPart.get(locatorName);
         if (subPart != null) {
             return subPart.getLocatorWorldTransform(locatorName);
-        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+        } else {
+            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
+            throw new NullPointerException();
+        }
     }
 
     public Vector3f getLocatorLocalPos(String locatorName) {
         SubPart subPart = locatorSubPart.get(locatorName);
         if (subPart != null) {
             return subPart.getLocatorLocalPos(locatorName);
-        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+        } else {
+            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
+            throw new NullPointerException();
+        }
     }
 
     public Vector3f getLocatorWorldPos(String locatorName) {
         SubPart subPart = locatorSubPart.get(locatorName);
         if (subPart != null) {
             return subPart.getLocatorWorldPos(locatorName);
-        } else throw new NullPointerException("error.machine_max.subpart.locator_not_found");
+        } else {
+            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
+            throw new NullPointerException();
+        }
     }
 
     /**

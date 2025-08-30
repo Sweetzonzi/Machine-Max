@@ -55,7 +55,7 @@
   "message.machine_max.blueprint_pass": "No vehicle selected, skipping blueprint save",
   "message.machine_max.blueprint_saved": "Blueprint has been saved to %1$s",
   "message.machine_max.leaving_vehicle": "Hold [%1$s] %2$s/0.50s to leave the vehicle.",
-  "message.machine_max.watch_interact_box_info": "Press [%1$s] to interact with %2$s",
+  "message.machine_max.watch_interact_box_info": "[%1$s] ",
   "tooltip.machine_max.crowbar.safe_disassembly": "Interact to safely disassemble %1$s",
   "tooltip.machine_max.crowbar.unsafe_disassembly": "Integrity: %1$s/%2$s Interact to force disassemble %3$s (Could damage part)",
   "tooltip.machine_max.spray_can.interact": "Interact to paint:",

@@ -2432,6 +2432,18 @@
 					]
 				},
 				{
+					"name": "TrunkInteractZone",
+					"parent": "mmPartBody_Hull",
+					"pivot": [0, 4, 37],
+					"cubes": [
+						{
+							"origin": [-12, -6, 38],
+							"size": [24, 18, 19],
+							"uv": {}
+						}
+					]
+				},
+				{
 					"name": "Doors",
 					"parent": "Hull",
 					"pivot": [-19.5, -2.75, 1.5]

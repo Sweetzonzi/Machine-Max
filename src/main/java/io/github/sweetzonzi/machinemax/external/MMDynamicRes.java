@@ -308,6 +308,10 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/model/ae86_wheel_right.geo.json", modelFolder.resolve("ae86_wheel_right.geo.json"), overwrite);
         copyResourceToFile("/example_pack/model/ae86_wheel_left.geo.json", modelFolder.resolve("ae86_wheel_left.geo.json"), overwrite);
 
+        copyResourceToFile("/example_pack/model/mini_ev_hull.geo.json", modelFolder.resolve("mini_ev_hull.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/mini_ev_wheel_right.geo.json", modelFolder.resolve("mini_ev_wheel_right.geo.json"), overwrite);
+        copyResourceToFile("/example_pack/model/mini_ev_wheel_left.geo.json", modelFolder.resolve("mini_ev_wheel_left.geo.json"), overwrite);
+
         //动画文件
         copyResourceToFile("/example_pack/animation/example_hud.animation.json", animationFolder.resolve("example_hud.animation.json"), overwrite);
         copyResourceToFile("/example_pack/animation/ae86.animation.json", animationFolder.resolve("ae86.animation.json"), overwrite);
@@ -321,6 +325,9 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/part_type/ae86_chassis.json", partTypeFolder.resolve("ae86_chassis.json"), overwrite);
         copyResourceToFile("/example_pack/part_type/ae86_wheel.json", partTypeFolder.resolve("ae86_wheel.json"), overwrite);
 
+        copyResourceToFile("/example_pack/part_type/mini_ev_hull.json", partTypeFolder.resolve("mini_ev_hull.json"), overwrite);
+        copyResourceToFile("/example_pack/part_type/mini_ev_wheel.json", partTypeFolder.resolve("mini_ev_wheel.json"), overwrite);
+
         //自定义HUD文件
         copyResourceToFile("/example_pack/hud/example_hud.json", hudTypeFolder.resolve("example_hud.json"), overwrite);
 
@@ -330,6 +337,7 @@ public class MMDynamicRes {
         //蓝图文件
         copyResourceToFile("/example_pack/blueprint/ae86.json", blueprint.resolve("ae86.json"), overwrite);
         copyResourceToFile("/example_pack/blueprint/ae86at.json", blueprint.resolve("ae86at.json"), overwrite);
+        copyResourceToFile("/example_pack/blueprint/mini_ev.json", blueprint.resolve("mini_ev.json"), overwrite);
 
         //配方文件
         copyResourceToFile("/example_pack/recipe/ae86_chassis.json", recipe.resolve("ae86_chassis.json"), overwrite);
@@ -344,15 +352,22 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_2.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_3.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_4.png", texture.resolve("ae86_4.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_1.png", texture.resolve("ae86_5.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_6.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_7.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_4.png", texture.resolve("ae86_8.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_4.png", texture.resolve("ae86_9.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_5.png", texture.resolve("ae86_5.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_6.png", texture.resolve("ae86_6.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_7.png", texture.resolve("ae86_7.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_8.png", texture.resolve("ae86_8.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/ae86_9.png", texture.resolve("ae86_9.png"), overwrite);
+
         copyResourceToFile("/example_pack/texture/ae86_all_terrain_1.png", texture.resolve("ae86_all_terrain_1.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_all_terrain_2.png", texture.resolve("ae86_all_terrain_2.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_all_terrain_3.png", texture.resolve("ae86_all_terrain_3.png"), overwrite);
         copyResourceToFile("/example_pack/texture/ae86_all_terrain_4.png", texture.resolve("ae86_all_terrain_4.png"), overwrite);
+
+        copyResourceToFile("/example_pack/texture/mini_ev_ae86.png", texture.resolve("mini_ev_ae86.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/mini_ev_black.png", texture.resolve("mini_ev_black.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/mini_ev_brown.png", texture.resolve("mini_ev_brown.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/mini_ev_pink.png", texture.resolve("mini_ev_pink.png"), overwrite);
+        copyResourceToFile("/example_pack/texture/mini_ev_white.png", texture.resolve("mini_ev_white.png"), overwrite);
 
         //自带测试图标
         copyResourceToFile("/example_pack/icon/ae86_back_seat_icon.png", icon.resolve("ae86_back_seat_icon.png"), overwrite);
@@ -364,10 +379,15 @@ public class MMDynamicRes {
         copyResourceToFile("/example_pack/icon/ae86_hull_icon.png", icon.resolve("ae86_hull_icon.png"), overwrite);
         copyResourceToFile("/example_pack/icon/ae86_icon.png", icon.resolve("ae86_icon.png"), overwrite);
         copyResourceToFile("/example_pack/icon/ae86at_icon.png", icon.resolve("ae86at_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/mini_ev_icon.png", icon.resolve("mini_ev_icon.png"), overwrite);
+
+        copyResourceToFile("/example_pack/icon/mini_ev_hull_icon.png", icon.resolve("mini_ev_hull_icon.png"), overwrite);
+        copyResourceToFile("/example_pack/icon/mini_ev_wheel_icon.png", icon.resolve("mini_ev_wheel_icon.png"), overwrite);
 
         //自定义文本文件
         copyResourceToFile("/example_pack/content/ae86.html", content.resolve("ae86.html"), overwrite);
         copyResourceToFile("/example_pack/content/ae86at.html", content.resolve("ae86at.html"), overwrite);
+        copyResourceToFile("/example_pack/content/mini_ev.html", content.resolve("mini_ev.html"), overwrite);
 
         //自定义字体文件
         copyResourceToFile("/example_pack/font/test_font.json", font.resolve("test_font.json"), overwrite);

@@ -110,7 +110,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                 InteractBox interactBox = eyesight.getAccurateInteractBox();
                 if (interactBox == null) interactBox = eyesight.getFastInteractBox();
                 if (interactBox != null) {
-                    player.displayClientMessage(Component.translatable("message.machine_max.watch_interact_box_info", KeyBinding.generalInteractKey.getTranslatedKeyMessage(), interactBox.name), true);
+                    player.displayClientMessage(Component.translatable("message.machine_max.watch_interact_box_info", KeyBinding.generalInteractKey.getTranslatedKeyMessage())
+                            .append(Component.translatable(interactBox.name)), true);
                 }
             }
         }

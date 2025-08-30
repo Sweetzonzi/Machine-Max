@@ -5,6 +5,8 @@ import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.ISignalSender;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.InteractSignal;
 import lombok.Getter;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.LivingEntity;
 
 import java.util.HashMap;

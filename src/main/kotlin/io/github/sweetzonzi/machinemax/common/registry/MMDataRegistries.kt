@@ -9,7 +9,6 @@ object MMDataRegistries {
     @JvmStatic
     val SUBSYSTEM_ATTR_CODEC = MachineMax.REGISTER.registry<MapCodec<out AbstractSubsystemAttr>>()
         .id("subsystem_attr_codec")
-        .valueType(MapCodec::class as KClass<out MapCodec<out AbstractSubsystemAttr>>)
         .build { it.sync(true).create() }
     @JvmStatic
     fun register() {}

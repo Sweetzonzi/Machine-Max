@@ -72,6 +72,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         Vec3 delta = new Vec3(originalVec.x, originalVec.y, originalVec.z);
         Vec3 center = aabb.getCenter();
         if (delta.length() < 0.5f) delta = delta.normalize().scale(0.5f);
+        //TODO:有时扫掠测试会报错，检查原因
         machine_Max$sweepTestStart.setTranslation(PhysicsHelperKt.toBVector3f(center));
         machine_Max$sweepTestEnd.setTranslation(PhysicsHelperKt.toBVector3f(center.add(delta)));
         entity.level().getPhysicsLevel().getWorld().sweepTest(

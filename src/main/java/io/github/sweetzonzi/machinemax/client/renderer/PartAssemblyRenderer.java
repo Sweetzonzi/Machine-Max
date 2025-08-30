@@ -8,29 +8,26 @@ import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.client.renderable.ModelAnimatable;
 import io.github.sweetzonzi.machinemax.client.renderable.VehicleAnimatable;
 import io.github.sweetzonzi.machinemax.common.item.prop.PartItem;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machinemax.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machinemax.common.visual.AnimatableParams;
 import io.github.sweetzonzi.machinemax.common.visual.RenderableBoundingBox;
 import io.github.sweetzonzi.machinemax.common.visual.VisualEffectHelper;
-import io.github.sweetzonzi.machinemax.external.MMDynamicRes;
-import io.github.sweetzonzi.machinemax.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Brightness;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
@@ -50,44 +47,6 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
     @Override
     public void tick() {
         player = Minecraft.getInstance().player;
-        if (vehicle != null) {
-            vehicle.setTransform(new Transform().setTranslation(PhysicsHelperKt.toBVector3f(vehicleCore.getPosition())));
-        }
-    }
-
-    @Override
-    public void physTick(@NotNull PhysicsLevel physicsLevel) {
-    }
-
-    @Override
-    public void render(@NotNull Minecraft minecraft, @NotNull Vec3 camPos, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, float partialTick) {
-        renderPartToAssembly(camPos, poseStack, bufferSource, partialTick);
-        renderBoundingBoxes(camPos, poseStack, bufferSource, partialTick);
-        renderAnimatable(camPos, poseStack, bufferSource, partialTick);
-    }
-
-    public void renderAnimatable(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
-        if (player == null) return;
-        if (partToPlace != null) {
-            poseStack.pushPose();
-            poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
-            partToPlace.render(poseStack, (MultiBufferSource.BufferSource) bufferSource, partialTick);
-            poseStack.popPose();
-        } else if (VisualEffectHelper.partToPlace != null) {
-            partToPlace = new ModelAnimatable(VisualEffectHelper.partToPlace);
-        }
-//        if (vehicle != null) {
-//            poseStack.pushPose();
-//            poseStack.translate(-camPos.x, -camPos.y + 3, -camPos.z);
-//            vehicle.render(poseStack, (MultiBufferSource.BufferSource) bufferSource, partialTick);
-//            poseStack.popPose();
-//        } else if (((IEntityMixin) player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
-//            vehicleCore = seat.getPart().vehicle;
-//            vehicle = new VehicleAnimatable(vehicleCore);
-//        }
-    }
-
-    public void renderPartToAssembly(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
         if (player.getMainHandItem().getItem() instanceof PartItem) {
             ItemStack partItem = player.getMainHandItem();
@@ -99,16 +58,55 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
             if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.getModelIndex().getModelPath() != model) {
                 VisualEffectHelper.partToPlace = new AnimatableParams(model, animation, texture);
                 VisualEffectHelper.partToPlace.setTransparency(64);
+                VisualEffectHelper.partToPlace.setTransform(new Transform(
+                        PhysicsHelperKt.toBVector3f(player.level().clip(new ClipContext(
+                                player.getEyePosition(),
+                                player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                        Quaternion.IDENTITY
+                ));
+                this.partToPlace = null; // 清空原有已有动画体
             }
-            renderAttachPoints(partType, variant, camPos, poseStack, bufferSource, partialTick);
         } else {
             this.partToPlace = null;
             VisualEffectHelper.partToPlace = null;
         }
     }
 
-    public void renderInteractBoxes() {
-        //TODO: 实现交互判定区的渲染
+    @Override
+    public void physTick(@NotNull PhysicsLevel physicsLevel) {
+    }
+
+    @Override
+    public void render(@NotNull Minecraft minecraft, @NotNull Vec3 camPos, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, float partialTick) {
+        renderPartToAssembly(camPos, poseStack, bufferSource, partialTick);
+        renderBoundingBoxes(camPos, poseStack, bufferSource, partialTick);
+    }
+
+    public void renderPartToAssembly(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
+        if (player == null) return;
+        if (player.getMainHandItem().getItem() instanceof PartItem) {
+            ItemStack partItem = player.getMainHandItem();
+            PartType partType = PartItem.getPartType(partItem, player.level());
+            String variant = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
+            renderAttachPoints(partType, variant, camPos, poseStack, bufferSource, partialTick);
+            renderPart(camPos, poseStack, bufferSource, partialTick);
+        } else {
+            this.partToPlace = null;
+            VisualEffectHelper.partToPlace = null;
+        }
+    }
+
+    public void renderPart(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
+        if (player == null) return;
+        if (partToPlace != null) {
+            poseStack.pushPose();
+            poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+            partToPlace.render(poseStack, (MultiBufferSource.BufferSource) bufferSource, partialTick);
+            poseStack.popPose();
+        } else if (VisualEffectHelper.partToPlace != null) {
+            partToPlace = new ModelAnimatable(VisualEffectHelper.partToPlace);
+        }
     }
 
     public void renderAttachPoints(PartType partType, String variant, Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {

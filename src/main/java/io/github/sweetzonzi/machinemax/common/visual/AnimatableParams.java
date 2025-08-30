@@ -24,7 +24,7 @@ import java.util.Map;
 public class AnimatableParams {
     public ModelIndex modelIndex;
     public Transform transform = new Transform();
-    public Transform lastTransform = new Transform();
+    public Transform lastTransform;
     public Vec3i color;
     public int transparency;
     public boolean perspective;
@@ -103,7 +103,6 @@ public class AnimatableParams {
         Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
         this.transform.setRotation(SparkMathKt.toBQuaternion(quaternionf));
         this.transform.setScale(PhysicsHelperKt.toBVector3f(scale));
-        this.lastTransform = this.transform;
         this.color = color;
         this.transparency = transparency;
         this.perspective = perspective;
@@ -125,7 +124,6 @@ public class AnimatableParams {
         Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
         this.transform.setRotation(SparkMathKt.toBQuaternion(quaternionf));
         this.transform.setScale(PhysicsHelperKt.toBVector3f(scale));
-        this.lastTransform = this.transform;
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
         this.perspective = perspective;
@@ -147,7 +145,6 @@ public class AnimatableParams {
         Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
         this.transform.setRotation(SparkMathKt.toBQuaternion(quaternionf));
         this.transform.setScale((float) scale);
-        this.lastTransform = this.transform;
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
         this.perspective = perspective;
@@ -166,7 +163,6 @@ public class AnimatableParams {
         this.modelIndex = new ModelIndex(model, animation, texture);
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
         this.transform.setScale((float) scale);
-        this.lastTransform = this.transform;
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
         this.perspective = perspective;
@@ -184,8 +180,6 @@ public class AnimatableParams {
                             Map<String, TextParams> textAttr) {
         this.modelIndex = new ModelIndex(model, animation, texture);
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
-        this.transform.setScale(1);
-        this.lastTransform = this.transform;
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
         this.perspective = perspective;
@@ -199,8 +193,6 @@ public class AnimatableParams {
 
     public AnimatableParams(ResourceLocation model, ResourceLocation animation, ResourceLocation texture) {
         this.modelIndex = new ModelIndex(model, animation, texture);
-        this.transform.setScale(1);
-        this.lastTransform = this.transform;
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
         this.perspective = true;
@@ -215,8 +207,6 @@ public class AnimatableParams {
 
     public AnimatableParams(ModelIndex modelIndex) {
         this.modelIndex = modelIndex;
-        this.transform.setScale(1);
-        this.lastTransform = this.transform;
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
         this.perspective = true;
@@ -244,24 +234,12 @@ public class AnimatableParams {
         return SparkMathKt.toVec3(getTransform(1).getTranslation());
     }
 
-    public void setOffset(Vec3 offset){
-        this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
-    }
-
     private Vec3 getRotation() {
         return SparkMathKt.toVec3(SparkMathKt.toQuaternionf(getTransform(1).getRotation()).getEulerAnglesXYZ(new Vector3f()));
     }
 
-    public void setQuaternion(Quaternionf quaternion){
-        this.transform.setRotation(SparkMathKt.toBQuaternion(quaternion));
-    }
-
     private Vec3 getScale() {
         return SparkMathKt.toVec3(getTransform(1).getScale());
-    }
-
-    public void setScale(Vec3 scale){
-        this.transform.setScale(PhysicsHelperKt.toBVector3f(scale));
     }
 
     public Vector3f getOffset(float partialTick) {
@@ -281,12 +259,18 @@ public class AnimatableParams {
     }
 
     public void setTransform(Transform transform) {
-        this.lastTransform = this.transform;
+        if (this.lastTransform == null) {
+            this.lastTransform = transform;
+        } else this.lastTransform = this.transform;
         this.transform = transform;
     }
 
     public Transform getTransform(float partialTick) {
-        return SparkMathKt.lerp(lastTransform, transform, partialTick);
+        if (this.lastTransform != null) {
+            return SparkMathKt.lerp(lastTransform, transform, partialTick);
+        } else {
+            return transform;
+        }
     }
 
 }

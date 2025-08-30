@@ -1,0 +1,245 @@
+{
+  "hp": 20.0,
+  "parts": [
+    {
+      "integrity": 15.0,
+      "subPartTransforms": {
+        "mini_ev_wheel": {
+          "position": [
+            6.4932156,
+            -59.59297,
+            -22.830652
+          ],
+          "rotation": [
+            -0.12882367,
+            0.006608802,
+            -0.0031116768,
+            0.9916406
+          ],
+          "linearVel": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "angularVel": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "uuid": "144834a4-3062-40e1-8313-5b25b026d2d4",
+      "durability": 20.0,
+      "registryKey": "machine_max:mini_ev_wheel",
+      "subpart": "mini_ev_wheel",
+      "variant": "left",
+      "textureIndex": 0
+    },
+    {
+      "integrity": 15.0,
+      "subPartTransforms": {
+        "mini_ev_wheel": {
+          "position": [
+            8.625206,
+            -59.59298,
+            -22.85708
+          ],
+          "rotation": [
+            0.9643291,
+            -0.002171909,
+            -0.0070130164,
+            0.26460436
+          ],
+          "linearVel": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "angularVel": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "uuid": "5677fb0a-70da-4230-b241-f23c040e4cf1",
+      "durability": 20.0,
+      "registryKey": "machine_max:mini_ev_wheel",
+      "subpart": "mini_ev_wheel",
+      "variant": "right",
+      "textureIndex": 0
+    },
+    {
+      "integrity": 15.0,
+      "subPartTransforms": {
+        "mini_ev_wheel": {
+          "position": [
+            6.52871,
+            -59.59296,
+            -19.955925
+          ],
+          "rotation": [
+            0.006397192,
+            0.011774624,
+            -0.004099718,
+            0.99990183
+          ],
+          "linearVel": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "angularVel": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "uuid": "89e29023-2dcc-405b-aa06-212b8ae1191e",
+      "durability": 20.0,
+      "registryKey": "machine_max:mini_ev_wheel",
+      "subpart": "mini_ev_wheel",
+      "variant": "left",
+      "textureIndex": 0
+    },
+    {
+      "integrity": 30.0,
+      "subPartTransforms": {
+        "mini_ev_hull": {
+          "position": [
+            7.5767174,
+            -59.277145,
+            -21.651958
+          ],
+          "rotation": [
+            -3.0063317E-4,
+            0.0061830045,
+            -0.0045038736,
+            0.9999707
+          ],
+          "linearVel": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "angularVel": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "SubsystemData": {
+        "left_back_seat": {},
+        "car_controller": {},
+        "left_front_wheel_driver": {},
+        "driver_seat": {},
+        "right_back_wheel_driver": {},
+        "transmission": {},
+        "right_front_wheel_driver": {},
+        "engine": {},
+        "title.machine_max.subsystem.mini_ev.glove_box": {
+          "Items": []
+        },
+        "gearbox": {},
+        "copilot_seat": {},
+        "right_back_seat": {},
+        "left_back_wheel_driver": {}
+      },
+      "uuid": "7bf58131-3239-4232-9b81-0b037c15fa12",
+      "durability": 40.0,
+      "registryKey": "machine_max:mini_ev_hull",
+      "subpart": "mini_ev_hull",
+      "variant": "default",
+      "textureIndex": 0
+    },
+    {
+      "integrity": 15.0,
+      "subPartTransforms": {
+        "mini_ev_wheel": {
+          "position": [
+            8.660698,
+            -59.592937,
+            -19.982271
+          ],
+          "rotation": [
+            -9.316852E-4,
+            0.0094550215,
+            -0.0041371984,
+            0.9999463
+          ],
+          "linearVel": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "angularVel": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "uuid": "5d9dd2cb-def1-4bc5-946a-cf359d3f1898",
+      "durability": 20.0,
+      "registryKey": "machine_max:mini_ev_wheel",
+      "subpart": "mini_ev_wheel",
+      "variant": "right",
+      "textureIndex": 0
+    }
+  ],
+  "connections": [
+    {
+      "PartUuidA": "5d9dd2cb-def1-4bc5-946a-cf359d3f1898",
+      "SubPartNameA": "mini_ev_wheel",
+      "AttachPointConnectorName": "chassis_connection",
+      "PartUuidS": "7bf58131-3239-4232-9b81-0b037c15fa12",
+      "SubPartNameS": "mini_ev_hull",
+      "SpecialConnectorName": "right_back_wheel"
+    },
+    {
+      "PartUuidA": "5677fb0a-70da-4230-b241-f23c040e4cf1",
+      "SubPartNameA": "mini_ev_wheel",
+      "AttachPointConnectorName": "chassis_connection",
+      "PartUuidS": "7bf58131-3239-4232-9b81-0b037c15fa12",
+      "SubPartNameS": "mini_ev_hull",
+      "SpecialConnectorName": "right_front_wheel"
+    },
+    {
+      "PartUuidA": "89e29023-2dcc-405b-aa06-212b8ae1191e",
+      "SubPartNameA": "mini_ev_wheel",
+      "AttachPointConnectorName": "chassis_connection",
+      "PartUuidS": "7bf58131-3239-4232-9b81-0b037c15fa12",
+      "SubPartNameS": "mini_ev_hull",
+      "SpecialConnectorName": "left_back_wheel"
+    },
+    {
+      "PartUuidA": "144834a4-3062-40e1-8313-5b25b026d2d4",
+      "SubPartNameA": "mini_ev_wheel",
+      "AttachPointConnectorName": "chassis_connection",
+      "PartUuidS": "7bf58131-3239-4232-9b81-0b037c15fa12",
+      "SubPartNameS": "mini_ev_hull",
+      "SpecialConnectorName": "left_front_wheel"
+    }
+  ],
+  "min": [
+    -1.3181641578674324,
+    -0.6760612487792912,
+    -2.2535137176513658
+  ],
+  "max": [
+    1.3402220726013176,
+    2.3065361022949276,
+    2.4220806121826186
+  ],
+  "uuid": "7bf58131-3239-4232-9b81-0b037c15fa12",
+  "pos": [
+    7.576909351348878,
+    -59.52979888916016,
+    -21.45557746887207
+  ],
+  "vehicle_name": "miniEV",
+  "tooltip": "machine_max:example_pack/content/mini_ev.html",
+  "icon": "machine_max:example_pack/icon/mini_ev_icon.png"
+}

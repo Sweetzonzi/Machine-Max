@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machinemax.common.item.prop;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
@@ -15,7 +16,6 @@ import io.github.sweetzonzi.machinemax.common.component.PartAssemblyInfoComponen
 import io.github.sweetzonzi.machinemax.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
 import io.github.sweetzonzi.machinemax.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machinemax.common.registry.MMRegistries;
 import io.github.sweetzonzi.machinemax.common.vehicle.Part;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
@@ -52,6 +52,7 @@ import org.joml.Vector3f;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class PartItem extends Item implements ICustomModelItem {
@@ -179,7 +180,8 @@ public class PartItem extends Item implements ICustomModelItem {
 
                     );
             }
-            Minecraft.getInstance().player.displayClientMessage(message, true);
+            if (entity instanceof Player player)
+                player.displayClientMessage(message, true);
         }
     }
 
@@ -252,14 +254,10 @@ public class PartItem extends Item implements ICustomModelItem {
     public static PartType getPartType(ItemStack stack, Level level) {
         PartType partType;
         if (stack.has(MMDataComponents.getPART_TYPE())) {
-            //从物品Component中获取部件类型
-            partType = MMRegistries.getRegistryAccess(level).registry(PartType.PART_REGISTRY_KEY).get().get(stack.get(MMDataComponents.getPART_TYPE()));
-            if (partType == null) {
-                if (level.isClientSide) {
-                    partType = MMDynamicRes.PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));//为null说明是外部包 尝试还原
-                } else
-                    partType = MMDynamicRes.SERVER_PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));
-            } else return partType;
+            if (level.isClientSide) {
+                partType = MMDynamicRes.PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));
+            } else
+                partType = MMDynamicRes.SERVER_PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));
         } else throw new IllegalStateException("物品" + stack + "中未找到部件类型数据");//如果物品Component中部件类型为空，则抛出异常
         if (partType == null) throw new IllegalStateException("未找到物品" + stack + "中存储的数据类型");
         return partType;

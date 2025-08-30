@@ -142,35 +142,17 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         return part.level.getPhysicsLevel();
     }
 
-    /**
-     * Invoked immediately after a contact manifold is removed.
-     *
-     * @param manifoldId the native ID of the {@code btPersistentManifold} (not
-     *                   zero)
-     */
-    @Override
-    public void onEnded(@NotNull PhysicsCollisionObject pcoA, @NotNull PhysicsCollisionObject pcoB, long manifoldId) {
-//        MachineMax.LOGGER.debug("onEnded: {} {}", pcoA.name, pcoB.name);
-    }
-
-    /**
-     * Invoked immediately after a contact point is refreshed without being
-     * removed. Skipped for Sphere-Sphere contacts.
-     *
-     * @param pcoA            the first involved object (not null)
-     * @param pcoB            the 2nd involved object (not null)
-     * @param manifoldPointId the native ID of the {@code btManifoldPoint} (not
-     *                        zero)
-     */
     @Override
     public void onProcessed(PhysicsCollisionObject pcoA, @NotNull PhysicsCollisionObject pcoB, long manifoldPointId) {
         //TODO:拆分为多个简单方法以方便子类修改并提升可读性
         PhysicsRigidBody other;
+        Vector3f normal = new Vector3f();
         Level level = part.level;
         int hitBoxIndex, otherHitBoxIndex;
         Vector3f worldContactPoint = new Vector3f(), otherWorldContactPoint = new Vector3f();
         Vector3f localContactPoint = new Vector3f(), otherLocalContactPoint = new Vector3f();
-        if (pcoA.getOwner() == this) {
+        PhysicsHost host = pcoA.getOwner();
+        if (host == this) {
             other = (PhysicsRigidBody) pcoB;
             hitBoxIndex = ManifoldPoints.getIndex0(manifoldPointId);
             otherHitBoxIndex = ManifoldPoints.getIndex1(manifoldPointId);
@@ -178,7 +160,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             ManifoldPoints.getPositionWorldOnB(manifoldPointId, otherWorldContactPoint);
             ManifoldPoints.getLocalPointA(manifoldPointId, localContactPoint);
             ManifoldPoints.getLocalPointB(manifoldPointId, otherLocalContactPoint);
-
         } else {
             other = (PhysicsRigidBody) pcoA;
             hitBoxIndex = ManifoldPoints.getIndex1(manifoldPointId);
@@ -188,9 +169,15 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
             ManifoldPoints.getLocalPointB(manifoldPointId, localContactPoint);
             ManifoldPoints.getLocalPointA(manifoldPointId, otherLocalContactPoint);
         }
+//        hitBoxIndex = point1.getTriangleIndex();
+//        otherHitBoxIndex = point2.getTriangleIndex();
+//        point1.getPositionWorld(worldContactPoint);
+//        point2.getPositionWorld(otherWorldContactPoint);
+//        point1.getLocalPoint(localContactPoint);
+//        point2.getLocalPoint(otherLocalContactPoint);
         //获取世界坐标下的碰撞点法线
-        Vector3f normal = new Vector3f();
         ManifoldPoints.getNormalWorldOnB(manifoldPointId, normal);
+//        point1.getNormalWorldOnB(normal);
         //计算相对接触速度
         Vector3f vel = body.getLinearVelocity(null);
         Vector3f contactVel = MMMath.relPointWorldVel(localContactPoint, body);
@@ -463,17 +450,6 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         }
     }
 
-    /**
-     * Invoked immediately after a contact manifold is created.
-     *
-     * @param manifoldId the native ID of the {@code btPersistentManifold} (not
-     *                   zero)
-     */
-    @Override
-    public void onStarted(@NotNull PhysicsCollisionObject pcoA, @NotNull PhysicsCollisionObject pcoB, long manifoldId) {
-//        MachineMax.LOGGER.debug("onStarted: {} {}", pcoA.name, pcoB.name);
-    }
-
     @SubscribeEvent
     public static void onPreCollision(NeedsCollisionEvent event) {
         //同载具部件不发生碰撞
@@ -648,12 +624,22 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
 
     @NotNull
     public HitBox getHitBox(int contactPointIndex) {
-        return getHitBox(this.collisionShape.findChild(contactPointIndex).getShape().nativeId());
+        try {
+            return getHitBox(this.collisionShape.findChild(contactPointIndex).getShape().nativeId());
+        } catch (NullPointerException e) {
+            MachineMax.LOGGER.error("No matching child shape of sub-part {}-{} found for contact point id: {}", part.name, name, contactPointIndex);
+            return part.hitBoxes.values().iterator().next();
+        }
     }
 
     @NotNull
     public HitBox getHitBox(long childShapeId) {
-        return part.hitBoxes.get(attr.getHitBoxNames().get(childShapeId));
+        try {
+            return part.hitBoxes.get(attr.getHitBoxNames().get(childShapeId));
+        } catch (NullPointerException e) {
+            MachineMax.LOGGER.error("No hit box of sub-part {}-{} found for child shape id: {}", part.name, name, childShapeId);
+            return part.hitBoxes.values().iterator().next();
+        }
     }
 
     public Transform getLerpedLocatorWorldTransform(String locatorName, float partialTick) {

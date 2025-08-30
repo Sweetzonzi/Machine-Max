@@ -55,7 +55,7 @@
   "message.machine_max.blueprint_pass": "未选中任何载具，取消保存蓝图",
   "message.machine_max.blueprint_saved": "蓝图已保存至%1$s",
   "message.machine_max.leaving_vehicle": "长按[%1$s]键%2$s/0.50秒以离开载具",
-  "message.machine_max.watch_interact_box_info": "按[%1$s]键与%2$s互动",
+  "message.machine_max.watch_interact_box_info": "[%1$s] ",
   "tooltip.machine_max.crowbar.safe_disassembly": "互动以安全拆除%1$s",
   "tooltip.machine_max.crowbar.unsafe_disassembly": "结构完整性：%1$s/%2$s 互动以强行拆除%3$s (可能损坏部件)",
   "tooltip.machine_max.spray_can.interact": "互动以喷涂：",

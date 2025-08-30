@@ -82,20 +82,12 @@ object MMCreativeTabs {
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
         if (event.tab == MACHINE_MAX_PART_TAB.get()) {
             MachineMax.LOGGER.info("Putting parts into creative tab...")
-            val buildInParts = ArrayList<ItemStack>(1)//将所有注册了的零件的物品形式加入创造物品栏
-            for (partType in MMRegistries.getRegistryAccess(Minecraft.getInstance().level)
-                .registry(PartType.PART_REGISTRY_KEY).get()) {
-                val itemStack = ItemStack(MMItems.PART_ITEM)
-                itemStack.set(MMDataComponents.PART_TYPE, partType.registryKey)
-                buildInParts.add(itemStack)
-            }
             val externalParts = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
             MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
                 val itemStack = ItemStack(MMItems.PART_ITEM)
                 itemStack.set(MMDataComponents.PART_TYPE, loc)
                 externalParts.add(itemStack)
             }
-            buildInParts.forEach { event.accept(it) }
             externalParts.forEach { event.accept(it) }
         } else if (event.tab == MACHINE_MAX_VEHICLE_BLUEPRINT_TAB.get()) {
             MachineMax.LOGGER.info("Putting blueprints into creative tab...")

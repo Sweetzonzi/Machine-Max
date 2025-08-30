@@ -428,7 +428,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @NotNull
     @Override
-    public BlackBoard getAttackData() {
+    public BlackBoard getHurtData() {
         return new BlackBoard();
     }
 }

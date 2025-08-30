@@ -26,7 +26,6 @@ public interface ICustomModelItem {
             Map<ItemDisplayContext, ItemAnimatable> customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
             if (customModels == null) customModels = new HashMap<>();
             ItemAnimatable animatable = customModels.get(context);
-            //为什么会出现itemStack不匹配的情况？
             if (animatable == null || animatable.getItemStack() != itemStack || animatable.getAnimLevel() != level)
                 animatable = createItemAnimatable(itemStack, level, context);
             return animatable;
