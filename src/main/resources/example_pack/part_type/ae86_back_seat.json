@@ -1,7 +1,7 @@
 {
   "name": "ae86_back_seat",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
   "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-    "default": "machine_max:example_pack/model/ae86_back_seat.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_hull.geo.json"
+    "default": "machine_max:ae86_back_seat.geo"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_hull.geo.json"
   },
   "textures": [//部件贴图列表，不同变体模型应共享一张贴图
     "machine_max:example_pack/texture/ae86_all_terrain_1.png",

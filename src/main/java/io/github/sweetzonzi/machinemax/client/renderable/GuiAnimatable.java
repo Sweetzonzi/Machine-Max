@@ -8,6 +8,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import com.mojang.math.Axis;
+import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.visual.AnimatableParams;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
@@ -149,7 +150,7 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
     }
 
     @Override
-    public void renderTexts(PoseStack poseStack,
+    protected void renderTexts(PoseStack poseStack,
                             MultiBufferSource.BufferSource bufferSource, float partialTick) {
         poseStack.pushPose();
         poseStack.scale(-1, -1, 1);
@@ -162,7 +163,12 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
             String locatorName = entry.getKey();
             AnimatableParams.TextParams textParams = entry.getValue();
             Matrix4f matrix = getSpaceBoneMatrix(locatorName, partialTick);
-            var offset = getModel().getLocators().get(locatorName).getOffset().toVector3f();
+            Vector3f offset;
+            try{
+                offset = getModel().getLocators().get(locatorName).getOffset().toVector3f();
+            }catch (Exception e){
+                offset = new Vector3f();
+            }
             matrix.translate(offset.x, offset.y, offset.z);
             poseStack.pushPose();
             poseStack.mulPose(matrix);
@@ -176,6 +182,8 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
             for (String arg : textParams.molangArgs()) {
                 try {
                     Object value = SparkCore.PARSER.parseExpression(arg).evalUnsafe(evaluator);
+                    //TODO:排查有时仪表速度值双倍的问题
+//                    MachineMax.LOGGER.debug("Molang: " + arg + " = " + value);
                     switch (value) {
                         case String stringValue -> args.add(stringValue);
                         case Number number -> args.add(df.format(number.doubleValue()));

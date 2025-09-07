@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machinemax.client.renderer;
 
 import cn.solarmoon.spark_core.animation.renderer.GeoEntityRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
+import cn.solarmoon.spark_core.util.RenderTypeUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -39,6 +40,8 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 worldMatrix,
                 poseStack.last().normal(),
                 bufferSource.getBuffer(getRenderType(entity)),
+//                bufferSource.getBuffer(RenderTypeUtil.transparentRepair(getTextureLocation(entity), false)),
+//                bufferSource.getBuffer(RenderTypeUtil.pureEffect(0, 10)),
                 packedLight,
                 overlay,
                 color.getRGB(),

@@ -32,7 +32,7 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
     public static final MapCodec<CarControllerSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
             Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
-            Codec.STRING.listOf().fieldOf("control_inputs").forGetter(CarControllerSubsystemAttr::getControlInputKeys),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(CarControllerSubsystemAttr::getControlInputKeys),
             Vec3.CODEC.optionalFieldOf("steering_center", Vec3.ZERO).forGetter(CarControllerSubsystemAttr::getSteeringCenter),
             Codec.FLOAT.optionalFieldOf("steering_radius", 5.0f).forGetter(CarControllerSubsystemAttr::getSteeringRadius),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(CarControllerSubsystemAttr::isManualGearShift),

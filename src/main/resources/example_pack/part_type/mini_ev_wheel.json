@@ -1,8 +1,8 @@
 {
   "name": "mini_ev_wheel",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
   "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-    "left": "machine_max:example_pack/model/mini_ev_wheel_left.geo.json",
-    "right": "machine_max:example_pack/model/mini_ev_wheel_right.geo.json"
+    "left": "machine_max:mini_ev_wheel_left.geo",
+    "right": "machine_max:mini_ev_wheel_right.geo"
   },
   "textures": [//部件贴图列表，不同变体模型必须共享一张贴图，否则请创建新的部件而非部件变体
     "machine_max:example_pack/texture/mini_ev_ae86.png"
@@ -12,7 +12,7 @@
   "basic_integrity": 15.0,//(可选，默认15.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
   "sub_parts": {//零件(子部件)列表
     "mini_ev_wheel": {//零件(子部件)名称
-      "mass": 15.0,//零件质量(kg)
+      "mass": 20.0,//零件质量(kg)
       "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
       "block_collision": "ground",//(可选，默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
       "collision_height": 1.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
@@ -20,10 +20,10 @@
       "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体，以及将此骨骼下的定位器储存起来供子系统等使用
         "CollisionShape": {//骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
           "type": "cylinder",//碰撞形状类型，支持box、sphere、cylinder
-          "friction": [1.2, 3.3, 1.0],//(可选，默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
+          "friction": [1.2, 3.5, 1.0],//(可选，默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
           "slip_adaptation": 0.5,//(可选，默认0.5)滑动适应性系数(0~1)，该属性可削弱打滑时的摩擦系数降低效果，提升抓地力
           "rolling_friction": 0.05,//(可选，默认0.2)滚动摩擦系数，影响滚动阻力
-          "restitution": 0.3,//(可选，默认0.1)弹性系数，0为完全非弹性碰撞，1为完全弹性碰撞，碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
+          "restitution": 0.2,//(可选，默认0.1)弹性系数，0为完全非弹性碰撞，1为完全弹性碰撞，碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
           "block_damage_factor": 0.05, //(可选，默认1.0)方块损伤系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力
           "collision_damage_reduction": 3.0 //(可选，默认1.0)碰撞伤害减免，小于此数值的伤害会被免疫，大于此数值的伤害会被减免
         }

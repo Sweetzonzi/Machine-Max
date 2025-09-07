@@ -1,17 +1,13 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.subsystem;
 
-import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machinemax.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machinemax.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machinemax.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machinemax.common.vehicle.attr.subsystem.CarControllerSubsystemAttr;
 import io.github.sweetzonzi.machinemax.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machinemax.common.vehicle.signal.*;
 import lombok.Getter;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +18,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     public final CarControllerSubsystemAttr attr;
     public byte[] moveInput;
     public byte[] moveInputConflict;
-    public float speed;
+    public float speed = 0.0f;
     private final Map<ISignalReceiver, Float> overrideCountDown = new HashMap<>();
 
     float avgEngineMaxSpeed = 0f;
@@ -31,6 +27,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     int engineCount = 0;
 
     private final Map<ISignalReceiver, String> engines = new HashMap<>();//控制的发动机其接收控制的信号频道映射 Control engine and its receiving signal channel mapping
+    private final Map<ISignalReceiver, String> motors = new HashMap<>();//控制的电动机其接收控制的信号频道映射 Control engine and its receiving signal channel mapping
     private final Map<ISignalReceiver, String> gearboxes = new HashMap<>();//控制的变速箱其接收控制的信号频道映射 Control gearbox and its receiving signal channel mapping
     private final Map<ISignalReceiver, String> wheels = new HashMap<>();//控制的车轮其接收控制的信号频道映射 Control wheel and its receiving signal channel mapping
 
@@ -55,7 +52,6 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 sendSignalToTarget(signalChannel, targetName, getPart().vehicle.getVelocity().length());
         }
         updateMoveInputs();
-        this.speed = -getPart().rootSubPart.body.getLinearVelocityLocal(null).z;
         if (isActive()) {
             //自动换档与手刹车冷却时间 Auto gear shift cooldown
             for (Map.Entry<ISignalReceiver, Float> entry : overrideCountDown.entrySet()) {
@@ -69,6 +65,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
+        this.speed = -getPart().rootSubPart.body.getLinearVelocityLocal(null).z;
         if (isActive() && getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
@@ -151,7 +148,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     else {
                         engines.put(engine, controlChannel);
                         addCallbackTarget(controlChannel, engine);
-                        //计算引擎最大转速和最大扭矩转速的平均值 Calculate the average maximum speed and max torque speed of the engine
+                        //计算引擎最大转速和最大扭矩转速的平均值 Calculate the average maximum speed and max torque speed of the motor
                         avgEngineMinSpeed = 0;
                         avgEngineMaxTorqueSpeed = 0;
                         avgEngineMaxSpeed = 0;
@@ -170,6 +167,12 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                             avgEngineMaxTorqueSpeed = 0f;
                             avgEngineMaxSpeed = 0f;
                         }
+                    }
+                } else if (sender instanceof MotorSubsystem motor) {
+                    if (motor.getPart().vehicle != this.getPart().vehicle) this.motors.remove(motor);
+                    else {
+                        motors.put(motor, controlChannel);
+                        addCallbackTarget(controlChannel, motor);
                     }
                 } else if (sender instanceof GearboxSubsystem gearbox) {
                     if (gearbox.getPart().vehicle != this.getPart().vehicle) {
@@ -261,6 +264,10 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         sendCallbackToAllListeners(entry.getValue(), actualThrottle);
                         avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
                     }
+                    for (Map.Entry<ISignalReceiver, String> entry : motors.entrySet()) {
+                        sendCallbackToAllListeners(entry.getValue(), moveInput[2]);
+                        avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).rotSpeed;
+                    }
                     avgEngineSpeed /= engineCount;
                     //起步时自动松离合和手刹 Auto release hand brake when starting
                     if (attr.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
@@ -283,6 +290,10 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         sendCallbackToAllListeners(entry.getValue(), actualThrottle);
                         avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
                     }
+                    for (Map.Entry<ISignalReceiver, String> entry : motors.entrySet()) {
+                        sendCallbackToAllListeners(entry.getValue(), moveInput[2]);
+                        avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).rotSpeed;
+                    }
                     avgEngineSpeed /= engineCount;
                     for (ISignalReceiver gearbox : gearboxes.keySet()) {//减速时积极降档 Shift down early when braking
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
@@ -303,6 +314,10 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
                     sendCallbackToAllListeners(entry.getValue(), actualThrottle);
                     avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
+                }
+                for (Map.Entry<ISignalReceiver, String> entry : motors.entrySet()) {
+                    sendCallbackToAllListeners(entry.getValue(), actualThrottle);
+                    avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).rotSpeed;
                 }
                 avgEngineSpeed /= engineCount;
                 if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low

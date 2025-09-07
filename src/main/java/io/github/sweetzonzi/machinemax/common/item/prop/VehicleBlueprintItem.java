@@ -254,7 +254,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         } catch (NullPointerException e) {
             animatable.setModelIndex(
                     new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/blueprint.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"),
                             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"))
             );
         }

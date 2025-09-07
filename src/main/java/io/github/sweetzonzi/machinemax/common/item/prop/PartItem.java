@@ -274,7 +274,7 @@ public class PartItem extends Item implements ICustomModelItem {
         if (context == ItemDisplayContext.GUI) {
             animatable.setModelIndex(
                     new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/item_icon_2d_128x.geo"),
+                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x"),
                             partType.icon)
             );
         } else {

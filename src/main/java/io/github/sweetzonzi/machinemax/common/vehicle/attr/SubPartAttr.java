@@ -121,6 +121,7 @@ public class SubPartAttr {
                     type.variants.getOrDefault(variant, type.variants.get("default")),//获取部件模型路径
                     type.textures.getFirst());//获取部件第一个可用纹理作为默认纹理
             LinkedHashMap<String, OBone> bones = modelIndex.getModel().getBones();//从模型获取所有骨骼
+            if (bones.isEmpty()) throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
             //将表示部件连接点的定位器添加进定位器列表

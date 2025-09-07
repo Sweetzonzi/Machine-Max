@@ -11,7 +11,7 @@ import java.util.Map;
 public class MotorSubsystem extends AbstractSubsystem{
     public final MotorSubsystemAttr attr;
     public double rotSpeed;//当前转速(rad/s)
-    public double throttleInput;//当前油门输入（0~1）
+    public double throttleInput;//当前电门输入（-1~1）
 
     public MotorSubsystem(ISubsystemHost owner, String name, MotorSubsystemAttr attr) {
         super(owner, name, attr);
@@ -27,6 +27,7 @@ public class MotorSubsystem extends AbstractSubsystem{
     @Override
     public void onPrePhysicsTick() {
         updateThrottleInput();
+        //TODO:电门输入与转速方向相反时，发电模式
         double engineTorque = throttleInput * calculateMaxTorque(rotSpeed);//输出扭矩
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
@@ -64,10 +65,7 @@ public class MotorSubsystem extends AbstractSubsystem{
      * @return 当前转速下的最大扭矩(N · m)
      */
     private double calculateMaxTorque(double rotSpeed) {
-        if (rotSpeed >=0)
-            return attr.maxPower / Math.max(rotSpeed, 0.1f);
-        else
-            return attr.maxPower / Math.min(rotSpeed, -0.1f);
+        return Math.min(attr.maxPower / Math.max(Math.abs(rotSpeed), 0.1f), attr.maxTorque);
     }
 
     /**
@@ -95,7 +93,7 @@ public class MotorSubsystem extends AbstractSubsystem{
                 powerControlInput = (float) signalChannel.getFirstSignal();
                 break;
             } else if (signalChannel.getFirstSignal() instanceof MoveInputSignal) {
-                powerControlInput = Math.abs(((MoveInputSignal) signalChannel.getFirstSignal()).getMoveInput()[2] / 100f);
+                powerControlInput = ((MoveInputSignal) signalChannel.getFirstSignal()).getMoveInput()[2] / 100f;
                 break;
             }
         }

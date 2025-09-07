@@ -3,6 +3,11 @@ package io.github.sweetzonzi.machinemax.common.vehicle;
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
+import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
+import com.jme3.bullet.objects.PhysicsBody;
+import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Plane;
+import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machinemax.common.registry.MMAttachments;
@@ -215,7 +220,7 @@ public class VehicleManager {
             physicsLevel.getWorld().useScr(true);//补偿弹性系数以改善小物体的碰撞精度
             physicsLevel.getWorld().getSolverInfo().setGlobalCfm(1e-5f);
             physicsLevel.getWorld().getSolverInfo().setNumIterations(25);
-//            Plane plane = new Plane(Vector3f.UNIT_Y, -60);
+//            Plane plane = new Plane(Vector3f.UNIT_Y, -59.5f);//测试平面
 //            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
 //            PhysicsRigidBody body = new PhysicsRigidBody("ground", null, shape, PhysicsBody.massForStatic);
 //            physicsLevel.getWorld().add(body);

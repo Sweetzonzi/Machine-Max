@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machinemax.common.vehicle;
 
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.collision.ManifoldPoint;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.collision.CollisionCallback;
 import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
@@ -143,45 +144,26 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
     }
 
     @Override
-    public void onProcessed(PhysicsCollisionObject pcoA, @NotNull PhysicsCollisionObject pcoB, long manifoldPointId) {
+    public void onProcessed(PhysicsCollisionObject o1, @NotNull PhysicsCollisionObject o2, ManifoldPoint point1, ManifoldPoint point2, long manifoldPointId) {
         //TODO:拆分为多个简单方法以方便子类修改并提升可读性
-        PhysicsRigidBody other;
+        PhysicsRigidBody other = (PhysicsRigidBody) o2;
         Vector3f normal = new Vector3f();
         Level level = part.level;
         int hitBoxIndex, otherHitBoxIndex;
         Vector3f worldContactPoint = new Vector3f(), otherWorldContactPoint = new Vector3f();
         Vector3f localContactPoint = new Vector3f(), otherLocalContactPoint = new Vector3f();
-        PhysicsHost host = pcoA.getOwner();
-        if (host == this) {
-            other = (PhysicsRigidBody) pcoB;
-            hitBoxIndex = ManifoldPoints.getIndex0(manifoldPointId);
-            otherHitBoxIndex = ManifoldPoints.getIndex1(manifoldPointId);
-            ManifoldPoints.getPositionWorldOnA(manifoldPointId, worldContactPoint);
-            ManifoldPoints.getPositionWorldOnB(manifoldPointId, otherWorldContactPoint);
-            ManifoldPoints.getLocalPointA(manifoldPointId, localContactPoint);
-            ManifoldPoints.getLocalPointB(manifoldPointId, otherLocalContactPoint);
-        } else {
-            other = (PhysicsRigidBody) pcoA;
-            hitBoxIndex = ManifoldPoints.getIndex1(manifoldPointId);
-            otherHitBoxIndex = ManifoldPoints.getIndex0(manifoldPointId);
-            ManifoldPoints.getPositionWorldOnB(manifoldPointId, worldContactPoint);
-            ManifoldPoints.getPositionWorldOnA(manifoldPointId, otherWorldContactPoint);
-            ManifoldPoints.getLocalPointB(manifoldPointId, localContactPoint);
-            ManifoldPoints.getLocalPointA(manifoldPointId, otherLocalContactPoint);
-        }
-//        hitBoxIndex = point1.getTriangleIndex();
-//        otherHitBoxIndex = point2.getTriangleIndex();
-//        point1.getPositionWorld(worldContactPoint);
-//        point2.getPositionWorld(otherWorldContactPoint);
-//        point1.getLocalPoint(localContactPoint);
-//        point2.getLocalPoint(otherLocalContactPoint);
+        hitBoxIndex = point1.getTriangleIndex();
+        otherHitBoxIndex = point2.getTriangleIndex();
+        point1.getPositionWorld(worldContactPoint);
+        point2.getPositionWorld(otherWorldContactPoint);
+        point1.getLocalPoint(localContactPoint);
+        point2.getLocalPoint(otherLocalContactPoint);
         //获取世界坐标下的碰撞点法线
-        ManifoldPoints.getNormalWorldOnB(manifoldPointId, normal);
-//        point1.getNormalWorldOnB(normal);
+        point1.getNormalWorldOnB(normal);
         //计算相对接触速度
         Vector3f vel = body.getLinearVelocity(null);
         Vector3f contactVel = MMMath.relPointWorldVel(localContactPoint, body);
-        contactVel.subtractLocal((pcoB instanceof PhysicsRigidBody) ? MMMath.relPointWorldVel(otherLocalContactPoint, other) : new Vector3f());
+        contactVel.subtractLocal((o2 instanceof PhysicsRigidBody) ? MMMath.relPointWorldVel(otherLocalContactPoint, other) : new Vector3f());
         //计算碰撞角度（法线与速度方向的夹角）
         float impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(contactVel.normalize())));
         if (Float.isNaN(impactAngle)) impactAngle = 0; // 处理NaN情况
