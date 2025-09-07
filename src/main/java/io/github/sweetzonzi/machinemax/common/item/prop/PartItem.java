@@ -2,8 +2,9 @@ package io.github.sweetzonzi.machinemax.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
@@ -235,10 +236,10 @@ public class PartItem extends Item implements ICustomModelItem {
             String variant = iterators.getNextVariant();
             String connectorName = iterators.getNextConnector();
             ConnectorAttr connectorAttr = connectors.get(connectorName);
-            ModelIndex modelIndex = new ModelIndex(partType.variants.get(variant), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
-            if (modelIndex.getModel().getBones().isEmpty())
-                throw new IllegalStateException("未找到部件" + partType.name + "的" + variant + "变体的模型:" + modelIndex.getModelPath());
-            var locators = modelIndex.getModel().getLocators();
+            OModel model = OModel.getOrEmpty(partType.variants.get(variant));
+            if (model.getBones().isEmpty())
+                throw new IllegalStateException("未找到部件" + partType.name + "的" + variant + "变体的模型:" + partType.variants.get(variant));
+            var locators = model.getLocators();
             OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
             if (partConnectorLocator == null)
                 throw new NullPointerException("部件" + partType.name + "的" + variant + "变体缺少" + connectorAttr.locatorName() + "定位器");
@@ -272,17 +273,12 @@ public class PartItem extends Item implements ICustomModelItem {
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         if (context == ItemDisplayContext.GUI) {
-            animatable.setModelIndex(
-                    new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/item_icon_2d_128x.geo"),
-                            partType.icon)
-            );
+            animatable.getModelController().setModel(new ModelIndex(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x"), null));
+            animatable.getModelController().setTextureLocation(partType.icon);
         } else {
-            animatable.setModelIndex(
-                    new ModelIndex(
-                            partType.variants.get(variant),
-                            partType.textures.getFirst())
-            );
+            animatable.getModelController().setModel(new ModelIndex(partType.variants.get(variant), null));
+            animatable.getModelController().setTextureLocation(partType.textures.getFirst());
         }
         if (customModels != null) {
             customModels.put(context, animatable);

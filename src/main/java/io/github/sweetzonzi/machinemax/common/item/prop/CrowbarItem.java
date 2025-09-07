@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machinemax.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machinemax.MachineMax;
@@ -86,7 +86,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
                         }
                     }
                     SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.removed"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 32f, (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 32f, (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
                 }
                 player.resetAttackStrengthTicker();
                 crowbar.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
@@ -157,18 +157,15 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
-        if (context.firstPerson())
-            animatable.setModelIndex(
-                    new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/crowbar_first_person.geo"),
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar_first_person.png"))
-            );
-        else
-            animatable.setModelIndex(
-                    new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/crowbar.geo"),
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar.png"))
-            );
+        if (context.firstPerson()) {
+            animatable.getModelController().setModel(new ModelIndex(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "crowbar_first_person"), null));
+            animatable.getModelController().setTextureLocation(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar_first_person.png"));
+        } else {
+            animatable.getModelController().setModel(new ModelIndex(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "crowbar"), null));
+            animatable.getModelController().setTextureLocation(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar.png"));
+        }
         if (customModels != null) {
             customModels.put(context, animatable);
             itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);

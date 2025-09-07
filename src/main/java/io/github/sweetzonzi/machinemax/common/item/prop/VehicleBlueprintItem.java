@@ -1,7 +1,8 @@
 package io.github.sweetzonzi.machinemax.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
@@ -245,18 +246,15 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                     && context == ItemDisplayContext.GUI
                     && !vehicleData.icon.equals(ResourceLocation.withDefaultNamespace("missingno"))
             ) {
-                animatable.setModelIndex(
-                        new ModelIndex(
-                                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/item_icon_2d_128x.geo"),
-                                vehicleData.icon)
-                );
+                animatable.getModelController().setModel(new ModelIndex(
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x"), null));
+                animatable.getModelController().setTextureLocation(vehicleData.icon);
             } else throw new NullPointerException();
         } catch (NullPointerException e) {
-            animatable.setModelIndex(
-                    new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/blueprint.geo"),
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"))
-            );
+            animatable.getModelController().setModel(new ModelIndex(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"), null));
+            animatable.getModelController().setTextureLocation(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"));
         }
         if (customModels != null) {
             customModels.put(context, animatable);
@@ -267,8 +265,8 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
 
     @Override
     public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        if (!getRenderInstance(itemStack, level, displayContext).getModelIndex().getModelPath().equals(
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/blueprint.geo")
+        if (!getRenderInstance(itemStack, level, displayContext).getModelController().getOriginModel().equals(
+                OModel.getOrEmpty(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"))
         )) {
             return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
         }

@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machinemax.network.payload;
 
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machinemax.common.component.PartAssemblyCacheComponent;
@@ -120,8 +120,8 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                             String connectorName = iterators.getNextConnector();//获取下一个部件接口
                             if (partConnectors.get(connectorName).type().equals("AttachPoint") || targetConnector instanceof AttachPointConnector) {
                                 // TODO: 检查部件Tag是否与目标接口接受的类型匹配
-                                ModelIndex modelIndex = new ModelIndex(partType.variants.get(variant), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
-                                var locators = modelIndex.getModel().getLocators();
+                                OModel model = OModel.getOrEmpty(partType.variants.get(variant));
+                                var locators = model.getLocators();
                                 var connectorAttr = connectors.get(connectorName);
                                 OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
                                 Vector3f offset = partConnectorLocator.getOffset().toVector3f();
@@ -154,8 +154,8 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                         //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限
                         String variant = iterators.getNextVariant();//获取下一个部件变体
                         if (targetConnector == null || targetConnector.acceptableVariants.contains(variant)) {
-                            ModelIndex modelIndex = new ModelIndex(partType.variants.get(variant), ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
-                            var locators = modelIndex.getModel().getLocators();
+                            OModel model = OModel.getOrEmpty(partType.variants.get(variant));
+                            var locators = model.getLocators();
                             OLocator partConnectorLocator = locators.get(connectors.get(info.connector()).locatorName());
                             Vector3f offset = partConnectorLocator.getOffset().toVector3f();
                             Vector3f rotation = partConnectorLocator.getRotation().toVector3f();

@@ -53,7 +53,9 @@ public class CustomHud implements LayeredDraw.Layer {
                         if(!seat.attr.views.thirdPersonHud().contains(entry.getKey())) vehicleHud.remove(entry.getKey());
                     }
                 }
-            } else vehicleHud.clear();
+            } else {
+                vehicleHud.clear();
+            }
         }
     }
 

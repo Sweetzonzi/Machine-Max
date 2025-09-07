@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machinemax.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.crafting.FabricatingInput;
 import io.github.sweetzonzi.machinemax.common.crafting.FabricatingRecipe;
@@ -95,17 +95,14 @@ public class FabicatingBlueprintItem extends Item implements ICustomModelItem {
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         if (context == ItemDisplayContext.GUI) {
-            animatable.setModelIndex(
-                    new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/item_icon_2d_128x.geo"),
-                            partType.icon)
-            );
+            animatable.getModelController().setModel(new ModelIndex(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x"), null));
+            animatable.getModelController().setTextureLocation(partType.icon);
         } else {
-            animatable.setModelIndex(
-                    new ModelIndex(
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/blueprint.geo"),
-                            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"))
-            );
+            animatable.getModelController().setModel(new ModelIndex(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"), null));
+            animatable.getModelController().setTextureLocation(
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"));
         }
         if (customModels != null) {
             customModels.put(context, animatable);

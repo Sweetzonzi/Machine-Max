@@ -135,7 +135,7 @@ public interface ISignalSender {
                 if (signalReceiver instanceof SubsystemController vehicle){
                     vehicle.foreignStorage.setPublic(signalChannel, signalValue);
                 } else if (signalReceiver instanceof Part part) {
-                    ((VariableStorage)part.foreignStorage).setPublic(signalChannel, signalValue);
+                    ((VariableStorage)part.animController.getForeignStorage()).setPublic(signalChannel, signalValue);
                 }
                 if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
                     if (callbackReturnsSignalValue)

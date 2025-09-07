@@ -4,17 +4,16 @@ import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.anim.play.*;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData;
-import cn.solarmoon.spark_core.animation.anim.play.layer.AnimationLayer;
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer;
+import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
-import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
-import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
-import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
-import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
 
 import cn.solarmoon.spark_core.sync.SyncData;
@@ -31,6 +30,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -53,12 +53,13 @@ import java.util.Map;
 public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable {
     private final Minecraft minecraft = Minecraft.getInstance();
     protected final AnimatableParams params;//各种渲染参数
-    private BonePoseGroup bonePoseGroup;
+    private final ModelController modelController = new ModelController(this);
     private final AnimController animController = new AnimController(this);
 
     public ModelAnimatable(AnimatableParams params) {
         this.params = params;
-        this.bonePoseGroup = new BonePoseGroup(this);
+        getModelController().setModel(params.modelIndex);
+        getModelController().setTextureLocation(params.texture);
         create();
     }
 
@@ -79,11 +80,11 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     protected void renderModel(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick) {
         poseStack.pushPose();
         ModelRenderHelperKt.render(
-                getModel(),
-                getBones(),
+                getModelController().getOriginModel(),
+                getModelController().getModel().getBonePoses(),
                 poseStack.last().pose(),
                 poseStack.last().normal(),
-                bufferSource.getBuffer(RenderType.entityTranslucent(getModelIndex().getTextureLocation())),
+                bufferSource.getBuffer(RenderType.entityTranslucent(getModelController().getModel().getTextureLocation())),
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,
                 new Color(params.color.getX(), params.color.getY(), params.color.getZ(), params.transparency).getRGB(),
@@ -103,8 +104,13 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
         for (Map.Entry<String, AnimatableParams.TextParams> entry : params.textAttr.entrySet()) {
             String locatorName = entry.getKey();
             AnimatableParams.TextParams textParams = entry.getValue();
-            Matrix4f matrix = getSpaceBoneMatrix(locatorName, partialTick);
-            var offset = getModel().getLocators().get(locatorName).getOffset().toVector3f();
+            Matrix4f matrix = getModelController().getModel().getBonePose(locatorName).getSpaceBoneMatrix(partialTick);
+            Vector3f offset;
+            try {
+                offset = getModelController().getOriginModel().getLocators().get(locatorName).getOffset().toVector3f();
+            } catch (Exception e) {
+                offset = new Vector3f();
+            }
             matrix.translate(offset.x, offset.y, offset.z);
             poseStack.pushPose();
             poseStack.mulPose(matrix);
@@ -156,11 +162,15 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
 
     public void animTick() {
         getAnimController().tick();
-        var animSet = getModelIndex().getAnimationSet().getAnimations();
-        if (!animSet.isEmpty() && !animController.isPlayingAnim()) {
-            for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
+        ResourceLocation animPath = params.getAnimation();
+        var animSet = OAnimationSet.getORIGINS().get(animPath);
+        if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
+            for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
                 String name = entry.getKey();
-                var animInstance = AnimInstance.create(this, name, a -> Unit.INSTANCE);
+                var animInstance = AnimInstance.create(
+                        this,
+                        new AnimIndex(new ModelIndex(animPath, null), name),
+                        a -> Unit.INSTANCE);
                 getAnimController().getLayer(DefaultLayer.INSTANCE.getBASE_LAYER()).setAnimation(animInstance, new AnimLayerData());
             }
         }
@@ -192,23 +202,6 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
 
     @NotNull
     @Override
-    public ModelIndex getModelIndex() {
-        return params.modelIndex;
-    }
-
-    @Override
-    public void setBones(@NotNull BonePoseGroup boneGroup) {
-        this.bonePoseGroup = boneGroup;
-    }
-
-    @NotNull
-    @Override
-    public BonePoseGroup getBones() {
-        return bonePoseGroup;
-    }
-
-    @NotNull
-    @Override
     public Vec3 getWorldPosition(float v) {
         return SparkMathKt.toVec3(params.getOffset(v));
     }
@@ -234,35 +227,6 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
 
     @NotNull
     @Override
-    public ITempVariableStorage getTempStorage() {
-        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable) return entityAnimatable.getTempStorage();
-        else return new VariableStorage();
-    }
-
-    @NotNull
-    @Override
-    public IScopedVariableStorage getScopedStorage() {
-        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable)
-            return entityAnimatable.getScopedStorage();
-        else return new VariableStorage();
-    }
-
-    @NotNull
-    @Override
-    public IForeignVariableStorage getForeignStorage() {
-        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable)
-            return entityAnimatable.getForeignStorage();
-        else return new VariableStorage();
-    }
-
-    @Override
-    public void setModelIndex(@NotNull ModelIndex modelIndex) {
-        params.setModelIndex(modelIndex);
-        setBones(new BonePoseGroup(this));
-    }
-
-    @NotNull
-    @Override
     public Map<String, Vec3> getIkTargetPositions() {
         return Map.of();
     }
@@ -271,5 +235,11 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     @Override
     public Map<String, FabrikChain3D> getIkChains() {
         return Map.of();
+    }
+
+    @NotNull
+    @Override
+    public ModelController getModelController() {
+        return this.modelController;
     }
 }

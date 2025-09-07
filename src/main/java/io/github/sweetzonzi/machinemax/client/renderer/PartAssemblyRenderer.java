@@ -55,7 +55,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
             ResourceLocation model = partType.variants.get(variant);
             ResourceLocation texture = partType.textures.getFirst();
             ResourceLocation animation = partType.getAnimation();
-            if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.getModelIndex().getModelPath() != model) {
+            if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.getModelIndex().getLocation() != model) {
                 VisualEffectHelper.partToPlace = new AnimatableParams(model, animation, texture);
                 VisualEffectHelper.partToPlace.setTransparency(64);
                 VisualEffectHelper.partToPlace.setTransform(new Transform(

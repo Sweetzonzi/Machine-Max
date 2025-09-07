@@ -7,8 +7,11 @@ import cn.solarmoon.spark_core.animation.anim.play.*;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData;
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer;
+import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
 import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
@@ -72,11 +75,8 @@ import java.util.concurrent.ConcurrentMap;
 @Getter
 public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver {
     //渲染属性 Renderer attributes
-    public ModelIndex modelIndex;//用于储存部件的模型索引(模型贴图动画路径等)
     public volatile boolean hurtMarked = false;
     public volatile boolean oHurtMarked = false;
-    @Setter
-    private BonePoseGroup bones;//用于储存部件的骨骼组
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
     //常规属性 General attributes
     public volatile VehicleCore vehicle;//所属的VehicleCore
@@ -91,18 +91,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public volatile float durability;
     public volatile float integrity;
     private final ConcurrentMap<Vector3f, Float> accumulatedImpact = new ConcurrentHashMap<>(8);
-
-    @NotNull
-    @Override
-    public Map<String, Vec3> getIkTargetPositions() {
-        return Map.of();
-    }
-
-    @NotNull
-    @Override
-    public Map<String, FabrikChain3D> getIkChains() {
-        return Map.of();
-    }
 
     public record PartDamageData(
             DamageSource source,
@@ -119,12 +107,9 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     private final Map<String, SubPart> locatorSubPart = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
+    public final ModelController modelController = new ModelController(this);
     public final AnimController animController = new AnimController(this);
     public float totalMass;
-    //Molang变量存储 Molang variable storage
-    public ITempVariableStorage tempStorage = new VariableStorage();
-    public IScopedVariableStorage scopedStorage = new VariableStorage();
-    public IForeignVariableStorage foreignStorage = new VariableStorage();
     //模块化属性 Modular attributes
     public final Map<String, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<String, AbstractConnector> allConnectors = HashMap.newHashMap(1);
@@ -142,13 +127,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
      */
     public Part(PartType partType, String variant, Level level) {
         if (variant == null) variant = "default";
-        this.modelIndex = new ModelIndex(
-                partType.variants.getOrDefault(variant, partType.variants.get("default")),//获取部件模型路径
-                partType.animation,//获取部件动画路径
-                partType.textures.getFirst());//获取部件第一个可用纹理作为默认纹理
         this.textureIndex = 0;
         this.name = partType.getName();
         this.type = partType;
+        this.getModelController().setModel(new ModelIndex(type.variants.getOrDefault(variant, type.variants.get("default")), null));
+        this.getModelController().setTextureLocation(type.getTextures().get(textureIndex % type.getTextures().size()));
         this.variant = variant;
         this.level = level;
         this.uuid = UUID.randomUUID();
@@ -205,10 +188,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.level = level;
         this.variant = data.variant;
         this.textureIndex = data.textureIndex;
-        this.modelIndex = new ModelIndex(
-                type.variants.getOrDefault(variant, type.variants.get("default")),//获取部件模型路径
-                type.animation,//获取部件动画路径
-                type.textures.get(textureIndex % type.textures.size()));//获取部件第一个可用纹理作为默认纹理
+        this.getModelController().setModel(new ModelIndex(type.variants.getOrDefault(variant, type.variants.get("default")), null));
+        this.getModelController().setTextureLocation(type.getTextures().get(textureIndex % type.getTextures().size()));
         this.uuid = UUID.fromString(data.uuid);
         this.durability = readSavedData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
         this.integrity = readSavedData ? Math.min(data.integrity, type.basicIntegrity) : type.basicIntegrity;
@@ -260,14 +241,14 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         else if (hurtMarked) hurtMarked = false;
         if (this.entity != null && !this.entity.isRemoved()) {
             getAnimController().tick();
-            var animSet = modelIndex.getAnimationSet().getAnimations();
-            if (!animSet.isEmpty() && !animController.isPlayingAnim()) {
-                for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
-                    String name = entry.getKey();
-                    var animInstance = AnimInstance.create(this, name, a -> Unit.INSTANCE);
-                    getAnimController().getLayer(DefaultLayer.INSTANCE.getBASE_LAYER()).setAnimation(animInstance, new AnimLayerData());
-                }
-            }
+//            var animSet = modelIndex.getAnimationSet().getAnimations();
+//            if (!animSet.isEmpty() && !animController.isPlayingAnim()) {
+//                for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
+//                    String name = entry.getKey();
+//                    var animInstance = AnimInstance.create(this, name, a -> Unit.INSTANCE);
+//                    getAnimController().getLayer(DefaultLayer.INSTANCE.getBASE_LAYER()).setAnimation(animInstance, new AnimLayerData());
+//                }
+//            }
         }
     }
 
@@ -531,9 +512,9 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     private SubPart createSubPart(Map<String, SubPartAttr> subPartAttrMap) {
         SubPart rootSubPart = null;
-        ModelIndex data = this.getModelIndex();
+        OModel model = getModelController().getOriginModel();
         HashMap<SubPart, String> subPartMap = new HashMap<>();//用于记录子部件的父子关系
-        LinkedHashMap<String, OBone> bones = data.getModel().getBones();//从模型获取所有骨骼
+        LinkedHashMap<String, OBone> bones = model.getBones();//从模型获取所有骨骼
         LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
         for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
         //创建零件
@@ -618,13 +599,9 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public void switchTexture(int index) {
         if (type.getTextures().size() == 1) return;
         this.textureIndex = index % type.getTextures().size();
-        this.setModelIndex(new ModelIndex(
-                modelIndex.getModelPath(),
-                modelIndex.getAnimPath(),
-                type.getTextures().get(index % type.getTextures().size())
-        ));
+        this.getModelController().setTextureLocation(type.getTextures().get(textureIndex));
         //同步客户端
-        if (!level.isClientSide()) PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
+        if (!level.isClientSide() && vehicle != null) PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
                 new PartPaintPayload(vehicle.uuid, this.uuid, this.textureIndex));
     }
 
@@ -721,16 +698,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         }
     }
 
-    public void setModelIndex(@NotNull ModelIndex modelIndex) {
-        this.modelIndex = modelIndex;
-        this.setBones(new BonePoseGroup(this));
-    }
-
-    public @NotNull BonePoseGroup getBones() {
-        if (this.bones == null) bones = new BonePoseGroup(this);
-        return this.bones;
-    }
-
     public void setTransform(Transform transform) {
         if (vehicle == null || !vehicle.inLevel) {
             setTransformRaw(transform);
@@ -756,12 +723,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Override
     public Part getAnimatable() {
         return this;
-    }
-
-    @NotNull
-    @Override
-    public AnimController getAnimController() {
-        return animController;
     }
 
     @NotNull
@@ -798,24 +759,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         return null;
     }
 
-    @NotNull
-    @Override
-    public ITempVariableStorage getTempStorage() {
-        return tempStorage;
-    }
-
-    @NotNull
-    @Override
-    public IScopedVariableStorage getScopedStorage() {
-        return scopedStorage;
-    }
-
-    @NotNull
-    @Override
-    public IForeignVariableStorage getForeignStorage() {
-        return foreignStorage;
-    }
-
     @Override
     public Part getPart() {
         return this;
@@ -829,5 +772,24 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Override
     public @NotNull Level getAnimLevel() {
         return level;
+    }
+
+
+    @NotNull
+    @Override
+    public Map<String, Vec3> getIkTargetPositions() {
+        return Map.of();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, FabrikChain3D> getIkChains() {
+        return Map.of();
+    }
+
+    @NotNull
+    @Override
+    public ModelController getModelController() {
+        return this.modelController;
     }
 }

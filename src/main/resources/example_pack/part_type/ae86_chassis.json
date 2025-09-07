@@ -1,9 +1,9 @@
 {
   "name": "ae86_chassis",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
   "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-    "default": "machine_max:example_pack/model/ae86_chassis.geo.json"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_chassis.geo.json"
+    "default": "machine_max:ae86_chassis.geo"//若无变体，可缩减，即"variants": "machine_max:example_pack/model/ae86_chassis.geo.json"
   },
-  "animation": "machine_max:example_pack/animation/ae86.animation.json", //(可选，留空则不播放动画)动画文件路径
+  "animation": "machine_max:example_pack/animations/ae86.animation", //(可选，留空则不播放动画)动画文件路径
   "textures": [//部件可用贴图列表，不同变体模型应共享一张贴图
     "machine_max:example_pack/texture/ae86_1.png",
     "machine_max:example_pack/texture/ae86_2.png",

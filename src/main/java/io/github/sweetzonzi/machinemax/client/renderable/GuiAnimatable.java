@@ -135,11 +135,11 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
         poseStack.mulPose(Axis.YP.rotationDegrees(180));
         if (!perspective) poseStack.mulPose(Axis.XP.rotationDegrees(180));
         ModelRenderHelperKt.render(
-                getModel(),
-                getBones(),
+                getModelController().getOriginModel(),
+                getModelController().getModel().getBonePoses(),
                 poseStack.last().pose(),
                 poseStack.last().normal(),
-                bufferSource.getBuffer(RenderType.entityTranslucent(getModelIndex().getTextureLocation())),
+                bufferSource.getBuffer(RenderType.entityTranslucent(getModelController().getTextureLocation())),
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,
                 new Color(params.color.getX(), params.color.getY(), params.color.getZ(), params.transparency).getRGB(),
@@ -162,10 +162,10 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
         for (Map.Entry<String, AnimatableParams.TextParams> entry : params.textAttr.entrySet()) {
             String locatorName = entry.getKey();
             AnimatableParams.TextParams textParams = entry.getValue();
-            Matrix4f matrix = getSpaceBoneMatrix(locatorName, partialTick);
+            Matrix4f matrix = getModelController().getModel().getBonePose(locatorName).getSpaceBoneMatrix(partialTick);
             Vector3f offset;
             try{
-                offset = getModel().getLocators().get(locatorName).getOffset().toVector3f();
+                offset = getModelController().getOriginModel().getLocators().get(locatorName).getOffset().toVector3f();
             }catch (Exception e){
                 offset = new Vector3f();
             }

@@ -1,9 +1,8 @@
 package io.github.sweetzonzi.machinemax.common.visual;
 
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -23,6 +22,8 @@ import java.util.Map;
 @Setter
 public class AnimatableParams {
     public ModelIndex modelIndex;
+    public ResourceLocation animation;
+    public ResourceLocation texture;
     public Transform transform = new Transform();
     public Transform lastTransform;
     public Vec3i color;
@@ -97,7 +98,8 @@ public class AnimatableParams {
                             boolean perspective,
                             Map<String, TextParams> textAttr,
                             boolean enableScissor, int scissorX, int scissorY, int scissorWidth, int scissorHeight) {
-        this.modelIndex = new ModelIndex(model, animation, texture);
+        this.modelIndex = new ModelIndex(model, texture);
+        this.animation = animation;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
         Vector3f rot = SparkMathKt.toRadians(rotation).toVector3f();
         Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
@@ -118,7 +120,8 @@ public class AnimatableParams {
                             Vec3 offset, Vec3 rotation, Vec3 scale,
                             boolean perspective,
                             Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model, animation, texture);
+        this.modelIndex = new ModelIndex(model, texture);
+        this.animation = animation;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
         Vector3f rot = SparkMathKt.toRadians(rotation).toVector3f();
         Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
@@ -139,7 +142,8 @@ public class AnimatableParams {
                             Vec3 offset, Vec3 rotation, double scale,
                             boolean perspective,
                             Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model, animation, texture);
+        this.modelIndex = new ModelIndex(model, texture);
+        this.animation = animation;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
         Vector3f rot = SparkMathKt.toRadians(rotation).toVector3f();
         Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
@@ -160,7 +164,7 @@ public class AnimatableParams {
                             Vec3 offset, double scale,
                             boolean perspective,
                             Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model, animation, texture);
+        this.modelIndex = new ModelIndex(model, null);
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
         this.transform.setScale((float) scale);
         this.color = new Vec3i(255, 255, 255);
@@ -178,7 +182,8 @@ public class AnimatableParams {
                             Vec3 offset,
                             boolean perspective,
                             Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model, animation, texture);
+        this.modelIndex = new ModelIndex(model, null);
+        this.animation = animation;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
@@ -192,21 +197,9 @@ public class AnimatableParams {
     }
 
     public AnimatableParams(ResourceLocation model, ResourceLocation animation, ResourceLocation texture) {
-        this.modelIndex = new ModelIndex(model, animation, texture);
-        this.color = new Vec3i(255, 255, 255);
-        this.transparency = 255;
-        this.perspective = true;
-        this.textAttr = Map.of();
-        this.enableScissor = false;
-        this.scissorX = 0;
-        this.scissorY = 0;
-        this.scissorWidth = 0;
-        this.scissorHeight = 0;
-    }
-
-
-    public AnimatableParams(ModelIndex modelIndex) {
-        this.modelIndex = modelIndex;
+        this.modelIndex = new ModelIndex(model, null);
+        this.animation = animation;
+        this.texture = texture;
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
         this.perspective = true;
@@ -219,15 +212,7 @@ public class AnimatableParams {
     }
 
     private ResourceLocation getModel() {
-        return modelIndex.getModelPath();
-    }
-
-    private ResourceLocation getAnimation() {
-        return modelIndex.getAnimPath();
-    }
-
-    private ResourceLocation getTexture() {
-        return modelIndex.getTextureLocation();
+        return modelIndex.getLocation();
     }
 
     private Vec3 getOffset() {

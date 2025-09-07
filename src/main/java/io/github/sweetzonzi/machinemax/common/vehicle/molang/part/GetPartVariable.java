@@ -23,7 +23,7 @@ public class GetPartVariable extends ContextFunction<IAnimatable<?>> {
         if (part == null) return null;
         else {
             String key = argumentCollection.getAsString(executionContext, 0);
-            return part.foreignStorage.getPublic(key);
+            return part.animController.getForeignStorage().getPublic(key);
         }
     }
 

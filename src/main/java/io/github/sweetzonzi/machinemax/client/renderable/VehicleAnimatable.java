@@ -30,7 +30,11 @@ public class VehicleAnimatable implements ITickableRenderable {
         for(Map.Entry<UUID, Part> entry : vehicle.partMap.entrySet()){
             UUID uuid = entry.getKey();
             Part part = entry.getValue();
-            AnimatableParams partParams = new AnimatableParams(part.getModelIndex());
+            AnimatableParams partParams = new AnimatableParams(
+                    part.type.variants.get(part.variant),
+                    part.type.animation,
+                    part.type.textures.getFirst()
+            );
             partParams.setTransform(part.rootSubPart.body.tickTransform.clone());
             parts.put(uuid, new ModelAnimatable(partParams));
         }

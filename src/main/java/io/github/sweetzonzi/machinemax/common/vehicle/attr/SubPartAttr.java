@@ -1,9 +1,10 @@
 package io.github.sweetzonzi.machinemax.common.vehicle.attr;
 
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
@@ -117,10 +118,7 @@ public class SubPartAttr {
         return hitBoxShape.computeIfAbsent(variant, v -> {
             //创建碰撞体积 Create collision shape for sub-part
             var shape = new CompoundCollisionShape(1);
-            ModelIndex modelIndex = new ModelIndex(
-                    type.variants.getOrDefault(variant, type.variants.get("default")),//获取部件模型路径
-                    type.textures.getFirst());//获取部件第一个可用纹理作为默认纹理
-            LinkedHashMap<String, OBone> bones = modelIndex.getModel().getBones();//从模型获取所有骨骼
+            LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(type.variants.getOrDefault(variant, type.variants.get("default"))).getBones();//从模型获取所有骨骼
             if (bones.isEmpty()) throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
@@ -222,10 +220,7 @@ public class SubPartAttr {
         return interactBoxShape.computeIfAbsent(variant, v -> {
             //创建交互体积 Create interact box shape for sub-part
             var shape = new CompoundCollisionShape(1);
-            ModelIndex modelIndex = new ModelIndex(
-                    type.variants.getOrDefault(variant, type.variants.get("default")),//获取部件模型路径
-                    type.textures.getFirst());//获取部件第一个可用纹理作为默认纹理
-            LinkedHashMap<String, OBone> bones = modelIndex.getModel().getBones();//从模型获取所有骨骼
+            LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(type.variants.getOrDefault(variant, type.variants.get("default"))).getBones();//从模型获取所有骨骼
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
             for (Map.Entry<String, InteractBoxAttr> interactBoxEntry : this.interactBoxes.entrySet()) {

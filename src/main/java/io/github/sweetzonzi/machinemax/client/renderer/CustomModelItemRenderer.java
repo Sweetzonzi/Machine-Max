@@ -38,18 +38,18 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             poseStack.pushPose();
             if (displayContext == ItemDisplayContext.GUI) poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
             ModelRenderHelperKt.render(
-                    animatable.getModel(),
-                    animatable.getBones(),
+                    animatable.getModelController().getOriginModel(),
+                    animatable.getModelController().getModel().getBonePoses(),
                     poseStack.last().pose()
                             .translate(customModelItem.getRenderOffset(stack, Minecraft.getInstance().level, displayContext))
                             .rotateZYX(customModelItem.getRenderRotation(stack, Minecraft.getInstance().level, displayContext))
                             .scale(customModelItem.getRenderScale(stack, Minecraft.getInstance().level, displayContext)),
                     poseStack.last().normal(),
-                    buffer.getBuffer(RenderType.entityTranslucent(animatable.getModelIndex().getTextureLocation())),
+                    buffer.getBuffer(RenderType.entityTranslucent(animatable.getModelController().getTextureLocation())),
                     Brightness.FULL_BRIGHT.pack(),
                     packedOverlay,
                     customModelItem.getColor(stack, Minecraft.getInstance().level, displayContext).getRGB(),
-                    animatable.getPartialTicks(),
+                    1,
                     true
             );
             poseStack.popPose();

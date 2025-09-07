@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machinemax.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import io.github.sweetzonzi.machinemax.MachineMax;
 import io.github.sweetzonzi.machinemax.common.attachment.LivingEntityEyesightAttachment;
@@ -43,7 +43,7 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
                 //TODO:粒子效果
                 part.switchTexture(part.textureIndex + 1);
                 SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.painted"));
-                SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 24f, (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
+                SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 24f, (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));
             } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
         } else {
@@ -88,11 +88,10 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
-        animatable.setModelIndex(
-                new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/spray_can.geo"),
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/spray_can.png"))
-        );
+        animatable.getModelController().setModel(
+                new ModelIndex(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "spray_can"), null));
+        animatable.getModelController().setTextureLocation(
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/spray_can.png"));
         if (customModels != null) {
             customModels.put(context, animatable);
             itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);

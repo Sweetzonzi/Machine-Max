@@ -2,13 +2,8 @@ package io.github.sweetzonzi.machinemax.common.entity;
 
 import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.BonePoseGroup;
-import cn.solarmoon.spark_core.animation.anim.play.ModelIndex;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
-import cn.solarmoon.spark_core.molang.core.storage.IForeignVariableStorage;
-import cn.solarmoon.spark_core.molang.core.storage.IScopedVariableStorage;
-import cn.solarmoon.spark_core.molang.core.storage.ITempVariableStorage;
-import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
+import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.BlackBoard;
 import cn.solarmoon.spark_core.util.SparkMathKt;
@@ -42,7 +37,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
 import java.util.List;
@@ -292,13 +286,6 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
         return new IntSyncData(1);
     }
 
-    @NotNull
-    @Override
-    public ModelIndex getModelIndex() {//返回部件的模型索引用于渲染
-        if (part != null) return part.getModelIndex();
-        else return IEntityAnimatable.super.getModelIndex();
-    }
-
     @Override
     public MMPartEntity getAnimatable() {
         return this;
@@ -308,13 +295,6 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     public @NotNull AnimController getAnimController() {
         if (part == null) return new AnimController(this);
         else return part.getAnimController();
-    }
-
-    @NotNull
-    @Override
-    public BonePoseGroup getBones() {
-        if (part != null) return part.getBones();
-        else return new BonePoseGroup(this);
     }
 
     private void updatePart() {
@@ -360,27 +340,6 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @NotNull
     @Override
-    public ITempVariableStorage getTempStorage() {
-        if (part != null) return part.tempStorage;
-        else return new VariableStorage();
-    }
-
-    @NotNull
-    @Override
-    public IScopedVariableStorage getScopedStorage() {
-        if (part != null) return part.scopedStorage;
-        else return new VariableStorage();
-    }
-
-    @NotNull
-    @Override
-    public IForeignVariableStorage getForeignStorage() {
-        if (part != null) return part.foreignStorage;
-        else return new VariableStorage();
-    }
-
-    @NotNull
-    @Override
     public AtomicInteger getSkillCount() {
         return new AtomicInteger();
     }
@@ -409,11 +368,6 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
         return new PreInput(this);
     }
 
-    @Override
-    public void setBones(@NotNull BonePoseGroup boneGroup) {
-        //Do nothing
-    }
-
     @NotNull
     @Override
     public Map<String, Vec3> getIkTargetPositions() {
@@ -430,5 +384,12 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     @Override
     public BlackBoard getHurtData() {
         return new BlackBoard();
+    }
+
+    @NotNull
+    @Override
+    public ModelController getModelController() {
+        if (part != null) return part.getModelController();
+        else return new ModelController(this);
     }
 }
