@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MotorSubsystem extends AbstractSubsystem{
+public class MotorSubsystem extends AbstractSubsystem {
     public final MotorSubsystemAttr attr;
     public double rotSpeed;//当前转速(rad/s)
     public double throttleInput;//当前电门输入（-1~1）
@@ -32,8 +32,8 @@ public class MotorSubsystem extends AbstractSubsystem{
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
         Object speedFeedback = null;
-        for (Map.Entry<ISignalSender, Object> entry: getSignalChannel("speed_feedback").entrySet()){
-            if (entry.getValue() instanceof EmptySignal || entry.getValue() instanceof Float){
+        for (Map.Entry<ISignalSender, Object> entry : getSignalChannel("speed_feedback").entrySet()) {
+            if (entry.getValue() instanceof EmptySignal || entry.getValue() instanceof Float) {
                 speedFeedback = entry.getValue();
             }
             break;
@@ -90,7 +90,7 @@ public class MotorSubsystem extends AbstractSubsystem{
         for (String inputKey : attr.throttleInputKeys) {
             SignalChannel signalChannel = getSignalChannel(inputKey);
             if (signalChannel.getFirstSignal() instanceof Float) {
-                powerControlInput = (float) signalChannel.getFirstSignal();
+                powerControlInput = (float) signalChannel.getFirstSignal() / 100f;
                 break;
             } else if (signalChannel.getFirstSignal() instanceof MoveInputSignal) {
                 powerControlInput = ((MoveInputSignal) signalChannel.getFirstSignal()).getMoveInput()[2] / 100f;

@@ -63,7 +63,7 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem {
         else customModels = new HashMap<>();
         animatable.setModelIndex(
                 new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"),
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/blueprint.geo"),
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"))
         );
         if (customModels != null) {

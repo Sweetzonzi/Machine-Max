@@ -144,6 +144,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (variant == null) variant = "default";
         this.modelIndex = new ModelIndex(
                 partType.variants.getOrDefault(variant, partType.variants.get("default")),//获取部件模型路径
+                partType.animation,//获取部件动画路径
                 partType.textures.getFirst());//获取部件第一个可用纹理作为默认纹理
         this.textureIndex = 0;
         this.name = partType.getName();
@@ -206,6 +207,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.textureIndex = data.textureIndex;
         this.modelIndex = new ModelIndex(
                 type.variants.getOrDefault(variant, type.variants.get("default")),//获取部件模型路径
+                type.animation,//获取部件动画路径
                 type.textures.get(textureIndex % type.textures.size()));//获取部件第一个可用纹理作为默认纹理
         this.uuid = UUID.fromString(data.uuid);
         this.durability = readSavedData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
@@ -618,6 +620,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.textureIndex = index % type.getTextures().size();
         this.setModelIndex(new ModelIndex(
                 modelIndex.getModelPath(),
+                modelIndex.getAnimPath(),
                 type.getTextures().get(index % type.getTextures().size())
         ));
         //同步客户端

@@ -316,7 +316,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
                 }
                 for (Map.Entry<ISignalReceiver, String> entry : motors.entrySet()) {
-                    sendCallbackToAllListeners(entry.getValue(), actualThrottle);
+                    sendCallbackToAllListeners(entry.getValue(), 0f);
                     avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).rotSpeed;
                 }
                 avgEngineSpeed /= engineCount;

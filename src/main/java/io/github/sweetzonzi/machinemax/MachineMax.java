@@ -27,8 +27,6 @@ public class MachineMax {
     //TODO:炮塔控制
     //TODO:方块代理子系统，互动以及tick时有对应方块的功能？
     //TODO:载具触发压力板
-    //TODO:内容包之间的依赖关系
-    //TODO:蓝图对内容包的依赖关系
     //TODO:把拼好的载具保存为微缩模型，分不同可选比例
     //TODO:使用蓝图快速重新组装部分零件缺失的载具，需要图匹配算法
     public static final String MOD_ID = "machine_max";

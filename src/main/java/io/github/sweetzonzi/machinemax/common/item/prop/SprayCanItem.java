@@ -90,7 +90,7 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
         else customModels = new HashMap<>();
         animatable.setModelIndex(
                 new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "spray_can"),
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "builtin/models/item/spray_can.geo"),
                         ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/spray_can.png"))
         );
         if (customModels != null) {
