@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machinemax.external;
 
 
+import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
@@ -19,11 +20,15 @@ import java.util.Set;
 import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
 
 public class DynamicPack implements PackResources {
+    @Getter
     private String content = "";
+    @Getter
     private String base64 = "";
+    @Getter
     private final String packName;
     private final String packRoot;
     private final ResourceLocation location;
+    @Getter
     private File file;
     private ByteArrayInputStream inputStream;
     public DynamicPack(String packName, ResourceLocation location, String packRoot, File file) {
@@ -70,21 +75,6 @@ public class DynamicPack implements PackResources {
         // 列出所有动态资源（必须实现）
         if (type == PackType.CLIENT_RESOURCES && path.equals(packRoot))
             output.accept(location, () -> inputStream);
-    }
-
-    public String getPackName() {
-        return packName;
-    }
-
-    public File getFile() {
-        return file;
-    }
-    public String getContent() {
-        return content;
-    }
-
-    public String getBase64() {
-        return base64;
     }
 
     public String getContent(boolean keepComments) {

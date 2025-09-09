@@ -34,7 +34,6 @@ public class MachineMax {
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器
 
     public MachineMax(IEventBus bus, ModContainer container) {
-        // 首先注册Spirit of Fight到多mod资源系统
         MultiModResourceRegistry.INSTANCE.registerModResources(MOD_ID, MachineMax.class);
         REGISTER.register(bus);
         MMDataRegistries.register();//注册所有自定义注册器
@@ -52,6 +51,7 @@ public class MachineMax {
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMMenus.register(bus);//注册所有菜单
         MMSounds.register();//注册所有音效
+        MMPackModuleRegistries.register();//注册所有SparkCore扩展包模块
     }
 
 }

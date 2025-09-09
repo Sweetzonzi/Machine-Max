@@ -241,5 +241,5 @@
   ],
   "vehicle_name": "miniEV",
   "tooltip": "machine_max:example_pack/content/mini_ev.html",
-  "icon": "machine_max:example_pack/icon/mini_ev_icon.png"
+  "icon": "machine_max:textures/icon/mini_ev_icon.png"
 }

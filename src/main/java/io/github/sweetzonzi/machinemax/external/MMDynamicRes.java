@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machinemax.external;
 
-import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -42,6 +41,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
@@ -63,12 +64,39 @@ public class MMDynamicRes {
     public static List<String> MM_PUBLIC_SCRIPTS = new ArrayList<>(); // 自带外部公共库的所有js代码会被存在这里
 
     //各个外部路径
+    public static final Path GAME_DIR = FMLPaths.GAMEDIR.get();
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
+    public static final Path SPARK_MODULE = GAME_DIR.resolve("spark_modules");
     public static final Path VEHICLES = NAMESPACE.resolve("custom_packs");//载具包根文件夹
     public static final Path PUBLIC_JS_LIBS = NAMESPACE.resolve("public_scripts");//js外部公共库目录
 
     public static boolean overwrite = true;//覆写总开关，考虑以后做成用户自定义配置
+
+    // 添加静态字段来跟踪临时目录
+    private static final Set<Path> TEMP_DIRS = ConcurrentHashMap.newKeySet();
+    private static final Set<Path> ZIP_PACKS = ConcurrentHashMap.newKeySet();
+
+    // 在类初始化时注册关闭钩子
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            for (Path tempDir : TEMP_DIRS) {
+                try {
+                    Files.walk(tempDir)
+                            .sorted(Comparator.reverseOrder())
+                            .forEach(path -> {
+                                try {
+                                    Files.deleteIfExists(path);
+                                } catch (IOException e) {
+                                    LOGGER.warn("Failed to delete temporary file: {}", path, e);
+                                }
+                            });
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to clean up temporary directory: {}", tempDir, e);
+                }
+            }
+        }));
+    }
 
     public static void init(FMLCommonSetupEvent event) {
         loadData();
@@ -81,9 +109,7 @@ public class MMDynamicRes {
 
     public static void initResources() {
         EXTERNAL_RESOURCE.clear();
-        PART_TYPES.clear();
         CUSTOM_HUD.clear();
-        SERVER_PART_TYPES.clear();
         OBoneParse.clear();
         BLUEPRINTS.clear();
         CRAFTING_RECIPES.clear();
@@ -105,18 +131,38 @@ public class MMDynamicRes {
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(VEHICLES);
+        Exist(SPARK_MODULE);
         Exist(PUBLIC_JS_LIBS);
-        GenerateTestPack(); //自动生成测试包
-        for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
+        GenerateTestPack(VEHICLES); //自动生成测试包
+        for (Path root : listPaths(VEHICLES, path -> Files.isDirectory(path) || isZipFile(path))) {
             String packName = root.getFileName().toString();
-            //资源类数据先加载
-            packUp(packName, Exist(root.resolve("content")));
-            packUp(packName, Exist(root.resolve("lang")));
-            packUp(packName, Exist(root.resolve("texture")));
-            packUp(packName, Exist(root.resolve("sound")));
-            packUp(packName, Exist(root.resolve("hud")));
-            packUp(packName, Exist(root.resolve("icon")));
-            packUp(packName, Exist(root.resolve("font")));
+            if (Files.isDirectory(root)) {
+                // 处理文件夹资源包
+                packUp(packName, Exist(root.resolve("content")));
+                packUp(packName, Exist(root.resolve("lang")));
+                packUp(packName, Exist(root.resolve("sound")));
+                packUp(packName, Exist(root.resolve("hud")));
+                packUp(packName, Exist(root.resolve("font")));
+            } else if (isZipFile(root)) {
+                // 处理ZIP压缩包
+//                packUpZip(packName, root);
+            }
+        }
+        //TODO:从.minecraft/spark_modules中读取各个包的各个模块的内容，包可以是文件夹也可以是zip压缩包
+        for (Path root : listPaths(SPARK_MODULE, path -> Files.isDirectory(path) || isZipFile(path))) {
+            String packName = root.getFileName().toString();
+
+            if (Files.isDirectory(root)) {
+                // 处理文件夹资源包
+                packUp(packName, Exist(root.resolve("content")));
+                packUp(packName, Exist(root.resolve("lang")));
+                packUp(packName, Exist(root.resolve("sound")));
+                packUp(packName, Exist(root.resolve("hud")));
+                packUp(packName, Exist(root.resolve("font")));
+            } else if (isZipFile(root)) {
+                // 处理ZIP压缩包
+//                packUpZip(packName, root);
+            }
         }
     }
 
@@ -133,14 +179,10 @@ public class MMDynamicRes {
             String packName = root.getFileName().toString();
             //各种MM配置
             packUp(packName, Exist(root.resolve("blueprint")));
-            packUp(packName, Exist(root.resolve("model")));
-            packUp(packName, Exist(root.resolve("animation")));
-            packUp(packName, Exist(root.resolve("part_type")));
             packUp(packName, Exist(root.resolve("recipe")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("color")));
         }
-
         //公共js库（用于开发时不用覆盖，
         boolean STATIC = true;
         // STATIC: 所有载具包都可以调用里面封装的库代码，所以为了保证用户所有脚本的正常运行，发布版必须覆盖）
@@ -278,55 +320,17 @@ public class MMDynamicRes {
     /**
      * 自动生成测试包
      */
-    private static void GenerateTestPack() {
+    private static void GenerateTestPack(Path path) {
         //拿到存在的路径
-        Path examplePack = Exist(VEHICLES.resolve("example_pack"));
-        Path modelFolder = Exist(examplePack.resolve("model"));
-        Path animationFolder = Exist(examplePack.resolve("animation"));
-        Path partTypeFolder = Exist(examplePack.resolve("part_type"));
+        Path examplePack = Exist(path.resolve("example_pack"));
         Path hudTypeFolder = Exist(examplePack.resolve("hud"));
         Path script = Exist(examplePack.resolve("script"));
         Path blueprint = Exist(examplePack.resolve("blueprint"));
         Path recipe = Exist(examplePack.resolve("recipe"));
         Path lang = Exist(examplePack.resolve("lang"));
-        Path texture = Exist(examplePack.resolve("texture"));
-        Path icon = Exist(examplePack.resolve("icon"));
         Path content = Exist(examplePack.resolve("content"));
         Path font = Exist(examplePack.resolve("font"));
         Path color = Exist(examplePack.resolve("color"));
-
-        //设置默认测试包的路径、名字、内容
-        //模型文件
-        copyResourceToFile("/example_pack/model/example_hud.geo.json", modelFolder.resolve("example_hud.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_back_seat.geo.json", modelFolder.resolve("ae86_back_seat.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_seat.geo.json", modelFolder.resolve("ae86_seat.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_hull.geo.json", modelFolder.resolve("ae86_hull.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_chassis_all_terrain.geo.json", modelFolder.resolve("ae86_chassis_all_terrain.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_right.geo.json", modelFolder.resolve("ae86_wheel_all_terrain_right.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_wheel_all_terrain_left.geo.json", modelFolder.resolve("ae86_wheel_all_terrain_left.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_chassis.geo.json", modelFolder.resolve("ae86_chassis.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_wheel_right.geo.json", modelFolder.resolve("ae86_wheel_right.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/ae86_wheel_left.geo.json", modelFolder.resolve("ae86_wheel_left.geo.json"), overwrite);
-
-        copyResourceToFile("/example_pack/model/mini_ev_hull.geo.json", modelFolder.resolve("mini_ev_hull.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/mini_ev_wheel_right.geo.json", modelFolder.resolve("mini_ev_wheel_right.geo.json"), overwrite);
-        copyResourceToFile("/example_pack/model/mini_ev_wheel_left.geo.json", modelFolder.resolve("mini_ev_wheel_left.geo.json"), overwrite);
-
-        //动画文件
-        copyResourceToFile("/example_pack/animation/example_hud.animation.json", animationFolder.resolve("example_hud.animation.json"), overwrite);
-        copyResourceToFile("/example_pack/animation/ae86.animation.json", animationFolder.resolve("ae86.animation.json"), overwrite);
-
-        //部件定义文件
-        copyResourceToFile("/example_pack/part_type/ae86_back_seat.json", partTypeFolder.resolve("ae86_back_seat.json"), overwrite);
-        copyResourceToFile("/example_pack/part_type/ae86_seat.json", partTypeFolder.resolve("ae86_seat.json"), overwrite);
-        copyResourceToFile("/example_pack/part_type/ae86_hull.json", partTypeFolder.resolve("ae86_hull.json"), overwrite);
-        copyResourceToFile("/example_pack/part_type/ae86_chassis_all_terrain.json", partTypeFolder.resolve("ae86_chassis_all_terrain.json"), overwrite);
-        copyResourceToFile("/example_pack/part_type/ae86_wheel_all_terrain.json", partTypeFolder.resolve("ae86_wheel_all_terrain.json"), overwrite);
-        copyResourceToFile("/example_pack/part_type/ae86_chassis.json", partTypeFolder.resolve("ae86_chassis.json"), overwrite);
-        copyResourceToFile("/example_pack/part_type/ae86_wheel.json", partTypeFolder.resolve("ae86_wheel.json"), overwrite);
-
-        copyResourceToFile("/example_pack/part_type/mini_ev_hull.json", partTypeFolder.resolve("mini_ev_hull.json"), overwrite);
-        copyResourceToFile("/example_pack/part_type/mini_ev_wheel.json", partTypeFolder.resolve("mini_ev_wheel.json"), overwrite);
 
         //自定义HUD文件
         copyResourceToFile("/example_pack/hud/example_hud.json", hudTypeFolder.resolve("example_hud.json"), overwrite);
@@ -345,45 +349,7 @@ public class MMDynamicRes {
         //自定义翻译
         copyResourceToFile("/example_pack/lang/zh_cn.json", lang.resolve("zh_cn.json"), overwrite);
         copyResourceToFile("/example_pack/lang/en_us.json", lang.resolve("en_us.json"), overwrite);
-
-        //自带测试材质
-        copyResourceToFile("/example_pack/texture/example_hud.png", texture.resolve("example_hud.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_1.png", texture.resolve("ae86_1.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_2.png", texture.resolve("ae86_2.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_3.png", texture.resolve("ae86_3.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_4.png", texture.resolve("ae86_4.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_5.png", texture.resolve("ae86_5.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_6.png", texture.resolve("ae86_6.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_7.png", texture.resolve("ae86_7.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_8.png", texture.resolve("ae86_8.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_9.png", texture.resolve("ae86_9.png"), overwrite);
-
-        copyResourceToFile("/example_pack/texture/ae86_all_terrain_1.png", texture.resolve("ae86_all_terrain_1.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_all_terrain_2.png", texture.resolve("ae86_all_terrain_2.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_all_terrain_3.png", texture.resolve("ae86_all_terrain_3.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/ae86_all_terrain_4.png", texture.resolve("ae86_all_terrain_4.png"), overwrite);
-
-        copyResourceToFile("/example_pack/texture/mini_ev_ae86.png", texture.resolve("mini_ev_ae86.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/mini_ev_black.png", texture.resolve("mini_ev_black.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/mini_ev_brown.png", texture.resolve("mini_ev_brown.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/mini_ev_pink.png", texture.resolve("mini_ev_pink.png"), overwrite);
-        copyResourceToFile("/example_pack/texture/mini_ev_white.png", texture.resolve("mini_ev_white.png"), overwrite);
-
-        //自带测试图标
-        copyResourceToFile("/example_pack/icon/ae86_back_seat_icon.png", icon.resolve("ae86_back_seat_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/ae86_seat_icon.png", icon.resolve("ae86_seat_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/ae86_chassis_all_terrain_icon.png", icon.resolve("ae86_chassis_all_terrain_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/ae86_wheel_all_terrain_icon.png", icon.resolve("ae86_wheel_all_terrain_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/ae86_chassis_icon.png", icon.resolve("ae86_chassis_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/ae86_wheel_icon.png", icon.resolve("ae86_wheel_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/ae86_hull_icon.png", icon.resolve("ae86_hull_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/ae86_icon.png", icon.resolve("ae86_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/ae86at_icon.png", icon.resolve("ae86at_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/mini_ev_icon.png", icon.resolve("mini_ev_icon.png"), overwrite);
-
-        copyResourceToFile("/example_pack/icon/mini_ev_hull_icon.png", icon.resolve("mini_ev_hull_icon.png"), overwrite);
-        copyResourceToFile("/example_pack/icon/mini_ev_wheel_icon.png", icon.resolve("mini_ev_wheel_icon.png"), overwrite);
-
+        
         //自定义文本文件
         copyResourceToFile("/example_pack/content/ae86.html", content.resolve("ae86.html"), overwrite);
         copyResourceToFile("/example_pack/content/ae86at.html", content.resolve("ae86at.html"), overwrite);
@@ -407,6 +373,7 @@ public class MMDynamicRes {
      * 对一个载具包子目录的解析 packName是载具包名称 categoryPath是子目录
      */
     private static void packUp(String packName, Path categoryPath) {
+        if (!Files.exists(categoryPath)) return;
         String category = categoryPath.getFileName().toString();
         for (Path filePath : listAllFiles(categoryPath)) {
             DynamicPack dynamicPack = null;
@@ -418,15 +385,6 @@ public class MMDynamicRes {
                 reader.setLenient(true); // 允许非严格JSON
                 JsonElement json = JsonParser.parseReader(reader);
                 switch (category) {
-
-                    case "model" -> {
-                        OBoneParse.register(location, json);
-                    }
-
-                    case "animation" -> {
-                        OAnimationSet animSet = OAnimationSet.getCODEC().parse(JsonOps.INSTANCE, json).result().orElseThrow();
-                        OAnimationSet.getORIGINS().put(location, animSet);
-                    }
 
                     case "part_type" -> { //part_type文件夹中的配置
                         PartType partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
@@ -504,14 +462,74 @@ public class MMDynamicRes {
                 errorMessages.add(Component.translatable(e.getMessage()));
                 LOGGER.error("An error occurred while reading {}, file: {}, skipped. Reason: {}", category, filePath, e.getMessage());
             }
-
-//            //把指定包的文件转换成base64字符串形式    取消注释则会生成镜像base64文件包 在 run/config/machine_max/base64ify
-//            Path master_base64ify = Exist(NAMESPACE.resolve("base64ify"));
-//            Path root_base64ify = Exist(master_base64ify.resolve(packName+"_base64"));
-//            Path category_base64ify = Exist(root_base64ify.resolve(category));
-//            createDefaultFile(category_base64ify.resolve(fileName+"_base64.txt"), dynamicPack.getBase64(), true);
         }
+    }
 
+    /**
+     * 处理ZIP压缩包，解压并模拟成文件夹资源包
+     */
+    private static void packUpZip(String packName, Path zipPath) {
+        try {
+            // 创建临时目录用于解压
+            Path tempDir = Files.createTempDirectory("mm_zip_" + packName);
+            TEMP_DIRS.add(tempDir);
+
+            // 解压ZIP文件
+            try (ZipFile zipFile = new ZipFile(zipPath.toFile())) {
+                Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement();
+                    Path entryPath = tempDir.resolve(entry.getName());
+
+                    if (entry.isDirectory()) {
+                        Files.createDirectories(entryPath);
+                    } else {
+                        Files.createDirectories(entryPath.getParent());
+                        try (InputStream is = zipFile.getInputStream(entry)) {
+                            Files.copy(is, entryPath, StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    }
+                }
+            }
+
+            // 处理解压后的目录，使用现有的packUp方法
+            processUnpackedZip(packName, tempDir);
+
+        } catch (IOException e) {
+            LOGGER.error("Failed to process ZIP pack: {}", zipPath, e);
+            exceptions.add(e);
+            errorFiles.add(zipPath.toString());
+            errorMessages.add(Component.translatable("error.machine_max.zip_process_failed", e.getMessage()));
+        }
+    }
+
+    /**
+     * 处理解压后的ZIP内容，使用现有的packUp方法
+     */
+    private static void processUnpackedZip(String packName, Path unpackedDir) {
+        // 资源类数据先加载
+        packUp(packName, unpackedDir.resolve("content"));
+        packUp(packName, unpackedDir.resolve("lang"));
+        packUp(packName, unpackedDir.resolve("textures"));
+        packUp(packName, unpackedDir.resolve("sound"));
+        packUp(packName, unpackedDir.resolve("hud"));
+        packUp(packName, unpackedDir.resolve("icons"));
+        packUp(packName, unpackedDir.resolve("font"));
+
+        // 配置类数据后加载
+        packUp(packName, unpackedDir.resolve("blueprint"));
+        packUp(packName, unpackedDir.resolve("part_type"));
+        packUp(packName, unpackedDir.resolve("recipe"));
+        packUp(packName, unpackedDir.resolve("script"));
+        packUp(packName, unpackedDir.resolve("color"));
+    }
+
+    /**
+     * 确保路径存在（如果不存在则返回空路径而不是创建）
+     */
+    private static Path ensureExists(Path path) {
+        return Files.exists(path) ? path : path.getFileSystem().getPath("");
     }
 
     private static void mergeJsonObjects(JsonObject target, JsonObject source) {
@@ -671,5 +689,11 @@ public class MMDynamicRes {
         }
     }
 
+    /**
+     * 检查路径是否为ZIP文件
+     */
+    private static boolean isZipFile(Path path) {
+        return Files.isRegularFile(path) && path.toString().toLowerCase().endsWith(".zip");
+    }
 
 }

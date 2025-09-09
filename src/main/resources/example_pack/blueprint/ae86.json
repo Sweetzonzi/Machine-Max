@@ -392,5 +392,5 @@
   ],
   "vehicle_name": "AE86",
   "tooltip": "machine_max:example_pack/content/ae86.html",
-  "icon": "machine_max:example_pack/icon/ae86_icon.png"
+  "icon": "machine_max:textures/icon/ae86_icon.png"
 }
