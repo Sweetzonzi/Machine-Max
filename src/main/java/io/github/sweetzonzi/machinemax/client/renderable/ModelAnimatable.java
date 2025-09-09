@@ -57,6 +57,7 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     private final AnimController animController = new AnimController(this);
 
     public ModelAnimatable(AnimatableParams params) {
+        if (params == null) throw new NullPointerException();
         this.params = params;
         getModelController().setModel(params.modelIndex);
         getModelController().setTextureLocation(params.texture);

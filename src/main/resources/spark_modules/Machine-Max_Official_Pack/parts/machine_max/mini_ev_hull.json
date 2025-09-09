@@ -21,9 +21,9 @@
       "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
       "views": {
         "enable_first_person": true, //(可选,默认true)是否启用第一人称视角
-        "first_person_hud": ["machine_max:example_pack/hud/example_hud.json"],//(可选,默认[])第一人称视角下的HUD组件
+        "first_person_hud": ["machine_max:example_hud"],//(可选,默认[])第一人称视角下的HUD组件
         "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
-        "third_person_hud": ["machine_max:example_pack/hud/example_hud.json"],//(可选,默认[])第三人称视角下的HUD组件
+        "third_person_hud": ["machine_max:example_hud"],//(可选,默认[])第三人称视角下的HUD组件
         "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
         "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
         "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率

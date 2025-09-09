@@ -45,8 +45,6 @@ public class MachineMax {
         MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令
         MMDynamicRes.initResources();//首次启动时读取外部资源文件
-        bus.addListener(MMDynamicRes::init);//CommonSetup时读取外部数据文件
-        bus.addListener(MMDynamicRes.DataPackReloader::registerClientReloadListeners);//服务端的注册Listener位于DataPackReloader中
         MMItems.register();//通过kotlin注册的所有物品
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMMenus.register(bus);//注册所有菜单

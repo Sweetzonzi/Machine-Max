@@ -10,7 +10,6 @@ import net.neoforged.neoforge.common.NeoForge
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = [Dist.CLIENT])
 object MMPackModuleRegistries {
-
     fun reg(event: SparkPackageReaderRegisterEvent) {
         event.register(PartModule())
         event.register(BlueprintModule())

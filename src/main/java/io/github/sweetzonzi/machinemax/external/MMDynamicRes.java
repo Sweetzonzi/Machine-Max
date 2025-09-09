@@ -1,40 +1,27 @@
 package io.github.sweetzonzi.machinemax.external;
 
-import cn.solarmoon.spark_core.animation.model.origin.OModel;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
-import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.JsonOps;
 import io.github.sweetzonzi.machinemax.common.visual.AnimatableParams;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machinemax.external.js.MMInitialJS;
-import io.github.sweetzonzi.machinemax.external.parse.OBoneParse;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.crafting.*;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
 
-import javax.annotation.Nullable;
 import java.awt.*;
 import java.io.*;
-import java.lang.reflect.Field;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
@@ -47,14 +34,13 @@ import java.util.zip.ZipFile;
 import static io.github.sweetzonzi.machinemax.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machinemax.MachineMax.MOD_ID;
 
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new ConcurrentHashMap<>(); //所有当下读取的外部资源
     public static ConcurrentMap<ResourceLocation, PartType> PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     //TODO:按维度区分，避免不同服务端物理线程获取到相同的对象
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
-    public static ConcurrentMap<ResourceLocation, OModel> O_MODELS = new ConcurrentHashMap<>(); // 读取为part的骨架数据，同时是geckolib的模型文件 key是自带构造函数生成的registryKey， value是暂存的OModel
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
-    public static List<Pair<ResourceLocation, JsonElement>> CRAFTING_RECIPES = new ArrayList<>();
     public static ConcurrentMap<ResourceLocation, AnimatableParams> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
@@ -97,6 +83,7 @@ public class MMDynamicRes {
         }));
     }
 
+    @SubscribeEvent
     public static void init(FMLCommonSetupEvent event) {
         loadData();
     }
@@ -108,8 +95,6 @@ public class MMDynamicRes {
 
     public static void initResources() {
         EXTERNAL_RESOURCE.clear();
-        OBoneParse.clear();
-        CRAFTING_RECIPES.clear();
         exceptions.clear();
         errorFiles.clear();
         errorMessages.clear();
@@ -136,7 +121,6 @@ public class MMDynamicRes {
             if (Files.isDirectory(root)) {
                 // 处理文件夹资源包
                 packUp(packName, Exist(root.resolve("content")));
-                packUp(packName, Exist(root.resolve("lang")));
                 packUp(packName, Exist(root.resolve("sound")));
                 packUp(packName, Exist(root.resolve("font")));
             } else if (isZipFile(root)) {
@@ -151,7 +135,6 @@ public class MMDynamicRes {
             if (Files.isDirectory(root)) {
                 // 处理文件夹资源包
                 packUp(packName, Exist(root.resolve("content")));
-                packUp(packName, Exist(root.resolve("lang")));
                 packUp(packName, Exist(root.resolve("sound")));
                 packUp(packName, Exist(root.resolve("font")));
             } else if (isZipFile(root)) {
@@ -173,7 +156,6 @@ public class MMDynamicRes {
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
             //各种MM配置
-            packUp(packName, Exist(root.resolve("recipe")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("color")));
         }
@@ -194,10 +176,8 @@ public class MMDynamicRes {
         MMInitialJS.register();//注册所有JS形式的初始化配置
     }
 
-    @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
+    @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
     public static class DataPackReloader extends SimplePreparableReloadListener<Void> {
-        @Nullable
-        private static ReloadableServerResources serverResources;
 
         @Override
         protected Void prepare(ResourceManager manager, ProfilerFiller profiler) {
@@ -207,12 +187,7 @@ public class MMDynamicRes {
 
         @Override
         protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
-            //TODO: 整体转为数据包方案？
-            if (serverResources != null) {
-                //注入自定义配方
-                RecipeManager recipeManager = serverResources.getRecipeManager();
-                registerRecipes(recipeManager, CRAFTING_RECIPES);
-            }
+
         }
 
         public static void sendErrorToPlayer(Player player) {
@@ -232,79 +207,10 @@ public class MMDynamicRes {
         }
 
         @SubscribeEvent
-        public static void registerServerReloadListeners(AddReloadListenerEvent event) {
-            event.addListener(new MMDynamicRes.DataPackReloader());
-            serverResources = event.getServerResources();//每次reload都会有新的serverResources被创建，因此在这里保存下来最新的
-        }
-
         public static void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
             event.registerReloadListener(new MMDynamicRes.DataPackReloader());
         }
 
-        private void registerRecipes(RecipeManager manager, List<Pair<ResourceLocation, JsonElement>> recipes) {
-            // 使用反射访问RecipeManager内部映射
-            try {
-                // 获取当前不可变集合
-                Field byNameField = RecipeManager.class.getDeclaredField("byName");
-                byNameField.setAccessible(true);
-                Field byTypeField = RecipeManager.class.getDeclaredField("byType");
-                byTypeField.setAccessible(true);
-
-                Map<ResourceLocation, RecipeHolder<?>> currentByName =
-                        (Map<ResourceLocation, RecipeHolder<?>>) byNameField.get(manager);
-                Multimap<RecipeType<?>, RecipeHolder<?>> currentByType =
-                        (Multimap<RecipeType<?>, RecipeHolder<?>>) byTypeField.get(manager);
-
-                // 创建可变副本
-                Map<ResourceLocation, RecipeHolder<?>> newByName = new HashMap<>(currentByName);
-                Multimap<RecipeType<?>, RecipeHolder<?>> newByType = ArrayListMultimap.create();
-
-                // 复制现有数据到新集合
-                for (Map.Entry<RecipeType<?>, Collection<RecipeHolder<?>>> entry : currentByType.asMap().entrySet()) {
-                    newByType.putAll(entry.getKey(), entry.getValue());
-                }
-
-                // 添加新配方
-                for (Pair<ResourceLocation, JsonElement> entry : recipes) {
-                    ResourceLocation id = entry.getFirst();
-                    JsonElement json = entry.getSecond();
-
-                    RecipeHolder<?> recipeHolder = parseRecipe(id, json);
-                    if (recipeHolder != null) {
-                        // 替换同名配方
-                        newByName.put(id, recipeHolder);
-                        // 按类型分组
-                        newByType.put(recipeHolder.value().getType(), recipeHolder);
-                    }
-                }
-
-                // 创建不可变版本
-                Map<ResourceLocation, RecipeHolder<?>> immutableByName = ImmutableMap.copyOf(newByName);
-                Multimap<RecipeType<?>, RecipeHolder<?>> immutableByType = ImmutableMultimap.copyOf(newByType);
-
-                // 更新RecipeManager
-                byNameField.set(manager, immutableByName);
-                byTypeField.set(manager, immutableByType);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException("Failed to register external recipes", e);
-            }
-        }
-
-        @Nullable
-        private RecipeHolder<?> parseRecipe(ResourceLocation id, JsonElement json) {
-            try {
-                // 解析配方对象
-                var recipe = Recipe.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow(JsonParseException::new);
-                return new RecipeHolder<>(id, recipe);
-            } catch (Exception e) {
-                // 记录解析错误
-                exceptions.add(e);
-                errorFiles.add(id.toString());
-                errorMessages.add(Component.translatable(e.getMessage()));
-                LOGGER.error("An error occurred while reading recipe {}, skipped. Reason: {}", id, e.getMessage());
-                return null;
-            }
-        }
     }
 
     public static void GenerateChannels(String jsCode) {
@@ -318,16 +224,12 @@ public class MMDynamicRes {
         //拿到存在的路径
         Path examplePack = Exist(path.resolve("example_pack"));
         Path script = Exist(examplePack.resolve("script"));
-        Path recipe = Exist(examplePack.resolve("recipe"));
         Path content = Exist(examplePack.resolve("content"));
         Path font = Exist(examplePack.resolve("font"));
         Path color = Exist(examplePack.resolve("color"));
 
         //MM自带JS文件
         copyResourceToFile("/example_pack/script/main.js", script.resolve("main.js"), overwrite);
-
-        //配方文件
-        copyResourceToFile("/example_pack/recipe/ae86_chassis.json", recipe.resolve("ae86_chassis.json"), overwrite);
 
         //自定义文本文件
         copyResourceToFile("/example_pack/content/ae86.html", content.resolve("ae86.html"), overwrite);
@@ -368,10 +270,6 @@ public class MMDynamicRes {
                     case "script" -> {
                         dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());
                         MM_SCRIPTS.put(location, dynamicPack);
-                    }
-
-                    case "recipe" -> {
-                        CRAFTING_RECIPES.add(Pair.of(location, json));
                     }
 
                     case "font" -> {
@@ -443,32 +341,13 @@ public class MMDynamicRes {
     private static void processUnpackedZip(String packName, Path unpackedDir) {
         // 资源类数据先加载
         packUp(packName, unpackedDir.resolve("content"));
-        packUp(packName, unpackedDir.resolve("lang"));
-        packUp(packName, unpackedDir.resolve("textures"));
         packUp(packName, unpackedDir.resolve("sound"));
-        packUp(packName, unpackedDir.resolve("hud"));
-        packUp(packName, unpackedDir.resolve("icons"));
         packUp(packName, unpackedDir.resolve("font"));
 
         // 配置类数据后加载
-        packUp(packName, unpackedDir.resolve("blueprint"));
-        packUp(packName, unpackedDir.resolve("part_type"));
         packUp(packName, unpackedDir.resolve("recipe"));
         packUp(packName, unpackedDir.resolve("script"));
         packUp(packName, unpackedDir.resolve("color"));
-    }
-
-    /**
-     * 确保路径存在（如果不存在则返回空路径而不是创建）
-     */
-    private static Path ensureExists(Path path) {
-        return Files.exists(path) ? path : path.getFileSystem().getPath("");
-    }
-
-    private static void mergeJsonObjects(JsonObject target, JsonObject source) {
-        for (Map.Entry<String, JsonElement> entry : source.entrySet()) {
-            target.add(entry.getKey(), entry.getValue());
-        }
     }
 
     /**
