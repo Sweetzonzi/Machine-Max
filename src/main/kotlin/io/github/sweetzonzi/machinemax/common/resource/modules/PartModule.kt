@@ -18,7 +18,11 @@ class PartModule : SparkPackModule {
 
     override val id: String = "parts"
     override fun onStart() {
-
+        if (FMLEnvironment.dist.isClient) {
+            MMDynamicRes.PART_TYPES.clear()
+        } else {
+            MMDynamicRes.SERVER_PART_TYPES.clear()
+        }
     }
 
     override fun read(
@@ -37,11 +41,9 @@ class PartModule : SparkPackModule {
             val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
             val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
             val partType = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-            if (FMLEnvironment.dist.isClient) {
-                MMDynamicRes.PART_TYPES[id] = partType
-            } else {
-                MMDynamicRes.SERVER_PART_TYPES[id] = partType
-            }
+            MMDynamicRes.PART_TYPES[id] = partType
+            val partType2 = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+            MMDynamicRes.SERVER_PART_TYPES[id] = partType2
         }
     }
 

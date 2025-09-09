@@ -75,7 +75,6 @@ public class MMDynamicRes {
 
     // 添加静态字段来跟踪临时目录
     private static final Set<Path> TEMP_DIRS = ConcurrentHashMap.newKeySet();
-    private static final Set<Path> ZIP_PACKS = ConcurrentHashMap.newKeySet();
 
     // 在类初始化时注册关闭钩子
     static {
@@ -109,9 +108,7 @@ public class MMDynamicRes {
 
     public static void initResources() {
         EXTERNAL_RESOURCE.clear();
-        CUSTOM_HUD.clear();
         OBoneParse.clear();
-        BLUEPRINTS.clear();
         CRAFTING_RECIPES.clear();
         exceptions.clear();
         errorFiles.clear();
@@ -141,7 +138,6 @@ public class MMDynamicRes {
                 packUp(packName, Exist(root.resolve("content")));
                 packUp(packName, Exist(root.resolve("lang")));
                 packUp(packName, Exist(root.resolve("sound")));
-                packUp(packName, Exist(root.resolve("hud")));
                 packUp(packName, Exist(root.resolve("font")));
             } else if (isZipFile(root)) {
                 // 处理ZIP压缩包
@@ -157,7 +153,6 @@ public class MMDynamicRes {
                 packUp(packName, Exist(root.resolve("content")));
                 packUp(packName, Exist(root.resolve("lang")));
                 packUp(packName, Exist(root.resolve("sound")));
-                packUp(packName, Exist(root.resolve("hud")));
                 packUp(packName, Exist(root.resolve("font")));
             } else if (isZipFile(root)) {
                 // 处理ZIP压缩包
@@ -178,7 +173,6 @@ public class MMDynamicRes {
         for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
             String packName = root.getFileName().toString();
             //各种MM配置
-            packUp(packName, Exist(root.resolve("blueprint")));
             packUp(packName, Exist(root.resolve("recipe")));
             packUp(packName, Exist(root.resolve("script")));
             packUp(packName, Exist(root.resolve("color")));
@@ -323,33 +317,18 @@ public class MMDynamicRes {
     private static void GenerateTestPack(Path path) {
         //拿到存在的路径
         Path examplePack = Exist(path.resolve("example_pack"));
-        Path hudTypeFolder = Exist(examplePack.resolve("hud"));
         Path script = Exist(examplePack.resolve("script"));
-        Path blueprint = Exist(examplePack.resolve("blueprint"));
         Path recipe = Exist(examplePack.resolve("recipe"));
-        Path lang = Exist(examplePack.resolve("lang"));
         Path content = Exist(examplePack.resolve("content"));
         Path font = Exist(examplePack.resolve("font"));
         Path color = Exist(examplePack.resolve("color"));
 
-        //自定义HUD文件
-        copyResourceToFile("/example_pack/hud/example_hud.json", hudTypeFolder.resolve("example_hud.json"), overwrite);
-
         //MM自带JS文件
         copyResourceToFile("/example_pack/script/main.js", script.resolve("main.js"), overwrite);
-
-        //蓝图文件
-        copyResourceToFile("/example_pack/blueprint/ae86.json", blueprint.resolve("ae86.json"), overwrite);
-        copyResourceToFile("/example_pack/blueprint/ae86at.json", blueprint.resolve("ae86at.json"), overwrite);
-        copyResourceToFile("/example_pack/blueprint/mini_ev.json", blueprint.resolve("mini_ev.json"), overwrite);
 
         //配方文件
         copyResourceToFile("/example_pack/recipe/ae86_chassis.json", recipe.resolve("ae86_chassis.json"), overwrite);
 
-        //自定义翻译
-        copyResourceToFile("/example_pack/lang/zh_cn.json", lang.resolve("zh_cn.json"), overwrite);
-        copyResourceToFile("/example_pack/lang/en_us.json", lang.resolve("en_us.json"), overwrite);
-        
         //自定义文本文件
         copyResourceToFile("/example_pack/content/ae86.html", content.resolve("ae86.html"), overwrite);
         copyResourceToFile("/example_pack/content/ae86at.html", content.resolve("ae86at.html"), overwrite);
@@ -386,59 +365,13 @@ public class MMDynamicRes {
                 JsonElement json = JsonParser.parseReader(reader);
                 switch (category) {
 
-                    case "part_type" -> { //part_type文件夹中的配置
-                        PartType partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
-                        location = partType.registryKey;
-                        PART_TYPES.put(location, partType); //我暂时把它存在PART_TYPES
-                        partType = PartType.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
-                        SERVER_PART_TYPES.put(location, partType);
-                    }
-
                     case "script" -> {
                         dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());
                         MM_SCRIPTS.put(location, dynamicPack);
                     }
 
-                    case "blueprint" -> {
-                        VehicleData data = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
-                        BLUEPRINTS.put(location, data);
-                    }
-
-                    case "hud" -> {
-                        AnimatableParams attr = AnimatableParams.CODEC.decode(JsonOps.INSTANCE, json).result().orElseThrow().getFirst();
-                        CUSTOM_HUD.put(location, attr);
-                    }
-
                     case "recipe" -> {
                         CRAFTING_RECIPES.add(Pair.of(location, json));
-                    }
-
-                    case "lang" -> {
-                        location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //语言翻译系统的标准搜索路径
-                        if (EXTERNAL_RESOURCE.containsKey(location)) {
-                            //已经有该语言的.json翻译表，需要往里面注入
-                            DynamicPack existedPack = EXTERNAL_RESOURCE.get(location);
-
-                            try {
-                                // 解析JSON字符串为JsonObject
-                                JsonObject origin = JsonParser.parseString(existedPack.getContent()).getAsJsonObject();
-                                JsonObject mergeIn = json.getAsJsonObject();
-
-                                // 合并JsonObject（后者覆盖前者）
-                                JsonObject merged = new JsonObject();
-                                mergeJsonObjects(merged, origin);
-                                mergeJsonObjects(merged, mergeIn);
-
-                                // 转换为合并后的JSON字符串
-                                String mergedJson = new GsonBuilder().setPrettyPrinting().create().toJson(merged);
-
-                                // 保存到合并后的JSON到资源覆写
-                                dynamicPack = new DynamicPack(packName, location, category, mergedJson);
-
-                            } catch (JsonSyntaxException | IllegalStateException e) {
-                                LOGGER.error("合并相同翻译表 {}时失败 目标文件位于外部包{}: {}", category, packName, e.getMessage());
-                            }
-                        }
                     }
 
                     case "font" -> {

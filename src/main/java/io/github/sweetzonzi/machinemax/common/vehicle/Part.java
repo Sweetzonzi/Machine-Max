@@ -225,7 +225,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         if (level.isClientSide) pt = MMDynamicRes.PART_TYPES.get(registryKey);
         else pt = MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
         if (pt == null)
-            throw new NullPointerException("部件类型" + registryKey + "不存在，请检查数据。部件列表: " + (level.isClientSide() ? MMDynamicRes.PART_TYPES.keySet() : MMDynamicRes.SERVER_PART_TYPES.keySet()));
+            throw new NullPointerException("部件类型" + registryKey + "不存在，请检查数据。可用部件列表: " + (level.isClientSide() ? MMDynamicRes.PART_TYPES.keySet() : MMDynamicRes.SERVER_PART_TYPES.keySet()));
         return pt;
     }
 
