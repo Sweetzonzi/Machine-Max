@@ -1,0 +1,395 @@
+package io.github.sweetzonzi.machine_max.common.entity;
+
+import au.edu.federation.caliko.FabrikChain3D;
+import cn.solarmoon.spark_core.animation.IEntityAnimatable;
+import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
+import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.util.BlackBoard;
+import cn.solarmoon.spark_core.util.SparkMathKt;
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.preinput.PreInput;
+import cn.solarmoon.spark_core.skill.Skill;
+import cn.solarmoon.spark_core.sync.EntitySyncerType;
+import cn.solarmoon.spark_core.sync.IntSyncData;
+import cn.solarmoon.spark_core.sync.SyncData;
+import cn.solarmoon.spark_core.sync.SyncerType;
+import com.jme3.bounding.BoundingBox;
+import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Matrix3f;
+import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
+import io.github.sweetzonzi.machine_max.common.vehicle.*;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
+import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
+import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn {
+
+    public Part part;//实体所属的部件
+    public UUID vehicleUUID;
+    public UUID partUUID;
+    public AtomicReference<List<BoundingBox>> boundingBoxes = new AtomicReference<>(List.of());
+
+    /**
+     * 不应被使用！
+     *
+     * @param entityType 实体类型
+     * @param level      实体加入的世界
+     */
+    public MMPartEntity(EntityType<? extends Entity> entityType, Level level) {
+        super(entityType, level);
+        this.blocksBuilding = false;
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+
+    }
+
+    public MMPartEntity(Level level, Part part) {
+        super(MMEntities.getPART_ENTITY().get(), level);
+        this.setNoGravity(true);
+        this.part = part;
+        this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (tickCount == 2) removeAllBodies();//移除SparkCore为实体添加的默认刚体
+        if (this.part == null) {//如果实体没有所属的部件，则移除实体
+            if (tickCount % 20 == 0) updatePart();
+            else if (tickCount > 100) {//等待100tick用于同步部件信息
+                MachineMax.LOGGER.warn("部件实体没有匹配的部件，已移除!");
+                this.remove(RemovalReason.DISCARDED);
+            }
+        } else {
+            //更新实体位置
+            this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
+            Quaternionf q = SparkMathKt.toQuaternionf(part.rootSubPart.body.getPhysicsRotation(null));
+            org.joml.Vector3f eulerAngles = new org.joml.Vector3f();
+            q.getEulerAnglesZYX(eulerAngles).mul((float) (180 / Math.PI));
+            this.setRot(-eulerAngles.y + 180f, eulerAngles.x);
+            updateBoundingBox();//更新实体包围盒
+        }
+    }
+
+    @Override
+    public boolean hurt(@NotNull DamageSource source, float amount) {
+        if (this.part == null) return false;
+        if (source.getDirectEntity() instanceof Projectile projectile) {
+            //来自投射物的伤害处理
+            IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
+            SubPart hitSubPart = mixinProjectile.machine_Max$getHitSubPart();
+            if (hitSubPart != null) {//如果命中了部件
+                Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
+                Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
+                HitBox hitBox = mixinProjectile.machine_Max$getHitBox();
+                return part.onHurt(source, amount, null, hitSubPart, normal,
+                        PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
+                                .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBox);
+            } else return false;
+        } else if (source.getSourcePosition() != null && source.getDirectEntity() instanceof Entity entity) {
+            //来自其他实体的伤害处理
+            PhysicsLevel level = level().getPhysicsLevel();
+            Vector3f start;
+            Vector3f end;
+            if (entity instanceof LivingEntity livingEntity && livingEntity.isAlive() && !livingEntity.isRemoved()) {
+                start = PhysicsHelperKt.toBVector3f(livingEntity.getEyePosition());
+                end = PhysicsHelperKt.toBVector3f(
+                                livingEntity.getViewVector(1).normalize()
+                                        .scale(5))
+                        .add(start);
+            } else {
+                start = PhysicsHelperKt.toBVector3f(source.getSourcePosition());
+                end = PhysicsHelperKt.toBVector3f(this.position());
+            }
+            if (end.subtract(start).length() > 0) {
+                if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION)) {
+                    //范围伤害处理
+                    SubPart nearest = null;
+                    float nearestDistance = Float.MAX_VALUE;
+                    Vector3f normal = new Vector3f();
+                    Vector3f contactPoint = new Vector3f();
+                    for (SubPart subPart : part.subParts.values()) {
+                        Vector3f delta = subPart.body.tickTransform.getTranslation().subtract(start);
+                        float d = delta.length();
+                        if (d < nearestDistance) {
+                            nearest = subPart;
+                            contactPoint = subPart.body.tickTransform.getTranslation();
+                            normal = delta.multLocal(-1).normalize();
+                            nearestDistance = d;
+                        }
+                    }
+                    if (nearest != null) {
+                        HitBox hitBox = null;
+                        float maxThickness = -1;
+                        for (String hitBoxName : nearest.attr.hitBoxNames.values()) {
+                            if (part.hitBoxes.get(hitBoxName).getRHA(part) > maxThickness)
+                                hitBox = part.hitBoxes.get(hitBoxName);
+                        }
+                        return part.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBox);
+                    } else throw new IllegalStateException("No subpart found for explosion damage.");
+                } else {//一般伤害处理
+                    var results = level.getWorld().rayTest(start, end);
+                    for (var result : results) {
+                        PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
+                        if (body.getOwner() instanceof SubPart subPart) {
+                            //TODO: new一个新的source存储攻击来袭方向
+                            Vector3f normal = result.getHitNormalLocal(null);
+                            Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
+                            HitBox hitBox = subPart.getHitBox(result.triangleIndex());
+                            //将伤害转发给部件进行操作
+                            return subPart.part.onHurt(source, amount, null, subPart, normal, end.subtract(start).normalize(), contactPoint, hitBox);
+                        }
+                    }
+                }
+            } else {//射线长度有问题时的异常处理
+                MachineMax.LOGGER.error("Damage source {} is too close to entity position, causing a zero-length ray.", entity);
+            }
+            return false;//未能命中任何部件碰撞箱则不处理伤害
+        } else return false;
+    }
+
+    @Override
+    public Component getDisplayName() {
+        if (part != null) return Component.translatable(part.type.registryKey.toLanguageKey());
+        return super.getDisplayName();
+    }
+
+    @Override
+    public @NotNull Component getName() {
+        if (part != null) return Component.translatable(part.type.registryKey.toLanguageKey());
+        return super.getName();
+    }
+
+    @Override
+    public boolean canBeHitByProjectile() {
+        return false;//投射物命中判定交由物理引擎处理
+    }
+
+    public void updateBoundingBox() {
+        List<BoundingBox> boxes = boundingBoxes.get();
+        if (part != null && !boxes.isEmpty()) {
+            Vector3f min = new Vector3f(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
+            Vector3f max = new Vector3f(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE).mult(-1);
+            for (BoundingBox box : boxes) {
+                Vector3f tempMin = box.getMin(null);
+                Vector3f tempMax = box.getMax(null);
+                for (int i = 0; i < 3; i++) {
+                    if (tempMax.get(i) > max.get(i)) max.set(i, tempMax.get(i));
+                    if (tempMin.get(i) < min.get(i)) min.set(i, tempMin.get(i));
+                }
+            }
+            AABB aabb = new AABB(min.get(0), min.get(1), min.get(2), max.get(0), max.get(1), max.get(2));
+            if (!aabb.isInfinite() && !aabb.hasNaN() && min.get(0) < max.get(0) && min.get(1) < max.get(1) && min.get(2) < max.get(2))
+                this.setBoundingBox(aabb);
+            else setBoundingBox(new AABB(0, 0, 0, 0, 0, 0));
+        }
+    }
+
+    @Override
+    protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
+        if (entity instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+            Vector3f rawRelPos = seat.getSeatPointLocalTransform().getTranslation();
+            Matrix3f pose = seat.getSeatPointWorldTransform().getRotation().toRotationMatrix();
+            Vector3f relPos = pose.mult(rawRelPos, null);
+            return SparkMathKt.toVec3(relPos);
+        } else return new Vec3(0, 0, 0);
+    }
+
+    @Override
+    public @NotNull Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {
+        return super.getDismountLocationForPassenger(passenger);
+    }
+
+    @Override
+    public void onPassengerTurned(@NotNull Entity entityToUpdate) {
+        if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+            entityToUpdate.setYBodyRot(180);
+//            float f = Mth.wrapDegrees(entityToUpdate.getYRot() - this.getYRot());
+//            float f1 = Mth.clamp(f, -105.0F, 105.0F);
+//            entityToUpdate.yRotO += f1 - f;
+//            entityToUpdate.setYRot(entityToUpdate.getYRot() + f1 - f);
+//            entityToUpdate.setYRot(this.getYRot());
+        }
+    }
+
+    @Override
+    public void move(@NotNull MoverType type, @NotNull Vec3 pos) {
+        //交由物理引擎处理
+    }
+
+    @Override
+    public void setPos(double x, double y, double z) {
+        this.setPosRaw(x, y, z);
+    }
+
+    @Override
+    protected void readAdditionalSaveData(CompoundTag compoundTag) {
+
+    }
+
+    @Override
+    protected void addAdditionalSaveData(CompoundTag compoundTag) {
+
+    }
+
+    @Override
+    public boolean canCollideWith(@NotNull Entity entity) {
+        return false;
+    }
+
+    @Override
+    public boolean isPickable() {
+        return true;
+    }
+
+    @NotNull
+    @Override
+    public PhysicsLevel getPhysicsLevel() {
+        return level().getPhysicsLevel();
+    }
+
+    @NotNull
+    @Override
+    public SyncerType getSyncerType() {
+        return new EntitySyncerType();
+    }
+
+    @NotNull
+    @Override
+    public SyncData getSyncData() {
+        return new IntSyncData(1);
+    }
+
+    @Override
+    public MMPartEntity getAnimatable() {
+        return this;
+    }
+
+    @Override
+    public @NotNull AnimController getAnimController() {
+        if (part == null) return new AnimController(this);
+        else return part.getAnimController();
+    }
+
+    private void updatePart() {
+        VehicleCore vehicle = VehicleManager.clientAllVehicles.get(vehicleUUID);
+        if (vehicle != null && vehicle.level == this.level()) {
+            this.part = vehicle.partMap.get(partUUID);//设置实体对应的部件
+            if (part != null) {
+                if (part.entity != null) part.entity.part = null;
+                part.entity = this;
+            }
+        }
+    }
+
+    /**
+     * 服务器创建实体时写入对应的部件UUID
+     *
+     * @param buffer 数据流
+     */
+    @Override
+    public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
+        if (part != null) {
+            buffer.writeBoolean(true);
+            buffer.writeUUID(this.part.vehicle.uuid);
+            buffer.writeUUID(this.part.uuid);
+        } else buffer.writeBoolean(false);
+    }
+
+    /**
+     * 客户端接收实体创建包时读取匹配的部件UUID，
+     * 寻找并并设置实体对应的部件
+     *
+     * @param additionalData 数据流
+     */
+    @Override
+    public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
+        boolean hasPart = additionalData.readBoolean();
+        if (hasPart) {
+            vehicleUUID = additionalData.readUUID();
+            partUUID = additionalData.readUUID();
+            updatePart();
+        } else this.remove(RemovalReason.DISCARDED);
+    }
+
+    @NotNull
+    @Override
+    public AtomicInteger getSkillCount() {
+        return new AtomicInteger();
+    }
+
+    @NotNull
+    @Override
+    public ConcurrentHashMap<Integer, Skill> getAllSkills() {
+        return new ConcurrentHashMap<>();
+    }
+
+    @NotNull
+    @Override
+    public ConcurrentHashMap<Integer, Skill> getPredictedSkills() {
+        return getAllSkills();
+    }
+
+    @NotNull
+    @Override
+    public Level getAnimLevel() {
+        return this.level();
+    }
+
+    @NotNull
+    @Override
+    public PreInput getPreInput() {
+        return new PreInput(this);
+    }
+
+    @NotNull
+    @Override
+    public Map<String, Vec3> getIkTargetPositions() {
+        return Map.of();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, FabrikChain3D> getIkChains() {
+        return Map.of();
+    }
+
+    @NotNull
+    @Override
+    public BlackBoard getHurtData() {
+        return new BlackBoard();
+    }
+
+    @NotNull
+    @Override
+    public ModelController getModelController() {
+        if (part != null) return part.getModelController();
+        else return new ModelController(this);
+    }
+}
