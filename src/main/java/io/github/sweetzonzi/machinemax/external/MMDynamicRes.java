@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machinemax.external;
 
 import com.google.gson.*;
-import com.google.gson.stream.JsonReader;
 import io.github.sweetzonzi.machinemax.common.visual.AnimatableParams;
 import io.github.sweetzonzi.machinemax.common.vehicle.PartType;
 import io.github.sweetzonzi.machinemax.common.vehicle.data.VehicleData;
@@ -55,7 +54,6 @@ public class MMDynamicRes {
     public static final Path CONFIG_PATH = FMLPaths.CONFIGDIR.get();//.minecraft/config文件夹
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
     public static final Path SPARK_MODULE = GAME_DIR.resolve("spark_modules");
-    public static final Path VEHICLES = NAMESPACE.resolve("custom_packs");//载具包根文件夹
     public static final Path PUBLIC_JS_LIBS = NAMESPACE.resolve("public_scripts");//js外部公共库目录
 
     public static boolean overwrite = true;//覆写总开关，考虑以后做成用户自定义配置
@@ -113,21 +111,18 @@ public class MMDynamicRes {
         //清理之前的数据，避免刷新时发生重复的注册
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
-        Exist(VEHICLES);
         Exist(SPARK_MODULE);
         Exist(PUBLIC_JS_LIBS);
-        GenerateTestPack(VEHICLES); //自动生成测试包
-        for (Path root : listPaths(VEHICLES, path -> Files.isDirectory(path) || isZipFile(path))) {
-            String packName = root.getFileName().toString();
-            if (Files.isDirectory(root)) {
-                // 处理文件夹资源包
-                packUp(packName, Exist(root.resolve("font")));
-                packUp(packName, Exist(root.resolve("color")));
-            } else if (isZipFile(root)) {
-                // 处理ZIP压缩包
+//        for (Path root : listPaths(VEHICLES, path -> Files.isDirectory(path) || isZipFile(path))) {
+//            String packName = root.getFileName().toString();
+//            if (Files.isDirectory(root)) {
+//                // 处理文件夹资源包
+//                packUp(packName, Exist(root.resolve("font")));
+//            } else if (isZipFile(root)) {
+//                // 处理ZIP压缩包
 //                packUpZip(packName, root);
-            }
-        }
+//            }
+//        }
         //TODO:从.minecraft/spark_modules中读取各个包的各个模块的内容，包可以是文件夹也可以是zip压缩包
         for (Path root : listPaths(SPARK_MODULE, path -> Files.isDirectory(path) || isZipFile(path))) {
             String packName = root.getFileName().toString();
@@ -135,10 +130,9 @@ public class MMDynamicRes {
             if (Files.isDirectory(root)) {
                 // 处理文件夹资源包
                 packUp(packName, Exist(root.resolve("font")));
-                packUp(packName, Exist(root.resolve("color")));
             } else if (isZipFile(root)) {
                 // 处理ZIP压缩包
-//                packUpZip(packName, root);
+                packUpZip(packName, root);
             }
         }
     }
@@ -210,53 +204,19 @@ public class MMDynamicRes {
     }
 
     /**
-     * 自动生成测试包
-     */
-    private static void GenerateTestPack(Path path) {
-        //拿到存在的路径
-        Path examplePack = Exist(path.resolve("example_pack"));
-        Path font = Exist(examplePack.resolve("font"));
-        Path color = Exist(examplePack.resolve("color"));
-
-        //自定义字体文件
-        copyResourceToFile("/example_pack/font/test_font.json", font.resolve("test_font.json"), overwrite);
-        copyResourceToFile("/example_pack/font/yahei.json", font.resolve("yahei.json"), overwrite);
-        copyResourceToFile("/example_pack/font/yahei.ttf", font.resolve("yahei.ttf"), overwrite);
-        copyResourceToFile("/example_pack/font/bell.ttf", font.resolve("bell.ttf"), overwrite);
-        copyResourceToFile("/example_pack/font/bellb.ttf", font.resolve("bellb.ttf"), overwrite);
-        copyResourceToFile("/example_pack/font/belli.ttf", font.resolve("belli.ttf"), overwrite);
-
-        //自定义色板
-        copyResourceToFile("/example_pack/color/color_palette.json", color.resolve("color_palette.json"), overwrite);
-
-    }
-
-
-    /**
      * 对一个载具包子目录的解析 packName是载具包名称 categoryPath是子目录
      */
     private static void packUp(String packName, Path categoryPath) {
         if (!Files.exists(categoryPath)) return;
         String category = categoryPath.getFileName().toString();
         for (Path filePath : listAllFiles(categoryPath)) {
-            DynamicPack dynamicPack = null;
+            DynamicPack dynamicPack;
             String fileName = filePath.getFileName().toString();
-            String fileRealName = getRealName(fileName);
             String relativePath = categoryPath.relativize(filePath).toString().replace("\\", "/").toLowerCase();
             ResourceLocation location = ResourceLocation.tryBuild(MOD_ID, "%s/%s/%s".formatted(packName.toLowerCase(), category, relativePath));
-            try (JsonReader reader = new JsonReader(new FileReader(filePath.toFile()))) {
-                reader.setLenient(true); // 允许非严格JSON
-                JsonElement json = JsonParser.parseReader(reader);
-                switch (category) {
-
-                    case "font" -> {
-                        location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //字体系统的标准搜索路径
-                    }
-
-                    case "color" -> {
-                        COLORS.put(location, json);
-                    }
-
+            try {
+                if (category.equals("font")) {
+                    location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //字体系统的标准搜索路径
                 }
                 if (location == null) {
                     throw new IllegalArgumentException("error.machine_max.invalid_resource_location");
@@ -315,9 +275,7 @@ public class MMDynamicRes {
      * 处理解压后的ZIP内容，使用现有的packUp方法
      */
     private static void processUnpackedZip(String packName, Path unpackedDir) {
-        packUp(packName, unpackedDir.resolve("content"));
         packUp(packName, unpackedDir.resolve("font"));
-        packUp(packName, unpackedDir.resolve("color"));
     }
 
     /**
