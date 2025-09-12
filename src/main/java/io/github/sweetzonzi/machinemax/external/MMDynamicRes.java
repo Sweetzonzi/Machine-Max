@@ -41,6 +41,7 @@ public class MMDynamicRes {
     //TODO:按维度区分，避免不同服务端物理线程获取到相同的对象
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
+    public static ConcurrentMap<ResourceLocation, String> BLUEPRINT_INFO = new ConcurrentHashMap<>(); //蓝图对应的描述信息
     public static ConcurrentMap<ResourceLocation, AnimatableParams> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
@@ -120,9 +121,8 @@ public class MMDynamicRes {
             String packName = root.getFileName().toString();
             if (Files.isDirectory(root)) {
                 // 处理文件夹资源包
-                packUp(packName, Exist(root.resolve("content")));
-                packUp(packName, Exist(root.resolve("sound")));
                 packUp(packName, Exist(root.resolve("font")));
+                packUp(packName, Exist(root.resolve("color")));
             } else if (isZipFile(root)) {
                 // 处理ZIP压缩包
 //                packUpZip(packName, root);
@@ -134,9 +134,8 @@ public class MMDynamicRes {
 
             if (Files.isDirectory(root)) {
                 // 处理文件夹资源包
-                packUp(packName, Exist(root.resolve("content")));
-                packUp(packName, Exist(root.resolve("sound")));
                 packUp(packName, Exist(root.resolve("font")));
+                packUp(packName, Exist(root.resolve("color")));
             } else if (isZipFile(root)) {
                 // 处理ZIP压缩包
 //                packUpZip(packName, root);
@@ -151,14 +150,7 @@ public class MMDynamicRes {
         LOGGER.info("开始从外部包读取配置...");
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
-        Exist(VEHICLES);
         Exist(PUBLIC_JS_LIBS);
-        for (Path root : listPaths(VEHICLES, Files::isDirectory)) {
-            String packName = root.getFileName().toString();
-            //各种MM配置
-            packUp(packName, Exist(root.resolve("script")));
-            packUp(packName, Exist(root.resolve("color")));
-        }
         //公共js库（用于开发时不用覆盖，
         boolean STATIC = true;
         // STATIC: 所有载具包都可以调用里面封装的库代码，所以为了保证用户所有脚本的正常运行，发布版必须覆盖）
@@ -223,18 +215,8 @@ public class MMDynamicRes {
     private static void GenerateTestPack(Path path) {
         //拿到存在的路径
         Path examplePack = Exist(path.resolve("example_pack"));
-        Path script = Exist(examplePack.resolve("script"));
-        Path content = Exist(examplePack.resolve("content"));
         Path font = Exist(examplePack.resolve("font"));
         Path color = Exist(examplePack.resolve("color"));
-
-        //MM自带JS文件
-        copyResourceToFile("/example_pack/script/main.js", script.resolve("main.js"), overwrite);
-
-        //自定义文本文件
-        copyResourceToFile("/example_pack/content/ae86.html", content.resolve("ae86.html"), overwrite);
-        copyResourceToFile("/example_pack/content/ae86at.html", content.resolve("ae86at.html"), overwrite);
-        copyResourceToFile("/example_pack/content/mini_ev.html", content.resolve("mini_ev.html"), overwrite);
 
         //自定义字体文件
         copyResourceToFile("/example_pack/font/test_font.json", font.resolve("test_font.json"), overwrite);
@@ -267,11 +249,6 @@ public class MMDynamicRes {
                 JsonElement json = JsonParser.parseReader(reader);
                 switch (category) {
 
-                    case "script" -> {
-                        dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());
-                        MM_SCRIPTS.put(location, dynamicPack);
-                    }
-
                     case "font" -> {
                         location = ResourceLocation.tryBuild(MOD_ID, "%s/%s".formatted(category, fileName)); //字体系统的标准搜索路径
                     }
@@ -284,8 +261,7 @@ public class MMDynamicRes {
                 if (location == null) {
                     throw new IllegalArgumentException("error.machine_max.invalid_resource_location");
                 }
-                if (dynamicPack == null)
-                    dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
+                dynamicPack = new DynamicPack(packName, location, category, filePath.toFile());//生成动态包（这里保留的目的是一般拿来注入材质包和模型、动画，part-type却不能用要单独实现）
                 EXTERNAL_RESOURCE.put(location, dynamicPack);//保存动态包，后续会被addPackEvent读取、注册
             } catch (Exception e) {
                 exceptions.add(e);
@@ -339,14 +315,8 @@ public class MMDynamicRes {
      * 处理解压后的ZIP内容，使用现有的packUp方法
      */
     private static void processUnpackedZip(String packName, Path unpackedDir) {
-        // 资源类数据先加载
         packUp(packName, unpackedDir.resolve("content"));
-        packUp(packName, unpackedDir.resolve("sound"));
         packUp(packName, unpackedDir.resolve("font"));
-
-        // 配置类数据后加载
-        packUp(packName, unpackedDir.resolve("recipe"));
-        packUp(packName, unpackedDir.resolve("script"));
         packUp(packName, unpackedDir.resolve("color"));
     }
 

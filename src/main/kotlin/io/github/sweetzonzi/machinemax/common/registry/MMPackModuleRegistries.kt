@@ -14,6 +14,7 @@ object MMPackModuleRegistries {
         event.register(PartModule())
         event.register(BlueprintModule())
         event.register(HudModule())
+        event.register(BlueprintInfoModule())
     }
 
     @SubscribeEvent

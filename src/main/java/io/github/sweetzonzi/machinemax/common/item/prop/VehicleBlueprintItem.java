@@ -186,8 +186,8 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         } catch (NullPointerException e) {
             return;
         }
-        if (MMDynamicRes.EXTERNAL_RESOURCE.get(ResourceLocation.parse(tip)) instanceof DynamicPack dynamicPack) {
-            tip = dynamicPack.getContent();
+        if (MMDynamicRes.BLUEPRINT_INFO.get(ResourceLocation.parse(tip)) instanceof String content) {
+            tip = content;
         }
 
         String[] regexList = {"\r\n", "\n"}; //扫描不同类型系统的回车符
