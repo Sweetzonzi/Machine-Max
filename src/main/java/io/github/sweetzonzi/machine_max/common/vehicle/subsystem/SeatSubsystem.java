@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class SeatSubsystem extends AbstractSubsystem implements IControllableSubsystem  {
+public class SeatSubsystem extends AbstractSubsystem implements IControllableSubsystem {
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
     public LivingEntity passenger;
@@ -65,9 +65,13 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
     }
 
     public void setPassenger(LivingEntity passenger) {
-        if (owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getRidingSubsystem() == null) {
-            if (!getPart().level.isClientSide)
+        if (owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getRidingSubsystem() != this) {
+            if (!getPart().level.isClientSide) {
+                if (((IEntityMixin) passenger).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+                    seat.removePassenger();
+                }
                 passenger.startRiding(owner.getPart().entity, true);
+            }
             occupied = true;
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setRidingSubsystem(this);
@@ -99,6 +103,7 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
     public SignalTargetsHolder getHolder() {
         return signalTargetsHolder;
     }
+
     @Override
     public Map<String, List<String>> getTargetNames() {
         return signalTargetsHolder.setUpTargets(new HashMap<>(1));

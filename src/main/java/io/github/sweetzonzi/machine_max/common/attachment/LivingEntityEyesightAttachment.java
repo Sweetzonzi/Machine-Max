@@ -49,8 +49,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     private final CopyOnWriteArraySet<InteractBox> accurateInteractBoxes = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArraySet<InteractBox> fastInteractBoxCache = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArraySet<InteractBox> accurateInteractBoxCache = new CopyOnWriteArraySet<>();
-    private HashMap<PhysicsRigidBody, PhysicsRayTestResult> targetsCache = new HashMap<>(2);
-    private List<PhysicsRigidBody> sortedTargetsCache = new LinkedList<>();
+    private final HashMap<PhysicsRigidBody, PhysicsRayTestResult> targetsCache = new HashMap<>(2);
+    private final List<PhysicsRigidBody> sortedTargetsCache = new LinkedList<>();
     private double eyesightRange;
 
     public LivingEntityEyesightAttachment(LivingEntity entity) {
@@ -99,7 +99,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                 eyesight.accurateInteractBoxCache.addAll(eyesight.accurateInteractBoxes);
                 eyesight.sortedTargetsCache.clear();
                 eyesight.sortedTargetsCache.addAll(eyesight.sortedTargets);
-                eyesight.targetsCache = new HashMap<>(eyesight.targets);
+                eyesight.targetsCache.clear();
+                eyesight.targetsCache.putAll(eyesight.targets);
                 eyesight.fastInteractBoxes.clear();//清空交互判定区列表
                 level.getPhysicsLevel().getWorld().contactTest(eyesight.trigger, eyesight);
                 level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
@@ -210,11 +211,6 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
 
     public InteractBox getAccurateInteractBox() {
         if (!sortedTargetsCache.isEmpty()) {
-            List<PhysicsHost> owners = new ArrayList<>();
-            for (PhysicsRigidBody body : sortedTargetsCache) {
-                if (body.getOwner() != null) owners.add(body.getOwner());
-            }
-            MachineMax.LOGGER.debug("targets:{}", owners);
             for (PhysicsRigidBody body : sortedTargetsCache) {
                 if (body.getOwner() != null && body.getOwner() instanceof SubPart.InteractBoxes) {
                     for (InteractBox interactBox : accurateInteractBoxCache) {
