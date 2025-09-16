@@ -11,8 +11,9 @@ import java.nio.charset.StandardCharsets
 class BlueprintInfoModule : SparkPackModule {
 
     override val id: String = "contents"
-    override fun onStart() {
-        if (FMLEnvironment.dist.isClient) {
+
+    override fun onStart(isClientSide: Boolean) {
+        if (isClientSide) {
             MMDynamicRes.BLUEPRINT_INFO.clear()
         }
     }
@@ -21,9 +22,10 @@ class BlueprintInfoModule : SparkPackModule {
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
-        pack: SparkPackage
+        pack: SparkPackage,
+        isClientSide: Boolean
     ) {
-        if (FMLEnvironment.dist.isClient) {
+        if (isClientSide) {
             val nameSpace: String = if (pathSegments.size > 1) {
                 pathSegments[0]
             } else {
@@ -40,8 +42,8 @@ class BlueprintInfoModule : SparkPackModule {
     }
 
 
-    override fun onFinish() {
-        if (FMLEnvironment.dist.isClient) {
+    override fun onFinish(isClientSide: Boolean) {
+        if (isClientSide) {
             MachineMax.LOGGER.info("已加载${MMDynamicRes.BLUEPRINT_INFO.size}种文本内容")
         }
     }

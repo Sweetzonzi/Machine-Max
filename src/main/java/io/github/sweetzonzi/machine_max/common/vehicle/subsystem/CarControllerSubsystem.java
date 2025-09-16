@@ -114,7 +114,6 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
-        clearCallbackChannel();
         for (String signalKey : attr.engineControlOutputTargets.keySet()) {
             sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(), false);
         }

@@ -29,6 +29,7 @@ public class MachineMax {
     //TODO:载具触发压力板
     //TODO:把拼好的载具保存为微缩模型，分不同可选比例
     //TODO:使用蓝图快速重新组装部分零件缺失的载具，需要图匹配算法
+    //TODO:指定连接口是否有部件连接的molang，或许返回部件名？
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器
@@ -49,7 +50,7 @@ public class MachineMax {
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMMenus.register(bus);//注册所有菜单
         MMSounds.register();//注册所有音效
-        MMPackModuleRegistries.register();//注册所有SparkCore扩展包模块
+        MMPackModuleRegistries.register(bus);//注册所有SparkCore扩展包模块
     }
 
 }

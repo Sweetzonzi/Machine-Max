@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.attachment;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.host.PhysicsHost;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.collision.PhysicsCollisionEvent;
 import com.jme3.bullet.collision.PhysicsCollisionListener;
@@ -28,6 +29,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,7 +44,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     public final LivingEntity owner;
     public final PhysicsGhostObject trigger;
     private final ConcurrentMap<PhysicsRigidBody, PhysicsRayTestResult> targets = new ConcurrentHashMap<>(2);
-    private final ConcurrentSkipListSet<PhysicsRigidBody> sortedTargets = new ConcurrentSkipListSet<>();
+    private final List<PhysicsRigidBody> sortedTargets = new LinkedList<>();
     private final CopyOnWriteArraySet<InteractBox> fastInteractBoxes = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArraySet<InteractBox> accurateInteractBoxes = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArraySet<InteractBox> fastInteractBoxCache = new CopyOnWriteArraySet<>();
@@ -95,7 +97,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                 );
                 eyesight.accurateInteractBoxCache.clear();
                 eyesight.accurateInteractBoxCache.addAll(eyesight.accurateInteractBoxes);
-                eyesight.sortedTargetsCache = eyesight.sortedTargets.stream().toList();
+                eyesight.sortedTargetsCache.clear();
+                eyesight.sortedTargetsCache.addAll(eyesight.sortedTargets);
                 eyesight.targetsCache = new HashMap<>(eyesight.targets);
                 eyesight.fastInteractBoxes.clear();//清空交互判定区列表
                 level.getPhysicsLevel().getWorld().contactTest(eyesight.trigger, eyesight);
@@ -207,6 +210,11 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
 
     public InteractBox getAccurateInteractBox() {
         if (!sortedTargetsCache.isEmpty()) {
+            List<PhysicsHost> owners = new ArrayList<>();
+            for (PhysicsRigidBody body : sortedTargetsCache) {
+                if (body.getOwner() != null) owners.add(body.getOwner());
+            }
+            MachineMax.LOGGER.debug("targets:{}", owners);
             for (PhysicsRigidBody body : sortedTargetsCache) {
                 if (body.getOwner() != null && body.getOwner() instanceof SubPart.InteractBoxes) {
                     for (InteractBox interactBox : accurateInteractBoxCache) {

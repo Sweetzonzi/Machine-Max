@@ -7,8 +7,10 @@
   "title.machine_max.blueprint.mini_ev": "宏光 miniEV",
   "description.machine_max.blueprint.ae86": "AE86是丰田出厂的一款小巧、轻量、经济效益取向的小车，在1983年以COROLLA四代的身份投入生产线。丰田在1978年推出的TERCEL，标志着由于汽车科技的进步，小型车由构造简单但成本较高且占空间的FR（前置引擎后轮驱动）转向较复杂但成本较低的FF（前置引擎前轮驱动）发展的开端。",
   "description.machine_max.blueprint.ae86at": "这辆AE86将传动系统改装为了四轮驱动，并换装了更强大的引擎、相适配的变速箱和全地形轮，越野能力得到大幅强化。",
-  "notes.machine_max.blueprint.ae86": "示例载具蓝图",
+  "description.machine_max.blueprint.mini_ev": "宏光miniEV是上汽通用五菱旗下五菱品牌的首款四座新能源车，于2020年7月24日正式上市，聚焦短途便捷出行场景，力争成为“人民的代步车”。",
+  "notes.machine_max.blueprint.example": "示例载具蓝图",
   "author.machine_max.blueprint.ae86": "模型作者: 02bunny 版权所有: MadFlower",
+  "author.machine_max.blueprint.mini_ev": "模型作者: 哥斯拉",
   "machine_max.ae86_chassis_all_terrain": "AE86全地形车架",
   "machine_max.ae86_wheel_all_terrain": "AE86全地形轮",
   "machine_max.ae86_chassis": "AE86车架",
@@ -18,6 +20,8 @@
   "machine_max.ae86_hull": "AE86车壳",
   "machine_max.mini_ev_hull": "miniEV车壳",
   "machine_max.mini_ev_wheel": "miniEV车轮",
+  "machine_max.box_16x16x8": "小型储物箱",
+  "machine_max.reinforced_box_16x16x8": "小型强化储物箱",
   "hud.machine_max.default_1.speed": "§o%1$s%2$s%3$s",
   "hud.machine_max.default_1.gear": "§o%1$s",
   "hud.machine_max.default_1.kmh": "§oKM/H",
@@ -31,6 +35,10 @@
   "interact.machine_max.mini_ev.left_back_door": "进入后排乘客座",
   "interact.machine_max.mini_ev.right_front_door": "进入副驾驶座",
   "interact.machine_max.mini_ev.right_back_door": "进入后排乘客座",
+  "interact.machine_max.box": "打开小型储物箱",
+  "interact.machine_max.reinforced_box": "打开小型强化储物箱",
   "title.machine_max.subsystem.ae86.trunk": "后备箱",
-  "title.machine_max.subsystem.mini_ev.glove_box": "手套箱"
+  "title.machine_max.subsystem.mini_ev.glove_box": "手套箱",
+  "title.machine_max.subsystem.box": "小型储物箱",
+  "title.machine_max.subsystem.reinforced_box": "小型强化储物箱"
 }

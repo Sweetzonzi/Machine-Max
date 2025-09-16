@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
 import cn.solarmoon.spark_core.resource2.graph.SparkPackage
+import cn.solarmoon.spark_core.resource2.modules.ReadMode
 import cn.solarmoon.spark_core.resource2.modules.SparkPackModule
 import com.google.gson.JsonParser
 import io.github.sweetzonzi.machine_max.MachineMax
@@ -12,8 +13,8 @@ import java.nio.charset.StandardCharsets
 class ColorModule : SparkPackModule {
 
     override val id: String = "colors"
-    override fun onStart() {
-        if (FMLEnvironment.dist.isClient) {
+    override fun onStart(isClientSide: Boolean) {
+        if (isClientSide) {
             MMDynamicRes.COLORS.clear()
         }
     }
@@ -22,7 +23,8 @@ class ColorModule : SparkPackModule {
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
-        pack: SparkPackage
+        pack: SparkPackage,
+        isClientSide: Boolean
     ) {
         if (FMLEnvironment.dist.isClient && fileName.endsWith(".json")) {
             val nameSpace: String = if (pathSegments.size > 1) {
@@ -38,8 +40,8 @@ class ColorModule : SparkPackModule {
     }
 
 
-    override fun onFinish() {
-        if (FMLEnvironment.dist.isClient) {
+    override fun onFinish(isClientSide: Boolean) {
+        if (isClientSide) {
             MachineMax.LOGGER.info("已加载${MMDynamicRes.COLORS.size}种色板方案")
         }
     }

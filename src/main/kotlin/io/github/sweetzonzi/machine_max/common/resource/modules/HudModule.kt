@@ -14,8 +14,8 @@ import java.nio.charset.StandardCharsets
 class HudModule : SparkPackModule {
 
     override val id: String = "huds"
-    override fun onStart() {
-        if (FMLEnvironment.dist.isClient) {
+    override fun onStart(isClientSide: Boolean) {
+        if (isClientSide) {
             MMDynamicRes.CUSTOM_HUD.clear()
         }
     }
@@ -24,9 +24,10 @@ class HudModule : SparkPackModule {
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
-        pack: SparkPackage
+        pack: SparkPackage,
+        isClientSide: Boolean
     ) {
-        if (FMLEnvironment.dist.isClient && fileName.endsWith(".json")) {
+        if (isClientSide && fileName.endsWith(".json")) {
             val nameSpace: String = if (pathSegments.size > 1) {
                 pathSegments[0]
             } else {
@@ -41,8 +42,8 @@ class HudModule : SparkPackModule {
     }
 
 
-    override fun onFinish() {
-        if (FMLEnvironment.dist.isClient) {
+    override fun onFinish(isClientSide: Boolean) {
+        if (isClientSide) {
             MachineMax.LOGGER.info("已加载${MMDynamicRes.CUSTOM_HUD.size}种HUD元素")
         }
     }

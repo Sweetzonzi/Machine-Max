@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets
 class BlueprintModule : SparkPackModule {
 
     override val id: String = "blueprints"
-    override fun onStart() {
+    override fun onStart(isClientSide: Boolean) {
         MMDynamicRes.BLUEPRINTS.clear()
     }
 
@@ -21,7 +21,8 @@ class BlueprintModule : SparkPackModule {
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
-        pack: SparkPackage
+        pack: SparkPackage,
+        isClientSide: Boolean
     ) {
         if (fileName.endsWith(".json")) {
             val nameSpace: String = if (pathSegments.size > 1) {
@@ -38,7 +39,7 @@ class BlueprintModule : SparkPackModule {
     }
 
 
-    override fun onFinish() {
+    override fun onFinish(isClientSide: Boolean) {
         MachineMax.LOGGER.info("已加载${MMDynamicRes.BLUEPRINTS.size}个载具蓝图")
     }
 
