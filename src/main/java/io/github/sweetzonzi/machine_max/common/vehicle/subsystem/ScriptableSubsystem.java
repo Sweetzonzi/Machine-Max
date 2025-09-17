@@ -42,6 +42,11 @@ public class ScriptableSubsystem extends AbstractSubsystem implements IControlla
     }
 
     @Override
+    public AbstractSubsystem getControllableSubsystem() {
+        return this;
+    }
+
+    @Override
     public Map<String, List<String>> getTargetNames() {
         return signalTargetsHolder.setUpTargets(new HashMap<>(1));
     }

@@ -347,6 +347,7 @@ public class VehicleCore {
             if (subPart.interactBoxes != null)
                 for (InteractBox interactBox : subPart.interactBoxes.values()) {
                     interactBox.setTargetFromNames();
+                    interactBox.onVehicleStructureChanged();
                 }
         }
         this.updateTotalMass();
@@ -389,6 +390,12 @@ public class VehicleCore {
                 this.activate();//重新激活，进行部件移除后的物理计算
                 this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
                 this.cameraDistance = calculateCameraDistance();
+                for (SubPart subPart : part.subParts.values()) {
+                    if (subPart.interactBoxes != null)
+                        for (InteractBox interactBox : subPart.interactBoxes.values()) {
+                            interactBox.onVehicleStructureChanged();
+                        }
+                }
             }
             this.updateTotalMass();
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, part.name);

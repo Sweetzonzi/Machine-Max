@@ -4,4 +4,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.SignalTargetsHolder;
 
 public interface IControllableSubsystem {
     SignalTargetsHolder getHolder();
+
+    AbstractSubsystem getControllableSubsystem();
 }

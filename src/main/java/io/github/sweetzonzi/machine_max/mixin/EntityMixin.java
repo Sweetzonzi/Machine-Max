@@ -9,7 +9,7 @@ import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.IControllableSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import net.minecraft.world.entity.Entity;
@@ -31,7 +31,7 @@ import java.util.List;
 @Mixin(Entity.class)
 abstract public class EntityMixin extends AttachmentHolder implements IEntityMixin {
     @Unique
-    private SeatSubsystem machine_Max$subSystem;
+    private IControllableSubsystem machine_Max$controllingSubSystem;
     @Unique
     private CapsuleCollisionShape machine_Max$collideTestShape = null;
     @Unique
@@ -54,7 +54,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
                 || entity instanceof MMPartEntity
                 || (aabb.maxX - aabb.minX) * (aabb.maxY - aabb.minY) * (aabb.maxZ - aabb.minZ) < 0.001
                 || (entity instanceof Player player && !player.isAffectedByFluids())
-                || ((IEntityMixin) entity).machine_Max$getRidingSubsystem() != null) return;
+                || ((IEntityMixin) entity).machine_Max$getControllingSubsystem() != null) return;
         // 调用物理引擎进行碰撞检测
         if (machine_Max$collideTestShape == null) {
             double x = (aabb.maxX - aabb.minX) / 2;
@@ -134,13 +134,13 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
 
     @Nullable
     @Override
-    public SeatSubsystem machine_Max$getRidingSubsystem() {
-        return machine_Max$subSystem;
+    public IControllableSubsystem machine_Max$getControllingSubsystem() {
+        return machine_Max$controllingSubSystem;
     }
 
     @Override
-    public void machine_Max$setRidingSubsystem(SeatSubsystem subSystem) {
-        this.machine_Max$subSystem = subSystem;
+    public void machine_Max$setControllingSubsystem(IControllableSubsystem subSystem) {
+        this.machine_Max$controllingSubSystem = subSystem;
     }
 
 }

@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.CarControllerSubsystemAttr;
@@ -31,7 +32,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     private final Map<ISignalReceiver, String> gearboxes = new HashMap<>();//控制的变速箱其接收控制的信号频道映射 Control gearbox and its receiving signal channel mapping
     private final Map<ISignalReceiver, String> wheels = new HashMap<>();//控制的车轮其接收控制的信号频道映射 Control wheel and its receiving signal channel mapping
 
-    public boolean handBrakeControl = true;
+    public boolean handBrake = true;
     public float actualThrottle = 0f;
     public float actualBrake = 0f;
     public float actualHandBrake = 0f;
@@ -71,7 +72,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             if (this.moveInput != null) {
                 actualSteering = actualSteering * 0.9f + (moveInput[4]) * 0.1f;
             }
-            actualHandBrake = actualHandBrake * 0.9f + (handBrakeControl ? 1 : 0) * 0.1f;
+            actualHandBrake = actualHandBrake * 0.9f + (handBrake ? 1 : 0) * 0.1f;
             distributeControlSignals();
         } else resetSignalOutputs();
     }
@@ -211,11 +212,11 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         for (ISignalReceiver gearbox : gearboxes.keySet()) ((GearboxSubsystem) gearbox).downShift();
                         break;
                     case HAND_BRAKE:
-                        handBrakeControl = tickCount == 0;
-                        overrideCountDown.put(this, tickCount == 0 ? 9999f : 0f);
+                        handBrake = tickCount == 0;
+                        overrideCountDown.put(this, tickCount == 0 ? 100f : 0f);
                         break;
                     case TOGGLE_HAND_BRAKE:
-                        handBrakeControl = !handBrakeControl;
+                        handBrake = !handBrake;
                         overrideCountDown.put(this, 1f);
                         break;
                     default://忽视其他输入 Ignore other inputs
@@ -270,7 +271,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     avgEngineSpeed /= engineCount;
                     //起步时自动松离合和手刹 Auto release hand brake when starting
                     if (attr.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
-                        handBrakeControl = false;
+                        handBrake = false;
                         overrideCountDown.put(this, 2f);
                     }
                     for (ISignalReceiver gearbox : gearboxes.keySet()) {//加速时延迟升档 Delay shifting up when accelerating
@@ -322,7 +323,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low
                     actualBrake = actualBrake * 0.9f + 1 * 0.1f;
                     if (attr.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
-                        handBrakeControl = true;
+                        handBrake = true;
                         overrideCountDown.put(this, 0.5f);
                     }
                     for (Map.Entry<ISignalReceiver, String> entry : wheels.entrySet()) {

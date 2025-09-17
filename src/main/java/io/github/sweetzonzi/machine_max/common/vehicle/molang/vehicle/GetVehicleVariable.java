@@ -16,7 +16,7 @@ public class GetVehicleVariable extends ContextFunction<IAnimatable<?>> {
         Object ctx = executionContext.entity().getAnimatable();
         VehicleCore vehicle = null;
         if (ctx instanceof LivingEntity) {
-            if (((IEntityMixin) ctx).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+            if (((IEntityMixin) ctx).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
                 vehicle = seat.getPart().vehicle;
             } else return null;
         } else if (ctx instanceof Part)

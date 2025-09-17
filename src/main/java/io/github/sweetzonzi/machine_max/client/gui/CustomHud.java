@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.client.gui;
 
 import io.github.sweetzonzi.machine_max.client.renderable.GuiAnimatable;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.IControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -32,8 +34,8 @@ public class CustomHud implements LayeredDraw.Layer {
         Player player = Minecraft.getInstance().player;
         CameraType view = Minecraft.getInstance().options.getCameraType();
         if (player != null) {
-            SeatSubsystem seat = ((IEntityMixin) player).machine_Max$getRidingSubsystem();
-            if (seat != null) {
+            IControllableSubsystem subsystem = ((IEntityMixin) player).machine_Max$getControllingSubsystem();
+            if (subsystem != null && subsystem.getControllableSubsystem() instanceof SeatSubsystem seat) {
                 if (view.isFirstPerson()) {
                     //添加缺少的HUD组件
                     for (ResourceLocation path : seat.attr.views.firstPersonHud()) {

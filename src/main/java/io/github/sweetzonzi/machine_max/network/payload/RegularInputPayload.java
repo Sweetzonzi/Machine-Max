@@ -15,7 +15,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.IControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -81,9 +80,9 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
 
                 break;
             case LEAVE_VEHICLE://与载具等交互
-                if ((player.getVehicle() != null || ((IEntityMixin) player).machine_Max$getRidingSubsystem() != null) && payload.tick_count() >= 10) {
+                if ((player.getVehicle() != null || ((IEntityMixin) player).machine_Max$getControllingSubsystem() != null) && payload.tick_count() >= 10) {
                     //处于骑乘状态，且长按互动键1秒，则尝试脱离载具
-                    if (((IEntityMixin) player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seatSubSystem) {
+                    if (((IEntityMixin) player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seatSubSystem) {
                         seatSubSystem.removePassenger();
                         player.stopRiding();//保险措施，确保停止骑乘
                     } else player.stopRiding();//一般载具实体的处理方式
@@ -172,12 +171,10 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
     }
 
     private static void handleRegularInputForSeatSubsystem(Player player, KeyInputMapping key, int tickCount) {
-        if (player.getVehicle() instanceof MMPartEntity vehicle) {
-            for (AbstractSubsystem subSystem : vehicle.part.subsystems.values()) {
-                if (subSystem instanceof IControllableSubsystem subsystem) {
-                    subsystem.getHolder().setRegularInputSignal(key, tickCount);
-                    break;
-                }
+        if (player.getVehicle() instanceof MMPartEntity) {
+            IControllableSubsystem subsystem = ((IEntityMixin)player).machine_Max$getControllingSubsystem();
+            if (subsystem != null) {
+                subsystem.getHolder().setRegularInputSignal(key, tickCount);
             }
         }
     }

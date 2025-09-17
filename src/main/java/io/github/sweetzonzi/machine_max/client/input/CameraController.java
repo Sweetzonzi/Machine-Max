@@ -6,6 +6,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.IControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -52,7 +53,7 @@ public class CameraController {
         float partialTick = (float) event.getPartialTick();
         var type = client.options.getCameraType();
         Entity entity = camera.getEntity();
-        if (((IEntityMixin) entity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+        if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
             if (!type.isFirstPerson() && seat.attr.views.focusOnCenter()) {
                 VehicleCore vehicle = seat.getPart().getVehicle();
                 event.setCameraPos(vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick)));
@@ -67,7 +68,7 @@ public class CameraController {
     public static void updateCameraDistance(CalculateDetachedCameraDistanceEvent event) {
         Camera camera = event.getCamera();
         Entity entity = camera.getEntity();
-        if (((IEntityMixin) entity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+        if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
             VehicleCore vehicle = seat.getPart().getVehicle();
             //根据速度调整相机距离
             speedDistanceFactor = 0.9f * speedDistanceFactor + 0.1f * (float) MMMath.sigmoid(0.1 * vehicle.getVelocity().length());
@@ -86,9 +87,8 @@ public class CameraController {
         pitch = 0.6f * pitch + 0.4f * targetViewPitch;
         yaw = 0.6f * yaw + 0.4f * targetViewYaw;
         roll = 0.6f * roll + 0.4f * targetViewRoll;
-        try {
-            SeatSubsystem seat = ((IEntityMixin) entity).machine_Max$getRidingSubsystem();
-            if (seat == null) throw new NullPointerException();
+        IControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
+        if(subsystem != null && subsystem.getControllableSubsystem() instanceof SeatSubsystem seat) {
             if (!type.isFirstPerson() && !seat.attr.views.followVehicle()) throw new RuntimeException();
             //基于附体坐标系旋转相机
             Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
@@ -107,7 +107,7 @@ public class CameraController {
             event.setPitch(rot.x);
             event.setYaw(-rot.y);
             event.setRoll(rot.z);
-        } catch (Exception e) {
+        }else {
             //基于世界坐标系旋转相机
             event.setPitch(pitch);
             event.setYaw(yaw);
@@ -116,7 +116,7 @@ public class CameraController {
         }
         //非自由视角模式下，逐渐回正视角
         if (!RawInputHandler.freeCam) {
-            if (((IEntityMixin) entity).machine_Max$getRidingSubsystem() instanceof SeatSubsystem subsystem) {
+            if (subsystem != null && subsystem.getControllableSubsystem() instanceof SeatSubsystem) {
                 //回到保存记录的位置
             } else {
                 //回到实体实时视角
@@ -153,8 +153,8 @@ public class CameraController {
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
         if (client.player != null) {
-            SeatSubsystem seat = ((IEntityMixin) client.player).machine_Max$getRidingSubsystem();
-            if (seat != null) {
+            IControllableSubsystem subsystem = ((IEntityMixin) client.player).machine_Max$getControllingSubsystem();
+            if (subsystem != null && subsystem.getControllableSubsystem() instanceof SeatSubsystem seat) {
                 //根据座椅设置切换可用视角
                 while ((!seat.attr.views.enableFirstPerson() && client.options.getCameraType() == CameraType.FIRST_PERSON) ||
                         (!seat.attr.views.enableThirdPerson() && (client.options.getCameraType() == CameraType.THIRD_PERSON_BACK

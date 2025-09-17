@@ -60,7 +60,7 @@ public class RawInputHandler {
     public static void handleMoveInputs(ClientTickEvent.Pre event) {
         if (client == null) client = Minecraft.getInstance();
         if (client.player != null &&
-                ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat &&
+                ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat &&
                 seat.owner instanceof Part part) {
             String subSystemName = seat.name;
             UUID vehicleUuid = part.vehicle.uuid;
@@ -166,7 +166,7 @@ public class RawInputHandler {
                     .OnKeyHover((tick -> {
                         if (tick <= 10.0) {
                             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), (int) tick));
-                            if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getRidingSubsystem() != null)
+                            if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() != null)
                                 client.player.displayClientMessage(
                                         Component.translatable("message.machine_max.leaving_vehicle",
                                                 KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
@@ -248,7 +248,7 @@ public class RawInputHandler {
         // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
         LocalPlayer player = Minecraft.getInstance().player;
         if (player instanceof IEntityMixin passenger &&
-                passenger.machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat &&
+                passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat &&
                 seat.disableVanillaActions) {
             if (event.getKeyMapping() == Minecraft.getInstance().options.keyAttack ||
                     event.getKeyMapping() == Minecraft.getInstance().options.keyUse ||
@@ -264,7 +264,7 @@ public class RawInputHandler {
         // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
         LocalPlayer player = Minecraft.getInstance().player;
         if (player instanceof IEntityMixin passenger &&
-                passenger.machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+                passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
             //很奇怪，必须套一层if判断，屏蔽效果才能生效 Wired, must have a if to work
             if (Minecraft.getInstance().options.keyUp.consumeClick()) {
                 Minecraft.getInstance().options.keyUp.setDown(false);

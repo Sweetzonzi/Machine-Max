@@ -1,13 +1,16 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import com.jme3.math.Transform;
+import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.HashMap;
 import java.util.List;
@@ -65,34 +68,32 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
     }
 
     public void setPassenger(LivingEntity passenger) {
-        if (owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getRidingSubsystem() != this) {
+        if (owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getControllingSubsystem() != this) {
             if (!getPart().level.isClientSide) {
-                if (((IEntityMixin) passenger).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+                if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
                     seat.removePassenger();
                 }
                 passenger.startRiding(owner.getPart().entity, true);
             }
             occupied = true;
             this.passenger = passenger;
-            ((IEntityMixin) passenger).machine_Max$setRidingSubsystem(this);
+            ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
             getPart().vehicle.activate();
             //TODO:换成在hud角落常驻显示好了
-
-            //TODO:考虑删除，下面的状态展示已经挪到RawInput的全新键位事件系统中
-//            if (passenger.level().isClientSide && passenger instanceof Player player)
-//                player.displayClientMessage(
-//                        Component.translatable("message.machine_max.leaving_vehicle",
-//                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
-//                                String.format("%.2f", Math.clamp(0.05 * RawInputHandler.keyPressTicks.getOrDefault(KeyBinding.generalInteractKey, 0), 0.0, 0.5))
-//                        ), true
-//                );
+            if (passenger.level().isClientSide && passenger instanceof Player player)
+                player.displayClientMessage(
+                        Component.translatable("message.machine_max.leaving_vehicle",
+                                KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
+                                0.0
+                        ), true
+                );
         }
     }
 
     public void removePassenger() {
         if (passenger != null) {
-            if (((IEntityMixin) passenger).machine_Max$getRidingSubsystem() == this)
-                ((IEntityMixin) passenger).machine_Max$setRidingSubsystem(null);
+            if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() == this)
+                ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(null);
             passenger = null;
         }
         occupied = false;
@@ -102,6 +103,11 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
     @Override
     public SignalTargetsHolder getHolder() {
         return signalTargetsHolder;
+    }
+
+    @Override
+    public AbstractSubsystem getControllableSubsystem() {
+        return this;
     }
 
     @Override

@@ -37,8 +37,8 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
         this.subPart = subPart;
         this.name = name;
         this.attr = attr;
-        this.targetNames = attr.signalTargets();
-        this.interactMode = InteractMode.valueOf(attr.mode().toUpperCase());
+        this.targetNames = attr.getSignalTargets();
+        this.interactMode = InteractMode.valueOf(attr.getMode().toUpperCase());
     }
 
     /**
@@ -47,6 +47,95 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
     public void onVehicleStructureChanged() {
         this.clearCallbackChannel();
     }
+
+    @Override
+    public void onSignalUpdated(String channelName, ISignalSender sender) {
+        ISignalReceiver.super.onSignalUpdated(channelName, sender);
+        boolean isSignalValid;
+        int trueCount = 0;
+        outerLoop:
+        switch (attr.condition) {
+            case AND:
+                //全1出1
+                isSignalValid = false;
+                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
+                    SignalChannel signalChannel = entry.getValue();
+                    for (Object signal : signalChannel.values()) {
+                        if (isFalseSignal(signal)) {
+                            break outerLoop;
+                        }
+                    }
+                }
+                isSignalValid = true;
+                break;
+            case OR:
+                //有1出1
+                isSignalValid = false;
+                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
+                    SignalChannel signalChannel = entry.getValue();
+                    for (Object signal : signalChannel.values()) {
+                        if (isTrueSignal(signal)) {
+                            isSignalValid = true;
+                            break outerLoop;
+                        }
+                    }
+                }
+                break;
+            case NAND:
+                //全1出0
+                isSignalValid = true;
+                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
+                    SignalChannel signalChannel = entry.getValue();
+                    for (Object signal : signalChannel.values()) {
+                        if (isFalseSignal(signal)) {
+                            break outerLoop;
+                        }
+                    }
+                }
+                break;
+            case NOR:
+                //有1出0
+                isSignalValid = true;
+                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
+                    SignalChannel signalChannel = entry.getValue();
+                    for (Object signal : signalChannel.values()) {
+                        if (isTrueSignal(signal)) {
+                            isSignalValid = false;
+                            break outerLoop;
+                        }
+                    }
+                }
+                break;
+            case XOR:
+                // XOR: 有奇数个真信号时为真
+                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
+                    SignalChannel signalChannel = entry.getValue();
+                    for (Object signal : signalChannel.values()) {
+                        if (isTrueSignal(signal)) {
+                            trueCount++;
+                        }
+                    }
+                }
+                isSignalValid = (trueCount % 2 == 1);
+                break;
+            case XNOR:
+                // XNOR: 有偶数个真信号时为真 (包括0个)
+                for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
+                    SignalChannel signalChannel = entry.getValue();
+                    for (Object signal : signalChannel.values()) {
+                        if (isTrueSignal(signal)) {
+                            trueCount++;
+                        }
+                    }
+                }
+                isSignalValid = (trueCount % 2 == 0);
+                break;
+            default:
+                isSignalValid = true;
+        }
+        this.enabled = isSignalValid;
+    }
+
 
     //TODO:回调？
     public void interact(LivingEntity entity) {
@@ -64,6 +153,26 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
     @Override
     public Part getPart() {
         return subPart.part;
+    }
+
+    // 辅助方法：判断信号是否为真
+    private boolean isTrueSignal(Object signal) {
+        if (signal instanceof Float) {
+            return ((Float) signal) != 0f;
+        } else if (signal instanceof Boolean) {
+            return (Boolean) signal;
+        }
+        return false;
+    }
+
+    // 辅助方法：判断信号是否为假
+    private boolean isFalseSignal(Object signal) {
+        if (signal instanceof Float) {
+            return ((Float) signal) == 0f;
+        } else if (signal instanceof Boolean) {
+            return !(Boolean) signal;
+        }
+        return true;
     }
 
 }

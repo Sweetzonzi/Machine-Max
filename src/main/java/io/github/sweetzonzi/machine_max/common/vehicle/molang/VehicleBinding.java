@@ -19,7 +19,7 @@ public class VehicleBinding  extends ContextBinding {
 
     private static Float getDurability(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
-            if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+            if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
                 return seat.getPart().getVehicle().getHp();
             } else return null;
         } else if (ctx.getAnimatable() instanceof Part part)
@@ -29,7 +29,7 @@ public class VehicleBinding  extends ContextBinding {
 
     private static Float getMaxDurability(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
-            if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+            if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
                 //TODO:修改为总血量
                 return seat.getPart().getVehicle().getHp();
             } else return null;

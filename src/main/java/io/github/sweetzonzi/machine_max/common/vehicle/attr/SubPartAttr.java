@@ -223,7 +223,7 @@ public class SubPartAttr {
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
             for (Map.Entry<String, InteractBoxAttr> interactBoxEntry : this.interactBoxes.entrySet()) {
-                String boneName = interactBoxEntry.getValue().boneName();
+                String boneName = interactBoxEntry.getValue().getBoneName();
                 if (bones.get(boneName) != null) {//若找到了对应的碰撞形状骨骼
                     String interactBoxName = interactBoxEntry.getKey();
                     OBone bone = bones.get(boneName);
@@ -239,7 +239,7 @@ public class SubPartAttr {
                                 SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
                     }
                 } else
-                    MachineMax.LOGGER.error("在部件{}中未找到对应的交互形状骨骼{}。", type.name, interactBoxEntry.getValue().boneName());
+                    MachineMax.LOGGER.error("在部件{}中未找到对应的交互形状骨骼{}。", type.name, interactBoxEntry.getValue().getBoneName());
             }
             //调整交互体积偏移 Adjust interact box shape offset
             Transform massCenter = new Transform();

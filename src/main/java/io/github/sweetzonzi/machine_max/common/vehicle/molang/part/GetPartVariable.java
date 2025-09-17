@@ -15,7 +15,7 @@ public class GetPartVariable extends ContextFunction<IAnimatable<?>> {
         Object ctx = executionContext.entity().getAnimatable();
         Part part = null;
         if (ctx instanceof LivingEntity) {
-            if (((IEntityMixin) ctx).machine_Max$getRidingSubsystem() instanceof SeatSubsystem seat) {
+            if (((IEntityMixin) ctx).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
                 part = seat.getPart();
             } else return null;
         } else if (ctx instanceof Part)

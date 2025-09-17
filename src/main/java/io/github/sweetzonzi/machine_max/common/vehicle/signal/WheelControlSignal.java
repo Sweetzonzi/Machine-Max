@@ -44,7 +44,7 @@ public class WheelControlSignal extends Signal<WheelControlSignalTemplate> {
 
     @Override
     public String toString() {
-        return "brakeControl=" + getBrakeControl() + ", handBrakeControl=" + getHandBrakeControl() + ", steeringControl=" + getSteeringControl();
+        return "brakeControl=" + getBrakeControl() + ", handBrake=" + getHandBrakeControl() + ", steeringControl=" + getSteeringControl();
     }
 }
 
