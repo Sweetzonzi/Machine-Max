@@ -4,7 +4,6 @@ import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.SignalTargetsHolder;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
@@ -17,17 +16,16 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class SeatSubsystem extends AbstractSubsystem implements IControllableSubsystem {
+public class SeatSubsystem extends AbstractControllableSubsystem {
     public final SeatSubsystemAttr attr;
     public boolean disableVanillaActions;
     public LivingEntity passenger;
     public boolean occupied;
-    private final SignalTargetsHolder signalTargetsHolder = new SignalTargetsHolder(this);
 
     public SeatSubsystem(ISubsystemHost owner, String name, SeatSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        signalTargetsHolder.setUp(attr.moveSignalTargets, attr.viewSignalTargets, attr.regularSignalTargets);
+        setUp(attr.moveSignalTargets, attr.viewSignalTargets, attr.regularSignalTargets);
         this.disableVanillaActions = !this.attr.allowUseItems;
     }
 
@@ -68,14 +66,21 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
     }
 
     public void setPassenger(LivingEntity passenger) {
-        if (owner.getPart() != null && owner.getPart().entity != null && ((IEntityMixin) passenger).machine_Max$getControllingSubsystem() != this) {
+        if (owner.getPart() != null && owner.getPart().entity != null) {
+            if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
+                if (seat == this) return;
+            }
             if (!getPart().level.isClientSide) {
-                if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
+                if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat
+                        && seat != this) {
                     seat.removePassenger();
                 }
                 passenger.startRiding(owner.getPart().entity, true);
             }
             occupied = true;
+            for (String channel : attr.passengerNumSignalTargets.keySet()) {
+                sendSignalToAllTargets(channel, 1f);
+            }
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
             getPart().vehicle.activate();
@@ -97,22 +102,17 @@ public class SeatSubsystem extends AbstractSubsystem implements IControllableSub
             passenger = null;
         }
         occupied = false;
+        for (String channel : attr.passengerNumSignalTargets.keySet()) {
+            sendSignalToAllTargets(channel, 0f);
+        }
         resetSignalOutputs();
     }
 
     @Override
-    public SignalTargetsHolder getHolder() {
-        return signalTargetsHolder;
-    }
-
-    @Override
-    public AbstractSubsystem getControllableSubsystem() {
-        return this;
-    }
-
-    @Override
     public Map<String, List<String>> getTargetNames() {
-        return signalTargetsHolder.setUpTargets(new HashMap<>(1));
+        Map<String, List<String>> result = setUpTargets(new HashMap<>(1));
+        result.putAll(attr.passengerNumSignalTargets);
+        return result;
     }
 
     public Transform getSeatPointWorldTransform() {

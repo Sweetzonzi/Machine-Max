@@ -29,10 +29,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -73,9 +70,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
                 eyesight.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
                 Vector3f startPos = PhysicsHelperKt.toBVector3f(entity.getEyePosition());
-                Vector3f endPos = startPos.add(PhysicsHelperKt.toBVector3f(
-                        entity.getViewVector(1).normalize().scale(eyesight.eyesightRange)
-                ));
+                Vector3f view = PhysicsHelperKt.toBVector3f(entity.getViewVector(1).normalize().scale(eyesight.eyesightRange));
+                Vector3f endPos = startPos.add(view);
                 eyesight.targets.clear();//清空射线检测结果列表
                 eyesight.sortedTargets.clear();//清空排序后的射线检测结果列表
                 eyesight.accurateInteractBoxes.clear();//清空交互判定区列表
@@ -214,7 +210,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             for (PhysicsRigidBody body : sortedTargetsCache) {
                 if (body.getOwner() != null && body.getOwner() instanceof SubPart.InteractBoxes) {
                     for (InteractBox interactBox : accurateInteractBoxCache) {
-                        if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE) return interactBox;
+                        if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE && interactBox.isEnabled()) return interactBox;
                     }
                 } else if (body.getOwner() != null && body.getOwner() instanceof AbstractConnector) {
                     continue;
@@ -226,10 +222,15 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
 
     public InteractBox getFastInteractBox() {
         if (!fastInteractBoxCache.isEmpty()) {
-            return fastInteractBoxCache.iterator().next();
+            for (InteractBox interactBox : fastInteractBoxCache) {
+                if (interactBox.isEnabled()) {
+                    return interactBox;
+                }
+            }
         }
         return null;
     }
+
 
     /**
      * 客户端尝试与交互判定区交互，先尝试精确交互，如果没有则尝试快速交互

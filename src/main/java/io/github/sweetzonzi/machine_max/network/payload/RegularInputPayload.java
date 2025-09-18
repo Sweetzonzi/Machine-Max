@@ -15,7 +15,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.IControllableSubsystem;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
@@ -172,9 +172,9 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
 
     private static void handleRegularInputForSeatSubsystem(Player player, KeyInputMapping key, int tickCount) {
         if (player.getVehicle() instanceof MMPartEntity) {
-            IControllableSubsystem subsystem = ((IEntityMixin)player).machine_Max$getControllingSubsystem();
+            AbstractControllableSubsystem subsystem = ((IEntityMixin)player).machine_Max$getControllingSubsystem();
             if (subsystem != null) {
-                subsystem.getHolder().setRegularInputSignal(key, tickCount);
+                subsystem.setRegularInputSignal(key, tickCount);
             }
         }
     }

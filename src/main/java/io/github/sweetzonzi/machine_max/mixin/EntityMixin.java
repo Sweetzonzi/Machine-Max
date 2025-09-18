@@ -9,7 +9,7 @@ import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.IControllableSubsystem;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import net.minecraft.world.entity.Entity;
@@ -31,7 +31,7 @@ import java.util.List;
 @Mixin(Entity.class)
 abstract public class EntityMixin extends AttachmentHolder implements IEntityMixin {
     @Unique
-    private IControllableSubsystem machine_Max$controllingSubSystem;
+    private AbstractControllableSubsystem machine_Max$controllingSubSystem;
     @Unique
     private CapsuleCollisionShape machine_Max$collideTestShape = null;
     @Unique
@@ -134,12 +134,12 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
 
     @Nullable
     @Override
-    public IControllableSubsystem machine_Max$getControllingSubsystem() {
+    public AbstractControllableSubsystem machine_Max$getControllingSubsystem() {
         return machine_Max$controllingSubSystem;
     }
 
     @Override
-    public void machine_Max$setControllingSubsystem(IControllableSubsystem subSystem) {
+    public void machine_Max$setControllingSubsystem(AbstractControllableSubsystem subSystem) {
         this.machine_Max$controllingSubSystem = subSystem;
     }
 

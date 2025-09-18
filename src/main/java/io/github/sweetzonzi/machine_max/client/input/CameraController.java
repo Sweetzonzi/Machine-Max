@@ -6,7 +6,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.IControllableSubsystem;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -87,8 +87,8 @@ public class CameraController {
         pitch = 0.6f * pitch + 0.4f * targetViewPitch;
         yaw = 0.6f * yaw + 0.4f * targetViewYaw;
         roll = 0.6f * roll + 0.4f * targetViewRoll;
-        IControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
-        if(subsystem != null && subsystem.getControllableSubsystem() instanceof SeatSubsystem seat) {
+        AbstractControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
+        if(subsystem instanceof SeatSubsystem seat) {
             if (!type.isFirstPerson() && !seat.attr.views.followVehicle()) throw new RuntimeException();
             //基于附体坐标系旋转相机
             Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
@@ -116,7 +116,7 @@ public class CameraController {
         }
         //非自由视角模式下，逐渐回正视角
         if (!RawInputHandler.freeCam) {
-            if (subsystem != null && subsystem.getControllableSubsystem() instanceof SeatSubsystem) {
+            if (subsystem instanceof SeatSubsystem) {
                 //回到保存记录的位置
             } else {
                 //回到实体实时视角
@@ -153,8 +153,8 @@ public class CameraController {
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
         if (client.player != null) {
-            IControllableSubsystem subsystem = ((IEntityMixin) client.player).machine_Max$getControllingSubsystem();
-            if (subsystem != null && subsystem.getControllableSubsystem() instanceof SeatSubsystem seat) {
+            AbstractControllableSubsystem subsystem = ((IEntityMixin) client.player).machine_Max$getControllingSubsystem();
+            if (subsystem instanceof SeatSubsystem seat) {
                 //根据座椅设置切换可用视角
                 while ((!seat.attr.views.enableFirstPerson() && client.options.getCameraType() == CameraType.FIRST_PERSON) ||
                         (!seat.attr.views.enableThirdPerson() && (client.options.getCameraType() == CameraType.THIRD_PERSON_BACK

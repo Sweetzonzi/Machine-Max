@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.signal;
 
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
@@ -195,12 +196,13 @@ public interface ISignalSender {
     default void setTargetFromNames() {
         if (getPart() != null) {
             Map<String, AbstractSubsystem> subSystems = getPart().subsystems;
+            Map<String, InteractBox> interactBoxes = new HashMap<>(getPart().interactBoxes);
             Map<String, SignalPort> ports = new HashMap<>();
             getPart().allConnectors.forEach((name, connector) -> ports.put(name, connector.signalPort));
             for (Map.Entry<String, List<String>> entry : getTargetNames().entrySet()) {
                 Map<String, ISignalReceiver> signalReceivers = new HashMap<>(2);
                 if (entry.getKey().isEmpty()) continue;
-                getReceiversFromNames(entry.getValue(), getPart(), subSystems, ports).forEach(receiver -> signalReceivers.put(receiver.getName(), receiver));
+                getReceiversFromNames(entry.getValue(), getPart(), subSystems, interactBoxes, ports).forEach(receiver -> signalReceivers.put(receiver.getName(), receiver));
                 getTargets().put(entry.getKey(), signalReceivers);
             }
         }
@@ -210,6 +212,7 @@ public interface ISignalSender {
             List<String> targetNames,
             Part ownerPart,
             Map<String, AbstractSubsystem> subSystems,
+            Map<String, InteractBox> interactBoxes,
             Map<String, SignalPort> ports) {
         List<ISignalReceiver> targets = new ArrayList<>();
         for (String targetName : targetNames) {
@@ -223,10 +226,13 @@ public interface ISignalSender {
                 if (subSystem != null) {
                     targets.add(subSystem);
                 }
+            } else if (interactBoxes.containsKey(targetName)) {
+                InteractBox interactBox = interactBoxes.get(targetName);
+                targets.add(interactBox);
             } else if (ports.containsKey(targetName)) {
                 SignalPort signalPort = ports.get(targetName);
                 targets.add(signalPort);
-            } else MachineMax.LOGGER.error("未在部件内找到目标端口或子系统: {}", targetName);
+            } else MachineMax.LOGGER.error("未在部件内找到目标端口、子系统或交互区: {}", targetName);
         }
         return targets;
     }

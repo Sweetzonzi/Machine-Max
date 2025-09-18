@@ -213,7 +213,9 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
-        if (entity instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
+        var subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
+        if (entity instanceof LivingEntity livingEntity
+                && subsystem instanceof SeatSubsystem seat) {
             Vector3f rawRelPos = seat.getSeatPointLocalTransform().getTranslation();
             Matrix3f pose = seat.getSeatPointWorldTransform().getRotation().toRotationMatrix();
             Vector3f relPos = pose.mult(rawRelPos, null);
@@ -229,7 +231,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     @Override
     public void onPassengerTurned(@NotNull Entity entityToUpdate) {
         if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-            entityToUpdate.setYBodyRot(180);
+//            entityToUpdate.setYBodyRot(180);
 //            float f = Mth.wrapDegrees(entityToUpdate.getYRot() - this.getYRot());
 //            float f1 = Mth.clamp(f, -105.0F, 105.0F);
 //            entityToUpdate.yRotO += f1 - f;

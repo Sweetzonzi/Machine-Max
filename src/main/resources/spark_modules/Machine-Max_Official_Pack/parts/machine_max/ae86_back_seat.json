@@ -25,7 +25,10 @@
         "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
         "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率
       },
-      "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
+      "allow_use_items": true, //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
+      "passenger_num_outputs": {
+        "passenger_num": ["interact.machine_max.ae86.left_back_seat", "chassis_connection"]
+      }
     },
     "right_seat": {
       "type": "machine_max:seat",
@@ -41,7 +44,10 @@
         "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
         "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率
       },
-      "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
+      "allow_use_items": true, //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
+      "passenger_num_outputs": {
+        "passenger_num": ["interact.machine_max.ae86.right_back_seat", "chassis_connection"]
+      }
     },
     "storage": {
       "type": "machine_max:item_storage",
@@ -61,14 +67,14 @@
         }
       },
       "interact_boxes": {//交互判定区列表
-        "left_seat": {//键:交互判定区名称
+        "interact.machine_max.ae86.left_back_seat": {//键:交互判定区名称
           "bone": "LeftInteractShape",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
           "signal_targets": {
             "interact": ["left_seat"] //将交互信号转发给座椅子系统
           },
           "interact_mode": "accurate" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
         },
-        "right_seat": {//键:交互判定区名称
+        "interact.machine_max.ae86.right_back_seat": {//键:交互判定区名称
           "bone": "RightInteractShape",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
           "signal_targets": {
             "interact": ["right_seat"] //将交互信号转发给座椅子系统

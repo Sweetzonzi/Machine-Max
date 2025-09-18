@@ -26,6 +26,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, List<String>> moveSignalTargets;
     public final Map<String, List<String>> viewSignalTargets;
     public final Map<String, List<String>> regularSignalTargets;
+    public final Map<String, List<String>> passengerNumSignalTargets;
     //TODO:是否无视命中情况转嫁乘客伤害到部件
 
     public static final MapCodec<SeatSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -48,7 +49,8 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             Codec.STRING.listOf().optionalFieldOf("view_inputs", List.of()).forGetter(SeatSubsystemAttr::getViewInputs),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("move_outputs", Map.of()).forGetter(SeatSubsystemAttr::getMoveSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("view_outputs", Map.of()).forGetter(SeatSubsystemAttr::getViewSignalTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("regular_outputs", Map.of()).forGetter(SeatSubsystemAttr::getRegularSignalTargets)
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("regular_outputs", Map.of()).forGetter(SeatSubsystemAttr::getRegularSignalTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("passenger_num_outputs", Map.of()).forGetter(SeatSubsystemAttr::getPassengerNumSignalTargets)
     ).apply(instance, SeatSubsystemAttr::new));
 
     public SeatSubsystemAttr(
@@ -61,7 +63,8 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             List<String> viewInputs,
             Map<String, List<String>> moveSignalTargets,
             Map<String, List<String>> viewSignalTargets,
-            Map<String, List<String>> regularSignalTargets) {
+            Map<String, List<String>> regularSignalTargets,
+            Map<String, List<String>> passengerNumSignalTargets) {
         super(basicDurability, hitBox);
         //合法性检查
         if (locator == null || locator.isEmpty())
@@ -80,6 +83,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
         this.moveSignalTargets = moveSignalTargets;
         this.viewSignalTargets = viewSignalTargets;
         this.regularSignalTargets = regularSignalTargets;
+        this.passengerNumSignalTargets = passengerNumSignalTargets;
     }
 
     @Override

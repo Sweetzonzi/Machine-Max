@@ -2,10 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.common.vehicle.HitBox;
-import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.SignalTargetsHolder;
+import io.github.sweetzonzi.machine_max.common.vehicle.*;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.ScriptableSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
@@ -24,12 +21,12 @@ import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 
 
-public class ScriptableSubsystem extends AbstractSubsystem implements IControllableSubsystem {
+public class ScriptableSubsystem extends AbstractControllableSubsystem {
     public final ScriptableSubsystemAttr attr;
     public final String script;
     @Getter
     private UUID vehicleCoreUUID = null;
-    private final SignalTargetsHolder signalTargetsHolder = new SignalTargetsHolder(this);
+
     public ScriptableSubsystem(ISubsystemHost owner, String name, ScriptableSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
@@ -37,22 +34,12 @@ public class ScriptableSubsystem extends AbstractSubsystem implements IControlla
     }
 
     @Override
-    public SignalTargetsHolder getHolder() {
-        return signalTargetsHolder;
-    }
-
-    @Override
-    public AbstractSubsystem getControllableSubsystem() {
-        return this;
-    }
-
-    @Override
     public Map<String, List<String>> getTargetNames() {
-        return signalTargetsHolder.setUpTargets(new HashMap<>(1));
+        return setUpTargets(new HashMap<>(1));
     }
 
 
-    public void sendNbt(String to, CompoundTag nbt){
+    public void sendNbt(String to, CompoundTag nbt) {
         if (vehicleCoreUUID != null) {
             PacketDistributor.sendToServer(new ScriptablePayload(vehicleCoreUUID, script, to, nbt));
         }
@@ -63,6 +50,7 @@ public class ScriptableSubsystem extends AbstractSubsystem implements IControlla
     public interface FetchedScriptableSubsystem {
         void doAction(ScriptableSubsystem scriptableSubsystem);
     }
+
     public void doActionOnScriptable(String scriptName, FetchedScriptableSubsystem action) {
         for (AbstractSubsystem subsystem : getPart().getVehicle().getSubSystemController().getAllSubsystems()) {
             if (subsystem instanceof ScriptableSubsystem sc && sc.script.equals(scriptName)) action.doAction(sc);
@@ -332,10 +320,10 @@ public class ScriptableSubsystem extends AbstractSubsystem implements IControlla
     }
 
     @Override
-    public List<ISignalReceiver> getReceiversFromNames(List<String> targetNames, Part ownerPart, Map<String, AbstractSubsystem> subSystems, Map<String, SignalPort> ports) {
-        if (Hook.run(this, targetNames, ownerPart, subSystems, ports) instanceof List hooked) {
+    public List<ISignalReceiver> getReceiversFromNames(List<String> targetNames, Part ownerPart, Map<String, AbstractSubsystem> subSystems, Map<String, InteractBox> interactBoxes, Map<String, SignalPort> ports) {
+        if (Hook.run(this, targetNames, ownerPart, subSystems, interactBoxes, ports) instanceof List hooked) {
             return hooked;
         }
-        return super.getReceiversFromNames(targetNames, ownerPart, subSystems, ports);
+        return super.getReceiversFromNames(targetNames, ownerPart, subSystems, interactBoxes, ports);
     }
 }

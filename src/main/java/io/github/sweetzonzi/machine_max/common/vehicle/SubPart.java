@@ -86,9 +86,10 @@ public class SubPart implements PhysicsHost, CollisionCallback, PhysicsCollision
         this.name = name;
         this.attr = attr;
         this.collisionShape = attr.getCollisionShape(part.variant, part.type);
-        if (!attr.interactBoxes.isEmpty())
+        if (!attr.interactBoxes.isEmpty()) {
             this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape(part.variant, part.type));
-        else this.interactBoxes = null;
+            part.interactBoxes.putAll(this.interactBoxes);
+        } else this.interactBoxes = null;
         this.body = new PhysicsRigidBody(name, this, this.collisionShape, attr.mass);
         Vector3f inverseInertia = new Vector3f();
         body.getInverseInertiaLocal(inverseInertia);

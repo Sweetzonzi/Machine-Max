@@ -33,6 +33,9 @@
       },
       "view_outputs": {
         "view_control": ["chassis_connection"] //将控制信号转发给与底盘连接的对接口
+      },
+      "passenger_num_outputs": {
+        "passenger_num": ["interact.machine_max.ae86.seat", "chassis_connection"]
       }
     }
   },
@@ -48,7 +51,7 @@
         }
       },
       "interact_boxes": {//交互判定区列表
-        "seat": {//键:交互判定区名称
+        "interact.machine_max.ae86.seat": {//键:交互判定区名称
           "bone": "InteractShape",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
           "signal_targets": {
               "interact": ["seat"] //将交互信号转发给座椅子系统

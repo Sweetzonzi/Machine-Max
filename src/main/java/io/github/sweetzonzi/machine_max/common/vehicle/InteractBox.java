@@ -1,10 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.InteractBoxAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
-import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalSender;
-import io.github.sweetzonzi.machine_max.common.vehicle.signal.InteractSignal;
-import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
@@ -161,6 +158,8 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
             return ((Float) signal) != 0f;
         } else if (signal instanceof Boolean) {
             return (Boolean) signal;
+        } else if (signal instanceof EmptySignal) {
+            return false;
         }
         return false;
     }
@@ -171,6 +170,8 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
             return ((Float) signal) == 0f;
         } else if (signal instanceof Boolean) {
             return !(Boolean) signal;
+        } else if (signal instanceof EmptySignal) {
+            return true;
         }
         return true;
     }
