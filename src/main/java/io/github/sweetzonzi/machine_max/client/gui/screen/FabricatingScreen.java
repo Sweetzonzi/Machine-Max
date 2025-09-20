@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.client.gui;
+package io.github.sweetzonzi.machine_max.client.gui.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

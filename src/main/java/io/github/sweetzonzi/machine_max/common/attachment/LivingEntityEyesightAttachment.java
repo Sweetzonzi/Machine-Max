@@ -70,7 +70,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
                 eyesight.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
                 Vector3f startPos = PhysicsHelperKt.toBVector3f(entity.getEyePosition());
-                Vector3f view = PhysicsHelperKt.toBVector3f(entity.getViewVector(1).normalize().scale(eyesight.eyesightRange));
+                Vector3f view = PhysicsHelperKt.toBVector3f(entity.getForward().normalize().scale(eyesight.eyesightRange));
                 Vector3f endPos = startPos.add(view);
                 eyesight.targets.clear();//清空射线检测结果列表
                 eyesight.sortedTargets.clear();//清空排序后的射线检测结果列表

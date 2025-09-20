@@ -2,10 +2,12 @@ package io.github.sweetzonzi.machine_max.mixin;
 
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,11 +20,39 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
 
     @Inject(method = "setupRotations", at = @At("TAIL"))
     public void setupRotations(T entity, PoseStack poseStack, float bob, float yBodyRot, float partialTick, float scale, CallbackInfo ci) {
+        if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem) {
+//            poseStack.mulPose(Axis.YP.rotationDegrees(90));
+        }
+    }
+
+    @Inject(method = "render*", at = @At("HEAD"))
+    public void onRenderStart(T entity, float yaw, float partialTicks, PoseStack poseStack,
+                              MultiBufferSource buffer, int light, CallbackInfo ci) {
         if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seatSubsystem) {
-            var actualRot = seatSubsystem.getPart().getLerpedLocatorWorldTransform(seatSubsystem.attr.locator, partialTick).getRotation();
+            // 保存当前变换状态
+            poseStack.pushPose();
+            poseStack.translate(0, 0.5f, 0);//移动旋转枢轴以避免大倾角时的错位
+            poseStack.pushPose();
+
+            // 应用载具的旋转和指定的缩放变换
+            var actualRot = seatSubsystem.getPart().getLerpedLocatorWorldTransform(
+                    seatSubsystem.attr.locator, partialTicks).getRotation();
             poseStack.mulPose(SparkMathKt.toQuaternionf(actualRot));
+
             Vector3f passengerScale = seatSubsystem.attr.passengerScale.toVector3f();
             poseStack.scale(passengerScale.x(), passengerScale.y(), passengerScale.z());
+
+            poseStack.translate(0, -0.5f, 0);//复位枢轴点
+        }
+    }
+
+    @Inject(method = "render*", at = @At("TAIL"))
+    public void onRenderEnd(T entity, float yaw, float partialTicks, PoseStack poseStack,
+                            MultiBufferSource buffer, int light, CallbackInfo ci) {
+        if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem) {
+            // 恢复变换状态
+            poseStack.popPose();
+            poseStack.popPose();
         }
     }
 
@@ -35,13 +65,4 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
         }
     }
 
-//    @ModifyVariable(
-//            method = "render*",
-//            at = @At(value = "STORE"),
-//            ordinal = 0
-//    )
-//    private boolean modifyShouldSit(boolean original) {
-//        // 修改 shouldSit 的值
-//        return true;
-//    }
 }

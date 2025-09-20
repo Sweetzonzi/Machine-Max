@@ -28,10 +28,16 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.vehicle.VehicleEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -46,7 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn {
+public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn {
 
     public Part part;//实体所属的部件
     public UUID vehicleUUID;
@@ -65,8 +71,13 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
+        super.defineSynchedData(builder);
+    }
 
+    @Override
+    protected @NotNull Item getDropItem() {
+        return ItemStack.EMPTY.getItem();
     }
 
     public MMPartEntity(Level level, Part part) {
@@ -90,9 +101,16 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
             //更新实体位置
             this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
             Quaternionf q = SparkMathKt.toQuaternionf(part.rootSubPart.body.getPhysicsRotation(null));
-            org.joml.Vector3f eulerAngles = new org.joml.Vector3f();
-            q.getEulerAnglesZYX(eulerAngles).mul((float) (180 / Math.PI));
-            this.setRot(-eulerAngles.y + 180f, eulerAngles.x);
+            // 从四元数提取前向向量
+            org.joml.Vector3f forward = new org.joml.Vector3f(0, 0, 1).rotate(q);
+            // 计算yaw和pitch
+            float yaw = -(float) Math.toDegrees(Math.atan2(forward.x, forward.z)) + 180;
+            float pitch = (float) Math.toDegrees(Math.asin(forward.y));
+            yaw = yaw % 360;
+            if (yaw > 180) yaw -= 360;
+            else if (yaw < -180) yaw += 360;
+            // 设置实体旋转
+            this.setRot(yaw, pitch);
             updateBoundingBox();//更新实体包围盒
         }
     }
@@ -214,8 +232,7 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
     @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
         var subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
-        if (entity instanceof LivingEntity livingEntity
-                && subsystem instanceof SeatSubsystem seat) {
+        if (entity instanceof LivingEntity && subsystem instanceof SeatSubsystem seat) {
             Vector3f rawRelPos = seat.getSeatPointLocalTransform().getTranslation();
             Matrix3f pose = seat.getSeatPointWorldTransform().getRotation().toRotationMatrix();
             Vector3f relPos = pose.mult(rawRelPos, null);
@@ -230,13 +247,11 @@ public class MMPartEntity extends Entity implements IEntityAnimatable<MMPartEnti
 
     @Override
     public void onPassengerTurned(@NotNull Entity entityToUpdate) {
-        if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-//            entityToUpdate.setYBodyRot(180);
-//            float f = Mth.wrapDegrees(entityToUpdate.getYRot() - this.getYRot());
-//            float f1 = Mth.clamp(f, -105.0F, 105.0F);
-//            entityToUpdate.yRotO += f1 - f;
-//            entityToUpdate.setYRot(entityToUpdate.getYRot() + f1 - f);
-//            entityToUpdate.setYRot(this.getYRot());
+        if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem) {
+            float rot = Mth.wrapDegrees(livingEntity.getYRot() - this.getYRot() + 180f);
+            entityToUpdate.setYBodyRot(rot);
+            livingEntity.yHeadRotO = rot;
+            livingEntity.setYHeadRot(rot);
         }
     }
 

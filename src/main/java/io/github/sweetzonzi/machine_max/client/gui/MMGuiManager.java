@@ -2,17 +2,25 @@ package io.github.sweetzonzi.machine_max.client.gui;
 
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.gui.hud.CustomHud;
 import io.github.sweetzonzi.machine_max.client.renderable.ITickableRenderable;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class MMGuiManager {
@@ -59,6 +67,16 @@ public class MMGuiManager {
             }
         } catch (Exception e) {
             MachineMax.LOGGER.warn("Error while ticking widget at physics thread: ", e);
+        }
+    }
+
+    @SubscribeEvent
+    private static void renderHudEvent(RenderGuiLayerEvent.Pre event) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player instanceof IEntityMixin passenger
+                && passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat
+                && !seat.attr.allowUseItems) {
+            if (event.getName() == VanillaGuiLayers.HOTBAR) event.setCanceled(true);
         }
     }
 }

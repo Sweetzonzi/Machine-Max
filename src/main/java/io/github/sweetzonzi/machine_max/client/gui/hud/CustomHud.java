@@ -1,5 +1,6 @@
-package io.github.sweetzonzi.machine_max.client.gui;
+package io.github.sweetzonzi.machine_max.client.gui.hud;
 
+import io.github.sweetzonzi.machine_max.client.gui.MMGuiManager;
 import io.github.sweetzonzi.machine_max.client.renderable.GuiAnimatable;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;

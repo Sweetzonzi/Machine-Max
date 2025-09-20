@@ -3,8 +3,11 @@ package io.github.sweetzonzi.machine_max.client.input;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
+import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
@@ -14,15 +17,15 @@ import jme3utilities.math.MyMath;
 import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.CalculateDetachedCameraDistanceEvent;
-import net.neoforged.neoforge.client.event.CalculatePlayerTurnEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.client.event.*;
 import org.joml.Math;
 import org.joml.Quaternionf;
 
@@ -88,7 +91,7 @@ public class CameraController {
         yaw = 0.6f * yaw + 0.4f * targetViewYaw;
         roll = 0.6f * roll + 0.4f * targetViewRoll;
         AbstractControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
-        if(subsystem instanceof SeatSubsystem seat) {
+        if (subsystem instanceof SeatSubsystem seat) {
             if (!type.isFirstPerson() && !seat.attr.views.followVehicle()) throw new RuntimeException();
             //基于附体坐标系旋转相机
             Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
@@ -107,7 +110,7 @@ public class CameraController {
             event.setPitch(rot.x);
             event.setYaw(-rot.y);
             event.setRoll(rot.z);
-        }else {
+        } else {
             //基于世界坐标系旋转相机
             event.setPitch(pitch);
             event.setYaw(yaw);
@@ -116,8 +119,13 @@ public class CameraController {
         }
         //非自由视角模式下，逐渐回正视角
         if (!RawInputHandler.freeCam) {
-            if (subsystem instanceof SeatSubsystem) {
+            if (subsystem instanceof SeatSubsystem seat) {
                 //回到保存记录的位置
+                if (seat.getPart().getEntity() instanceof MMPartEntity partEntity) {
+                    entity.setXRot(aimPitch);
+                    entity.setYRot(Mth.wrapDegrees(aimYaw + partEntity.getYRot() + 180));
+//                    entity.setYHeadRot(aimYaw + 180 + partEntity.getYRot());
+                }
             } else {
                 //回到实体实时视角
                 aimPitch = entity.getViewXRot(partialTick);
@@ -127,6 +135,22 @@ public class CameraController {
             targetViewPitch = 0.9f * targetViewPitch + 0.1f * aimPitch;
             targetViewYaw = 0.9f * targetViewYaw + 0.1f * aimYaw;
             targetViewRoll = 0.9f * targetViewRoll + 0.1f * aimRoll;
+        }
+    }
+
+    /**
+     * 避免水平角度于±180°跳变导致第一人称手臂位置跳变，乘坐载具时取消手臂随动旋转
+     * 另外座椅不允许使用物品时，直接禁止手持物品的渲染
+     */
+    @SubscribeEvent
+    public static void onRenderArm(RenderHandEvent event) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player instanceof IEntityMixin passenger && passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
+            if (!seat.attr.allowUseItems) event.setCanceled(true);
+            PoseStack poseStack = event.getPoseStack();
+            float partialTicks = event.getPartialTick();
+            float f3 = Mth.lerp(partialTicks, player.yBobO, player.yBob);
+            poseStack.mulPose(Axis.YP.rotationDegrees((player.getViewYRot(partialTicks) - f3) * -0.1F));
         }
     }
 

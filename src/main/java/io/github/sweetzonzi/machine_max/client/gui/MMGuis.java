@@ -1,6 +1,9 @@
 package io.github.sweetzonzi.machine_max.client.gui;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.gui.hud.CustomHud;
+import io.github.sweetzonzi.machine_max.client.gui.screen.FabricatingScreen;
+import io.github.sweetzonzi.machine_max.client.gui.screen.ItemStorageSubsystemScreen;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;

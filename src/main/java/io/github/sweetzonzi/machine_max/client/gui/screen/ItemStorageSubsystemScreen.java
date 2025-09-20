@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.client.gui;
+package io.github.sweetzonzi.machine_max.client.gui.screen;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.menu.ItemStorageSubsystemMenu;
