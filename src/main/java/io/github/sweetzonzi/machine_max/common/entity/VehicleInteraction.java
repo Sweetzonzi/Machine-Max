@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.entity;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import net.minecraft.world.entity.player.Player;
@@ -7,6 +8,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
@@ -17,6 +19,13 @@ public class VehicleInteraction {
         if (event.getEntity() instanceof Player player) {
             LivingEntityEyesightAttachment interactionSight = new LivingEntityEyesightAttachment(player);
             player.setData(MMAttachments.getENTITY_EYESIGHT(), interactionSight);
+        }
+    }
+
+    @SubscribeEvent
+    private static void join(EntityTickEvent.Pre event) {
+        if (event.getEntity() instanceof Player player && !player.level().isClientSide) {
+            MachineMax.LOGGER.debug("z:{}, zo:{}, zOld:{}", player.getZ(), player.getZ()-player.zo, player.getZ()-player.zOld);
         }
     }
 

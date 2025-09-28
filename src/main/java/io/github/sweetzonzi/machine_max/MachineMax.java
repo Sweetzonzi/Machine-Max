@@ -25,6 +25,7 @@ public class MachineMax {
     //TODO:放置部件前检查空间是否足够
     //TODO:投射物与刀刃判定，使用Capability系统控制部件功能？
     //TODO:炮塔控制
+    //TODO:外骨骼与机甲，穿戴外骨骼时仍可乘坐载具
     //TODO:方块代理子系统，互动以及tick时有对应方块的功能？
     //TODO:载具触发压力板
     //TODO:把拼好的载具保存为微缩模型，分不同可选比例
@@ -53,5 +54,4 @@ public class MachineMax {
         MMSounds.register();//注册所有音效
         MMPackModuleRegistries.register(bus);//注册所有SparkCore扩展包模块
     }
-
 }

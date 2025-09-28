@@ -83,7 +83,7 @@ public class PartItem extends Item implements ICustomModelItem {
                 int damage = stack.getDamageValue();
                 float durability = Math.clamp(partType.basicDurability - damage + 1, 1f, partType.basicDurability);
                 if (targetConnector != null) {//若有可用的接口
-                    if (targetConnector.conditionCheck(variant)) {//检查变体条件
+                    if (targetConnector.conditionCheck(partType, variant)) {//检查变体条件
                         //TODO:检查connectorType，骑乘姿态拆卸零件后这一内容会变null
                         if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
@@ -137,7 +137,7 @@ public class PartItem extends Item implements ICustomModelItem {
             AbstractConnector targetConnector = eyesight.getConnector();
             MutableComponent message = Component.empty();
             if (targetConnector != null) {
-                if (targetConnector.conditionCheck(variant)) {
+                if (targetConnector.conditionCheck(partType, variant)) {
                     if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {
                         message.append("目标接口:" + targetConnector.name + "部件接口:" + connectorName);
                         if (!variant.equals("default") && partType.variants.size() > 1)
@@ -153,7 +153,7 @@ public class PartItem extends Item implements ICustomModelItem {
                     } else message.append("无法连接两个非AttachPoint接口");
                 } else {
                     for (String variantName : partType.variants.keySet()) {
-                        if (targetConnector.conditionCheck(variantName)) {
+                        if (targetConnector.conditionCheck(partType, variantName)) {
                             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
                             return;
                         }

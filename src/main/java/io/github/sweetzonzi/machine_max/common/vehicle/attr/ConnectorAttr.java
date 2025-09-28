@@ -9,7 +9,9 @@ import java.util.Map;
 /**
  * @param locatorName 对接口对应的Locator名称
  * @param type 对接口类型
- * @param acceptableVariants 对接口接受的部件变体类型列表(左，右等)，留空时表示接受所有部件变体类型
+ * @param requiredTags 对接口的必需标签
+ * @param acceptableTags 对接口的可接受标签
+ * @param forbiddenTags 对接口的禁止标签
  * @param jointAttrs 对接口的关节属性(限制，刚性与阻尼)
  * @param signalTargets 对接口的控制信号传输目标(子系统/对接口名/part/vehicle)
  * @param collideBetweenParts 对接口是否允许部件间碰撞
@@ -19,8 +21,9 @@ import java.util.Map;
 public record ConnectorAttr(
         String locatorName,
         String type,
-        List<String> acceptableVariants,
-//        List<TagKey<Part>> acceptablePartTags,
+        List<String> requiredTags,
+        List<String> acceptableTags,
+        List<String> forbiddenTags,
         Map<String, JointAttr> jointAttrs,
         Map<String, List<String>> signalTargets,
         boolean collideBetweenParts,
@@ -36,7 +39,9 @@ public record ConnectorAttr(
     public static final Codec<ConnectorAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("locator").forGetter(ConnectorAttr::locatorName),
             Codec.STRING.fieldOf("type").forGetter(ConnectorAttr::type),
-            Codec.STRING.listOf().optionalFieldOf("variant", List.of()).forGetter(ConnectorAttr::acceptableVariants),
+            Codec.STRING.listOf().optionalFieldOf("required_tags", List.of()).forGetter(ConnectorAttr::requiredTags),
+            Codec.STRING.listOf().optionalFieldOf("acceptable_tags", List.of()).forGetter(ConnectorAttr::requiredTags),
+            Codec.STRING.listOf().optionalFieldOf("forbidden_tags", List.of()).forGetter(ConnectorAttr::requiredTags),
             JointAttr.MAP_CODEC.optionalFieldOf("joint_attrs", Map.of()).forGetter(ConnectorAttr::jointAttrs),
             SIGNAL_TARGET_CODEC.optionalFieldOf("signal_targets", Map.of()).forGetter(ConnectorAttr::signalTargets),
             Codec.BOOL.optionalFieldOf("collide_between_parts", false).forGetter(ConnectorAttr::collideBetweenParts),

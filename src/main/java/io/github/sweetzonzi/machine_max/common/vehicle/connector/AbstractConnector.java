@@ -42,7 +42,6 @@ import java.util.Map;
 public abstract class AbstractConnector implements PhysicsHost, PhysicsCollisionObjectTicker {
     public final String name;//接口名称
     public final SubPart subPart;//接口所属的零件
-    public final List<String> acceptableVariants;//可接受的变体列表
     public final boolean collideBetweenParts;//是否允许零件间碰撞
     public final boolean breakable;//TODO:是否可拆解
     public final boolean internal;//是否为内部接口
@@ -59,7 +58,6 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
         this.name = name;
         this.subPart = subPart;
         this.subPartTransform = subPartTransform;
-        this.acceptableVariants = attr.acceptableVariants();
         this.signalPort = new SignalPort(this, attr.signalTargets());
         this.collideBetweenParts = attr.collideBetweenParts();
         this.breakable = attr.breakable();
@@ -108,7 +106,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
             MachineMax.LOGGER.error("零件安装失败，对接口{}已被占用！", targetConnector.getName());
             return false;
         }
-        if ((!conditionCheck(new PartData(targetConnector.subPart.part)) || !targetConnector.conditionCheck(new PartData(this.subPart.part)) && !force)) {
+        if ((!conditionCheck(targetConnector.subPart.part) || !targetConnector.conditionCheck(this.subPart.part) && !force)) {
             MachineMax.LOGGER.error("零件安装失败，零件不符合对接口安装条件！");
             return false;
         } else {
@@ -267,8 +265,8 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
      * @param part 要检查的待安装部件
      * @return 给定零件是否满足当前接口安装条件
      */
-    public boolean conditionCheck(PartData part) {
-        return conditionCheck(part.variant);
+    public boolean conditionCheck(Part part) {
+        return conditionCheck(part.type, part.variant);
     }
 
     /**
@@ -279,17 +277,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
      * @return 给定零件是否满足当前接口安装条件
      */
     public boolean conditionCheck(PartType partType, String variant) {
-        return conditionCheck(variant);
-    }
-
-    /**
-     * 检查给定零件是否符合本接口的安装要求
-     *
-     * @param variant 要检查的待安装部件的变体类型
-     * @return 给定零件是否满足当前接口安装条件
-     */
-    public boolean conditionCheck(String variant) {
-        if (!this.hasPart() && (this.acceptableVariants.isEmpty() || this.acceptableVariants.contains(variant)))
+        if (!this.hasPart())
             //TODO:tag检查
             return true;
         else

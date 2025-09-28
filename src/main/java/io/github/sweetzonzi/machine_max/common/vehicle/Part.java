@@ -133,18 +133,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     /**
-     * <p>从注册名创建新部件，使用指定变体</p>
-     * <p>仅应在服务端新建部件时使用</p>
-     *
-     * @param registryKey 部件注册名
-     * @param variant     部件变体类型
-     * @param level       部件被加入的世界
-     */
-    public Part(ResourceLocation registryKey, String variant, Level level) {
-        this(Objects.requireNonNull(level.registryAccess().registry(PartType.PART_REGISTRY_KEY).get().get(registryKey)), variant, level);
-    }
-
-    /**
      * <p>创建新部件，使用默认变体</p>
      * <p>仅应在服务端新建部件时使用</p>
      *
@@ -155,16 +143,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this(partType, "default", level);
     }
 
-    /**
-     * <p>创建新部件，使用默认变体</p>
-     * <p>仅应在服务端新建部件时使用</p>
-     *
-     * @param registryKey 部件注册名
-     * @param level       部件被加入的世界
-     */
-    public Part(ResourceLocation registryKey, Level level) {
-        this(registryKey, "default", level);
-    }
 
     /**
      * 从保存或网络传输的数据中重建部件
