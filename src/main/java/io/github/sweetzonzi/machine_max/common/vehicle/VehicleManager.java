@@ -217,8 +217,22 @@ public class VehicleManager {
             physicsLevel.getWorld().getSolverInfo().setNumIterations(25);
 //            Plane plane = new Plane(Vector3f.UNIT_Y, -59.5f);//测试平面
 //            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
-//            PhysicsRigidBody body = new PhysicsRigidBody("ground", null, shape, PhysicsBody.massForStatic);
-//            physicsLevel.getWorld().add(body);
+//            CompoundCollisionShape shape = new CompoundCollisionShape();
+//            for(int i=0;i<16;i++){
+//                for(int j=0;j<1;j++){
+//                    for (int k = 0; k < 16; k++) {
+//                        shape.addChildShape(new BoxCollisionShape(new Vector3f(0.5f, 0.5f, 0.5f)), new Vector3f(i, j, k));
+//                    }
+//                }
+//            }
+//            for (int i = -2; i < 3; i++){
+//                for (int j = 0; j < 24; j++){
+//                    PhysicsRigidBody body = new PhysicsRigidBody("ground", level, shape, 0);
+//                    body.setPhysicsLocation(new Vector3f(i*16, -50, j*16));
+//                    body.tickTransform = body.getTransform(body.lastTickTransform);
+//                    physicsLevel.getWorld().add(body);
+//                }
+//            }
             return null;
         });
         ResourceKey<Level> dimension = level.dimension();

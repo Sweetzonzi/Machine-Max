@@ -270,7 +270,9 @@
         "left_front_wheel": {//接口名称
           "locator": "left_front_wheel",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
           "type": "Special",//对接口类型，支持AttachPoint和Special
-          "variant": ["left"],//对接口可连接的部件变体类型，留空以接受所有类型的变体(例如轮胎的左右轮变体)
+          "required_tags": ["variant:left"],//(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
+          "acceptable_tags": [],//(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
+          "forbidden_tags": [],//(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
           "joint_attrs": {//关节属性，目前仅在关节类型为Special时生效
             "y": {
               "lower_limit": -1.0,//关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
@@ -295,7 +297,9 @@
         "left_back_wheel": {
           "locator": "left_back_wheel",
           "type": "Special",
-          "variant": ["left"],
+          "required_tags": ["variant:left"],//(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
+          "acceptable_tags": [],//(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
+          "forbidden_tags": [],//(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
           "joint_attrs": {
             "y": {
               "lower_limit": -1.0,
@@ -313,7 +317,9 @@
         "right_front_wheel": {
           "locator": "right_front_wheel",
           "type": "Special",
-          "variant": ["right"],
+          "required_tags": ["variant:right"],//(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
+          "acceptable_tags": [],//(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
+          "forbidden_tags": [],//(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
           "joint_attrs": {
             "y": {
               "lower_limit": -1.0,
@@ -338,7 +344,9 @@
         "right_back_wheel": {
           "locator": "right_back_wheel",
           "type": "Special",
-          "variant": ["right"],
+          "required_tags": ["variant:right"],//(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
+          "acceptable_tags": [],//(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
+          "forbidden_tags": [],//(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
           "joint_attrs": {
             "y": {
               "lower_limit": -1.0,

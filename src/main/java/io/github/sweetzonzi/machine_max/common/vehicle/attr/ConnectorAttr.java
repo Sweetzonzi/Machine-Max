@@ -2,9 +2,12 @@ package io.github.sweetzonzi.machine_max.common.vehicle.attr;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @param locatorName 对接口对应的Locator名称
@@ -53,4 +56,30 @@ public record ConnectorAttr(
             Codec.STRING,//对接口名称
             ConnectorAttr.CODEC//对接口属性
     );
+
+    public boolean conditionCheck(PartType partType, String variant){
+        Set<String> tags = new HashSet<>(partType.tags);
+        tags.add("variant:" + variant);
+        //检查必须拥有的tag情况(必须全都有)
+        if (this.requiredTags().isEmpty() || tags.containsAll(this.requiredTags())) {
+            boolean hasAcceptableTags = false;
+            for (String acceptableTag : this.acceptableTags()) {
+                if (tags.contains(acceptableTag)) {
+                    hasAcceptableTags = true;
+                    break;
+                }
+            }
+            //检查可接受的tag情况(有一个符合要求即可)
+            if (this.acceptableTags().isEmpty() || hasAcceptableTags) {
+                boolean hasForbiddenTags = false;
+                for (String forbiddenTag : this.forbiddenTags()) {
+                    if (tags.contains(forbiddenTag)) {
+                        hasForbiddenTags = true;
+                        break;
+                    }
+                }
+                return this.forbiddenTags().isEmpty() || !hasForbiddenTags;
+            } else return false;
+        } else return false;
+    }
 }

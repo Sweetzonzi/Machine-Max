@@ -24,7 +24,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.JointAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalPort;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
@@ -34,8 +33,7 @@ import lombok.Setter;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 @Getter
@@ -277,11 +275,9 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
      * @return 给定零件是否满足当前接口安装条件
      */
     public boolean conditionCheck(PartType partType, String variant) {
-        if (!this.hasPart())
-            //TODO:tag检查
-            return true;
-        else
-            return false;
+        if (!this.hasPart()) {
+            return attr.conditionCheck(partType, variant);
+        } else return false;
     }
 
     /**

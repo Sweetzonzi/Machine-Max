@@ -23,13 +23,6 @@ public class VehicleInteraction {
     }
 
     @SubscribeEvent
-    private static void join(EntityTickEvent.Pre event) {
-        if (event.getEntity() instanceof Player player && !player.level().isClientSide) {
-            MachineMax.LOGGER.debug("z:{}, zo:{}, zOld:{}", player.getZ(), player.getZ()-player.zo, player.getZ()-player.zOld);
-        }
-    }
-
-    @SubscribeEvent
     private static void leave(EntityLeaveLevelEvent event) {
         if (event.getEntity() instanceof Player player) {
             LivingEntityEyesightAttachment eyeSight;

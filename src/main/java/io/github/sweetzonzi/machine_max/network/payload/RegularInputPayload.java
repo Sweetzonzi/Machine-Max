@@ -117,17 +117,19 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                         while (i > 0) {
                             //循环获取下一个端口，直到找到合适的接口或到达迭代次数上限
                             String connectorName = iterators.getNextConnector();//获取下一个部件接口
-                            if (partConnectors.get(connectorName).type().equals("AttachPoint") || targetConnector instanceof AttachPointConnector) {
-                                // TODO: 检查部件Tag是否与目标接口接受的类型匹配
-                                OModel model = OModel.getOrEmpty(partType.variants.get(variant));
-                                var locators = model.getLocators();
-                                var connectorAttr = connectors.get(connectorName);
-                                OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
-                                Vector3f offset = partConnectorLocator.getOffset().toVector3f();
-                                Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
-                                Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
-                                info = new PartAssemblyInfoComponent(variant, connectorName, connectorAttr.type(), offset, quaternion);
-                                break;
+                            ConnectorAttr connectorAttr = connectors.get(connectorName);
+                            if (connectorAttr.type().equals("AttachPoint") || targetConnector instanceof AttachPointConnector) {
+                                //检查部件Tag是否与目标接口接受的类型匹配
+                                if(targetConnector.conditionCheck(partType, variant) && connectorAttr.conditionCheck(partType, variant)) {
+                                    OModel model = OModel.getOrEmpty(partType.variants.get(variant));
+                                    var locators = model.getLocators();
+                                    OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
+                                    Vector3f offset = partConnectorLocator.getOffset().toVector3f();
+                                    Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
+                                    Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
+                                    info = new PartAssemblyInfoComponent(variant, connectorName, connectorAttr.type(), offset, quaternion);
+                                    break;
+                                }
                             }
                             i--;
                         }
@@ -152,7 +154,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     while (i >= 0) {
                         //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限
                         String variant = iterators.getNextVariant();//获取下一个部件变体
-                        if (targetConnector == null || targetConnector.acceptableVariants.contains(variant)) {
+                        if (targetConnector == null || targetConnector.conditionCheck(partType, variant)) {
                             OModel model = OModel.getOrEmpty(partType.variants.get(variant));
                             var locators = model.getLocators();
                             OLocator partConnectorLocator = locators.get(connectors.get(info.connector()).locatorName());
