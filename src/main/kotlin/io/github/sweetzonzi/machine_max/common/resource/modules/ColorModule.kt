@@ -1,8 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
-import cn.solarmoon.spark_core.resource2.graph.SparkPackage
-import cn.solarmoon.spark_core.resource2.modules.ReadMode
-import cn.solarmoon.spark_core.resource2.modules.SparkPackModule
+import cn.solarmoon.spark_core.pack.graph.SparkPackage
+import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import com.google.gson.JsonParser
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
