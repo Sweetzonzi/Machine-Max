@@ -98,7 +98,7 @@ public class AnimatableParams {
                             boolean perspective,
                             Map<String, TextParams> textAttr,
                             boolean enableScissor, int scissorX, int scissorY, int scissorWidth, int scissorHeight) {
-        this.modelIndex = new ModelIndex(model, null);
+        this.modelIndex = new ModelIndex(model);
         this.animation = animation;
         this.texture = texture;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
@@ -121,7 +121,7 @@ public class AnimatableParams {
                             Vec3 offset, Vec3 rotation, Vec3 scale,
                             boolean perspective,
                             Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model, null);
+        this.modelIndex = new ModelIndex(model);
         this.animation = animation;
         this.texture = texture;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
@@ -144,7 +144,7 @@ public class AnimatableParams {
                             Vec3 offset, Vec3 rotation, double scale,
                             boolean perspective,
                             Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model, null);
+        this.modelIndex = new ModelIndex(model);
         this.animation = animation;
         this.texture = texture;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
@@ -167,7 +167,7 @@ public class AnimatableParams {
                             Vec3 offset, double scale,
                             boolean perspective,
                             Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model, null);
+        this.modelIndex = new ModelIndex(model);
         this.animation = animation;
         this.texture = texture;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
@@ -187,7 +187,7 @@ public class AnimatableParams {
                             Vec3 offset,
                             boolean perspective,
                             Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model, null);
+        this.modelIndex = new ModelIndex(model);
         this.animation = animation;
         this.texture = texture;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
@@ -203,7 +203,7 @@ public class AnimatableParams {
     }
 
     public AnimatableParams(ResourceLocation model, ResourceLocation animation, ResourceLocation texture) {
-        this.modelIndex = new ModelIndex(model, null);
+        this.modelIndex = new ModelIndex(model);
         this.animation = animation;
         this.texture = texture;
         this.color = new Vec3i(255, 255, 255);

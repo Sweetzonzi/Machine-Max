@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.CarControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
+import io.github.sweetzonzi.machine_max.util.MMMath;
 import lombok.Getter;
 
 import java.util.HashMap;
@@ -66,7 +67,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        this.speed = -getPart().rootSubPart.body.getLinearVelocityLocal(null).z;
+        this.speed = -MMMath.getLinearVelocityLocal(getPart().rootSubPart.body).z;
         if (isActive() && getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {

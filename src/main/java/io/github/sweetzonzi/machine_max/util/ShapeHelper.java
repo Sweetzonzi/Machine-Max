@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.util;
 
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.EmptyShape;
@@ -20,14 +21,14 @@ public class ShapeHelper {
             BoundingBox boundingBox;
             float height;
             try {
-                boundingBox = pco.cachedBoundingBox;
+                boundingBox = PhysicsBodyExtensionKt.stateOf(pco).getCachedBoundingBox();
                 height = boundingBox.getMin(null).y;
             } catch (Exception e) {
                 MachineMax.LOGGER.error("{}碰撞箱计算结果异常: ", pco.name, e);
                 return 9999;
             }
             PlaneCollisionShape testPlane;
-            PhysicsRigidBody testPco = new PhysicsRigidBody("test_plane", null, new EmptyShape(false), 0);
+            PhysicsRigidBody testPco = new PhysicsRigidBody(new EmptyShape(true), 0);
             while (height < centerY) {
                 testPlane = new PlaneCollisionShape(new Plane(new Vector3f(0, 1, 0), height));
                 testPco.setCollisionShape(testPlane);

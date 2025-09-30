@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.renderer;
 
+import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.GeoEntityRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -29,14 +31,17 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
     @Override
     public void render(@NotNull MMPartEntity entity, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
         if (entity.part == null || entity.part.rootSubPart == null) return;
+        ModelController modelController = entity.part.getModelController();
+        ModelInstance modelInstance = modelController.getModel();
+        if (modelInstance == null) return;
         var worldMatrix = entity.part.getWorldPositionMatrix(partialTick);
         Color color = entity.part.isDestroyed() ? new Color(32, 32, 32, 255) : Color.WHITE;
         int overlay = OverlayTexture.NO_OVERLAY;
         if (entity.part.hurtMarked) overlay = OverlayTexture.pack(10, 10);
         poseStack.pushPose();//开始渲染
         ModelRenderHelperKt.render(
-                entity.part.getModelController().getOriginModel(),
-                entity.part.getModelController().getModel().getBonePoses(),
+                modelController.getOriginModel(),
+                modelInstance.getPose(),
                 worldMatrix,
                 poseStack.last().normal(),
                 bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),

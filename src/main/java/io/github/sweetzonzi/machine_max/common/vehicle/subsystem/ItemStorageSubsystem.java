@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.ItemStorageSubsystemAttr;
@@ -66,7 +67,7 @@ public class ItemStorageSubsystem extends AbstractSubsystem implements MenuProvi
         for (int i = 0; i < container.getContainerSize(); i++) {
             ItemStack stack = container.getItem(i);
             if (!stack.isEmpty()) {
-                Vec3 pos = getOwner().getPart().getWorldPosition(1);
+                Vec3 pos = SparkMathKt.toVec3(getOwner().getPart().getWorldPositionMatrix(1).getTranslation(null));
                 ItemEntity item = new ItemEntity(getOwner().getLevel(), pos.x, pos.y, pos.z, stack);
                 getOwner().getLevel().addFreshEntity(item);
             }

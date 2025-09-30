@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.google.common.graph.EndpointPair;
@@ -166,7 +167,7 @@ public class VehicleCore {
         Vec3 newVel = new Vec3(0, 0, 0);
         int count = 0;
         for (Part part : partMap.values()) {
-            Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.body.tickTransform.getTranslation());
+            Vec3 partPos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(part.rootSubPart.body).getTransform().getTranslation());
             Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.body.getLinearVelocity(null));
             newPos = newPos.add(partPos);//计算载具形心位置
             newVel = newVel.add(partVel);//计算载具形心速度
@@ -271,8 +272,6 @@ public class VehicleCore {
                                 body.setPhysicsRotation(SparkMathKt.toBQuaternion(data.rotation()));
                                 body.setLinearVelocity(data.linearVel());
                                 body.setAngularVelocity(data.angularVel());
-                                if (isSleep) body.forceDeactivate();
-                                else body.activate();
                             } else
                                 MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this.name, partUUID, subPartName);
                         }
@@ -290,17 +289,6 @@ public class VehicleCore {
         poseSyncCountDown = 0;
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
-            return null;
-        });
-    }
-
-    /**
-     * 令载具所有零件的运动体休眠
-     */
-    public void deactivate() {
-        level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
-            for (Part part : partMap.values())
-                part.subParts.values().forEach(subPart -> subPart.body.forceDeactivate());
             return null;
         });
     }
@@ -716,8 +704,8 @@ public class VehicleCore {
         Vector3f max = new Vector3f();
         for (Part part : this.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
-                subPart.body.cachedBoundingBox.getMin(min);
-                subPart.body.cachedBoundingBox.getMax(max);
+                PhysicsBodyExtensionKt.stateOf(subPart.body).getCachedBoundingBox().getMin(min);
+                PhysicsBodyExtensionKt.stateOf(subPart.body).getCachedBoundingBox().getMax(max);
                 if (min.x < xMin) xMin = min.x;
                 if (min.y < yMin) yMin = min.y;
                 if (min.z < zMin) zMin = min.z;

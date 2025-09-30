@@ -1,10 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.entity;
 
-import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.BlackBoard;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
@@ -90,7 +90,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     @Override
     public void tick() {
         super.tick();
-        if (tickCount == 2) removeAllBodies();//移除SparkCore为实体添加的默认刚体
+//        if (tickCount == 2) removeAllBodies();//移除SparkCore为实体添加的默认刚体
         if (this.part == null) {//如果实体没有所属的部件，则移除实体
             if (tickCount % 20 == 0) updatePart();
             else if (tickCount > 100) {//等待100tick用于同步部件信息
@@ -153,11 +153,11 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                     Vector3f normal = new Vector3f();
                     Vector3f contactPoint = new Vector3f();
                     for (SubPart subPart : part.subParts.values()) {
-                        Vector3f delta = subPart.body.tickTransform.getTranslation().subtract(start);
+                        Vector3f delta = PhysicsBodyExtensionKt.stateOf(subPart.body).getTransform().getTranslation().subtract(start);
                         float d = delta.length();
                         if (d < nearestDistance) {
                             nearest = subPart;
-                            contactPoint = subPart.body.tickTransform.getTranslation();
+                            contactPoint = PhysicsBodyExtensionKt.stateOf(subPart.body).getTransform().getTranslation();
                             normal = delta.multLocal(-1).normalize();
                             nearestDistance = d;
                         }
@@ -175,7 +175,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                     var results = level.getWorld().rayTest(start, end);
                     for (var result : results) {
                         PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
-                        if (body.getOwner() instanceof SubPart subPart) {
+                        if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart) {
                             //TODO: new一个新的source存储攻击来袭方向
                             Vector3f normal = result.getHitNormalLocal(null);
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
@@ -383,18 +383,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     @Override
     public PreInput getPreInput() {
         return new PreInput(this);
-    }
-
-    @NotNull
-    @Override
-    public Map<String, Vec3> getIkTargetPositions() {
-        return Map.of();
-    }
-
-    @NotNull
-    @Override
-    public Map<String, FabrikChain3D> getIkChains() {
-        return Map.of();
     }
 
     @NotNull

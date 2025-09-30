@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.connector;
 
-import cn.solarmoon.spark_core.physics.collision.PhysicsCollisionObjectTicker;
-import cn.solarmoon.spark_core.physics.host.PhysicsHost;
+import cn.solarmoon.spark_core.physics.PhysicsHost;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.RotationOrder;
@@ -30,14 +30,13 @@ import io.github.sweetzonzi.machine_max.util.data.Axis;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
 
 @Getter
-public abstract class AbstractConnector implements PhysicsHost, PhysicsCollisionObjectTicker {
+public abstract class AbstractConnector implements PhysicsHost {
     public final String name;//接口名称
     public final SubPart subPart;//接口所属的零件
     public final boolean collideBetweenParts;//是否允许零件间碰撞
@@ -51,6 +50,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
     public final Transform subPartTransform;//被安装零件的连接点相对本部件质心的位置与姿态
     public final CollisionShape shape = new BoxCollisionShape(0.25f);//接口碰撞形状
     public PhysicsRigidBody body;//部件接口安装判定区
+    private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
 
     protected AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, Transform subPartTransform) {
         this.name = name;
@@ -66,20 +66,18 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
                 subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
     }
 
-    @Override
-    public void prePhysicsTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull PhysicsLevel physicsLevel) {
+    public void prePhysicsTick() {
         if (!this.hasPart()) {//更新判定点位置姿态
             body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
             body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
         } else {
-            removeAllBodies();
+            PhysicsBodyExtensionKt.removePhysicsBody(subPart.part.getLevel(), body);
             this.body = null;
         }
     }
 
-    @Override
-    public void mcTick(@NotNull PhysicsCollisionObject physicsCollisionObject, @NotNull Level level) {
-        if (level.isClientSide() && body != null) {
+    public void mcTick() {
+        if (subPart.part.level.isClientSide() && body != null) {
             if (!this.hasPart()) {
                 VisualEffectHelper.attachPoints.put(this, body);
             } else {
@@ -298,9 +296,10 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
 
     public void destroy() {
         detach(true);
-        if (subPart.part.level.isClientSide())
+        if (subPart.part.getLevel().isClientSide())
             VisualEffectHelper.attachPoints.remove(this);
-        this.removeAllBodies();
+        if (body != null)
+            removePhysicsBody(body);
     }
 
     @NotNull
@@ -311,7 +310,7 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
 
     private void createAttachPointBody(Vector3f position, Quaternion rotation) {
         if (!internal && this.body == null) {//为与外部部件连接的接口创建碰撞判定，供玩家通过视线选取
-            body = new PhysicsRigidBody(name, this, shape, PhysicsBody.massForStatic);
+            body = createPhysicsBody(shape, PhysicsBody.massForStatic);
             body.setProtectGravity(true);
             body.setGravity(Vector3f.ZERO);
             body.setKinematic(true);
@@ -320,15 +319,15 @@ public abstract class AbstractConnector implements PhysicsHost, PhysicsCollision
             body.setCollideWithGroups(VehicleManager.COLLISION_GROUP_NONE);
             body.setPhysicsLocation(position);
             body.setPhysicsRotation(rotation);
-            bindBody(
-                    body,
-                    subPart.getPhysicsLevel(),
-                    true,
-                    (body) -> {
-                        body.addPhysicsTicker(this);
-                        return null;
-                    }
-            );
+            PhysicsBodyExtensionKt.onPrePhysicsTick(body, event->{
+                prePhysicsTick();
+                return null;
+            });
+            PhysicsBodyExtensionKt.onTick(body, event->{
+                mcTick();
+                return null;
+            });
+            addPhysicsBody(body);
         } else body = null;
 
     }

@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.renderable;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -35,7 +36,7 @@ public class VehicleAnimatable implements ITickableRenderable {
                     part.type.animation,
                     part.type.textures.getFirst()
             );
-            partParams.setTransform(part.rootSubPart.body.tickTransform.clone());
+            partParams.setTransform(PhysicsBodyExtensionKt.stateOf(part.rootSubPart.body).getTransform().clone());
             parts.put(uuid, new ModelAnimatable(partParams));
         }
         create();
@@ -67,7 +68,7 @@ public class VehicleAnimatable implements ITickableRenderable {
             for (Map.Entry<UUID, Part> entry : vehicle.partMap.entrySet()) {
                 UUID uuid = entry.getKey();
                 Part part = entry.getValue();
-                Transform transform = part.rootSubPart.body.tickTransform.clone();
+                Transform transform = PhysicsBodyExtensionKt.stateOf(part.rootSubPart.body).getTransform().clone();
                 transform.setTranslation(transform.getTranslation().subtract(PhysicsHelperKt.toBVector3f(vehicle.getPosition())));
                 parts.get(uuid).params.setTransform(transform);
                 //TODO: 连接点的关节姿态molang存入渲染对象的属性中

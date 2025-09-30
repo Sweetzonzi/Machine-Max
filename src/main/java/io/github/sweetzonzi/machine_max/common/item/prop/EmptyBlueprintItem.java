@@ -62,7 +62,7 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem {
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         animatable.getModelController().setModel(new ModelIndex(
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"), null));
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint")));
         animatable.getModelController().setTextureLocation(
                 ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"));
         if (customModels != null) {

@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.mixin;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
+import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsSweepTestResult;
@@ -15,10 +17,12 @@ import io.github.sweetzonzi.machine_max.util.MMMath;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.BlockAttachedEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.attachment.AttachmentHolder;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -27,9 +31,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Mixin(Entity.class)
 abstract public class EntityMixin extends AttachmentHolder implements IEntityMixin {
+    @Shadow public abstract Level level();
+
     @Unique
     private AbstractControllableSubsystem machine_Max$controllingSubSystem;
     @Unique
@@ -63,26 +70,29 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             float height = (float) (aabb.maxY - aabb.minY - radius * 2);
             machine_Max$collideTestShape = new CapsuleCollisionShape(radius, height > 0 ? height : 0.01f);
         }
-        List<PhysicsSweepTestResult> results = new ArrayList<>();
+        AtomicReference<List<PhysicsSweepTestResult>> results = new AtomicReference<>(new ArrayList<>());
         Vec3 delta = new Vec3(originalVec.x, originalVec.y, originalVec.z);
         Vec3 center = aabb.getCenter();
         if (delta.length() < 0.5f) delta = delta.normalize().scale(0.5f);
-        //TODO:有时扫掠测试会报错，检查原因
+        //TODO:有时扫掠测试会报错，检查原因 会是因为delta某些情况下等于0吗？
         machine_Max$sweepTestStart.setTranslation(PhysicsHelperKt.toBVector3f(center));
         machine_Max$sweepTestEnd.setTranslation(PhysicsHelperKt.toBVector3f(center.add(delta)));
-        entity.level().getPhysicsLevel().getWorld().sweepTest(
-                machine_Max$collideTestShape,
-                machine_Max$sweepTestStart,
-                machine_Max$sweepTestEnd, results, 0.1f);
-        if (results.isEmpty()) return;// 无碰撞结果时直接返回
+        level().submitImmediateTask(PPhase.ALL, () -> {
+            results.set(entity.level().getPhysicsLevel().getWorld().sweepTest(
+                    machine_Max$collideTestShape,
+                    machine_Max$sweepTestStart,
+                    machine_Max$sweepTestEnd, new ArrayList<>(), 0.1f));
+            return null;
+        });
+        if (results.get().isEmpty()) return;// 无碰撞结果时直接返回
         Vec3 normal = new Vec3(0, 1, 0);
         Vec3 movement = new Vec3(0, 0, 0);
         float hitFraction = Float.MAX_VALUE;
-        for (PhysicsSweepTestResult result : results) {
+        for (PhysicsSweepTestResult result : results.get()) {
             PhysicsCollisionObject pco = result.getCollisionObject();
             int group = pco.getCollisionGroup();
             if (group == VehicleManager.COLLISION_GROUP_PART) {
-                if (pco.getOwner() instanceof SubPart subPart) {
+                if (PhysicsBodyExtensionKt.getOwner(pco) instanceof SubPart subPart) {
                     if (result.getHitFraction() < hitFraction) {
                         normal = SparkMathKt.toVec3(result.getHitNormalLocal(null).normalize());
                         hitFraction = result.getHitFraction();

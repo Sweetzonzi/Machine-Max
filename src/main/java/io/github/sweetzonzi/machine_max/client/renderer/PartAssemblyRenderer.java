@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.renderer;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh;
@@ -155,7 +156,10 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
             poseStack.pushPose();//开始渲染
             BoxShapeMesh mesh = new BoxShapeMesh();
             mesh.update(boxShape);
-            Matrix4f transform = SparkMathKt.toMatrix4f(SparkMathKt.lerp(body.lastTickTransform, body.tickTransform, partialTick).toTransformMatrix());
+            Matrix4f transform = SparkMathKt.toMatrix4f(SparkMathKt.lerp(
+                    PhysicsBodyExtensionKt.stateOf(body).getLastTransform(),
+                    PhysicsBodyExtensionKt.stateOf(body).getTransform(),
+                    partialTick).toTransformMatrix());
             renderBox(mesh, transform, camPos, color, poseStack, bufferSource);
             poseStack.popPose();//结束渲染
         }

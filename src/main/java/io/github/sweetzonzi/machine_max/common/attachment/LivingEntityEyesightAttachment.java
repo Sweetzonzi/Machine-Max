@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.attachment;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.host.PhysicsHost;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.collision.PhysicsCollisionEvent;
 import com.jme3.bullet.collision.PhysicsCollisionListener;
@@ -47,14 +47,14 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     private final CopyOnWriteArraySet<InteractBox> fastInteractBoxCache = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArraySet<InteractBox> accurateInteractBoxCache = new CopyOnWriteArraySet<>();
     private final HashMap<PhysicsRigidBody, PhysicsRayTestResult> targetsCache = new HashMap<>(2);
-    private final List<PhysicsRigidBody> sortedTargetsCache = new LinkedList<>();
+    private final CopyOnWriteArraySet<PhysicsRigidBody> sortedTargetsCache = new CopyOnWriteArraySet<>();
     private double eyesightRange;
 
     public LivingEntityEyesightAttachment(LivingEntity entity) {
         this.owner = entity;
         var boundingBox = entity.getBoundingBox();
         BoxCollisionShape shape = new BoxCollisionShape((float) (boundingBox.getXsize() * 0.5f), (float) (boundingBox.getYsize() * 0.5f), (float) (boundingBox.getZsize() * 0.5f));
-        this.trigger = new PhysicsGhostObject("interact_trigger", entity, shape);
+        this.trigger = new PhysicsGhostObject(shape);
         this.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
         this.trigger.setCollisionGroup(VehicleManager.COLLISION_GROUP_NO_COLLISION);
         this.trigger.setCollideWithGroups(VehicleManager.COLLISION_GROUP_INTERACT);
@@ -79,10 +79,12 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                 rayTestResults.forEach(//获取射线命中物体
                         result -> {
                             PhysicsCollisionObject object = result.getCollisionObject();
-                            if (object instanceof PhysicsRigidBody body && body.getOwner() != null && body.getOwner() != entity) {//如果射线命中物体是刚体
+                            if (object instanceof PhysicsRigidBody body
+                                    && PhysicsBodyExtensionKt.getOwner(body) != null
+                                    && PhysicsBodyExtensionKt.getOwner(body) != entity) {//如果射线命中物体是刚体
                                 eyesight.targets.put(body, result);//将射线命中物体和相应信息存入targets列表
                                 eyesight.sortedTargets.add(body);//将射线命中物体加入sortedTargets列表
-                                if (body.getOwner() instanceof SubPart.InteractBoxes interactBoxes) {
+                                if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart.InteractBoxes interactBoxes) {
                                     int interactBoxIndex = result.triangleIndex();
                                     InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
                                     if (interactBox != null && interactBox.interactMode == InteractBox.InteractMode.ACCURATE)
@@ -91,6 +93,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                             }
                         }
                 );
+                MachineMax.LOGGER.debug("{} eyesight targets", rayTestResults.size());
                 eyesight.accurateInteractBoxCache.clear();
                 eyesight.accurateInteractBoxCache.addAll(eyesight.accurateInteractBoxes);
                 eyesight.sortedTargetsCache.clear();
@@ -128,7 +131,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             interactHitBox = event.getObjectA();
             interactBoxIndex = event.getIndex0();
         } else return;//事件与交互判定无关时提前返回
-        if (interactHitBox.getOwner() instanceof SubPart.InteractBoxes interactBoxes) {
+        if (PhysicsBodyExtensionKt.getOwner(interactHitBox) instanceof SubPart.InteractBoxes interactBoxes) {
             InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
             if (interactBox!=null) {
                 InteractBox.InteractMode mode = interactBox.interactMode;
@@ -147,27 +150,25 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     public AbstractConnector getConnector() {
         if (!sortedTargetsCache.isEmpty()) {
             for (PhysicsRigidBody body : sortedTargetsCache) {
-                if (body.getOwner() != null) {
-                    if (body.getOwner() instanceof SubPart && targetsCache.get(body) instanceof PhysicsRayTestResult rayTestResult) {//如果射线命中物体是部件
-                        rayTestResult.getHitFraction();//获取距离命中点最近的可用部件接口
-                        Vector3f hitPoint = PhysicsHelperKt.toBVector3f(owner.position()
-                                .add(0, owner.getEyeHeight(), 0)
-                                .add(owner.getViewVector(1).normalize().scale(this.eyesightRange * rayTestResult.getHitFraction())));
-                        AbstractConnector result = null;
-                        float distance = Float.MAX_VALUE;
-                        for (AbstractConnector connector : ((SubPart) body.getOwner()).connectors.values()) {
-                            if (!connector.internal && !connector.hasPart() && connector.body != null) {
-                                Vector3f attachPos = connector.body.getPhysicsLocation(null);
-                                float dist = attachPos.subtract(hitPoint).lengthSquared();
-                                if (dist < distance) {//如果距离更近
-                                    distance = dist;//更新距离
-                                    result = connector;//更新结果
-                                }
+                if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart && targetsCache.get(body) instanceof PhysicsRayTestResult rayTestResult) {//如果射线命中物体是部件
+                    rayTestResult.getHitFraction();//获取距离命中点最近的可用部件接口
+                    Vector3f hitPoint = PhysicsHelperKt.toBVector3f(owner.position()
+                            .add(0, owner.getEyeHeight(), 0)
+                            .add(owner.getViewVector(1).normalize().scale(this.eyesightRange * rayTestResult.getHitFraction())));
+                    AbstractConnector result = null;
+                    float distance = Float.MAX_VALUE;
+                    for (AbstractConnector connector : subPart.connectors.values()) {
+                        if (!connector.internal && !connector.hasPart() && connector.body != null) {
+                            Vector3f attachPos = connector.body.getPhysicsLocation(null);
+                            float dist = attachPos.subtract(hitPoint).lengthSquared();
+                            if (dist < distance) {//如果距离更近
+                                distance = dist;//更新距离
+                                result = connector;//更新结果
                             }
                         }
-                        return result;
-                    } else if (body.getOwner() instanceof AbstractConnector connector) return connector;
-                }
+                    }
+                    return result;
+                } else if (PhysicsBodyExtensionKt.getOwner(body) instanceof AbstractConnector connector) return connector;
             }
         }
         return null;
@@ -181,7 +182,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     public Part getPart() {
         if (!sortedTargetsCache.isEmpty()) {
             for (PhysicsRigidBody body : sortedTargetsCache) {
-                if (body.getOwner() != null && body.getOwner() instanceof SubPart part) {
+                if (PhysicsBodyExtensionKt.getOwner(body) != null && PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart part) {
                     return part.part;
                 }
             }
@@ -197,7 +198,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     public Entity getEntity() {
         if (!sortedTargetsCache.isEmpty()) {
             for (PhysicsRigidBody body : sortedTargetsCache) {
-                if (body.getOwner() != null && body.getOwner() instanceof Entity entity) {
+                if (PhysicsBodyExtensionKt.getOwner(body) != null && PhysicsBodyExtensionKt.getOwner(body) instanceof Entity entity) {
                     return entity;
                 }
             }
@@ -208,11 +209,12 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     public InteractBox getAccurateInteractBox() {
         if (!sortedTargetsCache.isEmpty()) {
             for (PhysicsRigidBody body : sortedTargetsCache) {
-                if (body.getOwner() != null && body.getOwner() instanceof SubPart.InteractBoxes) {
+                var owner = PhysicsBodyExtensionKt.getOwner(body);
+                if (owner instanceof SubPart.InteractBoxes) {
                     for (InteractBox interactBox : accurateInteractBoxCache) {
                         if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE && interactBox.isEnabled()) return interactBox;
                     }
-                } else if (body.getOwner() != null && body.getOwner() instanceof AbstractConnector) {
+                } else if (owner instanceof AbstractConnector) {
                     continue;
                 } else return null;
             }

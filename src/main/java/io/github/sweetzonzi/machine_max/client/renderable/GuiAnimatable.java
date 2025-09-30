@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.renderable;
 
 import cn.solarmoon.spark_core.SparkCore;
+import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
 import com.mojang.blaze3d.platform.Lighting;
@@ -130,12 +131,14 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
     @Override
     public void renderModel(PoseStack poseStack,
                             MultiBufferSource.BufferSource bufferSource, float partialTick) {
+        ModelInstance modelInstance = getModelController().getModel();
+        if (modelInstance == null) return;
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(180));
         if (!perspective) poseStack.mulPose(Axis.XP.rotationDegrees(180));
         ModelRenderHelperKt.render(
                 getModelController().getOriginModel(),
-                getModelController().getModel().getBonePoses(),
+                modelInstance.getPose(),
                 poseStack.last().pose(),
                 poseStack.last().normal(),
                 bufferSource.getBuffer(RenderType.entityTranslucent(getModelController().getTextureLocation())),
@@ -151,6 +154,8 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
     @Override
     protected void renderTexts(PoseStack poseStack,
                             MultiBufferSource.BufferSource bufferSource, float partialTick) {
+        ModelInstance model = getModelController().getModel();
+        if (model == null) return;
         poseStack.pushPose();
         poseStack.scale(-1, -1, 1);
         if (perspective) {
@@ -161,14 +166,7 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
         for (Map.Entry<String, AnimatableParams.TextParams> entry : params.textAttr.entrySet()) {
             String locatorName = entry.getKey();
             AnimatableParams.TextParams textParams = entry.getValue();
-            Matrix4f matrix = getModelController().getModel().getBonePose(locatorName).getSpaceBoneMatrix(partialTick);
-            Vector3f offset;
-            try{
-                offset = getModelController().getOriginModel().getLocators().get(locatorName).getOffset().toVector3f();
-            }catch (Exception e){
-                offset = new Vector3f();
-            }
-            matrix.translate(offset.x, offset.y, offset.z);
+            Matrix4f matrix = model.getPose().getSpaceBoneLocatorMatrix(locatorName, partialTick);
             poseStack.pushPose();
             poseStack.mulPose(matrix);
             //计算molang表达式

@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
-import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
@@ -9,6 +8,7 @@ import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.sync.SyncData;
@@ -121,7 +121,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.textureIndex = 0;
         this.name = partType.getName();
         this.type = partType;
-        this.getModelController().setModel(new ModelIndex(type.variants.getOrDefault(variant, type.variants.get("default")), null));
+        this.getModelController().setModel(new ModelIndex(type.variants.getOrDefault(variant, type.variants.get("default"))));
         this.getModelController().setTextureLocation(type.getTextures().get(textureIndex % type.getTextures().size()));
         this.variant = variant;
         this.level = level;
@@ -157,7 +157,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.level = level;
         this.variant = data.variant;
         this.textureIndex = data.textureIndex;
-        this.getModelController().setModel(new ModelIndex(type.variants.getOrDefault(variant, type.variants.get("default")), null));
+        this.getModelController().setModel(new ModelIndex(type.variants.getOrDefault(variant, type.variants.get("default"))));
         this.getModelController().setTextureLocation(type.getTextures().get(textureIndex % type.getTextures().size()));
         this.uuid = UUID.fromString(data.uuid);
         this.durability = readSavedData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
@@ -172,8 +172,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 subPart.body.setPhysicsRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
                 subPart.body.setLinearVelocity(posRotVelVel.linearVel());
                 subPart.body.setAngularVelocity(posRotVelVel.angularVel());
-                subPart.body.tickTransform = posRotVelVel.toTransform();
-                subPart.body.lastTickTransform = posRotVelVel.toTransform();
+                PhysicsBodyExtensionKt.stateOf(subPart.body).setTransform(posRotVelVel.toTransform());
+                PhysicsBodyExtensionKt.stateOf(subPart.body).setLastTransform(posRotVelVel.toTransform());
             } else
                 throw new NullPointerException("部件" + name + "的子部件" + entry.getKey() + "不存在，请检查数据。");
         }
@@ -257,10 +257,10 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             }
             if (integrity <= 0 && destroyed) {
                 float finalImpact = (destroyed ? 0.5f * impact : 0.1f * impact);
-                ((TaskSubmitOffice) level).submitImmediateTask(PPhase.PRE, () -> {
+                level.submitImmediateTask(PPhase.PRE, () -> {
                     vehicle.removePart(this);
                     SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, getWorldPosition(1), Vec3.ZERO, 64f,
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getWorldPositionMatrix(1).transformPosition(null)), Vec3.ZERO, 64f,
                             (float) ((2 - Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity) * (1f + 0.2f * (Math.random() - 0.5f))),
                             0.2f + 0.8f * Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity);
                     return null;
@@ -272,7 +272,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public void onPostPhysicsTick() {
         if (entity != null && !entity.isRemoved()) {//更新实体包围盒
             List<BoundingBox> boxes = new ArrayList<>();
-            for (SubPart subPart : subParts.values()) boxes.add(subPart.body.cachedBoundingBox);
+            for (SubPart subPart : subParts.values()) boxes.add(PhysicsBodyExtensionKt.stateOf(subPart.body).getCachedBoundingBox());
             entity.boundingBoxes.set(boxes);
             getAnimController().physTick();
         }
@@ -287,7 +287,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           Vector3f worldContactPoint,
                           HitBox hitBox) {
         Vec3 sourcePos = source.getSourcePosition();
-        if (sourcePos == null) sourcePos = SparkMathKt.toVec3(rootSubPart.body.tickTransform.getTranslation());
+        if (sourcePos == null) sourcePos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getTransform().getTranslation());
         Vec3 finalSourcePos = sourcePos;
         float armor = hitBox.getRHA(this);
         float armorPenetration = 0;
@@ -418,7 +418,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         }
         if (level.isClientSide) {
             SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"));
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, getWorldPosition(1), Vec3.ZERO, 64f,
+            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getWorldPositionMatrix(1).transformPosition(null)), Vec3.ZERO, 64f,
                     (float) (1f + 0.2f * (Math.random() - 0.5f)),
                     1f);
         }
@@ -694,38 +694,16 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         return this;
     }
 
-    @NotNull
     @Override
-    public Vec3 getWorldPosition(float v) {
-        if (rootSubPart != null) {
-            return SparkMathKt.toVec3(SparkMathKt.lerp(rootSubPart.body.lastTickTransform, rootSubPart.body.tickTransform, v).getTranslation());
-        } else return Vec3.ZERO;
-    }
-
-    @Override
-    public float getRootYRot(float v) {
-        return 0;
-    }
-
-    @Override
-    public Matrix4f getWorldPositionMatrix(float partialTick) {
+    public @NotNull Matrix4f getWorldPositionMatrix(@NotNull Number partialTick) {
         if (rootSubPart != null) {
             return SparkMathKt.toMatrix4f(
-                    SparkMathKt.lerp(rootSubPart.body.lastTickTransform, rootSubPart.body.tickTransform, partialTick).toTransformMatrix()
+                    SparkMathKt.lerp(
+                            PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getLastTransform(),
+                            PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getTransform(),
+                            partialTick.floatValue()).toTransformMatrix()
             );
         } else return new Matrix4f().identity();
-    }
-
-    @NotNull
-    @Override
-    public SyncerType getSyncerType() {
-        return null;
-    }
-
-    @NotNull
-    @Override
-    public SyncData getSyncData() {
-        return null;
     }
 
     @Override
@@ -741,19 +719,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     @Override
     public @NotNull Level getAnimLevel() {
         return level;
-    }
-
-
-    @NotNull
-    @Override
-    public Map<String, Vec3> getIkTargetPositions() {
-        return Map.of();
-    }
-
-    @NotNull
-    @Override
-    public Map<String, FabrikChain3D> getIkChains() {
-        return Map.of();
     }
 
     @NotNull

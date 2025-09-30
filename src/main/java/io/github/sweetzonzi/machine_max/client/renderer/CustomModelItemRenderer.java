@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.renderer;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
+import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.IGeoRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer;
@@ -35,11 +36,13 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
         if (stack.getItem() instanceof ICustomModelItem customModelItem) {
             IAnimatable<?> animatable = customModelItem.getRenderInstance(stack, Minecraft.getInstance().level, displayContext);
             if (animatable == null) return;
+            ModelInstance modelInstance = animatable.getModelController().getModel();
+            if (modelInstance == null) return;
             poseStack.pushPose();
             if (displayContext == ItemDisplayContext.GUI) poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
             ModelRenderHelperKt.render(
                     animatable.getModelController().getOriginModel(),
-                    animatable.getModelController().getModel().getBonePoses(),
+                    modelInstance.getPose(),
                     poseStack.last().pose()
                             .translate(customModelItem.getRenderOffset(stack, Minecraft.getInstance().level, displayContext))
                             .rotateZYX(customModelItem.getRenderRotation(stack, Minecraft.getInstance().level, displayContext))

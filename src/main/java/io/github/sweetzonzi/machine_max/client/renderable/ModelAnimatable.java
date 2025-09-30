@@ -1,9 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.renderable;
 
-import au.edu.federation.caliko.FabrikChain3D;
 import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
@@ -13,11 +11,10 @@ import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData;
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
 
-import cn.solarmoon.spark_core.sync.SyncData;
-import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -34,7 +31,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -79,10 +75,12 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     }
 
     protected void renderModel(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick) {
+        ModelInstance model = getModelController().getModel();
+        if (model == null) return;
         poseStack.pushPose();
         ModelRenderHelperKt.render(
                 getModelController().getOriginModel(),
-                getModelController().getModel().getBonePoses(),
+                model.getPose(),
                 poseStack.last().pose(),
                 poseStack.last().normal(),
                 bufferSource.getBuffer(RenderType.entityTranslucent(getModelController().getModel().getTextureLocation())),
@@ -97,6 +95,8 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
 
     protected void renderTexts(PoseStack poseStack,
                                MultiBufferSource.BufferSource bufferSource, float partialTick) {
+        ModelInstance model = getModelController().getModel();
+        if (model == null) return;
         poseStack.pushPose();
         poseStack.scale(-1, -1, 1);
         poseStack.mulPose(Axis.XP.rotationDegrees(180));//透视投影需要翻转文字
@@ -105,14 +105,7 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
         for (Map.Entry<String, AnimatableParams.TextParams> entry : params.textAttr.entrySet()) {
             String locatorName = entry.getKey();
             AnimatableParams.TextParams textParams = entry.getValue();
-            Matrix4f matrix = getModelController().getModel().getBonePose(locatorName).getSpaceBoneMatrix(partialTick);
-            Vector3f offset;
-            try {
-                offset = getModelController().getOriginModel().getLocators().get(locatorName).getOffset().toVector3f();
-            } catch (Exception e) {
-                offset = new Vector3f();
-            }
-            matrix.translate(offset.x, offset.y, offset.z);
+            Matrix4f matrix = model.getPose().getSpaceBoneLocatorMatrix(locatorName, partialTick);
             poseStack.pushPose();
             poseStack.mulPose(matrix);
             //计算molang表达式
@@ -170,7 +163,7 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
                 String name = entry.getKey();
                 var animInstance = AnimInstance.create(
                         this,
-                        new AnimIndex(new ModelIndex(animPath, null), name),
+                        new AnimIndex(new ModelIndex(animPath), name),
                         a -> Unit.INSTANCE);
                 getAnimController().getLayer(DefaultLayer.INSTANCE.getBASE_LAYER()).setAnimation(animInstance, new AnimLayerData());
             }
@@ -203,44 +196,13 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
 
     @NotNull
     @Override
-    public Vec3 getWorldPosition(float v) {
-        return SparkMathKt.toVec3(params.getOffset(v));
-    }
-
-    @Override
-    public float getRootYRot(float v) {
-        return 0;
-    }
-
-    @NotNull
-    @Override
-    public SyncerType getSyncerType() {
-        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable) return entityAnimatable.getSyncerType();
-        else return null;
-    }
-
-    @NotNull
-    @Override
-    public SyncData getSyncData() {
-        if (getAnimatable() instanceof IEntityAnimatable<?> entityAnimatable) return entityAnimatable.getSyncData();
-        else return null;
-    }
-
-    @NotNull
-    @Override
-    public Map<String, Vec3> getIkTargetPositions() {
-        return Map.of();
-    }
-
-    @NotNull
-    @Override
-    public Map<String, FabrikChain3D> getIkChains() {
-        return Map.of();
-    }
-
-    @NotNull
-    @Override
     public ModelController getModelController() {
         return this.modelController;
+    }
+
+    @NotNull
+    @Override
+    public Matrix4f getWorldPositionMatrix(@NotNull Number number) {
+        return SparkMathKt.toMatrix4f(SparkMathKt.lerp(params.lastTransform, params.transform, number.floatValue()).toTransformMatrix());
     }
 }

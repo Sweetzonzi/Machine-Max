@@ -72,8 +72,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                 Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
                 Vec3 max = vehicleData.max.add(SparkMathKt.toVec3(transform.getTranslation()));
                 com.jme3.math.Vector3f shape = new com.jme3.math.Vector3f((float) (max.x - min.x), (float) (max.y - min.y), (float) (max.z - min.z)).mult(0.5f);
-                PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
-                        new BoxCollisionShape(shape));
+                PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(shape));
                 testGhost.setPhysicsLocation(transform.getTranslation());
                 PhysicsLevel physicsLevel = level.getPhysicsLevel();
                 TaskSubmitOffice taskLevel = (TaskSubmitOffice) level;
@@ -128,8 +127,8 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                         VisualEffectHelper.boundingBox = boundingBox;
                     }
                     boundingBox.updateShape(PhysicsHelperKt.toBVector3f(min), PhysicsHelperKt.toBVector3f(max));
-                    PhysicsGhostObject testGhost = new PhysicsGhostObject("blueprint_bounding_box", level,
-                            new BoxCollisionShape(boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
+                    PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(
+                            boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
                     testGhost.setPhysicsLocation(transform.getTranslation());
                     PhysicsLevel physicsLevel = level.getPhysicsLevel();
                     physicsLevel.submitImmediateTask(PPhase.PRE, () -> {
@@ -246,12 +245,12 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                     && !vehicleData.icon.equals(ResourceLocation.withDefaultNamespace("missingno"))
             ) {
                 animatable.getModelController().setModel(new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x"), null));
+                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
                 animatable.getModelController().setTextureLocation(vehicleData.icon);
             } else throw new NullPointerException();
         } catch (NullPointerException e) {
             animatable.getModelController().setModel(new ModelIndex(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"), null));
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint")));
             animatable.getModelController().setTextureLocation(
                     ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"));
         }
