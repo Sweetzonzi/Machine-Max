@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.connector;
 
 import cn.solarmoon.spark_core.physics.PhysicsHost;
+import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
@@ -315,8 +316,8 @@ public abstract class AbstractConnector implements PhysicsHost {
             body.setGravity(Vector3f.ZERO);
             body.setKinematic(true);
             body.setContactResponse(false);
-            body.setCollisionGroup(VehicleManager.COLLISION_GROUP_NO_COLLISION);
-            body.setCollideWithGroups(VehicleManager.COLLISION_GROUP_NONE);
+            body.setCollisionGroup(VehicleManager.COLLISION_GROUP_INTERACT);
+            body.setCollideWithGroups(CollisionGroups.NONE);
             body.setPhysicsLocation(position);
             body.setPhysicsRotation(rotation);
             PhysicsBodyExtensionKt.onPrePhysicsTick(body, event->{

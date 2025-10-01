@@ -211,7 +211,7 @@ public class VehicleManager {
         Level level = (Level) event.getLevel();
         PhysicsLevel physicsLevel = level.getPhysicsLevel();
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            physicsLevel.getWorld().useDeterministicDispatch(true);//启用确定计算顺序以保证客户端服务端一致性
+            physicsLevel.getWorld().useDeterministicDispatch(false);//启用确定计算顺序以保证客户端服务端一致性
             physicsLevel.getWorld().useScr(true);//补偿弹性系数以改善小物体的碰撞精度
             physicsLevel.getWorld().getSolverInfo().setGlobalCfm(1e-5f);
             physicsLevel.getWorld().getSolverInfo().setNumIterations(25);
@@ -277,10 +277,6 @@ public class VehicleManager {
 
     }
 
-    /**
-     * collideWithGroups bitmask that represents "no groups"
-     */
-    final public static int COLLISION_GROUP_NONE = 0x0;
     /**
      * 代表一般部件的碰撞组 #1
      * Represent the collision group for general parts #1

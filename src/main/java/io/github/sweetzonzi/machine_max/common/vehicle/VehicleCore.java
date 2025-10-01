@@ -19,6 +19,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnecto
 import io.github.sweetzonzi.machine_max.common.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.network.payload.PartSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.SubPartSyncPayload;

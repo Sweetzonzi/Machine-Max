@@ -16,6 +16,8 @@ import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.*;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.network.payload.SubsystemInteractPayload;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
@@ -32,7 +34,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 @Getter
@@ -84,7 +85,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                                     && PhysicsBodyExtensionKt.getOwner(body) != entity) {//如果射线命中物体是刚体
                                 eyesight.targets.put(body, result);//将射线命中物体和相应信息存入targets列表
                                 eyesight.sortedTargets.add(body);//将射线命中物体加入sortedTargets列表
-                                if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart.InteractBoxes interactBoxes) {
+                                if (PhysicsBodyExtensionKt.getOwner(body) instanceof InteractBoxes interactBoxes) {
                                     int interactBoxIndex = result.triangleIndex();
                                     InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
                                     if (interactBox != null && interactBox.interactMode == InteractBox.InteractMode.ACCURATE)
@@ -93,7 +94,6 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                             }
                         }
                 );
-                MachineMax.LOGGER.debug("{} eyesight targets", rayTestResults.size());
                 eyesight.accurateInteractBoxCache.clear();
                 eyesight.accurateInteractBoxCache.addAll(eyesight.accurateInteractBoxes);
                 eyesight.sortedTargetsCache.clear();
@@ -131,9 +131,9 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             interactHitBox = event.getObjectA();
             interactBoxIndex = event.getIndex0();
         } else return;//事件与交互判定无关时提前返回
-        if (PhysicsBodyExtensionKt.getOwner(interactHitBox) instanceof SubPart.InteractBoxes interactBoxes) {
+        if (PhysicsBodyExtensionKt.getOwner(interactHitBox) instanceof InteractBoxes interactBoxes) {
             InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
-            if (interactBox!=null) {
+            if (interactBox != null) {
                 InteractBox.InteractMode mode = interactBox.interactMode;
                 if (mode == InteractBox.InteractMode.FAST) {
                     this.fastInteractBoxes.add(interactBox);
@@ -168,7 +168,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                         }
                     }
                     return result;
-                } else if (PhysicsBodyExtensionKt.getOwner(body) instanceof AbstractConnector connector) return connector;
+                } else if (PhysicsBodyExtensionKt.getOwner(body) instanceof AbstractConnector connector)
+                    return connector;
             }
         }
         return null;
@@ -210,9 +211,10 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
         if (!sortedTargetsCache.isEmpty()) {
             for (PhysicsRigidBody body : sortedTargetsCache) {
                 var owner = PhysicsBodyExtensionKt.getOwner(body);
-                if (owner instanceof SubPart.InteractBoxes) {
+                if (owner instanceof InteractBoxes) {
                     for (InteractBox interactBox : accurateInteractBoxCache) {
-                        if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE && interactBox.isEnabled()) return interactBox;
+                        if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE && interactBox.isEnabled())
+                            return interactBox;
                     }
                 } else if (owner instanceof AbstractConnector) {
                     continue;

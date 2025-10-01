@@ -11,10 +11,7 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
-import cn.solarmoon.spark_core.sync.SyncData;
-import cn.solarmoon.spark_core.sync.SyncerType;
 import cn.solarmoon.spark_core.util.PPhase;
-import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -30,6 +27,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnect
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;

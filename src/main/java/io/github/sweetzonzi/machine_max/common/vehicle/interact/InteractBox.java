@@ -1,8 +1,9 @@
-package io.github.sweetzonzi.machine_max.common.vehicle;
+package io.github.sweetzonzi.machine_max.common.vehicle.interact;
 
+import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.InteractBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
 

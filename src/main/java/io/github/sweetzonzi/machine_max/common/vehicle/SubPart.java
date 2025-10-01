@@ -1,12 +1,11 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
-import cn.solarmoon.spark_core.physics.CollisionGroups;
-import cn.solarmoon.spark_core.physics.ManifoldPoint;
+import cn.solarmoon.spark_core.physics.body.CollisionGroups;
+import cn.solarmoon.spark_core.physics.body.ManifoldPoint;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionObjectEntity;
-import cn.solarmoon.spark_core.physics.body.PhysicsBodyEvent;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.*;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
@@ -17,38 +16,30 @@ import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
-import com.jme3.math.Matrix3f;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.InteractBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.ShapeHelper;
-import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
-import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
-import net.minecraft.core.particles.BlockParticleOption;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -61,7 +52,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 @Getter
@@ -105,6 +95,7 @@ public class SubPart implements PhysicsHost {
         }
         this.body.setFriction(1.0f);
         this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_PART);
+        this.body.setCollideWithGroups(VehicleManager.COLLISION_GROUP_PART);
         if (attr.blockCollision == SubPartAttr.BlockCollisionType.TRUE) {
             GROUND_COLLISION_ONLY = false;
             this.body.addCollideWithGroup(CollisionGroups.TERRAIN);
@@ -133,7 +124,6 @@ public class SubPart implements PhysicsHost {
             return null;
         });
         addPhysicsBody(body);
-        if (interactBoxes != null) addPhysicsBody(interactBoxes.body);
     }
 
     public void destroy() {
@@ -689,66 +679,6 @@ public class SubPart implements PhysicsHost {
             return getLocatorLocalTransform(locatorName).getTranslation();
         } catch (Exception e) {
             return new Vector3f();
-        }
-    }
-
-    @Getter
-    public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implements PhysicsHost {
-
-        public final SubPart subPart;
-        public final CompoundCollisionShape interactBoxShape;
-        public final PhysicsRigidBody body;
-        private final Map<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
-
-        public InteractBoxes(SubPart subPart, Map<String, InteractBoxAttr> boxes, CompoundCollisionShape interactBoxShape) {
-            this.subPart = subPart;
-            this.interactBoxShape = interactBoxShape;
-            for (Map.Entry<String, InteractBoxAttr> entry : boxes.entrySet()) {
-                String name = entry.getKey();
-                InteractBox interactBox = new InteractBox(subPart, name, entry.getValue());
-                this.put(name, interactBox);
-            }
-            this.body = createPhysicsBody(interactBoxShape, 0);
-            this.body.setContactResponse(false);
-            this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_INTERACT);
-            this.body.setCollideWithGroups(VehicleManager.COLLISION_GROUP_NONE);
-            PhysicsBodyExtensionKt.onPostPhysicsTick(this.body, event -> {
-                this.postPhysicsTick();
-                return null;
-            });
-        }
-
-        public void postPhysicsTick() {
-            Vector3f position = subPart.body.getPhysicsLocation(null);
-            Quaternion rotation = subPart.body.getPhysicsRotation(null);
-            this.body.setPhysicsLocation(position);
-            this.body.setPhysicsRotation(rotation);
-        }
-
-        public InteractBox getInteractBox(long childShapeId) {
-            String name = this.subPart.attr.interactBoxNames.get(childShapeId);
-            return this.get(name);
-        }
-
-        public InteractBox getInteractBox(int contactPointIndex) {
-            try {
-                long childShapeId = this.interactBoxShape.listChildren()[contactPointIndex].getShape().nativeId();
-                return getInteractBox(childShapeId);
-            } catch (IndexOutOfBoundsException e) {
-                MachineMax.LOGGER.error("No matching child shape of interact box {}-{}-{} found for contact point id: {}", part.name, subPart.name, name, contactPointIndex);
-                return this.values().iterator().next();
-            }
-        }
-
-        public void destroy() {
-            this.clear();
-            removePhysicsBody(this.body);
-        }
-
-        @NotNull
-        @Override
-        public PhysicsLevel getPhysicsLevel() {
-            return subPart.getPhysicsLevel();
         }
     }
 }

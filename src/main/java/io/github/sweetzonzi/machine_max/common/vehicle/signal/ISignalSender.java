@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.signal;
 
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.InteractBox;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;

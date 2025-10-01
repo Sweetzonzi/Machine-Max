@@ -5,6 +5,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.*;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.ScriptableSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;

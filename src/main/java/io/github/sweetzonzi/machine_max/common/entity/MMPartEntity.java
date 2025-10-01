@@ -10,7 +10,6 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.preinput.PreInput;
 import cn.solarmoon.spark_core.skill.Skill;
-import cn.solarmoon.spark_core.sync.EntitySyncerType;
 import cn.solarmoon.spark_core.sync.IntSyncData;
 import cn.solarmoon.spark_core.sync.SyncData;
 import cn.solarmoon.spark_core.sync.SyncerType;
@@ -289,18 +288,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     @Override
     public PhysicsLevel getPhysicsLevel() {
         return level().getPhysicsLevel();
-    }
-
-    @NotNull
-    @Override
-    public SyncerType getSyncerType() {
-        return new EntitySyncerType();
-    }
-
-    @NotNull
-    @Override
-    public SyncData getSyncData() {
-        return new IntSyncData(1);
     }
 
     @Override
