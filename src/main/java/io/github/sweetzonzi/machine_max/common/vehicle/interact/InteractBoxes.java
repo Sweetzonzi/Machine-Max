@@ -39,7 +39,7 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
         this.body = createPhysicsBody(interactBoxShape, 0);
         this.body.setContactResponse(false);
         this.body.setKinematic(true); // 非常诡异，不设置运动学模式会导致射线检测等判定不上
-        this.body.setCollisionGroup(VehicleManager.COLLISION_GROUP_INTERACT);
+        this.body.setCollisionGroup(CollisionGroups.PAWN);
         this.body.setCollideWithGroups(CollisionGroups.NONE);
         PhysicsBodyExtensionKt.onPostPhysicsTick(this.body, event -> {
             this.postPhysicsTick();

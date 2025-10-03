@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
+import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent;
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
@@ -180,13 +181,11 @@ public class VehicleManager {
                         addVehicle(vehicle);
                         i++;
                     } catch (Exception e) {
-                        savedVehicles.remove(savedVehicleData);
                         MachineMax.LOGGER.error("载具加载失败，出错载具数据：{}", savedVehicleData, e);
                     }
                 }
             } catch (Exception e) {
-                level.setData(MMAttachments.getLEVEL_VEHICLES().get(), savedVehicles);
-                MachineMax.LOGGER.error("有载具未能成功加载，已清除出错载具");
+                MachineMax.LOGGER.error("有载具未能成功加载，已跳过出错载具");
             }
             MachineMax.LOGGER.info("已成功从维度{}加载{}个载具", level.dimension().location(), i);
         }
@@ -207,11 +206,11 @@ public class VehicleManager {
     }
 
     @SubscribeEvent//加载服务端世界时加载载具核心数据
-    public static void loadVehicleData(LevelEvent.Load event) {
-        Level level = (Level) event.getLevel();
-        PhysicsLevel physicsLevel = level.getPhysicsLevel();
+    public static void loadVehicleData(PhysicsLevelInitEvent event) {
+        Level level = event.getLevel().getMcLevel();
+        PhysicsLevel physicsLevel = event.getLevel();
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            physicsLevel.getWorld().useDeterministicDispatch(false);//启用确定计算顺序以保证客户端服务端一致性
+//            physicsLevel.getWorld().useDeterministicDispatch(true);//启用确定计算顺序以保证客户端服务端一致性
             physicsLevel.getWorld().useScr(true);//补偿弹性系数以改善小物体的碰撞精度
             physicsLevel.getWorld().getSolverInfo().setGlobalCfm(1e-5f);
             physicsLevel.getWorld().getSolverInfo().setNumIterations(25);
@@ -276,75 +275,4 @@ public class VehicleManager {
     public static void sendVehicleActivateMessage(ChunkWatchEvent.Sent event) {
 
     }
-
-    /**
-     * 代表一般部件的碰撞组 #1
-     * Represent the collision group for general parts #1
-     */
-    final public static int COLLISION_GROUP_PART = 0x0001;
-    /**
-     * 代表地形方块的碰撞组 #2
-     * Represent the collision group for terrain blocks #2
-     */
-    final public static int COLLISION_GROUP_BLOCK = 0x0002;
-    /**
-     * 代表技能等范围效果判定区的碰撞组 #3
-     * Represent the collision group for skill range effect detection etc. #3
-     */
-    final public static int COLLISION_GROUP_EFFECT = 0x0004;
-    /**
-     * 代表受物理引擎控制的视觉效果的碰撞组 #4
-     * Represent the collision group for visual effects controlled by the physical engine #4
-     */
-    final public static int COLLISION_GROUP_VISUAL = 0x0008;
-    /**
-     * 代表除了射线检测等操作外，不应与任何物体发生碰撞的碰撞组 #5
-     * Represent the collision group for any object that should not collide with anything except ray detection etc. #5
-     */
-    final public static int COLLISION_GROUP_NO_COLLISION = 0x0010;
-    /**
-     * 未使用的碰撞组 #6
-     * Unused collision group #6
-     */
-    final public static int COLLISION_GROUP_INTERACT = 0x0020;
-    /**
-     * 未使用的碰撞组 #7
-     */
-    final public static int COLLISION_GROUP_07 = 0x0040;
-    /**
-     * 未使用的碰撞组 #8
-     */
-    final public static int COLLISION_GROUP_08 = 0x0080;
-    /**
-     * 未使用的碰撞组 #9
-     */
-    final public static int COLLISION_GROUP_09 = 0x0100;
-    /**
-     * 未使用的碰撞组 #10
-     */
-    final public static int COLLISION_GROUP_10 = 0x0200;
-    /**
-     * 未使用的碰撞组 #11
-     */
-    final public static int COLLISION_GROUP_11 = 0x0400;
-    /**
-     * 未使用的碰撞组 #12
-     */
-    final public static int COLLISION_GROUP_12 = 0x0800;
-    /**
-     * 未使用的碰撞组 #13
-     */
-    final public static int COLLISION_GROUP_13 = 0x1000;
-    /**
-     * 未使用的碰撞组 #14
-     */
-    final public static int COLLISION_GROUP_14 = 0x2000;
-    /**
-     * 未使用的碰撞组 #15
-     */
-    final public static int COLLISION_GROUP_15 = 0x4000;
-    /**
-     * 未使用的碰撞组 #16
-     */
-    final public static int COLLISION_GROUP_16 = 0x8000;
 }

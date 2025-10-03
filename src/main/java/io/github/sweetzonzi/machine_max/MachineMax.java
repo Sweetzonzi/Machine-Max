@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max;
 
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
-import cn.solarmoon.spark_core.printer.PrinterRegister;
 import com.mojang.logging.LogUtils;
 import io.github.sweetzonzi.machine_max.common.registry.*;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
@@ -52,6 +51,5 @@ public class MachineMax {
         MMMenus.register(bus);//注册所有菜单
         MMSounds.register();//注册所有音效
         MMPackModuleRegistries.register(bus);//注册所有SparkCore扩展包模块
-        PrinterRegister.register(bus);
     }
 }

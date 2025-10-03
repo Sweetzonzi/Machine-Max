@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.attachment;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.collision.PhysicsCollisionEvent;
@@ -57,8 +58,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
         BoxCollisionShape shape = new BoxCollisionShape((float) (boundingBox.getXsize() * 0.5f), (float) (boundingBox.getYsize() * 0.5f), (float) (boundingBox.getZsize() * 0.5f));
         this.trigger = new PhysicsGhostObject(shape);
         this.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
-        this.trigger.setCollisionGroup(VehicleManager.COLLISION_GROUP_NO_COLLISION);
-        this.trigger.setCollideWithGroups(VehicleManager.COLLISION_GROUP_INTERACT);
+        this.trigger.setCollisionGroup(CollisionGroups.PAWN);
+        this.trigger.setCollideWithGroups(CollisionGroups.PAWN);
     }
 
     @SubscribeEvent

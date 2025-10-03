@@ -299,8 +299,10 @@ public abstract class AbstractConnector implements PhysicsHost {
         detach(true);
         if (subPart.part.getLevel().isClientSide())
             VisualEffectHelper.attachPoints.remove(this);
-        if (body != null)
+        getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
             removePhysicsBody(body);
+            return null;
+        });
     }
 
     @NotNull
@@ -316,7 +318,7 @@ public abstract class AbstractConnector implements PhysicsHost {
             body.setGravity(Vector3f.ZERO);
             body.setKinematic(true);
             body.setContactResponse(false);
-            body.setCollisionGroup(VehicleManager.COLLISION_GROUP_INTERACT);
+            body.setCollisionGroup(CollisionGroups.PAWN);
             body.setCollideWithGroups(CollisionGroups.NONE);
             body.setPhysicsLocation(position);
             body.setPhysicsRotation(rotation);

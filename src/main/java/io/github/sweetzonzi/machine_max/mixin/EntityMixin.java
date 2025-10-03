@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.mixin;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
@@ -8,6 +9,7 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsSweepTestResult;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.math.Transform;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
@@ -70,28 +72,28 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             float height = (float) (aabb.maxY - aabb.minY - radius * 2);
             machine_Max$collideTestShape = new CapsuleCollisionShape(radius, height > 0 ? height : 0.01f);
         }
-        AtomicReference<List<PhysicsSweepTestResult>> results = new AtomicReference<>(new ArrayList<>());
+        List<PhysicsSweepTestResult> results = new ArrayList<>();
         Vec3 delta = new Vec3(originalVec.x, originalVec.y, originalVec.z);
         Vec3 center = aabb.getCenter();
         if (delta.length() < 0.5f) delta = delta.normalize().scale(0.5f);
-        //TODO:有时扫掠测试会报错，检查原因 会是因为delta某些情况下等于0吗？
+        if(delta.length() < 0.498f) {
+            //TODO:有时扫掠测试会报错，检查原因 会是因为delta某些情况下等于0吗？
+            return; // 无运动时直接返回，也许能修复此问题
+        }
         machine_Max$sweepTestStart.setTranslation(PhysicsHelperKt.toBVector3f(center));
         machine_Max$sweepTestEnd.setTranslation(PhysicsHelperKt.toBVector3f(center.add(delta)));
-        level().submitImmediateTask(PPhase.ALL, () -> {
-            results.set(entity.level().getPhysicsLevel().getWorld().sweepTest(
-                    machine_Max$collideTestShape,
-                    machine_Max$sweepTestStart,
-                    machine_Max$sweepTestEnd, new ArrayList<>(), 0.1f));
-            return null;
-        });
-        if (results.get().isEmpty()) return;// 无碰撞结果时直接返回
+        entity.level().getPhysicsLevel().getWorld().sweepTest(
+                machine_Max$collideTestShape,
+                machine_Max$sweepTestStart,
+                machine_Max$sweepTestEnd, results, 0.1f);
+        if (results.isEmpty()) return;// 无碰撞结果时直接返回
         Vec3 normal = new Vec3(0, 1, 0);
         Vec3 movement = new Vec3(0, 0, 0);
         float hitFraction = Float.MAX_VALUE;
-        for (PhysicsSweepTestResult result : results.get()) {
+        for (PhysicsSweepTestResult result : results) {
             PhysicsCollisionObject pco = result.getCollisionObject();
             int group = pco.getCollisionGroup();
-            if (group == VehicleManager.COLLISION_GROUP_PART) {
+            if (group == CollisionGroups.PHYSICS_BODY) {
                 if (PhysicsBodyExtensionKt.getOwner(pco) instanceof SubPart subPart) {
                     if (result.getHitFraction() < hitFraction) {
                         normal = SparkMathKt.toVec3(result.getHitNormalLocal(null).normalize());

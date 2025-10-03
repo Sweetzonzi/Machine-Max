@@ -45,7 +45,6 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -89,7 +88,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     @Override
     public void tick() {
         super.tick();
-//        if (tickCount == 2) removeAllBodies();//移除SparkCore为实体添加的默认刚体
+        if (tickCount == 2) this.removePhysicsBody("entity_bounding_box");//移除SparkCore为实体添加的默认碰撞箱刚体
         if (this.part == null) {//如果实体没有所属的部件，则移除实体
             if (tickCount % 20 == 0) updatePart();
             else if (tickCount > 100) {//等待100tick用于同步部件信息

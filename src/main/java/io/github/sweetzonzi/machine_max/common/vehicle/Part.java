@@ -258,7 +258,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 level.submitImmediateTask(PPhase.PRE, () -> {
                     vehicle.removePart(this);
                     SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getWorldPositionMatrix(1).transformPosition(null)), Vec3.ZERO, 64f,
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getWorldPositionMatrix(1).getTranslation(new org.joml.Vector3f())), Vec3.ZERO, 64f,
                             (float) ((2 - Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity) * (1f + 0.2f * (Math.random() - 0.5f))),
                             0.2f + 0.8f * Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity);
                     return null;
@@ -416,7 +416,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         }
         if (level.isClientSide) {
             SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"));
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getWorldPositionMatrix(1).transformPosition(null)), Vec3.ZERO, 64f,
+            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getWorldPositionMatrix(1).getTranslation(new org.joml.Vector3f())), Vec3.ZERO, 64f,
                     (float) (1f + 0.2f * (Math.random() - 0.5f)),
                     1f);
         }

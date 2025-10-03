@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.util.mechanic;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -30,7 +31,7 @@ public class DamageUtil {
         return pDamage;
     }
 
-    public static float getMaxBlockDurability(Level level, BlockState blockState, BlockPos blockPos){
+    public static float getMaxBlockDurability(BlockGetter level, BlockState blockState, BlockPos blockPos){
         float blockDurability;
         //软质吸能地面方块更不易被破坏，特殊处理沙土雪等软质地面方块的耐久度
         if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SNOW) || blockState.is(BlockTags.SAND)) {
