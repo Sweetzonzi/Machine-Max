@@ -289,7 +289,7 @@ public abstract class AbstractConnector implements PhysicsHost {
     }
 
     public void addToLevel() {
-        if (hasPart() && joint != null) subPart.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+        if (hasPart() && joint != null) subPart.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
             subPart.getPhysicsLevel().getWorld().addJoint(joint);
             return null;
         });

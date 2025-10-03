@@ -46,7 +46,7 @@ public record LevelVehicleDataPayload(
     };
 
     public static int receivedPacketCount = 0;
-    public static Set<VehicleData> vehicleDataToLoad = new HashSet<>();
+    public static final Set<VehicleData> vehicleDataToLoad = new HashSet<>();
 
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {
@@ -54,21 +54,24 @@ public record LevelVehicleDataPayload(
     }
 
     public static void handle(LevelVehicleDataPayload payload, IPayloadContext context) {
-        if (payload.dimension == context.player().level().dimension()) {
-            MachineMax.LOGGER.info("收到维度载具数据包分包:{}/{}", receivedPacketCount + 1, payload.packetNum);
-            vehicleDataToLoad.addAll(payload.vehicles);
-            if (receivedPacketCount >= payload.packetNum - 1) {
-                MachineMax.LOGGER.info("成功接收维度内所有载具数据，载入中...");
-                context.player().level().setData(MMAttachments.getLEVEL_VEHICLES(), vehicleDataToLoad);
-                VehicleManager.loadVehicles(context.player().level());
-                receivedPacketCount = 0;
-                vehicleDataToLoad.clear();
+        Level level = context.player().level();
+        context.enqueueWork(()-> {
+            if (payload.dimension == level.dimension()) {
+                MachineMax.LOGGER.info("收到维度载具数据包分包:{}/{}", receivedPacketCount + 1, payload.packetNum);
+                vehicleDataToLoad.addAll(payload.vehicles);
+                if (receivedPacketCount >= payload.packetNum - 1) {
+                    MachineMax.LOGGER.info("成功接收维度内所有载具数据，载入中...");
+                    level.setData(MMAttachments.getLEVEL_VEHICLES(), vehicleDataToLoad);
+                    VehicleManager.loadVehicles(context.player().level());
+                    receivedPacketCount = 0;
+                    vehicleDataToLoad.clear();
+                } else {
+                    receivedPacketCount++;
+                }
             } else {
-                receivedPacketCount++;
+                MachineMax.LOGGER.error("从维度{}收到载具数据，但玩家不在该维度: ", payload.dimension);
+                receivedPacketCount = 0;
             }
-        } else {
-            MachineMax.LOGGER.error("从维度{}收到载具数据，但玩家不在该维度: ", payload.dimension);
-            receivedPacketCount = 0;
-        }
+        });
     }
 }

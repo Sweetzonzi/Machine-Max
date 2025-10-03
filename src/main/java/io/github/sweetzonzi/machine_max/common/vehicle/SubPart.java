@@ -7,8 +7,6 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionObjectEntity;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
-import cn.solarmoon.spark_core.physics.terrain.BlockShapeManager;
-import cn.solarmoon.spark_core.physics.terrain.BlockShapeManagerKt;
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
 import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.util.*;
@@ -44,7 +42,6 @@ import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.BlockParticleOption;
-import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -55,6 +52,7 @@ import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -63,10 +61,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.EventHooks;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 @Getter
@@ -122,10 +117,8 @@ public class SubPart implements PhysicsHost {
         }
         this.stepHeight = attr.stepHeight;
         this.projectedArea = attr.projectedArea;
-    }
-
-    public void addToLevel() {
-        PhysicsBodyExtensionKt.onCollideProcessed(body, event -> {
+        //各类回调
+        PhysicsBodyExtensionKt.onCollideProcessed(this.body, event -> {
             var o1 = event.getO1();
             var o2 = event.getO2();
             var point1 = event.getO1Point();
@@ -134,11 +127,18 @@ public class SubPart implements PhysicsHost {
             this.onProcessed(o1, o2, point1, point2, manifoldPointId);
             return null;
         });
-        PhysicsBodyExtensionKt.onPrePhysicsTick(body, event -> {
+        PhysicsBodyExtensionKt.onPrePhysicsTick(this.body, event -> {
             this.prePhysicsTick();
             return null;
         });
+    }
+
+    public void addToLevel() {
         addPhysicsBody(body);
+        for (AbstractConnector connector : connectors.values()) {
+            if (connector.hasPart())
+                connector.addToLevel();
+        }
     }
 
     public void destroy() {
@@ -229,28 +229,30 @@ public class SubPart implements PhysicsHost {
                 ManifoldPoints.setCombinedRollingFriction(manifoldPointId, Math.max(0f, body.getRollingFriction() * blockRollingFriction));
                 //若是需要攀爬辅助处理的方块
                 if (climbableBlocks.contains(blockPos)) {
-                    Vector3f frictionTorque = contactVel.normalize()
-                            .mult((float) (1 - Math.exp(-0.05 * Math.abs(contactVel.lengthSquared()))))
-                            .mult(ManifoldPoints.getCombinedFriction(manifoldPointId))
-                            .mult((float) (partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId)));
-                    Vector3f frictionImpulse = new Vector3f(0, (float) (1 - Math.exp(-0.5 * Math.abs(contactVel.y))), 0)
-                            .mult(ManifoldPoints.getCombinedFriction(manifoldPointId))
-                            .mult((float) (-partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId)));
-                    if (frictionTorque.lengthSquared() > 0.1f)
-                        body.applyTorqueImpulse(worldContactPoint.subtract(body.getPhysicsLocation(null)).cross(frictionTorque));
-                    if (frictionImpulse.lengthSquared() > 0.1f)
-                        body.applyCentralImpulse(frictionImpulse);
-                    //手动给予摩擦力
-                    Vector3f lateral1 = new Vector3f();
-                    Vector3f lateral2 = new Vector3f();
-                    ManifoldPoints.getLateralFrictionDir1(manifoldPointId, lateral1);
-                    ManifoldPoints.getLateralFrictionDir2(manifoldPointId, lateral2);
-                    lateral1 = lateral1.normalize();
-                    lateral2 = lateral2.normalize();
-                    lateral1.multLocal((float) (-partMass / 60f * MMMath.sigmoidSignum(lateral1.dot(contactVel))));
-                    lateral2.multLocal((float) (-partMass / 60f * MMMath.sigmoidSignum(lateral2.dot(contactVel))));
-                    body.applyCentralImpulse(lateral1);
-                    body.applyCentralImpulse(lateral2);
+                    if (attr.isClimbAssist()) {
+                        Vector3f frictionTorque = contactVel.normalize()
+                                .mult((float) (1 - Math.exp(-0.05 * Math.abs(contactVel.lengthSquared()))))
+                                .mult(ManifoldPoints.getCombinedFriction(manifoldPointId))
+                                .mult((float) (partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId)));
+                        Vector3f frictionImpulse = new Vector3f(0, (float) (1 - Math.exp(-0.5 * Math.abs(contactVel.y))), 0)
+                                .mult(ManifoldPoints.getCombinedFriction(manifoldPointId))
+                                .mult((float) (-partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId)));
+                        if (frictionTorque.lengthSquared() > 0.1f)
+                            body.applyTorqueImpulse(worldContactPoint.subtract(body.getPhysicsLocation(null)).cross(frictionTorque));
+                        if (frictionImpulse.lengthSquared() > 0.1f)
+                            body.applyCentralImpulse(frictionImpulse);
+                        //手动给予摩擦力
+                        Vector3f lateral1 = new Vector3f();
+                        Vector3f lateral2 = new Vector3f();
+                        ManifoldPoints.getLateralFrictionDir1(manifoldPointId, lateral1);
+                        ManifoldPoints.getLateralFrictionDir2(manifoldPointId, lateral2);
+                        lateral1 = lateral1.normalize();
+                        lateral2 = lateral2.normalize();
+                        lateral1.multLocal((float) (-partMass / 60f * MMMath.sigmoidSignum(lateral1.dot(contactVel))));
+                        lateral2.multLocal((float) (-partMass / 60f * MMMath.sigmoidSignum(lateral2.dot(contactVel))));
+                        body.applyCentralImpulse(lateral1);
+                        body.applyCentralImpulse(lateral2);
+                    }
                     //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
                     ManifoldPoints.setDistance1(manifoldPointId, 500f);
                     //重设碰撞法线方向
@@ -282,12 +284,12 @@ public class SubPart implements PhysicsHost {
                     double contactEnergy = 0.5 * partMass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
                     //TODO:根据硬度差距调整能量释放速度
                     double blockDurability = DamageUtil.getMaxBlockDurability(EmptyBlockGetter.INSTANCE, blockState, BlockPos.ZERO);
-                    //TODO:方块有支撑时将强化其耐久度
-//                    Vec3i supportBlockPos = MMMath.getClosestAxisAlignedVector(SparkMathKt.toVec3(normal.mult(-1)));
-//                    PhysicsRigidBody supportBlockBody = getPhysicsLevel().getTerrainBlockBodies().get(blockPos.offset(supportBlockPos));
-//                    if (supportBlockBody != null) {
-//                        blockDurability += 0.5 * DamageUtil.getMaxBlockDurability(level, (BlockState) supportBlockBody.getUserObject(), supportBlockBody.blockPos);
-//                    }
+                    //方块有支撑时将强化其耐久度
+                    Vec3i supportBlockPos = MMMath.getClosestAxisAlignedVector(SparkMathKt.toVec3(normal.mult(-1)));
+                    SectionSnapshot.BlockSnapshot supportBlock = getPhysicsLevel().getTerrainManager().getBlockSnapshotAt(blockPos.offset(supportBlockPos));
+                    if (supportBlock != null) {
+                        blockDurability += 0.5 * DamageUtil.getMaxBlockDurability(EmptyBlockGetter.INSTANCE, supportBlock.getState(), BlockPos.ZERO);
+                    }
                     double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);//方块吸收的碰撞能量
                     double partEnergy = contactEnergy - blockEnergy;//部件吸收的碰撞能量
                     if (hitBox.attr.blockDamageFactor() * blockEnergy > 250 * blockDurability) {
@@ -476,40 +478,8 @@ public class SubPart implements PhysicsHost {
             var sub = ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem();
             if (sub != null && sub.getPart().getVehicle() == subPart.part.vehicle) {
                 event.setShouldCollide(false);
-                return;
             }
         }
-        //特殊碰撞模式的处理
-        PhysicsRigidBody terrain;
-        PhysicsRigidBody partBody;
-        if (event.getPcoA() instanceof PhysicsRigidBody pcoA && event.getPcoB() instanceof PhysicsRigidBody pcoB) {
-            if (ownerA instanceof SubPart && pcoB.name.equals("terrain")) {
-                terrain = pcoB;
-                partBody = pcoA;
-            } else if (ownerB instanceof SubPart && pcoA.name.equals("terrain")) {
-                terrain = pcoA;
-                partBody = pcoB;
-            } else return;
-        } else return;
-//        if (PhysicsBodyExtensionKt.getOwner(partBody) instanceof SubPart subPart && subPart.GROUND_COLLISION_ONLY) {
-//            //仅与地面方块碰撞的零件遭遇方块时
-//            float terrainHeight = terrain.cachedBoundingBox.getMax(null).y;
-//            if (terrainHeight > partBody.cachedBoundingBox.getMin(null).y) {
-//                float y0 = subPart.bodyMinY + 0.05f;//计算部件最低点高度
-//                if (terrainHeight > y0) {//若地形高于于部件最低位置，则视情况修改碰撞检测结果
-//                    float height = terrainHeight - y0;//部件最低点与地形的高度差
-//                    BlockPos highestBlockPos = terrain.blockPos.above();
-//                    while (height <= subPart.stepHeight && subPart.getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
-//                        height = subPart.getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - y0;
-//                        highestBlockPos = highestBlockPos.above();
-//                    }
-//                    if (height <= subPart.stepHeight) {
-//                        if (!subPart.attr.climbAssist) event.setShouldCollide(false);
-//                        else subPart.climbableBlocks.add(terrain.blockPos);
-//                    } else subPart.climbableBlocks.remove(terrain.blockPos);
-//                } else subPart.climbableBlocks.remove(terrain.blockPos);
-//            } else subPart.climbableBlocks.remove(terrain.blockPos);
-//        }
     }
 
     public void prePhysicsTick() {
@@ -593,49 +563,76 @@ public class SubPart implements PhysicsHost {
             }
         }
         //攀爬辅助处理
-        if (body.isActive() && this.GROUND_COLLISION_ONLY && stepHeight > 0) {
+        climbableBlocks.clear();
+        if (body.isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
-//            if (attr.climbAssist) {
-//                Vector3f start = this.body.getPhysicsLocation(null);
-//                start.set(1, bodyMinY - 1);
-//                var end = start.add(0f, 1 + stepHeight, 0f);
-//                if (start.equals(end)) {
-//                    MachineMax.LOGGER.error("Same start and end position for climb assist ray test, canceling climb assist.");
-//                    //TODO:治标不治本，需要排查原因
-//                    return;
-//                }
-//                var test = getPhysicsLevel().getWorld().rayTest(start, end);
-//                PhysicsRigidBody terrainsUnder = null;//清空先前记录的地面碰撞体
-//                float height = -1;
-//                for (var hit : test) {//寻找部件下最低的方块
-//                    if (hit.getCollisionObject() instanceof PhysicsRigidBody terrain && terrain.name.equals("terrain")) {
-//                        terrainsUnder = terrain;
-//                        height = Math.max(terrain.cachedBoundingBox.getMax(null).y - bodyMinY, height);
-//                        break;
-//                    }
-//                }
-//                if (terrainsUnder != null) {//若接地/轮子质心竖直投影方向有方块，寻找投影方向连续方块的最高点
-//                    BlockPos highestBlockPos = terrainsUnder.blockPos.above();
-//                    while (height <= stepHeight && getPhysicsLevel().getTerrainBlockBodies().containsKey(highestBlockPos)) {
-//                        height = Math.max(getPhysicsLevel().getTerrainBlockBodies().get(highestBlockPos).cachedBoundingBox.getMax(null).y - bodyMinY, height);
-//                        highestBlockPos = highestBlockPos.above();
-//                    }
-//                }
-//                if (height > 0 && height <= stepHeight) {//若最高点小于容许高度，则额外为车轮赋予速度
-//                    var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);//根据水平速度决定赋予的额外垂直速度
-//                    var speedFactor = 0.7 * Math.exp(-0.25 * horizonVel) + 0.3;//速度越快，能接受的坡度越小
-//                    var ang = Math.max(0, Math.atan2(vel.y, horizonVel));
-//                    var tgtAng = speedFactor * Math.atan2(height, 1) + (1 - speedFactor) * ang;
-//                    float mass = body.getMass() + 0.015f * (part.vehicle.totalMass - body.getMass());
-//                    float extraVel = (float) Math.max(-5, Math.max(Math.sin(tgtAng) * vel.length(), 2f * speedFactor) - vel.y);
-//                    if (extraVel <= 0 && vel.y < 0) return;
-//                    float horizontalVelScale = (float) Math.max(0, (Math.cos(ang) - Math.cos(tgtAng)));
-//                    body.applyCentralImpulse(new Vector3f(
-//                            -horizontalVelScale * vel.x,
-//                            extraVel,
-//                            -horizontalVelScale * vel.z).mult(mass));
-//                }
-//            }
+            //遍历范围内的方块
+            AABB aabb = SparkMathKt.toAABB(PhysicsBodyExtensionKt.stateOf(this.body).getCachedBoundingBox())
+                    .expandTowards(new Vec3(vel.x, 0, vel.z).scale(0.1f));
+            int minX = (int) Math.floor(aabb.minX);
+            int minZ = (int) Math.floor(aabb.minZ);
+            int maxX = (int) Math.ceil(aabb.maxX);
+            int maxZ = (int) Math.ceil(aabb.maxZ);
+            float y0 = bodyMinY + 0.1f;
+            for (int x = minX; x <= maxX; x++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    BlockPos currentPos = new BlockPos(x, (int) Math.floor(y0), z);
+                    SectionSnapshot.BlockSnapshot blockSnapshot = getPhysicsLevel().terrainManager.getBlockSnapshotAt(currentPos);
+
+                    if (blockSnapshot != null) {
+                        BlockState blockState = blockSnapshot.getState();
+                        float blockHeight = getPhysicsLevel().getBlockShapeManager().getCollisionShape(blockState)
+                                .boundingBoxWithoutRecalculate(Vector3f.ZERO, Matrix3f.IDENTITY, null).getYExtent() * 2;
+                        float terrainHeight = blockHeight + currentPos.getY();
+
+                        if (terrainHeight > y0 && terrainHeight < bodyMinY + attr.stepHeight) {
+                            float height = terrainHeight - bodyMinY; // 部件最低点与地形的高度差
+                            Set<BlockPos> noCollisionBlocks = new HashSet<>();
+                            // 向上遍历检查连续方块
+                            BlockPos highestBlockPos = currentPos;
+                            while (height <= stepHeight) {
+                                noCollisionBlocks.add(highestBlockPos);
+                                SectionSnapshot.BlockSnapshot higherSnapshot = getPhysicsLevel().terrainManager.getBlockSnapshotAt(highestBlockPos);
+                                if (higherSnapshot == null) break;
+
+                                BlockState higherState = higherSnapshot.getState();
+                                float higherBlockHeight = getPhysicsLevel().getBlockShapeManager().getCollisionShape(higherState)
+                                        .boundingBoxWithoutRecalculate(Vector3f.ZERO, Matrix3f.IDENTITY, null).getYExtent() * 2;
+                                float higherTerrainHeight = higherBlockHeight + highestBlockPos.getY();
+                                height = higherTerrainHeight - y0;
+                                highestBlockPos = highestBlockPos.above();
+                            }
+
+                            // 根据高度判断是否可攀爬
+                            if (height <= stepHeight) {
+                                climbableBlocks.addAll(noCollisionBlocks);
+                                Vector3f pos = body.getPhysicsLocation(null);
+                                int partX = (int) Math.floor(pos.x);
+                                int partZ = (int) Math.floor(pos.z);
+                                if (attr.climbAssist && partX == x && partZ == z) {
+                                    // 仅在部件重心所处方块柱施加额外攀爬辅助力
+                                    if (height > 0 && height <= stepHeight) {
+                                        var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
+                                        var speedFactor = 0.7 * Math.exp(-0.25 * horizonVel) + 0.3;
+                                        var ang = Math.max(0, Math.atan2(vel.y, horizonVel));
+                                        var tgtAng = speedFactor * Math.atan2(height, 1) + (1 - speedFactor) * ang;
+                                        float mass = body.getMass() + 0.015f * (part.vehicle.totalMass - body.getMass());
+                                        float extraVel = (float) Math.max(-5, Math.max(Math.sin(tgtAng) * vel.length(), 2f * speedFactor) - vel.y);
+
+                                        if (!(extraVel <= 0 && vel.y < 0)) {
+                                            float horizontalVelScale = (float) Math.max(0, (Math.cos(ang) - Math.cos(tgtAng)));
+                                            body.applyCentralImpulse(new Vector3f(
+                                                    -horizontalVelScale * vel.x,
+                                                    extraVel,
+                                                    -horizontalVelScale * vel.z).mult(mass));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

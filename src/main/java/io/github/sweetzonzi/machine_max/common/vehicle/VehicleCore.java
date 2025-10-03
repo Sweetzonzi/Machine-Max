@@ -55,7 +55,7 @@ public class VehicleCore {
     @Setter
     private ChunkPos oldChunkPos = new ChunkPos(0, 0);
     public int tickCount = 0;
-    public boolean inLevel = false;
+    public volatile boolean inLevel = false;
     //属性
     @Setter
     public float hp = 20;//耐久度
@@ -431,7 +431,6 @@ public class VehicleCore {
                 if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
                 newPart.addToLevel();//将新部件加入到世界
             }
-            if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
             this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
             this.cameraDistance = calculateCameraDistance();
             this.activate();
@@ -645,21 +644,8 @@ public class VehicleCore {
     }
 
     public void onAddToLevel() {
-        Set<New6Dof> joints = new HashSet<>();
-        Set<Part> parts = new HashSet<>(partMap.values());
-        partMap.values().forEach(node -> {
-            for (SubPart subPart : node.subParts.values()) {
-                for (AbstractConnector connector : subPart.connectors.values()) {
-                    if (connector.hasPart()) joints.add(connector.joint);
-                }
-            }
-        });
-        parts.forEach(Part::addToLevel);
-        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            joints.forEach(joint -> level.getPhysicsLevel().getWorld().addJoint(joint));
-            return null;
-        });
-        this.inLevel = true;
+        // TODO: 使用多线程版本的物理库时，关节的存在会导致崩溃，是因为关节加入世界时刚体尚未加入吗？
+        partMap.values().forEach(Part::addToLevel);
     }
 
     public void onRemoveFromLevel() {
