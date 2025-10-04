@@ -58,7 +58,7 @@ public record ConnectorAttr(
     );
 
     public boolean conditionCheck(PartType partType, String variant){
-        Set<String> tags = new HashSet<>(partType.tags);
+        Set<String> tags = new HashSet<>(partType.getVariant(variant).tags());
         tags.add("variant:" + variant);
         //检查必须拥有的tag情况(必须全都有)
         if (this.requiredTags().isEmpty() || tags.containsAll(this.requiredTags())) {

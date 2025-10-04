@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.component;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
@@ -14,7 +15,7 @@ public class PartAssemblyCacheComponent {
     @Setter
     private Iterator<String> variantIterator;
     @Setter
-    private Iterator<String> connectorIterator;
+    private Iterator<Pair<String, String>> connectorIterator;
     private final PartType partType;
 
     public static final Codec<PartAssemblyCacheComponent> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -24,7 +25,7 @@ public class PartAssemblyCacheComponent {
     public PartAssemblyCacheComponent(PartType partType) {
         this.partType = partType;
         this.variantIterator = partType.getVariantIterator();
-        this.connectorIterator = partType.getConnectorIterator();
+        this.connectorIterator = partType.getVariants().get(getNextVariant()).getConnectorIterator();
     }
 
     public String getNextVariant() {
@@ -36,13 +37,18 @@ public class PartAssemblyCacheComponent {
         } else return "default";
     }
 
-    public String getNextConnector() {
+    /**
+     * 获取下一个连接器所属的零件名称和连接器本身的名称
+     *
+     * @return Pair<零件名称, 连接器名称> Pair<SubPartName, ConnectorName>
+     */
+    public Pair<String, String> getNextConnector() {
         if (connectorIterator != null && connectorIterator.hasNext()) {
             return connectorIterator.next();
-        } else if (connectorIterator != null && !partType.subParts.isEmpty()) {
-            this.connectorIterator = partType.getConnectorIterator();
+        } else if (connectorIterator != null) {
+            this.connectorIterator = partType.getVariants().get(getNextVariant()).getConnectorIterator();
             return connectorIterator.next();
-        } else return "default";
+        } else return Pair.of(partType.name, "empty");
     }
 
     @Override

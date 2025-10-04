@@ -27,7 +27,6 @@ public class MotorSubsystemAttr extends AbstractSubsystemAttr {
 
     public static final MapCodec<MotorSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
-            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.optionalFieldOf("particle_locator", "").forGetter(MotorSubsystemAttr::getParticleLocator),
             Codec.FLOAT.fieldOf("max_power").forGetter(MotorSubsystemAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("max_torque", 100f).forGetter(MotorSubsystemAttr::getMaxTorque),
@@ -40,8 +39,7 @@ public class MotorSubsystemAttr extends AbstractSubsystemAttr {
     ).apply(instance, MotorSubsystemAttr::new));
 
     public MotorSubsystemAttr(
-            float basicDurability,
-            String hitBox,
+            float basicDurability, 
             String particleLocator,
             float maxPower,
             float maxTorque,
@@ -51,7 +49,7 @@ public class MotorSubsystemAttr extends AbstractSubsystemAttr {
             String powerOutputTarget,
             Map<String, List<String>> rpmOutputTargets,
             float generatorEfficiency) {
-        super(basicDurability, hitBox);
+        super(basicDurability);
         this.particleLocator = particleLocator;
         this.maxPower = maxPower;
         this.maxTorque = maxTorque;

@@ -22,7 +22,7 @@ public class PartBinding extends ContextBinding {
     private static Float getDurability(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                return seat.getPart().getDurability();
+                return seat.getOwner().getSubPart().getPart().getDurability();
             } else return null;
         } else if (ctx.getAnimatable() instanceof Part part)
             return part.getDurability();
@@ -32,7 +32,7 @@ public class PartBinding extends ContextBinding {
     private static Float getMaxDurability(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                return seat.getPart().getType().getBasicDurability();
+                return seat.getOwner().getSubPart().getPart().getType().getBasicDurability();
             } else return null;
         } else if (ctx.getAnimatable() instanceof Part part)
             return part.getType().getBasicDurability();
@@ -42,7 +42,7 @@ public class PartBinding extends ContextBinding {
     private static Float getIntegrity(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                return seat.getPart().getIntegrity();
+                return seat.getOwner().getSubPart().getPart().getIntegrity();
             } else return null;
         } else if (ctx.getAnimatable() instanceof Part part)
             return part.getIntegrity();
@@ -52,7 +52,7 @@ public class PartBinding extends ContextBinding {
     private static Float getMaxIntegrity(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                return seat.getPart().getType().getBasicIntegrity();
+                return seat.getOwner().getSubPart().getPart().getType().getBasicIntegrity();
             } else return null;
         } else if (ctx.getAnimatable() instanceof Part part)
             return part.getType().getBasicIntegrity();

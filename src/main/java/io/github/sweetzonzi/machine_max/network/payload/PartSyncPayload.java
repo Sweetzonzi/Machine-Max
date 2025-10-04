@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
+import com.mojang.serialization.Codec;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
@@ -20,9 +21,10 @@ public record PartSyncPayload(
         UUID partUUID,//部件UUID
         float durability,//部件耐久度
         float integrity,//部件完整度
-        Map<String, Float> subsystemDurability//子系统耐久度
+        Map<String, Map<String, Float>> subsystemDurability//子系统耐久度
 ) implements CustomPacketPayload {
     public static final Type<PartSyncPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_sync_payload"));
+    public static final Codec<Map<String, Map<String, Float>>> DURABILITY_CODEC = Codec.unboundedMap(Codec.STRING, Codec.unboundedMap(Codec.STRING, Codec.FLOAT));
     public static final StreamCodec<FriendlyByteBuf, PartSyncPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull PartSyncPayload decode(FriendlyByteBuf buffer) {
@@ -30,7 +32,7 @@ public record PartSyncPayload(
             UUID partUUID = buffer.readUUID();
             float durability = buffer.readFloat();
             float integrity = buffer.readFloat();
-            Map<String, Float> subsystemDurability = buffer.readMap(FriendlyByteBuf::readUtf, FriendlyByteBuf::readFloat);
+            Map<String, Map<String, Float>> subsystemDurability = buffer.readJsonWithCodec(DURABILITY_CODEC);
             return new PartSyncPayload(vehicleUUID, partUUID, durability, integrity, subsystemDurability);
         }
 
@@ -40,7 +42,7 @@ public record PartSyncPayload(
             FriendlyByteBuf.writeUUID(buffer, value.partUUID());
             buffer.writeFloat(value.durability());
             buffer.writeFloat(value.integrity());
-            buffer.writeMap(value.subsystemDurability(), FriendlyByteBuf::writeUtf, FriendlyByteBuf::writeFloat);
+            buffer.writeJsonWithCodec(DURABILITY_CODEC, value.subsystemDurability());
         }
     };
 
@@ -50,7 +52,6 @@ public record PartSyncPayload(
     }
 
     public static void handler(final PartSyncPayload payload, final IPayloadContext context) {
-        //TODO:根据时间戳判定数据包的有效性，并根据延迟情况对客户端位姿进行预测
         VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUUID);
         if (vehicle != null) {
             Part part = vehicle.partMap.get(payload.partUUID);
@@ -61,11 +62,15 @@ public record PartSyncPayload(
                         part.hurtMarked = true;
                         part.oHurtMarked = true;
                     }
-                    for (Map.Entry<String, Float> entry : payload.subsystemDurability().entrySet()){
-                        String subsystemName = entry.getKey();
-                        float subsystemDurability = entry.getValue();
-                        AbstractSubsystem subsystem = part.subsystems.get(subsystemName);
-                        subsystem.durability = subsystemDurability;
+                    for (Map.Entry<String, Map<String, Float>> entry : payload.subsystemDurability().entrySet()){
+                        String subPartName = entry.getKey();
+                        Map<String, Float> subsystemDurability = entry.getValue();
+                        for (Map.Entry<String, Float> subEntry : subsystemDurability.entrySet()){
+                            String subsystemName = subEntry.getKey();
+                            float durability = subEntry.getValue();
+                            AbstractSubsystem subsystem = part.subParts.get(subPartName).subsystems.get(subsystemName);
+                            subsystem.durability = durability;
+                        }
                     }
                     part.durability = payload.durability;
                     part.integrity = payload.integrity;

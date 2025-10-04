@@ -4,6 +4,7 @@ import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
@@ -38,7 +39,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
     @Override
     public void onTick() {
         super.onTick();
-        if (passenger != null && this.owner.getPart() instanceof Part part) {
+        if (passenger != null && this.getOwner().getSubPart() instanceof SubPart part) {
             if (passenger.isRemoved() || passenger.isDeadOrDying()) {
                 removePassenger();
                 return;
@@ -66,13 +67,13 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
     }
 
     public void setPassenger(LivingEntity passenger) {
-        if (owner.getPart() != null && owner.getPart().entity != null) {
+        if (owner.getSubPart() != null && owner.getSubPart().entity != null) {
             if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
                 if (seat == this) return;
                 else seat.removePassenger();
             }
-            if (!getPart().level.isClientSide) {
-                passenger.startRiding(owner.getPart().entity, true);
+            if (!getOwner().getLevel().isClientSide) {
+                passenger.startRiding(owner.getSubPart().entity, true);
             }
             occupied = true;
             for (String channel : attr.passengerNumSignalTargets.keySet()) {
@@ -80,7 +81,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             }
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
-            getPart().vehicle.activate();
+            getOwner().getSubPart().getPart().vehicle.activate();
             //TODO:换成在hud角落常驻显示好了
             if (passenger.level().isClientSide && passenger instanceof Player player)
                 player.displayClientMessage(
@@ -114,11 +115,11 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
 
     public Transform getSeatPointWorldTransform() {
         String locatorName = attr.locator;
-        return getPart().getLocatorWorldTransform(locatorName);
+        return getOwner().getSubPart().getLocatorWorldTransform(locatorName);
     }
 
     public Transform getSeatPointLocalTransform() {
         String locatorName = attr.locator;
-        return getPart().getLocatorLocalTransform(locatorName);
+        return getOwner().getSubPart().getLocatorLocalTransform(locatorName);
     }
 }

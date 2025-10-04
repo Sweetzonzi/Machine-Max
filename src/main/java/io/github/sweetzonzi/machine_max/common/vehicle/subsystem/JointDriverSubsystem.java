@@ -32,8 +32,8 @@ public class JointDriverSubsystem extends AbstractSubsystem{
     public JointDriverSubsystem(ISubsystemHost owner, String name, JointDriverSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        if (owner.getPart() != null &&
-                owner.getPart().allConnectors.get(this.attr.controlledConnector) instanceof SpecialConnector specialConnector) {
+        if (owner.getSubPart() != null &&
+                owner.getSubPart().connectors.get(this.attr.controlledConnector) instanceof SpecialConnector specialConnector) {
             this.connector = specialConnector;
             float totalPowerWeight = 0f;
             for (int axis : this.attr.axisParams.keySet()) {

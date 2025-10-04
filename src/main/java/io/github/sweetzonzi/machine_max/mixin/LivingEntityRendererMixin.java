@@ -35,7 +35,7 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
             poseStack.pushPose();
 
             // 应用载具的旋转和指定的缩放变换
-            var actualRot = seatSubsystem.getPart().getLerpedLocatorWorldTransform(
+            var actualRot = seatSubsystem.getOwner().getSubPart().getLerpedLocatorWorldTransform(
                     seatSubsystem.attr.locator, partialTicks).getRotation();
             poseStack.mulPose(SparkMathKt.toQuaternionf(actualRot));
 

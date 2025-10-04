@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.signal;
 
 import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubsystemController;
@@ -35,8 +36,6 @@ public interface ISignalSender {
     default void clearCallbackTargets() {
         getCallbackTargets().clear();
     }
-
-    Part getPart();
 
     /**
      * 将发送的信号输出类型全部重置为空信号
@@ -135,7 +134,7 @@ public interface ISignalSender {
                 signalReceiver.onSignalUpdated(signalChannel, this);
                 if (signalReceiver instanceof SubsystemController vehicle){
                     vehicle.foreignStorage.setPublic(signalChannel, signalValue);
-                } else if (signalReceiver instanceof Part part) {
+                } else if (signalReceiver instanceof SubPart part) {
                     ((VariableStorage)part.animController.getForeignStorage()).setPublic(signalChannel, signalValue);
                 }
                 if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
@@ -190,19 +189,23 @@ public interface ISignalSender {
         }
     }
 
+    SubPart getSubPart();
+
     /**
      * 设置信号传输目标
      */
     default void setTargetFromNames() {
-        if (getPart() != null) {
-            Map<String, AbstractSubsystem> subSystems = getPart().subsystems;
-            Map<String, InteractBox> interactBoxes = new HashMap<>(getPart().interactBoxes);
+        if (getSubPart() != null) {
+            Map<String, AbstractSubsystem> subSystems = getSubPart().subsystems;
+            Map<String, InteractBox> interactBoxes = new HashMap<>();
+            if (getSubPart().interactBoxes != null)
+                interactBoxes.putAll(getSubPart().interactBoxes);
             Map<String, SignalPort> ports = new HashMap<>();
-            getPart().allConnectors.forEach((name, connector) -> ports.put(name, connector.signalPort));
+            getSubPart().connectors.forEach((name, connector) -> ports.put(name, connector.signalPort));
             for (Map.Entry<String, List<String>> entry : getTargetNames().entrySet()) {
                 Map<String, ISignalReceiver> signalReceivers = new HashMap<>(2);
                 if (entry.getKey().isEmpty()) continue;
-                getReceiversFromNames(entry.getValue(), getPart(), subSystems, interactBoxes, ports).forEach(receiver -> signalReceivers.put(receiver.getName(), receiver));
+                getReceiversFromNames(entry.getValue(), getSubPart(), subSystems, interactBoxes, ports).forEach(receiver -> signalReceivers.put(receiver.getName(), receiver));
                 getTargets().put(entry.getKey(), signalReceivers);
             }
         }
@@ -210,15 +213,15 @@ public interface ISignalSender {
 
     default List<ISignalReceiver> getReceiversFromNames(
             List<String> targetNames,
-            Part ownerPart,
+            SubPart ownerPart,
             Map<String, AbstractSubsystem> subSystems,
             Map<String, InteractBox> interactBoxes,
             Map<String, SignalPort> ports) {
         List<ISignalReceiver> targets = new ArrayList<>();
         for (String targetName : targetNames) {
             if (targetName.equals("vehicle")) {
-                if (ownerPart.vehicle != null)
-                    targets.add(ownerPart.vehicle.subSystemController);
+                if (ownerPart.part.vehicle != null)
+                    targets.add(ownerPart.part.vehicle.subSystemController);
             } else if (targetName.equals("part")) {
                 targets.add(ownerPart);
             } else if (subSystems.containsKey(targetName)) {

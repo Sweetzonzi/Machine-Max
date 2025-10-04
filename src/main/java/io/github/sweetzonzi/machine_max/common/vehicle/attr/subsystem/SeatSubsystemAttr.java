@@ -31,7 +31,6 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
 
     public static final MapCodec<SeatSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
-            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.optionalFieldOf("seat_point_locator", "").forGetter(SeatSubsystemAttr::getLocator),
             Codec.BOOL.optionalFieldOf("render_passenger", true).forGetter(SeatSubsystemAttr::isRenderPassenger),
             Vec3.CODEC.optionalFieldOf("passenger_scale", new Vec3(1, 1, 1)).forGetter(SeatSubsystemAttr::getPassengerScale),
@@ -54,8 +53,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
     ).apply(instance, SeatSubsystemAttr::new));
 
     public SeatSubsystemAttr(
-            float basicDurability,
-            String hitBox,
+            float basicDurability, 
             String locator,
             boolean renderPassenger, Vec3 passengerScale,
             ViewAttr views,
@@ -65,7 +63,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             Map<String, List<String>> viewSignalTargets,
             Map<String, List<String>> regularSignalTargets,
             Map<String, List<String>> passengerNumSignalTargets) {
-        super(basicDurability, hitBox);
+        super(basicDurability);
         //合法性检查
         if (locator == null || locator.isEmpty())
             throw new IllegalStateException("error.machine_max.seat_subsystem.no_locator");

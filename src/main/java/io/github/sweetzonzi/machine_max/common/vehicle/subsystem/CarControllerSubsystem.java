@@ -51,7 +51,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             String signalChannel = entry.getKey();
             List<String> targets = entry.getValue();
             for (String targetName : targets)
-                sendSignalToTarget(signalChannel, targetName, getPart().vehicle.getVelocity().length());
+                sendSignalToTarget(signalChannel, targetName, getOwner().getSubPart().getPart().vehicle.getVelocity().length());
         }
         updateMoveInputs();
         if (isActive()) {
@@ -67,8 +67,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        this.speed = -MMMath.getLinearVelocityLocal(getPart().rootSubPart.body).z;
-        if (isActive() && getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
+        this.speed = -MMMath.getLinearVelocityLocal(getOwner().getSubPart().getPart().rootSubPart.body).z;
+        if (isActive() && getOwner().getSubPart().getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
                 actualSteering = actualSteering * 0.9f + (moveInput[4]) * 0.1f;
@@ -139,13 +139,13 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         if (isActive()) {
             if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
                 if (sender instanceof WheelDriverSubsystem wheel) {
-                    if (wheel.getPart().vehicle != this.getPart().vehicle) wheels.remove(wheel);
+                    if (wheel.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle) wheels.remove(wheel);
                     else {
                         wheels.put(wheel, controlChannel);
                         addCallbackTarget(controlChannel, wheel);
                     }
                 } else if (sender instanceof EngineSubsystem engine) {
-                    if (engine.getPart().vehicle != this.getPart().vehicle) this.engines.remove(engine);
+                    if (engine.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle) this.engines.remove(engine);
                     else {
                         engines.put(engine, controlChannel);
                         addCallbackTarget(controlChannel, engine);
@@ -170,13 +170,13 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         }
                     }
                 } else if (sender instanceof MotorSubsystem motor) {
-                    if (motor.getPart().vehicle != this.getPart().vehicle) this.motors.remove(motor);
+                    if (motor.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle) this.motors.remove(motor);
                     else {
                         motors.put(motor, controlChannel);
                         addCallbackTarget(controlChannel, motor);
                     }
                 } else if (sender instanceof GearboxSubsystem gearbox) {
-                    if (gearbox.getPart().vehicle != this.getPart().vehicle) {
+                    if (gearbox.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle) {
                         this.gearboxes.remove(gearbox);
                         overrideCountDown.remove(gearbox);
                     } else {

@@ -35,7 +35,6 @@ public class TransmissionSubsystemAttr extends AbstractSubsystemAttr {
 
     public static final MapCodec<TransmissionSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
-            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             POWER_OUTPUTS_CODEC.fieldOf("power_outputs").forGetter(TransmissionSubsystemAttr::getPowerOutputs),
             Codec.STRING.optionalFieldOf("diff_lock", "auto").forGetter(TransmissionSubsystemAttr::getDiffLock),
             Codec.FLOAT.optionalFieldOf("diff_lock_sensitivity", 1f).forGetter(TransmissionSubsystemAttr::getDiffLockSensitivity),
@@ -44,14 +43,13 @@ public class TransmissionSubsystemAttr extends AbstractSubsystemAttr {
     ).apply(instance, TransmissionSubsystemAttr::new));
 
     public TransmissionSubsystemAttr(
-            float basicDurability,
-            String hitBox,
+            float basicDurability, 
             Map<String, Float> powerOutputs,
             String diffLock,
             float diffLockSensitivity,
             float autoDiffLockThreshold,
             List<String> manualDiffLockInputChannels) {
-        super(basicDurability, hitBox);
+        super(basicDurability);
         this.powerOutputs = powerOutputs;
         for (Map.Entry<String, Float> entry : powerOutputs.entrySet()) {
             String targetName = entry.getKey();

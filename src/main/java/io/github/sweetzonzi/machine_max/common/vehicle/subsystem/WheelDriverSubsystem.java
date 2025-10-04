@@ -36,8 +36,8 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
         MAX_BRAKE_FORCE = attr.rollingAxis.maxBrakeForce();
         MAX_HAND_BRAKE_FORCE = attr.rollingAxis.maxHandBrakeForce();
         MAX_STEERING_FORCE = attr.steeringAxis.maxForce();
-        if (owner.getPart() != null &&
-                owner.getPart().allConnectors.get(this.attr.controlledConnector) instanceof SpecialConnector specialConnector) {
+        if (owner.getSubPart() != null &&
+                owner.getSubPart().connectors.get(this.attr.controlledConnector) instanceof SpecialConnector specialConnector) {
             this.connector = specialConnector;
         } else {
             this.connector = null;

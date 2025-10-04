@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.signal;
 
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import lombok.Getter;
 
@@ -78,8 +79,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     }
 
     @Override
-    public Part getPart() {
-        return owner.subPart.part;
+    public SubPart getSubPart() {
+        return owner.getSubPart();
     }
-
 }

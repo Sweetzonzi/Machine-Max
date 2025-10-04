@@ -8,9 +8,8 @@ import lombok.Getter;
 @Getter
 public class SignalConvertSubsystemAttr extends AbstractSubsystemAttr{
     protected SignalConvertSubsystemAttr(
-            float basicDurability,
-            String hitBox) {
-        super(basicDurability, hitBox);
+            float basicDurability) {
+        super(basicDurability);
     }
 
     @Override

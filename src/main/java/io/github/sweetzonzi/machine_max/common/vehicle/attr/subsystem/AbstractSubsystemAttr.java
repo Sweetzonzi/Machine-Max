@@ -15,11 +15,9 @@ import java.util.function.Function;
 abstract public class AbstractSubsystemAttr {
 
     public final float basicDurability;
-    public final String hitBox;
 
-    protected AbstractSubsystemAttr(float basicDurability, String hitBox) {
+    protected AbstractSubsystemAttr(float basicDurability) {
         this.basicDurability = basicDurability;
-        this.hitBox = hitBox;
     }
 
     public abstract MapCodec<? extends AbstractSubsystemAttr> codec();

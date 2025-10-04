@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,28 +25,32 @@ import java.util.Map;
  */
 @Getter
 public class PartData {
-    public final ResourceLocation registryKey;
-    public final String name;
-    public final String variant;
-    public final int textureIndex;
-    public final String uuid;
-    public final float durability;
-    public final float integrity;
-    public final Map<String, PosRotVelVel> subPartTransforms;
-    public final Map<String, CompoundTag> subsystemData;
+    public final ResourceLocation registryKey;//注册表键
+    public final String name;//部件的名称
+    public final String uuid;//部件的UUID
+    public final String variant;//部件的变体
+    public final float durability;//部件的耐久度
+    public final float integrity;//部件的完整度
+    public final Map<String, PosRotVelVel> subPartTransforms;//尚存的零件的位置、旋转、速度、角速度
+    public final Map<String, Integer> textureIndexes;//尚存的零件的贴图索引
+    public final Map<String, Map<String, CompoundTag>> subsystemData;//尚存的零件的子系统数据
 
-    public static final Codec<Map<String, CompoundTag>> SUBSYSTEM_DATA_CODEC = Codec.unboundedMap(Codec.STRING, CompoundTag.CODEC);
+    public static final Codec<Map<String, Integer>> TEXTURE_INDEXES_CODEC = Codec.unboundedMap(Codec.STRING, Codec.INT);
+
+    public static final Codec<Map<String, CompoundTag>> SUBPART_SUBSYSTEM_DATA_CODEC = Codec.unboundedMap(Codec.STRING, CompoundTag.CODEC);
+
+    public static final Codec<Map<String, Map<String, CompoundTag>>> SUBSYSTEM_DATA_CODEC = Codec.unboundedMap(Codec.STRING, SUBPART_SUBSYSTEM_DATA_CODEC);
 
     public static final Codec<PartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("registryKey").forGetter(PartData::getRegistryKey),
+            ResourceLocation.CODEC.fieldOf("registry_key").forGetter(PartData::getRegistryKey),
             Codec.STRING.fieldOf("subpart").forGetter(PartData::getName),
-            Codec.STRING.fieldOf("variant").forGetter(PartData::getVariant),
-            Codec.INT.fieldOf("textureIndex").forGetter(PartData::getTextureIndex),
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),
+            Codec.STRING.fieldOf("variant").forGetter(PartData::getVariant),
             Codec.FLOAT.fieldOf("durability").forGetter(PartData::getDurability),
             Codec.FLOAT.optionalFieldOf("integrity", 20f).forGetter(PartData::getIntegrity),
-            PosRotVelVel.MAP_CODEC.fieldOf("subPartTransforms").forGetter(PartData::getSubPartTransforms),
-            SUBSYSTEM_DATA_CODEC.optionalFieldOf("SubsystemData", Map.of()).forGetter(PartData::getSubsystemData)
+            PosRotVelVel.MAP_CODEC.fieldOf("subpart_transforms").forGetter(PartData::getSubPartTransforms),
+            TEXTURE_INDEXES_CODEC.fieldOf("texture_indexes").forGetter(PartData::getTextureIndexes),
+            SUBSYSTEM_DATA_CODEC.optionalFieldOf("subsystem_data", Map.of()).forGetter(PartData::getSubsystemData)
     ).apply(instance, PartData::new));
 
     public static final Codec<Map<String, PartData>> MAP_CODEC = CODEC.listOf().xmap(
@@ -65,39 +70,48 @@ public class PartData {
         public @NotNull PartData decode(FriendlyByteBuf buffer) {
             ResourceLocation registryKey = buffer.readResourceLocation();
             String name = buffer.readUtf();
-            String variant = buffer.readUtf();
-            int textureIndex = buffer.readInt();
             String uuid = buffer.readUtf();
+            String variant = buffer.readUtf();
             float durability = buffer.readFloat();
             float integrity = buffer.readFloat();
             Map<String, PosRotVelVel> subPartTransforms = buffer.readJsonWithCodec(PosRotVelVel.MAP_CODEC);
-            Map<String, CompoundTag> subsystemData = buffer.readJsonWithCodec(SUBSYSTEM_DATA_CODEC);
-            return new PartData(registryKey, name, variant, textureIndex, uuid, durability, integrity, subPartTransforms, subsystemData);
+            Map<String, Integer> textureIndexes = buffer.readJsonWithCodec(TEXTURE_INDEXES_CODEC);
+            Map<String, Map<String, CompoundTag>> subsystemData = buffer.readJsonWithCodec(SUBSYSTEM_DATA_CODEC);
+            return new PartData(registryKey, name, uuid, variant, durability, integrity, subPartTransforms, textureIndexes, subsystemData);
         }
 
         @Override
         public void encode(FriendlyByteBuf buffer, @NotNull PartData value) {
             buffer.writeResourceLocation(value.registryKey);
             buffer.writeUtf(value.name);
-            buffer.writeUtf(value.variant);
-            buffer.writeInt(value.textureIndex);
             buffer.writeUtf(value.uuid);
+            buffer.writeUtf(value.variant);
             buffer.writeFloat(value.durability);
             buffer.writeFloat(value.integrity);
             buffer.writeJsonWithCodec(PosRotVelVel.MAP_CODEC, value.subPartTransforms);
+            buffer.writeJsonWithCodec(TEXTURE_INDEXES_CODEC, value.textureIndexes);
             buffer.writeJsonWithCodec(SUBSYSTEM_DATA_CODEC, value.subsystemData);
         }
     };
 
-    public PartData(ResourceLocation registryKey, String name, String variant, int textureIndex, String uuid, float durability, float integrity, Map<String, PosRotVelVel> subPartTransforms, Map<String, CompoundTag> subsystemData) {
+    public PartData(
+            ResourceLocation registryKey,
+            String name,
+            String uuid,
+            String variant,
+            float durability,
+            float integrity,
+            Map<String, PosRotVelVel> subPartTransforms,
+            Map<String, Integer> textureIndexes,
+            Map<String, Map<String, CompoundTag>> subsystemData) {
         this.registryKey = registryKey;
         this.name = name;
-        this.variant = variant;
-        this.textureIndex = textureIndex;
         this.uuid = uuid;
+        this.variant = variant;
         this.durability = durability;
         this.integrity = integrity;
         this.subPartTransforms = subPartTransforms;
+        this.textureIndexes = textureIndexes;
         this.subsystemData = subsystemData;
         //校验数据
         for (Map.Entry<String, PosRotVelVel> entry : subPartTransforms.entrySet()) {
@@ -127,26 +141,33 @@ public class PartData {
     public PartData(Part part) {
         this.registryKey = part.type.registryKey;
         this.name = part.name;
-        this.variant = part.variant;
-        this.textureIndex = part.textureIndex;
         this.uuid = part.getUuid().toString();
+        this.variant = part.variant;
         this.durability = part.durability;
         this.integrity = part.integrity;
         this.subPartTransforms = HashMap.newHashMap(1);
+        this.textureIndexes = HashMap.newHashMap(1);
+        this.subsystemData = HashMap.newHashMap(1);
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {
-            this.subPartTransforms.put(entry.getKey(), new PosRotVelVel(
-                    entry.getValue().body.getPhysicsLocation(null),
-                    SparkMathKt.toQuaternionf(entry.getValue().body.getPhysicsRotation(null)),
-                    entry.getValue().body.getLinearVelocity(null),
-                    entry.getValue().body.getAngularVelocity(null)
+            String subPartName = entry.getKey();
+            SubPart subPart = entry.getValue();
+            //保存子零件的位置、旋转、速度、角速度
+            this.subPartTransforms.put(subPartName, new PosRotVelVel(
+                    subPart.body.getPhysicsLocation(null),
+                    SparkMathKt.toQuaternionf(subPart.body.getPhysicsRotation(null)),
+                    subPart.body.getLinearVelocity(null),
+                    subPart.body.getAngularVelocity(null)
             ));
+            //保存子零件的贴图索引
+            this.textureIndexes.put(subPartName, subPart.getTextureIndex());
+            //保存子零件的子系统数据
+            Map<String, CompoundTag> subPartSubsystemData = HashMap.newHashMap(1);
+            for (Map.Entry<String, AbstractSubsystem> entry2 : subPart.subsystems.entrySet()) {
+                String subsystemName = entry2.getKey();
+                AbstractSubsystem subsystem = entry2.getValue();
+                subPartSubsystemData.put(subsystemName, subsystem.saveData(new CompoundTag()));
+            }
+            subsystemData.put(subPartName, subPartSubsystemData);
         }
-        Map<String, CompoundTag> subsystemData = HashMap.newHashMap(1);
-        for (Map.Entry<String, AbstractSubsystem> entry : part.subsystems.entrySet()){
-            String subsystemName = entry.getKey();
-            AbstractSubsystem subsystem = entry.getValue();
-            subsystemData.put(subsystemName, subsystem.saveData(new CompoundTag()));
-        }
-        this.subsystemData = subsystemData;
     }
 }

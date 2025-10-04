@@ -1,9 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
-import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
-import cn.solarmoon.spark_core.animation.model.ModelController;
-import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
@@ -18,7 +14,6 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
@@ -27,13 +22,11 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnect
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
-import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.PartSyncPayload;
-import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
@@ -45,14 +38,12 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 import java.util.*;
@@ -61,15 +52,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 @Getter
-public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver {
+public class Part implements ISignalReceiver {
     //渲染属性 Renderer attributes
     public volatile boolean hurtMarked = false;
     public volatile boolean oHurtMarked = false;
-    public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
     //常规属性 General attributes
     public volatile VehicleCore vehicle;//所属的VehicleCore
-    @Nullable
-    public MMPartEntity entity;//用于渲染模型以及和原版内容进行交互的的实体对象
     public String name;
     public final PartType type;
     public final Level level;
@@ -79,6 +67,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     public volatile float durability;
     public volatile float integrity;
     private final ConcurrentMap<Vector3f, Float> accumulatedImpact = new ConcurrentHashMap<>(8);
+    public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
 
     public record PartDamageData(
             DamageSource source,
@@ -93,18 +82,11 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     private final ConcurrentLinkedQueue<Pair<Float, PartDamageData>> accumulatedDamage = new ConcurrentLinkedQueue<>();
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
-    private final Map<String, SubPart> locatorSubPart = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
-    public final ModelController modelController = new ModelController(this);
-    public final AnimController animController = new AnimController(this);
     public float totalMass;
     //模块化属性 Modular attributes
-    public final Map<String, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
-    public final Map<String, AbstractConnector> allConnectors = HashMap.newHashMap(1);
-    public final Map<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
-    public final ConcurrentHashMap<String, HitBox> hitBoxes = new ConcurrentHashMap<>();
-    public final ConcurrentHashMap<String, InteractBox> interactBoxes = new ConcurrentHashMap<>();
-    public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
+    public final Map<Pair<String, String>, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
+    public final Map<Pair<String, String>, AbstractConnector> allConnectors = HashMap.newHashMap(1);
 
     /**
      * <p>创建新部件，使用指定变体</p>
@@ -114,19 +96,16 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
      * @param variant  部件变体类型
      * @param level    部件被加入的世界
      */
-    public Part(PartType partType, String variant, Level level) {
+    public Part(PartType partType, @Nullable String variant, Level level) {
         if (variant == null) variant = "default";
-        this.textureIndex = 0;
         this.name = partType.getName();
         this.type = partType;
-        this.getModelController().setModel(new ModelIndex(type.variants.getOrDefault(variant, type.variants.get("default"))));
-        this.getModelController().setTextureLocation(type.getTextures().get(textureIndex % type.getTextures().size()));
         this.variant = variant;
         this.level = level;
         this.uuid = UUID.randomUUID();
         this.durability = partType.basicDurability;
         this.integrity = partType.basicIntegrity;
-        this.rootSubPart = createSubPart(type.subParts);//创建子部件并指定根子部件
+        this.rootSubPart = createSubParts(type.getVariants().get(variant).subParts());//创建子部件并指定根子部件
         updateMass();
     }
 
@@ -154,13 +133,10 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         this.type = getPT(level, data.registryKey);
         this.level = level;
         this.variant = data.variant;
-        this.textureIndex = data.textureIndex;
-        this.getModelController().setModel(new ModelIndex(type.variants.getOrDefault(variant, type.variants.get("default"))));
-        this.getModelController().setTextureLocation(type.getTextures().get(textureIndex % type.getTextures().size()));
         this.uuid = UUID.fromString(data.uuid);
         this.durability = readSavedData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
         this.integrity = readSavedData ? Math.min(data.integrity, type.basicIntegrity) : type.basicIntegrity;
-        this.rootSubPart = createSubPart(type.subParts);//重建子部件并指定根子部件
+        this.rootSubPart = createSubParts(type.getVariants().get(variant).subParts());//重建子部件并指定根子部件
         //遍历保存的子部件位置、旋转、速度数据
         for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {
             SubPart subPart = subParts.get(entry.getKey());//获取已重建的子部件
@@ -177,11 +153,14 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
         }
         if (readSavedData) {
             //加载子系统储存的数据
-            for (Map.Entry<String, CompoundTag> entry : data.subsystemData.entrySet()) {
-                String name = entry.getKey();
-                CompoundTag subsystemData = entry.getValue();
-                AbstractSubsystem subsystem = subsystems.get(name);
-                subsystem.loadData(subsystemData);
+            for (Map.Entry<String, Map<String, CompoundTag>> entry : data.subsystemData.entrySet()) {
+                SubPart subPart = subParts.get(entry.getKey());
+                for (Map.Entry<String, CompoundTag> subsystemData : entry.getValue().entrySet()) {
+                    String subSystemName = subsystemData.getKey();
+                    CompoundTag subsystemTagData = subsystemData.getValue();
+                    AbstractSubsystem subsystem = subPart.subsystems.get(subSystemName);
+                    subsystem.loadData(subsystemTagData);
+                }
             }
         }
         updateMass();//更新部件总质量
@@ -197,26 +176,12 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     public void onTick() {
-        if (this.entity == null || this.entity.isRemoved()) {
-            if (!level.isClientSide()) refreshPartEntity();
-        }
         //处理各线程造成的伤害
         if (!level.isClientSide()) handleAccumulatedDamage();
         //判定摧毁
         if (!destroyed && durability <= 0) onDestroyed();
         if (oHurtMarked) oHurtMarked = false;
         else if (hurtMarked) hurtMarked = false;
-        if (this.entity != null && !this.entity.isRemoved()) {
-            getAnimController().tick();
-//            var animSet = modelIndex.getAnimationSet().getAnimations();
-//            if (!animSet.isEmpty() && !animController.isPlayingAnim()) {
-//                for (Map.Entry<String, OAnimation> entry : animSet.entrySet()) {
-//                    String name = entry.getKey();
-//                    var animInstance = AnimInstance.create(this, name, a -> Unit.INSTANCE);
-//                    getAnimController().getLayer(DefaultLayer.INSTANCE.getBASE_LAYER()).setAnimation(animInstance, new AnimLayerData());
-//                }
-//            }
-        }
     }
 
     public void onPrePhysicsTick() {
@@ -258,7 +223,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 level.submitImmediateTask(PPhase.PRE, () -> {
                     vehicle.removePart(this);
                     SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getWorldPositionMatrix(1).getTranslation(new org.joml.Vector3f())), Vec3.ZERO, 64f,
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getTransform().getTranslation()), Vec3.ZERO, 64f,
                             (float) ((2 - Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity) * (1f + 0.2f * (Math.random() - 0.5f))),
                             0.2f + 0.8f * Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity);
                     return null;
@@ -268,12 +233,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     public void onPostPhysicsTick() {
-        if (entity != null && !entity.isRemoved()) {//更新实体包围盒
-            List<BoundingBox> boxes = new ArrayList<>();
-            for (SubPart subPart : subParts.values()) boxes.add(PhysicsBodyExtensionKt.stateOf(subPart.body).getCachedBoundingBox());
-            entity.boundingBoxes.set(boxes);
-            getAnimController().physTick();
-        }
     }
 
     public boolean onHurt(DamageSource source,
@@ -285,9 +244,10 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                           Vector3f worldContactPoint,
                           HitBox hitBox) {
         Vec3 sourcePos = source.getSourcePosition();
-        if (sourcePos == null) sourcePos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getTransform().getTranslation());
+        if (sourcePos == null)
+            sourcePos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getTransform().getTranslation());
         Vec3 finalSourcePos = sourcePos;
-        float armor = hitBox.getRHA(this);
+        float armor = hitBox.getRHA(subPart);
         float armorPenetration = 0;
         //击退处理与特殊逻辑
         if (projectileSource == null && !level.isClientSide) {//原版伤害处理
@@ -364,7 +324,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
 
     /**
      * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link #onTick()}</p>
-     * <p>Handles the damage caused by each thread and applies it to the subsystems, which will be handled in the main thread, see {@link #onTick()}</p>
+     * <p>Handles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link #onTick()}</p>
      */
     private void handleAccumulatedDamage() {
         if (!level.isClientSide() && !accumulatedDamage.isEmpty()) {
@@ -375,7 +335,8 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
                 float damage = pair.getFirst();
                 PartDamageData data = pair.getSecond();
                 //对子系统造成伤害
-                data.hitBox.getSubsystems().values().forEach(subsystem -> subsystem.onHurt(damage, data));
+                if (data.hitBox.getSubsystem() != null)
+                    data.hitBox.getSubsystem().onHurt(damage, data);
                 totalDamage += damage;
                 soundPos = SparkMathKt.toVec3(data.worldContactPoint);
             }
@@ -392,50 +353,79 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     /**
+     * <p>获取部件所有零件持有的子系统</p>
+     * <p>Gets all subsystems held by all parts</p>
+     * @return
+     */
+    public Set<AbstractSubsystem> getAllSubsystems() {
+        HashSet<AbstractSubsystem> subsystems = new HashSet<>();
+        for (SubPart subPart : subParts.values()) {
+            subsystems.addAll(subPart.subsystems.values());
+        }
+        return subsystems;
+    }
+
+    /**
      * <p>立刻发包同步部件与子系统耐久度等数据</p>
-     * <p>Sends a packet to synchronize the durability and other data of the part and its subsystems immediately</p>
+     * <p>Sends a packet to synchronize the durability and other data of the part and its subsystem immediately</p>
      */
     public void syncStatus() {
         if (!level.isClientSide) {
-            Map<String, Float> subsystemDurability = new HashMap<>();
-            for (Map.Entry<String, AbstractSubsystem> entry : this.getSubsystems().entrySet()) {
-                subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
-            }
+            Map<String, Map<String, Float>> allSubsystemDurability = getStatusSyncData();
             PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                    new PartSyncPayload(vehicle.uuid, uuid, durability, integrity, subsystemDurability));
+                    new PartSyncPayload(vehicle.uuid, uuid, durability, integrity, allSubsystemDurability));
         }
+    }
+
+    /**
+     * <p>获取部件与子系统耐久度等数据，用于同步</p>
+     * <p>Gets the durability and other data of the part and its subsystem for synchronization</p>
+     * @return 部件与子系统耐久度等数据
+     */
+    public @NotNull Map<String, Map<String, Float>> getStatusSyncData() {
+        Map<String,Map<String,Float>> allSubsystemDurability = new HashMap<>();
+        for (Map.Entry<String, SubPart> entry : this.subParts.entrySet()){
+            String subPartName = entry.getKey();
+            SubPart subPart = entry.getValue();
+            Map<String, Float> subsystemDurability = new HashMap<>();
+            for (Map.Entry<String, AbstractSubsystem> entry2 : subPart.getSubsystems().entrySet()) {
+                subsystemDurability.put(entry2.getKey(), entry2.getValue().getDurability());
+            }
+            allSubsystemDurability.put(subPartName, subsystemDurability);
+        }
+        return allSubsystemDurability;
     }
 
     protected void onDestroyed() {
         destroyed = true;
-        for (AbstractSubsystem subsystem : subsystems.values()) {
-            subsystem.setActive(false);
-        }
-        for (AbstractConnector connector : allConnectors.values()) {
-            //TODO:随机锁定/解锁某个关节的自由度
+        for (SubPart subPart : subParts.values()) {
+            for (AbstractSubsystem subsystem : subPart.subsystems.values()) {
+                subsystem.setActive(false);
+            }
+            for (AbstractConnector connector : allConnectors.values()) {
+                //TODO:随机锁定/解锁某个关节的自由度？
+                if (connector.attr.breakable()) {
+
+                }
+            }
         }
         if (level.isClientSide) {
             SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"));
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getWorldPositionMatrix(1).getTranslation(new org.joml.Vector3f())), Vec3.ZERO, 64f,
+            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(rootSubPart.getWorldPositionMatrix(1).getTranslation(new org.joml.Vector3f())), Vec3.ZERO, 64f,
                     (float) (1f + 0.2f * (Math.random() - 0.5f)),
                     1f);
         }
     }
 
-    public void refreshPartEntity() {
-        this.entity = new MMPartEntity(level, this);
-        level.addFreshEntity(this.entity);
-    }
-
     private void createSubsystems(
+            SubPart subPart,
             Map<String, AbstractSubsystemAttr> subSystemAttrMap
     ) {
         for (Map.Entry<String, AbstractSubsystemAttr> entry : subSystemAttrMap.entrySet()) {
             String name = entry.getKey();
             AbstractSubsystemAttr attr = entry.getValue();
-            AbstractSubsystem subsystem = attr.createSubsystem(this, name);
-            subsystems.put(name, subsystem);//部件内的子系统
-            subsystem.hitBox = hitBoxes.get(attr.hitBox);//设置子系统的判定区
+            AbstractSubsystem subsystem = attr.createSubsystem(subPart, name);
+            subPart.subsystems.put(name, subsystem);//部件内的子系统
         }
     }
 
@@ -445,199 +435,109 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
             LinkedHashMap<String, OLocator> locators
     ) {
         for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartAttr.connectors.entrySet()) {
-            if (locators.get(connectorEntry.getValue().locatorName()) instanceof OLocator locator) {//若找到了对应的零件对接口Locator
+            String connectorName = connectorEntry.getKey();
+            ConnectorAttr connectorAttr = connectorEntry.getValue();
+            if (locators.get(connectorAttr.locatorName()) instanceof OLocator locator) {//若找到了对应的零件对接口Locator
                 org.joml.Vector3f rotation = locator.getRotation().toVector3f();
                 Transform posRot = new Transform(//对接口的位置与姿态
                         PhysicsHelperKt.toBVector3f(locator.getOffset()).subtract(subPart.massCenterTransform.getTranslation()),
                         SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z)).mult(subPart.massCenterTransform.getRotation().inverse())
                 );
-                AbstractConnector connector = switch (connectorEntry.getValue().type()) {
+                AbstractConnector connector = switch (connectorAttr.type()) {
                     case "AttachPoint" ->//连接点接口
                             new AttachPointConnector(
-                                    connectorEntry.getKey(),
-                                    connectorEntry.getValue(),
+                                    connectorName,
+                                    connectorAttr,
                                     subPart,
                                     posRot
                             );
                     case "Special" ->//6自由度自定义关节接口
                             new SpecialConnector(
-                                    connectorEntry.getKey(),
-                                    connectorEntry.getValue(),
+                                    connectorName,
+                                    connectorAttr,
                                     subPart,
                                     posRot
                             );
                     default ->
-                            throw new NullPointerException(Component.translatable("error.machine_max.part.invalid_connector_type", type.name, connectorEntry.getKey(), connectorEntry.getValue().type()).getString());
+                            throw new NullPointerException(Component.translatable("error.machine_max.part.invalid_connector_type", type.name, connectorName, connectorAttr.type()).getString());
                 };
-                subPart.connectors.put(connectorEntry.getKey(), connector);
-                this.allConnectors.put(connectorEntry.getKey(), connector);
-                if (!connector.internal) this.externalConnectors.put(connectorEntry.getKey(), connector);
+                subPart.connectors.put(connectorName, connector);
+                this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
+                if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
-                throw new NullPointerException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.name, connectorEntry.getKey(), connectorEntry.getValue().locatorName()).getString());
+                throw new NullPointerException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.name, connectorName, connectorAttr.locatorName()).getString());
         }
-    }
-
-    private SubPart createSubPart(Map<String, SubPartAttr> subPartAttrMap) {
-        SubPart rootSubPart = null;
-        OModel model = getModelController().getOriginModel();
-        HashMap<SubPart, String> subPartMap = new HashMap<>();//用于记录子部件的父子关系
-        LinkedHashMap<String, OBone> bones = model.getBones();//从模型获取所有骨骼
-        LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
-        for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
-        //创建零件
-        for (Map.Entry<String, SubPartAttr> subPartEntry : subPartAttrMap.entrySet()) {//遍历部件的零件属性
-            SubPart subPart = new SubPart(subPartEntry.getKey(), this, subPartEntry.getValue());//创建零件
-            subParts.put(subPartEntry.getKey(), subPart);//将零件放入部件的零件表
-            if (subPartEntry.getValue().parent.isEmpty()) {//检测是否为根零件
-                if (rootSubPart == null) rootSubPart = subPart;//记录第一个根零件
-                else MachineMax.LOGGER.error("仅允许存在一个根零件，请检查模型文件{}。", type);
-            } else subPartMap.put(subPart, subPartEntry.getValue().parent);//记录子部件的父子关系
-            subPart.body.setMass(subPartEntry.getValue().mass > 0 ? subPartEntry.getValue().mass : 20);//设置质量
-            subPart.body.setCcdSweptSphereRadius(subPart.collisionShape.maxRadius());//设置CCD半径
-            //计算/设置零件三轴投影面积，用于阻力计算
-            BoundingBox boundingBox = subPart.collisionShape.boundingBox(new Vector3f(), Quaternion.IDENTITY, null);
-            double xArea, yArea, zArea;
-            if (subPart.attr.projectedArea.x <= 0)
-                xArea = 4 * boundingBox.getYExtent() * boundingBox.getZExtent();//半长相乘，还需乘4才能获得真正的面积
-            else xArea = subPart.attr.projectedArea.x;
-            if (subPart.attr.projectedArea.y <= 0)
-                yArea = 4 * boundingBox.getXExtent() * boundingBox.getZExtent();
-            else yArea = subPart.attr.projectedArea.y;
-            if (subPart.attr.projectedArea.z <= 0)
-                zArea = 4 * boundingBox.getXExtent() * boundingBox.getYExtent();
-            else zArea = subPart.attr.projectedArea.z;
-            subPart.projectedArea = new Vec3(xArea, yArea, zArea);
-            //创建零件对接口
-            createConnectors(subPart, subPartEntry.getValue(), locators);
-            //用于从部件查找定位器对应的零件
-            subPart.attr.locatorTransforms.computeIfAbsent(variant, v1 -> new ConcurrentHashMap<>()).keySet().forEach(name -> this.locatorSubPart.put(name, subPart));
-            //创建命中碰撞区属性
-            for (HitBoxAttr hitBoxAttr : subPart.attr.hitBoxes.values()) {
-                hitBoxes.put(hitBoxAttr.hitBoxName(), new HitBox(subPart, hitBoxAttr));
-            }
-        }
-        //创建部件内子系统
-        createSubsystems(type.subsystems);//创建子系统，赋予部件实际功能
-        for (Map.Entry<String, AbstractSubsystem> entry : subsystems.entrySet()) {
-            String name = entry.getKey();
-            AbstractSubsystem subsystem = entry.getValue();
-            HitBox hitBox = hitBoxes.get(subsystem.attr.hitBox);
-            if (hitBox != null) {
-                hitBox.getSubsystems().put(name, subsystem);//碰撞箱与子系统绑定
-            } else if (!subsystem.attr.hitBox.isEmpty())
-                MachineMax.LOGGER.warn(Component.translatable("error.machine_max.part.subsystem_hitbox_not_found", type.name, name, subsystem.attr.hitBox).getString());
-        }
-        //设置零件的父子关系，连接内部关节
-        for (Map.Entry<SubPart, String> entry : subPartMap.entrySet()) {
-            SubPart subPart = entry.getKey();
-            String parentName = entry.getValue();
-            subPart.parent = subParts.get(parentName);//设置子部件的父部件
-            for (AbstractConnector connector : subPart.connectors.values()) {
-                if (connector.internal && connector.attachedConnector == null) {
-                    for (Map.Entry<SubPart, String> entry2 : subPartMap.entrySet()) {
-                        if (entry2.getValue().equals(parentName)) continue;
-                        if (entry2.getKey().connectors.containsKey(connector.attr.ConnectedTo())) {
-                            AbstractConnector targetConnector = entry2.getKey().connectors.get(connector.attr.ConnectedTo());
-                            if (targetConnector.internal && targetConnector.attachedConnector == null && targetConnector instanceof AttachPointConnector) {
-                                targetConnector.subPart.body.setPhysicsTransform(targetConnector.subPart.massCenterTransform);
-                                connector.attach((AttachPointConnector) targetConnector, true);
-                            } else if (targetConnector.internal && targetConnector.attachedConnector == null && connector instanceof AttachPointConnector) {
-                                connector.subPart.body.setPhysicsTransform(connector.subPart.massCenterTransform);
-                                targetConnector.attach((AttachPointConnector) connector, true);
-                            } else
-                                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.invalid_internal_connector_connection", type.name, connector.name, targetConnector.name).getString());
-                        }
-                    }
-                }
-            }
-        }
-        //设置默认根零件
-        if (!subParts.values().isEmpty() && rootSubPart == null)//若模型中没有根零件
-            rootSubPart = subParts.values().iterator().next();//将表中第一个零件作为部件的根零件
-        return rootSubPart;
     }
 
     /**
-     * 按给定的纹理索引切换部件纹理
-     * 可用于为拥有多个纹理的部件选择外观
+     * <p>计算零件三轴投影面积，用于阻力计算以及RCS计算</p>
+     * <p>Calculates the projection area of the part in three axes, which is used for force calculation.</p>
+     * <p>首选零件属性指定的投影面积，否则使用碰撞体积估算</p>
+     * <p>First, the projected area specified in the part attribute is used, otherwise, the estimated volume of the collision shape is used.</p>
      *
-     * @param index 纹理索引
+     * @param subPart 零件
+     * @return 投影面积 projection area (m^2)
      */
-    public void switchTexture(int index) {
-        if (type.getTextures().size() == 1) return;
-        this.textureIndex = index % type.getTextures().size();
-        this.getModelController().setTextureLocation(type.getTextures().get(textureIndex));
-        //同步客户端
-        if (!level.isClientSide() && vehicle != null) PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                new PartPaintPayload(vehicle.uuid, this.uuid, this.textureIndex));
+    public Vec3 calculateProjectedArea(SubPart subPart) {
+        //计算零件三轴投影面积，用于阻力计算
+        BoundingBox boundingBox = subPart.collisionShape.boundingBox(new Vector3f(), Quaternion.IDENTITY, null);
+        double xArea, yArea, zArea;
+        if (subPart.attr.projectedArea.x <= 0)
+            xArea = 4 * boundingBox.getYExtent() * boundingBox.getZExtent();//半长相乘，还需乘4才能获得真正的面积
+        else xArea = subPart.attr.projectedArea.x;
+        if (subPart.attr.projectedArea.y <= 0)
+            yArea = 4 * boundingBox.getXExtent() * boundingBox.getZExtent();
+        else yArea = subPart.attr.projectedArea.y;
+        if (subPart.attr.projectedArea.z <= 0)
+            zArea = 4 * boundingBox.getXExtent() * boundingBox.getYExtent();
+        else zArea = subPart.attr.projectedArea.z;
+        return new Vec3(xArea, yArea, zArea);
+    }
+
+    private SubPart createSubParts(Map<String, SubPartAttr> subPartAttrMap) {
+        //创建零件
+        for (Map.Entry<String, SubPartAttr> subPartEntry : subPartAttrMap.entrySet()) {//遍历部件的零件属性
+            String name = subPartEntry.getKey();
+            SubPartAttr subPartAttr = subPartEntry.getValue();
+            SubPart subPart = new SubPart(name, this, subPartAttr);//创建零件
+            //获取模型用于构建碰撞
+            OModel model = subPart.getModelController().getOriginModel();
+            LinkedHashMap<String, OBone> bones = model.getBones();//从模型获取所有骨骼
+            LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
+            for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
+
+            subParts.put(name, subPart);//将零件放入部件的零件表
+
+            subPart.body.setMass(subPartAttr.mass > 0 ? subPartAttr.mass : 20);//设置质量
+            subPart.body.setCcdSweptSphereRadius(subPart.collisionShape.maxRadius());//设置CCD半径
+            subPart.projectedArea = calculateProjectedArea(subPart);
+            //创建零件对接口
+            createConnectors(subPart, subPartAttr, locators);
+            //创建部件内子系统
+            createSubsystems(subPart, subPartAttr.subsystems);//创建子系统，赋予部件实际功能
+            //创建命中判定区属性并匹配对应子系统(内部实现)
+            for (HitBoxAttr hitBoxAttr : subPart.attr.hitBoxes.values()) {
+                subPart.hitBoxes.put(hitBoxAttr.hitBoxName(), new HitBox(subPart, hitBoxAttr));
+            }
+        }
+        //设置默认根零件，取质量最大的
+        float maxMass = -100;
+        SubPart rootSubPart = null;
+        for (SubPart subPart : subParts.values()) {
+            if (subPart.body.getMass() > maxMass) {
+                maxMass = subPart.body.getMass();
+                rootSubPart = subPart;
+            }
+        }
+        return rootSubPart;
     }
 
     public void updateMass() {
         float totalMass = 0;
-        for (SubPartAttr subPart : type.subParts.values()) {
+        for (SubPartAttr subPart : type.getVariants().get(variant).subParts().values()) {
             totalMass += subPart.mass;
         }
         this.totalMass = totalMass;
-    }
-
-    public Transform getLocatorLocalTransform(String locatorName) {
-        SubPart subPart = locatorSubPart.get(locatorName);
-        if (subPart != null) {
-            return subPart.getLocatorLocalTransform(locatorName);
-        } else {
-            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
-            throw new NullPointerException();
-        }
-    }
-
-    public Transform getLerpedLocatorWorldTransform(String locatorName, float partialTick) {
-        SubPart subPart = locatorSubPart.get(locatorName);
-        if (subPart != null) {
-            return subPart.getLerpedLocatorWorldTransform(locatorName, partialTick);
-        } else {
-            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
-            throw new NullPointerException();
-        }
-    }
-
-    public Transform getLerpedLocatorWorldTransform(String locatorName, Transform offset, float partialTick) {
-        SubPart subPart = locatorSubPart.get(locatorName);
-        if (subPart != null) {
-            return subPart.getLerpedLocatorWorldTransform(locatorName, offset, partialTick);
-        } else {
-            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
-            throw new NullPointerException();
-        }
-    }
-
-    public Transform getLocatorWorldTransform(String locatorName) {
-        SubPart subPart = locatorSubPart.get(locatorName);
-        if (subPart != null) {
-            return subPart.getLocatorWorldTransform(locatorName);
-        } else {
-            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
-            throw new NullPointerException();
-        }
-    }
-
-    public Vector3f getLocatorLocalPos(String locatorName) {
-        SubPart subPart = locatorSubPart.get(locatorName);
-        if (subPart != null) {
-            return subPart.getLocatorLocalPos(locatorName);
-        } else {
-            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
-            throw new NullPointerException();
-        }
-    }
-
-    public Vector3f getLocatorWorldPos(String locatorName) {
-        SubPart subPart = locatorSubPart.get(locatorName);
-        if (subPart != null) {
-            return subPart.getLocatorWorldPos(locatorName);
-        } else {
-            MachineMax.LOGGER.error("error.machine_max.subpart.locator_not_found");
-            throw new NullPointerException();
-        }
     }
 
     /**
@@ -656,13 +556,6 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
      */
     public void destroy() {
         for (SubPart subPart : subParts.values()) subPart.destroy();
-        subsystems.forEach((name, subsystem) -> subsystem.onDetach());
-        subsystems.clear();
-        if (this.entity != null) {
-            this.entity.part = null;
-            this.entity.remove(Entity.RemovalReason.DISCARDED);
-            this.entity = null;
-        }
     }
 
     public void setTransform(Transform transform) {
@@ -688,40 +581,7 @@ public class Part implements IAnimatable<Part>, ISubsystemHost, ISignalReceiver 
     }
 
     @Override
-    public Part getAnimatable() {
-        return this;
-    }
-
-    @Override
-    public @NotNull Matrix4f getWorldPositionMatrix(@NotNull Number partialTick) {
-        if (rootSubPart != null) {
-            return SparkMathKt.toMatrix4f(
-                    SparkMathKt.lerp(
-                            PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getLastTransform(),
-                            PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getTransform(),
-                            partialTick.floatValue()).toTransformMatrix()
-            );
-        } else return new Matrix4f().identity();
-    }
-
-    @Override
-    public Part getPart() {
-        return this;
-    }
-
-    @Override
     public ConcurrentMap<String, SignalChannel> getSignalInputChannels() {
         return signalChannels;
-    }
-
-    @Override
-    public @NotNull Level getAnimLevel() {
-        return level;
-    }
-
-    @NotNull
-    @Override
-    public ModelController getModelController() {
-        return this.modelController;
     }
 }

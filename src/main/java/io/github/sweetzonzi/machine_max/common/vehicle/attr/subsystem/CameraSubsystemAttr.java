@@ -11,12 +11,11 @@ import lombok.Getter;
 @Getter
 public class CameraSubsystemAttr extends AbstractSubsystemAttr {
     public static final MapCodec<CameraSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
-            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox)
+            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability)
     ).apply(instance, CameraSubsystemAttr::new));
 
-    protected CameraSubsystemAttr(float basicDurability, String hitBox) {
-        super(basicDurability, hitBox);
+    protected CameraSubsystemAttr(float basicDurability) {
+        super(basicDurability);
     }
 
     @Override

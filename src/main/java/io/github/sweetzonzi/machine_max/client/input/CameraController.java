@@ -58,10 +58,10 @@ public class CameraController {
         Entity entity = camera.getEntity();
         if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
             if (!type.isFirstPerson() && seat.attr.views.focusOnCenter()) {
-                VehicleCore vehicle = seat.getPart().getVehicle();
+                VehicleCore vehicle = seat.getOwner().getSubPart().getPart().getVehicle();
                 event.setCameraPos(vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick)));
             } else {
-                Transform transform = seat.getPart().getLerpedLocatorWorldTransform(seat.attr.locator, new Transform().setTranslation(new Vector3f(0, 1.1f, 0)), partialTick);
+                Transform transform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, new Transform().setTranslation(new Vector3f(0, 1.1f, 0)), partialTick);
                 event.setCameraPos(SparkMathKt.toVec3(transform.getTranslation()));
             }
         }
@@ -72,7 +72,7 @@ public class CameraController {
         Camera camera = event.getCamera();
         Entity entity = camera.getEntity();
         if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-            VehicleCore vehicle = seat.getPart().getVehicle();
+            VehicleCore vehicle = seat.getOwner().getSubPart().getPart().getVehicle();
             //根据速度调整相机距离
             speedDistanceFactor = 0.9f * speedDistanceFactor + 0.1f * (float) MMMath.sigmoid(0.1 * vehicle.getVelocity().length());
             float newDistance = (float) ((seat.attr.views.distanceScale() + 0.25 * speedDistanceFactor) * vehicle.cameraDistance);
@@ -121,7 +121,7 @@ public class CameraController {
         if (!RawInputHandler.freeCam) {
             if (subsystem instanceof SeatSubsystem seat) {
                 //回到保存记录的位置
-                if (seat.getPart().getEntity() instanceof MMPartEntity partEntity) {
+                if (seat.getOwner().getSubPart().getEntity() instanceof MMPartEntity partEntity) {
                     entity.setXRot(aimPitch);
                     entity.setYRot(Mth.wrapDegrees(aimYaw + partEntity.getYRot() + 180));
 //                    entity.setYHeadRot(aimYaw + 180 + partEntity.getYRot());
@@ -188,7 +188,7 @@ public class CameraController {
                 }
                 //更新附体坐标系的旋转
                 oldExtraTransform = extraTransform;
-                Transform newExtraTransform = seat.getPart().getLerpedLocatorWorldTransform(seat.attr.locator, 1);
+                Transform newExtraTransform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, 1);
                 extraTransform = SparkMathKt.lerp(extraTransform, newExtraTransform, 0.15f);
             }
             //TODO:传输相机控制量

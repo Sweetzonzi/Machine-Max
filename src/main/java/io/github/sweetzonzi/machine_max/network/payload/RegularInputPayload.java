@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.network.payload;
 
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.component.PartAssemblyCacheComponent;
@@ -13,6 +14,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
@@ -109,25 +111,26 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     if (targetConnector != null && !targetConnector.hasPart()) {
                         PartType partType = PartItem.getPartType(heldItem, level);
                         PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, level);
+                        String variantName = info.variant();
+                        VariantAttr variantAttr = partType.getVariant(variantName);
                         PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem, level);
-                        Map<String, ConnectorAttr> partConnectors = partType.getPartOutwardConnectors();
+                        Map<Pair<String, String>, ConnectorAttr> partConnectors = variantAttr.getPartOutwardConnectors();
                         int i = partConnectors.size();//设置最大迭代次数
-                        var connectors = partType.getPartOutwardConnectors();
-                        String variant = info.variant();
+                        var connectors = variantAttr.getPartOutwardConnectors();
                         while (i > 0) {
                             //循环获取下一个端口，直到找到合适的接口或到达迭代次数上限
-                            String connectorName = iterators.getNextConnector();//获取下一个部件接口
-                            ConnectorAttr connectorAttr = connectors.get(connectorName);
+                            var connectorPair = iterators.getNextConnector();//获取下一个部件接口
+                            ConnectorAttr connectorAttr = connectors.get(connectorPair);
                             if (connectorAttr.type().equals("AttachPoint") || targetConnector instanceof AttachPointConnector) {
                                 //检查部件Tag是否与目标接口接受的类型匹配
-                                if(targetConnector.conditionCheck(partType, variant) && connectorAttr.conditionCheck(partType, variant)) {
-                                    OModel model = OModel.getOrEmpty(partType.variants.get(variant));
+                                if(targetConnector.conditionCheck(partType, variantName) && connectorAttr.conditionCheck(partType, variantName)) {
+                                    OModel model = OModel.getOrEmpty(partType.variants.get(variantName).subParts().get(connectorPair.getFirst()).getModel("default"));
                                     var locators = model.getLocators();
                                     OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
                                     Vector3f offset = partConnectorLocator.getOffset().toVector3f();
                                     Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
                                     Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
-                                    info = new PartAssemblyInfoComponent(variant, connectorName, connectorAttr.type(), offset, quaternion);
+                                    info = new PartAssemblyInfoComponent(variantName, connectorPair, connectorAttr.type(), offset, quaternion);
                                     break;
                                 }
                             }
@@ -149,19 +152,20 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     PartType partType = PartItem.getPartType(heldItem, level);
                     PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, level);
                     PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem, level);
-                    var connectors = partType.getPartOutwardConnectors();
                     int i = partType.variants.size();//设置最大迭代次数
                     while (i >= 0) {
                         //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限
-                        String variant = iterators.getNextVariant();//获取下一个部件变体
-                        if (targetConnector == null || targetConnector.conditionCheck(partType, variant)) {
-                            OModel model = OModel.getOrEmpty(partType.variants.get(variant));
+                        String variantName = iterators.getNextVariant();//获取下一个部件变体
+                        VariantAttr variantAttr = partType.getVariant(variantName);
+                        var connectors = variantAttr.getPartOutwardConnectors();
+                        if (targetConnector == null || targetConnector.conditionCheck(partType, variantName)) {
+                            OModel model = OModel.getOrEmpty(partType.variants.get(variantName).subParts().get(info.connector().getFirst()).getModel("default"));
                             var locators = model.getLocators();
                             OLocator partConnectorLocator = locators.get(connectors.get(info.connector()).locatorName());
                             Vector3f offset = partConnectorLocator.getOffset().toVector3f();
                             Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
                             Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
-                            info = new PartAssemblyInfoComponent(variant, info.connector(), info.connectorType(), offset, quaternion);
+                            info = new PartAssemblyInfoComponent(variantName, info.connector(), info.connectorType(), offset, quaternion);
                             break;
                         }
                         i--;

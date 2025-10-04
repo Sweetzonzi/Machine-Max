@@ -3,21 +3,20 @@ package io.github.sweetzonzi.machine_max.common.vehicle;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import lombok.Getter;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import org.jetbrains.annotations.Nullable;
 
 @Getter
 public class HitBox {
     public final String name;
     public final SubPart subPart;
     public final HitBoxAttr attr;
-    public final ConcurrentMap<String, AbstractSubsystem> subsystems = new ConcurrentHashMap<>();
+    public final AbstractSubsystem subsystem;
 
     public HitBox(SubPart subPart,HitBoxAttr attr) {
         this.subPart = subPart;
         this.name = attr.hitBoxName();
         this.attr = attr;
+        this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem(), null);
     }
 
     public float getDamageReduction() {
@@ -32,8 +31,8 @@ public class HitBox {
         return attr.damageMultiplier();
     }
 
-    public float getRHA(Part part) {
-        return attr.RHA() * (part.destroyed? 0.5f : 1.0f);
+    public float getRHA(SubPart subPart) {
+        return attr.RHA() * (subPart.part.destroyed? 0.5f : 1.0f);
     }
 
     public boolean hasAngleEffect() {

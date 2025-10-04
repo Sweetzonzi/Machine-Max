@@ -31,7 +31,6 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
 
     public static final MapCodec<CarControllerSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
-            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(CarControllerSubsystemAttr::getControlInputKeys),
             Vec3.CODEC.optionalFieldOf("steering_center", Vec3.ZERO).forGetter(CarControllerSubsystemAttr::getSteeringCenter),
             Codec.FLOAT.optionalFieldOf("steering_radius", 5.0f).forGetter(CarControllerSubsystemAttr::getSteeringRadius),
@@ -48,8 +47,7 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
     ).apply(instance, CarControllerSubsystemAttr::new));
 
     public CarControllerSubsystemAttr(
-            float basicDurability,
-            String hitBox,
+            float basicDurability, 
             List<String> controlInputKeys,
             Vec3 steeringCenter,
             float steeringRadius,
@@ -63,7 +61,7 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
             Map<String, List<String>> steeringOutputTargets,
             Map<String, List<String>> brakeOutputTargets,
             Map<String, List<String>> handbrakeOutputTargets) {
-        super(basicDurability, hitBox);
+        super(basicDurability);
         this.controlInputKeys = controlInputKeys;
         this.steeringCenter = steeringCenter;
         this.steeringRadius = steeringRadius;

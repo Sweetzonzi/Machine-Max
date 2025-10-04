@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.util.PPhase;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
-import com.jme3.bullet.joints.New6Dof;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -36,6 +35,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -121,6 +121,7 @@ public class VehicleCore {
      *
      * @param uuid    新载具的UUID UUID of the new Vehicle
      * @param partNet 新载具的拓扑结构 Structure of the new Vehicle
+     * @param oldVehicle 被分裂的载具 The vehicle that was split
      */
     public VehicleCore(Level level, UUID uuid, MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> partNet, VehicleCore oldVehicle) {
         this.level = level;
@@ -129,13 +130,14 @@ public class VehicleCore {
         this.position = oldVehicle.position;
         //TODO:调整hp
         for (Part part : partNet.nodes()) {
-            oldVehicle.subSystemController.removeSubsystems(part.subsystems.values(), true);
+            Set<AbstractSubsystem> subsystems = part.getAllSubsystems();
+            oldVehicle.subSystemController.removeSubsystems(subsystems, true);
             oldVehicle.partMap.remove(part.uuid);
             oldVehicle.partNet.removeNode(part);
             this.partMap.put(part.uuid, part);
             this.partNet.addNode(part);
             part.vehicle = this;
-            this.subSystemController.addSubsystems(part.subsystems.values(), false);
+            this.subSystemController.addSubsystems(subsystems, false);
         }
         for (Pair<AbstractConnector, AttachPointConnector> edge : partNet.edges()) {
             EndpointPair<Part> connectedParts = partNet.incidentNodes(edge);
@@ -144,17 +146,6 @@ public class VehicleCore {
         this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();
         this.cameraDistance = calculateCameraDistance();
-//        //为分裂出的部件同步状态信息
-//        for(Part part : this.partMap.values()){
-//            if (!level.isClientSide) {
-//                Map<String, Float> subsystemDurability = new HashMap<>();
-//                for (Map.Entry<String, AbstractSubsystem> entry : part.getSubsystems().entrySet()) {
-//                    subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
-//                }
-//                PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-//                        new PartSyncPayload(uuid, part.uuid, part.durability, part.integrity, subsystemDurability));
-//            }
-//        }
     }
 
     /**
@@ -221,12 +212,9 @@ public class VehicleCore {
         for (Part part : partMap.values()) {
             part.onPostPhysicsTick();
             if (!level.isClientSide && statusSyncCountDown <= 0) {
-                Map<String, Float> subsystemDurability = new HashMap<>();
-                for (Map.Entry<String, AbstractSubsystem> entry : part.getSubsystems().entrySet()) {
-                    subsystemDurability.put(entry.getKey(), entry.getValue().getDurability());
-                }
+                var allSubsystemDurability = part.getStatusSyncData();
                 PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                        new PartSyncPayload(uuid, part.uuid, part.durability, part.integrity, subsystemDurability));
+                        new PartSyncPayload(uuid, part.uuid, part.durability, part.integrity, allSubsystemDurability));
                 statusSyncCountDown = 120;
             }
         }
@@ -326,23 +314,24 @@ public class VehicleCore {
      */
     public void addPart(Part part) {
         part.vehicle = this;
-        for (AbstractSubsystem subSystem : part.subsystems.values()) {//连接部件内子系统的信号传输关系
+        for (AbstractSubsystem subSystem : part.getAllSubsystems()) {//连接部件内子系统的信号传输关系
             subSystem.setTargetFromNames();
         }
+        subSystemController.addSubsystems(part.getAllSubsystems(), true);
         for (AbstractConnector connector : part.allConnectors.values()) {//连接部件内信号端口的传输关系
             if (connector.signalPort != null) connector.signalPort.setTargetFromNames();
         }
         for (SubPart subPart : part.subParts.values()) {//连接部件内交互判定区的信号传输关系
-            if (subPart.interactBoxes != null)
+            if (subPart.interactBoxes != null) {
                 for (InteractBox interactBox : subPart.interactBoxes.values()) {
                     interactBox.setTargetFromNames();
                     interactBox.onVehicleStructureChanged();
                 }
+            }
         }
         this.updateTotalMass();
         partMap.put(part.uuid, part);
         partNet.addNode(part);
-        subSystemController.addSubsystems(part.subsystems.values(), true);
     }
 
     public void removePart(Part part) {
@@ -352,7 +341,7 @@ public class VehicleCore {
     public void removePart(Part part, Map<UUID, UUID> spiltVehicles) {
         if (partMap.containsValue(part)) {
             UUID partUuid = part.getUuid();
-            subSystemController.removeSubsystems(part.subsystems.values(), true);
+            subSystemController.removeSubsystems(part.getAllSubsystems(), true);
             partNet.removeNode(part);
             partMap.remove(part.uuid, part);
             part.destroy();
@@ -431,6 +420,7 @@ public class VehicleCore {
                 if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
                 newPart.addToLevel();//将新部件加入到世界
             }
+            if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
             this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
             this.cameraDistance = calculateCameraDistance();
             this.activate();
@@ -646,6 +636,7 @@ public class VehicleCore {
     public void onAddToLevel() {
         // TODO: 使用多线程版本的物理库时，关节的存在会导致崩溃，是因为关节加入世界时刚体尚未加入吗？
         partMap.values().forEach(Part::addToLevel);
+        this.inLevel = true;
     }
 
     public void onRemoveFromLevel() {

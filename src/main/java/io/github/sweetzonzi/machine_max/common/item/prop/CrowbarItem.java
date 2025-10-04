@@ -13,6 +13,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -54,20 +55,21 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
         if (!player.level().isClientSide) {
             ItemStack crowbar = player.getItemInHand(usedHand);
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            Part part = eyesight.getPart();
-            if (part != null) {
+            SubPart subPart = eyesight.getSubPart();
+            if (subPart != null) {
+                Part part = subPart.part;
                 PartType partType = part.type;
                 float durability = part.durability;
                 if (part.integrity > 0.05 * partType.basicIntegrity && !player.isCreative()) {
-                    if (part.entity != null) {
+                    if (subPart.entity != null) {
                         float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
                         float scale = player.getAttackStrengthScale(0.5f);
                         DamageSource damageSource = level.damageSources().playerAttack(player);
-                        float finalDamage = EnchantmentHelper.modifyDamage((ServerLevel) level, player.getWeaponItem(), part.entity, damageSource, damage);
+                        float finalDamage = EnchantmentHelper.modifyDamage((ServerLevel) level, player.getWeaponItem(), subPart.entity, damageSource, damage);
                         level.getPhysicsLevel().submitDeduplicatedTask("disassembly_" + player.getStringUUID(), PPhase.PRE, () -> {
-                            if (part.entity != null) {
+                            if (subPart.entity != null) {
                                 part.integrity = Math.clamp(part.integrity - finalDamage * scale, 0, part.type.basicIntegrity);
-                                part.entity.hurt(damageSource, finalDamage * scale * 2);
+                                subPart.entity.hurt(damageSource, finalDamage * scale * 2);
                                 part.syncStatus();
                             }
                             return null;
@@ -100,8 +102,9 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (isSelected && level.isClientSide() && entity instanceof Player player) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            Part part = eyesight.getPart();
-            if (part != null) {//提示信息
+            SubPart subPart = eyesight.getSubPart();
+            if (subPart != null) {//提示信息
+                Part part = subPart.part;
                 if (part.integrity > 0.05 * part.type.basicIntegrity && !player.isCreative())
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.unsafe_disassembly",
                             part.integrity, part.type.basicIntegrity, Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);

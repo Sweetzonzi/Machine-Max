@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.item.IPartInteractableItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -38,7 +39,7 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
     public @NotNull InteractionResultHolder<ItemStack> use(Level level, @NotNull Player player, @NotNull InteractionHand usedHand) {
         if (!level.isClientSide) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            Part part = eyesight.getPart();
+            SubPart part = eyesight.getSubPart();
             if (part != null) {//改变瞄准的部件的涂装
                 //TODO:粒子效果
                 part.switchTexture(part.textureIndex + 1);
@@ -56,11 +57,11 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (isSelected && level.isClientSide() && entity instanceof Player player) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            Part part = eyesight.getPart();
+            SubPart part = eyesight.getSubPart();
             if (part != null) {//提示信息
                 player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(part.name), true);
-            } else if (eyesight.getEntity() instanceof MMPartEntity partEntity && partEntity.part != null) {
-                player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(partEntity.part.name), true);
+            } else if (eyesight.getEntity() instanceof MMPartEntity partEntity && partEntity.subPart != null) {
+                player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(partEntity.subPart.name), true);
             } else player.displayClientMessage(Component.empty(), true);
         }
     }

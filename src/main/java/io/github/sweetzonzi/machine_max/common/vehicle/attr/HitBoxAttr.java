@@ -10,6 +10,7 @@ import java.util.Map;
 public record HitBoxAttr(
         String hitBoxName,
         String shapeType,
+        String subsystem,
         Vec3 friction,
         float slipAdaptation,
         float rollingFriction,
@@ -27,6 +28,7 @@ public record HitBoxAttr(
     public static final Codec<HitBoxAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("name", "part").forGetter(HitBoxAttr::hitBoxName),
             Codec.STRING.fieldOf("type").forGetter(HitBoxAttr::shapeType),
+            Codec.STRING.optionalFieldOf("subsystem", "").forGetter(HitBoxAttr::subsystem),
             Vec3.CODEC.optionalFieldOf("friction", new Vec3(0.5, 0.5, 0.5)).forGetter(HitBoxAttr::friction),
             Codec.FLOAT.optionalFieldOf("slip_adaptation", 0.5f).forGetter(HitBoxAttr::slipAdaptation),
             Codec.FLOAT.optionalFieldOf("rolling_friction", 0.2f).forGetter(HitBoxAttr::rollingFriction),

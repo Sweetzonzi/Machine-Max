@@ -1,7 +1,9 @@
 package io.github.sweetzonzi.machine_max.common.component;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -11,7 +13,7 @@ import org.joml.Vector3f;
 
 public record PartAssemblyInfoComponent(
         String variant,
-        String connector,
+        Pair<String, String> connector,
         String connectorType,
         Vector3f offset,
         Quaternionf rotation
@@ -21,7 +23,13 @@ public record PartAssemblyInfoComponent(
     public static final StreamCodec<RegistryFriendlyByteBuf, PartAssemblyInfoComponent> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.STRING_UTF8,
             PartAssemblyInfoComponent::variant,
-            ByteBufCodecs.STRING_UTF8,
+            StreamCodec.composite(
+                    ByteBufCodecs.STRING_UTF8,
+                    Pair::getFirst,
+                    ByteBufCodecs.STRING_UTF8,
+                    Pair::getSecond,
+                    Pair::new
+            ),
             PartAssemblyInfoComponent::connector,
             ByteBufCodecs.STRING_UTF8,
             PartAssemblyInfoComponent::connectorType,
@@ -34,7 +42,7 @@ public record PartAssemblyInfoComponent(
 
     public static final Codec<PartAssemblyInfoComponent> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("variant").forGetter(PartAssemblyInfoComponent::variant),
-            Codec.STRING.fieldOf("seatLocator").forGetter(PartAssemblyInfoComponent::connector),
+            Codec.pair(Codec.STRING, Codec.STRING).fieldOf("connector").forGetter(PartAssemblyInfoComponent::connector),
             Codec.STRING.fieldOf("connectorType").forGetter(PartAssemblyInfoComponent::connectorType),
             ExtraCodecs.VECTOR3F.fieldOf("offset").forGetter(PartAssemblyInfoComponent::offset),
             ExtraCodecs.QUATERNIONF.fieldOf("rotation").forGetter(PartAssemblyInfoComponent::rotation)

@@ -177,15 +177,15 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     }
 
     /**
-     * 获取指向的最近的部件，如果没有则返回null
+     * 获取指向的最近的零件，如果没有则返回null
      *
-     * @return 线段命中的最近的部件
+     * @return 线段命中的最近的零件
      */
-    public Part getPart() {
+    public SubPart getSubPart() {
         if (!sortedTargetsCache.isEmpty()) {
             for (PhysicsRigidBody body : sortedTargetsCache) {
                 if (PhysicsBodyExtensionKt.getOwner(body) != null && PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart part) {
-                    return part.part;
+                    return part;
                 }
             }
         }

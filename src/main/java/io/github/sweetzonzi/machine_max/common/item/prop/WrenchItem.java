@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
@@ -39,14 +40,15 @@ public class WrenchItem extends Item {
         if (!player.level().isClientSide) {
             ItemStack wrench = player.getItemInHand(usedHand);
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            Part part = eyesight.getPart();
-            if (part != null) {
+            SubPart subPart = eyesight.getSubPart();
+            if (subPart != null) {
+                Part part = subPart.part;
                 if ((player.isCrouching() || part.destroyed) && part.integrity > 0) {
                     //潜行时拆除模式
                     float repair = 10;
                     float scale = player.getAttackStrengthScale(0.5f);
                     level.getPhysicsLevel().submitDeduplicatedTask("repair_" + player.getStringUUID(), PPhase.PRE, () -> {
-                        if (part.entity != null) {
+                        if (subPart.entity != null) {
                             part.integrity = Math.clamp(part.integrity - repair * scale, 0, part.type.basicIntegrity);
                             part.syncStatus();
                         }
@@ -57,7 +59,7 @@ public class WrenchItem extends Item {
                     float repair = 10;
                     float scale = player.getAttackStrengthScale(0.5f);
                     level.getPhysicsLevel().submitDeduplicatedTask("repair_" + player.getStringUUID(), PPhase.PRE, () -> {
-                        if (part.entity != null) {
+                        if (subPart.entity != null) {
                             part.integrity = Math.clamp(part.integrity + repair * scale, 0, part.type.basicIntegrity);
                             part.durability = Math.clamp(part.durability + repair * scale, 0, part.type.basicDurability);
                             part.syncStatus();
@@ -77,8 +79,9 @@ public class WrenchItem extends Item {
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (isSelected && level.isClientSide() && entity instanceof Player player) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            Part part = eyesight.getPart();
-            if (part != null) {//提示信息
+            SubPart subPart = eyesight.getSubPart();
+            if (subPart != null) {//提示信息
+                Part part = subPart.part;
                 if (entity.isCrouching() && part.integrity > 0)
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.disassembly",
                             part.integrity, part.type.basicIntegrity, Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);

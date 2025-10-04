@@ -35,7 +35,7 @@ public class Hook {
 //        boolean isScriptableSubsystem = false;
 //        if (args[0] instanceof ScriptableSubsystem scriptableSubsystem) {
 //            isScriptableSubsystem = true;
-//            ResourceLocation location = scriptableSubsystem.getPart().type.registryKey;
+//            ResourceLocation location = scriptableSubsystem.getSubPart().type.registryKey;
 //            if (MMDynamicRes.EXTERNAL_RESOURCE.get(location) instanceof DynamicPack pack) packName = pack.getPackName();
 //        }
 //        if (InputSignalProvider.getKeyDownTicks("backslash") == 2) {

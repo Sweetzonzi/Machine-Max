@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.input;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -61,11 +62,12 @@ public class RawInputHandler {
         if (client == null) client = Minecraft.getInstance();
         if (client.player != null &&
                 ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat &&
-                seat.owner instanceof Part part) {
-            String subSystemName = seat.name;
+                seat.owner instanceof SubPart subPart) {
+            Part part = subPart.part;
             UUID vehicleUuid = part.vehicle.uuid;
             UUID partUuid = part.uuid;
-
+            String subPartName = subPart.name;
+            String subSystemName = seat.name;
             int trans_x_input = 0;
             int trans_y_input = 0;
             int trans_z_input = 0;
@@ -112,7 +114,7 @@ public class RawInputHandler {
                     (byte) 0};
             if (vehicleUuid != null && partUuid != null && subSystemName != null && moveInputs != moveInputCache)
                 PacketDistributor.sendToServer(new MovementInputPayload(
-                        vehicleUuid, partUuid, subSystemName, moveInputs, moveInputConflicts));
+                        vehicleUuid, partUuid, subPartName, subSystemName, moveInputs, moveInputConflicts));
         }
     }
 

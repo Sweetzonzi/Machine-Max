@@ -29,6 +29,7 @@ import java.util.UUID;
 public record MovementInputPayload(
         UUID vehicleUUID,
         UUID partUUID,
+        String subPartName,
         String subSystemName,
         byte[] input,
         byte[] inputConflict) implements CustomPacketPayload {
@@ -40,15 +41,17 @@ public record MovementInputPayload(
             UUID vehicleUUID = buf.readUUID();
             UUID partUUID = buf.readUUID();
             String subSystemName = buf.readUtf();
+            String subPartName = buf.readUtf();
             byte[] input = buf.readByteArray();
             byte[] inputConflict = buf.readByteArray();
-            return new MovementInputPayload(vehicleUUID, partUUID, subSystemName, input, inputConflict);
+            return new MovementInputPayload(vehicleUUID, partUUID, subPartName, subSystemName, input, inputConflict);
         }
 
         @Override
         public void encode(FriendlyByteBuf buffer, @NotNull MovementInputPayload context) {
             buffer.writeUUID(context.vehicleUUID());
             buffer.writeUUID(context.partUUID());
+            buffer.writeUtf(context.subPartName());
             buffer.writeUtf(context.subSystemName());
             buffer.writeByteArray(context.input());
             buffer.writeByteArray(context.inputConflict());
@@ -79,7 +82,7 @@ public record MovementInputPayload(
     public static boolean handler(VehicleCore vehicle, final MovementInputPayload payload) {
         if (vehicle != null) {
             if (vehicle.partMap.get(payload.partUUID()) instanceof Part part) {
-                if (part.subsystems.get(payload.subSystemName()) instanceof AbstractControllableSubsystem subSystem) {
+                if (part.subParts.get(payload.subPartName()).subsystems.get(payload.subSystemName()) instanceof AbstractControllableSubsystem subSystem) {
                     subSystem.setMoveInputSignal(payload.input(), payload.inputConflict());
                     return true;
                 } else {

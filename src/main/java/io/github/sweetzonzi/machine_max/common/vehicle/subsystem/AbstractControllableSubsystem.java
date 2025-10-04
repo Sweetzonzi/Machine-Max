@@ -57,11 +57,11 @@ abstract public class AbstractControllableSubsystem extends AbstractSubsystem {
                 this.sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
             }
             for (int i = 0; i < 6; i++) {
-                if (inputs[i] != 0 && this.getPart() != null && this.getPart().vehicle != null) {
+                if (inputs[i] != 0 && this.getSubPart() != null && this.getOwner().getSubPart().part.vehicle != null) {
                     break;
                 }
             }
-            this.getPart().vehicle.activate();
+            this.getOwner().getSubPart().part.vehicle.activate();
         }
     }
 
@@ -70,7 +70,7 @@ abstract public class AbstractControllableSubsystem extends AbstractSubsystem {
             for (String signalKey : regularSignalTargets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
             }
-            this.getPart().vehicle.activate();
+            this.getOwner().getSubPart().part.vehicle.activate();
         }
     }
 
@@ -79,7 +79,7 @@ abstract public class AbstractControllableSubsystem extends AbstractSubsystem {
             for (String signalKey : viewSignalTargets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, new EmptySignal());
             }
-            this.getPart().vehicle.activate();
+            this.getOwner().getSubPart().part.vehicle.activate();
         }
     }
 }

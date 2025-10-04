@@ -148,11 +148,6 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
         targets.clear();
     }
 
-    @Override
-    public Part getPart() {
-        return subPart.part;
-    }
-
     // 辅助方法：判断信号是否为真
     private boolean isTrueSignal(Object signal) {
         if (signal instanceof Float) {

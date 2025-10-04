@@ -5,6 +5,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalSender;
@@ -28,7 +29,6 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public final String name;
     public final AbstractSubsystemAttr attr;
     public final ISubsystemHost owner;
-    public HitBox hitBox;
 
     public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//信号频道名->接收者名称->接收者
     public final Map<String, Set<ISignalReceiver>> callbackTargets = new HashMap<>();//信号频道名->回调接收者
@@ -57,7 +57,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         if (!this.isDestroyed() && this.durability <= 0) {
             //摧毁耐久度归零的子系统
             this.onDestroyed();
-        } else if (this.isDestroyed() && !getPart().isDestroyed() && this.durability >= 0.3 * attr.basicDurability) {
+        } else if (this.isDestroyed() && !getOwner().getSubPart().getPart().isDestroyed() && this.durability >= 0.3 * attr.basicDurability) {
             //重新激活修复到一定程度的子系统
             this.destroyed = false;
         }
@@ -155,13 +155,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         this.clearCallbackChannel();
     }
 
-    public Part getPart() {
-        if (owner instanceof Part part) return part;
-        else return null;
-    }
-
     public boolean isActive() {
-        return active && !this.isDestroyed() && !getPart().isDestroyed();
+        return active && !this.isDestroyed() && !getOwner().getSubPart().getPart().isDestroyed();
     }
 
     public void setActive(boolean active) {
@@ -180,5 +175,10 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     public CompoundTag saveData(CompoundTag data) {
         return data;
+    }
+
+    @Override
+    public SubPart getSubPart() {
+        return getOwner().getSubPart();
     }
 }

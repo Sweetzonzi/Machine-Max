@@ -42,7 +42,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
             Minecraft client = Minecraft.getInstance();
             if (client.player != null) {
                 if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem subSystem)
-                    return subSystem.getPart().vehicle.getMode() == VehicleCore.ControlMode.GROUND;
+                    return subSystem.getOwner().getSubPart().getPart().vehicle.getMode() == VehicleCore.ControlMode.GROUND;
                 else return true;
             } else return false;
         }
@@ -64,7 +64,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
             if (GUI.isActive()) return false;
             Minecraft client = Minecraft.getInstance();
             if (client.player != null && ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem subSystem) {
-                return subSystem.getPart().vehicle.getMode() == VehicleCore.ControlMode.SHIP;
+                return subSystem.getOwner().getSubPart().getPart().vehicle.getMode() == VehicleCore.ControlMode.SHIP;
             } else return false;
         }
 
@@ -85,7 +85,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
             if (GUI.isActive()) return false;
             Minecraft client = Minecraft.getInstance();
             if (client.player != null && ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem subSystem) {
-                return subSystem.getPart().vehicle.getMode() == VehicleCore.ControlMode.PLANE;
+                return subSystem.getOwner().getSubPart().getPart().vehicle.getMode() == VehicleCore.ControlMode.PLANE;
             } else return false;
         }
 
@@ -106,7 +106,7 @@ public enum KeyCategory implements IKeyConflictContext, IKeyCategory {
             if (GUI.isActive()) return false;
             Minecraft client = Minecraft.getInstance();
             if (client.player != null && ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem subSystem) {
-                return subSystem.getPart().vehicle.getMode() == VehicleCore.ControlMode.MECH;
+                return subSystem.getOwner().getSubPart().getPart().vehicle.getMode() == VehicleCore.ControlMode.MECH;
             } else return false;
         }
 

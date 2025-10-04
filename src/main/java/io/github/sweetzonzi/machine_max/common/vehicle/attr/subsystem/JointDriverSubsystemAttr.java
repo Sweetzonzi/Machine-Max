@@ -19,7 +19,6 @@ public class JointDriverSubsystemAttr extends AbstractSubsystemAttr {
 
     public static final MapCodec<JointDriverSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemAttr::getBasicDurability),
-            Codec.STRING.optionalFieldOf("hit_box", "").forGetter(AbstractSubsystemAttr::getHitBox),
             Codec.STRING.fieldOf("locator").forGetter(JointDriverSubsystemAttr::getControlledConnector),
             Codec.STRING.fieldOf("rotation_order").forGetter(JointDriverSubsystemAttr::getRotationOrder),
             MotorAttr.MAP_CODEC.fieldOf("axes").forGetter(JointDriverSubsystemAttr::getAxisParams)
@@ -27,12 +26,11 @@ public class JointDriverSubsystemAttr extends AbstractSubsystemAttr {
     ));
 
     public JointDriverSubsystemAttr(
-            float basicDurability,
-            String hitBox,
+            float basicDurability, 
             String controlledConnector,
             String rotationOrder,
             Map<Integer, MotorAttr> axisParams) {
-        super(basicDurability, hitBox);
+        super(basicDurability);
         this.controlledConnector = controlledConnector;
         this.rotationOrder = rotationOrder;
         this.axisParams = axisParams;

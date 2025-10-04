@@ -24,20 +24,20 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
     @NotNull
     @Override
     public ResourceLocation getTextureLocation(@NotNull MMPartEntity entity) {
-        if (entity.part != null) return entity.part.getModelController().getTextureLocation();
+        if (entity.subPart != null) return entity.subPart.getModelController().getTextureLocation();
         else return ResourceLocation.withDefaultNamespace("missingno");
     }
 
     @Override
     public void render(@NotNull MMPartEntity entity, float entityYaw, float partialTick, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, int packedLight) {
-        if (entity.part == null || entity.part.rootSubPart == null) return;
-        ModelController modelController = entity.part.getModelController();
+        if (entity.subPart == null) return;
+        ModelController modelController = entity.subPart.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         if (modelInstance == null) return;
-        var worldMatrix = entity.part.getWorldPositionMatrix(partialTick);
-        Color color = entity.part.isDestroyed() ? new Color(32, 32, 32, 255) : Color.WHITE;
+        var worldMatrix = entity.subPart.getWorldPositionMatrix(partialTick);
+        Color color = entity.subPart.part.isDestroyed() ? new Color(32, 32, 32, 255) : Color.WHITE;
         int overlay = OverlayTexture.NO_OVERLAY;
-        if (entity.part.hurtMarked) overlay = OverlayTexture.pack(10, 10);
+        if (entity.subPart.part.hurtMarked) overlay = OverlayTexture.pack(10, 10);
         poseStack.pushPose();//开始渲染
         ModelRenderHelperKt.render(
                 modelController.getOriginModel(),

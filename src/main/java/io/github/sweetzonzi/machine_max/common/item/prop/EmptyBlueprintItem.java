@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -35,9 +36,9 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if (!level.isClientSide()) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            Part part = eyesight.getPart();
-            if (part != null && part.vehicle != null) {
-                VehicleData vehicleData = new VehicleData(part.vehicle);
+            SubPart subPart = eyesight.getSubPart();
+            if (subPart != null && subPart.part.vehicle != null) {
+                VehicleData vehicleData = new VehicleData(subPart.part.vehicle);
                 var gameDir = FMLPaths.GAMEDIR.get().toFile();
                 var saveDir = new File(gameDir, vehicleData.uuid + ".json");
                 try {

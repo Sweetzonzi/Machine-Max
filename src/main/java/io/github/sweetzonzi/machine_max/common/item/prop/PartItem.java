@@ -10,6 +10,7 @@ import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.common.component.PartAssemblyCacheComponent;
 import io.github.sweetzonzi.machine_max.common.component.PartAssemblyInfoComponent;
@@ -76,7 +77,7 @@ public class PartItem extends Item implements ICustomModelItem {
                 PartType partType = getPartType(stack, level);//获取物品保存的部件类型
                 PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
                 String variant = info.variant();//获取物品保存的部件变体
-                String connectorName = info.connector();//获取物品保存的部件接口
+                var subpart_connector = info.connector();//获取物品保存的部件接口
                 String connectorType = info.connectorType();//获取物品保存的部件接口类型
                 var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
                 AbstractConnector targetConnector = eyesight.getConnector();
@@ -89,8 +90,8 @@ public class PartItem extends Item implements ICustomModelItem {
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
                             Part part = new Part(partType, variant, level);
                             part.durability = durability;
-                            targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
-                            vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
+                            targetConnector.adjustTransform(part, part.externalConnectors.get(subpart_connector));
+                            vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(subpart_connector), part);//尝试将新部件连接至接口
                             stack.consume(1, player);
                             SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"));
                             SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 32f, (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
@@ -131,7 +132,7 @@ public class PartItem extends Item implements ICustomModelItem {
             PartType partType = getPartType(stack, level);//获取物品保存的部件类型
             PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
             String variant = info.variant();//获取物品保存的部件变体
-            String connectorName = info.connector();//获取物品保存的部件接口
+            var subpart_connector = info.connector();//获取物品保存的部件接口
             String connectorType = info.connectorType();//获取物品保存的部件接口类型
             var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
             AbstractConnector targetConnector = eyesight.getConnector();
@@ -139,7 +140,7 @@ public class PartItem extends Item implements ICustomModelItem {
             if (targetConnector != null) {
                 if (targetConnector.conditionCheck(partType, variant)) {
                     if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {
-                        message.append("目标接口:" + targetConnector.name + "部件接口:" + connectorName);
+                        message.append("目标接口:" + targetConnector.name + "部件接口:" + subpart_connector);
                         if (!variant.equals("default") && partType.variants.size() > 1)
                             message.append(" 部件变体类型:" + variant);
                         if (VisualEffectHelper.partToPlace != null) {
@@ -229,11 +230,12 @@ public class PartItem extends Item implements ICustomModelItem {
         PartType partType = getPartType(stack, level);
         if (!stack.has(MMDataComponents.getPART_ASSEMBLY_INFO())) {//若物品Component中无组装信息，则新建
             PartAssemblyCacheComponent iterators = getPartAssemblyCache(stack, level);//获取物品保存的组装信息
-            var connectors = partType.getPartOutwardConnectors();
             String variant = iterators.getNextVariant();
-            String connectorName = iterators.getNextConnector();
-            ConnectorAttr connectorAttr = connectors.get(connectorName);
-            OModel model = OModel.getOrEmpty(partType.variants.get(variant));
+            var subpart_connector = iterators.getNextConnector();
+            VariantAttr variantAttr = partType.getVariant(variant);
+            var connectors = variantAttr.getPartOutwardConnectors();
+            ConnectorAttr connectorAttr = connectors.get(subpart_connector);
+            OModel model = OModel.getOrEmpty(partType.getVariant(variant).subParts().get(subpart_connector.getFirst()).getModel("default"));
             if (model.getBones().isEmpty())
                 throw new IllegalStateException("未找到部件" + partType.name + "的" + variant + "变体的模型:" + partType.variants.get(variant));
             var locators = model.getLocators();
@@ -243,7 +245,7 @@ public class PartItem extends Item implements ICustomModelItem {
             Vector3f offset = partConnectorLocator.getOffset().toVector3f();
             Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
             Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
-            PartAssemblyInfoComponent info = new PartAssemblyInfoComponent(variant, connectorName, connectorAttr.type(), offset, quaternion);
+            PartAssemblyInfoComponent info = new PartAssemblyInfoComponent(variant, subpart_connector, connectorAttr.type(), offset, quaternion);
             stack.set(MMDataComponents.getPART_ASSEMBLY_INFO(), info);//将组装信息存入物品，并自动同步至客户端
             return info;
         } else return stack.get(MMDataComponents.getPART_ASSEMBLY_INFO());
@@ -272,10 +274,10 @@ public class PartItem extends Item implements ICustomModelItem {
         if (context == ItemDisplayContext.GUI) {
             animatable.getModelController().setModel(new ModelIndex(
                     ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
-            animatable.getModelController().setTextureLocation(partType.icon);
+            animatable.getModelController().setTextureLocation(partType.getDefaultIcon());
         } else {
-            animatable.getModelController().setModel(new ModelIndex(partType.variants.get(variant)));
-            animatable.getModelController().setTextureLocation(partType.textures.getFirst());
+            animatable.getModelController().setModel(new ModelIndex(partType.getVariant(variant).subParts().values().iterator().next().getModel("default")));
+            animatable.getModelController().setTextureLocation(partType.getVariant(variant).subParts().values().iterator().next().getTextures("default").getFirst());
         }
         if (customModels != null) {
             customModels.put(context, animatable);

@@ -53,7 +53,7 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     }
 
     public void doActionOnScriptable(String scriptName, FetchedScriptableSubsystem action) {
-        for (AbstractSubsystem subsystem : getPart().getVehicle().getSubSystemController().getAllSubsystems()) {
+        for (AbstractSubsystem subsystem : getOwner().getSubPart().getPart().getVehicle().getSubSystemController().getAllSubsystems()) {
             if (subsystem instanceof ScriptableSubsystem sc && sc.script.equals(scriptName)) action.doAction(sc);
         }
     }
@@ -212,7 +212,7 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     public void onVehicleStructureChanged() {
         Hook.run(this);
         super.onVehicleStructureChanged();
-        vehicleCoreUUID = getPart().getVehicle().getUuid();
+        vehicleCoreUUID = getOwner().getSubPart().getPart().getVehicle().getUuid();
     }
 
     @Override
@@ -321,7 +321,7 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     }
 
     @Override
-    public List<ISignalReceiver> getReceiversFromNames(List<String> targetNames, Part ownerPart, Map<String, AbstractSubsystem> subSystems, Map<String, InteractBox> interactBoxes, Map<String, SignalPort> ports) {
+    public List<ISignalReceiver> getReceiversFromNames(List<String> targetNames, SubPart ownerPart, Map<String, AbstractSubsystem> subSystems, Map<String, InteractBox> interactBoxes, Map<String, SignalPort> ports) {
         if (Hook.run(this, targetNames, ownerPart, subSystems, interactBoxes, ports) instanceof List hooked) {
             return hooked;
         }

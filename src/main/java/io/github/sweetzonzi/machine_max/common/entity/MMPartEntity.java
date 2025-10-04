@@ -10,9 +10,6 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.preinput.PreInput;
 import cn.solarmoon.spark_core.skill.Skill;
-import cn.solarmoon.spark_core.sync.IntSyncData;
-import cn.solarmoon.spark_core.sync.SyncData;
-import cn.solarmoon.spark_core.sync.SyncerType;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Matrix3f;
@@ -27,12 +24,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.item.Item;
@@ -52,10 +48,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn {
 
-    public Part part;//实体所属的部件
+    public SubPart subPart;//实体所属的零件
     public UUID vehicleUUID;
     public UUID partUUID;
-    public AtomicReference<List<BoundingBox>> boundingBoxes = new AtomicReference<>(List.of());
+    public String subPartName;
+    public AtomicReference<BoundingBox> boundingBox = new AtomicReference<>();
 
     /**
      * 不应被使用！
@@ -78,18 +75,21 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         return ItemStack.EMPTY.getItem();
     }
 
-    public MMPartEntity(Level level, Part part) {
+    public MMPartEntity(Level level, SubPart subPart) {
         super(MMEntities.getPART_ENTITY().get(), level);
         this.setNoGravity(true);
-        this.part = part;
-        this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
+        this.subPart = subPart;
+        this.subPartName = subPart.name;
+        this.partUUID = subPart.part.uuid;
+        this.vehicleUUID = subPart.part.vehicle.uuid;
+        this.setPos(SparkMathKt.toVec3(subPart.body.getPhysicsLocation(null)));
     }
 
     @Override
     public void tick() {
         super.tick();
         if (tickCount == 2) this.removePhysicsBody("entity_bounding_box");//移除SparkCore为实体添加的默认碰撞箱刚体
-        if (this.part == null) {//如果实体没有所属的部件，则移除实体
+        if (this.subPart == null) {//如果实体没有所属的部件，则移除实体
             if (tickCount % 20 == 0) updatePart();
             else if (tickCount > 100) {//等待100tick用于同步部件信息
                 MachineMax.LOGGER.warn("部件实体没有匹配的部件，已移除!");
@@ -97,8 +97,8 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             }
         } else {
             //更新实体位置
-            this.setPos(SparkMathKt.toVec3(part.rootSubPart.body.getPhysicsLocation(null)));
-            Quaternionf q = SparkMathKt.toQuaternionf(part.rootSubPart.body.getPhysicsRotation(null));
+            this.setPos(SparkMathKt.toVec3(subPart.body.getPhysicsLocation(null)));
+            Quaternionf q = SparkMathKt.toQuaternionf(subPart.body.getPhysicsRotation(null));
             // 从四元数提取前向向量
             org.joml.Vector3f forward = new org.joml.Vector3f(0, 0, 1).rotate(q);
             // 计算yaw和pitch
@@ -115,7 +115,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @Override
     public boolean hurt(@NotNull DamageSource source, float amount) {
-        if (this.part == null) return false;
+        if (this.subPart == null) return false;
         if (source.getDirectEntity() instanceof Projectile projectile) {
             //来自投射物的伤害处理
             IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
@@ -124,7 +124,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                 Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
                 Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
                 HitBox hitBox = mixinProjectile.machine_Max$getHitBox();
-                return part.onHurt(source, amount, null, hitSubPart, normal,
+                return subPart.part.onHurt(source, amount, null, hitSubPart, normal,
                         PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
                                 .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBox);
             } else return false;
@@ -150,24 +150,22 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                     float nearestDistance = Float.MAX_VALUE;
                     Vector3f normal = new Vector3f();
                     Vector3f contactPoint = new Vector3f();
-                    for (SubPart subPart : part.subParts.values()) {
-                        Vector3f delta = PhysicsBodyExtensionKt.stateOf(subPart.body).getTransform().getTranslation().subtract(start);
-                        float d = delta.length();
-                        if (d < nearestDistance) {
-                            nearest = subPart;
-                            contactPoint = PhysicsBodyExtensionKt.stateOf(subPart.body).getTransform().getTranslation();
-                            normal = delta.multLocal(-1).normalize();
-                            nearestDistance = d;
-                        }
+                    Vector3f delta = PhysicsBodyExtensionKt.stateOf(subPart.body).getTransform().getTranslation().subtract(start);
+                    float d = delta.length();
+                    if (d < nearestDistance) {
+                        nearest = subPart;
+                        contactPoint = PhysicsBodyExtensionKt.stateOf(subPart.body).getTransform().getTranslation();
+                        normal = delta.multLocal(-1).normalize();
+                        nearestDistance = d;
                     }
                     if (nearest != null) {
                         HitBox hitBox = null;
                         float maxThickness = -1;
                         for (String hitBoxName : nearest.attr.hitBoxNames.values()) {
-                            if (part.hitBoxes.get(hitBoxName).getRHA(part) > maxThickness)
-                                hitBox = part.hitBoxes.get(hitBoxName);
+                            if (subPart.hitBoxes.get(hitBoxName).getRHA(subPart) > maxThickness)
+                                hitBox = subPart.hitBoxes.get(hitBoxName);
                         }
-                        return part.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBox);
+                        return subPart.part.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBox);
                     } else throw new IllegalStateException("No subpart found for explosion damage.");
                 } else {//一般伤害处理
                     var results = level.getWorld().rayTest(start, end);
@@ -192,13 +190,15 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @Override
     public Component getDisplayName() {
-        if (part != null) return Component.translatable(part.type.registryKey.toLanguageKey());
+        if (subPart != null)
+            return Component.translatable(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, subPart.name).toLanguageKey());
         return super.getDisplayName();
     }
 
     @Override
     public @NotNull Component getName() {
-        if (part != null) return Component.translatable(part.type.registryKey.toLanguageKey());
+        if (subPart != null)
+            return Component.translatable(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, subPart.name).toLanguageKey());
         return super.getName();
     }
 
@@ -208,23 +208,12 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     }
 
     public void updateBoundingBox() {
-        List<BoundingBox> boxes = boundingBoxes.get();
-        if (part != null && !boxes.isEmpty()) {
-            Vector3f min = new Vector3f(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
-            Vector3f max = new Vector3f(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE).mult(-1);
-            for (BoundingBox box : boxes) {
-                Vector3f tempMin = box.getMin(null);
-                Vector3f tempMax = box.getMax(null);
-                for (int i = 0; i < 3; i++) {
-                    if (tempMax.get(i) > max.get(i)) max.set(i, tempMax.get(i));
-                    if (tempMin.get(i) < min.get(i)) min.set(i, tempMin.get(i));
-                }
-            }
-            AABB aabb = new AABB(min.get(0), min.get(1), min.get(2), max.get(0), max.get(1), max.get(2));
-            if (!aabb.isInfinite() && !aabb.hasNaN() && min.get(0) < max.get(0) && min.get(1) < max.get(1) && min.get(2) < max.get(2))
-                this.setBoundingBox(aabb);
-            else setBoundingBox(new AABB(0, 0, 0, 0, 0, 0));
-        }
+        BoundingBox bb = boundingBox.get();
+        if (bb == null) return;
+        AABB aabb = SparkMathKt.toAABB(bb);
+        if (!aabb.isInfinite() && !aabb.hasNaN())
+            this.setBoundingBox(aabb);
+        else setBoundingBox(new AABB(0, 0, 0, 0, 0, 0));
     }
 
     @Override
@@ -245,7 +234,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @Override
     public void onPassengerTurned(@NotNull Entity entityToUpdate) {
-        if (this.part != null && entityToUpdate instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem) {
+        if (this.subPart != null && entityToUpdate instanceof LivingEntity livingEntity && ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem) {
             float rot = Mth.wrapDegrees(livingEntity.getYRot() - this.getYRot() + 180f);
             entityToUpdate.setYBodyRot(rot);
             livingEntity.yHeadRotO = rot;
@@ -296,17 +285,20 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @Override
     public @NotNull AnimController getAnimController() {
-        if (part == null) return new AnimController(this);
-        else return part.getAnimController();
+        if (subPart == null) return new AnimController(this);
+        else return subPart.getAnimController();
     }
 
     private void updatePart() {
         VehicleCore vehicle = VehicleManager.clientAllVehicles.get(vehicleUUID);
         if (vehicle != null && vehicle.level == this.level()) {
-            this.part = vehicle.partMap.get(partUUID);//设置实体对应的部件
+            Part part = vehicle.partMap.get(partUUID);
             if (part != null) {
-                if (part.entity != null) part.entity.part = null;
-                part.entity = this;
+                this.subPart = part.getSubParts().get(subPartName);//设置实体对应的部件
+                if (subPart != null) {
+                    if (subPart.entity != null) subPart.entity.subPart = null;
+                    subPart.entity = this;
+                }
             }
         }
     }
@@ -318,10 +310,11 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
      */
     @Override
     public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
-        if (part != null) {
+        if (subPart != null) {
             buffer.writeBoolean(true);
-            buffer.writeUUID(this.part.vehicle.uuid);
-            buffer.writeUUID(this.part.uuid);
+            buffer.writeUUID(this.subPart.part.vehicle.uuid);
+            buffer.writeUUID(this.subPart.part.uuid);
+            buffer.writeUtf(this.subPart.name);
         } else buffer.writeBoolean(false);
     }
 
@@ -337,6 +330,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         if (hasPart) {
             vehicleUUID = additionalData.readUUID();
             partUUID = additionalData.readUUID();
+            subPartName = additionalData.readUtf();
             updatePart();
         } else this.remove(RemovalReason.DISCARDED);
     }
@@ -380,7 +374,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     @NotNull
     @Override
     public ModelController getModelController() {
-        if (part != null) return part.getModelController();
+        if (subPart != null) return subPart.getModelController();
         else return new ModelController(this);
     }
 }

@@ -6,9 +6,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsyst
 
 public class TurretControllerSubsystemAttr extends AbstractSubsystemAttr{
     protected TurretControllerSubsystemAttr(
-            float basicDurability,
-            String hitBox) {
-        super(basicDurability, hitBox);
+            float basicDurability) {
+        super(basicDurability);
     }
 
     @Override

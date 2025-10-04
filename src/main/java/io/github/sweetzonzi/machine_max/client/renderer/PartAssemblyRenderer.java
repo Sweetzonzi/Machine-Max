@@ -13,10 +13,11 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.client.renderable.ModelAnimatable;
-import io.github.sweetzonzi.machine_max.client.renderable.VehicleAnimatable;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
 import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
@@ -42,7 +43,6 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     private Player player;
     private ModelAnimatable partToPlace = null;
-    private VehicleAnimatable vehicle;
     private VehicleCore vehicleCore;
 
     @Override
@@ -52,10 +52,12 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         if (player.getMainHandItem().getItem() instanceof PartItem) {
             ItemStack partItem = player.getMainHandItem();
             PartType partType = PartItem.getPartType(partItem, player.level());
-            String variant = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
-            ResourceLocation model = partType.variants.get(variant);
-            ResourceLocation texture = partType.textures.getFirst();
-            ResourceLocation animation = partType.getAnimation();
+            String variantName = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
+            VariantAttr variantAttr = partType.getVariant(variantName);
+            SubPartAttr subPartAttr = variantAttr.subParts().values().iterator().next();
+            ResourceLocation model = subPartAttr.getModel("default");
+            ResourceLocation texture = subPartAttr.getTextures("default").getFirst();
+            ResourceLocation animation = subPartAttr.getAnimation("default");
             if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.getModelIndex().getLocation() != model) {
                 VisualEffectHelper.partToPlace = new AnimatableParams(model, animation, texture);
                 VisualEffectHelper.partToPlace.setTransparency(64);
