@@ -214,11 +214,11 @@ public class VehicleCore {
         }
     }
 
-    public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> subPartSyncData) {
+    public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, PosRotVelVel>> subPartSyncData) {
         if (!level.isClientSide()) {
-            HashMap<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> subPartSyncDataToSend = new HashMap<>(1);
+            HashMap<UUID, HashMap<String, PosRotVelVel>> subPartSyncDataToSend = new HashMap<>(1);
             for (Map.Entry<UUID, Part> entry : partMap.entrySet()) {
-                HashMap<String, Pair<PosRotVelVel, Boolean>> subPartSyncDataMap = new HashMap<>(1);
+                HashMap<String, PosRotVelVel> subPartSyncDataMap = new HashMap<>(1);
                 Part part = entry.getValue();
                 for (Map.Entry<String, SubPart> subPartEntry : part.subParts.entrySet()) {
                     SubPart subPart = subPartEntry.getValue();
@@ -230,7 +230,7 @@ public class VehicleCore {
                                 SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
                                 body.getLinearVelocity(null),
                                 body.getAngularVelocity(null));
-                        subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, isSleep));
+                        subPartSyncDataMap.put(subPartEntry.getKey(), data);
                     }
                 }
                 subPartSyncDataToSend.put(entry.getKey(), subPartSyncDataMap);
@@ -240,19 +240,17 @@ public class VehicleCore {
             }
         } else if (subPartSyncData != null) {
             this.level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-                for (Map.Entry<UUID, HashMap<String, Pair<PosRotVelVel, Boolean>>> outerEntry : subPartSyncData.entrySet()) {
+                for (Map.Entry<UUID, HashMap<String, PosRotVelVel>> outerEntry : subPartSyncData.entrySet()) {
                     UUID partUUID = outerEntry.getKey();
                     Part part = this.partMap.get(partUUID);
-                    HashMap<String, Pair<PosRotVelVel, Boolean>> innerMap = outerEntry.getValue();
+                    HashMap<String, PosRotVelVel> innerMap = outerEntry.getValue();
                     if (part != null) {
-                        for (Map.Entry<String, Pair<PosRotVelVel, Boolean>> innerEntry : innerMap.entrySet()) {
+                        for (Map.Entry<String, PosRotVelVel> innerEntry : innerMap.entrySet()) {
                             String subPartName = innerEntry.getKey();
-                            PosRotVelVel data = innerEntry.getValue().getFirst();
-                            boolean isSleep = innerEntry.getValue().getSecond();
+                            PosRotVelVel data = innerEntry.getValue();
                             SubPart subPart = part.subParts.get(subPartName);
                             if (subPart != null) {
                                 PhysicsRigidBody body = subPart.body;
-                                if (!body.isActive() && isSleep) continue;//如果零件已休眠，则跳过此零件的同步
                                 body.setPhysicsLocation(data.position());
                                 body.setPhysicsRotation(SparkMathKt.toBQuaternion(data.rotation()));
                                 body.setLinearVelocity(data.linearVel());

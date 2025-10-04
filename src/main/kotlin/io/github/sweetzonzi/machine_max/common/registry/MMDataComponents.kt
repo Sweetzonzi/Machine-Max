@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.component.PartAssemblyCacheComponent
 import io.github.sweetzonzi.machine_max.common.component.PartAssemblyInfoComponent
+import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemDisplayContext
 
@@ -43,12 +44,25 @@ object MMDataComponents {
      * 保存在蓝图物品上的蓝图资源路径，用于重建载具
      */
     @JvmStatic
-    val VEHICLE_DATA = MachineMax.REGISTER.dataComponent<ResourceLocation>()
-        .id("vehicle_data")
+    val VEHICLE_BLUEPRINT_PATH = MachineMax.REGISTER.dataComponent<ResourceLocation>()
+        .id("vehicle_blueprint_path")
         .build {
             it
                 .persistent(ResourceLocation.CODEC)
                 .networkSynchronized(ResourceLocation.STREAM_CODEC)
+                .cacheEncoding()
+        }
+
+    /**
+     * 保存在蓝图物品上的蓝图资源路径，用于重建载具
+     */
+    @JvmStatic
+    val VEHICLE_DATA = MachineMax.REGISTER.dataComponent<VehicleData>()
+        .id("vehicle_data")
+        .build {
+            it
+                .persistent(VehicleData.CODEC)
+                .networkSynchronized(VehicleData.STREAM_CODEC)
                 .cacheEncoding()
         }
 

@@ -1,7 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.registry;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.crafting.FabricatingMenu;
+import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
+import io.github.sweetzonzi.machine_max.common.menu.VehicleNamingMenu;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.menu.ItemStorageSubsystemMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -17,6 +18,11 @@ public class MMMenus {
     public static final Supplier<MenuType<FabricatingMenu>> FABRICATING_MENU = MENU_TYPES.register(
             "fabricating_menu",
             ()-> IMenuTypeExtension.create((windowId, inv, data) -> new FabricatingMenu(windowId, inv))
+    );
+
+    public static final Supplier<MenuType<VehicleNamingMenu>> VEHICLE_NAMING_MENU = MENU_TYPES.register(
+            "vehicle_naming_menu",
+            ()-> IMenuTypeExtension.create(VehicleNamingMenu::new)
     );
 
     public static final Supplier<MenuType<ItemStorageSubsystemMenu>> ITEM_STORAGE_SUBSYSTEM_MENU = MENU_TYPES.register(

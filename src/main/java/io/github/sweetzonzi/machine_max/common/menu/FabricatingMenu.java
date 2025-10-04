@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.crafting;
+package io.github.sweetzonzi.machine_max.common.menu;
 
 import io.github.sweetzonzi.machine_max.common.registry.MMMenus;
 import net.minecraft.world.entity.player.Inventory;

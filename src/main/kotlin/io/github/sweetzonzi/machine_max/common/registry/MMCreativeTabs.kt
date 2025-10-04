@@ -92,7 +92,7 @@ object MMCreativeTabs {
             val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
             MMDynamicRes.BLUEPRINTS.forEach { (loc, _) ->
                 val itemStack = ItemStack(MMItems.VEHICLE_BLUEPRINT)
-                itemStack.set(MMDataComponents.VEHICLE_DATA, loc)
+                itemStack.set(MMDataComponents.VEHICLE_BLUEPRINT_PATH, loc)
                 externalBlueprints.add(itemStack)
             }
             externalBlueprints.forEach { event.accept(it) }

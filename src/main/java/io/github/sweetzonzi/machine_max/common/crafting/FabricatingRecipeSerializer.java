@@ -2,26 +2,26 @@
 
 //public class FabricatingRecipeSerializer {
 
-//    public static final MapCodec<FabricatingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-//            NonNullList.codecOf(Ingredient.CODEC).fieldOf("materials").forGetter(FabricatingRecipe::getIngredients),
-//            ResourceLocation.CODEC.fieldOf("result").forGetter(FabricatingRecipe::getResult)
+//    public static final MapCodec<FabricatingRecipe> STREAM_CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+//            NonNullList.codecOf(Ingredient.STREAM_CODEC).fieldOf("materials").forGetter(FabricatingRecipe::getIngredients),
+//            ResourceLocation.STREAM_CODEC.fieldOf("result").forGetter(FabricatingRecipe::getResult)
 //    ).apply(instance, FabricatingRecipe::new));
 //
 //    public static final StreamCodec<FriendlyByteBuf, FabricatingRecipe> STREAM_CODEC = new StreamCodec<>() {
 //        @Override
 //        public @NotNull FabricatingRecipe decode(FriendlyByteBuf buffer) {
-//            return buffer.readJsonWithCodec(CODEC);
+//            return buffer.readJsonWithCodec(STREAM_CODEC);
 //        }
 //
 //        @Override
 //        public void encode(FriendlyByteBuf buffer, @NotNull FabricatingRecipe value) {
-//            buffer.writeJsonWithCodec(CODEC, value);
+//            buffer.writeJsonWithCodec(STREAM_CODEC, value);
 //        }
 //    };
 
 //    @Override
 //    public MapCodec<FabricatingRecipe> codec() {
-//        return CODEC;
+//        return STREAM_CODEC;
 //    }
 //
 //    @Override

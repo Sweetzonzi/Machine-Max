@@ -1,6 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.block;
 
-import io.github.sweetzonzi.machine_max.common.crafting.FabricatingMenu;
+import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
 import io.github.sweetzonzi.machine_max.common.registry.MMBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;

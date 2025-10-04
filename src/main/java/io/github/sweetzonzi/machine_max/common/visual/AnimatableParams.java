@@ -53,7 +53,7 @@ public class AnimatableParams {
                 Codec.STRING.fieldOf("key").forGetter(TextParams::key),
                 Codec.BOOL.optionalFieldOf("centered", true).forGetter(TextParams::centered),
                 Codec.BOOL.optionalFieldOf("shadow", false).forGetter(TextParams::shadow),
-//                ResourceLocation.CODEC.fieldOf("font").forGetter(TextParams::font),
+//                ResourceLocation.STREAM_CODEC.fieldOf("font").forGetter(TextParams::font),
                 Vec3.CODEC.optionalFieldOf("scale", new Vec3(1, 1, 1)).forGetter(TextParams::scale),
                 Vec3i.CODEC.optionalFieldOf("color", new Vec3i(255, 255, 255)).forGetter(TextParams::color),
                 Codec.INT.optionalFieldOf("transparency", 255).forGetter(TextParams::transparency),

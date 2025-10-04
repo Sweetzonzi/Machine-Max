@@ -5,7 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.renderable.GuiAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
-import io.github.sweetzonzi.machine_max.common.crafting.FabricatingMenu;
+import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;

@@ -52,7 +52,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.part.invalid_internal_connector_connection", "部件%1$s中的内部接口%2$s与%3$s的类型不匹配，至多只能有一个接口的类型为\"Special\"");
         //提示信息
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
-        this.add("message.machine_max.watch_interact_box_info", "按[%1$s]键与%2$s互动");
+        this.add("message.machine_max.watch_interact_box_info", "[%1$s]");
         this.add("error.machine_max.use_part_item", "尝试放置%1$s时出现错误：%2$s");
         this.add("tooltip.machine_max.crowbar.safe_disassembly", "互动以安全拆除%1$s");
         this.add("tooltip.machine_max.crowbar.unsafe_disassembly", "结构完整性：%1$s/%2$s 互动以强行拆除%3$s (可能损坏部件)");
@@ -82,5 +82,9 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "初级电子元件");
         this.add("item.machine_max.power_component_1", "初级能源组件");
         this.add("item.machine_max.energetic_component_1", "初级含能材料");
+        //菜单
+        this.add("gui.machine_max.confirm", "确认");
+        this.add("gui.machine_max.cancel", "取消");
+        this.add("gui.machine_max.enter_vehicle_name", "设置载具名称");
     }
 }

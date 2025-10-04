@@ -20,6 +20,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Getter
 public class VehicleData {
@@ -69,7 +70,7 @@ public class VehicleData {
             Vec3 max = new Vec3(maxX, maxY, maxZ);
             float hp = buffer.readFloat();
             Map<String, PartData> parts = buffer.readJsonWithCodec(PartData.MAP_CODEC);
-            List<ConnectionData> connections = buffer.readJsonWithCodec(ConnectionData.CODEC.listOf());
+            List<ConnectionData> connections = buffer.readList(ConnectionData.STREAM_CODEC);
             return new VehicleData(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
         }
 
@@ -90,7 +91,7 @@ public class VehicleData {
             buffer.writeFloat((float) value.max.z);
             buffer.writeFloat(value.hp);
             buffer.writeJsonWithCodec(PartData.MAP_CODEC, value.parts);
-            buffer.writeJsonWithCodec(ConnectionData.CODEC.listOf(), value.connections);
+            buffer.writeCollection(value.connections, ConnectionData.STREAM_CODEC);
         }
     };
 
@@ -142,4 +143,19 @@ public class VehicleData {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof VehicleData that)) return false;
+        return Float.compare(hp, that.hp) == 0 && Objects.equals(name, that.name) && Objects.equals(tooltip, that.tooltip) && Objects.equals(icon, that.icon) && Objects.equals(uuid, that.uuid) && Objects.equals(pos, that.pos) && Objects.equals(min, that.min) && Objects.equals(max, that.max) && Objects.equals(parts, that.parts) && Objects.equals(connections, that.connections);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
+    }
+
+    public VehicleData setName(String name) {
+        return new VehicleData(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
+    }
 }

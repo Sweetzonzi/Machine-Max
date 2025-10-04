@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 
 public abstract class DirtLayerBlock extends Block {
-//    public static final MapCodec<DirtLayerBlock> CODEC = simpleCodec(DirtLayerBlock::new);
+//    public static final MapCodec<DirtLayerBlock> STREAM_CODEC = simpleCodec(DirtLayerBlock::new);
     public static final int MAX_HEIGHT = 8;
     public static final IntegerProperty LAYERS = BlockStateProperties.LAYERS;
     protected static final VoxelShape[] SHAPE_BY_LAYER = new VoxelShape[]{
@@ -40,7 +40,7 @@ public abstract class DirtLayerBlock extends Block {
 
 //    @Override
 //    public @NotNull MapCodec<DirtLayerBlock> codec() {
-//        return CODEC;
+//        return STREAM_CODEC;
 //    }
 
     public DirtLayerBlock(BlockBehaviour.Properties properties) {

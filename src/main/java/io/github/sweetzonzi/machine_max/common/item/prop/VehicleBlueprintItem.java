@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
-import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.math.Quaternion;
@@ -61,7 +60,8 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
             //TODO:检查与地形的碰撞
             ItemStack stack = player.getItemInHand(usedHand);
             try {
-                VehicleData vehicleData = getVehicleData(stack, level);
+                VehicleData vehicleData = getVehicleData(stack);
+                if (vehicleData == null) return InteractionResultHolder.fail(stack);
                 Transform transform = new Transform(
                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                 player.getEyePosition(),
@@ -75,11 +75,10 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                 PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(shape));
                 testGhost.setPhysicsLocation(transform.getTranslation());
                 PhysicsLevel physicsLevel = level.getPhysicsLevel();
-                TaskSubmitOffice taskLevel = (TaskSubmitOffice) level;
                 physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_blueprint", PPhase.PRE, () -> {
                     int contact = physicsLevel.getWorld().contactTest(testGhost, null);
                     if (contact == 0) {
-                        taskLevel.submitImmediateTask(PPhase.PRE, () -> {
+                        level.submitImmediateTask(PPhase.PRE, () -> {
                             VehicleCore vehicle = new VehicleCore(level, vehicleData, false);
                             vehicle.setUuid(UUID.randomUUID());
                             vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
@@ -87,7 +86,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                             return null;
                         });
                     } else
-                        taskLevel.submitImmediateTask(PPhase.PRE, () -> {
+                        level.submitImmediateTask(PPhase.PRE, () -> {
                             player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
                             return null;
                         });
@@ -105,7 +104,8 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         super.inventoryTick(stack, level, entity, slotId, isSelected);
         if (level.isClientSide) {
             try {
-                VehicleData vehicleData = getVehicleData(stack, level);
+                VehicleData vehicleData = getVehicleData(stack);
+                if (vehicleData == null) return;
                 if (isSelected) {
                     Transform transform = entity instanceof LivingEntity livingEntity ?
                             new Transform(
@@ -155,7 +155,15 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
      */
     @Override
     public @NotNull Component getName(@NotNull ItemStack stack) {
-        String itemName = Objects.requireNonNull(stack.get(MMDataComponents.getVEHICLE_DATA())).toLanguageKey().replace("/", ".");
+        String itemName;
+        ResourceLocation location = stack.get(MMDataComponents.getVEHICLE_BLUEPRINT_PATH());
+        if(location != null) itemName = location.toLanguageKey().replace("/", ".");
+        else {
+            VehicleData vehicleData = getVehicleData(stack);
+            if (vehicleData != null)
+                itemName = vehicleData.getName();
+            else itemName = "machine_max:unreadable_blueprint";
+        }
         return Component.translatable(itemName);
     }
 
@@ -180,7 +188,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
 //                        tooltipComponents.add(Component.translatable("tooltip.%s.%s.details".formatted(MOD_ID, MMDynamicRes.getRealName(location.getPath()).replace("/", ".")))); // 支持本地化
         String tip;
         try {
-            tip = getVehicleData(stack, null).tooltip;
+            tip = getVehicleData(stack).tooltip;
         } catch (NullPointerException e) {
             return;
         }
@@ -221,14 +229,20 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
 
     }
 
-    public static VehicleData getVehicleData(ItemStack stack, Level level) {
-        VehicleData vehicleData;
-        if (stack.has(MMDataComponents.getVEHICLE_DATA())) {
-            //从物品Component中获取蓝图位置类型
-            vehicleData = MMDynamicRes.BLUEPRINTS.get(stack.get(MMDataComponents.getVEHICLE_DATA()));
-        } else throw new NullPointerException("物品" + stack + "中未找到蓝图数据");//如果物品Component中蓝图位置为空，则抛出异常
-        if (vehicleData == null)
-            throw new NullPointerException("未找到" + stack + "中存储的蓝图数据" + stack.get(MMDataComponents.getVEHICLE_DATA()));
+    public static VehicleData getVehicleData(ItemStack stack) {
+        VehicleData vehicleData = null;
+        if (stack.has(MMDataComponents.getVEHICLE_BLUEPRINT_PATH())) {
+            //从物品Component中获取内容包蓝图
+            try{
+                vehicleData = MMDynamicRes.BLUEPRINTS.get(stack.get(MMDataComponents.getVEHICLE_BLUEPRINT_PATH()));
+            }catch (Exception e){
+                stack.remove(MMDataComponents.getVEHICLE_BLUEPRINT_PATH());
+                MachineMax.LOGGER.error("物品{}中存储的蓝图数据{}读取异常，已清除该数据", stack, stack.get(MMDataComponents.getVEHICLE_BLUEPRINT_PATH()), e);
+            }
+        } else if(stack.has(MMDataComponents.getVEHICLE_DATA())){
+            //从物品Component中获取nbt保存的蓝图
+            vehicleData = stack.get(MMDataComponents.getVEHICLE_DATA());
+        }
         return vehicleData;
     }
 
@@ -239,7 +253,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         try {
-            VehicleData vehicleData = getVehicleData(itemStack, level);//获取物品保存的部件类型
+            VehicleData vehicleData = getVehicleData(itemStack);//获取物品保存的部件类型
             if (((ICustomModelItem) itemStack.getItem()).use2dModel(itemStack, level, context)
                     && context == ItemDisplayContext.GUI
                     && !vehicleData.icon.equals(ResourceLocation.withDefaultNamespace("missingno"))

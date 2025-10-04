@@ -34,7 +34,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         //Key names-Assembly
         this.add("key.machine_max.assembly.cycle_connector", "Cycle Part Connector");
         this.add("key.machine_max.assembly.cycle_variant", "Cycle Part Variant");
-        //Custom pack exception handle
+        //Custom pack exception handler
         this.add("error.machine_max.load", "An error occurred when loading external pack file at: %1$s, Reason: ");
         this.add("error.machine_max.invalid_resource_location", "Invalid resource location. Only lowercase letters, numbers, hyphens and underscores are allowed.");
         this.add("error.machine_max.subpart.zero_mass", "Sub-part mass must be greater than zero");
@@ -46,13 +46,13 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("error.machine_max.seat_subsystem.no_view", "Seat subsystem must either allow first person view or third person view");
         this.add("error.machine_max.item_storage_subsystem.invalid_row_num", "The row number of item-storage subsystem must be greater than 1");
         this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "The column number of item-storage subsystem must be greater than 1");
-        //Part assembly exception handle
+        //Part assembly exception handler
         this.add("error.machine_max.part.connector_locator_not_found", "Failed to find locator %2$s's locator %3$s in the model of part %1$");
         this.add("error.machine_max.part.invalid_connector_type", "Invalid locator type: \"%3$s\" in part: %1$: %2$s, must be \"Special\" or \"AttachPoint\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "Illegal internal locator connection between %2$s and %3$s in part %1$s. Only at most one \"Special\" locator is allowed");
         //Hint messages
         this.add("message.machine_max.leaving_vehicle", "Hold [%1$s] %2$s/0.50s to leave the vehicle.");
-        this.add("message.machine_max.watch_interact_box_info", "Press [%1$s] to interact with %2$s");
+        this.add("message.machine_max.watch_interact_box_info", "[%1$s]");
         this.add("error.machine_max.use_part_item", "An error occurred while trying to deploy %1$s：%2$s");
         this.add("tooltip.machine_max.crowbar.safe_disassembly", "Interact to safely disassemble %1$s");
         this.add("tooltip.machine_max.crowbar.unsafe_disassembly", "Integrity: %1$s/%2$s Interact to force disassemble %3$s (Could damage part)");
@@ -82,5 +82,10 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "Basic Electronic Component");
         this.add("item.machine_max.power_component_1", "Basic Power Component");
         this.add("item.machine_max.energetic_component_1", "Basic Energetic Material");
+        //Menu & Screen
+        this.add("gui.machine_max.set_vehicle_name", "Set Vehicle Name");
+        this.add("gui.machine_max.confirm", "Confirm");
+        this.add("gui.machine_max.cancel", "Cancel");
+        this.add("gui.machine_max.enter_vehicle_name", "Enter Vehicle Name");
     }
 }

@@ -100,5 +100,10 @@ public class MMPayloadRegistry {
                 PartSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartSyncPayload::handler)
         );
+        misc.playToServer(//通过GUI配置载具属性
+                VehicleConfigPayload.TYPE,
+                VehicleConfigPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(VehicleConfigPayload::handler)
+        );
     }
 }
