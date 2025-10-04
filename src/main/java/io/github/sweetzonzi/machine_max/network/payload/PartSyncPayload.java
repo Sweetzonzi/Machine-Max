@@ -77,5 +77,6 @@ public record PartSyncPayload(
                 });
             } else MachineMax.LOGGER.error("载具{}收到不存在部件的同步数据包", vehicle.name);
         } else MachineMax.LOGGER.error("收到不存在载具的同步数据包: {}", payload.vehicleUUID);
+        //TODO: 请求重建载具
     }
 }

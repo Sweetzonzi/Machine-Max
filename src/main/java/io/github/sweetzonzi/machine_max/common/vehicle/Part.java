@@ -220,7 +220,7 @@ public class Part implements ISignalReceiver {
             }
             if (integrity <= 0 && destroyed) {
                 float finalImpact = (destroyed ? 0.5f * impact : 0.1f * impact);
-                level.submitImmediateTask(PPhase.PRE, () -> {
+                level.submitImmediateTask(PPhase.ALL, () -> {
                     vehicle.removePart(this);
                     SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"));
                     SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getTransform().getTranslation()), Vec3.ZERO, 64f,
@@ -295,7 +295,7 @@ public class Part implements ISignalReceiver {
             return true;
         } else {
             if (!level.isClientSide) {
-                level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+                level.submitImmediateTask(PPhase.ALL, () -> {
                     //播放命中音效
                     SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"));
                     SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO, 64f,

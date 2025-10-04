@@ -52,17 +52,21 @@ public record ConnectorDetachPayload(
 
     public static void handle(ConnectorDetachPayload payload, IPayloadContext context) {
         context.enqueueWork(()->{
-            VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUuid);
-            if (vehicle == null) throw new IllegalStateException("未找到载具: " + payload.vehicleUuid);
-            List<Pair<AbstractConnector, AttachPointConnector>> connections = new ArrayList<>();
-            for (ConnectionData connection : payload.connections) {
-                AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(connection.partUuidS)).externalConnectors.get(Pair.of(connection.subPartNameS,connection.specialConnectorName));
-                AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(connection.partUuidA)).externalConnectors.get(Pair.of(connection.subPartNameA,connection.attachPointConnectorName));
-                if (connectorA == null || connectorB == null)
-                    throw new IllegalStateException("未找到对接口: " + payload.connections);
-                connections.add(Pair.of(connectorA, (AttachPointConnector) connectorB));
+            try{
+                VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUuid);
+                if (vehicle == null) throw new NullPointerException("未找到载具: " + payload.vehicleUuid);
+                List<Pair<AbstractConnector, AttachPointConnector>> connections = new ArrayList<>();
+                for (ConnectionData connection : payload.connections) {
+                    AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(connection.partUuidS)).externalConnectors.get(Pair.of(connection.subPartNameS,connection.specialConnectorName));
+                    AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(connection.partUuidA)).externalConnectors.get(Pair.of(connection.subPartNameA,connection.attachPointConnectorName));
+                    if (connectorA == null || connectorB == null)
+                        throw new NullPointerException("未找到对接口: " + payload.connections);
+                    connections.add(Pair.of(connectorA, (AttachPointConnector) connectorB));
+                }
+                vehicle.detachConnections(connections, payload.splitVehicles);
+            } catch (NullPointerException e){
+                MachineMax.LOGGER.error("处理载具连接断开包时发生错误: " , e);
             }
-            vehicle.detachConnections(connections, payload.splitVehicles);
         });
     }
 }
