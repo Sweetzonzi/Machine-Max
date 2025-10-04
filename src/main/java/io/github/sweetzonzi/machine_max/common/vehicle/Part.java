@@ -262,7 +262,7 @@ public class Part implements ISignalReceiver {
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
                 vehicle.activate();
                 subPart.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(subPart.body.getPhysicsLocation(null)));
-                vehicle.poseSyncCountDown = 0;//发生击退时立刻重新同步位置姿态速度
+//                vehicle.poseSyncCountDown = 0;//发生击退时立刻重新同步位置姿态速度
                 return null;
             });
             //换算穿深
@@ -538,6 +538,15 @@ public class Part implements ISignalReceiver {
             totalMass += subPart.mass;
         }
         this.totalMass = totalMass;
+    }
+
+    /**
+     * <p>获取此部件为载具提供的最大耐久度</p>
+     * <p>Gets the maximum durability of this part as a vehicle</p>
+     * @return 最大耐久度 max durability
+     */
+    public float getDurabilityForVehicle() {
+        return type.vehicleDurabilityRate * type.basicDurability;
     }
 
     /**

@@ -90,10 +90,12 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         super.tick();
         if (tickCount == 2) this.removePhysicsBody("entity_bounding_box");//移除SparkCore为实体添加的默认碰撞箱刚体
         if (this.subPart == null) {//如果实体没有所属的部件，则移除实体
-            if (tickCount % 20 == 0) updatePart();
-            else if (tickCount > 100) {//等待100tick用于同步部件信息
-                MachineMax.LOGGER.warn("部件实体没有匹配的部件，已移除!");
-                this.remove(RemovalReason.DISCARDED);
+            if (!this.isRemoved()) {
+                if (tickCount % 20 == 0) updatePart();
+                else if (tickCount > 100) {//等待100tick用于同步部件信息
+                    MachineMax.LOGGER.warn("部件实体没有匹配的部件，已移除!");
+                    this.remove(RemovalReason.DISCARDED);
+                }
             }
         } else {
             //更新实体位置

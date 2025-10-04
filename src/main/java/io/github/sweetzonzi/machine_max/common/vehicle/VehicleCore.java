@@ -35,7 +35,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -64,7 +63,6 @@ public class VehicleCore {
     private Vec3 oldPosition = Vec3.ZERO;//上一帧位置
     private Vec3 oldVelocity = Vec3.ZERO;//上一帧速度
     public float totalMass = 0;//总质量
-    public int poseSyncCountDown = 5;//位姿同步倒计时
     public int statusSyncCountDown = 5;//状态同步倒计时
     @Setter
     public boolean inLoadedChunk = false;//是否睡眠
@@ -99,12 +97,12 @@ public class VehicleCore {
             for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level, readSavedData));
             //重建连接关系
             for (ConnectionData connectionData : savedData.connections) {
-                Part partA = partMap.get(UUID.fromString(connectionData.PartUuidS));
-                Part partB = partMap.get(UUID.fromString(connectionData.PartUuidA));
+                Part partA = partMap.get(UUID.fromString(connectionData.partUuidS));
+                Part partB = partMap.get(UUID.fromString(connectionData.partUuidA));
                 if (partA != null && partB != null) {
                     this.attachConnector(
-                            partMap.get(UUID.fromString(connectionData.PartUuidS)).subParts.get(connectionData.SubPartNameS).connectors.get(connectionData.SpecialConnectorName),
-                            partMap.get(UUID.fromString(connectionData.PartUuidA)).subParts.get(connectionData.SubPartNameA).connectors.get(connectionData.AttachPointConnectorName),
+                            partMap.get(UUID.fromString(connectionData.partUuidS)).subParts.get(connectionData.subPartNameS).connectors.get(connectionData.specialConnectorName),
+                            partMap.get(UUID.fromString(connectionData.partUuidA)).subParts.get(connectionData.subPartNameA).connectors.get(connectionData.attachPointConnectorName),
                             null);
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
@@ -179,7 +177,7 @@ public class VehicleCore {
         if (inLoadedChunk && !isRemoved) {//TODO:如果在已加载区块内，或速度大于某个阈值
             if (!loaded) {
                 if (loadFromSavedData) {
-                    if (tickCount > 100) {//等待五秒防止因地形未加载而跌入虚空
+                    if (tickCount > 100 && !level.isClientSide()) {//等待五秒防止因地形未加载而跌入虚空
                         loaded = true;
                         setKinematic(false);
                     }
@@ -187,16 +185,12 @@ public class VehicleCore {
                     loaded = true;
                 }
             }
-            if (!level.isClientSide && poseSyncCountDown <= 0) {
-                syncSubParts(null);//同步零件位置姿态速度
-                poseSyncCountDown = Math.max((int) (40 * Math.pow(2, -0.1 * velocity.length())), 2);//速度越大，同步冷却时间越短
-            }
+            syncSubParts(null);//同步零件位置姿态速度
             subSystemController.tick();
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
         }
         tickCount++;
-        if (poseSyncCountDown > 0) poseSyncCountDown--;
     }
 
     public void prePhysicsTick() {
@@ -230,12 +224,14 @@ public class VehicleCore {
                     SubPart subPart = subPartEntry.getValue();
                     PhysicsRigidBody body = subPart.body;
                     boolean isSleep = !body.isActive();
-                    PosRotVelVel data = new PosRotVelVel(
-                            body.getPhysicsLocation(null),
-                            SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
-                            body.getLinearVelocity(null),
-                            body.getAngularVelocity(null));
-                    subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, isSleep));
+                    if (!isSleep) {
+                        PosRotVelVel data = new PosRotVelVel(
+                                body.getPhysicsLocation(null),
+                                SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
+                                body.getLinearVelocity(null),
+                                body.getAngularVelocity(null));
+                        subPartSyncDataMap.put(subPartEntry.getKey(), Pair.of(data, isSleep));
+                    }
                 }
                 subPartSyncDataToSend.put(entry.getKey(), subPartSyncDataMap);
             }
@@ -275,7 +271,6 @@ public class VehicleCore {
      * 激活载具所有零件的运动体
      */
     public void activate() {
-        poseSyncCountDown = 0;
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;

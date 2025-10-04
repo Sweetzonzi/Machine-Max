@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
@@ -22,6 +23,7 @@ import java.util.UUID;
  *
  * @param vehicleUUID   控制的载具UUID
  * @param partUUID      控制的载具部件UUID
+ * @param subPartName   控制的子部件名称
  * @param subSystemName 控制的子系统名称
  * @param input         六向输入信号
  * @param inputConflict 输入冲突信号
@@ -40,8 +42,8 @@ public record MovementInputPayload(
         public @NotNull MovementInputPayload decode(FriendlyByteBuf buf) {
             UUID vehicleUUID = buf.readUUID();
             UUID partUUID = buf.readUUID();
-            String subSystemName = buf.readUtf();
             String subPartName = buf.readUtf();
+            String subSystemName = buf.readUtf();
             byte[] input = buf.readByteArray();
             byte[] inputConflict = buf.readByteArray();
             return new MovementInputPayload(vehicleUUID, partUUID, subPartName, subSystemName, input, inputConflict);
@@ -82,11 +84,16 @@ public record MovementInputPayload(
     public static boolean handler(VehicleCore vehicle, final MovementInputPayload payload) {
         if (vehicle != null) {
             if (vehicle.partMap.get(payload.partUUID()) instanceof Part part) {
-                if (part.subParts.get(payload.subPartName()).subsystems.get(payload.subSystemName()) instanceof AbstractControllableSubsystem subSystem) {
-                    subSystem.setMoveInputSignal(payload.input(), payload.inputConflict());
-                    return true;
+                if (part.subParts.get(payload.subPartName()) instanceof SubPart subPart) {
+                    if (part.subParts.get(payload.subPartName()).subsystems.get(payload.subSystemName()) instanceof AbstractControllableSubsystem subSystem) {
+                        subSystem.setMoveInputSignal(payload.input(), payload.inputConflict());
+                        return true;
+                    } else {
+                        MachineMax.LOGGER.warn("Received movement input for non-existent sub-system: {}", payload.subSystemName());
+                        return false;
+                    }
                 } else {
-                    MachineMax.LOGGER.warn("Received movement input for non-existent sub-system: {}", payload.subSystemName());
+                    MachineMax.LOGGER.warn("Received movement input for non-existent sub-part: {}", payload.subPartName());
                     return false;
                 }
             } else {

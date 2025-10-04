@@ -2,21 +2,18 @@
   "hp": 20.0,
   "parts": [
     {
-      "uuid": "a0ff9d89-98f4-4938-a92a-ee4db74fec06",
-      "durability": 50.0,
-      "integrity": 75.0,
-      "subPartTransforms": {
+      "subpart_transforms": {
         "ae86_wheel_all_terrain": {
           "position": [
-            -4.213042,
-            -59.1875,
-            -5.8043838
+            1719.1481,
+            -59.188274,
+            -2175.1711
           ],
           "rotation": [
-            -0.0013530809,
-            -0.005634344,
-            2.3557782E-6,
-            0.9999832
+            0.54217494,
+            -0.008672244,
+            0.005277001,
+            0.8402043
           ],
           "linearVel": [
             0.0,
@@ -30,27 +27,32 @@
           ]
         }
       },
-      "registryKey": "machine_max:ae86_wheel_all_terrain",
+      "texture_indexes": {
+        "ae86_wheel_all_terrain": 0
+      },
+      "subsystem_data": {
+        "ae86_wheel_all_terrain": {}
+      },
+      "durability": 50.0,
+      "integrity": 40.0,
+      "registry_key": "machine_max:ae86_wheel_all_terrain",
       "subpart": "ae86_wheel_all_terrain",
-      "variant": "left",
-      "textureIndex": 0
+      "uuid": "100c5676-76eb-4d59-ab37-d30d6c9e4e6a",
+      "variant": "right"
     },
     {
-      "uuid": "3e233d27-80c1-431c-8990-5f5c1e73e51b",
-      "durability": 50.0,
-      "integrity": 75.0,
-      "subPartTransforms": {
+      "subpart_transforms": {
         "ae86_back_seat": {
           "position": [
-            -2.4484055,
-            -58.077534,
-            -7.1016736
+            1717.4252,
+            -58.082546,
+            -2176.522
           ],
           "rotation": [
-            -0.0021164622,
-            -0.0056572324,
-            4.538731E-5,
-            0.99998176
+            -0.001474324,
+            -0.010155151,
+            -4.5278644E-5,
+            0.99994737
           ],
           "linearVel": [
             0.0,
@@ -64,129 +66,38 @@
           ]
         }
       },
-      "registryKey": "machine_max:ae86_back_seat",
+      "texture_indexes": {
+        "ae86_back_seat": 0
+      },
+      "subsystem_data": {
+        "ae86_back_seat": {
+          "right_seat": {},
+          "left_seat": {},
+          "storage": {
+            "Items": []
+          }
+        }
+      },
+      "durability": 50.0,
+      "integrity": 40.0,
+      "registry_key": "machine_max:ae86_back_seat",
       "subpart": "ae86_back_seat",
-      "variant": "default",
-      "textureIndex": 0
+      "uuid": "adfa98ae-3573-4605-9eab-e4e3b383e154",
+      "variant": "default"
     },
     {
-      "uuid": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
-      "durability": 100.0,
-      "integrity": 150.0,
-      "subPartTransforms": {
-        "ae86_chassis_all_terrain": {
-          "position": [
-            -2.4348745,
-            -59.33254,
-            -8.283802
-          ],
-          "rotation": [
-            -0.0021159593,
-            -0.005657247,
-            3.9805753E-5,
-            0.99998176
-          ],
-          "linearVel": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "angularVel": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      },
-      "registryKey": "machine_max:ae86_chassis_all_terrain",
-      "subpart": "ae86_chassis_all_terrain",
-      "variant": "default",
-      "textureIndex": 0
-    },
-    {
-      "uuid": "50c042fb-b876-4f1c-9170-cec00b2171ed",
-      "durability": 25.0,
-      "integrity": 50.0,
-      "subPartTransforms": {
-        "ae86_seat": {
-          "position": [
-            -1.8753749,
-            -57.956425,
-            -8.033268
-          ],
-          "rotation": [
-            -0.0021163716,
-            -0.0056574643,
-            5.511009E-5,
-            0.99998176
-          ],
-          "linearVel": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "angularVel": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      },
-      "registryKey": "machine_max:ae86_seat",
-      "subpart": "ae86_seat",
-      "variant": "default",
-      "textureIndex": 0
-    },
-    {
-      "uuid": "a9a350e5-bcbb-49fc-b27c-6a7cd5a5a371",
-      "durability": 25.0,
-      "integrity": 50.0,
-      "subPartTransforms": {
-        "ae86_seat": {
-          "position": [
-            -3.0002642,
-            -57.956566,
-            -8.045999
-          ],
-          "rotation": [
-            -0.0021165032,
-            -0.0056572207,
-            4.426508E-5,
-            0.99998176
-          ],
-          "linearVel": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "angularVel": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
-      },
-      "registryKey": "machine_max:ae86_seat",
-      "subpart": "ae86_seat",
-      "variant": "default",
-      "textureIndex": 0
-    },
-    {
-      "uuid": "16f07542-54d1-49e8-b069-c838a72834df",
-      "durability": 50.0,
-      "integrity": 75.0,
-      "subPartTransforms": {
+      "subpart_transforms": {
         "ae86_wheel_all_terrain": {
           "position": [
-            -4.160688,
-            -59.18746,
-            -10.429136
+            1715.6487,
+            -59.188526,
+            -2175.2422
           ],
           "rotation": [
-            0.0021537128,
-            -0.0056644194,
-            6.9387956E-5,
-            0.99998164
+            0.4069984,
+            -0.010174152,
+            0.0044683786,
+            0.91336125
           ],
           "linearVel": [
             0.0,
@@ -200,61 +111,32 @@
           ]
         }
       },
-      "registryKey": "machine_max:ae86_wheel_all_terrain",
-      "subpart": "ae86_wheel_all_terrain",
-      "variant": "left",
-      "textureIndex": 0
-    },
-    {
-      "uuid": "c8a8ab0b-aefd-420e-8492-afe6d6ee83e0",
-      "durability": 50.0,
-      "integrity": 75.0,
-      "subPartTransforms": {
-        "ae86_wheel_all_terrain": {
-          "position": [
-            -0.7132519,
-            -59.1875,
-            -5.7647696
-          ],
-          "rotation": [
-            -0.03256473,
-            -0.0050607924,
-            -1.643099E-4,
-            0.9994568
-          ],
-          "linearVel": [
-            0.0,
-            0.0,
-            0.0
-          ],
-          "angularVel": [
-            0.0,
-            0.0,
-            0.0
-          ]
-        }
+      "texture_indexes": {
+        "ae86_wheel_all_terrain": 0
       },
-      "registryKey": "machine_max:ae86_wheel_all_terrain",
+      "subsystem_data": {
+        "ae86_wheel_all_terrain": {}
+      },
+      "durability": 50.0,
+      "integrity": 40.0,
+      "registry_key": "machine_max:ae86_wheel_all_terrain",
       "subpart": "ae86_wheel_all_terrain",
-      "variant": "right",
-      "textureIndex": 0
+      "uuid": "2a1ab82e-e301-440b-8722-85a5ab822e88",
+      "variant": "left"
     },
     {
-      "uuid": "32bab657-ca6f-4960-9cad-84bdc77bebe7",
-      "durability": 50.0,
-      "integrity": 75.0,
-      "subPartTransforms": {
+      "subpart_transforms": {
         "ae86_hull": {
           "position": [
-            -2.4350023,
-            -58.08255,
-            -8.289084
+            1717.4492,
+            -58.086052,
+            -2177.7092
           ],
           "rotation": [
-            -0.0021169118,
-            -0.005656047,
-            4.4381926E-5,
-            0.99998176
+            -0.0014738947,
+            -0.0101554245,
+            -4.361591E-5,
+            0.9999473
           ],
           "linearVel": [
             0.0,
@@ -268,27 +150,36 @@
           ]
         }
       },
-      "registryKey": "machine_max:ae86_hull",
+      "texture_indexes": {
+        "ae86_hull": 0
+      },
+      "subsystem_data": {
+        "ae86_hull": {
+          "title.machine_max.subsystem.ae86.trunk": {
+            "Items": []
+          }
+        }
+      },
+      "durability": 50.0,
+      "integrity": 40.0,
+      "registry_key": "machine_max:ae86_hull",
       "subpart": "ae86_hull",
-      "variant": "default",
-      "textureIndex": 0
+      "uuid": "18c419e3-a993-4ae6-ba27-69695d66ed1f",
+      "variant": "default"
     },
     {
-      "uuid": "4ee88e3e-3185-401d-9137-1650fc35aea3",
-      "durability": 50.0,
-      "integrity": 75.0,
-      "subPartTransforms": {
-        "ae86_wheel_all_terrain": {
+      "subpart_transforms": {
+        "ae86_chassis_all_terrain": {
           "position": [
-            -0.66094476,
-            -59.187504,
-            -10.389486
+            1717.4491,
+            -59.33605,
+            -2177.7056
           ],
           "rotation": [
-            -0.0010841273,
-            -0.0056608105,
-            -1.937507E-5,
-            0.9999834
+            -0.001474314,
+            -0.010155724,
+            -4.2615575E-5,
+            0.9999473
           ],
           "linearVel": [
             0.0,
@@ -302,93 +193,268 @@
           ]
         }
       },
-      "registryKey": "machine_max:ae86_wheel_all_terrain",
+      "texture_indexes": {
+        "ae86_chassis_all_terrain": 0
+      },
+      "subsystem_data": {
+        "ae86_chassis_all_terrain": {
+          "transmission": {},
+          "right_front_wheel_driver": {},
+          "car_controller": {},
+          "engine": {},
+          "left_front_wheel_driver": {},
+          "right_back_wheel_driver": {},
+          "gearbox": {},
+          "left_back_wheel_driver": {}
+        }
+      },
+      "durability": 100.0,
+      "integrity": 80.0,
+      "registry_key": "machine_max:ae86_chassis_all_terrain",
+      "subpart": "ae86_chassis_all_terrain",
+      "uuid": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
+      "variant": "default"
+    },
+    {
+      "subpart_transforms": {
+        "ae86_wheel_all_terrain": {
+          "position": [
+            1715.7426,
+            -59.188335,
+            -2179.8662
+          ],
+          "rotation": [
+            0.23780644,
+            -0.0098219095,
+            0.0025700217,
+            0.9712595
+          ],
+          "linearVel": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "angularVel": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "texture_indexes": {
+        "ae86_wheel_all_terrain": 0
+      },
+      "subsystem_data": {
+        "ae86_wheel_all_terrain": {}
+      },
+      "durability": 50.0,
+      "integrity": 40.0,
+      "registry_key": "machine_max:ae86_wheel_all_terrain",
       "subpart": "ae86_wheel_all_terrain",
-      "variant": "right",
-      "textureIndex": 0
+      "uuid": "16d64ca2-cf24-47d2-9069-765ca6739fc7",
+      "variant": "left"
+    },
+    {
+      "subpart_transforms": {
+        "ae86_wheel_all_terrain": {
+          "position": [
+            1719.2418,
+            -59.18835,
+            -2179.7952
+          ],
+          "rotation": [
+            0.19031607,
+            -0.009971584,
+            0.0019997638,
+            0.9816702
+          ],
+          "linearVel": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "angularVel": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "texture_indexes": {
+        "ae86_wheel_all_terrain": 0
+      },
+      "subsystem_data": {
+        "ae86_wheel_all_terrain": {}
+      },
+      "durability": 50.0,
+      "integrity": 40.0,
+      "registry_key": "machine_max:ae86_wheel_all_terrain",
+      "subpart": "ae86_wheel_all_terrain",
+      "uuid": "41d59bda-7367-4982-928b-032dda1ecc0e",
+      "variant": "right"
+    },
+    {
+      "subpart_transforms": {
+        "ae86_seat": {
+          "position": [
+            1716.8817,
+            -57.96028,
+            -2177.4712
+          ],
+          "rotation": [
+            -0.0014740933,
+            -0.010155268,
+            -4.386715E-5,
+            0.9999473
+          ],
+          "linearVel": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "angularVel": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "texture_indexes": {
+        "ae86_seat": 0
+      },
+      "subsystem_data": {
+        "ae86_seat": {
+          "seat": {}
+        }
+      },
+      "durability": 25.0,
+      "registry_key": "machine_max:ae86_seat",
+      "subpart": "ae86_seat",
+      "uuid": "f9095b79-12c9-43fc-b23a-15b1c3b8cb05",
+      "variant": "default"
+    },
+    {
+      "subpart_transforms": {
+        "ae86_seat": {
+          "position": [
+            1718.0065,
+            -57.960346,
+            -2177.4482
+          ],
+          "rotation": [
+            -0.001474119,
+            -0.010155274,
+            -4.3997727E-5,
+            0.9999473
+          ],
+          "linearVel": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "angularVel": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "texture_indexes": {
+        "ae86_seat": 0
+      },
+      "subsystem_data": {
+        "ae86_seat": {
+          "seat": {}
+        }
+      },
+      "durability": 25.0,
+      "registry_key": "machine_max:ae86_seat",
+      "subpart": "ae86_seat",
+      "uuid": "8d6e975f-5d8f-42a6-b2a3-130d05797d2d",
+      "variant": "default"
     }
   ],
   "connections": [
     {
-      "PartUuidA": "a0ff9d89-98f4-4938-a92a-ee4db74fec06",
-      "SubPartNameA": "ae86_wheel_all_terrain",
-      "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
-      "SubPartNameS": "ae86_chassis_all_terrain",
-      "SpecialConnectorName": "left_back_wheel"
+      "partUuidA": "100c5676-76eb-4d59-ab37-d30d6c9e4e6a",
+      "subPartNameA": "ae86_wheel_all_terrain",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
+      "subPartNameS": "ae86_chassis_all_terrain",
+      "specialConnectorName": "right_back_wheel"
     },
     {
-      "PartUuidA": "16f07542-54d1-49e8-b069-c838a72834df",
-      "SubPartNameA": "ae86_wheel_all_terrain",
-      "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
-      "SubPartNameS": "ae86_chassis_all_terrain",
-      "SpecialConnectorName": "left_front_wheel"
+      "partUuidA": "2a1ab82e-e301-440b-8722-85a5ab822e88",
+      "subPartNameA": "ae86_wheel_all_terrain",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
+      "subPartNameS": "ae86_chassis_all_terrain",
+      "specialConnectorName": "left_back_wheel"
     },
     {
-      "PartUuidA": "c8a8ab0b-aefd-420e-8492-afe6d6ee83e0",
-      "SubPartNameA": "ae86_wheel_all_terrain",
-      "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
-      "SubPartNameS": "ae86_chassis_all_terrain",
-      "SpecialConnectorName": "right_back_wheel"
+      "partUuidA": "16d64ca2-cf24-47d2-9069-765ca6739fc7",
+      "subPartNameA": "ae86_wheel_all_terrain",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
+      "subPartNameS": "ae86_chassis_all_terrain",
+      "specialConnectorName": "left_front_wheel"
     },
     {
-      "PartUuidA": "4ee88e3e-3185-401d-9137-1650fc35aea3",
-      "SubPartNameA": "ae86_wheel_all_terrain",
-      "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
-      "SubPartNameS": "ae86_chassis_all_terrain",
-      "SpecialConnectorName": "right_front_wheel"
+      "partUuidA": "41d59bda-7367-4982-928b-032dda1ecc0e",
+      "subPartNameA": "ae86_wheel_all_terrain",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
+      "subPartNameS": "ae86_chassis_all_terrain",
+      "specialConnectorName": "right_front_wheel"
     },
     {
-      "PartUuidA": "3e233d27-80c1-431c-8990-5f5c1e73e51b",
-      "SubPartNameA": "ae86_back_seat",
-      "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
-      "SubPartNameS": "ae86_chassis_all_terrain",
-      "SpecialConnectorName": "back_seat"
+      "partUuidA": "8d6e975f-5d8f-42a6-b2a3-130d05797d2d",
+      "subPartNameA": "ae86_seat",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
+      "subPartNameS": "ae86_chassis_all_terrain",
+      "specialConnectorName": "driver_seat"
     },
     {
-      "PartUuidA": "a9a350e5-bcbb-49fc-b27c-6a7cd5a5a371",
-      "SubPartNameA": "ae86_seat",
-      "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
-      "SubPartNameS": "ae86_chassis_all_terrain",
-      "SpecialConnectorName": "copilot_seat"
+      "partUuidA": "f9095b79-12c9-43fc-b23a-15b1c3b8cb05",
+      "subPartNameA": "ae86_seat",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
+      "subPartNameS": "ae86_chassis_all_terrain",
+      "specialConnectorName": "copilot_seat"
     },
     {
-      "PartUuidA": "50c042fb-b876-4f1c-9170-cec00b2171ed",
-      "SubPartNameA": "ae86_seat",
-      "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
-      "SubPartNameS": "ae86_chassis_all_terrain",
-      "SpecialConnectorName": "driver_seat"
+      "partUuidA": "adfa98ae-3573-4605-9eab-e4e3b383e154",
+      "subPartNameA": "ae86_back_seat",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
+      "subPartNameS": "ae86_chassis_all_terrain",
+      "specialConnectorName": "back_seat"
     },
     {
-      "PartUuidA": "32bab657-ca6f-4960-9cad-84bdc77bebe7",
-      "SubPartNameA": "ae86_hull",
-      "AttachPointConnectorName": "chassis_connection",
-      "PartUuidS": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
-      "SubPartNameS": "ae86_chassis_all_terrain",
-      "SpecialConnectorName": "hull"
+      "partUuidA": "18c419e3-a993-4ae6-ba27-69695d66ed1f",
+      "subPartNameA": "ae86_hull",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
+      "subPartNameS": "ae86_chassis_all_terrain",
+      "specialConnectorName": "hull"
     }
   ],
   "min": [
-    -2.2621297306484647,
-    -1.409731970893013,
-    -3.2821789847479934
+    -2.299112955729015,
+    -1.7059805128309478,
+    -3.5888671875
   ],
   "max": [
-    2.264231436782413,
-    1.9220322502983933,
-    3.16192520989312
+    2.298177083333485,
+    1.9166734483506929,
+    3.408935546875
   ],
-  "uuid": "7c144ab1-1e3f-4bc1-af94-544e67b85855",
+  "uuid": "d97421ee-2d04-4d18-8e64-ca029d6e4672",
   "pos": [
-    -2.437983089023166,
-    -58.68395317925347,
-    -8.015733612908257
+    1717.443644205729,
+    -58.68652894761827,
+    -2177.436767578125
   ],
   "vehicle_name": "AE86AT",
   "tooltip": "machine_max:ae86at.html",

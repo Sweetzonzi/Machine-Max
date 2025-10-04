@@ -105,8 +105,9 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     public Vec3 projectedArea = null;
     public float bodyMinY = -99999;
     public HashSet<BlockPos> climbableBlocks = new HashSet<>();
+    //运行中
     public int tickCount = 0;
-
+    public volatile boolean isRemoved = false;
 
     public SubPart(String name, Part part, SubPartAttr attr) {
         this.part = part;
@@ -124,6 +125,7 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
         this.body.setSleepingThresholds(0.1f, 0.1f);
         this.body.setProtectGravity(true);
         this.body.setGravity(getPhysicsLevel().getWorld().getGravity(null));
+        if (part.getLevel().isClientSide()) this.body.setKinematic(true);
         Vector3f inverseInertia = new Vector3f();
         this.body.getInverseInertiaLocal(inverseInertia);
         //TODO:检查为什么从保存的文件加载时有概率获得一个不正确的转动惯量
@@ -177,6 +179,7 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     }
 
     public void destroy() {
+        isRemoved = true;
         subsystems.forEach((name, subsystem) -> subsystem.onDetach());
         subsystems.clear();
         for (AbstractConnector connector : connectors.values()) {
@@ -434,7 +437,7 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
             } else if (otherOwner instanceof Entity entity && !(entity instanceof CollisionObjectEntity)) {
                 //与实体碰撞时
                 //调用子系统碰撞回调
-                if (hitBox.subsystem != null){
+                if (hitBox.subsystem != null) {
                     hitBox.subsystem.onCollideWithEntity(
                             this.body, other, contactVel, normal, worldContactPoint, impactAngle, hitBox, manifoldPointId
                     );
@@ -544,12 +547,14 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     }
 
     public void tick() {
+        if (isRemoved) return;
         if (this.entity == null || this.entity.isRemoved()) {
             if (!getLevel().isClientSide()) refreshPartEntity();
         }
     }
 
     public void prePhysicsTick() {
+        if (isRemoved) return;
         tickCount++;
         Vector3f vel = this.body.getLinearVelocity(null);
         //仅在有速度时应用流体动力
@@ -704,11 +709,12 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     }
 
     public void postPhysicsTick() {
+        if (isRemoved) return;
         if (entity != null && !entity.isRemoved()) {//更新实体包围盒
             BoundingBox box = PhysicsBodyExtensionKt.stateOf(body).getCachedBoundingBox();
             entity.boundingBox.set(box);
-            getAnimController().physTick();
         }
+        getAnimController().physTick();
     }
 
     @NotNull
