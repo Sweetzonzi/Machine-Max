@@ -1,12 +1,29 @@
 {
-  "type": "minecraft:crafting_shapeless",
-  "category": "misc",
+  "type": "machine_max:fabricating",
   "ingredients": [
     {
-      "tag": "c:ingots/copper"
+      "ingredient": {
+        "tag": "c:ingots/copper"
+      },
+      "count": 3
     },
     {
-      "item": "minecraft:gunpowder"
+      "ingredient": {
+        "tag": "c:ingots/iron"
+      },
+      "count": 5
+    },
+    {
+      "ingredient": {
+        "tag": "c:ingots/gold"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:gunpowder"
+      },
+      "count": 224
     }
   ],
   "result": {
@@ -15,5 +32,6 @@
     "components": {
       "machine_max:part_type": "machine_max:ae86_chassis"
     }
-  }
+  },
+  "time": 2000
 }

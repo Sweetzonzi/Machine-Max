@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.crafting.FabricatingInput;
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingInput;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
@@ -32,7 +32,7 @@ public class FabicatingBlueprintItem extends Item implements ICustomModelItem {
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
-        FabricatingInput input = new FabricatingInput(player.getInventory().items, 0, 0, 0);
+        FabricatingInput input = new FabricatingInput(player.getInventory().items);
         Recipe<?> recipe = getRecipe(player.getItemInHand(usedHand), level);
 //        if (recipe.matches(input, level)) {
 //            MachineMax.LOGGER.debug("材料充足，可以制造{}", recipe.getResult().toString());

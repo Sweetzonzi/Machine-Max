@@ -10,6 +10,8 @@ import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -22,7 +24,7 @@ public class FabricatorBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public FabricatorBlock() {
-        super(Properties.of().sound(SoundType.METAL));
+        super(Properties.of().sound(SoundType.METAL).noOcclusion().noTerrainParticles().lightLevel(p -> 5));
     }
 
     @Override
@@ -32,10 +34,20 @@ public class FabricatorBlock extends BaseEntityBlock {
         } else {
             MenuProvider menuprovider = this.getMenuProvider(state, level, pos);
             if (menuprovider != null) {
-                player.openMenu(menuprovider);
+                player.openMenu(menuprovider, pos);
             }
             return InteractionResult.CONSUME;
         }
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+        return (level1, pos, state1, blockEntity) -> {
+            if (blockEntity instanceof FabricatorBlockEntity) {
+                ((FabricatorBlockEntity) blockEntity).tick(level1, pos, state1);
+            }
+        };
     }
 
     @Override

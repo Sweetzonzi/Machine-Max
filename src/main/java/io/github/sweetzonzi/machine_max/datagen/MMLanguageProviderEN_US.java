@@ -87,5 +87,33 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("gui.machine_max.confirm", "Confirm");
         this.add("gui.machine_max.cancel", "Cancel");
         this.add("gui.machine_max.enter_vehicle_name", "Enter Vehicle Name");
+        this.add("gui.machine_max.fabricator.recipes", "Recipes");
+        this.add("gui.machine_max.fabricator.tasks", "Tasks");
+        this.add("gui.machine_max.fabricator.preview", "Preview");
+        this.add("gui.machine_max.fabricator.materials", "Material requirements");
+        this.add("gui.machine_max.fabricator.free_slots", "Idle task queue: %1$s/%2$s");
+        this.add("gui.machine_max.fabricator.insufficient_materials", "Insufficient materials");
+        this.add("gui.machine_max.fabricator.no_free_slots", "Task queue is full");
+        this.add("gui.machine_max.fabricator.start_production", "FABRICATE");
+        this.add("gui.machine_max.fabricator.cancel_task", "CANCEL");
+        this.add("gui.machine_max.fabricator.collect_task", "CLAIM");
+        this.add("gui.machine_max.fabricator.collect_all_task", "CLAIM ALL");
+        this.add("gui.machine_max.fabricator.search_hint", "Search recipe…");
+        this.add("gui.machine_max.fabricator.status.queued", "Queued");
+        this.add("gui.machine_max.fabricator.status.producing", "Producing");
+        this.add("gui.machine_max.fabricator.status.completed", "Completed");
+        this.add("gui.machine_max.fabricator.status.idle", "Idle");
+        this.add("gui.machine_max.fabricator.ready_for_collection", "Complete!");
+        this.add("gui.machine_max.fabricator.estimated_time", "EST: %s");
+        this.add("gui.machine_max.fabricator.remaining_time", "Remaining: %s");
+        this.add("gui.machine_max.fabricator.no_item", "No Item");
+        this.add("gui.machine_max.fabricator.select_recipe_hint", "Select a recipe to view details");
+        this.add("gui.machine_max.fabricator.recipe_details", "Recipe Details");
+        this.add("gui.machine_max.fabricator.actual_time", "Fabrication Time: %s");
+        this.add("gui.machine_max.fabricator.base_time", "Base Time: %s");
+        this.add("gui.machine_max.fabricator.efficiency", "Efficiency: %sx");
+        this.add("gui.machine_max.fabricator.output_count", "Output Count: %s");
+        this.add("gui.machine_max.fabricator.recipe_description", "Recipe Description:");
+        this.add("gui.machine_max.fabricator.item_description", "Item Description:");
     }
 }

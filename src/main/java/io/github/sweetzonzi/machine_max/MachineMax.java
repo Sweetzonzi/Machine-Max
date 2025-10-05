@@ -50,6 +50,7 @@ public class MachineMax {
         MMCreativeTabs.register();//注册所有创造模式物品栏
         MMMenus.register(bus);//注册所有菜单
         MMSounds.register();//注册所有音效
+        MMResources.register();//注册所有自定义配方类型
         MMPackModuleRegistries.register(bus);//注册所有SparkCore扩展包模块
     }
 }

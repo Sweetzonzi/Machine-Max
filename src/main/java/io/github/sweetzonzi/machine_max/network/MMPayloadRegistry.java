@@ -3,6 +3,11 @@ package io.github.sweetzonzi.machine_max.network;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.network.payload.*;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.*;
+import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCancelPayload;
+import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
+import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
+import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationStartPayload;
+import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -104,6 +109,26 @@ public class MMPayloadRegistry {
                 VehicleConfigPayload.TYPE,
                 VehicleConfigPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(VehicleConfigPayload::handler)
+        );
+        misc.playToServer(//制造机开始制造
+                FabricationStartPayload.TYPE,
+                FabricationStartPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(FabricationStartPayload::handler)
+        );
+        misc.playToServer(//制造机取消制造
+                FabricationCancelPayload.TYPE,
+                FabricationCancelPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(FabricationCancelPayload::handler)
+        );
+        misc.playToServer(//制造机收取产物
+                FabricationCollectPayload.TYPE,
+                FabricationCollectPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(FabricationCollectPayload::handler)
+        );
+        misc.playToServer(//制造机收取产物
+                FabricationCollectAllPayload.TYPE,
+                StreamCodec.unit(new FabricationCollectAllPayload()),
+                new MainThreadPayloadHandler<>(FabricationCollectAllPayload::handler)
         );
     }
 }

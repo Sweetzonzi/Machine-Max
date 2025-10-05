@@ -1,0 +1,15 @@
+{
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "tag": "c:ingots/copper"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "minecraft:copper_ingot",
+    "count": 2
+  }
+}

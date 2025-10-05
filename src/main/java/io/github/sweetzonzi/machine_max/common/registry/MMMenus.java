@@ -17,7 +17,7 @@ public class MMMenus {
 
     public static final Supplier<MenuType<FabricatingMenu>> FABRICATING_MENU = MENU_TYPES.register(
             "fabricating_menu",
-            ()-> IMenuTypeExtension.create((windowId, inv, data) -> new FabricatingMenu(windowId, inv))
+            ()-> IMenuTypeExtension.create(FabricatingMenu::new)
     );
 
     public static final Supplier<MenuType<VehicleNamingMenu>> VEHICLE_NAMING_MENU = MENU_TYPES.register(

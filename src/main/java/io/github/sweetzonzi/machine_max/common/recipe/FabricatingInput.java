@@ -1,11 +1,11 @@
-package io.github.sweetzonzi.machine_max.common.crafting;
+package io.github.sweetzonzi.machine_max.common.recipe;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
 
 import java.util.List;
 
-public record FabricatingInput(List<ItemStack> inputs, float commonUnit, float rareUnit, float researchPoint) implements RecipeInput {
+public record FabricatingInput(List<ItemStack> inputs) implements RecipeInput {
 
     @Override
     public ItemStack getItem(int index) {

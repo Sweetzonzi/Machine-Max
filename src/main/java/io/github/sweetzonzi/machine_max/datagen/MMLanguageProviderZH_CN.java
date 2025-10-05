@@ -86,5 +86,33 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.confirm", "确认");
         this.add("gui.machine_max.cancel", "取消");
         this.add("gui.machine_max.enter_vehicle_name", "设置载具名称");
+        this.add("gui.machine_max.fabricator.recipes", "配方列表");
+        this.add("gui.machine_max.fabricator.tasks", "制造任务");
+        this.add("gui.machine_max.fabricator.preview", "预览");
+        this.add("gui.machine_max.fabricator.materials", "所需材料");
+        this.add("gui.machine_max.fabricator.free_slots", "任务队列空闲剩余: %1$s/%2$s");
+        this.add("gui.machine_max.fabricator.insufficient_materials", "材料不足");
+        this.add("gui.machine_max.fabricator.no_free_slots", "任务队列已满");
+        this.add("gui.machine_max.fabricator.start_production", "开始制造");
+        this.add("gui.machine_max.fabricator.cancel_task", "取消任务");
+        this.add("gui.machine_max.fabricator.collect_task", "领取产出");
+        this.add("gui.machine_max.fabricator.collect_all_task", "领取所有产出");
+        this.add("gui.machine_max.fabricator.search_hint", "搜索配方…");
+        this.add("gui.machine_max.fabricator.status.queued", "排队中");
+        this.add("gui.machine_max.fabricator.status.producing", "制造中");
+        this.add("gui.machine_max.fabricator.status.completed", "已完成");
+        this.add("gui.machine_max.fabricator.status.idle", "空闲");
+        this.add("gui.machine_max.fabricator.ready_for_collection", "已完成");
+        this.add("gui.machine_max.fabricator.estimated_time", "预计: %s");
+        this.add("gui.machine_max.fabricator.remaining_time", "剩余: %s");
+        this.add("gui.machine_max.fabricator.no_item", "无物品");
+        this.add("gui.machine_max.fabricator.select_recipe_hint", "选择配方查看详情");
+        this.add("gui.machine_max.fabricator.recipe_details", "配方详情");
+        this.add("gui.machine_max.fabricator.actual_time", "制造时间: %s");
+        this.add("gui.machine_max.fabricator.base_time", "基础时间: %s");
+        this.add("gui.machine_max.fabricator.efficiency", "效率: %sx");
+        this.add("gui.machine_max.fabricator.output_count", "产出数量: %s");
+        this.add("gui.machine_max.fabricator.recipe_description", "配方描述:");
+        this.add("gui.machine_max.fabricator.item_description", "物品描述:");
     }
 }
