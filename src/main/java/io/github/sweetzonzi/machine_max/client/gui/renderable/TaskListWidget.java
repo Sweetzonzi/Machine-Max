@@ -113,8 +113,10 @@ public class TaskListWidget extends AbstractScrollWidget {
             graphics.drawString(minecraft.font, displayNameStr, getX() + 24, yPos + 9, 0xFFFFFF, false);
             // 进度百分比
             String progressPercent = String.format("%.1f%%", task.getProgressPercent() * 100);
-            graphics.drawString(minecraft.font, progressPercent, getX() + width - 25, yPos + 35, 0xFFFFFF, false);
-
+            int textWidth = minecraft.font.width(progressPercent);
+            int rightMargin = 2; // 距离右侧的边距，可以根据需要调整
+            int textX = getX() + width - rightMargin - textWidth;
+            graphics.drawString(minecraft.font, progressPercent, textX, yPos + 35, 0xFFFFFF, false);
             // 进度信息
             if (task.status == FabricatorBlockEntity.TaskStatus.PRODUCING ||
                     task.status == FabricatorBlockEntity.TaskStatus.COMPLETED) {
@@ -132,7 +134,7 @@ public class TaskListWidget extends AbstractScrollWidget {
                 }
 
                 // 时间信息
-                if (task.status == FabricatorBlockEntity.TaskStatus.PRODUCING) {
+                if (task.status == FabricatorBlockEntity.TaskStatus.PRODUCING || task.status == FabricatorBlockEntity.TaskStatus.QUEUED) {
                     int remainingTime = (int) ((task.totalTime - task.progress) / fabricator.getEfficiency());
                     String timeText = formatTime(remainingTime);
                     graphics.drawString(minecraft.font, timeText, getX() + 4, yPos + 35, 0xAAAAAA, false);
@@ -149,9 +151,7 @@ public class TaskListWidget extends AbstractScrollWidget {
                 // 排队中的任务显示预计时间
                 int estimatedTime = (int) (task.totalTime / fabricator.getEfficiency());
                 String timeText = formatTime(estimatedTime);
-                graphics.drawString(minecraft.font,
-                        Component.translatable("gui.machine_max.fabricator.estimated_time", timeText),
-                        getX() + 4, yPos + 35, 0xAAAAAA, false);
+                graphics.drawString(minecraft.font, timeText, getX() + 4, yPos + 35, 0xAAAAAA, false);
             }
 
             // 悬停时显示详细tooltip
@@ -173,7 +173,6 @@ public class TaskListWidget extends AbstractScrollWidget {
                     tooltip.add(Component.translatable("gui.machine_max.fabricator.estimated_time",
                             formatTime(estimatedTime)).withStyle(ChatFormatting.GRAY));
                 }
-
                 graphics.renderTooltip(minecraft.font, tooltip, task.result.getTooltipImage(), mouseX, (int) (mouseY + scrollAmount()));
                 graphics.enableScissor(this.getX() + 1, this.getY() + 1, this.getX() + this.width - 1, this.getY() + this.height - 1);
             }
