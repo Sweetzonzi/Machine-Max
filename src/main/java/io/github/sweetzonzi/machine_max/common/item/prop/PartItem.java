@@ -273,7 +273,7 @@ public class PartItem extends Item implements ICustomModelItem {
         else customModels = new HashMap<>();
         if (context == ItemDisplayContext.GUI) {
             animatable.getModelController().setModel(new ModelIndex(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
+                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x")));
             animatable.getModelController().setTextureLocation(partType.getDefaultIcon());
         } else {
             animatable.getModelController().setModel(new ModelIndex(partType.getVariant(variant).subParts().values().iterator().next().getModel("default")));

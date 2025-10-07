@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -147,13 +148,10 @@ public class RecipeDetailsWidget extends AbstractScrollWidget {
     @Override
     protected void renderBackground(GuiGraphics graphics) {
         // 渲染背景
-        graphics.fill(getX(), getY(), getX() + width, getY() + height, 0x80555555);
+        graphics.fill(getX(), getY(), getX() + width, getY() + height, new Color(16, 16, 16, 128).getRGB());
 
         // 绘制边框
-        graphics.fill(getX(), getY(), getX() + width, getY() + 1, 0xFF555555);
-        graphics.fill(getX(), getY() + height - 1, getX() + width, getY() + height, 0xFF555555);
-        graphics.fill(getX(), getY(), getX() + 1, getY() + height, 0xFF555555);
-        graphics.fill(getX() + width - 1, getY(), getX() + width, getY() + height, 0xFF555555);
+        graphics.renderOutline(getX(), getY(), width, height, 0xFF555555);
 
         // 渲染滚动条背景（如果需要）
         if (scrollbarVisible()) {

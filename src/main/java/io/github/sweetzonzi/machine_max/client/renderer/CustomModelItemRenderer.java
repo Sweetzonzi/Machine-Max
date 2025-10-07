@@ -39,6 +39,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             ModelInstance modelInstance = animatable.getModelController().getModel();
             if (modelInstance == null) return;
             poseStack.pushPose();
+            poseStack.translate(0.5F, 0.5F, 0.5F);
             if (displayContext == ItemDisplayContext.GUI) poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
             ModelRenderHelperKt.render(
                     animatable.getModelController().getOriginModel(),

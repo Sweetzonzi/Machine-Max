@@ -8,6 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -24,7 +25,7 @@ public class FabricatorBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public FabricatorBlock() {
-        super(Properties.of().sound(SoundType.METAL).noOcclusion().noTerrainParticles().lightLevel(p -> 5));
+        super(Properties.of().sound(SoundType.METAL).noOcclusion().lightLevel(p -> 5));
     }
 
     @Override
@@ -64,5 +65,10 @@ public class FabricatorBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return new FabricatorBlockEntity(pos, state);
+    }
+
+    @Override
+    protected @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 }

@@ -51,6 +51,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -81,8 +82,8 @@ import java.util.concurrent.ConcurrentMap;
 @Getter
 public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHost, ISignalReceiver {
     //模型、动画与渲染
-    public final ModelController modelController = new ModelController(this);
-    public final AnimController animController = new AnimController(this);
+    public final ModelController modelController;
+    public final AnimController animController;
     public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
     @Nullable
     public MMPartEntity entity;//用于渲染模型以及和原版内容进行交互的的实体对象
@@ -113,7 +114,8 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
         this.part = part;
         this.name = name;
         this.attr = attr;
-
+        this.modelController = new ModelController(this);
+        this.animController = new AnimController(this);
         this.getModelController().setModel(new ModelIndex(attr.getModel("default")));
         this.getModelController().setTextureLocation(attr.getTextures("default").get(textureIndex % attr.getTextures("default").size()));
 
@@ -121,7 +123,8 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
         if (!attr.interactBoxes.isEmpty()) {
             this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape("default"));
         } else this.interactBoxes = null;
-        this.body = createPhysicsBody(this.collisionShape, attr.mass);
+        this.body = new PhysicsRigidBody(this.collisionShape, attr.mass);
+        PhysicsBodyExtensionKt.setOwner(this.body, this);
         this.body.setSleepingThresholds(0.1f, 0.1f);
         this.body.setProtectGravity(true);
         this.body.setGravity(getPhysicsLevel().getWorld().getGravity(null));
@@ -171,7 +174,11 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     }
 
     public void addToLevel() {
-        addPhysicsBody(body);
+        getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+            if (body.isInWorld()) return null;
+            getPhysicsLevel().getWorld().addCollisionObject(body);
+            return null;
+        });
         for (AbstractConnector connector : connectors.values()) {
             if (connector.hasPart())
                 connector.addToLevel();
@@ -185,7 +192,10 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
         for (AbstractConnector connector : connectors.values()) {
             connector.destroy();
         }
-        if (body.isInWorld()) removePhysicsBody(body);
+        if (body.isInWorld()) {
+            PhysicsBodyExtensionKt.setOwner(body, null);
+            PhysicsBodyExtensionKt.addPhysicsBody(getLevel(), this.body);
+        }
         if (interactBoxes != null) {
             for (InteractBox interactBox : interactBoxes.values()) interactBox.destroy();
             interactBoxes.destroy();
@@ -825,5 +835,11 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     @Override
     public Level getLevel() {
         return part.level;
+    }
+
+    @NotNull
+    @Override
+    public ModelIndex getDefaultModelIndex() {
+        return new ModelIndex(attr.getModel("default"));
     }
 }

@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
 import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData;
 import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer;
 import cn.solarmoon.spark_core.animation.model.ModelController;
-import io.github.sweetzonzi.machine_max.MachineMax;
+import cn.solarmoon.spark_core.molang.core.util.StringPool;
 import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMBlockEntities;
@@ -43,12 +43,14 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
     // 动画实例
     public final AnimInstance workAnim;
     public final AnimInstance idleAnim;
+
     // 状态机
     public enum State {
         IDLE,       // 空闲状态
         WORKING,    // 工作中状态
         FINISHED    // 完成状态
     }
+
     @Getter
     private State currentState = State.IDLE;
     //属性机制相关
@@ -61,6 +63,7 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
     private final NonNullList<ItemStack> outputItems; // 输出物品（每个任务槽对应一个输出槽）
     // 状态跟踪
     private boolean needsUpdate = false;
+
     // 任务状态
     public enum TaskStatus {
         IDLE,        // 空闲
@@ -127,8 +130,8 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
         this.taskSlots = new ProductionTask[maxTaskSize];
         this.outputItems = NonNullList.withSize(maxTaskSize, ItemStack.EMPTY);
         // 初始化动画
-        this.workAnim = AnimInstance.create(this, "work", (a)-> null);
-        this.idleAnim = AnimInstance.create(this, "idle", (a)-> null);
+        this.workAnim = AnimInstance.create(this, "work", (a) -> null);
+        this.idleAnim = AnimInstance.create(this, "idle", (a) -> null);
         // 初始化状态机
         this.currentState = State.IDLE;
         this.renderingTask = null;
@@ -194,22 +197,27 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
     }
 
     private void updateState() {
+        //更新状态
         if (getProducingTaskCount() > 0 && currentState != State.WORKING) {
             currentState = State.WORKING;
             renderingTask = findFirstProducingOrQueuedTask();
             animController.getLayer(DefaultLayer.INSTANCE.getMAIN_LAYER()).setAnimation(workAnim, new AnimLayerData());
-        } else if (getCompletedTaskCount() > 0 && currentState != State.FINISHED && getProducingTaskCount() == 0){
+        } else if (getCompletedTaskCount() > 0 && currentState != State.FINISHED && getProducingTaskCount() == 0) {
             currentState = State.FINISHED;
             renderingTask = findFirstCompletedTask();
             animController.getLayer(DefaultLayer.INSTANCE.getMAIN_LAYER()).setAnimation(idleAnim, new AnimLayerData());
-        } else if(currentState != State.IDLE && getProducingTaskCount() == 0 && getQueuedTaskCount() == 0){
+        } else if (currentState != State.IDLE && getProducingTaskCount() == 0 && getCompletedTaskCount() == 0) {
             currentState = State.IDLE;
             renderingTask = null;
             animController.getLayer(DefaultLayer.INSTANCE.getMAIN_LAYER()).setAnimation(idleAnim, new AnimLayerData());
         }
-        renderingTask = findFirstProducingOrQueuedTask();
-        if(currentState == State.WORKING && renderingTask != null){
-            workAnim.setTime(workAnim.getMaxLength() * renderingTask.getProgressPercent());
+        //更新动画进度与渲染
+        if (currentState == State.WORKING) {
+            renderingTask = findFirstProducingOrQueuedTask();
+            if (renderingTask != null) {
+                workAnim.setTime(renderingTask.progress / 20 / efficiency % workAnim.getMaxLength());
+                getAnimController().getScopedStorage().setScoped(StringPool.computeIfAbsent("progress"), (double) renderingTask.getProgressPercent());
+            }
         }
     }
 
@@ -299,7 +307,7 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
                 if (taskSlots[slot] != null && taskSlots[slot].status == TaskStatus.COMPLETED) {
                     taskSlots[slot] = null;
                 }
-            } else if(level != null){
+            } else if (level != null) {
                 // 背包已满，直接掉落
                 level.addFreshEntity(Objects.requireNonNull(player.drop(stack, true)));
             }

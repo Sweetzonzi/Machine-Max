@@ -17,6 +17,8 @@ import net.minecraft.world.item.ItemStack;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 
+import java.awt.*;
+
 public class ItemModelWidget extends AbstractWidget {
     private final Minecraft minecraft;
     @Getter
@@ -68,8 +70,10 @@ public class ItemModelWidget extends AbstractWidget {
 
         try {
             // 渲染背景
-            graphics.fill(getX(), getY(), getX() + width, getY() + height, 0x80404040);
+            graphics.fill(getX(), getY(), getX() + width, getY() + height, new Color(16, 16, 16, 128).getRGB());
 
+            // 绘制边框
+            graphics.renderOutline(getX(), getY(), width, height, 0xFF555555);
             if (itemStack.isEmpty()) {
                 // 显示占位文本
                 graphics.drawString(minecraft.font, Component.translatable("gui.machine_max.fabricator.no_item"),

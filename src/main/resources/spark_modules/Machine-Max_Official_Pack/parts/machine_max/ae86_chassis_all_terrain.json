@@ -10,12 +10,12 @@
     "tags": [],//(可选)部件标签列表
     "sub_parts": {//零件(子部件)列表，这是部件运动的最小单元，部件的每个可动部分都应当是一个零件(子部件)
       "ae86_chassis_all_terrain": {//零件(子部件)名称
-        "models": "machine_max:ae86_chassis_all_terrain.geo",
+        "models": "machine_max:part/ae86_all_terrain/ae86_chassis_all_terrain.geo",
         "textures": [//部件可用贴图列表，不同变体模型应共享一张贴图
           "machine_max:textures/part/ae86_all_terrain_1.png",
           "machine_max:textures/part/ae86_all_terrain_2.png"
         ],
-        "animation": "machine_max:ae86.animation", //(可选，留空则不播放动画)动画文件路径
+        "animation": "machine_max:part/ae86", //(可选，留空则不播放动画)动画文件路径
         "mass": 1200.0,//零件质量(kg)
         "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
         "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)

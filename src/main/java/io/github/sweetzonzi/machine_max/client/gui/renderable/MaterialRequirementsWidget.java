@@ -27,7 +27,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
     private static final int ENTRY_HEIGHT = 30;
     private static final int ENTRY_WIDTH = 60;
     private static final int HORIZONTAL_PADDING = 2;
-    private static final int VERTICAL_PADDING = 5;
+    private static final int VERTICAL_PADDING = 2;
 
     // 滚动文本相关
     private long lastScrollUpdate = 0;
@@ -91,10 +91,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
         graphics.fill(getX(), getY(), getX() + width, getY() + height, new Color(16, 16, 16, 128).getRGB());
 
         // 绘制边框
-        graphics.fill(getX(), getY(), getX() + width, getY() + 1, 0xFF555555); // 上边框
-        graphics.fill(getX(), getY() + height - 1, getX() + width, getY() + height, 0xFF555555); // 下边框
-        graphics.fill(getX(), getY(), getX() + 1, getY() + height, 0xFF555555); // 左边框
-        graphics.fill(getX() + width - 1, getY(), getX() + width, getY() + height, 0xFF555555); // 右边框
+        graphics.renderOutline(getX(), getY(), width, height, 0xFF555555);
 
         if (currentRecipe == null) {
             // 居中显示提示文本
@@ -128,8 +125,8 @@ public class MaterialRequirementsWidget extends AbstractWidget {
             int row = i / columns;
             int col = i % columns;
 
-            int x = startX + col * ENTRY_WIDTH + col * 2;
-            int y = startY + row * ENTRY_HEIGHT + row * 2;
+            int x = startX + col * ENTRY_WIDTH + col * HORIZONTAL_PADDING;
+            int y = startY + row * ENTRY_HEIGHT + row * VERTICAL_PADDING;
 
             renderMaterialEntry(graphics, materialEntries.get(i), x, y, ENTRY_WIDTH, ENTRY_HEIGHT);
 

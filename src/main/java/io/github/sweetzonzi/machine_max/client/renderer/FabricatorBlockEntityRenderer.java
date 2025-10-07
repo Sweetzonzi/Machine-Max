@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.renderer;
 
 import cn.solarmoon.spark_core.animation.renderer.GeoBlockEntityRenderer;
+import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.registry.client.SparkShaders;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -10,9 +11,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import org.joml.Matrix4f;
+
+import java.awt.*;
 
 public class FabricatorBlockEntityRenderer extends GeoBlockEntityRenderer<FabricatorBlockEntity> {
 
@@ -25,7 +31,22 @@ public class FabricatorBlockEntityRenderer extends GeoBlockEntityRenderer<Fabric
                        PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay) {
         // 先渲染基础模型
-        super.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        if (blockEntity.hasLevel()) {
+            super.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        } else {
+            var modelController = blockEntity.getModelController();
+            ModelRenderHelperKt.render(
+                    modelController.getOriginModel(),
+                    modelController.getModel().getPose(),
+                    poseStack.last().pose(),
+                    poseStack.last().normal(),
+                    bufferSource.getBuffer(RenderType.entityTranslucent(getGeoTextureLocation(blockEntity))),
+                    packedLight,
+                    packedOverlay,
+                    Color.WHITE.getRGB(),
+                    1f,
+                    true);
+        }
         // 如果正在工作，渲染制造中的物品
         if (blockEntity.getCurrentState() != FabricatorBlockEntity.State.IDLE && blockEntity.getRenderingTask() != null) {
             renderFabricatingItem(blockEntity, partialTick, poseStack, bufferSource, packedLight);
@@ -44,25 +65,39 @@ public class FabricatorBlockEntityRenderer extends GeoBlockEntityRenderer<Fabric
         ItemStack result = task.result;
 
         poseStack.pushPose();
-        poseStack.translate(0.5, 0.3, 0.5);// 移动到平台位置
-        float scale = 0.4f * progress;
-        poseStack.scale(0.5f, 0.1f + scale, 0.5f);// 缩放
-        // 计算当前高度（从平台到挤出机）
-        float currentHeight = 0.5f + scale * progress;
-        // 使用裁剪渲染类型
-        RenderType renderType = createClippedRenderType(currentHeight, poseStack.last().pose());
-
-        Minecraft.getInstance().getItemRenderer().renderStatic(
-                result,
-                ItemDisplayContext.GROUND,
-                packedLight,
-                OverlayTexture.NO_OVERLAY,
-                poseStack,
-                bufferSource,
-                Minecraft.getInstance().level,
-                0
-        );
-
+        float scale = 0.3f;
+        float scale2 = 0.4f * progress;
+        if (result.getItem() instanceof BlockItem item) {
+            poseStack.translate(0.5-scale/2, 0.2, 0.5-scale/2);// 移动到平台位置
+            poseStack.pushPose();
+            poseStack.scale(scale, scale, scale);// 缩放
+            // 计算当前高度（从平台到挤出机）
+            float currentHeight = 0.3f + 2 * scale2;
+            // 使用裁剪渲染类型
+            RenderType renderType = createClippedRenderType(currentHeight, poseStack.last().pose());
+            // 绘制方块
+            getContext().getBlockRenderDispatcher().renderSingleBlock(
+                    Block.byItem(item).defaultBlockState(),
+                    poseStack, bufferSource, packedLight, OverlayTexture.NO_OVERLAY,
+                    ModelData.EMPTY, renderType
+            );
+        } else {
+            poseStack.translate(0.5f, 0.2f, 0.5f);// 移动到平台位置
+            poseStack.pushPose();
+            poseStack.scale(scale, scale, scale);// 缩放
+            poseStack.scale(1, scale2, 1);// 缩放
+            Minecraft.getInstance().getItemRenderer().renderStatic(
+                    result,
+                    ItemDisplayContext.GROUND,
+                    packedLight,
+                    OverlayTexture.NO_OVERLAY,
+                    poseStack,
+                    bufferSource,
+                    Minecraft.getInstance().level,
+                    0
+            );
+        }
+        poseStack.popPose();
         poseStack.popPose();
     }
 

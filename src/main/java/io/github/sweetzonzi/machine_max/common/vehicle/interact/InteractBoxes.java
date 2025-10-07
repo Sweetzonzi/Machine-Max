@@ -36,7 +36,8 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
             InteractBox interactBox = new InteractBox(subPart, name, entry.getValue());
             this.put(name, interactBox);
         }
-        this.body = createPhysicsBody(interactBoxShape, 0);
+        this.body = new PhysicsRigidBody(interactBoxShape, 0);
+        PhysicsBodyExtensionKt.setOwner(this.body, this);
         this.body.setContactResponse(false);
         this.body.setKinematic(true); // 非常诡异，不设置运动学模式会导致射线检测等判定不上
         this.body.setCollisionGroup(CollisionGroups.PAWN);
@@ -45,7 +46,7 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
             this.postPhysicsTick();
             return null;
         });
-        this.addPhysicsBody(this.body);
+        PhysicsBodyExtensionKt.addPhysicsBody(subPart.getLevel(), this.body);
     }
 
     public void postPhysicsTick() {
@@ -74,7 +75,7 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
 
     public void destroy() {
         this.clear();
-        removePhysicsBody(this.body);
+        PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), this.body);
     }
 
     @NotNull

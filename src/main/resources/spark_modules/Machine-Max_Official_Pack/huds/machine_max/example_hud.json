@@ -1,6 +1,6 @@
 {
-  "model": "machine_max:example_hud.geo",
-  "animation": "machine_max:example_hud",
+  "model": "machine_max:hud/example_hud.geo",
+  "animation": "machine_max:hud/example_hud",
   "texture": "machine_max:textures/hud/example_hud.png",
   "offset": [95, 55, -135], //(可选，默认[0, 0, 0]) 相对屏幕中心的偏移量，透视投影下单位为米，正交投影下单位为像素
   "rotation": [-25, -30, 0],//(可选，默认[0, 0, 0]) 旋转角度，单位为度

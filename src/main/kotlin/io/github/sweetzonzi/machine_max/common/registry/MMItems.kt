@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.client.renderer.BlockEntityItemRenderer
 import io.github.sweetzonzi.machine_max.client.renderer.CustomModelItemRenderer
 import io.github.sweetzonzi.machine_max.common.item.MaterialItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
@@ -11,6 +12,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabicatingBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.WrenchItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
+import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
@@ -27,7 +29,7 @@ object MMItems {
     //载具部件物品原型
     @JvmStatic
     val PART_ITEM = MachineMax.REGISTER.item<PartItem>()
-        .id("part_item")
+        .id("part")
         .bound {
             PartItem(
                 Item.Properties().stacksTo(1).durability(100)
@@ -35,12 +37,12 @@ object MMItems {
         }
         .build()
 
-    //部件制造台
-//    @JvmStatic
-//    val FABRICATOR_BLOCK_ITEM = MachineMax.REGISTER.item<BlockItem>()
-//        .id("fabricator")
-//        .bound { BlockItem(MMBlocks.FABRICATOR_BLOCK.get(), Item.Properties()) }
-//        .build()
+    //制造台
+    @JvmStatic
+    val FABRICATOR_BLOCK_ITEM = MachineMax.REGISTER.item<BlockItem>()
+        .id("fabricator")
+        .bound { BlockItem(MMBlocks.FABRICATOR_BLOCK.get(), Item.Properties()) }
+        .build()
 
     //载具蓝图物品原型
     @JvmStatic
@@ -141,10 +143,22 @@ object MMItems {
             CustomModelItemExtension(),
             CROWBAR_ITEM, SPRAY_CAN_ITEM, PART_ITEM, FABRICATING_BLUEPRINT, VEHICLE_BLUEPRINT, EMPTY_BLUEPRINT
         )
+        event.registerItem(
+            CustomModelBlockEntityExtension(),
+            FABRICATOR_BLOCK_ITEM
+        )
     }
 
     class CustomModelItemExtension : IClientItemExtensions {
         private val renderer = CustomModelItemRenderer()
+
+        override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
+            return renderer
+        }
+    }
+
+    class CustomModelBlockEntityExtension : IClientItemExtensions {
+        private val renderer = BlockEntityItemRenderer()
 
         override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
             return renderer

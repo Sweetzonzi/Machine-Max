@@ -27,7 +27,7 @@
     }
   ],
   "result": {
-    "id": "machine_max:part_item",
+    "id": "machine_max:part",
     "count": 1,
     "components": {
       "machine_max:part_type": "machine_max:ae86_chassis"

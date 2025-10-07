@@ -300,7 +300,7 @@ public abstract class AbstractConnector implements PhysicsHost {
         if (subPart.part.getLevel().isClientSide())
             VisualEffectHelper.attachPoints.remove(this);
         getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
-            removePhysicsBody(body);
+            if (this.body != null) PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), this.body);
             return null;
         });
     }
@@ -313,7 +313,8 @@ public abstract class AbstractConnector implements PhysicsHost {
 
     private void createAttachPointBody(Vector3f position, Quaternion rotation) {
         if (!internal && this.body == null) {//为与外部部件连接的接口创建碰撞判定，供玩家通过视线选取
-            body = createPhysicsBody(shape, PhysicsBody.massForStatic);
+            body = new PhysicsRigidBody(shape, PhysicsBody.massForStatic);
+            PhysicsBodyExtensionKt.setOwner(this.body, this);
             body.setProtectGravity(true);
             body.setGravity(Vector3f.ZERO);
             body.setKinematic(true);
@@ -322,15 +323,15 @@ public abstract class AbstractConnector implements PhysicsHost {
             body.setCollideWithGroups(CollisionGroups.NONE);
             body.setPhysicsLocation(position);
             body.setPhysicsRotation(rotation);
-            PhysicsBodyExtensionKt.onPrePhysicsTick(body, event->{
+            PhysicsBodyExtensionKt.onPrePhysicsTick(body, event -> {
                 prePhysicsTick();
                 return null;
             });
-            PhysicsBodyExtensionKt.onTick(body, event->{
+            PhysicsBodyExtensionKt.onTick(body, event -> {
                 mcTick();
                 return null;
             });
-            addPhysicsBody(body);
+            PhysicsBodyExtensionKt.addPhysicsBody(subPart.getLevel(), this.body);
         } else body = null;
 
     }

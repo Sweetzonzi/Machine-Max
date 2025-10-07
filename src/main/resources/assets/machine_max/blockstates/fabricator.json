@@ -1,5 +1,5 @@
 {
   "variants": {
-    "": { "model": "builtin/entity" }
+    "": { "model": "machine_max:block/fabricator" }
   }
 }

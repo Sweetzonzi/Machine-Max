@@ -49,12 +49,14 @@ import java.util.Map;
 public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable {
     private final Minecraft minecraft = Minecraft.getInstance();
     protected final AnimatableParams params;//各种渲染参数
-    private final ModelController modelController = new ModelController(this);
-    private final AnimController animController = new AnimController(this);
+    private final ModelController modelController;
+    private final AnimController animController;
 
     public ModelAnimatable(AnimatableParams params) {
         if (params == null) throw new NullPointerException();
         this.params = params;
+        this.modelController = new ModelController(this);
+        this.animController = new AnimController(this);
         getModelController().setModel(params.modelIndex);
         getModelController().setTextureLocation(params.texture);
         create();
@@ -204,5 +206,11 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     @Override
     public Matrix4f getWorldPositionMatrix(@NotNull Number number) {
         return SparkMathKt.toMatrix4f(SparkMathKt.lerp(params.lastTransform, params.transform, number.floatValue()).toTransformMatrix());
+    }
+
+    @NotNull
+    @Override
+    public ModelIndex getDefaultModelIndex() {
+        return params.modelIndex;
     }
 }
