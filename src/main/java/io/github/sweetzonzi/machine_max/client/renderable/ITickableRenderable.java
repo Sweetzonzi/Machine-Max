@@ -11,6 +11,10 @@ public interface ITickableRenderable {
         MMGuiManager.animatableWidgets.add(new WeakReference<>(this, MMGuiManager.referenceQueue));
     }
 
+    default void destroy() {
+        MMGuiManager.animatableWidgets.removeIf(weakRef -> weakRef.get() == this);
+    }
+
     void render(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float partialTick);
 
     void animTick();

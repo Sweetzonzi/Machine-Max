@@ -43,7 +43,10 @@ public class CustomHud implements LayeredDraw.Layer {
                     }
                     //移除不匹配的HUD组件
                     for (Map.Entry<ResourceLocation, GuiAnimatable> entry : vehicleHud.entrySet()){
-                        if(!seat.attr.views.firstPersonHud().contains(entry.getKey())) vehicleHud.remove(entry.getKey());
+                        if(!seat.attr.views.firstPersonHud().contains(entry.getKey())) {
+                            vehicleHud.remove(entry.getKey());
+                            entry.getValue().destroy();
+                        }
                     }
                 } else {
                     //添加缺少的HUD组件
@@ -52,10 +55,14 @@ public class CustomHud implements LayeredDraw.Layer {
                     }
                     //移除不匹配的HUD组件
                     for (Map.Entry<ResourceLocation, GuiAnimatable> entry : vehicleHud.entrySet()){
-                        if(!seat.attr.views.thirdPersonHud().contains(entry.getKey())) vehicleHud.remove(entry.getKey());
+                        if(!seat.attr.views.thirdPersonHud().contains(entry.getKey())) {
+                            vehicleHud.remove(entry.getKey());
+                            entry.getValue().destroy();
+                        }
                     }
                 }
             } else {
+                for (GuiAnimatable renderable : vehicleHud.values()) renderable.destroy();
                 vehicleHud.clear();
             }
         }
