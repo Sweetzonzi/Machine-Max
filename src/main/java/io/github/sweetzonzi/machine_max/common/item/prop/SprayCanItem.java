@@ -90,7 +90,7 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         animatable.getModelController().setModel(
-                new ModelIndex(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/spray_can")));
+                new ModelIndex("item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "spray_can")));
         animatable.getModelController().setTextureLocation(
                 ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/spray_can.png"));
         if (customModels != null) {

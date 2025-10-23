@@ -15,6 +15,6 @@ public class MMRenderHandler {
     @SubscribeEvent//注册每个实体渲染器
     public static void onEntityRendererRegistry(EntityRenderersEvent.RegisterRenderers event){
         event.registerEntityRenderer(MMEntities.getPART_ENTITY().get(), PartEntityRenderer::new);
-        event.registerBlockEntityRenderer(MMBlockEntities.getFABRICATOR_BLOCK_ENTITY().get(), FabricatorBlockEntityRenderer::new);
+        event.registerBlockEntityRenderer(MMBlockEntities.FABRICATOR_BLOCK_ENTITY.get(), FabricatorBlockEntityRenderer::new);
     }
 }

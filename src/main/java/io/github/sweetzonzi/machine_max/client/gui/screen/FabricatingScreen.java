@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.client.gui.screen;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import io.github.sweetzonzi.machine_max.client.gui.renderable.*;
-import io.github.sweetzonzi.machine_max.common.block.FabricatorBlockEntity;
+import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
 import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCancelPayload;

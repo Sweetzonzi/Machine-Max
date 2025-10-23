@@ -4,7 +4,6 @@ import com.google.gson.*;
 import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
-import io.github.sweetzonzi.machine_max.external.js.MMInitialJS;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -97,9 +96,9 @@ public class MMDynamicRes {
         exceptions.clear();
         errorFiles.clear();
         errorMessages.clear();
-        MM_SCRIPTS.clear();
-        MMInitialJS.clear();
-        MM_PUBLIC_SCRIPTS.clear();
+//        MM_SCRIPTS.clear();
+//        MMInitialJS.clear();
+//        MM_PUBLIC_SCRIPTS.clear();
         loadResources();
     }
 
@@ -112,7 +111,7 @@ public class MMDynamicRes {
         //保证 主路径、载具包根路径 存在
         Exist(NAMESPACE);
         Exist(SPARK_MODULE);
-        Exist(PUBLIC_JS_LIBS);
+//        Exist(PUBLIC_JS_LIBS);
 //        for (Path root : listPaths(VEHICLES, path -> Files.isDirectory(path) || isZipFile(path))) {
 //            String packName = root.getFileName().toString();
 //            if (Files.isDirectory(root)) {
@@ -151,15 +150,15 @@ public class MMDynamicRes {
         boolean DYNAMIC = false;
         // DYNAMIC: 某些示范代码需要关闭覆盖保证存在文件即可，在生成器中则需要覆盖）
 
-        copyResourceToFile("/public_scripts/functions.js", PUBLIC_JS_LIBS.resolve("functions.js"), STATIC);
-        for (Path jsPackageFile : listPaths(PUBLIC_JS_LIBS, Files::isRegularFile)) {
-            try {
-                MM_PUBLIC_SCRIPTS.add(new String(Files.readAllBytes(jsPackageFile)));
-            } catch (Exception ignored) {
-            }
-        }
+//        copyResourceToFile("/public_scripts/functions.js", PUBLIC_JS_LIBS.resolve("functions.js"), STATIC);
+//        for (Path jsPackageFile : listPaths(PUBLIC_JS_LIBS, Files::isRegularFile)) {
+//            try {
+//                MM_PUBLIC_SCRIPTS.add(new String(Files.readAllBytes(jsPackageFile)));
+//            } catch (Exception ignored) {
+//            }
+//        }
 
-        MMInitialJS.register();//注册所有JS形式的初始化配置
+//        MMInitialJS.register();//注册所有JS形式的初始化配置
     }
 
     @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)

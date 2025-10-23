@@ -7,7 +7,6 @@ import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.data.event.GatherDataEvent
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, modid = MachineMax.MOD_ID)
 object MMGenerator {
-    @JvmStatic
     @SubscribeEvent
     private fun gather(event: GatherDataEvent) {
         val generator = event.generator

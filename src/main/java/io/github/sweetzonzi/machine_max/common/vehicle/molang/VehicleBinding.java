@@ -1,20 +1,18 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.molang;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.molang.core.binding.ContextBinding;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.molang.vehicle.GetVehicleVariable;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.world.entity.LivingEntity;
 
-public class VehicleBinding  extends ContextBinding {
+public class VehicleBinding{
     public static final VehicleBinding INSTANCE = new VehicleBinding();
 
     private VehicleBinding() {
-        var("durability", VehicleBinding::getDurability);
-        var("max_durability", VehicleBinding::getMaxDurability);
-        function("get", new GetVehicleVariable());
+//        var("durability", VehicleBinding::getDurability);
+//        var("max_durability", VehicleBinding::getMaxDurability);
+//        function("get", new GetVehicleVariable());
     }
 
     private static Float getDurability(IAnimatable<?> ctx) {

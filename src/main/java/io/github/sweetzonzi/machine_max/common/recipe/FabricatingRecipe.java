@@ -28,6 +28,7 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
     private final List<IngredientCountPair> ingredientPairs;
     private final ItemStack result;
     private final int processingTime;
+    private final String tooltip;
 
     // 内部类：包装 Ingredient 和数量
     public record IngredientCountPair(Ingredient ingredient, int count) {
@@ -47,7 +48,8 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
             instance.group(
                     FabricatingRecipe.IngredientCountPair.CODEC.listOf().fieldOf("ingredients").forGetter(FabricatingRecipe::getIngredientPairs),
                     ItemStack.CODEC.fieldOf("result").forGetter(FabricatingRecipe::getResult),
-                    Codec.INT.optionalFieldOf("time", 100).forGetter(FabricatingRecipe::getProcessingTime)
+                    Codec.INT.optionalFieldOf("time", 100).forGetter(FabricatingRecipe::getProcessingTime),
+                    Codec.STRING.optionalFieldOf("description", "").forGetter(FabricatingRecipe::getTooltip)
             ).apply(instance, FabricatingRecipe::new)
     );
 
@@ -66,7 +68,8 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
             ItemStack result = ItemStack.STREAM_CODEC.decode(buffer);
             // 读取处理时间
             int processingTime = buffer.readVarInt();
-            return new FabricatingRecipe(ingredients, result, processingTime);
+            String descriptionId = buffer.readUtf();
+            return new FabricatingRecipe(ingredients, result, processingTime, descriptionId);
         }
 
         @Override
@@ -83,13 +86,16 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
             ItemStack.STREAM_CODEC.encode(buffer, recipe.getResult());
             // 写入处理时间
             buffer.writeVarInt(recipe.getProcessingTime());
+            // 写入描述id
+            buffer.writeUtf(recipe.getTooltip());
         }
     };
 
-    public FabricatingRecipe(List<IngredientCountPair> ingredientPairs, ItemStack result, int processingTime) {
+    public FabricatingRecipe(List<IngredientCountPair> ingredientPairs, ItemStack result, int processingTime, String tooltip) {
         this.ingredientPairs = ingredientPairs;
         this.result = result;
         this.processingTime = processingTime;
+        this.tooltip = tooltip;
 
         // 验证输出数量在合理范围内
         if (result.getCount() <= 0 || result.getCount() > 99) {
@@ -296,13 +302,13 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
     }
 
     @Override
-    public RecipeSerializer<?> getSerializer() {
-        return MMResources.getFABRICATE_RECIPE_TYPE().getSerializer().get();
+    public @NotNull RecipeSerializer<?> getSerializer() {
+        return MMResources.getFABRICATE_RECIPE_SERIALIZER().get();
     }
 
     @Override
-    public RecipeType<?> getType() {
-        return MMResources.getFABRICATE_RECIPE_TYPE().getType().get();
+    public @NotNull RecipeType<?> getType() {
+        return MMResources.getFABRICATE_RECIPE_TYPE().get();
     }
 
     public static class Serializer implements RecipeSerializer<FabricatingRecipe> {

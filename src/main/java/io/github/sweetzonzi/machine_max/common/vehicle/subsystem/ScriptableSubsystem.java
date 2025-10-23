@@ -291,12 +291,6 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     }
 
     @Override
-    public void sendSignalToTarget(String signalChannel, ISignalReceiver target, Object signalValue) {
-        super.sendSignalToTarget(signalChannel, target, signalValue);
-        Hook.run(this, signalChannel, target, signalValue);
-    }
-
-    @Override
     public void sendSignalToTargetWithCallback(String signalChannel, ISignalReceiver target, Object signalValue, boolean callbackReturnsSignalValue) {
         super.sendSignalToTargetWithCallback(signalChannel, target, signalValue, callbackReturnsSignalValue);
         Hook.run(this, signalChannel, target, signalValue, callbackReturnsSignalValue);

@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.gui.renderable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import io.github.sweetzonzi.machine_max.common.block.FabricatorBlockEntity;
+import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
 import lombok.Getter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -11,7 +11,6 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

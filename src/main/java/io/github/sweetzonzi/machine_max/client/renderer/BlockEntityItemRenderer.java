@@ -1,12 +1,13 @@
 package io.github.sweetzonzi.machine_max.client.renderer;
 
 import cn.solarmoon.spark_core.animation.IBlockEntityAnimatable;
-import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.anim.AnimInstance;
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import io.github.sweetzonzi.machine_max.common.block.FabricatorBlock;
-import io.github.sweetzonzi.machine_max.common.block.FabricatorBlockEntity;
+import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlock;
+import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
 import io.github.sweetzonzi.machine_max.common.registry.MMBlocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
@@ -48,6 +49,9 @@ public class BlockEntityItemRenderer extends BlockEntityWithoutLevelRenderer {
                 if (!fabricatorReady) {
                     IBlockEntityAnimatable<FabricatorBlockEntity> animatable = fabricator;
                     animatable.getModelController().setModel(new ModelInstance(animatable, animatable.getDefaultModelIndex()));
+                    // 初始化动画
+                    fabricator.workAnim = new AnimInstance(fabricator, new AnimIndex(fabricator.getDefaultModelIndex(), "work"));
+                    fabricator.idleAnim = new AnimInstance(fabricator, new AnimIndex(fabricator.getDefaultModelIndex(), "idle"));
                     fabricatorReady = true;
                 }
                 this.blockEntityRenderDispatcher.renderItem(fabricator, poseStack, buffer, packedLight, packedOverlay);

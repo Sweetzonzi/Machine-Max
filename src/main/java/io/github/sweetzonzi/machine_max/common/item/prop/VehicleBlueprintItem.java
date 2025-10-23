@@ -259,12 +259,12 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                     && !vehicleData.icon.equals(ResourceLocation.withDefaultNamespace("missingno"))
             ) {
                 animatable.getModelController().setModel(new ModelIndex(
-                        ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x")));
+                        "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
                 animatable.getModelController().setTextureLocation(vehicleData.icon);
             } else throw new NullPointerException();
         } catch (NullPointerException e) {
             animatable.getModelController().setModel(new ModelIndex(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint")));
+                    "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint")));
             animatable.getModelController().setTextureLocation(
                     ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"));
         }
@@ -278,7 +278,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
     @Override
     public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
         if (!getRenderInstance(itemStack, level, displayContext).getModelController().getOriginModel().equals(
-                OModel.getOrEmpty(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"))
+                OModel.getOrEmpty(new ModelIndex("item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint")))
         )) {
             return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
         }

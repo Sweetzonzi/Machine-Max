@@ -1,15 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.entity;
 
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
+import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.BlackBoard;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.preinput.PreInput;
-import cn.solarmoon.spark_core.skill.Skill;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Matrix3f;
@@ -118,6 +116,11 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             this.setRot(yaw, pitch);
             updateBoundingBox();//更新实体包围盒
         }
+    }
+
+    @Override
+    public boolean isAlwaysTicking() {
+        return subPart != null && !subPart.isRemoved;
     }
 
     @Override
@@ -344,32 +347,8 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @NotNull
     @Override
-    public AtomicInteger getSkillCount() {
-        return new AtomicInteger();
-    }
-
-    @NotNull
-    @Override
-    public ConcurrentHashMap<Integer, Skill> getAllSkills() {
-        return new ConcurrentHashMap<>();
-    }
-
-    @NotNull
-    @Override
-    public ConcurrentHashMap<Integer, Skill> getPredictedSkills() {
-        return getAllSkills();
-    }
-
-    @NotNull
-    @Override
     public Level getAnimLevel() {
         return this.level();
-    }
-
-    @NotNull
-    @Override
-    public PreInput getPreInput() {
-        return new PreInput(this);
     }
 
     @NotNull

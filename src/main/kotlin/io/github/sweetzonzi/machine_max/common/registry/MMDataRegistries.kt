@@ -6,9 +6,9 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.AbstractSu
 
 object MMDataRegistries {
     @JvmStatic
-    val SUBSYSTEM_ATTR_CODEC = MachineMax.REGISTER.registry<MapCodec<out AbstractSubsystemAttr>>()
-        .id("subsystem_attr_codec")
-        .build { it.sync(true).create() }
+    val SUBSYSTEM_ATTR_CODEC = MachineMax.REGISTER.registry<MapCodec<out AbstractSubsystemAttr>>("subsystem_attr_codec") {
+        it.sync(true).create()
+    }
     @JvmStatic
     fun register() {}
 }

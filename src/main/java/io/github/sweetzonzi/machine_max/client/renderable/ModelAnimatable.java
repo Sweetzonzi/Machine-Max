@@ -5,15 +5,11 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
-import cn.solarmoon.spark_core.animation.anim.play.*;
-import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
-import cn.solarmoon.spark_core.animation.anim.play.layer.AnimLayerData;
-import cn.solarmoon.spark_core.animation.anim.play.layer.DefaultLayer;
+import cn.solarmoon.spark_core.animation.anim.*;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
-import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
 
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -103,7 +99,6 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
         poseStack.scale(-1, -1, 1);
         poseStack.mulPose(Axis.XP.rotationDegrees(180));//透视投影需要翻转文字
         //渲染所有文本
-        var evaluator = ExpressionEvaluator.evaluator(getAnimatable());
         for (Map.Entry<String, AnimatableParams.TextParams> entry : params.textAttr.entrySet()) {
             String locatorName = entry.getKey();
             AnimatableParams.TextParams textParams = entry.getValue();
@@ -117,19 +112,22 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
             if (num > 0) {
                 df = new DecimalFormat("#." + "0".repeat(num)); // 如果num大于0，则保留相应数量的有效数字
             }
-            for (String arg : textParams.molangArgs()) {
-                try {
-                    Object value = SparkCore.PARSER.parseExpression(arg).evalUnsafe(evaluator);
-                    switch (value) {
-                        case String stringValue -> args.add(stringValue);
-                        case Number number -> args.add(df.format(number.doubleValue()));
-                        case Boolean bool -> args.add(String.valueOf(bool));
-                        case null, default -> args.add("null");
-                    }
-                } catch (Exception e) {
-                    args.add("MOLANG_ERROR" + e);
-                }
-            }
+            //TODO:利用js解析molang表达式
+//            for (JSMolangValue arg : textParams.molangArgs()) {
+//                try {
+//                    Object value = arg.eval(this);
+//                    //TODO:排查有时仪表速度值双倍的问题
+////                    MachineMax.LOGGER.debug("Molang: " + arg + " = " + value);
+//                    switch (value) {
+//                        case String stringValue -> args.add(stringValue);
+//                        case Number number -> args.add(df.format(number.doubleValue()));
+//                        case Boolean bool -> args.add(String.valueOf(bool));
+//                        case null, default -> args.add("null");
+//                    }
+//                } catch (Exception e) {
+//                    args.add("MOLANG_ERROR" + e);
+//                }
+//            }
             String text;
             if (textParams.molangArgs().isEmpty())
                 text = net.minecraft.network.chat.Component.translatable(textParams.key()).getString();//无参数直接使用翻译键
@@ -158,16 +156,13 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
 
     public void animTick() {
         getAnimController().tick();
-        ResourceLocation animPath = params.getAnimation();
-        var animSet = OAnimationSet.getORIGINS().get(animPath);
+        var modelIndexForAnim = new ModelIndex(params.modelIndex.getType(), params.getAnimation());
+        var animSet = OAnimationSet.getORIGINS().get(modelIndexForAnim);
         if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
             for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
                 String name = entry.getKey();
-                var animInstance = AnimInstance.create(
-                        this,
-                        new AnimIndex(new ModelIndex(animPath), name),
-                        a -> Unit.INSTANCE);
-                getAnimController().getLayer(DefaultLayer.INSTANCE.getBASE_LAYER()).setAnimation(animInstance, new AnimLayerData());
+                var animInstance = new AnimInstance(this, new AnimIndex(modelIndexForAnim, name));
+                animInstance.enter();
             }
         }
     }

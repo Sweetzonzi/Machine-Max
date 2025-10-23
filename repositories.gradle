@@ -1,7 +1,9 @@
 dependencies {
     // 物理库
 //    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
-    implementation files('libs/SparkCore-1.21.1-1.0.888.jar')
+//    implementation("io.github.solarmoonqaq:spark-core-${mod_loader}:${spark_core_version}")
+    implementation files('libs/SparkCore-1.21.1-neoforge-1.0.956-SNAPSHOT.jar')
+
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -12,6 +14,7 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js
     compileOnly "org.mozilla:rhino:1.8.0"
+    implementation("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")
 //    implementation("org.mozilla:rhino:1.8.0")
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
@@ -83,6 +86,9 @@ repositories {
     }
     maven {
         url = 'https://maven.azuredoom.com/mods'
+    }
+    maven {
+        url = uri("https://central.sonatype.com/repository/maven-snapshots/")
     }
     flatDir {
         dir 'libs'

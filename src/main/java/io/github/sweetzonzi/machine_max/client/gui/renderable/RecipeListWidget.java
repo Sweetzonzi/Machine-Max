@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.gui.renderable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import io.github.sweetzonzi.machine_max.common.block.FabricatorBlockEntity;
+import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
 import lombok.Setter;
@@ -14,14 +14,11 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -56,7 +53,7 @@ public class RecipeListWidget extends AbstractScrollWidget {
         RecipeManager recipeManager = minecraft.level.getRecipeManager();
         allRecipes.clear();
 
-        allRecipes.addAll(recipeManager.getAllRecipesFor(MMResources.getFABRICATE_RECIPE_TYPE().getType().get()));
+        allRecipes.addAll(recipeManager.getAllRecipesFor(MMResources.getFABRICATE_RECIPE_TYPE().get()));
 
         applySearchFilter();
     }

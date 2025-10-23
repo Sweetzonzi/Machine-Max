@@ -17,7 +17,7 @@ public class RoadBaseBlockEntity extends BlockEntity {
     double[] heightData = new double[17 * 17];//道路高程数据
 
     public RoadBaseBlockEntity(BlockPos pos, BlockState blockState) {
-        super(MMBlockEntities.getROAD_BASE_BLOCK_ENTITY().get(), pos, blockState);
+        super(MMBlockEntities.ROAD_BASE_BLOCK_ENTITY.get(), pos, blockState);
         for(int i = 0; i < 17; i++){
             for(int j = 0; j < 17; j++){
                 heightData[i*17+j] = (double) j /17/2;

@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.signal;
 
-import cn.solarmoon.spark_core.molang.core.storage.VariableStorage;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
@@ -133,9 +132,9 @@ public interface ISignalSender {
                 signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
                 signalReceiver.onSignalUpdated(signalChannel, this);
                 if (signalReceiver instanceof SubsystemController vehicle){
-                    vehicle.foreignStorage.setPublic(signalChannel, signalValue);
+                    //TODO
                 } else if (signalReceiver instanceof SubPart part) {
-                    ((VariableStorage)part.animController.getForeignStorage()).setPublic(signalChannel, signalValue);
+                    //TODO
                 }
                 if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
                     if (callbackReturnsSignalValue)
@@ -144,19 +143,6 @@ public interface ISignalSender {
                 }
             }
         }
-    }
-
-    /**
-     * <p>若无回调需求请使用 {@link #sendCallbackToListener}</p>
-     * <p>Use {@link #sendCallbackToListener} instead if no callback is required.</p>
-     *
-     * @param signalChannel 信号频道
-     * @param target        接收者
-     * @param signalValue   信号值
-     */
-    @Deprecated
-    default void sendSignalToTarget(String signalChannel, ISignalReceiver target, Object signalValue) {
-        this.sendSignalToTarget(signalChannel, target.getName(), signalValue);
     }
 
     /**

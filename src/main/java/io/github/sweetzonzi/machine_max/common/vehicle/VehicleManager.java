@@ -144,11 +144,11 @@ public class VehicleManager {
     public static void transmitVehicleData(PlayerEvent.PlayerLoggedInEvent event) {
         Level level = event.getEntity().level();
         Set<VehicleData> dataToSend = level.getData(MMAttachments.getLEVEL_VEHICLES());
-        int packetNum = (dataToSend.size() + 4) / 5;//计算分包数量，5个载具为一包
+        int packetNum = (dataToSend.size() + 1) / 2;//计算分包数量，2个载具为一包
         Iterator<VehicleData> iterator = dataToSend.iterator();
         for (int i = 0; i < packetNum; i++) {
             Set<VehicleData> packetData = new HashSet<>();
-            for (int j = 0; j < 5 && iterator.hasNext(); j++) {
+            for (int j = 0; j < 2 && iterator.hasNext(); j++) {
                 packetData.add(iterator.next());
             }
             PacketDistributor.sendToPlayer((ServerPlayer) event.getEntity(), new LevelVehicleDataPayload(level.dimension(), packetData, packetNum));

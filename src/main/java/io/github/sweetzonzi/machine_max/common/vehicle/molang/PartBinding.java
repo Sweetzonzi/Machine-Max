@@ -1,22 +1,20 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.molang;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.molang.core.binding.ContextBinding;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.molang.part.GetPartVariable;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.world.entity.LivingEntity;
 
-public class PartBinding extends ContextBinding {
+public class PartBinding{
     public static final PartBinding INSTANCE = new PartBinding();
 
     private PartBinding() {
-        var("durability", PartBinding::getDurability);
-        var("max_durability", PartBinding::getMaxDurability);
-        var("integrity", PartBinding::getIntegrity);
-        var("max_integrity", PartBinding::getMaxIntegrity);
-        function("get", new GetPartVariable());
+//        var("durability", PartBinding::getDurability);
+//        var("max_durability", PartBinding::getMaxDurability);
+//        var("integrity", PartBinding::getIntegrity);
+//        var("max_integrity", PartBinding::getMaxIntegrity);
+//        function("get", new GetPartVariable());
     }
 
     private static Float getDurability(IAnimatable<?> ctx) {

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.renderer;
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
@@ -59,7 +60,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
             ResourceLocation texture = subPartAttr.getTextures("default").getFirst();
             ResourceLocation animation = subPartAttr.getAnimation("default");
             if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.getModelIndex().getLocation() != model) {
-                VisualEffectHelper.partToPlace = new AnimatableParams(model, animation, texture);
+                VisualEffectHelper.partToPlace = new AnimatableParams(new ModelIndex("part", model), animation, texture);
                 VisualEffectHelper.partToPlace.setTransparency(64);
                 VisualEffectHelper.partToPlace.setTransform(new Transform(
                         PhysicsHelperKt.toBVector3f(player.level().clip(new ClipContext(

@@ -8,8 +8,7 @@ object MMSounds {
     }
 
     @JvmStatic
-    val PART_PAINTED = MachineMax.REGISTER.sound().id("item.part_painted").build()
-
-    @JvmStatic
-    val CUSTOM_SOUND = MachineMax.REGISTER.sound().id("custom_sound").build()
+    val CUSTOM_SOUND = MachineMax.REGISTER.soundEvent {
+        id = "custom_sound"
+    }
 }

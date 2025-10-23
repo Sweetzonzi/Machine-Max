@@ -94,11 +94,11 @@ public class FabicatingBlueprintItem extends Item implements ICustomModelItem {
         else customModels = new HashMap<>();
         if (context == ItemDisplayContext.GUI) {
             animatable.getModelController().setModel(new ModelIndex(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x")));
+                    "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
             animatable.getModelController().setTextureLocation(partType.getDefaultIcon());
         } else {
             animatable.getModelController().setModel(new ModelIndex(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint")));
+                    "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint")));
             animatable.getModelController().setTextureLocation(
                     ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"));
         }

@@ -22,7 +22,6 @@ import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.JointAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalPort;
@@ -206,20 +205,22 @@ public abstract class AbstractConnector implements PhysicsHost {
      * 将此接口连接的零件从此接口拆下
      * 特别地，部件内零件之间的内部接口不允许被断开连接
      */
-    public void detach(boolean force) {
-        if ((force || !internal) && hasPart()) {
+    public void detach(boolean destroy) {
+        if ((destroy || !internal) && hasPart()) {
             if (this.signalPort != null && attachedConnector.signalPort != null) {
                 this.signalPort.onConnectorDetach();
                 attachedConnector.signalPort.onConnectorDetach();
             }
             detachJoint();
             //重建部件连接点
-            this.createAttachPointBody(
-                    MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
-                    subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
-            attachedConnector.createAttachPointBody(
-                    MMMath.relPointWorldPos(attachedConnector.subPartTransform.getTranslation(), attachedConnector.subPart.body),
-                    attachedConnector.subPart.body.getPhysicsRotation(null).mult(attachedConnector.subPartTransform.getRotation()));
+            if(!destroy) {
+                this.createAttachPointBody(
+                        MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
+                        subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+                attachedConnector.createAttachPointBody(
+                        MMMath.relPointWorldPos(attachedConnector.subPartTransform.getTranslation(), attachedConnector.subPart.body),
+                        attachedConnector.subPart.body.getPhysicsRotation(null).mult(attachedConnector.subPartTransform.getRotation()));
+            }
             this.attachedConnector.attachedConnector = null;
             this.attachedConnector = null;
         } else if (internal)
@@ -229,8 +230,8 @@ public abstract class AbstractConnector implements PhysicsHost {
     protected void detachJoint() {
         if (attachedConnector != null)
             attachedConnector.joint = null;
-        getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-            getPhysicsLevel().getWorld().removeJoint(joint);
+        getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+            if (this.joint.getPhysicsSpace() != null) getPhysicsLevel().getWorld().removeJoint(joint);
             this.joint = null;
             return null;
         });
@@ -290,7 +291,8 @@ public abstract class AbstractConnector implements PhysicsHost {
 
     public void addToLevel() {
         if (hasPart() && joint != null) subPart.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
-            subPart.getPhysicsLevel().getWorld().addJoint(joint);
+            if (joint.getPhysicsSpace() == null)
+                subPart.getPhysicsLevel().getWorld().addJoint(joint);
             return null;
         });
     }
@@ -300,7 +302,7 @@ public abstract class AbstractConnector implements PhysicsHost {
         if (subPart.part.getLevel().isClientSide())
             VisualEffectHelper.attachPoints.remove(this);
         getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
-            if (this.body != null) PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), this.body);
+            if (this.body != null && this.body.isInWorld()) PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), this.body);
             return null;
         });
     }

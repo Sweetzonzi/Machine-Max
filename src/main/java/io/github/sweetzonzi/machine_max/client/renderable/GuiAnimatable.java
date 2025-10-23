@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.client.renderable;
 import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
-import cn.solarmoon.spark_core.molang.engine.runtime.ExpressionEvaluator;
+import cn.solarmoon.spark_core.js.molang.JSMolangValue;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -162,7 +162,6 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
             poseStack.mulPose(Axis.XP.rotationDegrees(180));//透视投影需要翻转文字
         }
         //渲染所有文本
-        var evaluator = ExpressionEvaluator.evaluator(getAnimatable());
         for (Map.Entry<String, AnimatableParams.TextParams> entry : params.textAttr.entrySet()) {
             String locatorName = entry.getKey();
             AnimatableParams.TextParams textParams = entry.getValue();
@@ -176,21 +175,22 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
             if (num > 0) {
                 df = new DecimalFormat("#." + "0".repeat(num)); // 如果num大于0，则保留相应数量的有效数字
             }
-            for (String arg : textParams.molangArgs()) {
-                try {
-                    Object value = SparkCore.PARSER.parseExpression(arg).evalUnsafe(evaluator);
-                    //TODO:排查有时仪表速度值双倍的问题
-//                    MachineMax.LOGGER.debug("Molang: " + arg + " = " + value);
-                    switch (value) {
-                        case String stringValue -> args.add(stringValue);
-                        case Number number -> args.add(df.format(number.doubleValue()));
-                        case Boolean bool -> args.add(String.valueOf(bool));
-                        case null, default -> args.add("null");
-                    }
-                } catch (Exception e) {
-                    args.add("MOLANG_ERROR" + e);
-                }
-            }
+            //TODO:利用js解析molang表达式
+//            for (JSMolangValue arg : textParams.molangArgs()) {
+//                try {
+//                    Object value = arg.eval(this);
+//                    //TODO:排查有时仪表速度值双倍的问题
+////                    MachineMax.LOGGER.debug("Molang: " + arg + " = " + value);
+//                    switch (value) {
+//                        case String stringValue -> args.add(stringValue);
+//                        case Number number -> args.add(df.format(number.doubleValue()));
+//                        case Boolean bool -> args.add(String.valueOf(bool));
+//                        case null, default -> args.add("null");
+//                    }
+//                } catch (Exception e) {
+//                    args.add("MOLANG_ERROR" + e);
+//                }
+//            }
             String text;
             if (textParams.molangArgs().isEmpty())
                 text = Component.translatable(textParams.key()).getString();//无参数直接使用翻译键

@@ -67,7 +67,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        this.speed = -MMMath.getLinearVelocityLocal(getOwner().getSubPart().getPart().rootSubPart.body).z;
+        this.speed = -getOwner().getSubPart().getLinearVelocityLocal().z;
         if (isActive() && getOwner().getSubPart().getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
@@ -258,6 +258,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             float avgEngineSpeed = 0f;
             byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
+                if(getSubPart().getLevel().isClientSide)MachineMax.LOGGER.debug("speed:{}", speed);
                 if (moveInput[2] * speed > 0 || (Math.abs(speed) <= 1f)) {//加速行驶 Accelerate
                     actualThrottle = actualThrottle * 0.9f + (Math.abs(moveInput[2])) * 0.1f;
                     actualBrake = actualBrake * 0.8f + 0 * 0.2f;

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.attr;
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
@@ -208,7 +209,7 @@ public class SubPartAttr {
         return hitBoxShape.computeIfAbsent(state, s -> {
             ResourceLocation modelLocation = getModel(state);
             var shape = new CompoundCollisionShape(1);
-            LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(modelLocation).getBones();
+            LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones();
 
             if (bones.isEmpty()) throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
 
@@ -323,7 +324,7 @@ public class SubPartAttr {
         return interactBoxShape.computeIfAbsent(state, s -> {
             ResourceLocation modelLocation = getModel(state);
             var shape = new CompoundCollisionShape(1);
-            LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(modelLocation).getBones();
+            LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones();
 
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());

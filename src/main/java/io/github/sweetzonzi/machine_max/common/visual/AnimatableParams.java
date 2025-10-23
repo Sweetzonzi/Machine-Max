@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.visual;
 
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.js.molang.JSMolangValue;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
@@ -46,7 +47,7 @@ public class AnimatableParams {
             int transparency,
             Vec3i backgroundColor,
             int backgroundTransparency,
-            List<String> molangArgs,
+            List<JSMolangValue> molangArgs,
             int significand
     ) {
         public static final Codec<TextParams> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -59,7 +60,7 @@ public class AnimatableParams {
                 Codec.INT.optionalFieldOf("transparency", 255).forGetter(TextParams::transparency),
                 Vec3i.CODEC.optionalFieldOf("background_color", new Vec3i(0, 0, 0)).forGetter(TextParams::backgroundColor),
                 Codec.INT.optionalFieldOf("background_transparency", 0).forGetter(TextParams::backgroundTransparency),
-                Codec.STRING.listOf().optionalFieldOf("molang_args", List.of()).forGetter(TextParams::molangArgs),
+                JSMolangValue.Companion.getCODEC().listOf().optionalFieldOf("molang_args", List.of()).forGetter(TextParams::molangArgs),
                 Codec.INT.optionalFieldOf("significand", 0).forGetter(TextParams::significand)
         ).apply(instance, TextParams::new));
 
@@ -75,6 +76,7 @@ public class AnimatableParams {
     }
 
     public static final Codec<AnimatableParams> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.optionalFieldOf("type", "hud").forGetter(AnimatableParams::getType),
             ResourceLocation.CODEC.fieldOf("model").forGetter(AnimatableParams::getModel),
             ResourceLocation.CODEC.fieldOf("animation").forGetter(AnimatableParams::getAnimation),
             ResourceLocation.CODEC.fieldOf("texture").forGetter(AnimatableParams::getTexture),
@@ -92,13 +94,13 @@ public class AnimatableParams {
             Codec.INT.optionalFieldOf("scissor_height", 0).forGetter(AnimatableParams::getScissorHeight)
     ).apply(instance, AnimatableParams::new));
 
-    public AnimatableParams(ResourceLocation model, ResourceLocation animation, ResourceLocation texture,
+    public AnimatableParams(String type, ResourceLocation model, ResourceLocation animation, ResourceLocation texture,
                             Vec3 offset, Vec3 rotation, Vec3 scale,
                             Vec3i color, int transparency,
                             boolean perspective,
                             Map<String, TextParams> textAttr,
                             boolean enableScissor, int scissorX, int scissorY, int scissorWidth, int scissorHeight) {
-        this.modelIndex = new ModelIndex(model);
+        this.modelIndex = new ModelIndex(type, model);
         this.animation = animation;
         this.texture = texture;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
@@ -117,93 +119,8 @@ public class AnimatableParams {
         this.scissorHeight = scissorHeight;
     }
 
-    public AnimatableParams(ResourceLocation model, ResourceLocation animation, ResourceLocation texture,
-                            Vec3 offset, Vec3 rotation, Vec3 scale,
-                            boolean perspective,
-                            Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model);
-        this.animation = animation;
-        this.texture = texture;
-        this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
-        Vector3f rot = SparkMathKt.toRadians(rotation).toVector3f();
-        Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
-        this.transform.setRotation(SparkMathKt.toBQuaternion(quaternionf));
-        this.transform.setScale(PhysicsHelperKt.toBVector3f(scale));
-        this.color = new Vec3i(255, 255, 255);
-        this.transparency = 255;
-        this.perspective = perspective;
-        this.textAttr = textAttr;
-        this.enableScissor = false;
-        this.scissorX = 0;
-        this.scissorY = 0;
-        this.scissorWidth = 0;
-        this.scissorHeight = 0;
-    }
-
-    public AnimatableParams(ResourceLocation model, ResourceLocation animation, ResourceLocation texture,
-                            Vec3 offset, Vec3 rotation, double scale,
-                            boolean perspective,
-                            Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model);
-        this.animation = animation;
-        this.texture = texture;
-        this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
-        Vector3f rot = SparkMathKt.toRadians(rotation).toVector3f();
-        Quaternionf quaternionf = new Quaternionf().rotationZYX(rot.z(), rot.y(), rot.x());
-        this.transform.setRotation(SparkMathKt.toBQuaternion(quaternionf));
-        this.transform.setScale((float) scale);
-        this.color = new Vec3i(255, 255, 255);
-        this.transparency = 255;
-        this.perspective = perspective;
-        this.textAttr = textAttr;
-        this.enableScissor = false;
-        this.scissorX = 0;
-        this.scissorY = 0;
-        this.scissorWidth = 0;
-        this.scissorHeight = 0;
-    }
-
-    public AnimatableParams(ResourceLocation model, ResourceLocation animation, ResourceLocation texture,
-                            Vec3 offset, double scale,
-                            boolean perspective,
-                            Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model);
-        this.animation = animation;
-        this.texture = texture;
-        this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
-        this.transform.setScale((float) scale);
-        this.color = new Vec3i(255, 255, 255);
-        this.transparency = 255;
-        this.perspective = perspective;
-        this.textAttr = textAttr;
-        this.enableScissor = false;
-        this.scissorX = 0;
-        this.scissorY = 0;
-        this.scissorWidth = 0;
-        this.scissorHeight = 0;
-    }
-
-    public AnimatableParams(ResourceLocation model, ResourceLocation animation, ResourceLocation texture,
-                            Vec3 offset,
-                            boolean perspective,
-                            Map<String, TextParams> textAttr) {
-        this.modelIndex = new ModelIndex(model);
-        this.animation = animation;
-        this.texture = texture;
-        this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
-        this.color = new Vec3i(255, 255, 255);
-        this.transparency = 255;
-        this.perspective = perspective;
-        this.textAttr = textAttr;
-        this.enableScissor = false;
-        this.scissorX = 0;
-        this.scissorY = 0;
-        this.scissorWidth = 0;
-        this.scissorHeight = 0;
-    }
-
-    public AnimatableParams(ResourceLocation model, ResourceLocation animation, ResourceLocation texture) {
-        this.modelIndex = new ModelIndex(model);
+    public AnimatableParams(ModelIndex model, ResourceLocation animation, ResourceLocation texture) {
+        this.modelIndex = model;
         this.animation = animation;
         this.texture = texture;
         this.color = new Vec3i(255, 255, 255);
@@ -219,6 +136,10 @@ public class AnimatableParams {
 
     private ResourceLocation getModel() {
         return modelIndex.getLocation();
+    }
+
+    private String getType() {
+        return modelIndex.getType();
     }
 
     private Vec3 getOffset() {

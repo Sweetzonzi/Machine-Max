@@ -1,6 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.menu;
 
-import io.github.sweetzonzi.machine_max.common.block.FabricatorBlockEntity;
+import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMMenus;
 import lombok.Getter;

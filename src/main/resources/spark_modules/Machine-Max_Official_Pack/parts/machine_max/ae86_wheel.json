@@ -12,14 +12,14 @@
       "sub_parts": {//零件(子部件)列表
         "ae86_wheel": {//零件(子部件)名称
           "models": {//(必须)状态差分模型映射，支持单值或多状态映射
-            "default": "machine_max:part/ae86/ae86_wheel_left.geo"//状态名称 -> 模型路径
+            "default": "machine_max:ae86_wheel_left.geo"//状态名称 -> 模型路径
           },
           "textures": {//(必须)状态差分贴图映射，支持单值或多状态映射
             "default": [//状态名称 -> 贴图路径列表
               "machine_max:textures/part/ae86_1.png"
             ]
           },
-          "mass": 50.0,//零件质量(kg)
+          "mass": 30.0,//零件质量(kg)
           "mass_center": "MassCenter",//(可选)质心Locator名称，会寻找名称匹配的Locator，以其位置作为质心，留空则取坐标原点
           "block_collision": "ground",//(可选，默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
           "collision_height": 1.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
@@ -27,7 +27,7 @@
           "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体，以及将此骨骼下的定位器储存起来供子系统等使用
             "root": {//骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体
               "type": "cylinder",//碰撞形状类型，支持box、sphere、cylinder
-              "friction": [1.7, 2.2, 1.0],//(可选，默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
+              "friction": [1.7, 2.2, 1.0],//(可选，默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 无用]
               "slip_adaptation": 0.5,//(可选，默认0.5)滑动适应性系数(0~1)，该属性可削弱打滑时的摩擦系数降低效果，提升抓地力
               "rolling_friction": 0.05,//(可选，默认0.2)滚动摩擦系数，影响滚动阻力
               "restitution": 0.2,//(可选，默认0.1)弹性系数，0为完全非弹性碰撞，1为完全弹性碰撞，碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
@@ -50,7 +50,7 @@
       "sub_parts": {//零件(子部件)列表
         "ae86_wheel": {//零件(子部件)名称
           "models": {//(必须)状态差分模型映射，支持单值或多状态映射
-            "default": "machine_max:part/ae86/ae86_wheel_right.geo"//状态名称 -> 模型路径
+            "default": "machine_max:ae86_wheel_right.geo"//状态名称 -> 模型路径
           },
           "textures": {//(必须)状态差分贴图映射，支持单值或多状态映射
             "default": [//状态名称 -> 贴图路径列表

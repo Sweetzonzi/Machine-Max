@@ -16,66 +16,72 @@ object MMCreativeTabs {
     }
 
     @JvmStatic
-    val MACHINE_MAX_TAB = MachineMax.REGISTER.creativeTab()
-        .id("machine_max_tab_main")
-        .bound(CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.machine_max.main"))
-            .icon { ItemStack(MMItems.CROWBAR_ITEM) }
-            .displayItems { _, output ->
-                output.accept(MMItems.FABRICATOR_BLOCK_ITEM.get())
-                output.accept(MMItems.CROWBAR_ITEM.get())
-                output.accept(MMItems.WRENCH_ITEM.get())
-                output.accept(MMItems.SPRAY_CAN_ITEM.get())
-                output.accept(MMItems.EMPTY_BLUEPRINT.get())
-                //材料
-                output.accept(MMItems.STRUCTURAL_COMPONENT_1_ITEM.get())
-                output.accept(MMItems.MECHANIC_COMPONENT_1_ITEM.get())
-                output.accept(MMItems.WEAPON_COMPONENT_1_ITEM.get())
-                output.accept(MMItems.ELECTRONIC_COMPONENT_1_ITEM.get())
-                output.accept(MMItems.POWER_COMPONENT_1_ITEM.get())
-                output.accept(MMItems.ENERGETIC_COMPONENT_1_ITEM.get())
-            }
-        )
-        .build()
-
-    @JvmStatic
-    val MACHINE_MAX_PART_TAB = MachineMax.REGISTER.creativeTab()
-        .id("machine_max_tab_part")
-        .bound(CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.machine_max.part"))
-            // 动态设置图标
-            .icon {
-                if (MMDynamicRes.PART_TYPES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
-                else {
-                    val randomIndex = (0 until MMDynamicRes.PART_TYPES.size).random() //随机的一个蓝图在图标上展示
-                    val item = ItemStack(MMItems.PART_ITEM)
-                    item.set(MMDataComponents.PART_TYPE, MMDynamicRes.PART_TYPES.keys.toList()[randomIndex])
-                    item
+    val MACHINE_MAX_TAB = MachineMax.REGISTER.creativeModeTab {
+        id = "machine_max_tab_main"
+        factory = {
+            CreativeModeTab.builder()
+                .title(Component.translatable("itemGroup.machine_max.main"))
+                .icon { ItemStack(MMItems.CROWBAR_ITEM) }
+                .displayItems { _, output ->
+                    output.accept(MMItems.FABRICATOR_BLOCK_ITEM.get())
+                    output.accept(MMItems.CROWBAR_ITEM.get())
+                    output.accept(MMItems.WRENCH_ITEM.get())
+                    output.accept(MMItems.SPRAY_CAN_ITEM.get())
+                    output.accept(MMItems.EMPTY_BLUEPRINT.get())
+                    //材料
+                    output.accept(MMItems.STRUCTURAL_COMPONENT_1_ITEM.get())
+                    output.accept(MMItems.MECHANIC_COMPONENT_1_ITEM.get())
+                    output.accept(MMItems.WEAPON_COMPONENT_1_ITEM.get())
+                    output.accept(MMItems.ELECTRONIC_COMPONENT_1_ITEM.get())
+                    output.accept(MMItems.POWER_COMPONENT_1_ITEM.get())
+                    output.accept(MMItems.ENERGETIC_COMPONENT_1_ITEM.get())
                 }
-            }
-        )
-        .build()
+                .build()
+        }
+    }
 
     @JvmStatic
-    val MACHINE_MAX_VEHICLE_BLUEPRINT_TAB = MachineMax.REGISTER.creativeTab()
-        .id("machine_max_tab_vehicle_blueprint")
-        .bound(CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.machine_max.vehicle_blueprint"))
-            .icon {ItemStack(MMItems.EMPTY_BLUEPRINT)}
-        )
-        .build()
+    val MACHINE_MAX_PART_TAB = MachineMax.REGISTER.creativeModeTab {
+        id = "machine_max_tab_part"
+        factory = {
+            CreativeModeTab.builder()
+                .title(Component.translatable("itemGroup.machine_max.part"))
+                // 动态设置图标
+                .icon {
+                    if (MMDynamicRes.PART_TYPES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
+                    else {
+                        val randomIndex = (0 until MMDynamicRes.PART_TYPES.size).random() //随机的一个蓝图在图标上展示
+                        val item = ItemStack(MMItems.PART_ITEM)
+                        item.set(MMDataComponents.PART_TYPE, MMDynamicRes.PART_TYPES.keys.toList()[randomIndex])
+                        item
+                    }
+                }
+                .build()
+        }
+    }
 
     @JvmStatic
-    val MACHINE_MAX_FABRICATING_BLUEPRINT_TAB = MachineMax.REGISTER.creativeTab()
-        .id("machine_max_tab_fabricating_blueprint")
-        .bound(CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.machine_max.fabricating_blueprint"))
-            // 动态设置图标：如果蓝图列表为空，则使用 MACHINE_MAX_TAB 的图标
-            .icon {ItemStack(MMItems.EMPTY_BLUEPRINT)}
-        )
-        .build()
+    val MACHINE_MAX_VEHICLE_BLUEPRINT_TAB = MachineMax.REGISTER.creativeModeTab {
+        id = "machine_max_tab_vehicle_blueprint"
+        factory = {
+            CreativeModeTab.builder()
+                .title(Component.translatable("itemGroup.machine_max.vehicle_blueprint"))
+                .icon { ItemStack(MMItems.EMPTY_BLUEPRINT) }
+                .build()
+        }
+    }
 
     @JvmStatic
+    val MACHINE_MAX_FABRICATING_BLUEPRINT_TAB = MachineMax.REGISTER.creativeModeTab {
+        id = "machine_max_tab_fabricating_blueprint"
+        factory = {
+            CreativeModeTab.builder()
+                .title(Component.translatable("itemGroup.machine_max.fabricating_blueprint"))
+                .icon { ItemStack(MMItems.EMPTY_BLUEPRINT) }
+                .build()
+        }
+    }
+
     @SubscribeEvent
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
         if (event.tab == MACHINE_MAX_PART_TAB.get()) {

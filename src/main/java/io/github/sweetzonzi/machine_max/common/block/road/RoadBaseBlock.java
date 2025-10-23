@@ -42,7 +42,7 @@ public class RoadBaseBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        return createTickerHelper(blockEntityType, MMBlockEntities.getROAD_BASE_BLOCK_ENTITY().get(), RoadBaseBlockEntity::tick);
+        return createTickerHelper(blockEntityType, MMBlockEntities.ROAD_BASE_BLOCK_ENTITY.get(), RoadBaseBlockEntity::tick);
     }
 
     @Override

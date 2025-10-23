@@ -33,14 +33,14 @@ public class MachineMax {
     //TODO:显示内含物品的fast_item_storage子系统，容量为1，互动立刻和手中物品交换，无GUI
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID, false);//一体化注册器
+    public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID);//一体化注册器
 
     public MachineMax(IEventBus bus, ModContainer container) {
         REGISTER.register(bus);
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块
         MMEntities.register();//注册所有实体
-        MMBlockEntities.register();//注册所有方块实体
+        MMBlockEntities.register(bus);//注册所有方块实体
         MMDataComponents.register();//注册所有物品数据组件
         MMAttachments.register();//注册所有附件类型
         MMCodecs.register(bus);//注册所有编解码器

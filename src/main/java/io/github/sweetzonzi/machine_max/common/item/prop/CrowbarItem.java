@@ -162,11 +162,11 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
         else customModels = new HashMap<>();
         if (context.firstPerson()) {
             animatable.getModelController().setModel(new ModelIndex(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/crowbar_first_person")));
+                    "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "crowbar_first_person")));
             animatable.getModelController().setTextureLocation(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar_first_person.png"));
         } else {
             animatable.getModelController().setModel(new ModelIndex(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/crowbar")));
+                    "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "crowbar")));
             animatable.getModelController().setTextureLocation(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/crowbar.png"));
         }
         if (customModels != null) {

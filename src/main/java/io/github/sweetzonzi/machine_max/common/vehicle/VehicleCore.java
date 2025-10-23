@@ -250,11 +250,7 @@ public class VehicleCore {
                             PosRotVelVel data = innerEntry.getValue();
                             SubPart subPart = part.subParts.get(subPartName);
                             if (subPart != null) {
-                                PhysicsRigidBody body = subPart.body;
-                                body.setPhysicsLocation(data.position());
-                                body.setPhysicsRotation(SparkMathKt.toBQuaternion(data.rotation()));
-                                body.setLinearVelocity(data.linearVel());
-                                body.setAngularVelocity(data.angularVel());
+                                subPart.handleSyncData(data);
                             } else
                                 MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this.name, partUUID, subPartName);
                         }

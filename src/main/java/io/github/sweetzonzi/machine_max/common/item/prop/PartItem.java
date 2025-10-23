@@ -235,7 +235,7 @@ public class PartItem extends Item implements ICustomModelItem {
             VariantAttr variantAttr = partType.getVariant(variant);
             var connectors = variantAttr.getPartOutwardConnectors();
             ConnectorAttr connectorAttr = connectors.get(subpart_connector);
-            OModel model = OModel.getOrEmpty(partType.getVariant(variant).subParts().get(subpart_connector.getFirst()).getModel("default"));
+            OModel model = OModel.getOrEmpty(new ModelIndex("part", partType.getVariant(variant).subParts().get(subpart_connector.getFirst()).getModel("default")));
             if (model.getBones().isEmpty())
                 throw new IllegalStateException("未找到部件" + partType.name + "的" + variant + "变体的模型:" + partType.variants.get(variant));
             var locators = model.getLocators();
@@ -273,10 +273,10 @@ public class PartItem extends Item implements ICustomModelItem {
         else customModels = new HashMap<>();
         if (context == ItemDisplayContext.GUI) {
             animatable.getModelController().setModel(new ModelIndex(
-                    ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/item_icon_2d_128x")));
+                    "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
             animatable.getModelController().setTextureLocation(partType.getDefaultIcon());
         } else {
-            animatable.getModelController().setModel(new ModelIndex(partType.getVariant(variant).subParts().values().iterator().next().getModel("default")));
+            animatable.getModelController().setModel(new ModelIndex("part", partType.getVariant(variant).subParts().values().iterator().next().getModel("default")));
             animatable.getModelController().setTextureLocation(partType.getVariant(variant).subParts().values().iterator().next().getTextures("default").getFirst());
         }
         if (customModels != null) {

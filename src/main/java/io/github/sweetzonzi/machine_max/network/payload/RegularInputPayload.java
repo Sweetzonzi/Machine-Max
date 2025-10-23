@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.mojang.datafixers.util.Pair;
@@ -124,7 +125,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                             if (connectorAttr.type().equals("AttachPoint") || targetConnector instanceof AttachPointConnector) {
                                 //检查部件Tag是否与目标接口接受的类型匹配
                                 if(targetConnector.conditionCheck(partType, variantName) && connectorAttr.conditionCheck(partType, variantName)) {
-                                    OModel model = OModel.getOrEmpty(partType.variants.get(variantName).subParts().get(connectorPair.getFirst()).getModel("default"));
+                                    OModel model = OModel.getOrEmpty(new ModelIndex("part", partType.variants.get(variantName).subParts().get(connectorPair.getFirst()).getModel("default")));
                                     var locators = model.getLocators();
                                     OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
                                     Vector3f offset = partConnectorLocator.getOffset().toVector3f();
@@ -159,7 +160,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                         VariantAttr variantAttr = partType.getVariant(variantName);
                         var connectors = variantAttr.getPartOutwardConnectors();
                         if (targetConnector == null || targetConnector.conditionCheck(partType, variantName)) {
-                            OModel model = OModel.getOrEmpty(partType.variants.get(variantName).subParts().get(info.connector().getFirst()).getModel("default"));
+                            OModel model = OModel.getOrEmpty(new ModelIndex("part", partType.variants.get(variantName).subParts().get(info.connector().getFirst()).getModel("default")));
                             var locators = model.getLocators();
                             OLocator partConnectorLocator = locators.get(connectors.get(info.connector()).locatorName());
                             Vector3f offset = partConnectorLocator.getOffset().toVector3f();

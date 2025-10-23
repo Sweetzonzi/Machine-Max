@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
-import cn.solarmoon.spark_core.animation.anim.play.layer.AnimController;
+import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
@@ -80,7 +80,7 @@ import java.util.concurrent.ConcurrentMap;
 
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 @Getter
-public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHost, ISignalReceiver {
+public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHost, ISignalReceiver {
     //模型、动画与渲染
     public final ModelController modelController;
     public final AnimController animController;
@@ -98,32 +98,25 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
     public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
     //物理
-    public final PhysicsRigidBody body;//物理对象
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
-    public CompoundCollisionShape collisionShape;//碰撞形状
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
     public Vec3 projectedArea = null;
     public float bodyMinY = -99999;
     public HashSet<BlockPos> climbableBlocks = new HashSet<>();
-    //运行中
-    public int tickCount = 0;
-    public volatile boolean isRemoved = false;
 
     public SubPart(String name, Part part, SubPartAttr attr) {
+        super(part.level, attr.getCollisionShape("default"), attr.mass);
         this.part = part;
         this.name = name;
         this.attr = attr;
         this.modelController = new ModelController(this);
         this.animController = new AnimController(this);
-        this.getModelController().setModel(new ModelIndex(attr.getModel("default")));
+        this.getModelController().setModel(new ModelIndex("part", attr.getModel("default")));
         this.getModelController().setTextureLocation(attr.getTextures("default").get(textureIndex % attr.getTextures("default").size()));
-
-        this.collisionShape = attr.getCollisionShape("default");
         if (!attr.interactBoxes.isEmpty()) {
             this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape("default"));
         } else this.interactBoxes = null;
-        this.body = new PhysicsRigidBody(this.collisionShape, attr.mass);
         PhysicsBodyExtensionKt.setOwner(this.body, this);
         this.body.setSleepingThresholds(0.1f, 0.1f);
         this.body.setProtectGravity(true);
@@ -186,7 +179,7 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     }
 
     public void destroy() {
-        isRemoved = true;
+        super.destroy();
         subsystems.forEach((name, subsystem) -> subsystem.onDetach());
         subsystems.clear();
         for (AbstractConnector connector : connectors.values()) {
@@ -194,7 +187,7 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
         }
         if (body.isInWorld()) {
             PhysicsBodyExtensionKt.setOwner(body, null);
-            PhysicsBodyExtensionKt.addPhysicsBody(getLevel(), this.body);
+            PhysicsBodyExtensionKt.removePhysicsBody(getLevel(), this.body);
         }
         if (interactBoxes != null) {
             for (InteractBox interactBox : interactBoxes.values()) interactBox.destroy();
@@ -557,15 +550,18 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     }
 
     public void tick() {
-        if (isRemoved) return;
+        super.tick();
         if (this.entity == null || this.entity.isRemoved()) {
             if (!getLevel().isClientSide()) refreshPartEntity();
+        }
+        if (this.entity != null && !this.entity.isRemoved()){
+            BoundingBox box = PhysicsBodyExtensionKt.stateOf(body).getCachedBoundingBox();
+            entity.boundingBox.set(box);
         }
     }
 
     public void prePhysicsTick() {
-        if (isRemoved) return;
-        tickCount++;
+        super.prePhysicsTick();
         Vector3f vel = this.body.getLinearVelocity(null);
         //仅在有速度时应用流体动力
         if (vel.length() > 0.1f) {
@@ -646,7 +642,7 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
         }
         //攀爬辅助处理
         climbableBlocks.clear();
-        if (body.isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
+        if (!level.isClientSide() && body.isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
             //遍历范围内的方块
             AABB aabb = SparkMathKt.toAABB(PhysicsBodyExtensionKt.stateOf(this.body).getCachedBoundingBox())
@@ -719,11 +715,7 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     }
 
     public void postPhysicsTick() {
-        if (isRemoved) return;
-        if (entity != null && !entity.isRemoved()) {//更新实体包围盒
-            BoundingBox box = PhysicsBodyExtensionKt.stateOf(body).getCachedBoundingBox();
-            entity.boundingBox.set(box);
-        }
+        super.postPhysicsTick();
         getAnimController().physTick();
     }
 
@@ -804,6 +796,12 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     }
 
     @Override
+    void setPosition(Vector3f position) {
+        if (entity != null && !entity.isRemoved()) entity.setPos(position.x, position.y, position.z);
+        super.setPosition(position);
+    }
+
+    @Override
     public ConcurrentMap<String, SignalChannel> getSignalInputChannels() {
         return signalChannels;
     }
@@ -816,15 +814,7 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
     @Nullable
     @Override
     public Level getAnimLevel() {
-        return part.getLevel();
-    }
-
-    @NotNull
-    @Override
-    public Matrix4f getWorldPositionMatrix(@NotNull Number number) {
-        Transform transform = PhysicsBodyExtensionKt.stateOf(body).getTransform();
-        Transform lastTransform = PhysicsBodyExtensionKt.stateOf(body).getLastTransform();
-        return SparkMathKt.toMatrix4f(SparkMathKt.lerp(lastTransform, transform, number.floatValue()).toTransformMatrix());
+        return getLevel();
     }
 
     @Override
@@ -832,14 +822,9 @@ public class SubPart implements PhysicsHost, IAnimatable<SubPart>, ISubsystemHos
         return this;
     }
 
-    @Override
-    public Level getLevel() {
-        return part.level;
-    }
-
     @NotNull
     @Override
     public ModelIndex getDefaultModelIndex() {
-        return new ModelIndex(attr.getModel("default"));
+        return new ModelIndex("part", attr.getModel("default"));
     }
 }

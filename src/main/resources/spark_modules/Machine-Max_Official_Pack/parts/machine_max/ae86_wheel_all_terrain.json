@@ -12,7 +12,7 @@
       "sub_parts": {//零件(子部件)列表
         "ae86_wheel_all_terrain": {//零件(子部件)名称
           "models": {//(必须)状态差分模型映射，支持单值或多状态映射
-            "default": "machine_max:part/ae86_all_terrain/ae86_wheel_all_terrain_left.geo"//状态名称 -> 模型路径
+            "default": "machine_max:ae86_wheel_all_terrain_left.geo"//状态名称 -> 模型路径
           },
           "textures": {//(必须)状态差分贴图映射，支持单值或多状态映射
             "default": [//状态名称 -> 贴图路径列表
@@ -54,7 +54,7 @@
       "sub_parts": {//零件(子部件)列表
         "ae86_wheel_all_terrain": {//零件(子部件)名称
           "models": {//(必须)状态差分模型映射，支持单值或多状态映射
-            "default": "machine_max:part/ae86_all_terrain/ae86_wheel_all_terrain_right.geo"//状态名称 -> 模型路径
+            "default": "machine_max:ae86_wheel_all_terrain_right.geo"//状态名称 -> 模型路径
           },
           "textures": {//(必须)状态差分贴图映射，支持单值或多状态映射
             "default": [//状态名称 -> 贴图路径列表
