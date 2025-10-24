@@ -4,6 +4,12 @@ import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent;
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
+import com.jme3.bullet.collision.shapes.BoxCollisionShape;
+import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
+import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
+import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.math.Plane;
+import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
@@ -210,28 +216,28 @@ public class VehicleManager {
         Level level = event.getLevel().getMcLevel();
         PhysicsLevel physicsLevel = event.getLevel();
         level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-//            physicsLevel.getWorld().useDeterministicDispatch(true);//启用确定计算顺序以保证客户端服务端一致性
             physicsLevel.getWorld().useScr(true);//补偿弹性系数以改善小物体的碰撞精度
             physicsLevel.getWorld().getSolverInfo().setGlobalCfm(1e-5f);
-            physicsLevel.getWorld().getSolverInfo().setNumIterations(25);
+            physicsLevel.getWorld().getSolverInfo().setNumIterations(50);
 //            Plane plane = new Plane(Vector3f.UNIT_Y, -59.5f);//测试平面
 //            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
-//            CompoundCollisionShape shape = new CompoundCollisionShape();
-//            for(int i=0;i<16;i++){
-//                for(int j=0;j<1;j++){
-//                    for (int k = 0; k < 16; k++) {
-//                        shape.addChildShape(new BoxCollisionShape(new Vector3f(0.5f, 0.5f, 0.5f)), new Vector3f(i, j, k));
-//                    }
-//                }
-//            }
-//            for (int i = -2; i < 3; i++){
-//                for (int j = 0; j < 24; j++){
-//                    PhysicsRigidBody body = new PhysicsRigidBody("ground", level, shape, 0);
-//                    body.setPhysicsLocation(new Vector3f(i*16, -50, j*16));
-//                    body.tickTransform = body.getTransform(body.lastTickTransform);
-//                    physicsLevel.getWorld().add(body);
-//                }
-//            }
+//            PhysicsRigidBody body = new PhysicsRigidBody(shape, 0);
+//            physicsLevel.getWorld().add(body);
+            CompoundCollisionShape shape = new CompoundCollisionShape();
+            for(int i=0;i<16;i++){
+                for(int j=0;j<1;j++){
+                    for (int k = 0; k < 16; k++) {
+                        shape.addChildShape(new BoxCollisionShape(new Vector3f(0.5f, 0.5f, 0.5f)), new Vector3f(i, j, k));
+                    }
+                }
+            }
+            for (int i = -2; i < 3; i++){
+                for (int j = 0; j < 24; j++){
+                    PhysicsRigidBody body = new PhysicsRigidBody(shape, 0);
+                    body.setPhysicsLocation(new Vector3f(i*16, -50, j*16));
+                    physicsLevel.getWorld().add(body);
+                }
+            }
             return null;
         });
         ResourceKey<Level> dimension = level.dimension();

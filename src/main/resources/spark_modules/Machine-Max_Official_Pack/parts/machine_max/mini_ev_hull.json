@@ -293,6 +293,13 @@
                 "upper_limit": 45.0,
                 "stiffness": 4000,
                 "damping": 20
+              },
+              "zr": {
+                "lower_limit": 1.0,
+                "upper_limit": 5.0,
+                "equilibrium": 1.0,
+                "stiffness": 25000,
+                "damping": 1000
               }
             },
             "breakable": false //暂时无实际作用，计划用于设定对接口是否可被外力或伤害破坏
@@ -314,6 +321,13 @@
               "xr": {
                 "lower_limit": 1.0,
                 "upper_limit": -1.0
+              },
+              "zr": {
+                "lower_limit": 1.0,
+                "upper_limit": 5.0,
+                "equilibrium": 1.0,
+                "stiffness": 25000,
+                "damping": 1000
               }
             }
           },
@@ -340,6 +354,13 @@
                 "upper_limit": 45.0,
                 "stiffness": 4000,
                 "damping": 20
+              },
+              "zr": {
+                "lower_limit": -5.0,
+                "upper_limit": -1.0,
+                "equilibrium": -1.0,
+                "stiffness": 25000,
+                "damping": 1000
               }
             },
             "breakable": false
@@ -361,6 +382,13 @@
               "xr": {
                 "lower_limit": 1.0,
                 "upper_limit": -1.0
+              },
+              "zr": {
+                "lower_limit": -5.0,
+                "upper_limit": -1.0,
+                "equilibrium": -1.0,
+                "stiffness": 25000,
+                "damping": 1000
               }
             }
           }

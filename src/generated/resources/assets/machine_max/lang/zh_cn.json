@@ -48,7 +48,7 @@
   "gui.machine_max.fabricator.tasks": "制造任务",
   "item.machine_max.crowbar": "撬棍",
   "item.machine_max.electronic_component_1": "初级电子元件",
-  "item.machine_max.empty_vehicle_blueprint": "空白载具蓝图",
+  "item.machine_max.empty_blueprint": "空白载具蓝图",
   "item.machine_max.energetic_component_1": "初级含能材料",
   "item.machine_max.fabricating_blueprint": "制造蓝图",
   "item.machine_max.mechanic_component_1": "初级机械构件",

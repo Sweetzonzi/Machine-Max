@@ -74,7 +74,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.crowbar", "撬棍");
         this.add("item.machine_max.wrench", "扳手");
         this.add("item.machine_max.spray_can", "喷漆罐");
-        this.add("item.machine_max.empty_vehicle_blueprint", "空白载具蓝图");
+        this.add("item.machine_max.empty_blueprint", "空白载具蓝图");
         this.add("item.machine_max.fabricating_blueprint", "制造蓝图");
         this.add("item.machine_max.structural_component_1", "初级结构部件");
         this.add("item.machine_max.mechanic_component_1", "初级机械构件");

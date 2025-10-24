@@ -50,8 +50,8 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
         super.onTick();
         if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
             //检查并设置关节的旋转顺序 Check and set joint rotation order
-            if (RotationOrder.XYZ != joint.getRotationOrder()) {
-                joint.setRotationOrder(RotationOrder.XYZ);
+            if (RotationOrder.XZY != joint.getRotationOrder()) {
+                joint.setRotationOrder(RotationOrder.XZY);
             }
         }
     }

@@ -62,7 +62,7 @@ public class MMGuiManager {
             for (WeakReference<ITickableRenderable> widget : animatableWidgets) {
                 ITickableRenderable animatable = widget.get();
                 if (animatable != null) {
-                    animatable.physicsTick();
+//                    animatable.physicsTick();
                 }
             }
         } catch (Exception e) {

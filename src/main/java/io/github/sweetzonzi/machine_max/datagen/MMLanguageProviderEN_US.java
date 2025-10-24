@@ -74,7 +74,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("item.machine_max.crowbar", "Crowbar");
         this.add("item.machine_max.wrench", "Wrench");
         this.add("item.machine_max.spray_can", "Spray Can");
-        this.add("item.machine_max.empty_vehicle_blueprint", "Empty Vehicle Blueprint");
+        this.add("item.machine_max.empty_blueprint", "Empty Vehicle Blueprint");
         this.add("item.machine_max.fabricating_blueprint", "Fabricating Blueprint");
         this.add("item.machine_max.structural_component_1", "Basic Structural Component");
         this.add("item.machine_max.mechanic_component_1", "Basic Mechanical Component");

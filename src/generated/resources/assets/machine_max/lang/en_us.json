@@ -49,7 +49,7 @@
   "gui.machine_max.set_vehicle_name": "Set Vehicle Name",
   "item.machine_max.crowbar": "Crowbar",
   "item.machine_max.electronic_component_1": "Basic Electronic Component",
-  "item.machine_max.empty_vehicle_blueprint": "Empty Vehicle Blueprint",
+  "item.machine_max.empty_blueprint": "Empty Vehicle Blueprint",
   "item.machine_max.energetic_component_1": "Basic Energetic Material",
   "item.machine_max.fabricating_blueprint": "Fabricating Blueprint",
   "item.machine_max.mechanic_component_1": "Basic Mechanical Component",

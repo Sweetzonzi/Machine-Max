@@ -7,10 +7,7 @@ import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.bullet.collision.shapes.BoxCollisionShape;
-import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
-import com.jme3.bullet.collision.shapes.CylinderCollisionShape;
-import com.jme3.bullet.collision.shapes.SphereCollisionShape;
+import com.jme3.bullet.collision.shapes.*;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Either;
@@ -278,6 +275,22 @@ public class SubPartAttr {
                             break;
                         case "capsule":
                             // TODO: 创建胶囊碰撞体积
+                            break;
+                        case "wheel":
+                            for (OCube cube : bone.getCubes()) {
+                                Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
+                                org.joml.Vector3f rotation = cube.getRotation().toVector3f();
+                                Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
+                                SphereCollisionShape round = new SphereCollisionShape(size.x * 0.2f);
+                                size = new Vector3f(size.x * 0.8f, size.y - size.x * 0.2f, size.z);
+                                CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size, 0);
+                                MinkowskiSum collisionShape = new MinkowskiSum(round, cylinderShape);
+                                hitBoxNames.put(collisionShape.nativeId(), hitBoxName);
+                                shape.addChildShape(
+                                        collisionShape,
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
+                                        SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
+                            }
                             break;
                         default:
                             MachineMax.LOGGER.error("发现不支持的碰撞形状类型{}。", hitBoxEntry.getValue());

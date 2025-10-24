@@ -131,6 +131,7 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
         this.body.setFriction(1.0f);
         this.body.setCollisionGroup(CollisionGroups.PHYSICS_BODY);
         this.body.setCollideWithGroups(CollisionGroups.PHYSICS_BODY);
+        this.body.addCollideWithGroup(CollisionGroups.PAWN);
         if (attr.blockCollision == SubPartAttr.BlockCollisionType.TRUE) {
             GROUND_COLLISION_ONLY = false;
             this.body.addCollideWithGroup(CollisionGroups.TERRAIN);
@@ -230,6 +231,7 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
     public void onProcessed(PhysicsCollisionObject o1, @NotNull PhysicsCollisionObject o2, ManifoldPoint point1, ManifoldPoint point2, long manifoldPointId) {
         //TODO:拆分为多个简单方法以方便子类修改并提升可读性
         PhysicsRigidBody other = (PhysicsRigidBody) o2;
+        var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         Vector3f normal = new Vector3f();
         Level level = part.level;
         int hitBoxIndex, otherHitBoxIndex;
@@ -426,7 +428,6 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
                 }
             }
         } else if (other.getCollisionGroup() == CollisionGroups.PHYSICS_BODY) {
-            var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
             if (otherOwner instanceof SubPart otherSubPart) {
                 //与零件碰撞时
                 HitBox otherHitBox = otherSubPart.getHitBox(otherHitBoxIndex);
@@ -437,8 +438,10 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
                     );
                 }
                 //TODO:撞击伤害计算
-            } else if (otherOwner instanceof Entity entity && !(entity instanceof CollisionObjectEntity)) {
-                //与实体碰撞时
+            }
+        } else if (other.getCollisionGroup() == CollisionGroups.PAWN) {
+            //与实体碰撞时
+            if (otherOwner instanceof Entity entity && !(entity instanceof CollisionObjectEntity)) {
                 //调用子系统碰撞回调
                 if (hitBox.subsystem != null) {
                     hitBox.subsystem.onCollideWithEntity(
@@ -554,7 +557,7 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
         if (this.entity == null || this.entity.isRemoved()) {
             if (!getLevel().isClientSide()) refreshPartEntity();
         }
-        if (this.entity != null && !this.entity.isRemoved()){
+        if (this.entity != null && !this.entity.isRemoved()) {
             BoundingBox box = PhysicsBodyExtensionKt.stateOf(body).getCachedBoundingBox();
             entity.boundingBox.set(box);
         }
@@ -651,7 +654,7 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
             int minZ = (int) Math.floor(aabb.minZ);
             int maxX = (int) Math.ceil(aabb.maxX);
             int maxZ = (int) Math.ceil(aabb.maxZ);
-            float y0 = bodyMinY + 0.1f;
+            float y0 = bodyMinY + 0.2f;
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos currentPos = new BlockPos(x, (int) Math.floor(y0), z);

@@ -258,7 +258,6 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             float avgEngineSpeed = 0f;
             byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
-                if(getSubPart().getLevel().isClientSide)MachineMax.LOGGER.debug("speed:{}", speed);
                 if (moveInput[2] * speed > 0 || (Math.abs(speed) <= 1f)) {//加速行驶 Accelerate
                     actualThrottle = actualThrottle * 0.9f + (Math.abs(moveInput[2])) * 0.1f;
                     actualBrake = actualBrake * 0.8f + 0 * 0.2f;
@@ -448,6 +447,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             return 0;
         } else {
             float steeringRadius = attr.steeringRadius / steeringInput * 100f;//实际转向半径(米) Actual steering radius (m)
+            if (speed > 15f) steeringRadius *= 1 + (speed - 15) / 15;//限制高速下的转弯半径确保安全 Limit the steering radius under high speed to ensure safety
             double deltaRadius = pivot.x - attr.steeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
             double deltaForward = pivot.z - attr.steeringCenter.z;
