@@ -123,7 +123,7 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
     }
 
     public FabricatorBlockEntity(BlockPos pos, BlockState blockState) {
-        super(MMBlockEntities.FABRICATOR_BLOCK_ENTITY.get(), pos, blockState);
+        super(MMBlockEntities.getFABRICATOR_BLOCK_ENTITY().get(), pos, blockState);
         this.taskSlots = new ProductionTask[maxTaskSize];
         this.outputItems = NonNullList.withSize(maxTaskSize, ItemStack.EMPTY);
         // 初始化状态机

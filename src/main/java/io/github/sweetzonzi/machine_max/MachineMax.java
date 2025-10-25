@@ -40,7 +40,7 @@ public class MachineMax {
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块
         MMEntities.register();//注册所有实体
-        MMBlockEntities.register(bus);//注册所有方块实体
+        MMBlockEntities.register();//注册所有方块实体
         MMDataComponents.register();//注册所有物品数据组件
         MMAttachments.register();//注册所有附件类型
         MMCodecs.register(bus);//注册所有编解码器

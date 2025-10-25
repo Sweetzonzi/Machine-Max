@@ -97,6 +97,7 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
     public final Map<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
     public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
+    public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
     //物理
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞

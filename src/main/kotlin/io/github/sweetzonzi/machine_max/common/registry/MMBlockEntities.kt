@@ -4,7 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity
 import io.github.sweetzonzi.machine_max.common.block.road.RoadBaseBlockEntity
 
-object MMBlockEntitiesOld {
+object MMBlockEntities {
     @JvmStatic
     fun register() {}
     @JvmStatic

@@ -16,6 +16,7 @@ public class SubsystemController implements ISignalReceiver {
     public final String name = "vehicle";
     public final VehicleCore CORE;
     public final ConcurrentMap<String, SignalChannel> channels = new ConcurrentHashMap<>();//可查可改
+    public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
     public final ConcurrentMap<String, Object> resources = new ConcurrentHashMap<>();//可查可改
     public final Set<AbstractSubsystem> allSubsystems = new CopyOnWriteArraySet<>();
 

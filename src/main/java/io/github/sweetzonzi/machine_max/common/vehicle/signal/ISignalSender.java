@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.vehicle.signal;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 
@@ -132,9 +131,9 @@ public interface ISignalSender {
                 signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
                 signalReceiver.onSignalUpdated(signalChannel, this);
                 if (signalReceiver instanceof SubsystemController vehicle){
-                    //TODO
-                } else if (signalReceiver instanceof SubPart part) {
-                    //TODO
+                    vehicle.signalStorage.put(signalChannel, signalValue);
+                } else if (signalReceiver instanceof SubPart subPart) {
+                    subPart.signalStorage.put(signalChannel, signalValue);
                 }
                 if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
                     if (callbackReturnsSignalValue)
