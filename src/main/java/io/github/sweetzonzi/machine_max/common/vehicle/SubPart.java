@@ -270,7 +270,13 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
             var owner = PhysicsBodyExtensionKt.getOwner(other);
             if (owner instanceof PhysicsChunkSection terrain) {
                 //基本信息获取
-                BlockPos blockPos = terrain.getBlockPosForChildShape(otherHitBoxIndex);
+                BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, point1.getDistance());
+                BlockPos relBlockPos = blockPos.subtract(terrain.getSectionPos().origin());
+                if (relBlockPos.getX() < 0 || relBlockPos.getY() < 0 || relBlockPos.getZ() < 0 ||
+                        relBlockPos.getX() > 15 || relBlockPos.getY() > 15 || relBlockPos.getZ() > 15){
+                    ManifoldPoints.setDistance1(manifoldPointId, 500);//阻止接触约束计算
+                    return;//若方块不属于本区块，则不处理碰撞
+                }
                 SectionSnapshot.BlockSnapshot block = terrain.getBlockSnapshot(blockPos);
                 if (block == null) {
                     ManifoldPoints.setDistance1(manifoldPointId, 500);//阻止接触约束计算
