@@ -249,7 +249,6 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
         //计算相对接触速度
         Vector3f vel = getLinearVelocity();
         Vector3f contactVel = MMMath.relPointWorldVel(localContactPoint, body.getPhysicsRotation(null), vel, getAngularVelocity());
-        //TODO:检查接触速度计算，似乎不对劲
         contactVel.subtractLocal((o2 instanceof PhysicsRigidBody) ? MMMath.relPointWorldVel(otherLocalContactPoint, other) : new Vector3f());
         //计算碰撞角度（法线与速度方向的夹角）
         float impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(contactVel.normalize())));
@@ -457,31 +456,6 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
                     );
                 }
                 switch (entity) {
-                    //原版投射物处理 TODO:似乎不需要这么大一串？
-                    case Projectile projectile when !projectile.isRemoved() && this.entity != null -> {
-                        IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
-                        if (mixinProjectile.machine_Max$getHitSubPart() == null && projectile.getDeltaMovement().length() > 0) {//若投射物还未与任何零件碰撞过
-                            var start = PhysicsHelperKt.toBVector3f(projectile.getEyePosition().subtract(projectile.getDeltaMovement()));
-                            var end = PhysicsHelperKt.toBVector3f(projectile.getEyePosition().add(projectile.getDeltaMovement()));
-                            var results = getPhysicsLevel().getWorld().rayTest(start, end);
-                            for (PhysicsRayTestResult result : results) {//遍历射线检测结果
-                                if (result.getCollisionObject() == this.body) {//若命中本零件
-                                    HitResult hitResult = new EntityHitResult(this.entity, SparkMathKt.toVec3(worldContactPoint));
-                                    if (!EventHooks.onProjectileImpact(projectile, hitResult)) {//若命中事件未被取消
-                                        mixinProjectile.machine_Max$setHitPoint(start.add(end.subtract(start).mult(result.getHitFraction())));
-                                        mixinProjectile.machine_Max$setHitNormal(result.getHitNormalLocal(null));
-                                        mixinProjectile.machine_Max$setHitBox(hitBox);
-                                        mixinProjectile.machine_Max$setHitSubPart(this);
-                                        part.level.submitDeduplicatedTask(projectile.getStringUUID(), PPhase.POST, () -> {
-                                            ((IProjectileMixin) projectile).machine_Max$manualProjectileHit(hitResult);
-                                            return null;
-                                        });
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                    }
                     case LivingEntity livingEntity when !entity.isRemoved() && !livingEntity.isDeadOrDying() && !entity.hasImpulse && !(entity.getVehicle() instanceof MMPartEntity) -> {
                         //不处理相对速度不足的碰撞
                         if (contactVel.subtract(PhysicsHelperKt.toBVector3f(entity.getDeltaMovement().scale(20))).length() < 4f) {

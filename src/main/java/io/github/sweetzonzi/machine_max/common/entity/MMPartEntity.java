@@ -6,9 +6,11 @@ import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.BlackBoard;
+import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bounding.BoundingBox;
+import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
@@ -28,13 +30,17 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.projectile.ProjectileDeflection;
 import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
+import net.neoforged.neoforge.event.EventHooks;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
@@ -88,7 +94,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         super.tick();
         if (tickCount == 2) {//移除SparkCore为实体添加的默认碰撞箱刚体
             var body = getPhysicsBody("body");
-            if (body!= null) {
+            if (body != null) {
                 PhysicsBodyExtensionKt.removePhysicsBody(level(), body);
             }
         }
@@ -130,7 +136,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             //来自投射物的伤害处理
             IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
             SubPart hitSubPart = mixinProjectile.machine_Max$getHitSubPart();
-            if (hitSubPart != null) {//如果命中了部件
+            if (hitSubPart == this.subPart) {//如果命中了部件
                 Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
                 Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
                 HitBox hitBox = mixinProjectile.machine_Max$getHitBox();
@@ -214,7 +220,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @Override
     public boolean canBeHitByProjectile() {
-        return false;//投射物命中判定交由物理引擎处理
+        return true;//投射物命中判定交由物理引擎处理
     }
 
     public void updateBoundingBox() {

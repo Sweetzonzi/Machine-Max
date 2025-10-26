@@ -83,7 +83,7 @@ public class MMMath {
         // 计算旋转带来的额外速度
         Vector3f extraVelocity = new Vector3f();
         relAngularVel.cross(relPointPos, extraVelocity);
-        return result.addLocal(extraVelocity);
+        return result.add(extraVelocity);
     }
 
     public static Vector3f relPointWorldVel(Vector3f relPointPos, PhysicsRigidBody obj) {
@@ -92,14 +92,14 @@ public class MMMath {
         // 计算旋转带来的额外速度
         Vector3f extraVelocity = new Vector3f();
         relAngularVel.cross(localVectorToWorldVector(relPointPos, obj), extraVelocity);
-        return result.addLocal(extraVelocity);
+        return result.add(extraVelocity);
     }
 
     public static Vector3f relPointWorldVel(Vector3f relPointPos, Quaternion rotation, Vector3f worldVel, Vector3f angularVel) {
         // 计算旋转带来的额外速度
         Vector3f extraVelocity = new Vector3f();
         angularVel.cross(localVectorToWorldVector(relPointPos, rotation), extraVelocity);
-        return worldVel.addLocal(extraVelocity);
+        return worldVel.add(extraVelocity);
     }
 
     public static Vector3f worldPointWorldVel(Vector3f worldPointPos, PhysicsRigidBody obj) {
@@ -107,7 +107,7 @@ public class MMMath {
         Vector3f angularVel = obj.getAngularVelocity(null);
         Vector3f extraVelocity = new Vector3f();
         angularVel.cross(worldPointPos.subtract(obj.getPhysicsLocation(null)), extraVelocity);
-        return result.addLocal(extraVelocity);
+        return result.add(extraVelocity);
     }
 
     public static Vec3i getClosestAxisAlignedVector(Vec3 vec3) {
