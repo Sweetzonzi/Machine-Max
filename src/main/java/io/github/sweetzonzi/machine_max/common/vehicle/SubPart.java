@@ -2,6 +2,10 @@ package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
+import cn.solarmoon.spark_core.animation.anim.AnimInstance;
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
+import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
@@ -536,12 +540,23 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
 
     public void tick() {
         super.tick();
-        if (this.entity == null || this.entity.isRemoved()) {
-            if (!getLevel().isClientSide()) refreshPartEntity();
-        }
-        if (this.entity != null && !this.entity.isRemoved()) {
-            BoundingBox box = PhysicsBodyExtensionKt.stateOf(body).getCachedBoundingBox();
-            entity.boundingBox.set(box);
+        if(!isRemoved()) {
+            if (this.entity == null || this.entity.isRemoved()) {
+                if (!getLevel().isClientSide()) refreshPartEntity();
+            }
+            if (this.entity != null && !this.entity.isRemoved()) {
+                BoundingBox box = PhysicsBodyExtensionKt.stateOf(body).getCachedBoundingBox();
+                entity.boundingBox.set(box);
+            }
+            var animSet = OAnimationSet.getORIGINS().get(new ModelIndex("part", attr.getAnimation("default")));
+            if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
+                for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
+                    String name = entry.getKey();
+                    var animInstance = new AnimInstance(this, new AnimIndex(new ModelIndex("part", attr.getAnimation("default")), name));
+                    animInstance.enter();
+                }
+            }
+            animController.tick();
         }
     }
 

@@ -19,7 +19,7 @@
               "machine_max:textures/part/mini_ev_ae86.png"
             ]
           },
-          "animations": {//(可选)状态差分工件映射，支持单值或多状态映射
+          "animations": {//(可选)状态差分动画映射，支持单值或多状态映射
             "default": "machine_max:empty"//状态名称 -> 动画路径
           },
           "mass": 20.0,//零件质量(kg)
@@ -60,7 +60,7 @@
               "machine_max:textures/part/mini_ev_ae86.png"
             ]
           },
-          "animations": {//(可选)状态差分工件映射，支持单值或多状态映射
+          "animations": {//(可选)状态差分动画映射，支持单值或多状态映射
             "default": "machine_max:empty"//状态名称 -> 动画路径
           },
           "mass": 20.0,//零件质量(kg)

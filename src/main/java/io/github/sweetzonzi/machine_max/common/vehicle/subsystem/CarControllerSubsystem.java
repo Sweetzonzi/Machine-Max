@@ -85,13 +85,15 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             String signalChannel = entry.getKey();
             List<String> targets = entry.getValue();
             for (String targetName : targets)
-                sendSignalToTarget(signalChannel, targetName, actualThrottle / 100f);
+                sendSignalToTarget(signalChannel, targetName, actualThrottle * 0.01f);
         }
         for (Map.Entry<String, List<String>> entry : attr.steeringOutputTargets.entrySet()) {
             String signalChannel = entry.getKey();
             List<String> targets = entry.getValue();
+            var steering = actualSteering * 0.01f;
+            if (speed > 15f) steering /= 1 + (speed - 15) / 15;//限制高速下的转弯半径确保安全 Limit the steering radius under high speed to ensure safety
             for (String targetName : targets)
-                sendSignalToTarget(signalChannel, targetName, actualSteering / 100f);
+                sendSignalToTarget(signalChannel, targetName, steering);
         }
         for (Map.Entry<String, List<String>> entry : attr.brakeOutputTargets.entrySet()) {
             String signalChannel = entry.getKey();

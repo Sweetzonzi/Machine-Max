@@ -14,7 +14,7 @@
         "textures": [//(必须)状态差分贴图映射，单值模式
           "machine_max:textures/part/ae86_all_terrain_1.png"
         ],
-        "animations": "machine_max:empty",//(可选)状态差分工件映射，单值模式
+        "animations": "machine_max:empty",//(可选)状态差分动画映射，单值模式
         "subsystems": {//(可选)子系统配置
           "seat": {
             "type": "machine_max:seat", //子系统类型

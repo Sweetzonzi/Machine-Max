@@ -18,7 +18,7 @@
             "machine_max:textures/part/reinforced_box_16x16x8.png"
           ]
         },
-        "animations": {//(可选)状态差分工件映射，支持单值或多状态映射
+        "animations": {//(可选)状态差分动画映射，支持单值或多状态映射
           "default": "machine_max:empty"//状态名称 -> 动画路径
         },
         "subsystems": {//(可选)子系统配置

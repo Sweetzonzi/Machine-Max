@@ -20,7 +20,7 @@
               "machine_max:textures/part/ae86_all_terrain_2.png"
             ]
           },
-          "animations": {//(可选)状态差分工件映射，支持单值或多状态映射
+          "animations": {//(可选)状态差分动画映射，支持单值或多状态映射
             "default": "machine_max:empty"//状态名称 -> 动画路径
           },
           "mass": 150.0,//零件质量(kg)
@@ -62,7 +62,7 @@
               "machine_max:textures/part/ae86_all_terrain_2.png"
             ]
           },
-          "animations": {//(可选)状态差分工件映射，支持单值或多状态映射
+          "animations": {//(可选)状态差分动画映射，支持单值或多状态映射
             "default": "machine_max:empty"//状态名称 -> 动画路径
           },
           "mass": 150.0,//零件质量(kg)
