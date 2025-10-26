@@ -37,8 +37,10 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             ViewAttr.CODEC.optionalFieldOf("views", new ViewAttr(
                     true,
                     List.of(),
+                    0f,
                     true,
                     List.of(),
+                    0.75f,
                     true,
                     true,
                     1.1f,
@@ -107,8 +109,10 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             //TODO:角度限制
             boolean enableFirstPerson,
             List<ResourceLocation> firstPersonHud,
+            float firstPersonHeight,
             boolean enableThirdPerson,
             List<ResourceLocation> thirdPersonHud,
+            float thirdPersonHeight,
             boolean followVehicle,
             boolean focusOnCenter,
             float distanceScale,
@@ -117,8 +121,10 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
         public static final Codec<ViewAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.BOOL.optionalFieldOf("enable_first_person", true).forGetter(ViewAttr::enableFirstPerson),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("first_person_hud", List.of()).forGetter(ViewAttr::firstPersonHud),
+                Codec.FLOAT.optionalFieldOf("first_person_offset", 0f).forGetter(ViewAttr::firstPersonHeight),
                 Codec.BOOL.optionalFieldOf("enable_third_person", true).forGetter(ViewAttr::enableThirdPerson),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("third_person_hud", List.of()).forGetter(ViewAttr::thirdPersonHud),
+                Codec.FLOAT.optionalFieldOf("third_person_offset", 0.75f).forGetter(ViewAttr::thirdPersonHeight),
                 Codec.BOOL.optionalFieldOf("follow_vehicle", true).forGetter(ViewAttr::followVehicle),
                 Codec.BOOL.optionalFieldOf("focus_on_center", true).forGetter(ViewAttr::focusOnCenter),
                 Codec.FLOAT.optionalFieldOf("distance_scale", 1.1f).forGetter(ViewAttr::distanceScale),

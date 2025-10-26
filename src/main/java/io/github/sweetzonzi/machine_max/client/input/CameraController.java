@@ -59,10 +59,11 @@ public class CameraController {
         if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
             if (!type.isFirstPerson() && seat.attr.views.focusOnCenter()) {
                 VehicleCore vehicle = seat.getOwner().getSubPart().getPart().getVehicle();
-                event.setCameraPos(vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick)));
+                event.setCameraPos(vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick))
+                        .add(new Vec3(0,seat.attr.views.thirdPersonHeight(),0)));
             } else {
                 Transform transform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, new Transform().setTranslation(new Vector3f(0, 1.1f, 0)), partialTick);
-                event.setCameraPos(SparkMathKt.toVec3(transform.getTranslation()));
+                event.setCameraPos(SparkMathKt.toVec3(transform.getTranslation()).add(new Vec3(0,seat.attr.views.firstPersonHeight(),0)));
             }
         }
     }

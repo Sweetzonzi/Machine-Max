@@ -65,6 +65,10 @@ public class MMMath {
         return MyQuaternion.rotate(localToWorld, localVec, null);
     }
 
+    public static Vector3f localVectorToWorldVector(Vector3f localVec, Quaternion rotation) {
+        return MyQuaternion.rotate(rotation, localVec, null);
+    }
+
     public static Vector3f getLinearVelocityLocal(PhysicsRigidBody obj) {
         //TODO:检查逻辑
         Vector3f result = obj.getLinearVelocity(null);//获取物体质心在世界坐标系下的线速度
@@ -89,6 +93,13 @@ public class MMMath {
         Vector3f extraVelocity = new Vector3f();
         relAngularVel.cross(localVectorToWorldVector(relPointPos, obj), extraVelocity);
         return result.addLocal(extraVelocity);
+    }
+
+    public static Vector3f relPointWorldVel(Vector3f relPointPos, Quaternion rotation, Vector3f worldVel, Vector3f angularVel) {
+        // 计算旋转带来的额外速度
+        Vector3f extraVelocity = new Vector3f();
+        angularVel.cross(localVectorToWorldVector(relPointPos, rotation), extraVelocity);
+        return worldVel.addLocal(extraVelocity);
     }
 
     public static Vector3f worldPointWorldVel(Vector3f worldPointPos, PhysicsRigidBody obj) {

@@ -247,8 +247,9 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
         //获取世界坐标下的碰撞点法线
         point1.getNormalWorldOnB(normal);
         //计算相对接触速度
-        Vector3f vel = body.getLinearVelocity(null);
-        Vector3f contactVel = MMMath.relPointWorldVel(localContactPoint, body);
+        Vector3f vel = getLinearVelocity();
+        Vector3f contactVel = MMMath.relPointWorldVel(localContactPoint, body.getPhysicsRotation(null), vel, getAngularVelocity());
+        //TODO:检查接触速度计算，似乎不对劲
         contactVel.subtractLocal((o2 instanceof PhysicsRigidBody) ? MMMath.relPointWorldVel(otherLocalContactPoint, other) : new Vector3f());
         //计算碰撞角度（法线与速度方向的夹角）
         float impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(contactVel.normalize())));
