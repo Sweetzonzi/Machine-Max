@@ -1,9 +1,12 @@
 package io.github.sweetzonzi.machine_max.client.renderable;
 
 import cn.solarmoon.spark_core.SparkCore;
+import cn.solarmoon.spark_core.animation.anim.AnimInstance;
+import cn.solarmoon.spark_core.animation.anim.origin.AnimIndex;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.js.molang.JSMolangValue;
+import cn.solarmoon.spark_core.js.molang.JSMolangValueKt;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -157,63 +160,10 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
         ModelInstance model = getModelController().getModel();
         if (model == null) return;
         poseStack.pushPose();
-        poseStack.scale(-1, -1, 1);
         if (perspective) {
             poseStack.mulPose(Axis.XP.rotationDegrees(180));//透视投影需要翻转文字
         }
-        //渲染所有文本
-        for (Map.Entry<String, AnimatableParams.TextParams> entry : params.textAttr.entrySet()) {
-            String locatorName = entry.getKey();
-            AnimatableParams.TextParams textParams = entry.getValue();
-            Matrix4f matrix = model.getPose().getSpaceBoneLocatorMatrix(locatorName, partialTick);
-            poseStack.pushPose();
-            poseStack.mulPose(matrix);
-            //计算molang表达式
-            List<String> args = new ArrayList<>();
-            int num = textParams.significand();
-            DecimalFormat df = new DecimalFormat("#"); // 初始化为不保留小数点
-            if (num > 0) {
-                df = new DecimalFormat("#." + "0".repeat(num)); // 如果num大于0，则保留相应数量的有效数字
-            }
-            //TODO:利用js解析molang表达式
-//            for (JSMolangValue arg : textParams.molangArgs()) {
-//                try {
-//                    Object value = arg.eval(this);
-//                    //TODO:排查有时仪表速度值双倍的问题
-////                    MachineMax.LOGGER.debug("Molang: " + arg + " = " + value);
-//                    switch (value) {
-//                        case String stringValue -> args.add(stringValue);
-//                        case Number number -> args.add(df.format(number.doubleValue()));
-//                        case Boolean bool -> args.add(String.valueOf(bool));
-//                        case null, default -> args.add("null");
-//                    }
-//                } catch (Exception e) {
-//                    args.add("MOLANG_ERROR" + e);
-//                }
-//            }
-            String text;
-            if (textParams.molangArgs().isEmpty())
-                text = Component.translatable(textParams.key()).getString();//无参数直接使用翻译键
-                //否则用解析的molang表达式结果作为参数
-            else text = Component.translatable(textParams.key(), args.toArray(new Object[0])).getString();
-            //绘制文字
-            poseStack.pushPose();
-            poseStack.scale(0.05f, 0.05f, (perspective ? -1 : 1) * 0.05f);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(180));
-            //noinspection IntegerDivisionInFloatingPointContext
-            Minecraft.getInstance().font.drawInBatch(text,
-                    textParams.centered() ? (-Minecraft.getInstance().font.width(text) / 2) : 0,
-                    textParams.centered() ? (-Minecraft.getInstance().font.lineHeight / 2) : -Minecraft.getInstance().font.lineHeight,
-                    textParams.getColor(),
-                    textParams.shadow(),
-                    poseStack.last().pose().scale(textParams.scale().toVector3f()),
-                    bufferSource,
-                    Font.DisplayMode.NORMAL,
-                    textParams.getBackgroundColor(),
-                    Brightness.FULL_BRIGHT.pack());
-            poseStack.popPose();
-            poseStack.popPose();
-        }
+        super.renderTexts(poseStack, bufferSource, partialTick);
         poseStack.popPose();
     }
 }

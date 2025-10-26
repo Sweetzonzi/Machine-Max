@@ -90,9 +90,9 @@
       "shadow": true,
       "scale": [2, 2, 2],
       "molang_args": [//(可选，默认[]) Molang参数，将用于填充翻译文本预留的参数位置
-        "math.floor((veh.get('speed')??q.ground_speed) * 3.6 / 100)",
-        "math.floor(math.mod((veh.get('speed')??q.ground_speed) * 3.6, 100) / 10)",
-        "math.floor(math.mod((veh.get('speed')??q.ground_speed) * 3.6, 10))"
+        "math.floor((math.abs(veh.get('vehicle_speed'))??0.0) * 3.6 / 100)",
+        "math.floor(math.mod((math.abs(veh.get('vehicle_speed'))??0.0) * 3.6, 100) / 10)",
+        "math.floor(math.mod((math.abs(veh.get('vehicle_speed'))??0.0) * 3.6, 10))"
       ],
       "significand": 0 //(可选，默认0) Molang参数计算结果为数字时，保留的小数点后位数
     }

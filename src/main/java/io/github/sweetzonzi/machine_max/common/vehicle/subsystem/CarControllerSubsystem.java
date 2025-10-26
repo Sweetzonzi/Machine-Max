@@ -51,7 +51,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             String signalChannel = entry.getKey();
             List<String> targets = entry.getValue();
             for (String targetName : targets)
-                sendSignalToTarget(signalChannel, targetName, getOwner().getSubPart().getPart().vehicle.getVelocity().length());
+                sendSignalToTarget(signalChannel, targetName, this.speed);
         }
         updateMoveInputs();
         if (isActive()) {

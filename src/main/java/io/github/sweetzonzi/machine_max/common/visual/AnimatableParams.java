@@ -47,7 +47,7 @@ public class AnimatableParams {
             int transparency,
             Vec3i backgroundColor,
             int backgroundTransparency,
-            List<JSMolangValue> molangArgs,
+            List<String> molangArgs,
             int significand
     ) {
         public static final Codec<TextParams> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -60,7 +60,7 @@ public class AnimatableParams {
                 Codec.INT.optionalFieldOf("transparency", 255).forGetter(TextParams::transparency),
                 Vec3i.CODEC.optionalFieldOf("background_color", new Vec3i(0, 0, 0)).forGetter(TextParams::backgroundColor),
                 Codec.INT.optionalFieldOf("background_transparency", 0).forGetter(TextParams::backgroundTransparency),
-                JSMolangValue.Companion.getCODEC().listOf().optionalFieldOf("molang_args", List.of()).forGetter(TextParams::molangArgs),
+                Codec.STRING.listOf().optionalFieldOf("molang_args", List.of()).forGetter(TextParams::molangArgs),
                 Codec.INT.optionalFieldOf("significand", 0).forGetter(TextParams::significand)
         ).apply(instance, TextParams::new));
 
