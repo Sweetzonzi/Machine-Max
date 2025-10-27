@@ -277,12 +277,12 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
                 BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, point1.getDistance());
                 BlockPos relBlockPos = blockPos.subtract(terrain.getSectionPos().origin());
                 if (relBlockPos.getX() < 0 || relBlockPos.getY() < 0 || relBlockPos.getZ() < 0 ||
-                        relBlockPos.getX() > 15 || relBlockPos.getY() > 15 || relBlockPos.getZ() > 15){
+                        relBlockPos.getX() > 15 || relBlockPos.getY() > 15 || relBlockPos.getZ() > 15) {
                     ManifoldPoints.setDistance1(manifoldPointId, 500);//阻止接触约束计算
                     return;//若方块不属于本区块，则不处理碰撞
                 }
                 SectionSnapshot.BlockSnapshot block = terrain.getBlockSnapshot(blockPos);
-                if (block == null) {
+                if (block == null || terrain.isRemoved(blockPos)) {
                     ManifoldPoints.setDistance1(manifoldPointId, 500);//阻止接触约束计算
                     return;//若方块已被移除，则不处理碰撞
                 }
@@ -340,7 +340,27 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
                     normal = new Vector3f(0, 1, 0);
                     ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
                     ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
-                    return;//爬坡辅助的方块不参与后续碰撞处理
+                    return; //爬坡辅助的方块不参与后续碰撞处理
+                } else { //非爬坡辅助的一般方块
+                    double velXZ = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
+                    if (velXZ > 12.5f) {
+                        //临近区块交界处的高速碰撞额外处理增稳
+                        var relContactPoint = SparkMathKt.toVector3f(worldContactPoint).sub(SparkMathKt.toVector3f(terrain.getSectionPos().origin()));
+                        if (relContactPoint.x <= velXZ / 60f + 0.1
+                                || relContactPoint.x >= 15.9 - velXZ / 60f
+                                || relContactPoint.z <= velXZ / 60f + 0.1
+                                || relContactPoint.z >= 15.9 - velXZ / 60f) {
+                            if (normal.y > 0.9f) {
+                                normal = new Vector3f(0, 1, 0);
+                                ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
+                                if(vel.y > 0.1f){
+                                    body.setLinearVelocity(new Vector3f(vel.x, vel.y * 0.75f, vel.z));
+                                }
+                                vel.set(1, 0f);
+                                contactVel.set(1, 0f);
+                            }
+                        }
+                    }
                 }
                 //调用子系统碰撞回调
                 if (hitBox.subsystem != null) {
@@ -419,21 +439,23 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
                 if (contactVel.length() > 1f) {
                     if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SAND) || blockState.is(BlockTags.SNOW)) {
                         if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
+                            Vector3f finalContactVel = contactVel;
                             level.submitImmediateTask(PPhase.PRE, () -> {
                                 //飞溅草石
                                 level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockState),
                                         worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
-                                        contactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
-                                        contactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
-                                        contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
+                                        finalContactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
+                                        finalContactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
+                                        finalContactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
                                 return null;
                             });
                         }
                     }
+                    Vector3f finalVel = vel;
                     level.submitDeduplicatedTask(part.uuid + "_" + name + "_slide_sound", PPhase.PRE, () -> {
                         level.playLocalSound(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
                                 blockState.getSoundType(part.level, blockPos, null).getStepSound(), SoundSource.BLOCKS,
-                                (float) (0.3f * (1f - Math.exp(-0.1 * (vel.length() - 2)))), 0.75f, false);
+                                (float) (0.3f * (1f - Math.exp(-0.1 * (finalVel.length() - 2)))), 0.75f, false);
                         return null;
                     });
                 }
@@ -540,7 +562,7 @@ public class SubPart extends DynamicRigidObject implements PhysicsHost, IAnimata
 
     public void tick() {
         super.tick();
-        if(!isRemoved()) {
+        if (!isRemoved()) {
             if (this.entity == null || this.entity.isRemoved()) {
                 if (!getLevel().isClientSide()) refreshPartEntity();
             }

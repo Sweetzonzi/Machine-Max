@@ -22,7 +22,6 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,12 +38,12 @@ public class SubPartAttr {
     // 物理属性
     public final float mass;
     public final Vec3 projectedArea;
-    public final String massCenterLocator;
     public final BlockCollisionType blockCollision;
     public final float stepHeight;
     public final boolean climbAssist;
 
     // 功能属性
+    public final float durability;
     public final Map<String, HitBoxAttr> hitBoxes;
     public final Map<String, InteractBoxAttr> interactBoxes;
     public final Map<String, ConnectorAttr> connectors;
@@ -58,7 +57,6 @@ public class SubPartAttr {
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();
     public final ConcurrentMap<Long, String> hitBoxNames = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, ConcurrentMap<String, Transform>> locatorTransforms = new ConcurrentHashMap<>();
-    public final Map<String, Transform> massCenterTransforms = new HashMap<>();
 
     public enum BlockCollisionType {
         TRUE, FALSE, GROUND
@@ -120,9 +118,9 @@ public class SubPartAttr {
             MODELS_CODEC.fieldOf("models").forGetter(SubPartAttr::getModels),
             TEXTURES_CODEC.optionalFieldOf("textures", Map.of()).forGetter(SubPartAttr::getTextures),
             ANIMATIONS_CODEC.optionalFieldOf("animations", Map.of()).forGetter(SubPartAttr::getAnimations),
-            Codec.FLOAT.optionalFieldOf("mass", -1f).forGetter(SubPartAttr::getMass),
+            Codec.FLOAT.optionalFieldOf("durability", 20f).forGetter(SubPartAttr::getDurability),
+            Codec.FLOAT.optionalFieldOf("mass", 25f).forGetter(SubPartAttr::getMass),
             Vec3.CODEC.optionalFieldOf("projected_area", Vec3.ZERO).forGetter(SubPartAttr::getProjectedArea),
-            Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::getMassCenterLocator),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
             Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
@@ -143,9 +141,9 @@ public class SubPartAttr {
             Map<String, ResourceLocation> models,
             Map<String, List<ResourceLocation>> textures,
             Map<String, ResourceLocation> animations,
+            float durability,
             float mass,
             Vec3 projectedArea,
-            String massCenterLocator,
             String blockCollision,
             float stepHeight,
             boolean climbAssist,
@@ -160,10 +158,10 @@ public class SubPartAttr {
         this.textures = textures;
         this.animations = animations;
 
+        this.durability = durability;
         if (mass <= 0) throw new IllegalArgumentException("error.machine_max.subpart.zero_mass");
         this.mass = mass;
         this.projectedArea = projectedArea;
-        this.massCenterLocator = massCenterLocator;
         this.blockCollision = BlockCollisionType.valueOf(blockCollision.toUpperCase());
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
@@ -274,7 +272,18 @@ public class SubPartAttr {
                             // TODO: 创建锥形碰撞体积
                             break;
                         case "capsule":
-                            // TODO: 创建胶囊碰撞体积
+                            for (OCube cube : bone.getCubes()) {
+                                //TODO: 检查尺寸方向是否正确
+                                Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
+                                org.joml.Vector3f rotation = cube.getRotation().toVector3f();
+                                Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
+                                CapsuleCollisionShape cylinderShape = new CapsuleCollisionShape(size.x, size.y, 0);
+                                hitBoxNames.put(cylinderShape.nativeId(), hitBoxName);
+                                shape.addChildShape(
+                                        cylinderShape,
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
+                                        SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
+                            }
                             break;
                         case "wheel":
                             for (OCube cube : bone.getCubes()) {
@@ -302,29 +311,22 @@ public class SubPartAttr {
 
             // 调整零件质心
             Transform massCenter = new Transform();
-            if (!this.massCenterLocator.isEmpty()) {
-                OLocator locator = locators.get(this.massCenterLocator);
-                if (locator != null) {
-                    org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-                    massCenter = new Transform(
-                            PhysicsHelperKt.toBVector3f(locator.getOffset()),
-                            SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
-                    );
-
-                    // 重新计算定位器相对质心的变换
-                    for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.computeIfAbsent(state, v1 -> new ConcurrentHashMap<>()).entrySet()) {
-                        String locatorName = locatorTransform.getKey();
-                        Transform transform = locatorTransform.getValue();
-                        MyMath.combine(massCenter.invert(), transform, transform);
-                        locatorTransforms.get(state).put(locatorName, transform);
-                    }
-                } else {
-                    MachineMax.LOGGER.warn("未找到质心定位点{}，未对子部件的碰撞体积进行偏移调整。", this.massCenterLocator);
+            OLocator locator = locators.get("MassCenter");
+            if (locator!=null) {
+                org.joml.Vector3f rotation = locator.getRotation().toVector3f();
+                massCenter = new Transform(
+                        PhysicsHelperKt.toBVector3f(locator.getOffset()),
+                        SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
+                );
+                // 重新计算定位器相对质心的变换
+                for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.computeIfAbsent(state, v1 -> new ConcurrentHashMap<>()).entrySet()) {
+                    String locatorName = locatorTransform.getKey();
+                    Transform transform = locatorTransform.getValue();
+                    MyMath.combine(massCenter.invert(), transform, transform);
+                    locatorTransforms.get(state).put(locatorName, transform);
                 }
-                shape.correctAxes(massCenter);
             }
-
-            this.massCenterTransforms.put(state, massCenter);
+            shape.correctAxes(massCenter);
             if (shape.countChildren() <= 0) throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
             return shape;
         });
@@ -365,19 +367,15 @@ public class SubPartAttr {
             }
 
             Transform massCenter = new Transform();
-            if (!this.massCenterLocator.isEmpty()) {
-                OLocator locator = locators.get(this.massCenterLocator);
-                if (locator != null) {
-                    org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-                    massCenter = new Transform(
-                            PhysicsHelperKt.toBVector3f(locator.getOffset()),
-                            SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
-                    );
-                } else {
-                    MachineMax.LOGGER.warn("未找到质心定位点{}，未对子部件的交互体积进行偏移调整。", this.massCenterLocator);
-                }
-                shape.correctAxes(massCenter);
+            OLocator locator = locators.get("MassCenter");
+            if (locator != null) {
+                org.joml.Vector3f rotation = locator.getRotation().toVector3f();
+                massCenter = new Transform(
+                        PhysicsHelperKt.toBVector3f(locator.getOffset()),
+                        SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
+                );
             }
+            shape.correctAxes(massCenter);
             return shape;
         });
     }

@@ -154,7 +154,7 @@ public abstract class AbstractConnector implements PhysicsHost {
             if (this instanceof SpecialConnector) {
                 if (jointAttr != null) {
                     float m_eff;//有效质量估算值，用于限制关节刚度和阻尼，避免数值不稳定
-                    float safe = 0.8f;//安全系数
+                    float safe = 0.95f;//安全系数
                     if (i <= 2)//平动轴以两物体质量计算等效质量
                         m_eff = computeEffectiveMass(joint.getBodyA().getMass(), joint.getBodyB().getMass());
                     else {//转动轴以两物体转动惯量计算等效质量
