@@ -17,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -143,7 +142,7 @@ public class PartData {
         this.name = part.name;
         this.uuid = part.getUuid().toString();
         this.variant = part.variant;
-        this.durability = part.durability;
+        this.durability = part.sharedDurability;
         this.integrity = part.integrity;
         this.subPartTransforms = HashMap.newHashMap(1);
         this.textureIndexes = HashMap.newHashMap(1);

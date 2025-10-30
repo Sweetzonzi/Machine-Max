@@ -26,23 +26,16 @@ import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
-import io.github.sweetzonzi.machine_max.network.payload.PartSyncPayload;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
@@ -52,6 +45,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 @Getter
+/**
+ * 组装与UGC创作的最小单元
+ */
 public class Part implements ISignalReceiver {
     //渲染属性 Renderer attributes
     public volatile boolean hurtMarked = false;
@@ -64,23 +60,11 @@ public class Part implements ISignalReceiver {
     public final String variant;
     public final UUID uuid;
     public volatile boolean destroyed = false;
-    public volatile float durability;
+    public volatile float sharedDurability;//仅在部件内共享耐久度启用时有效
     public volatile float integrity;
-    private final ConcurrentMap<Vector3f, Float> accumulatedImpact = new ConcurrentHashMap<>(8);
+    public final ConcurrentMap<Vector3f, Float> accumulatedImpact = new ConcurrentHashMap<>(8);
     public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
 
-    public record PartDamageData(
-            DamageSource source,
-            IPhysicsProjectile projectileSource,
-            SubPart subPart,
-            Vector3f normal,
-            Vector3f worldContactSpeed,
-            Vector3f worldContactPoint,
-            HitBox hitBox
-    ) {
-    }
-
-    private final ConcurrentLinkedQueue<Pair<Float, PartDamageData>> accumulatedDamage = new ConcurrentLinkedQueue<>();
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
     public float totalMass;
@@ -103,7 +87,7 @@ public class Part implements ISignalReceiver {
         this.variant = variant;
         this.level = level;
         this.uuid = UUID.randomUUID();
-        this.durability = partType.basicDurability;
+        this.sharedDurability = partType.basicDurability;
         this.integrity = partType.basicIntegrity;
         this.rootSubPart = createSubParts(type.getVariants().get(variant).subParts());//创建子部件并指定根子部件
         updateMass();
@@ -134,7 +118,7 @@ public class Part implements ISignalReceiver {
         this.level = level;
         this.variant = data.variant;
         this.uuid = UUID.fromString(data.uuid);
-        this.durability = readSavedData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
+        this.sharedDurability = readSavedData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
         this.integrity = readSavedData ? Math.min(data.integrity, type.basicIntegrity) : type.basicIntegrity;
         this.rootSubPart = createSubParts(type.getVariants().get(variant).subParts());//重建子部件并指定根子部件
         //遍历保存的子部件位置、旋转、速度数据
@@ -176,10 +160,8 @@ public class Part implements ISignalReceiver {
     }
 
     public void onTick() {
-        //处理各线程造成的伤害
-        if (!level.isClientSide()) handleAccumulatedDamage();
         //判定摧毁
-        if (!destroyed && durability <= 0) onDestroyed();
+        if (!destroyed && sharedDurability <= 0) destroyed = true;
         if (oHurtMarked) oHurtMarked = false;
         else if (hurtMarked) hurtMarked = false;
     }
@@ -235,122 +217,6 @@ public class Part implements ISignalReceiver {
     public void onPostPhysicsTick() {
     }
 
-    public boolean onHurt(DamageSource source,
-                          float damage,
-                          IPhysicsProjectile projectileSource,
-                          SubPart subPart,
-                          Vector3f normal,
-                          Vector3f worldContactSpeed,
-                          Vector3f worldContactPoint,
-                          HitBox hitBox) {
-        Vec3 sourcePos = source.getSourcePosition();
-        if (sourcePos == null)
-            sourcePos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getTransform().getTranslation());
-        Vec3 finalSourcePos = sourcePos;
-        float armor = hitBox.getRHA(subPart);
-        float armorPenetration = 0;
-        //击退处理与特殊逻辑
-        if (projectileSource == null && !level.isClientSide) {//原版伤害处理
-            //冲击效果
-            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / this.type.basicDurability))) * 150f);//伤害转化为动量
-            if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
-                knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
-            }
-            if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION))
-                knockBack *= 15.0f;
-            float finalKnockBack = knockBack;
-            level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
-                vehicle.activate();
-                subPart.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(subPart.body.getPhysicsLocation(null)));
-//                vehicle.poseSyncCountDown = 0;//发生击退时立刻重新同步位置姿态速度
-                return null;
-            });
-            //换算穿深
-            armorPenetration = damage / 2f;
-        } else if (projectileSource != null) {//甲弹对抗处理
-            //获取穿深
-            try {
-                armorPenetration = damage;
-                //TODO:研究一下Key是怎么用的
-//                armorPenetration = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
-            } catch (Exception e) {
-                armorPenetration = damage / 2f;
-                MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", subPart.part.name);
-            }
-        }
-        //线性减伤处理
-        float impactDamage = damage - hitBox.getDamageReduction();
-        //累积冲击效果用于削减结构完整性
-        accumulatedImpact.put(worldContactPoint, impactDamage);
-        //甲弹对抗相关处理
-        if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
-        //击穿判定
-        if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
-            if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
-                impactDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
-            impactDamage *= hitBox.getDamageMultiplier();
-            //对部件造成伤害
-            Part.PartDamageData data = new Part.PartDamageData(source, projectileSource, subPart, normal, worldContactSpeed, worldContactPoint, hitBox);
-            accumulateDamage(impactDamage, data);
-            return true;
-        } else {
-            if (!level.isClientSide) {
-                level.submitImmediateTask(PPhase.ALL, () -> {
-                    //播放命中音效
-                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO, 64f,
-                            (float) ((2 - Math.min(7f, damage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
-                            0.1f + 0.4f * Math.min(7f, damage) / 7f);
-                    return null;
-                });
-            }
-            return false;
-        }
-    }
-
-    /**
-     * <p>线程安全地对部件造成伤害，伤害会被在主线程统一处理，参见 {@link #handleAccumulatedDamage()}</p>
-     * <p>Accumulates damage to the part thread safely, which will be handled in the main thread, see {@link #handleAccumulatedDamage()}</p>
-     *
-     * @param damage 伤害值 damage value
-     * @param data   伤害源、命中点、判定区等 damage source, hit point, hit box, etc.
-     */
-    private void accumulateDamage(float damage, PartDamageData data) {
-        if (damage > 0) {
-            hurtMarked = true;
-            accumulatedDamage.add(Pair.of(damage, data));
-        }
-    }
-
-    /**
-     * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link #onTick()}</p>
-     * <p>Handles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link #onTick()}</p>
-     */
-    private void handleAccumulatedDamage() {
-        if (!level.isClientSide() && !accumulatedDamage.isEmpty()) {
-            float totalDamage = 0;
-            Vec3 soundPos = Vec3.ZERO;
-            while (!accumulatedDamage.isEmpty()) {
-                Pair<Float, PartDamageData> pair = accumulatedDamage.poll();
-                float damage = pair.getFirst();
-                PartDamageData data = pair.getSecond();
-                //对子系统造成伤害
-                if (data.hitBox.getSubsystem() != null)
-                    data.hitBox.getSubsystem().onHurt(damage, data);
-                totalDamage += damage;
-                soundPos = SparkMathKt.toVec3(data.worldContactPoint);
-            }
-            this.durability = Math.clamp(durability - totalDamage, 0, type.basicDurability);
-            //TODO:对载具造成伤害
-            //发包同步部件与子系统状态
-            syncStatus();
-            //播放音效
-            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"));
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, soundPos, Vec3.ZERO, 64f,
-                    (float) ((2 - 2 * Math.min(0.5f * type.basicDurability, totalDamage) / type.basicDurability) * (1f + 0.2f * (Math.random() - 0.5f))),
-                    0.2f + 0.8f * 2 * Math.min(0.5f * type.basicDurability, totalDamage) / type.basicDurability);
-        }
-    }
 
     /**
      * <p>获取部件所有零件持有的子系统</p>
@@ -365,56 +231,12 @@ public class Part implements ISignalReceiver {
         return subsystems;
     }
 
-    /**
-     * <p>立刻发包同步部件与子系统耐久度等数据</p>
-     * <p>Sends a packet to synchronize the durability and other data of the part and its subsystem immediately</p>
-     */
-    public void syncStatus() {
-        if (!level.isClientSide) {
-            Map<String, Map<String, Float>> allSubsystemDurability = getStatusSyncData();
-            PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                    new PartSyncPayload(vehicle.uuid, uuid, durability, integrity, allSubsystemDurability));
-        }
-    }
-
-    /**
-     * <p>获取部件与子系统耐久度等数据，用于同步</p>
-     * <p>Gets the durability and other data of the part and its subsystem for synchronization</p>
-     * @return 部件与子系统耐久度等数据
-     */
-    public @NotNull Map<String, Map<String, Float>> getStatusSyncData() {
-        Map<String,Map<String,Float>> allSubsystemDurability = new HashMap<>();
-        for (Map.Entry<String, SubPart> entry : this.subParts.entrySet()){
-            String subPartName = entry.getKey();
-            SubPart subPart = entry.getValue();
-            Map<String, Float> subsystemDurability = new HashMap<>();
-            for (Map.Entry<String, AbstractSubsystem> entry2 : subPart.getSubsystems().entrySet()) {
-                subsystemDurability.put(entry2.getKey(), entry2.getValue().getDurability());
-            }
-            allSubsystemDurability.put(subPartName, subsystemDurability);
-        }
-        return allSubsystemDurability;
-    }
-
-    protected void onDestroyed() {
-        destroyed = true;
+    public float getSharedMaxDurability() {
+        float result = 0;
         for (SubPart subPart : subParts.values()) {
-            for (AbstractSubsystem subsystem : subPart.subsystems.values()) {
-                subsystem.setActive(false);
-            }
-            for (AbstractConnector connector : allConnectors.values()) {
-                //TODO:随机锁定/解锁某个关节的自由度？
-                if (connector.attr.breakable()) {
-
-                }
-            }
+            result += subPart.getSharedMaxDurability();
         }
-        if (level.isClientSide) {
-            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"));
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(rootSubPart.getWorldPositionMatrix(1).getTranslation(new org.joml.Vector3f())), Vec3.ZERO, 64f,
-                    (float) (1f + 0.2f * (Math.random() - 0.5f)),
-                    1f);
-        }
+        return result;
     }
 
     private void createSubsystems(

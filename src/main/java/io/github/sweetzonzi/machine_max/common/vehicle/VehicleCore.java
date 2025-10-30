@@ -20,7 +20,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.network.payload.PartSyncPayload;
+import io.github.sweetzonzi.machine_max.network.payload.SubPartDataSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.SubPartSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetachPayload;
@@ -206,9 +206,9 @@ public class VehicleCore {
         for (Part part : partMap.values()) {
             part.onPostPhysicsTick();
             if (!level.isClientSide && statusSyncCountDown <= 0) {
-                var allSubsystemDurability = part.getStatusSyncData();
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) level,
-                        new PartSyncPayload(uuid, part.uuid, part.durability, part.integrity, allSubsystemDurability));
+                for (SubPart subPart : part.subParts.values()){
+                    subPart.sync();
+                }
                 statusSyncCountDown = 120;
             }
         }

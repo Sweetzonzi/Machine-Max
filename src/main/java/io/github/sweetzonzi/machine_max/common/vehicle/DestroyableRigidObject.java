@@ -1,19 +1,26 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
+import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
-import com.jme3.bullet.collision.shapes.CollisionShape;
+import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
+import lombok.Getter;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
-abstract public class DynamicRigidObject extends DynamicObject {
+import java.util.HashMap;
+@Getter
+abstract public class DestroyableRigidObject extends DestroyableObject implements PhysicsHost {
     public CompoundCollisionShape collisionShape;
     public final PhysicsRigidBody body;
+    private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
 
-    protected DynamicRigidObject(Level level, CompoundCollisionShape shape, float mass) {
+    protected DestroyableRigidObject(Level level, CompoundCollisionShape shape, float mass) {
         super(level);
         this.collisionShape = shape;
         this.body = new PhysicsRigidBody(shape, mass);
@@ -21,9 +28,12 @@ abstract public class DynamicRigidObject extends DynamicObject {
     }
 
     @Override
-    protected void sync() {
-        if(!getLevel().isClientSide()) syncTransformBuffer = PhysicsBodyExtensionKt.stateOf(body).getTransform();
-        super.sync();
+    public void prePhysicsTick() {
+        super.prePhysicsTick();
+        if (level.isClientSide()) {
+            body.setLinearVelocity(linearVelocity);
+            body.setAngularVelocity(angularVelocity);
+        }
     }
 
     @Override
@@ -82,5 +92,10 @@ abstract public class DynamicRigidObject extends DynamicObject {
             this.angularVelocity = body.getAngularVelocity(null);
         }
         return this.angularVelocity;
+    }
+
+    @Override
+    public @NotNull PhysicsLevel getPhysicsLevel() {
+        return getLevel().getPhysicsLevel();
     }
 }

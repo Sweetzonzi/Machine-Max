@@ -59,7 +59,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
             if (subPart != null) {
                 Part part = subPart.part;
                 PartType partType = part.type;
-                float durability = part.durability;
+                float durability = part.sharedDurability;
                 if (part.integrity > 0.05 * partType.basicIntegrity && !player.isCreative()) {
                     if (subPart.entity != null) {
                         float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
@@ -70,7 +70,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
                             if (subPart.entity != null) {
                                 part.integrity = Math.clamp(part.integrity - finalDamage * scale, 0, part.type.basicIntegrity);
                                 subPart.entity.hurt(damageSource, finalDamage * scale * 2);
-                                part.syncStatus();
+                                subPart.sync();
                             }
                             return null;
                         });

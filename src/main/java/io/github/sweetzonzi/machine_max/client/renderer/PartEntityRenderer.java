@@ -37,7 +37,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         var worldMatrix = entity.subPart.getWorldPositionMatrix(partialTick);
         Color color = entity.subPart.part.isDestroyed() ? new Color(32, 32, 32, 255) : Color.WHITE;
         int overlay = OverlayTexture.NO_OVERLAY;
-        if (entity.subPart.part.hurtMarked) overlay = OverlayTexture.pack(10, 10);
+        if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(10, 10);
         poseStack.pushPose();//开始渲染
         ModelRenderHelperKt.render(
                 modelController.getOriginModel(),

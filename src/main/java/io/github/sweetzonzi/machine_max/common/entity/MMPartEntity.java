@@ -140,7 +140,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                 Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
                 Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
                 HitBox hitBox = mixinProjectile.machine_Max$getHitBox();
-                return subPart.part.onHurt(source, amount, null, hitSubPart, normal,
+                return subPart.onHurt(source, amount, null, hitSubPart, normal,
                         PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
                                 .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBox);
             } else return false;
@@ -181,7 +181,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                             if (subPart.hitBoxes.get(hitBoxName).getRHA(subPart) > maxThickness)
                                 hitBox = subPart.hitBoxes.get(hitBoxName);
                         }
-                        return subPart.part.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBox);
+                        return subPart.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBox);
                     } else throw new IllegalStateException("No subpart found for explosion damage.");
                 } else {//一般伤害处理
                     var results = level.getWorld().rayTest(start, end);
@@ -193,7 +193,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
                             HitBox hitBox = subPart.getHitBox(result.triangleIndex());
                             //将伤害转发给部件进行操作
-                            return subPart.part.onHurt(source, amount, null, subPart, normal, end.subtract(start).normalize(), contactPoint, hitBox);
+                            return subPart.onHurt(source, amount, null, subPart, normal, end.subtract(start).normalize(), contactPoint, hitBox);
                         }
                     }
                 }
