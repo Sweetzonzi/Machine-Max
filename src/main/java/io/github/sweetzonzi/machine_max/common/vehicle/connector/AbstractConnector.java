@@ -321,7 +321,7 @@ public abstract class AbstractConnector implements PhysicsHost {
             body.setGravity(Vector3f.ZERO);
             body.setKinematic(true);
             body.setContactResponse(false);
-            body.setCollisionGroup(CollisionGroups.PAWN);
+            body.setCollisionGroup(CollisionGroups.TRIGGER);
             body.setCollideWithGroups(CollisionGroups.NONE);
             body.setPhysicsLocation(position);
             body.setPhysicsRotation(rotation);

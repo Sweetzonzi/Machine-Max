@@ -58,8 +58,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
         BoxCollisionShape shape = new BoxCollisionShape((float) (boundingBox.getXsize() * 0.5f), (float) (boundingBox.getYsize() * 0.5f), (float) (boundingBox.getZsize() * 0.5f));
         this.trigger = new PhysicsGhostObject(shape);
         this.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
-        this.trigger.setCollisionGroup(CollisionGroups.PAWN);
-        this.trigger.setCollideWithGroups(CollisionGroups.PAWN);
+        this.trigger.setCollisionGroup(CollisionGroups.TRIGGER);
+        this.trigger.setCollideWithGroups(CollisionGroups.TRIGGER);
     }
 
     @SubscribeEvent

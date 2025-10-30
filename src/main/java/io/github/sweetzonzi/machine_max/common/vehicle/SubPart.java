@@ -241,8 +241,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         point1.getPositionWorld(worldContactPoint);
         point1.getLocalPoint(localContactPoint);
         point2.getLocalPoint(otherLocalContactPoint);
-        //获取世界坐标下的碰撞点法线
-        point1.getNormalWorldOnB(normal);
+        //获取世界坐标下的碰撞点法线，由另一物体指向自身
+        point2.getNormalWorld(normal);
         //计算相对接触速度
         Vector3f contactVel = MMMath.relPointWorldVel(localContactPoint, body.getPhysicsRotation(null), getLinearVelocity(), getAngularVelocity());
         contactVel.subtractLocal((o2 instanceof PhysicsRigidBody) ? MMMath.relPointWorldVel(otherLocalContactPoint, other) : new Vector3f());
@@ -281,6 +281,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         super.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof PhysicsChunkSection terrain) {
+            other.shouldShowDebugBoxWhenNonColldeWith = true;
             //基本信息获取
             var hitBox = this.getHitBox(hitBoxIndex);
             var vel = this.getLinearVelocity();
@@ -347,7 +348,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
                 ManifoldPoints.setDistance1(manifoldPointId, 500f);
                 //重设碰撞法线方向
-                normal = new Vector3f(0, 1, 0);
+                normal = Vector3f.UNIT_Y;
                 ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
                 ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
                 return; //爬坡辅助的方块不参与后续碰撞处理
@@ -361,7 +362,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                             || relContactPoint.z <= velXZ / 60f + 0.1
                             || relContactPoint.z >= 15.9 - velXZ / 60f) {
                         if (normal.y > 0.9f) {
-                            normal = new Vector3f(0, 1, 0);
+                            normal = Vector3f.UNIT_Y;
                             ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
                             if (vel.y > 0.1f) {
                                 body.setLinearVelocity(new Vector3f(vel.x, vel.y * 0.75f, vel.z));
