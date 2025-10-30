@@ -1,10 +1,10 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -68,13 +68,13 @@ public record MovementInputPayload(
     public static void clientHandler(final MovementInputPayload payload, final IPayloadContext context) {
         //将其他玩家的输入同步至本机，以在客户端模拟其他玩家的操作
         //TODO:测试操作延迟情况
-        VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUUID);
+        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
         handler(vehicle, payload);
     }
 
     public static void serverHandler(final MovementInputPayload payload, final IPayloadContext context) {
         Player player = context.player();
-        VehicleCore vehicle = VehicleManager.serverAllVehicles.get(payload.vehicleUUID);
+        VehicleCore vehicle = ObjectManager.serverAllVehicles.get(payload.vehicleUUID);
         boolean success = handler(vehicle, payload);
         //将玩家输入转发给其他玩家，以在其他玩家客户端模拟自己的操作
         if (success)

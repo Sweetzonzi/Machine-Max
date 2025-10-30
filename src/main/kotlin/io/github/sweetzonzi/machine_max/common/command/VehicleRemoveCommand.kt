@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.command
 
 import com.mojang.brigadier.context.CommandContext
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager
 import net.minecraft.commands.CommandBuildContext
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
@@ -17,7 +17,7 @@ class VehicleRemoveCommand : VehicleCommand(2) {
         val source = context.source
         val level = source.level
         try {
-            val num = VehicleManager.removeAllVehiclesInLevel(level)
+            val num = ObjectManager.removeAllVehiclesInLevel(level)
             source.sendSuccess({ Component.literal("$num vehicles in ${level.dimension().location()} have been removed.") }, false)
             return 1
         } catch (e: Exception) {

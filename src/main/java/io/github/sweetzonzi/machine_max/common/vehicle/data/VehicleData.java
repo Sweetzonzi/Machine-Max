@@ -9,6 +9,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.AABB;
@@ -49,9 +50,9 @@ public class VehicleData {
 
     ).apply(instance, VehicleData::new));
 
-    public static final StreamCodec<FriendlyByteBuf, VehicleData> STREAM_CODEC = new StreamCodec<>() {
+    public static final StreamCodec<RegistryFriendlyByteBuf, VehicleData> STREAM_CODEC = new StreamCodec<>() {
         @Override
-        public @NotNull VehicleData decode(FriendlyByteBuf buffer) {
+        public @NotNull VehicleData decode(RegistryFriendlyByteBuf buffer) {
             String name = buffer.readUtf();
             String tooltip = buffer.readUtf();
             ResourceLocation icon = buffer.readResourceLocation();
@@ -69,13 +70,13 @@ public class VehicleData {
             double maxZ = buffer.readFloat();
             Vec3 max = new Vec3(maxX, maxY, maxZ);
             float hp = buffer.readFloat();
-            Map<String, PartData> parts = buffer.readJsonWithCodec(PartData.MAP_CODEC);
+            Map<String, PartData> parts = PartData.MAP_STREAM_CODEC.decode(buffer);
             List<ConnectionData> connections = buffer.readList(ConnectionData.STREAM_CODEC);
             return new VehicleData(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
         }
 
         @Override
-        public void encode(FriendlyByteBuf buffer, @NotNull VehicleData value) {
+        public void encode(RegistryFriendlyByteBuf buffer, @NotNull VehicleData value) {
             buffer.writeUtf(value.name);
             buffer.writeUtf(value.tooltip);
             buffer.writeResourceLocation(value.icon);
@@ -90,7 +91,7 @@ public class VehicleData {
             buffer.writeFloat((float) value.max.y);
             buffer.writeFloat((float) value.max.z);
             buffer.writeFloat(value.hp);
-            buffer.writeJsonWithCodec(PartData.MAP_CODEC, value.parts);
+            PartData.MAP_STREAM_CODEC.encode(buffer, value.parts);
             buffer.writeCollection(value.connections, ConnectionData.STREAM_CODEC);
         }
     };

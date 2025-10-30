@@ -50,7 +50,7 @@ public class WrenchItem extends Item {
                     level.getPhysicsLevel().submitDeduplicatedTask("repair_" + player.getStringUUID(), PPhase.PRE, () -> {
                         if (subPart.entity != null) {
                             part.integrity = Math.clamp(part.integrity - repair * scale, 0, part.type.basicIntegrity);
-                            subPart.sync();
+                            subPart.syncToClient();
                         }
                         return null;
                     });
@@ -62,7 +62,7 @@ public class WrenchItem extends Item {
                         if (subPart.entity != null) {
                             part.integrity = Math.clamp(part.integrity + repair * scale, 0, part.type.basicIntegrity);
                             part.sharedDurability = Math.clamp(part.sharedDurability + repair * scale, 0, part.type.basicDurability);
-                            subPart.sync();
+                            subPart.syncToClient();
                         }
                         return null;
                     });

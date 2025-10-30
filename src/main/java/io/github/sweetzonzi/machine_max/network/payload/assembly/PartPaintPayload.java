@@ -4,7 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -48,7 +48,7 @@ public record PartPaintPayload(
     }
 
     public static void handle(PartPaintPayload payload, IPayloadContext context) {
-        VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUUID);
+        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
         if (vehicle != null) {
             Part part = vehicle.partMap.get(payload.partUUID);
             if (part != null) {

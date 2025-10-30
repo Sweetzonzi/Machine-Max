@@ -59,8 +59,8 @@ public record SubsystemInteractPayload(
     public static void handle(SubsystemInteractPayload payload, IPayloadContext context) {
         VehicleCore vehicle;
         Level level = context.player().level();
-        if (level.isClientSide) vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUUID);
-        else vehicle = VehicleManager.serverAllVehicles.get(payload.vehicleUUID);
+        if (level.isClientSide) vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
+        else vehicle = ObjectManager.serverAllVehicles.get(payload.vehicleUUID);
         if (vehicle != null) {
             Part part = vehicle.partMap.get(payload.partUUID);
             if (part != null) {

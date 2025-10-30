@@ -1,9 +1,8 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
-import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -75,8 +74,8 @@ public record SubPartSyncPayload(
 
     public static void handler(final SubPartSyncPayload payload, final IPayloadContext context) {
         //TODO:根据时间戳判定数据包的有效性，并根据延迟情况对客户端位姿进行预测
-        VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUUID);
-        if (vehicle != null) vehicle.syncSubParts(payload.syncData);
-        else MachineMax.LOGGER.error("收到不存在载具的同步数据包: " + payload.vehicleUUID);
+        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
+//        if (vehicle != null) vehicle.syncSubParts(payload.syncData);
+//        else MachineMax.LOGGER.error("收到不存在载具的同步数据包: " + payload.vehicleUUID);
     }
 }

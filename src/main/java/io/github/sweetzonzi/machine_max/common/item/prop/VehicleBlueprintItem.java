@@ -16,7 +16,7 @@ import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
@@ -82,7 +82,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                             VehicleCore vehicle = new VehicleCore(level, vehicleData, false);
                             vehicle.setUuid(UUID.randomUUID());
                             vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
-                            VehicleManager.addVehicle(vehicle);
+                            ObjectManager.addVehicle(vehicle);
                             return null;
                         });
                     } else

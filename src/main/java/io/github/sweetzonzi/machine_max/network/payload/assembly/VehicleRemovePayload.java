@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.Registries;
@@ -38,9 +38,9 @@ public record VehicleRemovePayload(
 
     public static void handle(VehicleRemovePayload payload, IPayloadContext context) {
         if(payload.dimension == context.player().level().dimension()){
-            VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUUID);
+            VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
             if(vehicle!= null){
-                context.enqueueWork(()->VehicleManager.removeVehicle(vehicle));
+                context.enqueueWork(()-> ObjectManager.removeVehicle(vehicle));
             } else MachineMax.LOGGER.error("收到移除不存在的载具的请求: " + payload.vehicleUUID);
         } else MachineMax.LOGGER.error("从错误维度收到载具移除请求: " + payload.dimension);
     }

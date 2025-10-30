@@ -70,7 +70,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
                             if (subPart.entity != null) {
                                 part.integrity = Math.clamp(part.integrity - finalDamage * scale, 0, part.type.basicIntegrity);
                                 subPart.entity.hurt(damageSource, finalDamage * scale * 2);
-                                subPart.sync();
+                                subPart.syncToClient();
                             }
                             return null;
                         });

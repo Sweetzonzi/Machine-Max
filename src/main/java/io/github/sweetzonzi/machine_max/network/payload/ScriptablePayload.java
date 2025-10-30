@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.ScriptableSubsystem;
 import io.github.sweetzonzi.machine_max.external.js.hook.Hook;
@@ -48,7 +48,7 @@ public record ScriptablePayload(UUID vehicleCoreUUID, String from, String to, Co
     }
 
     private static void receiveNbt(ScriptablePayload payload, IPayloadContext context, Player player, Level level) {
-        for (AbstractSubsystem subsystem : VehicleManager.serverAllVehicles.get(payload.vehicleCoreUUID).getSubSystemController().allSubsystems) {
+        for (AbstractSubsystem subsystem : ObjectManager.serverAllVehicles.get(payload.vehicleCoreUUID).getSubSystemController().allSubsystems) {
             if (subsystem instanceof ScriptableSubsystem sc
                     && sc.script.equals(payload.to)
                     && sc.getVehicleCoreUUID().equals(payload.vehicleCoreUUID)

@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -45,7 +45,7 @@ public record PartRemovePayload(
     }
 
     public static void handle(PartRemovePayload payload, IPayloadContext context) {
-        VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUUID);
+        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
         if (vehicle != null) {
             UUID partUUID = payload.partUUID;
             context.enqueueWork(() -> vehicle.removePart(partUUID, payload.spiltVehicles));

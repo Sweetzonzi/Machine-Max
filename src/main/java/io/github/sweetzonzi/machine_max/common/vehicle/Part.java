@@ -22,6 +22,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnect
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
@@ -41,7 +42,6 @@ import org.joml.Quaternionf;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 @Getter
@@ -49,9 +49,6 @@ import java.util.concurrent.ConcurrentMap;
  * 组装与UGC创作的最小单元
  */
 public class Part implements ISignalReceiver {
-    //渲染属性 Renderer attributes
-    public volatile boolean hurtMarked = false;
-    public volatile boolean oHurtMarked = false;
     //常规属性 General attributes
     public volatile VehicleCore vehicle;//所属的VehicleCore
     public String name;
@@ -108,38 +105,45 @@ public class Part implements ISignalReceiver {
     /**
      * 从保存或网络传输的数据中重建部件
      *
-     * @param data          保存或网络传输的数据
-     * @param level         部件所在的世界
-     * @param readSavedData 是否从保存的数据中读取部件数据，否则使用默认数据
+     * @param data               保存或网络传输的数据
+     * @param level              部件所在的世界
+     * @param readAdditionalData 是否从保存的数据中读取额外数据，否则使用默认数据
      */
-    public Part(PartData data, Level level, boolean readSavedData) {
+    public Part(PartData data, Level level, boolean readAdditionalData) {
         this.name = data.name;
         this.type = getPT(level, data.registryKey);
         this.level = level;
         this.variant = data.variant;
         this.uuid = UUID.fromString(data.uuid);
-        this.sharedDurability = readSavedData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
-        this.integrity = readSavedData ? Math.min(data.integrity, type.basicIntegrity) : type.basicIntegrity;
+        this.sharedDurability = readAdditionalData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
+        this.integrity = readAdditionalData ? Math.min(data.integrity, type.basicIntegrity) : type.basicIntegrity;
         this.rootSubPart = createSubParts(type.getVariants().get(variant).subParts());//重建子部件并指定根子部件
-        //遍历保存的子部件位置、旋转、速度数据
-        for (Map.Entry<String, PosRotVelVel> entry : data.subPartTransforms.entrySet()) {
-            SubPart subPart = subParts.get(entry.getKey());//获取已重建的子部件
-            if (subPart != null) {//设定子部件body的位置、旋转、速度
-                PosRotVelVel posRotVelVel = entry.getValue();
+        //遍历零件，录入基本数据
+        for (Map.Entry<String, SubPart> entry : subParts.entrySet()) {
+            String subPartName = entry.getKey();
+            SubPart subPart = entry.getValue();
+            if (data.subParts.containsKey(subPartName)) {
+                SubPartData subPartData = data.subParts.get(subPartName);
+                if (level.isClientSide()) subPart.setId(subPartData.id);//仅客户端接收应用服务端发送的id
+                PosRotVelVel posRotVelVel = subPartData.posRotVelVel;
                 subPart.body.setPhysicsLocation(posRotVelVel.position());
                 subPart.body.setPhysicsRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
                 subPart.body.setLinearVelocity(posRotVelVel.linearVel());
                 subPart.body.setAngularVelocity(posRotVelVel.angularVel());
                 PhysicsBodyExtensionKt.stateOf(subPart.body).setTransform(posRotVelVel.toTransform());
                 PhysicsBodyExtensionKt.stateOf(subPart.body).setLastTransform(posRotVelVel.toTransform());
-            } else
-                throw new NullPointerException("部件" + name + "的子部件" + entry.getKey() + "不存在，请检查数据。");
+                subPart.transform = posRotVelVel.toTransform();
+                subPart.oldTransform = posRotVelVel.toTransform();
+            } else {
+                subPart.destroy();
+            }
         }
-        if (readSavedData) {
+        if (readAdditionalData) {
             //加载子系统储存的数据
-            for (Map.Entry<String, Map<String, CompoundTag>> entry : data.subsystemData.entrySet()) {
+            for (Map.Entry<String, SubPartData> entry : data.subParts.entrySet()) {
                 SubPart subPart = subParts.get(entry.getKey());
-                for (Map.Entry<String, CompoundTag> subsystemData : entry.getValue().entrySet()) {
+                subPart.setDurability(entry.getValue().durability);
+                for (Map.Entry<String, CompoundTag> subsystemData : entry.getValue().subsystemData.entrySet()) {
                     String subSystemName = subsystemData.getKey();
                     CompoundTag subsystemTagData = subsystemData.getValue();
                     AbstractSubsystem subsystem = subPart.subsystems.get(subSystemName);
@@ -162,8 +166,6 @@ public class Part implements ISignalReceiver {
     public void onTick() {
         //判定摧毁
         if (!destroyed && sharedDurability <= 0) destroyed = true;
-        if (oHurtMarked) oHurtMarked = false;
-        else if (hurtMarked) hurtMarked = false;
     }
 
     public void onPrePhysicsTick() {
@@ -221,6 +223,7 @@ public class Part implements ISignalReceiver {
     /**
      * <p>获取部件所有零件持有的子系统</p>
      * <p>Gets all subsystems held by all parts</p>
+     *
      * @return
      */
     public Set<AbstractSubsystem> getAllSubsystems() {
@@ -365,6 +368,7 @@ public class Part implements ISignalReceiver {
     /**
      * <p>获取此部件为载具提供的最大耐久度</p>
      * <p>Gets the maximum durability of this part as a vehicle</p>
+     *
      * @return 最大耐久度 max durability
      */
     public float getDurabilityForVehicle() {

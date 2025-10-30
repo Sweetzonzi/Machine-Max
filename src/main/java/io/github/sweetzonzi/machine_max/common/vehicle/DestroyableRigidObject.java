@@ -14,30 +14,74 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+
 @Getter
 abstract public class DestroyableRigidObject extends DestroyableObject implements PhysicsHost {
     public CompoundCollisionShape collisionShape;
     public final PhysicsRigidBody body;
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
+    protected boolean updateLock = true;//是否禁止同步应用位姿数据到刚体
 
     protected DestroyableRigidObject(Level level, CompoundCollisionShape shape, float mass) {
         super(level);
+        if (level.isClientSide()) updateLock = false;
         this.collisionShape = shape;
         this.body = new PhysicsRigidBody(shape, mass);
         if (level.isClientSide()) body.setKinematic(true);
     }
 
     @Override
+    public void tick() {
+        if (!level.isClientSide() && body.isInWorld() && (body.isActive() || body.isKinematic())) {
+            oldTransform = transform.clone();
+            transform = PhysicsBodyExtensionKt.stateOf(body).getTransform();
+            updateLock = true;//锁定刚体数据，仅利用服务端刚体数据更新同步用数据
+            setPosition(transform.getTranslation());
+            setRotation(transform.getRotation());
+            setLinearVelocity(body.getLinearVelocity(null));
+            setAngularVelocity(body.getAngularVelocity(null));
+            updateLock = false;//解锁刚体数据，允许set时应用位姿数据到刚体
+        }
+        super.tick();
+    }
+
+    @Override
     public void prePhysicsTick() {
         super.prePhysicsTick();
         if (level.isClientSide()) {
-            body.setLinearVelocity(linearVelocity);
-            body.setAngularVelocity(angularVelocity);
+            body.setLinearVelocity(getLinearVelocity());
+            body.setAngularVelocity(getAngularVelocity());
         }
     }
 
     @Override
-    void setPosition(Vector3f position) {
+    protected void clientSyncPose() {
+        if (syncTransformBuffer != null) body.setPhysicsTransform(syncTransformBuffer);
+        super.clientSyncPose();
+    }
+
+    @Override
+    public void addToLevel() {
+        getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+            if (body.isInWorld()) return null;
+            getPhysicsLevel().getWorld().addCollisionObject(body);
+            return null;
+        });
+        super.addToLevel();
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        if (body.isInWorld()) {
+            PhysicsBodyExtensionKt.setOwner(body, null);
+            PhysicsBodyExtensionKt.removePhysicsBody(getLevel(), this.body);
+        }
+    }
+
+    @Override
+    public void setPosition(Vector3f position) {
+        super.setPosition(position);
         if (!updateLock) {
             getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
                 body.setPhysicsLocation(position);
@@ -47,7 +91,8 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     }
 
     @Override
-    void setRotation(Quaternion rotation) {
+    public void setRotation(Quaternion rotation) {
+        super.setRotation(rotation);
         if (!updateLock) {
             getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
                 body.setPhysicsRotation(rotation);
@@ -57,9 +102,9 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     }
 
     @Override
-    void setLinearVelocity(Vector3f linearVelocity) {
+    public void setLinearVelocity(Vector3f linearVelocity) {
+        super.setLinearVelocity(linearVelocity);
         if (!updateLock) {
-            this.linearVelocity = linearVelocity;
             getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
                 body.setLinearVelocity(linearVelocity);
                 return null;
@@ -68,9 +113,9 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     }
 
     @Override
-    void setAngularVelocity(Vector3f angularVelocity) {
+    public void setAngularVelocity(Vector3f angularVelocity) {
+        super.setAngularVelocity(angularVelocity);
         if (!updateLock) {
-            this.angularVelocity = angularVelocity;
             getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
                 body.setAngularVelocity(angularVelocity);
                 return null;
@@ -80,18 +125,18 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
 
     @Override
     public Vector3f getLinearVelocity() {
-        if (!getLevel().isClientSide()){
-            this.linearVelocity = body.getLinearVelocity(null);
-        }
-        return this.linearVelocity;
+//        if (!getLevel().isClientSide()){
+//            this.setAngularVelocity(body.getLinearVelocity(null));
+//        }
+        return super.getLinearVelocity();
     }
 
     @Override
     public Vector3f getAngularVelocity() {
-        if (!getLevel().isClientSide()){
-            this.angularVelocity = body.getAngularVelocity(null);
-        }
-        return this.angularVelocity;
+//        if (!getLevel().isClientSide()){
+//            this.setAngularVelocity(body.getAngularVelocity(null));
+//        }
+        return super.getAngularVelocity();
     }
 
     @Override

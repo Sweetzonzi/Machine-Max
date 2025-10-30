@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.network.payload.assembly;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import net.minecraft.network.FriendlyByteBuf;
@@ -53,7 +53,7 @@ public record ConnectorAttachPayload(
     }
 
     public static void handle(ConnectorAttachPayload payload, IPayloadContext context) {
-        VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUuid);
+        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUuid);
         if (vehicle == null) throw new IllegalStateException("未找到载具: " + payload.vehicleUuid);
         if (payload.hasNewPart) {
             if (payload.partData == null) throw new IllegalStateException("载具" + vehicle.name + "应有新部件，但数据包中没有提供新部件数据");

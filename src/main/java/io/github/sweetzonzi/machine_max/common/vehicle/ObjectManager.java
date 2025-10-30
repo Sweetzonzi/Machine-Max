@@ -4,12 +4,6 @@ import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent;
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
-import com.jme3.bullet.collision.shapes.BoxCollisionShape;
-import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
-import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
-import com.jme3.bullet.objects.PhysicsRigidBody;
-import com.jme3.math.Plane;
-import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
@@ -37,15 +31,42 @@ import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
-public class VehicleManager {
+public class ObjectManager {
     public static final Map<Level, Set<VehicleCore>> levelVehicles = new ConcurrentHashMap<>();
+    public static final Map<Level, Map<Integer, DestroyableObject>> levelDestroyableObjects = new ConcurrentHashMap<>();
     public static final Map<UUID, VehicleCore> serverAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> clientAllVehicles = HashMap.newHashMap(64);
+
+    public static void addDestroyableObject(DestroyableObject object) {
+        Level level = object.level;
+        levelDestroyableObjects.computeIfAbsent(level, k -> new ConcurrentHashMap<>()).put(object.getId(), object);
+    }
+
+    public static void removeDestroyableObject(DestroyableObject object) {
+        Level level = object.level;
+        levelDestroyableObjects.get(level).remove(object.getId());
+    }
+
+    public static void removeDestroyableObject(Level level, int id) {
+        if (levelDestroyableObjects.containsKey(level)) {
+            levelDestroyableObjects.get(level).remove(id);
+        } else {
+            MachineMax.LOGGER.warn("尝试从维度{}中移除不存在的DestroyableObject: {}", level.dimension().location(), id);
+        }
+    }
+
+    @Nullable
+    public static DestroyableObject getDestroyableObject(Level level, int id) {
+        if (levelDestroyableObjects.containsKey(level)){
+            return levelDestroyableObjects.get(level).get(id);
+        } else return null;
+    }
 
     /**
      * 注册VehicleCore到载具管理器中
@@ -76,7 +97,7 @@ public class VehicleManager {
             serverAllVehicles.put(vehicle.getUuid(), vehicle);
             saveVehicles((ServerLevel) vehicle.level);//维度内载具发生变更，保存维度载具数据到Level的Attachment
         } else clientAllVehicles.put(vehicle.getUuid(), vehicle);
-        vehicle.inLevel =true;
+        vehicle.inLevel = true;
     }
 
     /**

@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.util.PPhase;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
-import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
@@ -20,13 +19,10 @@ import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.network.payload.SubPartDataSyncPayload;
-import io.github.sweetzonzi.machine_max.network.payload.SubPartSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
-import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.server.level.ServerLevel;
@@ -85,7 +81,7 @@ public class VehicleCore {
         this.addPart(rootPart);
     }
 
-    public VehicleCore(Level level, VehicleData savedData, boolean readSavedData) {
+    public VehicleCore(Level level, VehicleData savedData, boolean readAdditionalData) {
         this.level = level;
         this.uuid = UUID.fromString(savedData.uuid);
         this.hp = savedData.hp;
@@ -94,7 +90,7 @@ public class VehicleCore {
         this.name = savedData.name;
         try {
             //重建部件
-            for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level, readSavedData));
+            for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level, readAdditionalData));
             //重建连接关系
             for (ConnectionData connectionData : savedData.connections) {
                 Part partA = partMap.get(UUID.fromString(connectionData.partUuidS));
@@ -150,7 +146,7 @@ public class VehicleCore {
      * 主线程tick，默认tps=20
      */
     public void tick() {
-        if (tickCount == 20)
+        if (tickCount == 100)
             this.cameraDistance = calculateCameraDistance();
         //保持激活与控制量更新
         Vec3 newPos = new Vec3(0, 0, 0);
@@ -171,7 +167,7 @@ public class VehicleCore {
             this.velocity = newVel.scale((double) 1 / count);//更新载具形心速度
         }
         if (partMap.values().isEmpty() || this.position.y < -1024) {
-            VehicleManager.removeVehicle(this);//移除掉出世界的载具
+            ObjectManager.removeVehicle(this);//移除掉出世界的载具
             return;
         }
         if (inLoadedChunk && !isRemoved) {//TODO:如果在已加载区块内，或速度大于某个阈值
@@ -185,7 +181,6 @@ public class VehicleCore {
                     loaded = true;
                 }
             }
-            syncSubParts(null);//同步零件位置姿态速度
             subSystemController.tick();
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
@@ -205,59 +200,6 @@ public class VehicleCore {
         subSystemController.postPhysicsTick();
         for (Part part : partMap.values()) {
             part.onPostPhysicsTick();
-            if (!level.isClientSide && statusSyncCountDown <= 0) {
-                for (SubPart subPart : part.subParts.values()){
-                    subPart.sync();
-                }
-                statusSyncCountDown = 120;
-            }
-        }
-    }
-
-    public void syncSubParts(@Nullable HashMap<UUID, HashMap<String, PosRotVelVel>> subPartSyncData) {
-        if (!level.isClientSide()) {
-            HashMap<UUID, HashMap<String, PosRotVelVel>> subPartSyncDataToSend = new HashMap<>(1);
-            for (Map.Entry<UUID, Part> entry : partMap.entrySet()) {
-                HashMap<String, PosRotVelVel> subPartSyncDataMap = new HashMap<>(1);
-                Part part = entry.getValue();
-                for (Map.Entry<String, SubPart> subPartEntry : part.subParts.entrySet()) {
-                    SubPart subPart = subPartEntry.getValue();
-                    PhysicsRigidBody body = subPart.body;
-                    boolean isSleep = !body.isActive();
-                    if (!isSleep) {
-                        PosRotVelVel data = new PosRotVelVel(
-                                body.getPhysicsLocation(null),
-                                SparkMathKt.toQuaternionf(body.getPhysicsRotation(null)),
-                                body.getLinearVelocity(null),
-                                body.getAngularVelocity(null));
-                        subPartSyncDataMap.put(subPartEntry.getKey(), data);
-                    }
-                }
-                subPartSyncDataToSend.put(entry.getKey(), subPartSyncDataMap);
-            }
-            if (!subPartSyncDataToSend.isEmpty()) {
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(this.uuid, subPartSyncDataToSend));
-            }
-        } else if (subPartSyncData != null) {
-            this.level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-                for (Map.Entry<UUID, HashMap<String, PosRotVelVel>> outerEntry : subPartSyncData.entrySet()) {
-                    UUID partUUID = outerEntry.getKey();
-                    Part part = this.partMap.get(partUUID);
-                    HashMap<String, PosRotVelVel> innerMap = outerEntry.getValue();
-                    if (part != null) {
-                        for (Map.Entry<String, PosRotVelVel> innerEntry : innerMap.entrySet()) {
-                            String subPartName = innerEntry.getKey();
-                            PosRotVelVel data = innerEntry.getValue();
-                            SubPart subPart = part.subParts.get(subPartName);
-                            if (subPart != null) {
-                                subPart.handleSyncData(data);
-                            } else
-                                MachineMax.LOGGER.error("载具{}的部件{}中不存在零件{}，无法同步。", this.name, partUUID, subPartName);
-                        }
-                    } else MachineMax.LOGGER.error("载具{}中不存在部件{}，无法同步。", this.name, partUUID);
-                }
-                return null;
-            });
         }
     }
 
@@ -352,7 +294,7 @@ public class VehicleCore {
                     clientHandleSpilt(spiltPartNets, spiltVehicles);
                 }
             }
-            if (partMap.values().isEmpty()) VehicleManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
+            if (partMap.values().isEmpty()) ObjectManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
             else {
                 this.activate();//重新激活，进行部件移除后的物理计算
                 this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
@@ -548,7 +490,7 @@ public class VehicleCore {
             //最后一个网络视作此载具本身，不参与分裂
             if (iterator.hasNext()) {
                 VehicleCore newVehicle = new VehicleCore(level, uuid, network, this);
-                VehicleManager.addSpiltVehicle(newVehicle);
+                ObjectManager.addSpiltVehicle(newVehicle);
                 spiltVehiclesToSend.put(network.nodes().iterator().next().uuid, uuid);
             }
         }
@@ -564,7 +506,7 @@ public class VehicleCore {
                 if (vehicle.nodes().contains(part)) {
                     //为分离的部件指定新的VehicleCore
                     VehicleCore spiltVehicle = new VehicleCore(level, spiltVehicleUUID, vehicle, this);
-                    VehicleManager.addSpiltVehicle(spiltVehicle);
+                    ObjectManager.addSpiltVehicle(spiltVehicle);
                     break;//处理下一个被分离的部件
                 }
             }

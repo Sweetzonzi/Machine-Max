@@ -35,6 +35,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
@@ -173,28 +174,22 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         });
     }
 
+    @Override
     public void addToLevel() {
-        getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
-            if (body.isInWorld()) return null;
-            getPhysicsLevel().getWorld().addCollisionObject(body);
-            return null;
-        });
+        super.addToLevel();
         for (AbstractConnector connector : connectors.values()) {
             if (connector.hasPart())
                 connector.addToLevel();
         }
     }
 
+    @Override
     public void destroy() {
         super.destroy();
         subsystems.forEach((name, subsystem) -> subsystem.onDetach());
         subsystems.clear();
         for (AbstractConnector connector : connectors.values()) {
             connector.destroy();
-        }
-        if (body.isInWorld()) {
-            PhysicsBodyExtensionKt.setOwner(body, null);
-            PhysicsBodyExtensionKt.removePhysicsBody(getLevel(), this.body);
         }
         if (interactBoxes != null) {
             for (InteractBox interactBox : interactBoxes.values()) interactBox.destroy();
@@ -852,7 +847,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
             //TODO:对载具造成伤害
             //发包同步部件与子系统状态
-            sync();
+            syncToClient();
             //播放音效
             SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"));
             SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, soundPos, Vec3.ZERO, 64f,
@@ -881,13 +876,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     @Override
-    public void sync() {
-        super.sync();
+    public void syncToClient() {
+        super.syncToClient();
         if (!level.isClientSide()) {
             SynchedEntityData synchedentitydata = this.getSynchedData();
             List<SynchedEntityData.DataValue<?>> list = synchedentitydata.packDirty();
             if (list != null) {
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartDataSyncPayload(part.vehicle.uuid, part.uuid, name, list));
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartDataSyncPayload(getId(), list));
             }
         }
     }
@@ -969,7 +964,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     @Override
-    void setPosition(Vector3f position) {
+    public void setPosition(Vector3f position) {
         if (entity != null && !entity.isRemoved()) entity.setPos(position.x, position.y, position.z);
         super.setPosition(position);
     }

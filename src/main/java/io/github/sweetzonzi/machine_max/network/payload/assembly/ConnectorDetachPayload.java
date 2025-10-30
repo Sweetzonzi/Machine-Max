@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.network.payload.assembly;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.ConnectionData;
@@ -53,7 +53,7 @@ public record ConnectorDetachPayload(
     public static void handle(ConnectorDetachPayload payload, IPayloadContext context) {
         context.enqueueWork(()->{
             try{
-                VehicleCore vehicle = VehicleManager.clientAllVehicles.get(payload.vehicleUuid);
+                VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUuid);
                 if (vehicle == null) throw new NullPointerException("未找到载具: " + payload.vehicleUuid);
                 List<Pair<AbstractConnector, AttachPointConnector>> connections = new ArrayList<>();
                 for (ConnectionData connection : payload.connections) {

@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -62,7 +62,7 @@ public record LevelVehicleDataPayload(
                 if (receivedPacketCount >= payload.packetNum - 1) {
                     MachineMax.LOGGER.info("成功接收维度内所有载具数据，载入中...");
                     level.setData(MMAttachments.getLEVEL_VEHICLES(), vehicleDataToLoad);
-                    VehicleManager.loadVehicles(context.player().level());
+                    ObjectManager.loadVehicles(context.player().level());
                     receivedPacketCount = 0;
                     vehicleDataToLoad.clear();
                 } else {
