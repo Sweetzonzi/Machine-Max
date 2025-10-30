@@ -18,13 +18,13 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.JointAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalPort;
+import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import jme3utilities.math.MyMath;
@@ -32,7 +32,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @Getter

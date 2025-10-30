@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.util;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
-import com.jme3.bullet.collision.shapes.EmptyShape;
 import com.jme3.bullet.collision.shapes.PlaneCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;

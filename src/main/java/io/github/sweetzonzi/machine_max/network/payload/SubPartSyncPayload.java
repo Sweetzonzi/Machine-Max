@@ -1,69 +1,44 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.vehicle.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
-import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
-import net.minecraft.network.FriendlyByteBuf;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 public record SubPartSyncPayload(
-        UUID vehicleUUID,//载具UUID
-        HashMap<UUID, HashMap<String, PosRotVelVel>> syncData//部件UUID -> 零件名称 -> 位姿数据
+        int id,
+        List<SynchedEntityData.DataValue<?>> syncData //发生变化的数据
 ) implements CustomPacketPayload {
-    public static final CustomPacketPayload.Type<SubPartSyncPayload> TYPE = new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "phys_sync_payload"));
-    public static final StreamCodec<FriendlyByteBuf, SubPartSyncPayload> STREAM_CODEC = new StreamCodec<>() {
+    public static final Type<SubPartSyncPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subpart_data_sync_payload"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, SubPartSyncPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override
-        public @NotNull SubPartSyncPayload decode(FriendlyByteBuf buffer) {
-            UUID vehicleUUID = buffer.readUUID();
-            // 读取外层Map大小（使用VarInt优化）
-            int outerSize = buffer.readVarInt();
-            HashMap<UUID, HashMap<String, PosRotVelVel>> syncData = new HashMap<>(outerSize);
-            for (int i = 0; i < outerSize; i++) {
-                // 读取部件UUID
-                UUID partUUID = buffer.readUUID();
-                // 读取内部Map大小
-                int innerSize = buffer.readVarInt();
-                HashMap<String, PosRotVelVel> innerMap = new HashMap<>(innerSize);
-                for (int j = 0; j < innerSize; j++) {
-                    // 读取子部件名称（使用紧凑UTF编码）
-                    String partName = buffer.readUtf();
-                    // 读取位姿数据
-                    PosRotVelVel data = PosRotVelVel.STREAM_CODEC.decode(buffer);
-                    innerMap.put(partName, data);
-                }
-                syncData.put(partUUID, innerMap);
+        public @NotNull SubPartSyncPayload decode(RegistryFriendlyByteBuf buffer) {
+            int id = buffer.readInt();
+            List<SynchedEntityData.DataValue<?>> syncData = new ArrayList<>();
+            int i;
+            while ((i = buffer.readUnsignedByte()) != 255) {
+                syncData.add(SynchedEntityData.DataValue.read(buffer, i));
             }
-            return new SubPartSyncPayload(vehicleUUID, syncData);
+            return new SubPartSyncPayload(id, syncData);
         }
 
         @Override
-        public void encode(@NotNull FriendlyByteBuf buffer, SubPartSyncPayload value) {
-            FriendlyByteBuf.writeUUID(buffer, value.vehicleUUID());
-            // 写入外层Map大小
-            HashMap<UUID, HashMap<String, PosRotVelVel>> syncData = value.syncData();
-            buffer.writeVarInt(syncData.size());
-            for (Map.Entry<UUID, HashMap<String, PosRotVelVel>> outerEntry : syncData.entrySet()) {
-                // 写入部件UUID
-                buffer.writeUUID(outerEntry.getKey());
-                // 写入内部Map
-                HashMap<String, PosRotVelVel> innerMap = outerEntry.getValue();
-                buffer.writeVarInt(innerMap.size());
-                for (Map.Entry<String, PosRotVelVel> innerEntry : innerMap.entrySet()) {
-                    // 写入子部件名称（使用紧凑UTF编码）
-                    buffer.writeUtf(innerEntry.getKey());
-                    // 写入位姿数据
-                    PosRotVelVel.STREAM_CODEC.encode(buffer, innerEntry.getValue());
-                }
+        public void encode(@NotNull RegistryFriendlyByteBuf buffer, SubPartSyncPayload value) {
+            buffer.writeInt(value.id());
+            for (SynchedEntityData.DataValue<?> datavalue : value.syncData()) {
+                datavalue.write(buffer);
             }
+            buffer.writeByte(255);
         }
     };
 
@@ -73,9 +48,10 @@ public record SubPartSyncPayload(
     }
 
     public static void handler(final SubPartSyncPayload payload, final IPayloadContext context) {
-        //TODO:根据时间戳判定数据包的有效性，并根据延迟情况对客户端位姿进行预测
-        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
-//        if (vehicle != null) vehicle.syncSubParts(payload.syncData);
-//        else MachineMax.LOGGER.error("收到不存在载具的同步数据包: " + payload.vehicleUUID);
+        DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.id());
+        if (object instanceof SubPart subPart) {
+            context.enqueueWork(() -> subPart.getSynchedData().assignValues(payload.syncData()));
+        } else
+            MachineMax.LOGGER.error("维度{}收到不存在载具的同步数据包: {}", context.player().level().dimension().location(), payload.id);
     }
 }

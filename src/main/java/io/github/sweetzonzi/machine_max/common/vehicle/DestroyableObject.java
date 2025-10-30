@@ -37,15 +37,15 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     public Transform oldTransform = new Transform();//用于渲染插值
     public Transform syncTransformBuffer = new Transform();//用于缓存同步数据
     public long lastSync;//记录距离上次同步经过的时间，用于外推
-    private static final EntityDataAccessor<org.joml.Vector3f> DATA_POS_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.VECTOR3);
-    private static final EntityDataAccessor<Quaternionf> DATA_ROT_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.QUATERNION);
-    private static final EntityDataAccessor<org.joml.Vector3f> DATA_VEL_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.VECTOR3);
-    private static final EntityDataAccessor<org.joml.Vector3f> DATA_ANG_VEL_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.VECTOR3);
+    protected static final EntityDataAccessor<org.joml.Vector3f> DATA_POS_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.VECTOR3);
+    protected static final EntityDataAccessor<Quaternionf> DATA_ROT_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.QUATERNION);
+    protected static final EntityDataAccessor<org.joml.Vector3f> DATA_VEL_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.VECTOR3);
+    protected static final EntityDataAccessor<org.joml.Vector3f> DATA_ANG_VEL_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.VECTOR3);
     //常规属性 General attributes
     public final Level level;
     @Setter
     private int id = ENTITY_COUNTER.incrementAndGet();//客户端的ID应当根据收到的创建包更新
-    private static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.FLOAT);
     public volatile boolean destroyed = false;
     protected final ConcurrentLinkedQueue<Pair<Float, PartDamageData>> accumulatedDamage = new ConcurrentLinkedQueue<>();
     protected final SynchedEntityData synchedData;
@@ -192,12 +192,6 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         if (!level.isClientSide()) return;//服务器在需同步数据变化时不做特殊处理
         if (key.equals(DATA_DURABILITY_ID)) {
             hurtTime = hurtDuration;
-        } else if (key.equals(DATA_POS_ID)) {
-            Vector3f position = PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_POS_ID));
-//            this.setPosition(position);//应用到刚体(若有)
-        } else if (key.equals(DATA_ROT_ID)) {
-            Quaternion rotation = SparkMathKt.toBQuaternion(getSynchedData().get(DATA_ROT_ID));
-//            this.setRotation(rotation);//应用到刚体(若有)
         } else if (key.equals(DATA_VEL_ID)) {
             Vector3f linearVelocity = PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_VEL_ID));
             this.setLinearVelocity(linearVelocity);//应用到刚体(若有)

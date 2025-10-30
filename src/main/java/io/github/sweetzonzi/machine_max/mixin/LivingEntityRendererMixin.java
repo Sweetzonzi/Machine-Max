@@ -2,12 +2,10 @@ package io.github.sweetzonzi.machine_max.mixin;
 
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;

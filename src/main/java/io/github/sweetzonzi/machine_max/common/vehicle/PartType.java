@@ -4,19 +4,16 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import lombok.Getter;
-import net.minecraft.core.Registry;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
 
 @Getter
 public class PartType {

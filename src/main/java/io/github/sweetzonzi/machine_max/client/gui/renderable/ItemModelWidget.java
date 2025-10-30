@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.client.gui.renderable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;

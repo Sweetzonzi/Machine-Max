@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

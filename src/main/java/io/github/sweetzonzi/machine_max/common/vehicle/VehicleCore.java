@@ -2,8 +2,8 @@ package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
-import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.google.common.graph.EndpointPair;
 import com.google.common.graph.MutableNetwork;
 import com.google.common.graph.NetworkBuilder;
@@ -102,7 +102,7 @@ public class VehicleCore {
                             null);
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
-            this.cameraDistance = calculateCameraDistance();
+            recalculateCameraDistance();
         } catch (Exception e) {
             onRemoveFromLevel();//移除数据出错的载具
             throw e;
@@ -139,7 +139,7 @@ public class VehicleCore {
         }
         this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();
-        this.cameraDistance = calculateCameraDistance();
+        recalculateCameraDistance();
     }
 
     /**
@@ -147,7 +147,7 @@ public class VehicleCore {
      */
     public void tick() {
         if (tickCount == 100)
-            this.cameraDistance = calculateCameraDistance();
+            recalculateCameraDistance();
         //保持激活与控制量更新
         Vec3 newPos = new Vec3(0, 0, 0);
         Vec3 newVel = new Vec3(0, 0, 0);
@@ -298,7 +298,7 @@ public class VehicleCore {
             else {
                 this.activate();//重新激活，进行部件移除后的物理计算
                 this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
-                this.cameraDistance = calculateCameraDistance();
+                recalculateCameraDistance();
                 for (SubPart subPart : part.subParts.values()) {
                     if (subPart.interactBoxes != null)
                         for (InteractBox interactBox : subPart.interactBoxes.values()) {
@@ -353,7 +353,7 @@ public class VehicleCore {
             }
             if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
             this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
-            this.cameraDistance = calculateCameraDistance();
+            recalculateCameraDistance();
             this.activate();
             if (inLevel && !level.isClientSide()) {
                 comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊对接口在前面，以保证对接口属性得到正确应用
@@ -478,7 +478,7 @@ public class VehicleCore {
         }
         this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
-        this.cameraDistance = calculateCameraDistance();
+        recalculateCameraDistance();
     }
 
     private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> spiltPartNets) {
@@ -626,7 +626,7 @@ public class VehicleCore {
         return new AABB(xMin, yMin, zMin, xMax, yMax, zMax);
     }
 
-    public float calculateCameraDistance() {
+    public void recalculateCameraDistance() {
         Vector3f center = PhysicsHelperKt.toBVector3f(this.position);
         float maxDistance = 4f;
         for (Part part : this.partMap.values()) {
@@ -636,6 +636,6 @@ public class VehicleCore {
                 if (radius > maxDistance) maxDistance = radius;
             }
         }
-        return maxDistance;
+        this.cameraDistance = maxDistance;
     }
 }

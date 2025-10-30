@@ -1,20 +1,5 @@
 package io.github.sweetzonzi.machine_max.external.js;
 
-import io.github.sweetzonzi.machine_max.external.js.hook.Hook;
-import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import net.neoforged.neoforge.network.PacketDistributor;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Objects;
-
-import static io.github.sweetzonzi.machine_max.MachineMax.LOGGER;
-
 public class JSUtils {
 //    private final String location;
 //    private final String packName;

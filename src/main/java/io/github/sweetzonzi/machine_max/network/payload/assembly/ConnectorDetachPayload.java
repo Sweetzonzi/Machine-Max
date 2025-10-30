@@ -2,8 +2,8 @@ package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.ConnectionData;

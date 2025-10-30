@@ -2,16 +2,13 @@ package io.github.sweetzonzi.machine_max.client.gui.renderable;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import java.awt.*;

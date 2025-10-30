@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.block.fabricator;
 
 import cn.solarmoon.spark_core.animation.IBlockEntityAnimatable;
-import cn.solarmoon.spark_core.animation.anim.AnimInstance;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
+import cn.solarmoon.spark_core.animation.anim.AnimInstance;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;

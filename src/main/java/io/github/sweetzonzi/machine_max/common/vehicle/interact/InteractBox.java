@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.interact;
 
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.InteractBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;

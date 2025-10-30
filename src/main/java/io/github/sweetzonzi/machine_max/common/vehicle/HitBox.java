@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.vehicle;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import lombok.Getter;
-import org.jetbrains.annotations.Nullable;
 
 @Getter
 public class HitBox {

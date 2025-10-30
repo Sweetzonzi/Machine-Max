@@ -1,20 +1,10 @@
 package io.github.sweetzonzi.machine_max.external.js.hook;
 
-import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.ScriptableSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.ScriptableSubsystem;
-import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.external.js.JSUtils;
-import net.minecraft.client.Minecraft;
-import org.mozilla.javascript.Context;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static io.github.sweetzonzi.machine_max.MachineMax.LOGGER;
 
 public class Hook {
     public static ConcurrentMap<String, Double> HOOK_SIGNAL_MAP = new ConcurrentHashMap<>();//会自增的信号

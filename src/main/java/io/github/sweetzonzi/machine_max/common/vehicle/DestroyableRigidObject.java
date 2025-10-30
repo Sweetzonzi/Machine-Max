@@ -1,15 +1,18 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import lombok.Getter;
+import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,9 +58,14 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     }
 
     @Override
-    protected void clientSyncPose() {
-        if (syncTransformBuffer != null) body.setPhysicsTransform(syncTransformBuffer);
-        super.clientSyncPose();
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (!level.isClientSide()) return;//服务器在需同步数据变化时不做特殊处理
+        if (key.equals(DATA_POS_ID)) {
+            body.setPhysicsLocation(PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_POS_ID)));//应用到刚体
+        } else if (key.equals(DATA_ROT_ID)) {
+            body.setPhysicsRotation(SparkMathKt.toBQuaternion(getSynchedData().get(DATA_ROT_ID)));//应用到刚体
+        }
     }
 
     @Override
@@ -121,22 +129,6 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
                 return null;
             });
         }
-    }
-
-    @Override
-    public Vector3f getLinearVelocity() {
-//        if (!getLevel().isClientSide()){
-//            this.setAngularVelocity(body.getLinearVelocity(null));
-//        }
-        return super.getLinearVelocity();
-    }
-
-    @Override
-    public Vector3f getAngularVelocity() {
-//        if (!getLevel().isClientSide()){
-//            this.setAngularVelocity(body.getAngularVelocity(null));
-//        }
-        return super.getAngularVelocity();
     }
 
     @Override

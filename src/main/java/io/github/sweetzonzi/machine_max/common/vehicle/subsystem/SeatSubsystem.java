@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -82,6 +81,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
             getOwner().getSubPart().getPart().vehicle.activate();
+            getOwner().getSubPart().getPart().vehicle.recalculateCameraDistance();
             //TODO:换成在hud角落常驻显示好了
             if (passenger.level().isClientSide && passenger instanceof Player player)
                 player.displayClientMessage(

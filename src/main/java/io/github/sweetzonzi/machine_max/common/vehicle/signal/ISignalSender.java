@@ -2,8 +2,8 @@ package io.github.sweetzonzi.machine_max.common.vehicle.signal;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubsystemController;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 
 import java.util.*;

@@ -1,21 +1,14 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.data;
 
-import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import lombok.Getter;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
 
 import java.util.HashMap;
 import java.util.Map;

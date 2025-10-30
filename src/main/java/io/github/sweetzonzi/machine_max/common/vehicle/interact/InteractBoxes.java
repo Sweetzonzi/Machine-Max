@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.interact;
 
-import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
+import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.collision.PhysicsCollisionObject;

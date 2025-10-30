@@ -95,15 +95,10 @@ public class MMPayloadRegistry {
                 LevelVehicleDataPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(LevelVehicleDataPayload::handle)
         );
-        sync.playToClient(//运动体的位姿和速度
+        sync.playToClient(//运动体的同步数据
                 SubPartSyncPayload.TYPE,
                 SubPartSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(SubPartSyncPayload::handler)
-        );
-        sync.playToClient(//运动体的属性
-                SubPartDataSyncPayload.TYPE,
-                SubPartDataSyncPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(SubPartDataSyncPayload::handler)
         );
         misc.playToServer(//通过GUI配置载具属性
                 VehicleConfigPayload.TYPE,

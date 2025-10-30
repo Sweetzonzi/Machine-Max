@@ -1,9 +1,9 @@
 package io.github.sweetzonzi.machine_max.external;
 
-import com.google.gson.*;
-import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
+import com.google.gson.JsonElement;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -19,10 +19,13 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 
 import java.awt.*;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;

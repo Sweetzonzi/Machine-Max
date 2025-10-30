@@ -9,15 +9,16 @@ import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
-import cn.solarmoon.spark_core.physics.body.CollisionGroups;
-import cn.solarmoon.spark_core.physics.body.ManifoldPoint;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.CollisionObjectEntity;
+import cn.solarmoon.spark_core.physics.body.ManifoldPoint;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
 import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
-import cn.solarmoon.spark_core.util.*;
+import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.AfMode;
 import com.jme3.bullet.collision.ManifoldPoints;
@@ -35,14 +36,13 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
-import io.github.sweetzonzi.machine_max.network.payload.SubPartDataSyncPayload;
+import io.github.sweetzonzi.machine_max.network.payload.SubPartSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.ShapeHelper;
@@ -882,7 +882,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             SynchedEntityData synchedentitydata = this.getSynchedData();
             List<SynchedEntityData.DataValue<?>> list = synchedentitydata.packDirty();
             if (list != null) {
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartDataSyncPayload(getId(), list));
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(getId(), list));
             }
         }
     }

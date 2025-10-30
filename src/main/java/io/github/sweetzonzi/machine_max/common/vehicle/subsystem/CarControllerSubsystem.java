@@ -2,13 +2,11 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.CarControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
-import io.github.sweetzonzi.machine_max.util.MMMath;
 import lombok.Getter;
 
 import java.util.HashMap;

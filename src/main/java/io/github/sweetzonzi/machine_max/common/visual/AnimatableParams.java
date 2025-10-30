@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.visual;
 
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
-import cn.solarmoon.spark_core.js.molang.JSMolangValue;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
