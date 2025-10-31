@@ -127,14 +127,18 @@ public class Part implements ISignalReceiver {
                 SubPartData subPartData = data.subParts.get(subPartName);
                 if (level.isClientSide()) subPart.setId(subPartData.id);//仅客户端接收应用服务端发送的id
                 PosRotVelVel posRotVelVel = subPartData.posRotVelVel;
+                subPart.setPosition(posRotVelVel.position());
+                subPart.setRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
+                subPart.setLinearVelocity(posRotVelVel.linearVel());
+                subPart.setAngularVelocity(posRotVelVel.angularVel());
+                subPart.transform = posRotVelVel.toTransform();
+                subPart.oldTransform = posRotVelVel.toTransform();
                 subPart.body.setPhysicsLocation(posRotVelVel.position());
                 subPart.body.setPhysicsRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
                 subPart.body.setLinearVelocity(posRotVelVel.linearVel());
                 subPart.body.setAngularVelocity(posRotVelVel.angularVel());
                 PhysicsBodyExtensionKt.stateOf(subPart.body).setTransform(posRotVelVel.toTransform());
                 PhysicsBodyExtensionKt.stateOf(subPart.body).setLastTransform(posRotVelVel.toTransform());
-                subPart.transform = posRotVelVel.toTransform();
-                subPart.oldTransform = posRotVelVel.toTransform();
             } else {
                 subPart.destroy();
             }

@@ -14,7 +14,7 @@ import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 @Mod(MOD_ID)
 public class MachineMax {
     //TODO:限制带阻尼关节安装部件时的质量差距/警告
-    //TODO:排查AE86AT左轮胎转动惯量计算BUG（可能修复）
+    //TODO:排查AE86AT左轮胎转动惯量计算BUG（可能已修复）
     //TODO:GUI贴图渲染
     //TODO:交互可视化
     //TODO:重构流体动力，额外引入升力/阻力系数随攻角变化，以及叶元体理论
@@ -37,7 +37,6 @@ public class MachineMax {
     //TODO:结构完整度迁移至对接口，并根据命中点到各对接口的距离控制结构完整性损失分配
     //TODO:预制装配体，类似于部件的组装，但可预先装好方便使用。与蓝图不同的是使用后消耗，且拆卸时获得的是零散部件而非装配体本身。可json配置，也可动态保存生成，同时保留部件内数据如储物子系统内容物。
     //TODO:改装件，改变部件或子系统属性
-    //TODO:子系统数据同步（类似于SubPart的同步）
     //TODO:molang驱动的实时属性？护甲水平，摩擦等（性能问题？）
     public static final String MOD_ID = "machine_max";
     public static final Logger LOGGER = LogUtils.getLogger();

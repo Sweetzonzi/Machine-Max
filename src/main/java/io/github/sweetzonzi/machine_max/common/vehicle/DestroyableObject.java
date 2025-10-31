@@ -1,13 +1,16 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
@@ -66,7 +69,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         this.synchedData = syncheddata$builder.build();
     }
 
-    public void tick() {
+    public void preTick() {
         if (isRemoved) return;
         tickCount++;
         if (hurtTime > 0) hurtTime--;
@@ -79,7 +82,12 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         }
         //判定摧毁
         if (!destroyed && getDurability() <= 0) onDestroyed();
-        syncToClient();
+    }
+
+    public void postTick() {
+        if (!level.isClientSide()) {
+            syncToClient();
+        }
     }
 
     public void prePhysicsTick() {
@@ -88,7 +96,6 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     }
 
     public void postPhysicsTick() {
-        if (isRemoved) return;
     }
 
     /**
@@ -110,8 +117,8 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     }
 
     /**
-     * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link DestroyableObject#tick()}</p>
-     * <p>Handles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link DestroyableObject#tick()}</p>
+     * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link DestroyableObject#preTick()}</p>
+     * <p>Handles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link DestroyableObject#preTick()}</p>
      */
     abstract protected void handleAccumulatedDamage();
 
@@ -175,12 +182,10 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     }
 
     protected void clientSyncPose() {
-        if (syncTransformBuffer != null) {
-            oldTransform = transform.clone();
-            transform = syncTransformBuffer.clone();
-            syncTransformBuffer = null;
-            lastSync = System.nanoTime();
-        }
+        oldTransform = transform.clone();
+        transform = new Transform(getPosition(), getRotation());
+        MachineMax.LOGGER.debug("Client sync pos: {}", transform.getTranslation().subtract(oldTransform.getTranslation()));
+        lastSync = System.nanoTime();
     }
 
     @Override
@@ -198,16 +203,6 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         } else if (key.equals(DATA_ANG_VEL_ID)) {
             Vector3f angularVelocity = PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_ANG_VEL_ID));
             this.setAngularVelocity(angularVelocity);//应用到刚体(若有)
-        }
-        if (key.equals(DATA_POS_ID) || key.equals(DATA_ROT_ID)) {
-            //更新位姿同步缓冲区
-            if (syncTransformBuffer == null) {
-                syncTransformBuffer = new Transform(getPosition(), getRotation());
-            } else if (key.equals(DATA_POS_ID)) {
-                syncTransformBuffer.setTranslation(getPosition());
-            } else if (key.equals(DATA_ROT_ID)) {
-                syncTransformBuffer.setRotation(getRotation());
-            }
         }
     }
 

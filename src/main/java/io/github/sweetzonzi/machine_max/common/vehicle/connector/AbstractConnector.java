@@ -85,9 +85,15 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
 
     public void prePhysicsTick() {
         if (!this.hasPart()) {//更新判定点位置姿态
-            body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
-            body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
-        } else {
+            if (body == null) {
+                createAttachPointBody(
+                        MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
+                        subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+            } else {
+                body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
+                body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+            }
+        } else if (body != null) {
             PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), body);
             this.body = null;
         }
@@ -101,7 +107,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                 VisualEffectHelper.attachPoints.remove(this);
             }
         }
-        if (!subPart.level.isClientSide()){
+        if (!subPart.level.isClientSide()) {
             syncToClient();
         }
     }
@@ -233,7 +239,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             }
             detachJoint();
             //重建部件连接点
-            if(!destroy) {
+            if (!destroy) {
                 this.createAttachPointBody(
                         MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
                         subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
@@ -322,18 +328,22 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         if (subPart.part.getLevel().isClientSide())
             VisualEffectHelper.attachPoints.remove(this);
         getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
-            if (this.body != null && this.body.isInWorld()) PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), this.body);
+            if (this.body != null && this.body.isInWorld())
+                PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), this.body);
             return null;
         });
     }
 
     @Override
-    public void onSyncedDataUpdated(@NotNull List<SynchedEntityData.DataValue<?>> newData) {}
+    public void onSyncedDataUpdated(@NotNull List<SynchedEntityData.DataValue<?>> newData) {
+    }
 
     @Override
-    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {}
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
+    }
 
-    protected void defineSynchedData(SynchedEntityData.Builder builder){}
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    }
 
     protected void syncToClient() {
         if (!getSubPart().level.isClientSide()) {
@@ -363,17 +373,16 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             body.setCollideWithGroups(CollisionGroups.NONE);
             body.setPhysicsLocation(position);
             body.setPhysicsRotation(rotation);
-            PhysicsBodyExtensionKt.onPrePhysicsTick(body, event -> {
-                prePhysicsTick();
-                return null;
-            });
-            PhysicsBodyExtensionKt.onTick(body, event -> {
-                mcTick();
-                return null;
-            });
+//            PhysicsBodyExtensionKt.onPrePhysicsTick(body, event -> {
+//                prePhysicsTick();
+//                return null;
+//            });
+//            PhysicsBodyExtensionKt.onTick(body, event -> {
+//                mcTick();
+//                return null;
+//            });
             PhysicsBodyExtensionKt.addPhysicsBody(subPart.getLevel(), this.body);
-        } else body = null;
-
+        }
     }
 
     // 计算物体绕特定轴的转动惯量

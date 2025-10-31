@@ -160,18 +160,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             this.onContactProcessed(o1, o2, point1, point2, manifoldPointId);
             return null;
         });
-        PhysicsBodyExtensionKt.onPrePhysicsTick(this.body, event -> {
-            this.prePhysicsTick();
-            return null;
-        });
-        PhysicsBodyExtensionKt.onTick(this.body, event -> {
-            this.tick();
-            return null;
-        });
-        PhysicsBodyExtensionKt.onPostPhysicsTick(this.body, event -> {
-            this.postPhysicsTick();
-            return null;
-        });
     }
 
     @Override
@@ -573,8 +561,15 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
-    public void tick() {
-        super.tick();
+    @Override
+    public void preTick() {
+        super.preTick();
+    }
+
+    @Override
+    public void postTick() {
+        super.postTick();
+        for (AbstractConnector connector : this.connectors.values()) connector.mcTick();
         if (!isRemoved()) {
             if (this.entity == null || this.entity.isRemoved()) {
                 if (!getLevel().isClientSide()) refreshPartEntity();
@@ -595,8 +590,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
+    @Override
     public void prePhysicsTick() {
         super.prePhysicsTick();
+        for (AbstractConnector connector : this.connectors.values()) connector.prePhysicsTick();
         Vector3f vel = this.body.getLinearVelocity(null);
         //仅在有速度时应用流体动力
         if (vel.length() > 0.1f) {
@@ -749,6 +746,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
+    @Override
     public void postPhysicsTick() {
         super.postPhysicsTick();
         getAnimController().physTick();
@@ -827,8 +825,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     /**
-     * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link DestroyableObject#tick()}</p>
-     * <p>Handles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link DestroyableObject#tick()}</p>
+     * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link DestroyableObject#preTick()}</p>
+     * <p>Handles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link DestroyableObject#preTick()}</p>
      */
     protected void handleAccumulatedDamage() {
         if (!level.isClientSide() && !accumulatedDamage.isEmpty()) {
@@ -846,7 +844,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
             setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
             //TODO:对载具造成伤害
-            //发包同步部件与子系统状态
+            //发包同步部件状态
             syncToClient();
             //播放音效
             SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"));

@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.BlackBoard;
+import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -83,13 +84,18 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @Override
     public void tick() {
-        super.tick();
         if (tickCount == 2) {//移除SparkCore为实体添加的默认碰撞箱刚体
             var body = getPhysicsBody("body");
             if (body != null) {
                 PhysicsBodyExtensionKt.removePhysicsBody(level(), body);
             }
         }
+        super.tick();
+    }
+
+    @Override
+    public void baseTick() {
+        super.baseTick();
         if (this.subPart == null) {//如果实体没有所属的部件，则移除实体
             if (!this.isRemoved()) {
                 if (tickCount % 20 == 0) updatePart();
@@ -100,8 +106,8 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             }
         } else {
             //更新实体位置
-            this.setPos(SparkMathKt.toVec3(subPart.body.getPhysicsLocation(null)));
-            Quaternionf q = SparkMathKt.toQuaternionf(subPart.body.getPhysicsRotation(null));
+            this.setPos(SparkMathKt.toVec3(subPart.getPosition()));
+            Quaternionf q = SparkMathKt.toQuaternionf(subPart.getRotation());
             // 从四元数提取前向向量
             org.joml.Vector3f forward = new org.joml.Vector3f(0, 0, 1).rotate(q);
             // 计算yaw和pitch
@@ -112,7 +118,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             else if (yaw < -180) yaw += 360;
             // 设置实体旋转
             this.setRot(yaw, pitch);
-            updateBoundingBox();//更新实体包围盒
         }
     }
 
@@ -215,14 +220,17 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         return true;//投射物命中判定交由物理引擎处理
     }
 
-    public void updateBoundingBox() {
-        BoundingBox bb = boundingBox.get();
-        if (bb == null) return;
-        AABB aabb = SparkMathKt.toAABB(bb);
-        if (!aabb.isInfinite() && !aabb.hasNaN())
-            this.setBoundingBox(aabb);
-        else setBoundingBox(new AABB(0, 0, 0, 0, 0, 0));
-    }
+//    @Override
+//    public @NotNull AABB makeBoundingBox() {
+//        if (subPart != null && boundingBox != null) {
+//            BoundingBox bb = boundingBox.get();
+//            if (bb == null) return super.makeBoundingBox();
+//            AABB aabb = SparkMathKt.toAABB(bb);
+//            if (!aabb.isInfinite() && !aabb.hasNaN())
+//                return aabb;
+//            else return new AABB(0, 0, 0, 0, 0, 0);
+//        } else return super.makeBoundingBox();
+//    }
 
     @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
@@ -257,7 +265,12 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @Override
     public void setPos(double x, double y, double z) {
-        this.setPosRaw(x, y, z);
+        super.setPos(x, y, z);
+//        this.setPosRaw(x, y, z);
+//        level().submitImmediateTask(PPhase.PRE, () -> {
+//            updateBoundingBox();
+//            return null;
+//        });
     }
 
     @Override

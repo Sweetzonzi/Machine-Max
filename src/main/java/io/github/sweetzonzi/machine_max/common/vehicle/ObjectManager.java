@@ -132,21 +132,37 @@ public class ObjectManager {
     }
 
     @SubscribeEvent
-    public static void onTick(LevelTickEvent.Post event) {
+    public static void onPreTick(LevelTickEvent.Pre event) {
         levelVehicles.computeIfAbsent(event.getLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(vehicleCore -> {
-            vehicleCore.tick();
+            vehicleCore.preTick();
             updateVehicleChunk(vehicleCore);
+        });
+        levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).forEach((id, object) -> {
+            object.preTick();
+        });
+    }
+
+    @SubscribeEvent
+    public static void onPostTick(LevelTickEvent.Post event) {
+        levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).forEach((id, object) -> {
+            object.postTick();
         });
     }
 
     @SubscribeEvent
     public static void onPrePhysicsTick(PhysicsLevelTickEvent.Pre event) {
         levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::prePhysicsTick);
+        levelDestroyableObjects.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).forEach((id, object) -> {
+            object.prePhysicsTick();
+        });
     }
 
     @SubscribeEvent
     public static void onPostPhysicsTick(PhysicsLevelTickEvent.Post event) {
         levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::postPhysicsTick);
+        levelDestroyableObjects.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).forEach((id, object) -> {
+            object.postPhysicsTick();
+        });
     }
 
     private static void updateVehicleChunk(VehicleCore vehicle) {

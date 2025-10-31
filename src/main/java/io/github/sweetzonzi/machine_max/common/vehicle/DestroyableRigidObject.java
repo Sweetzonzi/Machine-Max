@@ -10,11 +10,13 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
+import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
 
 import java.util.HashMap;
 
@@ -34,8 +36,9 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     }
 
     @Override
-    public void tick() {
+    public void postTick() {
         if (!level.isClientSide() && body.isInWorld() && (body.isActive() || body.isKinematic())) {
+            //从刚体同步数据
             oldTransform = transform.clone();
             transform = PhysicsBodyExtensionKt.stateOf(body).getTransform();
             updateLock = true;//锁定刚体数据，仅利用服务端刚体数据更新同步用数据
@@ -45,7 +48,7 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
             setAngularVelocity(body.getAngularVelocity(null));
             updateLock = false;//解锁刚体数据，允许set时应用位姿数据到刚体
         }
-        super.tick();
+        super.postTick();//发送所有变化的数据
     }
 
     @Override

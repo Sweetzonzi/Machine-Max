@@ -145,7 +145,7 @@ public class VehicleCore {
     /**
      * 主线程tick，默认tps=20
      */
-    public void tick() {
+    public void preTick() {
         if (tickCount == 100)
             recalculateCameraDistance();
         //保持激活与控制量更新
