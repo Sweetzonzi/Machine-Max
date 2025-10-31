@@ -14,7 +14,7 @@ import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 @Mod(MOD_ID)
 public class MachineMax {
     //TODO:限制带阻尼关节安装部件时的质量差距/警告
-    //TODO:排查AE86AT左轮胎转动惯量计算BUG
+    //TODO:排查AE86AT左轮胎转动惯量计算BUG（可能修复）
     //TODO:GUI贴图渲染
     //TODO:交互可视化
     //TODO:重构流体动力，额外引入升力/阻力系数随攻角变化，以及叶元体理论
@@ -24,7 +24,7 @@ public class MachineMax {
     //TODO:放置部件前检查空间是否足够
     //TODO:投射物与刀刃判定，使用Capability系统控制子部件是否具有此功能？
     //TODO:炮塔控制
-    //TODO:通用分层作动器控制，计算期望姿态，计算所需角速度，计算所需舵面偏角/推进器推力等
+    //TODO:通用分层作动器控制，计算期望姿态，计算所需角速度，计算所需舵面偏角/推进器推力等，见 https://chat.deepseek.com/share/pneht1jesjnjakyh9g
     //TODO:外骨骼与机甲，穿戴外骨骼时仍可乘坐载具
     //TODO:方块/方块实体代理子系统（存在于一个FakeLevel），互动以及tick时有对应方块的功能
     //TODO:载具触发压力板
@@ -33,6 +33,7 @@ public class MachineMax {
     //TODO:指定连接口是否有部件连接的molang，或许返回部件名？
     //TODO:显示内含物品的fast_item_storage子系统，容量为1，互动立刻和手中物品交换，无GUI
     //TODO:对接口支持信号转义，改变接收到的信号内容的频道再输出
+    //TODO:部件的残骸判定与消失倒计时：全部SubPart损坏的部件会被标记为残骸，倒计时后消失
     //TODO:结构完整度迁移至对接口，并根据命中点到各对接口的距离控制结构完整性损失分配
     //TODO:预制装配体，类似于部件的组装，但可预先装好方便使用。与蓝图不同的是使用后消耗，且拆卸时获得的是零散部件而非装配体本身。可json配置，也可动态保存生成，同时保留部件内数据如储物子系统内容物。
     //TODO:改装件，改变部件或子系统属性

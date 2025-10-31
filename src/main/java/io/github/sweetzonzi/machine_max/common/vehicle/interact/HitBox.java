@@ -1,5 +1,6 @@
-package io.github.sweetzonzi.machine_max.common.vehicle;
+package io.github.sweetzonzi.machine_max.common.vehicle.interact;
 
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import lombok.Getter;

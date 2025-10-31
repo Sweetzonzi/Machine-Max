@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.data;
 
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.common.vehicle.HitBox;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.IPhysicsProjectile;
 import net.minecraft.world.damagesource.DamageSource;
 

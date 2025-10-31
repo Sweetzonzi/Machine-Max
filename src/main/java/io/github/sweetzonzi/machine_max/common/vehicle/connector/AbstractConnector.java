@@ -18,6 +18,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
@@ -25,19 +26,28 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.JointAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalPort;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
+import io.github.sweetzonzi.machine_max.network.payload.ConnectorSyncPayload;
+import io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SyncedDataHolder;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
 @Getter
-public abstract class AbstractConnector implements PhysicsHost {
+public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder {
     public final String name;//接口名称
     public final SubPart subPart;//接口所属的零件
     public final boolean collideBetweenParts;//是否允许零件间碰撞
@@ -46,6 +56,8 @@ public abstract class AbstractConnector implements PhysicsHost {
     public final ConnectorAttr attr;//接口属性
     public New6Dof joint;//在两个对接口间共享的关节
     public final SignalPort signalPort;//接口资源/信号传输端口
+    protected static final EntityDataAccessor<Float> DATA_INTEGRITY_ID = SynchedEntityData.defineId(AbstractConnector.class, EntityDataSerializers.FLOAT);
+    protected final SynchedEntityData synchedData;
     @Setter
     public AbstractConnector attachedConnector;//与本接口对接的接口
     public final Transform subPartTransform;//被安装零件的连接点相对本部件质心的位置与姿态
@@ -62,6 +74,10 @@ public abstract class AbstractConnector implements PhysicsHost {
         this.breakable = attr.breakable();
         this.internal = !attr.ConnectedTo().isEmpty();
         this.attr = attr;
+        SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
+        syncheddata$builder.define(DATA_INTEGRITY_ID, 20f);
+        this.defineSynchedData(syncheddata$builder);
+        this.synchedData = syncheddata$builder.build();
         createAttachPointBody(
                 MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
                 subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
@@ -72,18 +88,21 @@ public abstract class AbstractConnector implements PhysicsHost {
             body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
             body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
         } else {
-            PhysicsBodyExtensionKt.removePhysicsBody(subPart.part.getLevel(), body);
+            PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), body);
             this.body = null;
         }
     }
 
     public void mcTick() {
-        if (subPart.part.level.isClientSide() && body != null) {
+        if (subPart.level.isClientSide() && body != null) {
             if (!this.hasPart()) {
                 VisualEffectHelper.attachPoints.put(this, body);
             } else {
                 VisualEffectHelper.attachPoints.remove(this);
             }
+        }
+        if (!subPart.level.isClientSide()){
+            syncToClient();
         }
     }
 
@@ -306,6 +325,24 @@ public abstract class AbstractConnector implements PhysicsHost {
             if (this.body != null && this.body.isInWorld()) PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), this.body);
             return null;
         });
+    }
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull List<SynchedEntityData.DataValue<?>> newData) {}
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {}
+
+    protected void defineSynchedData(SynchedEntityData.Builder builder){}
+
+    protected void syncToClient() {
+        if (!getSubPart().level.isClientSide()) {
+            SynchedEntityData synchedentitydata = this.getSynchedData();
+            List<SynchedEntityData.DataValue<?>> list = synchedentitydata.packDirty();
+            if (list != null) {
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) getSubPart().level, new ConnectorSyncPayload(getSubPart().getId(), name, list));
+            }
+        }
     }
 
     @NotNull

@@ -36,6 +36,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
@@ -131,7 +132,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         if (part.getLevel().isClientSide()) this.body.setKinematic(true);
         Vector3f inverseInertia = new Vector3f();
         this.body.getInverseInertiaLocal(inverseInertia);
-        //TODO:检查为什么从保存的文件加载时有概率获得一个不正确的转动惯量
         if (inverseInertia.length() > 5) {
             MachineMax.LOGGER.error("{} ({})转动惯量异常: {}", name, part.variant, body.getInverseInertiaLocal(null));
         }

@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.common.vehicle.HitBox;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
@@ -11,20 +11,29 @@ import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.InteractSignal;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SyncedDataHolder;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Getter
-abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender{
+abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSender, SyncedDataHolder {
 
     public final String name;
     public final AbstractSubsystemAttr attr;
@@ -36,9 +45,11 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public final ConcurrentMap<String, Float> resourceInputs = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Float> resourceOutputs = new ConcurrentHashMap<>();
 
+    protected static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(AbstractSubsystem.class, EntityDataSerializers.FLOAT);
+    protected final SynchedEntityData synchedData;
+
     public volatile boolean active = true;
     public volatile boolean destroyed = false;
-    public volatile float durability;//子系统耐久度
     public int tickCount = 0;
     public int physicsTickCount = 0;
 
@@ -46,7 +57,10 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         this.owner = owner;
         this.attr = attr;
         this.name = name;
-        this.durability = attr.basicDurability;
+        SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
+        syncheddata$builder.define(DATA_DURABILITY_ID, attr.basicDurability);
+        this.defineSynchedData(syncheddata$builder);
+        this.synchedData = syncheddata$builder.build();
         if (this instanceof ISignalSender signalSender) {
             signalSender.resetSignalOutputs();
         }
@@ -54,13 +68,14 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     public void onTick() {
         tickCount++;
-        if (!this.isDestroyed() && this.durability <= 0) {
+        if (!this.isDestroyed() && this.getDurability() <= 0) {
             //摧毁耐久度归零的子系统
             this.onDestroyed();
-        } else if (this.isDestroyed() && !getOwner().getSubPart().getPart().isDestroyed() && this.durability >= 0.3 * attr.basicDurability) {
+        } else if (this.isDestroyed() && !getOwner().getSubPart().getPart().isDestroyed() && this.getDurability() >= 0.3 * getMaxDurability()) {
             //重新激活修复到一定程度的子系统
             this.destroyed = false;
         }
+        if(!getSubPart().getLevel().isClientSide()) syncToClient();
     }
 
     public void onPrePhysicsTick() {
@@ -125,7 +140,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void onHurt(float amount, PartDamageData data) {
-        this.durability -= amount;
+        setDurability(Math.clamp(getDurability() - amount, 0, getMaxDurability()));
     }
 
     public void onDestroyed() {
@@ -181,4 +196,36 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public SubPart getSubPart() {
         return getOwner().getSubPart();
     }
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull List<SynchedEntityData.DataValue<?>> newData) {}
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {}
+
+    protected void defineSynchedData(SynchedEntityData.Builder builder){}
+
+    protected void syncToClient() {
+        if (!getSubPart().level.isClientSide()) {
+            SynchedEntityData synchedentitydata = this.getSynchedData();
+            List<SynchedEntityData.DataValue<?>> list = synchedentitydata.packDirty();
+            if (list != null) {
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) getSubPart().level, new SubsystemSyncPayload(getSubPart().getId(), name, list));
+            }
+        }
+    }
+
+    public float getDurability() {
+        return synchedData.get(DATA_DURABILITY_ID);
+    }
+
+    public void setDurability(float durability) {
+        synchedData.set(DATA_DURABILITY_ID, durability);
+    }
+
+    public float getMaxDurability() {
+        return attr.basicDurability;
+    }
+
+
 }

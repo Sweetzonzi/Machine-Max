@@ -100,7 +100,7 @@ public class EngineSubsystem extends AbstractSubsystem {
         } else { //超速时动力大幅衰减
             result = Math.pow(2.7, -2.5 * (rotSpeed - MAX_ROT_SPEED) / BASE_ROT_SPEED) * attr.maxPower / rotSpeed;
         }
-        result *= 0.3 + 0.7 * Math.sqrt(durability / attr.basicDurability);
+        result *= 0.3 + 0.7 * Math.sqrt(getDurability() / attr.basicDurability);
         //TODO:扭矩输出根据转速和气缸数周期性变化
         return result;
     }

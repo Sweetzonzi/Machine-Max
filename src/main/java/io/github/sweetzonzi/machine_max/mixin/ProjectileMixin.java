@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.mixin;
 
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.common.vehicle.HitBox;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
 import net.minecraft.world.entity.Entity;
