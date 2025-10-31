@@ -184,7 +184,6 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     protected void clientSyncPose() {
         oldTransform = transform.clone();
         transform = new Transform(getPosition(), getRotation());
-        MachineMax.LOGGER.debug("Client sync pos: {}", transform.getTranslation().subtract(oldTransform.getTranslation()));
         lastSync = System.nanoTime();
     }
 

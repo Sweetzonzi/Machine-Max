@@ -576,7 +576,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
             if (this.entity != null && !this.entity.isRemoved()) {
                 BoundingBox box = PhysicsBodyExtensionKt.stateOf(body).getCachedBoundingBox();
+                Vector3f center = PhysicsBodyExtensionKt.stateOf(body).getTransform().getTranslation();
                 entity.boundingBox.set(box);
+                entity.bodyCenter.set(center);
             }
             var animSet = OAnimationSet.getORIGINS().get(new ModelIndex("part", attr.getAnimation("default")));
             if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {

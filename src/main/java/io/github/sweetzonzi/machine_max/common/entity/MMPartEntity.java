@@ -7,7 +7,6 @@ import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.BlackBoard;
-import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -50,6 +49,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     public UUID partUUID;
     public String subPartName;
     public AtomicReference<BoundingBox> boundingBox = new AtomicReference<>();
+    public AtomicReference<Vector3f> bodyCenter = new AtomicReference<>();
 
     /**
      * 不应被使用！
@@ -220,17 +220,22 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         return true;//投射物命中判定交由物理引擎处理
     }
 
-//    @Override
-//    public @NotNull AABB makeBoundingBox() {
-//        if (subPart != null && boundingBox != null) {
-//            BoundingBox bb = boundingBox.get();
-//            if (bb == null) return super.makeBoundingBox();
-//            AABB aabb = SparkMathKt.toAABB(bb);
-//            if (!aabb.isInfinite() && !aabb.hasNaN())
-//                return aabb;
-//            else return new AABB(0, 0, 0, 0, 0, 0);
-//        } else return super.makeBoundingBox();
-//    }
+    @Override
+    public @NotNull AABB makeBoundingBox() {
+        if (subPart != null && boundingBox != null) {
+            BoundingBox bb = boundingBox.get();
+            Vector3f bodyCenter = this.bodyCenter.get();
+            if (bb != null && bodyCenter != null) {
+                Vec3 center = position();
+                Vec3 min = center.subtract(bb.getXExtent(), bb.getYExtent(), bb.getZExtent());
+                Vec3 max = center.add(bb.getXExtent(), bb.getYExtent(), bb.getZExtent());
+                AABB aabb = new AABB(min, max);
+                Vector3f boundingBoxCenter = bb.getCenter(null);//注意碰撞箱中心很可能不是实体的坐标处，需要平移
+                return aabb.move(SparkMathKt.toVec3(boundingBoxCenter.subtract(bodyCenter)));
+            }
+        }
+        return super.makeBoundingBox();
+    }
 
     @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
