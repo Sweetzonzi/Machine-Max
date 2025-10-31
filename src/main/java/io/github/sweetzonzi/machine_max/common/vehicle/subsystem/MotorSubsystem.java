@@ -65,7 +65,11 @@ public class MotorSubsystem extends AbstractSubsystem {
      * @return 当前转速下的最大扭矩(N · m)
      */
     private double calculateMaxTorque(double rotSpeed) {
-        return Math.min(attr.maxPower / Math.max(Math.abs(rotSpeed), 0.1f), attr.maxTorque);
+        double result = 0;
+        if (!isActive()) return result;
+        result = Math.min(attr.maxPower / Math.max(Math.abs(rotSpeed), 0.1f), attr.maxTorque);
+        result *= 0.3 + 0.7 * Math.sqrt(getDurability() / getMaxDurability());
+        return result;
     }
 
     /**

@@ -185,10 +185,13 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void loadData(CompoundTag data) {
-        //TODO: 加载子系统生命值
+        //加载子系统耐久度
+        setDurability(data.getFloat("durability"));
     }
 
     public CompoundTag saveData(CompoundTag data) {
+        //保存子系统耐久度
+        data.putFloat("durability", getDurability());
         return data;
     }
 
