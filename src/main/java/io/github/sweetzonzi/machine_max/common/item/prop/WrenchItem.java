@@ -43,7 +43,7 @@ public class WrenchItem extends Item {
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {
                 Part part = subPart.part;
-                if ((player.isCrouching() || part.destroyed) && part.integrity > 0) {
+                if ((player.isCrouching() || subPart.destroyed) && part.integrity > 0) {
                     //潜行时拆除模式
                     float repair = 10;
                     float scale = player.getAttackStrengthScale(0.5f);
@@ -54,7 +54,7 @@ public class WrenchItem extends Item {
                         }
                         return null;
                     });
-                } else if (!part.destroyed && (part.sharedDurability < part.type.basicDurability || part.integrity < part.type.basicIntegrity)) {
+                } else if (!subPart.destroyed && (part.sharedDurability < part.type.basicDurability || part.integrity < part.type.basicIntegrity)) {
                     //一般状态下修复模式
                     float repair = 10;
                     float scale = player.getAttackStrengthScale(0.5f);
@@ -85,11 +85,11 @@ public class WrenchItem extends Item {
                 if (entity.isCrouching() && part.integrity > 0)
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.disassembly",
                             part.integrity, part.type.basicIntegrity, Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
-                else if (!part.destroyed && (part.sharedDurability < part.type.basicDurability || part.integrity < part.type.basicIntegrity))
+                else if (!subPart.destroyed && (part.sharedDurability < part.type.basicDurability || part.integrity < part.type.basicIntegrity))
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.repair",
                             Component.translatable(part.type.registryKey.toLanguageKey()),
                             part.integrity, part.type.basicIntegrity, part.sharedDurability, part.type.basicDurability).withColor(Color.GREEN.getRGB()), true);
-                else if (part.destroyed)
+                else if (subPart.destroyed)
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.cant_repair",
                             Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.RED.getRGB()), true);
                 else player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.no_need_to_repair",

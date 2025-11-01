@@ -71,7 +71,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         if (!this.isDestroyed() && this.getDurability() <= 0) {
             //摧毁耐久度归零的子系统
             this.onDestroyed();
-        } else if (this.isDestroyed() && !getOwner().getSubPart().getPart().isDestroyed() && this.getDurability() >= 0.3 * getMaxDurability()) {
+        } else if (this.isDestroyed() && !getOwner().getSubPart().isDestroyed() && this.getDurability() >= 0.3 * getMaxDurability()) {
             //重新激活修复到一定程度的子系统
             this.destroyed = false;
         }
@@ -171,7 +171,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public boolean isActive() {
-        return active && !this.isDestroyed() && !getOwner().getSubPart().getPart().isDestroyed();
+        return active && !this.isDestroyed() && !getOwner().getSubPart().isDestroyed();
     }
 
     public void setActive(boolean active) {

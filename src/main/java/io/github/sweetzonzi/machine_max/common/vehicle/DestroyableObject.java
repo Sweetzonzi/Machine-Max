@@ -1,16 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
@@ -65,7 +62,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         syncheddata$builder.define(DATA_VEL_ID, new org.joml.Vector3f());
         syncheddata$builder.define(DATA_ANG_VEL_ID, new org.joml.Vector3f());
         syncheddata$builder.define(DATA_DURABILITY_ID, 20.0F);
-        this.defineSynchedData(syncheddata$builder);
+        this.defineSyncedData(syncheddata$builder);
         this.synchedData = syncheddata$builder.build();
     }
 
@@ -105,7 +102,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
      * @param damage 伤害值 damage value
      * @param data   伤害源、命中点、判定区等 damage source, hit point, hit box, etc.
      */
-    protected void accumulateDamage(float damage, PartDamageData data) {
+    public void accumulateDamage(float damage, PartDamageData data) {
         if (damage > 0) {
             hurtTime = hurtDuration;
             accumulatedDamage.add(Pair.of(damage, data));
@@ -205,7 +202,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         }
     }
 
-    protected abstract void defineSynchedData(SynchedEntityData.Builder builder);
+    protected abstract void defineSyncedData(SynchedEntityData.Builder builder);
 
     public Vector3f getPosition() {
         return PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_POS_ID));

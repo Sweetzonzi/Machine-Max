@@ -394,12 +394,12 @@ public class VehicleCore {
                                     specialConnector = connector2;
                                 } else continue;//二者中存在AttachPointConnector时才可尝试连接
                                 //检查连接是否合理(连接点位置姿态差异)
-                                float posError = MMMath.relPointWorldPos(attachPoint.subPartTransform.getTranslation(), attachPoint.subPart.body).subtract(
-                                        MMMath.relPointWorldPos(specialConnector.subPartTransform.getTranslation(), specialConnector.subPart.body)
+                                float posError = MMMath.relPointWorldPos(attachPoint.offsetFromMassCenter.getTranslation(), attachPoint.subPart.body).subtract(
+                                        MMMath.relPointWorldPos(specialConnector.offsetFromMassCenter.getTranslation(), specialConnector.subPart.body)
                                 ).length();//计算连接点位置差异
                                 float rotError = SparkMathKt.toQuaternionf(
-                                        attachPoint.subPart.body.getPhysicsRotation(null).mult(attachPoint.subPartTransform.getRotation()).mult(
-                                                specialConnector.subPart.body.getPhysicsRotation(null).mult(specialConnector.subPartTransform.getRotation()).inverse()
+                                        attachPoint.subPart.body.getPhysicsRotation(null).mult(attachPoint.offsetFromMassCenter.getRotation()).mult(
+                                                specialConnector.subPart.body.getPhysicsRotation(null).mult(specialConnector.offsetFromMassCenter.getRotation()).inverse()
                                         )
                                 ).angle();//计算连接点姿态差异
                                 if (posError < 0.1f && rotError < 1f) {//若位置姿态差异小于阈值，则尝试连接

@@ -24,7 +24,7 @@ public record VariantAttr(
             String subPartName = subParts.getKey();
             SubPartAttr subPart = subParts.getValue();
             for (Map.Entry<String, ConnectorAttr> connector : subPart.connectors.entrySet()) {//遍历零件的接口
-                if (connector.getValue().ConnectedTo().isEmpty()) connectors.add(Pair.of(subPartName, connector.getKey()));//外部接口加入可用接口集合
+                if (connector.getValue().connectedTo().isEmpty()) connectors.add(Pair.of(subPartName, connector.getKey()));//外部接口加入可用接口集合
             }
         }
         return connectors.iterator();
@@ -39,7 +39,7 @@ public record VariantAttr(
             String subPartName = entry.getKey();
             SubPartAttr subPart = entry.getValue();
             for (Map.Entry<String, ConnectorAttr> entry1 : subPart.connectors.entrySet()) {
-                if (entry1.getValue().ConnectedTo().isEmpty())//外部零件对接口
+                if (entry1.getValue().connectedTo().isEmpty())//外部零件对接口
                     connectors.put(Pair.of(subPartName, entry1.getKey()), entry1.getValue());
             }
         }

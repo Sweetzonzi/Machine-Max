@@ -5,6 +5,7 @@ import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import lombok.Getter;
@@ -22,19 +23,18 @@ public class SubPartData {
     public final float durability;// 零件的耐久度
     public final PosRotVelVel posRotVelVel;// 零件的位置、朝向、速度、角速度
     public final int textureIndex;// 零件的纹理索引
-    public final Map<String, Float> connectorIntegrity;// 对接口结构完整性
+    public final Map<String, CompoundTag> connectorData;// 对接口结构完整性
     public final Map<String, CompoundTag> subsystemData;// 零件的子系统数据
 
-    public static final Codec<Map<String, Float>> CONNECTOR_INTEGRITY_CODEC = Codec.unboundedMap(Codec.STRING, Codec.FLOAT);
-    public static final Codec<Map<String, CompoundTag>> SUBSYSTEM_DATA_CODEC = Codec.unboundedMap(Codec.STRING, CompoundTag.CODEC);
+    public static final Codec<Map<String, CompoundTag>> DATA_CODEC = Codec.unboundedMap(Codec.STRING, CompoundTag.CODEC);
 
     public static final Codec<SubPartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("id").forGetter(SubPartData::getId),
             Codec.FLOAT.optionalFieldOf("durability", 20f).forGetter(SubPartData::getDurability),
             PosRotVelVel.CODEC.fieldOf("posRotVelVel").forGetter(SubPartData::getPosRotVelVel),
             Codec.INT.optionalFieldOf("textureIndex", 0).forGetter(SubPartData::getTextureIndex),
-            CONNECTOR_INTEGRITY_CODEC.optionalFieldOf("connectorIntegrity", Map.of()).forGetter(SubPartData::getConnectorIntegrity),
-            SUBSYSTEM_DATA_CODEC.optionalFieldOf("subsystemData", Map.of()).forGetter(SubPartData::getSubsystemData)
+            DATA_CODEC.optionalFieldOf("connectorData", Map.of()).forGetter(SubPartData::getConnectorData),
+            DATA_CODEC.optionalFieldOf("subsystemData", Map.of()).forGetter(SubPartData::getSubsystemData)
     ).apply(instance, SubPartData::new));
 
     public static final Codec<Map<String, SubPartData>> MAP_CODEC = Codec.unboundedMap(Codec.STRING, CODEC);
@@ -47,13 +47,13 @@ public class SubPartData {
             PosRotVelVel posRotVelVel = PosRotVelVel.STREAM_CODEC.decode(buffer);
             int textureIndex = buffer.readInt();
 
-            // 解码 connectorIntegrity
+            // 解码 connectorData
             int connectorSize = buffer.readVarInt();
-            Map<String, Float> connectorIntegrity = new HashMap<>(connectorSize);
+            Map<String, CompoundTag> connectorData = new HashMap<>(connectorSize);
             for (int i = 0; i < connectorSize; i++) {
                 String key = buffer.readUtf();
-                float value = buffer.readFloat();
-                connectorIntegrity.put(key, value);
+                CompoundTag value = buffer.readNbt();
+                connectorData.put(key, value);
             }
 
             // 解码 subsystemData
@@ -65,7 +65,7 @@ public class SubPartData {
                 subsystemData.put(key, value);
             }
 
-            return new SubPartData(id, durability, posRotVelVel, textureIndex, connectorIntegrity, subsystemData);
+            return new SubPartData(id, durability, posRotVelVel, textureIndex, connectorData, subsystemData);
         }
 
         @Override
@@ -75,12 +75,12 @@ public class SubPartData {
             PosRotVelVel.STREAM_CODEC.encode(buffer, value.posRotVelVel);
             buffer.writeInt(value.textureIndex);
 
-            // 编码 connectorIntegrity
-            Map<String, Float> connectorIntegrity = value.connectorIntegrity;
+            // 编码 connectorData
+            Map<String, CompoundTag> connectorIntegrity = value.connectorData;
             buffer.writeVarInt(connectorIntegrity.size());
-            for (Map.Entry<String, Float> entry : connectorIntegrity.entrySet()) {
+            for (Map.Entry<String, CompoundTag> entry : connectorIntegrity.entrySet()) {
                 buffer.writeUtf(entry.getKey());
-                buffer.writeFloat(entry.getValue());
+                buffer.writeNbt(entry.getValue());
             }
 
             // 编码 subsystemData
@@ -122,16 +122,16 @@ public class SubPartData {
      * @param durability         零件的耐久度
      * @param posRotVelVel       零件的位置、朝向、速度、角速度
      * @param textureIndex       零件的纹理索引
-     * @param connectorIntegrity 对接口结构完整性
+     * @param connectorData      零件的对接口数据
      * @param subsystemData      零件的子系统数据
      */
     public SubPartData(int id, float durability, PosRotVelVel posRotVelVel, int textureIndex,
-                      Map<String, Float> connectorIntegrity, Map<String, CompoundTag> subsystemData) {
+                      Map<String, CompoundTag> connectorData, Map<String, CompoundTag> subsystemData) {
         this.id = id;
         this.durability = durability;
         this.posRotVelVel = posRotVelVel;
         this.textureIndex = textureIndex;
-        this.connectorIntegrity = connectorIntegrity;
+        this.connectorData = connectorData;
         this.subsystemData = subsystemData;
     }
 
@@ -140,7 +140,12 @@ public class SubPartData {
         Quaternionf rotation = SparkMathKt.toQuaternionf(subPart.getRotation());
         Vector3f linearVel = subPart.getLinearVelocity();
         Vector3f angularVel = subPart.getAngularVelocity();
-        Map<String, Float> connectorIntegrity = Map.of();
+        Map<String, CompoundTag> connectorData = HashMap.newHashMap(1);
+        for (Map.Entry<String, AbstractConnector> entry : subPart.connectors.entrySet()) {
+            String connectorName = entry.getKey();
+            AbstractConnector connector = entry.getValue();
+            connectorData.put(connectorName, connector.saveData(new CompoundTag()));
+        }
         Map<String, CompoundTag> subPartSubsystemData = HashMap.newHashMap(1);
         for (Map.Entry<String, AbstractSubsystem> entry : subPart.subsystems.entrySet()) {
             String subsystemName = entry.getKey();
@@ -151,7 +156,7 @@ public class SubPartData {
         this.durability = subPart.getDurability();
         this.posRotVelVel = new PosRotVelVel(position, rotation, linearVel, angularVel);
         this.textureIndex = subPart.getTextureIndex();
-        this.connectorIntegrity = connectorIntegrity;
+        this.connectorData = connectorData;
         this.subsystemData = subPartSubsystemData;
     }
 }

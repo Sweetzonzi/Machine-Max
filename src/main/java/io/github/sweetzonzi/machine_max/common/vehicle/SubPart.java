@@ -751,6 +751,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @Override
     public void postPhysicsTick() {
         super.postPhysicsTick();
+        for (AbstractConnector connector : this.connectors.values()) connector.postPhysicsTick();
         getAnimController().physTick();
     }
 
@@ -798,8 +799,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
         //线性减伤处理
         float impactDamage = damage - hitBox.getDamageReduction();
-        //累积冲击效果用于削减结构完整性
-        part.accumulatedImpact.put(worldContactPoint, impactDamage);
+        //分配冲击至对接口
+        distributeImpactToConnectors(impactDamage, worldContactPoint);
         //甲弹对抗相关处理
         if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
         //击穿判定
@@ -823,6 +824,35 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 });
             }
             return false;
+        }
+    }
+
+    /**
+     * <p>根据伤害和各对接口的距离，施加冲击力至各个对接口</p>
+     * <p>Distributes the impact to each connector based on the damage and distance to each connector</p>
+     * @param impact 冲击
+     * @param impactPoint 冲击点
+     */
+    protected void distributeImpactToConnectors(float impact, Vector3f impactPoint){
+        // 累积冲击效果用于削减对接口结构完整性
+        Map<AbstractConnector, Float> impactWeights = new HashMap<>();
+        float totalImpactWeight = 0;
+        // 可调节参数
+        final float DISTANCE_EXPONENT = 2.0f; // 距离指数：1=反比，2=平方反比
+        final float MIN_DISTANCE = 0.1f; // 最小距离，防止除零和过大的权重
+        for(AbstractConnector connector : this.connectors.values()){
+            if(!connector.hasPart() || !connector.isBreakable()) continue; // 仅有连接且可破坏的对接口参与分配
+            Vector3f connectorPos = MMMath.relPointWorldPos(connector.offsetFromMassCenter.getTranslation(), this.body);
+            float distance = Math.max(connectorPos.distance(impactPoint), MIN_DISTANCE);
+            // 权重是距离的指数反比，距离越远权重越小
+            float weight = 1.0f / (float)Math.pow(distance, DISTANCE_EXPONENT);
+            impactWeights.put(connector, weight);
+            totalImpactWeight += weight;
+        }
+        // 分配冲击伤害
+        for (Map.Entry<AbstractConnector, Float> entry : impactWeights.entrySet()){
+            float impactFraction = entry.getValue() / totalImpactWeight;
+            entry.getKey().accumulateImpact(impact * impactFraction);
         }
     }
 
@@ -1023,7 +1053,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     @Override
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    protected void defineSyncedData(SynchedEntityData.Builder builder) {
 
     }
 

@@ -4,7 +4,9 @@ import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.RotationOrder;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
@@ -18,7 +20,6 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
@@ -27,23 +28,28 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.JointAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalPort;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.ConnectorSyncPayload;
-import io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SyncedDataHolder;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 @Getter
@@ -51,52 +57,57 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     public final String name;//接口名称
     public final SubPart subPart;//接口所属的零件
     public final boolean collideBetweenParts;//是否允许零件间碰撞
-    public final boolean breakable;//TODO:是否可拆解
     public final boolean internal;//是否为内部接口
     public final ConnectorAttr attr;//接口属性
     public New6Dof joint;//在两个对接口间共享的关节
     public final SignalPort signalPort;//接口资源/信号传输端口
     protected static final EntityDataAccessor<Float> DATA_INTEGRITY_ID = SynchedEntityData.defineId(AbstractConnector.class, EntityDataSerializers.FLOAT);
     protected final SynchedEntityData synchedData;
+    protected final ConcurrentLinkedQueue<Float> accumulatedImpact = new ConcurrentLinkedQueue<>();
+    public final boolean breakable;//对接口是否可被破坏
     @Setter
     public AbstractConnector attachedConnector;//与本接口对接的接口
-    public final Transform subPartTransform;//被安装零件的连接点相对本部件质心的位置与姿态
+    public final Transform offsetFromMassCenter;//被安装零件的连接点相对本部件质心的位置与姿态
     public final CollisionShape shape = new BoxCollisionShape(0.25f);//接口碰撞形状
     public PhysicsRigidBody body;//部件接口安装判定区
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
 
-    protected AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, Transform subPartTransform) {
+    protected AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, Transform offsetFromMassCenter) {
         this.name = name;
         this.subPart = subPart;
-        this.subPartTransform = subPartTransform;
+        this.offsetFromMassCenter = offsetFromMassCenter;
         this.signalPort = new SignalPort(this, attr.signalTargets());
         this.collideBetweenParts = attr.collideBetweenParts();
-        this.breakable = attr.breakable();
-        this.internal = !attr.ConnectedTo().isEmpty();
+        this.breakable = attr.breakable() && attr.connectedTo().isEmpty();
+        this.internal = !attr.connectedTo().isEmpty();
         this.attr = attr;
         SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
-        syncheddata$builder.define(DATA_INTEGRITY_ID, 20f);
-        this.defineSynchedData(syncheddata$builder);
+        syncheddata$builder.define(DATA_INTEGRITY_ID, attr.integrity());
+        this.defineSyncedData(syncheddata$builder);
         this.synchedData = syncheddata$builder.build();
         createAttachPointBody(
-                MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
-                subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+                MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body),
+                subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
     }
 
     public void prePhysicsTick() {
         if (!this.hasPart()) {//更新判定点位置姿态
             if (body == null) {
                 createAttachPointBody(
-                        MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
-                        subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+                        MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body),
+                        subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
             } else {
-                body.setPhysicsLocation(MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body));
-                body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+                body.setPhysicsLocation(MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body));
+                body.setPhysicsRotation(subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
             }
         } else if (body != null) {
             PhysicsBodyExtensionKt.removePhysicsBody(subPart.getLevel(), body);
             this.body = null;
         }
+    }
+
+    public void postPhysicsTick() {
+
     }
 
     public void mcTick() {
@@ -108,7 +119,52 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             }
         }
         if (!subPart.level.isClientSide()) {
+            handleAccumulatedImpact();
             syncToClient();
+        }
+    }
+
+    /**
+     * <p>线程安全地对部件造成伤害，伤害会被在主线程统一处理，参见 {@link #handleAccumulatedImpact()}</p>
+     * <p>Accumulates impact to the part thread safely, which will be handled in the main thread, see {@link #handleAccumulatedImpact()}</p>
+     *
+     * @param impact 伤害值 impact value
+     */
+    public void accumulateImpact(float impact) {
+        if (impact > 0) {
+            accumulatedImpact.add(impact);
+        }
+    }
+
+    /**
+     * <p>处理各线程对对接口造成的冲击，在主线程中统一处理，参见 {@link #mcTick()}</p>
+     * <p>Handles the impact caused by other threads to the connector, which will be handled in the main thread, see {@link #mcTick()}</p>
+     */
+    protected void handleAccumulatedImpact() {
+        if (!subPart.level.isClientSide()) {
+            float totalImpact = 0;
+            if(breakable && !accumulatedImpact.isEmpty()){
+                while (!accumulatedImpact.isEmpty()){
+                    totalImpact += accumulatedImpact.poll();
+                }
+                if (totalImpact > 0) {
+                    if (totalImpact >= getIntegrity() && hasPart()) {
+                        //强冲击，立即击落部件
+                        subPart.part.vehicle.detachConnector(this);
+                        float finalImpact = (subPart.destroyed ? 0.5f * totalImpact : 0.1f * totalImpact);
+                        subPart.level.submitImmediateTask(PPhase.ALL, () -> {
+                            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"));
+                            SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO, 64f,
+                                    (float) ((2 - Math.min(getBasicIntegrity(), finalImpact) / getBasicIntegrity()) * (1f + 0.2f * (Math.random() - 0.5f))),
+                                    0.2f + 0.8f * Math.min(getBasicIntegrity(), finalImpact) / getBasicIntegrity());
+                            return null;
+                        });
+                    }
+                    //削减部件完整性
+                    setIntegrity(Math.clamp(getIntegrity() - (subPart.destroyed ? totalImpact : 0.1f * totalImpact), 0, getBasicIntegrity()));
+                }
+                accumulatedImpact.clear();
+            }
         }
     }
 
@@ -155,8 +211,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
 
     protected void attachJoint(AttachPointConnector targetConnector) {
         this.joint = new New6Dof(this.subPart.body, targetConnector.subPart.body,
-                this.subPartTransform.getTranslation(), targetConnector.subPartTransform.getTranslation(),
-                this.subPartTransform.getRotation().toRotationMatrix(), targetConnector.subPartTransform.getRotation().toRotationMatrix(),
+                this.offsetFromMassCenter.getTranslation(), targetConnector.offsetFromMassCenter.getTranslation(),
+                this.offsetFromMassCenter.getRotation().toRotationMatrix(), targetConnector.offsetFromMassCenter.getRotation().toRotationMatrix(),
                 RotationOrder.XYZ);
         targetConnector.joint = this.joint;
         adjustJoint();//调整关节属性
@@ -241,16 +297,15 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             //重建部件连接点
             if (!destroy) {
                 this.createAttachPointBody(
-                        MMMath.relPointWorldPos(subPartTransform.getTranslation(), subPart.body),
-                        subPart.body.getPhysicsRotation(null).mult(subPartTransform.getRotation()));
+                        MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body),
+                        subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
                 attachedConnector.createAttachPointBody(
-                        MMMath.relPointWorldPos(attachedConnector.subPartTransform.getTranslation(), attachedConnector.subPart.body),
-                        attachedConnector.subPart.body.getPhysicsRotation(null).mult(attachedConnector.subPartTransform.getRotation()));
+                        MMMath.relPointWorldPos(attachedConnector.offsetFromMassCenter.getTranslation(), attachedConnector.subPart.body),
+                        attachedConnector.subPart.body.getPhysicsRotation(null).mult(attachedConnector.offsetFromMassCenter.getRotation()));
             }
             this.attachedConnector.attachedConnector = null;
             this.attachedConnector = null;
-        } else if (internal)
-            MachineMax.LOGGER.error("{}的内部接口{}不允许被断开连接！", this.subPart.part.name, this.getName());
+        }
     }
 
     protected void detachJoint() {
@@ -264,7 +319,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     public void adjustTransform(Part part, AbstractConnector partConnector) {
-        Transform targetTransform = mergeTransform(partConnector.subPartTransform.invert());
+        Transform targetTransform = mergeTransform(partConnector.offsetFromMassCenter.invert());
         Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
         part.rootSubPart.body.setPhysicsTransform(targetTransform);
         //相应调整部件内子零件的位置姿态
@@ -279,7 +334,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
 
     public Transform mergeTransform(Transform transform) {
         Transform result = subPart.body.getTransform(null);
-        MyMath.combine(this.subPartTransform, result, result);
+        MyMath.combine(this.offsetFromMassCenter, result, result);
         return MyMath.combine(transform, result, result);
     }
 
@@ -342,7 +397,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
     }
 
-    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    protected void defineSyncedData(SynchedEntityData.Builder builder) {
     }
 
     protected void syncToClient() {
@@ -353,6 +408,29 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                 PacketDistributor.sendToPlayersInDimension((ServerLevel) getSubPart().level, new ConnectorSyncPayload(getSubPart().getId(), name, list));
             }
         }
+    }
+
+    public void loadData(CompoundTag data) {
+        //加载子系统耐久度
+        setIntegrity(data.getFloat("integrity"));
+    }
+
+    public CompoundTag saveData(CompoundTag data) {
+        //保存子系统耐久度
+        data.putFloat("integrity", getIntegrity());
+        return data;
+    }
+
+    public void setIntegrity(float integrity){
+        getSynchedData().set(DATA_INTEGRITY_ID, integrity);
+    }
+
+    public float getIntegrity(){
+        return getSynchedData().get(DATA_INTEGRITY_ID);
+    }
+
+    public float getBasicIntegrity(){
+        return attr.integrity();
     }
 
     @NotNull

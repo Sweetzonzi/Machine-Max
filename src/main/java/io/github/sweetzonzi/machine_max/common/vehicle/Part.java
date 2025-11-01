@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
@@ -13,7 +12,6 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
@@ -24,8 +22,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnecto
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
-import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
-import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
@@ -34,8 +30,6 @@ import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -44,12 +38,11 @@ import org.joml.Quaternionf;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-@Getter
 /**
- * 组装与UGC创作的最小单元
+ * <p>组装与UGC创作的最小单元</p>
  */
-public class Part implements ISignalReceiver {
+@Getter
+public class Part {
     //常规属性 General attributes
     public volatile VehicleCore vehicle;//所属的VehicleCore
     public String name;
@@ -57,16 +50,12 @@ public class Part implements ISignalReceiver {
     public final Level level;
     public final String variant;
     public final UUID uuid;
-    public volatile boolean destroyed = false;
     public volatile float sharedDurability;//仅在部件内共享耐久度启用时有效
     public volatile float integrity;
-    public final ConcurrentMap<Vector3f, Float> accumulatedImpact = new ConcurrentHashMap<>(8);
-    public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
-
-    public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final SubPart rootSubPart;
     public float totalMass;
     //模块化属性 Modular attributes
+    public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> allConnectors = HashMap.newHashMap(1);
 
@@ -104,7 +93,7 @@ public class Part implements ISignalReceiver {
 
 
     /**
-     * 从保存或网络传输的数据中重建部件
+     * <p>从保存或网络传输的数据中重建部件</p>
      *
      * @param data               保存或网络传输的数据
      * @param level              部件所在的世界
@@ -112,7 +101,7 @@ public class Part implements ISignalReceiver {
      */
     public Part(PartData data, Level level, boolean readAdditionalData) {
         this.name = data.name;
-        this.type = getPT(level, data.registryKey);
+        this.type = getPartType(level, data.registryKey);
         this.level = level;
         this.variant = data.variant;
         this.uuid = UUID.fromString(data.uuid);
@@ -148,6 +137,12 @@ public class Part implements ISignalReceiver {
             for (Map.Entry<String, SubPartData> entry : data.subParts.entrySet()) {
                 SubPart subPart = subParts.get(entry.getKey());
                 subPart.setDurability(entry.getValue().durability);
+                for (Map.Entry<String, CompoundTag> connectorData : entry.getValue().connectorData.entrySet()) {
+                    String connectorName = connectorData.getKey();
+                    CompoundTag connectorTagData = connectorData.getValue();
+                    AbstractConnector connector = subPart.connectors.get(connectorName);
+                    connector.loadData(connectorTagData);
+                }
                 for (Map.Entry<String, CompoundTag> subsystemData : entry.getValue().subsystemData.entrySet()) {
                     String subSystemName = subsystemData.getKey();
                     CompoundTag subsystemTagData = subsystemData.getValue();
@@ -159,7 +154,7 @@ public class Part implements ISignalReceiver {
         updateMass();//更新部件总质量
     }
 
-    public PartType getPT(Level level, ResourceLocation registryKey) {
+    public PartType getPartType(Level level, ResourceLocation registryKey) {
         PartType pt;
         if (level.isClientSide) pt = MMDynamicRes.PART_TYPES.get(registryKey);
         else pt = MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
@@ -169,67 +164,19 @@ public class Part implements ISignalReceiver {
     }
 
     public void onTick() {
-        //判定摧毁
-        if (!destroyed && sharedDurability <= 0) destroyed = true;
     }
 
     public void onPrePhysicsTick() {
-        if (!level.isClientSide) {
-            float impact = 0;
-            if (!accumulatedImpact.isEmpty()) {
-                Vector3f hitPoint = new Vector3f();
-                for (Map.Entry<Vector3f, Float> entry : accumulatedImpact.entrySet()) {
-                    impact += entry.getValue();
-                    hitPoint.add(entry.getKey().mult(entry.getValue()));
-                }
-                if (impact > 0) {
-                    hitPoint.divideLocal(impact);
-                    if (impact >= integrity) {
-                        //强冲击，立即击落部件
-                        int count = (int) Math.floor(impact / integrity);//计算击落数量
-                        if (integrity <= 0) count = externalConnectors.size();
-                        for (int i = 0; i < count; i++) {
-                            AbstractConnector connectorToBreak = null;
-                            float minDistance = Float.MAX_VALUE;
-                            //寻找最近的外部接口并设置为要断开的接口
-                            for (AbstractConnector connector : externalConnectors.values()) {
-                                if (connector.hasPart()) {
-                                    Vector3f connectorWorldPos = connector.subPart.getLocatorWorldPos(connector.attr.locatorName());
-                                    float distance = connectorWorldPos.subtract(hitPoint).lengthSquared();
-                                    if (distance < minDistance) connectorToBreak = connector;
-                                }
-                            }
-                            if (connectorToBreak != null) vehicle.detachConnector(connectorToBreak);
-                        }
-                    }
-                    //削减部件完整性
-                    integrity = Math.clamp(integrity - (destroyed ? 0.5f * impact : 0.1f * impact), 0, type.basicIntegrity);
-                }
-                accumulatedImpact.clear();
-            }
-            if (integrity <= 0 && destroyed) {
-                float finalImpact = (destroyed ? 0.5f * impact : 0.1f * impact);
-                level.submitImmediateTask(PPhase.ALL, () -> {
-                    vehicle.removePart(this);
-                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(rootSubPart.body).getTransform().getTranslation()), Vec3.ZERO, 64f,
-                            (float) ((2 - Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity) * (1f + 0.2f * (Math.random() - 0.5f))),
-                            0.2f + 0.8f * Math.min(type.basicIntegrity, finalImpact) / type.basicIntegrity);
-                    return null;
-                });
-            }
-        }
     }
 
     public void onPostPhysicsTick() {
     }
 
-
     /**
      * <p>获取部件所有零件持有的子系统</p>
      * <p>Gets all subsystems held by all parts</p>
      *
-     * @return
+     * @return 所有子系统的不重复集合 Set of all subsystems
      */
     public Set<AbstractSubsystem> getAllSubsystems() {
         HashSet<AbstractSubsystem> subsystems = new HashSet<>();
@@ -420,8 +367,4 @@ public class Part implements ISignalReceiver {
         }
     }
 
-    @Override
-    public ConcurrentMap<String, SignalChannel> getSignalInputChannels() {
-        return signalChannels;
-    }
 }
