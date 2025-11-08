@@ -1,14 +1,24 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.SparkCore;
+import cn.solarmoon.spark_core.sound.ISoundSpreader;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.MotorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
-public class MotorSubsystem extends AbstractSubsystem {
+public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader {
     public final MotorSubsystemAttr attr;
     public double rotSpeed;//当前转速(rad/s)
     public double throttleInput;//当前电门输入（-1~1）
@@ -22,6 +32,10 @@ public class MotorSubsystem extends AbstractSubsystem {
     public void onTick() {
         super.onTick();
         //TODO:根据转速和油门播放声音
+        Level level = getSubPart().getLevel();
+        if (level.isClientSide() && tickCount % 36 == 0 && throttleInput > 0.1){
+            playSpreadingSound(level, SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "test"), 64f), SoundSource.PLAYERS, 2, 2);
+        }
     }
 
     @Override
@@ -112,4 +126,35 @@ public class MotorSubsystem extends AbstractSubsystem {
         return result;
     }
 
+    /**
+     * 获取声源的实时位置
+     *
+     * <p>此方法在每个游戏tick都会被调用，用于更新声音波面的发射源位置。
+     * 返回的位置将作为声音传播的起点，声音会从此位置以音速向外传播。</p>
+     *
+     * <p>实现注意事项：</p>
+     * <ul>
+     *   <li>应返回当前帧声源在世界中的精确位置</li>
+     *   <li>位置变化应平滑，避免剧烈跳跃</li>
+     *   <li>对于移动声源，建议返回质心或主要发声部位的位置</li>
+     * </ul>
+     *
+     * @param uuid  声源的UUID
+     * @param event 当前播放的声音事件
+     * @return 声源在当前游戏刻的三维世界坐标，单位：方块
+     */
+    @Override
+    public @NotNull Vec3 getPosition(UUID uuid, SoundEvent event) {
+        return SparkMathKt.toVec3(getSubPart().getPosition());
+    }
+
+    @Override
+    public float getVolume(UUID uuid, SoundEvent event) {
+        return (float) Math.abs(throttleInput);
+    }
+
+    //    @Override
+//    public float getPitch(UUID uuid, SoundEvent event) {
+//        return (float) Math.clamp(this.rotSpeed / (float) Math.PI * 0.5f + 0.5f, 0.5f, 2f);
+//    }
 }

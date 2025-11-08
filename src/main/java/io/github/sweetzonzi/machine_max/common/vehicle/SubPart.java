@@ -816,8 +816,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             if (!level.isClientSide) {
                 level.submitImmediateTask(PPhase.ALL, () -> {
                     //播放命中音效
-                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO, 64f,
+                    SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"), 64f);
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
                             (float) ((2 - Math.min(7f, damage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
                             0.1f + 0.4f * Math.min(7f, damage) / 7f);
                     return null;
@@ -879,8 +879,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //发包同步部件状态
             syncToClient();
             //播放音效
-            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"));
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, soundPos, Vec3.ZERO, 64f,
+            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"), 64f);
+            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, soundPos, Vec3.ZERO,
                     (float) ((2 - 2 * Math.min(0.5f * getMaxDurability(), totalDamage) / getMaxDurability()) * (1f + 0.2f * (Math.random() - 0.5f))),
                     0.2f + 0.8f * 2 * Math.min(0.5f * getMaxDurability(), totalDamage) / getMaxDurability());
         }
@@ -898,8 +898,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
         }
         if (level.isClientSide) {
-            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"));
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getTransform().getTranslation()), Vec3.ZERO, 64f,
+            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"), 64f);
+            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getTransform().getTranslation()), Vec3.ZERO,
                     (float) (1f + 0.2f * (Math.random() - 0.5f)),
                     1f);
         }

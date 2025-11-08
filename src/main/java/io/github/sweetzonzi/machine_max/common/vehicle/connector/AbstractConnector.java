@@ -153,8 +153,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                         subPart.part.vehicle.detachConnector(this);
                         float finalImpact = (subPart.destroyed ? 0.5f * totalImpact : 0.1f * totalImpact);
                         subPart.level.submitImmediateTask(PPhase.ALL, () -> {
-                            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"));
-                            SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO, 64f,
+                            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"), 64f);
+                            SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO,
                                     (float) ((2 - Math.min(getBasicIntegrity(), finalImpact) / getBasicIntegrity()) * (1f + 0.2f * (Math.random() - 0.5f))),
                                     0.2f + 0.8f * Math.min(getBasicIntegrity(), finalImpact) / getBasicIntegrity());
                             return null;

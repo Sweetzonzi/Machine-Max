@@ -43,8 +43,8 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
             if (part != null) {//改变瞄准的部件的涂装
                 //TODO:粒子效果
                 part.switchTexture(part.textureIndex + 1);
-                SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.painted"));
-                SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 24f, (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
+                SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.painted"), 32f);
+                SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));
             } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
         } else {

@@ -87,8 +87,8 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
                             level.addFreshEntity(itemStackEntity);
                         }
                     }
-                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.removed"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 32f, (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
+                    SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.removed"), 32f);
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
                 }
                 player.resetAttackStrengthTicker();
                 crowbar.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);

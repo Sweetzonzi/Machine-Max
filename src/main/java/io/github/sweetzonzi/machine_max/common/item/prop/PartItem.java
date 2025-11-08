@@ -93,8 +93,8 @@ public class PartItem extends Item implements ICustomModelItem {
                             targetConnector.adjustTransform(part, part.externalConnectors.get(subpart_connector));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(subpart_connector), part);//尝试将新部件连接至接口
                             stack.consume(1, player);
-                            SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"));
-                            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 32f, (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
+                            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
+                            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
                             return InteractionResultHolder.consume(stack);
                         } else return InteractionResultHolder.pass(stack);
                     } else return InteractionResultHolder.pass(stack);
@@ -112,8 +112,8 @@ public class PartItem extends Item implements ICustomModelItem {
                     );
                     ObjectManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
                     stack.consume(1, player);
-                    SoundEvent sound = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"));
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), 32f, (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
+                    SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
                     return InteractionResultHolder.consume(stack);
                 }
             } catch (Exception e) {
