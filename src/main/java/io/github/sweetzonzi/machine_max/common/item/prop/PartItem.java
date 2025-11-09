@@ -220,7 +220,7 @@ public class PartItem extends Item implements ICustomModelItem {
 
     public static PartAssemblyCacheComponent getPartAssemblyCache(ItemStack stack, Level level) {
         if (!stack.has(MMDataComponents.getPART_ASSEMBLY_CACHE())) {
-            PartAssemblyCacheComponent cache = new PartAssemblyCacheComponent(getPartType(stack, level));
+            PartAssemblyCacheComponent cache = new PartAssemblyCacheComponent(stack.get(MMDataComponents.getPART_TYPE()));
             stack.set(MMDataComponents.getPART_ASSEMBLY_CACHE(), cache);
             return cache;
         } else return stack.get(MMDataComponents.getPART_ASSEMBLY_CACHE());

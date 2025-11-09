@@ -86,14 +86,13 @@ object MMDataComponents {
     }
 
     /**
-     * 用于暂存部件变体与部件对接口的迭代器
-     * 仅存在于服务端，仅应在服务端被使用
+     * 用于在不创建部件的情况下暂存部件变体与部件对接口的迭代器
      */
     @JvmStatic
     val PART_ASSEMBLY_CACHE = MachineMax.REGISTER.dataComponentType<PartAssemblyCacheComponent> {
         id = "part_assembly_cache"
         factory = dataComponentBuilder {
-            persistent(PartAssemblyCacheComponent.CODEC)
+            networkSynchronized(PartAssemblyCacheComponent.STREAM_CODEC)
             cacheEncoding()
         }
     }

@@ -4,26 +4,34 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.Iterator;
 import java.util.Objects;
 
 @Getter
 public class PartAssemblyCacheComponent {
+    private final ResourceLocation registryKey;
     @Setter
     private Iterator<String> variantIterator;
     @Setter
     private Iterator<Pair<String, String>> connectorIterator;
     private final PartType partType;
 
-    public static final Codec<PartAssemblyCacheComponent> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            PartType.CODEC.fieldOf("part_type").forGetter(PartAssemblyCacheComponent::getPartType)
-    ).apply(instance, PartAssemblyCacheComponent::new));
+    public static final StreamCodec<RegistryFriendlyByteBuf, PartAssemblyCacheComponent> STREAM_CODEC = StreamCodec.composite(
+            ResourceLocation.STREAM_CODEC, PartAssemblyCacheComponent::getRegistryKey,
+            PartAssemblyCacheComponent::new
+    );
 
-    public PartAssemblyCacheComponent(PartType partType) {
-        this.partType = partType;
+    public PartAssemblyCacheComponent(ResourceLocation registryKey) {
+        this.registryKey = registryKey;
+        this.partType = MMDynamicRes.PART_TYPES.get(registryKey);
         this.variantIterator = partType.getVariantIterator();
         this.connectorIterator = partType.getVariants().get(getNextVariant()).getConnectorIterator();
     }

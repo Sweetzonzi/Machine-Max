@@ -100,7 +100,7 @@
               "regular_control": ["car_controller"] //将控制信号转发给车辆控制系统
             },
             "view_outputs": {
-              "view_control": ["chassis_connection"]
+              "view_control": ["car_controller"]
             }
           },
           "copilot_seat": {

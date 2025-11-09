@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.MotorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
@@ -22,6 +23,8 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     public final MotorSubsystemAttr attr;
     public double rotSpeed;//当前转速(rad/s)
     public double throttleInput;//当前电门输入（-1~1）
+    private MotorSubsystemAttr.WorkingState currentState = null;//当前引擎工况及对应音效
+    private UUID currentSoundUUID = UUID.randomUUID();
 
     public MotorSubsystem(ISubsystemHost owner, String name, MotorSubsystemAttr attr) {
         super(owner, name, attr);
@@ -31,10 +34,20 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     @Override
     public void onTick() {
         super.onTick();
-        //TODO:根据转速和油门播放声音
+        //根据转速和油门播放声音
         Level level = getSubPart().getLevel();
-        if (level.isClientSide() && tickCount % 36 == 0 && throttleInput > 0.1){
-            playSpreadingSound(level, SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(SparkCore.MOD_ID, "test"), 64f), SoundSource.PLAYERS, 2, 2);
+        if (level.isClientSide() && tickCount % 10 == 0) {
+            if (this.isActive()) {
+                MotorSubsystemAttr.WorkingState bestState = attr.getBestMatchWorkingState(
+                        Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
+                if (bestState != null) {
+                    currentState = bestState;
+                    currentSoundUUID = transitionSound(level, currentSoundUUID, SoundEvent.createFixedRangeEvent(bestState.sound(), 64f), SoundSource.PLAYERS, 4, 5);
+                } else {
+                    MachineMax.LOGGER.debug("No working state found for rotSpeed: {}, throttleInput: {}", rotSpeed, throttleInput);
+                    currentState = null;
+                }
+            } else currentState = null;
         }
     }
 
@@ -150,11 +163,17 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
 
     @Override
     public float getVolume(UUID uuid, SoundEvent event) {
-        return (float) Math.abs(throttleInput);
+        if (currentState != null && Math.abs(rotSpeed) > 0.5) {
+            return (float) (0.7 + 0.3 * Math.abs(throttleInput));
+        } else return 0f;
     }
 
-    //    @Override
-//    public float getPitch(UUID uuid, SoundEvent event) {
-//        return (float) Math.clamp(this.rotSpeed / (float) Math.PI * 0.5f + 0.5f, 0.5f, 2f);
-//    }
+    @Override
+    public float getPitch(UUID uuid, SoundEvent event) {
+        if (currentState != null) {
+            double rpm = Math.abs(30 * rotSpeed / Math.PI);
+            double rpmRatio = rpm / currentState.rpm();
+            return (float) Math.clamp(rpmRatio, 0.25, 4);
+        } else return 1f;
+    }
 }
