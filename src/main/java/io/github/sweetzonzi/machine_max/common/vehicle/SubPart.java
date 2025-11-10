@@ -909,7 +909,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public void syncToClient() {
         super.syncToClient();
         if (!level.isClientSide()) {
-            SynchedEntityData synchedentitydata = this.getSynchedData();
+            SynchedEntityData synchedentitydata = this.getSyncedData();
             List<SynchedEntityData.DataValue<?>> list = synchedentitydata.packDirty();
             if (list != null) {
                 PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(getId(), list));

@@ -50,7 +50,7 @@ public record SubPartSyncPayload(
     public static void handler(final SubPartSyncPayload payload, final IPayloadContext context) {
         DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.id());
         if (object instanceof SubPart subPart) {
-            context.enqueueWork(() -> subPart.getSynchedData().assignValues(payload.syncData()));
+            context.enqueueWork(() -> subPart.getSyncedData().assignValues(payload.syncData()));
         } else
             MachineMax.LOGGER.error("维度{}收到不存在载具的同步数据包: {}", context.player().level().dimension().location(), payload.id);
     }

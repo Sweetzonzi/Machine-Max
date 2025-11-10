@@ -43,7 +43,7 @@ public class MotorSubsystemAttr extends AbstractSubsystemAttr {
             RPM_OUTPUT_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of()).forGetter(MotorSubsystemAttr::getRpmOutputTargets),
             Codec.FLOAT.optionalFieldOf("generator_efficiency", 0.85f).forGetter(MotorSubsystemAttr::getGeneratorEfficiency)
     ).apply(instance, MotorSubsystemAttr::new));
-    public static final float baseRPM = 25.0f;
+    public static final float baseRPM = 400.0f;
     public static final int LOAD_STATE_COUNT = 5;
     public final ArrayList<ArrayList<WorkingState>> workingStates = new ArrayList<>();//工况-音效列表，外层转速，内层负载，对应音效文件名
 
@@ -99,7 +99,8 @@ public class MotorSubsystemAttr extends AbstractSubsystemAttr {
                 MachineMax.MOD_ID,
                 "subsystem/motor/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(load));
         MachineMax.LOGGER.debug("Creating motor sound: {}", id);
-        MotorSoundSynthesizer.synthesizeBrushlessMotor(3f, rpm, load).register(id);
+        MotorSoundSynthesizer.synthesizeBrushlessMotor(3f, rpm, load,
+                new MotorSoundSynthesizer.MotorConfig(6, 8000, 20000, 1200)).register(id);
         MachineMax.LOGGER.debug("Motor sound created: {}", id);
         return id;
     }

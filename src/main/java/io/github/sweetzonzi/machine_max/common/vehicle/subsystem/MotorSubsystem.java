@@ -25,6 +25,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     public double throttleInput;//当前电门输入（-1~1）
     private MotorSubsystemAttr.WorkingState currentState = null;//当前引擎工况及对应音效
     private UUID currentSoundUUID = UUID.randomUUID();
+    private int sinceLastSoundUpdate = 0;
 
     public MotorSubsystem(ISubsystemHost owner, String name, MotorSubsystemAttr attr) {
         super(owner, name, attr);
@@ -36,19 +37,21 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         super.onTick();
         //根据转速和油门播放声音
         Level level = getSubPart().getLevel();
-        if (level.isClientSide() && tickCount % 10 == 0) {
-            if (this.isActive()) {
-                MotorSubsystemAttr.WorkingState bestState = attr.getBestMatchWorkingState(
-                        Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
-                if (bestState != null) {
+        if (level.isClientSide() && this.isActive()) {
+            sinceLastSoundUpdate++;
+            MotorSubsystemAttr.WorkingState bestState = attr.getBestMatchWorkingState(
+                    Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
+            if (bestState != null) {
+                if(bestState != currentState || sinceLastSoundUpdate > 30) {
                     currentState = bestState;
-                    currentSoundUUID = transitionSound(level, currentSoundUUID, SoundEvent.createFixedRangeEvent(bestState.sound(), 64f), SoundSource.PLAYERS, 4, 5);
-                } else {
-                    MachineMax.LOGGER.debug("No working state found for rotSpeed: {}, throttleInput: {}", rotSpeed, throttleInput);
-                    currentState = null;
+                    sinceLastSoundUpdate = 0;
+                    currentSoundUUID = transitionSound(level, currentSoundUUID, SoundEvent.createFixedRangeEvent(bestState.sound(), 64f), SoundSource.PLAYERS, 10, 10);
                 }
-            } else currentState = null;
-        }
+            } else {
+                MachineMax.LOGGER.debug("No working state found for rotSpeed: {}, throttleInput: {}", rotSpeed, throttleInput);
+                currentState = null;
+            }
+        } else currentState = null;
     }
 
     @Override
@@ -163,15 +166,17 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
 
     @Override
     public float getVolume(UUID uuid, SoundEvent event) {
-        if (currentState != null && Math.abs(rotSpeed) > 0.5) {
-            return (float) (0.7 + 0.3 * Math.abs(throttleInput));
+        if (currentState != null) {
+            if (Math.abs(30 * rotSpeed / Math.PI) > MotorSubsystemAttr.baseRPM)
+                return (float) (0.7 + 0.3 * Math.abs(throttleInput));
+            else return (float) (Math.abs(30 * rotSpeed / Math.PI) / MotorSubsystemAttr.baseRPM);
         } else return 0f;
     }
 
     @Override
     public float getPitch(UUID uuid, SoundEvent event) {
         if (currentState != null) {
-            double rpm = Math.abs(30 * rotSpeed / Math.PI);
+            double rpm = Math.max(Math.abs(30 * rotSpeed / Math.PI), 0.5 * MotorSubsystemAttr.baseRPM);
             double rpmRatio = rpm / currentState.rpm();
             return (float) Math.clamp(rpmRatio, 0.25, 4);
         } else return 1f;

@@ -18,6 +18,9 @@ import net.minecraft.network.syncher.SyncedDataHolder;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -48,7 +51,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     protected static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.FLOAT);
     public volatile boolean destroyed = false;
     protected final ConcurrentLinkedQueue<Pair<Float, PartDamageData>> accumulatedDamage = new ConcurrentLinkedQueue<>();
-    protected final SynchedEntityData synchedData;
+    protected final SynchedEntityData syncedData;
     //运行中
     public int tickCount = 0;
     public int physicsTickCount = 0;
@@ -63,7 +66,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         syncheddata$builder.define(DATA_ANG_VEL_ID, new org.joml.Vector3f());
         syncheddata$builder.define(DATA_DURABILITY_ID, 20.0F);
         this.defineSyncedData(syncheddata$builder);
-        this.synchedData = syncheddata$builder.build();
+        this.syncedData = syncheddata$builder.build();
     }
 
     public void preTick() {
@@ -194,10 +197,10 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         if (key.equals(DATA_DURABILITY_ID)) {
             hurtTime = hurtDuration;
         } else if (key.equals(DATA_VEL_ID)) {
-            Vector3f linearVelocity = PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_VEL_ID));
+            Vector3f linearVelocity = PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_VEL_ID));
             this.setLinearVelocity(linearVelocity);//应用到刚体(若有)
         } else if (key.equals(DATA_ANG_VEL_ID)) {
-            Vector3f angularVelocity = PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_ANG_VEL_ID));
+            Vector3f angularVelocity = PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_ANG_VEL_ID));
             this.setAngularVelocity(angularVelocity);//应用到刚体(若有)
         }
     }
@@ -205,35 +208,35 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     protected abstract void defineSyncedData(SynchedEntityData.Builder builder);
 
     public Vector3f getPosition() {
-        return PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_POS_ID));
+        return PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_POS_ID));
     }
 
     public Quaternion getRotation() {
-        return SparkMathKt.toBQuaternion(getSynchedData().get(DATA_ROT_ID));
+        return SparkMathKt.toBQuaternion(getSyncedData().get(DATA_ROT_ID));
     }
 
     public Vector3f getLinearVelocity() {
-        return PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_VEL_ID));
+        return PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_VEL_ID));
     }
 
     public Vector3f getAngularVelocity() {
-        return PhysicsHelperKt.toBVector3f(getSynchedData().get(DATA_ANG_VEL_ID));
+        return PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_ANG_VEL_ID));
     }
 
     public void setPosition(Vector3f position) {
-        getSynchedData().set(DATA_POS_ID, SparkMathKt.toVector3f(position));
+        getSyncedData().set(DATA_POS_ID, SparkMathKt.toVector3f(position));
     }
 
     public void setRotation(Quaternion rotation) {
-        getSynchedData().set(DATA_ROT_ID, SparkMathKt.toQuaternionf(rotation));
+        getSyncedData().set(DATA_ROT_ID, SparkMathKt.toQuaternionf(rotation));
     }
 
     public void setLinearVelocity(Vector3f linearVelocity) {
-        getSynchedData().set(DATA_VEL_ID, SparkMathKt.toVector3f(linearVelocity));
+        getSyncedData().set(DATA_VEL_ID, SparkMathKt.toVector3f(linearVelocity));
     }
 
     public void setAngularVelocity(Vector3f angularVelocity) {
-        getSynchedData().set(DATA_ANG_VEL_ID, SparkMathKt.toVector3f(angularVelocity));
+        getSyncedData().set(DATA_ANG_VEL_ID, SparkMathKt.toVector3f(angularVelocity));
     }
 
     public Vector3f getLinearVelocityLocal() {
@@ -258,11 +261,11 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     }
 
     public float getDurability() {
-        return this.synchedData.get(DATA_DURABILITY_ID);
+        return this.syncedData.get(DATA_DURABILITY_ID);
     }
 
     public void setDurability(float durability) {
-        this.synchedData.set(DATA_DURABILITY_ID, Mth.clamp(durability, 0.0F, this.getMaxDurability()));
+        this.syncedData.set(DATA_DURABILITY_ID, Mth.clamp(durability, 0.0F, this.getMaxDurability()));
     }
 
     abstract public float getMaxDurability();
