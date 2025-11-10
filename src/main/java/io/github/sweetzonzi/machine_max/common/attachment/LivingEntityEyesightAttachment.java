@@ -114,14 +114,6 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                 });
                 return null;
             });
-            if (entity instanceof Player player && player.isLocalPlayer()) {
-                InteractBox interactBox = eyesight.getAccurateInteractBox();
-                if (interactBox == null) interactBox = eyesight.getFastInteractBox();
-                if (interactBox != null) {
-                    player.displayClientMessage(Component.translatable("message.machine_max.watch_interact_box_info", KeyBinding.generalInteractKey.getTranslatedKeyMessage())
-                            .append(Component.translatable(interactBox.name)), true);
-                }
-            }
         }
     }
 

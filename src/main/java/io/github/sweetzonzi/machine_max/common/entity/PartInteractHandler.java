@@ -1,12 +1,15 @@
 package io.github.sweetzonzi.machine_max.common.entity;
 
+import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityMountEvent;
 
 import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
@@ -30,5 +33,10 @@ public class PartInteractHandler {
                 player.removeData(MMAttachments.getENTITY_EYESIGHT());
             }
         }
+    }
+
+    @SubscribeEvent
+    private static void enterVehicle(EntityMountEvent event){
+
     }
 }

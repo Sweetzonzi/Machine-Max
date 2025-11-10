@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.gui;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.gui.hud.CustomHud;
+import io.github.sweetzonzi.machine_max.client.gui.hud.InteractHud;
 import io.github.sweetzonzi.machine_max.client.gui.screen.FabricatingScreen;
 import io.github.sweetzonzi.machine_max.client.gui.screen.ItemStorageSubsystemScreen;
 import io.github.sweetzonzi.machine_max.client.gui.screen.VehicleNamingScreen;
@@ -21,6 +22,7 @@ public class MMGuis {
     @SubscribeEvent
     public static void registerHud(RegisterGuiLayersEvent event){
         event.registerAboveAll(id("custom_hud"), new CustomHud());
+        event.registerAboveAll(id("interact_hud"), new InteractHud());
     }
 
     private static ResourceLocation id(String path){
