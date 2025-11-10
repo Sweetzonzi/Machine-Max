@@ -21,6 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -131,7 +132,7 @@ public class ObjectManager {
         return i;
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onPreTick(LevelTickEvent.Pre event) {
         levelVehicles.computeIfAbsent(event.getLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(vehicleCore -> {
             vehicleCore.preTick();
@@ -142,7 +143,7 @@ public class ObjectManager {
         });
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onPostTick(LevelTickEvent.Post event) {
         levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).forEach((id, object) -> {
             object.postTick();

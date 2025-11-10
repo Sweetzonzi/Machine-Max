@@ -29,6 +29,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -66,7 +67,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
         this.trigger.setCollideWithGroups(CollisionGroups.TRIGGER);
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onTick(EntityTickEvent.Post event) {
         if (event.getEntity() instanceof LivingEntity entity && entity.hasData(MMAttachments.getENTITY_EYESIGHT().get())) {
             Level level = entity.level();

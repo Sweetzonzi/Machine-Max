@@ -74,8 +74,8 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         tickCount++;
         if (hurtTime > 0) hurtTime--;
         if (!level.isClientSide()) {
-            //处理各线程造成的伤害
-            handleAccumulatedDamage();
+            handleAccumulatedDamage(); // 处理各线程造成的伤害
+            syncToClient(); // 同步数据至客户端
         } else {
             //客户端处理同步位姿数据
             clientSyncPose();

@@ -1,9 +1,11 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.interact;
 
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -13,6 +15,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.InteractBoxAttr;
 import lombok.Getter;
+import net.minecraft.network.syncher.EntityDataAccessor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -41,20 +44,16 @@ public class InteractBoxes extends ConcurrentHashMap<String, InteractBox> implem
         this.body.setKinematic(true); // 非常诡异，不设置运动学模式会导致射线检测等判定不上
         this.body.setCollisionGroup(CollisionGroups.TRIGGER);
         this.body.setCollideWithGroups(CollisionGroups.NONE);
-        PhysicsBodyExtensionKt.onPostPhysicsTick(this.body, event -> {
-            this.postPhysicsTick();
-            return null;
-        });
         PhysicsBodyExtensionKt.addPhysicsBody(subPart.getLevel(), this.body);
+        this.body.shouldShowDebugBoxWhenNonColldeWith = true;
     }
 
-    public void postPhysicsTick() {
-            Vector3f position = subPart.body.getPhysicsLocation(null);
-            Vector3f speed = subPart.body.getLinearVelocity(null);
-            Quaternion rotation = subPart.body.getPhysicsRotation(null);
-            this.body.setPhysicsLocation(position);
-            this.body.setLinearVelocity(speed);
-            this.body.setPhysicsRotation(rotation);
+    /**
+     * 更新交互判定区的位置和姿态，使其与零件统一
+     */
+    public void updatePose(){
+        this.body.setPhysicsLocation(this.subPart.getPosition());//应用到刚体
+        this.body.setPhysicsRotation(this.subPart.getRotation());
     }
 
     public InteractBox getInteractBox(long childShapeId) {

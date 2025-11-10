@@ -34,9 +34,4 @@ public class PartInteractHandler {
             }
         }
     }
-
-    @SubscribeEvent
-    private static void enterVehicle(EntityMountEvent event){
-
-    }
 }

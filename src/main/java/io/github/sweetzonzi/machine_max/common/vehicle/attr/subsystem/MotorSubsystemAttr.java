@@ -35,7 +35,7 @@ public class MotorSubsystemAttr extends AbstractSubsystemAttr {
             Codec.STRING.optionalFieldOf("particle_locator", "").forGetter(MotorSubsystemAttr::getParticleLocator),
             Codec.FLOAT.fieldOf("max_power").forGetter(MotorSubsystemAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("max_torque", 100f).forGetter(MotorSubsystemAttr::getMaxTorque),
-            Codec.FLOAT.optionalFieldOf("max_rpm", 20000f).forGetter(MotorSubsystemAttr::getMaxRPM),
+            Codec.FLOAT.optionalFieldOf("max_rpm", 10000f).forGetter(MotorSubsystemAttr::getMaxRPM),
             Codec.DOUBLE.optionalFieldOf("inertia", 100.0).forGetter(MotorSubsystemAttr::getInertia),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.003, 0.00002)).forGetter(MotorSubsystemAttr::getDampingFactors),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("motor_control", "move_control")).forGetter(MotorSubsystemAttr::getThrottleInputKeys),
@@ -100,7 +100,7 @@ public class MotorSubsystemAttr extends AbstractSubsystemAttr {
                 "subsystem/motor/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(load));
         MachineMax.LOGGER.debug("Creating motor sound: {}", id);
         MotorSoundSynthesizer.synthesizeBrushlessMotor(3f, rpm, load,
-                new MotorSoundSynthesizer.MotorConfig(6, 8000, 20000, 1200)).register(id);
+                new MotorSoundSynthesizer.MotorConfig(6, 8000, this.maxRPM, 1200)).register(id);
         MachineMax.LOGGER.debug("Motor sound created: {}", id);
         return id;
     }

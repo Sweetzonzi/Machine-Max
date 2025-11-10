@@ -1048,8 +1048,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     @Override
-    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
-        super.onSyncedDataUpdated(dataAccessor);
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (interactBoxes != null) {
+            interactBoxes.updatePose();//同步刚体与交互判定区位置
+        }
     }
 
     @Override

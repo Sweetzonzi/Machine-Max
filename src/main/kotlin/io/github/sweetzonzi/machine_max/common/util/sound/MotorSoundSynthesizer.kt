@@ -106,7 +106,7 @@ object MotorSoundSynthesizer {
                 )
             } else {
                 // 低阶次使用正弦波
-                SoundSynthesizers.sineWave(
+                SoundSynthesizers.squareWave(
                     duration = duration,
                     frequency = harmonicFreq,
                     amplitude = amplitude,
@@ -257,9 +257,9 @@ object MotorSoundSynthesizer {
         config: MotorConfig
     ): Double {
         // 负载越大，电磁噪音越强
-        val loadFactor = 0.1 + load * 0.9
+        val loadFactor = 0.4 + load * 0.6
         // 转速越高，噪音振幅越大，但在极高转速时可能饱和
-        val speedFactor = Math.sqrt(rpm / config.maxRPM).coerceIn(0.3, 1.0)
+        val speedFactor = Math.pow((rpm / config.maxRPM), 3.0).coerceIn(0.01, 1.0)
 
         return baseAmplitude * loadFactor * speedFactor
     }
