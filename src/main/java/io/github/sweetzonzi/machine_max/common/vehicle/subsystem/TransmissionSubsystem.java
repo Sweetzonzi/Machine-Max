@@ -129,7 +129,7 @@ public class TransmissionSubsystem extends AbstractSubsystem {
         //计算并分配输出功率 Calculate and distribute output power
         if (powerReceivers.isEmpty() || !isActive()) {
             for (ISignalReceiver receiver : powerReceivers.keySet()) {
-                sendCallbackToListener("power", receiver, new EmptySignal());
+                sendCallbackToListener("power", receiver, EmptySignal.INSTANCE);
             }
             return; //无输出目标则不发出功率信号
         }
@@ -203,7 +203,7 @@ public class TransmissionSubsystem extends AbstractSubsystem {
             if (count > 0) speed /= count;
             sendCallbackToAllListeners("speed_feedback", speed);
         } else
-            sendCallbackToAllListeners("speed_feedback", new EmptySignal());
+            sendCallbackToAllListeners("speed_feedback", EmptySignal.INSTANCE);
     }
 
     @Override

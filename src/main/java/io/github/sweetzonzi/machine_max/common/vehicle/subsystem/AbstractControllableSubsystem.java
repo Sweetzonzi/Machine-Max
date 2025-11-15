@@ -77,7 +77,7 @@ abstract public class AbstractControllableSubsystem extends AbstractSubsystem {
     public void setViewInputSignal() {
         if (!viewSignalTargets.isEmpty()) {
             for (String signalKey : viewSignalTargets.keySet()) {
-                this.sendSignalToAllTargets(signalKey, new EmptySignal());
+                this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
             }
             this.getOwner().getSubPart().part.vehicle.activate();
         }

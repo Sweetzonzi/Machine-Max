@@ -40,9 +40,10 @@ class PartModule : SparkPackModule {
             try{
                 val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
                 val partType = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-                MMDynamicRes.PART_TYPES[id] = partType
-                val partType2 = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-                MMDynamicRes.SERVER_PART_TYPES[id] = partType2
+                if (isClientSide)
+                    MMDynamicRes.PART_TYPES[id] = partType
+                else
+                    MMDynamicRes.SERVER_PART_TYPES[id] = partType
             } catch (e: Exception) {
                 MMDynamicRes.exceptions.add(e)
                 MMDynamicRes.errorFiles.add("[Part]" + id)

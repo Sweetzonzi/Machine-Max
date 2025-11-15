@@ -117,13 +117,13 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
         for (String signalKey : attr.engineControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(), false);
+            sendSignalToAllTargetsWithCallback(signalKey, EmptySignal.INSTANCE, false);
         }
         for (String signalKey : attr.wheelControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(), false);
+            sendSignalToAllTargetsWithCallback(signalKey, EmptySignal.INSTANCE, false);
         }
         for (String signalKey : attr.gearboxControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalKey, new EmptySignal(), false);
+            sendSignalToAllTargetsWithCallback(signalKey, EmptySignal.INSTANCE, false);
         }
     }
 
@@ -360,7 +360,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             }
         } else {//无输入信号 No input signal
             for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
-                sendCallbackToAllListeners(entry.getValue(), new EmptySignal());
+                sendCallbackToAllListeners(entry.getValue(), EmptySignal.INSTANCE);
             }
             for (ISignalReceiver gearbox : gearboxes.keySet()) {
                 if (overrideCountDown.get(gearbox) <= 0) {

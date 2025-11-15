@@ -42,14 +42,14 @@ public interface ISignalSender {
         if (this instanceof SignalPort) return;//信号端口只应转发信号，不应对其输出信号进行操作
         for (Map.Entry<String, Map<String, ISignalReceiver>> entry : getTargets().entrySet()) {
             entry.getValue().forEach((receiverName, signalReceiver) -> {
-                var emptySignal = new EmptySignal();
+                var emptySignal = EmptySignal.INSTANCE;
                 signalReceiver.getSignalInputChannels().computeIfAbsent(entry.getKey(), k -> new SignalChannel()).put(this, emptySignal);
                 signalReceiver.onSignalUpdated(entry.getKey(), this);
             });
         }
         for (Map.Entry<String, Set<ISignalReceiver>> entry : getCallbackTargets().entrySet()) {
             entry.getValue().forEach((signalReceiver) -> {
-                var emptySignal = new EmptySignal();
+                var emptySignal = EmptySignal.INSTANCE;
                 signalReceiver.getSignalInputChannels().computeIfAbsent(entry.getKey(), k -> new SignalChannel()).put(this, emptySignal);
                 signalReceiver.onSignalUpdated(entry.getKey(), this);
             });

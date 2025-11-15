@@ -142,7 +142,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
                     moveInputSignal.getMoveInput()[2] / 100f,
                     moveInputSignal.getMoveInput()[4]
             );
-        else return new EmptySignal();//若为其他任何类型的信号则不对速度进行控制
+        else return EmptySignal.INSTANCE;//若为其他任何类型的信号则不对速度进行控制
     }
 
     private Vector3f getRelativeAngle() {

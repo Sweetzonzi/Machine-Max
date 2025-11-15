@@ -48,6 +48,8 @@ abstract public class AbstractSubsystemAttr {
     protected AbstractSubsystemStaticAttr getStaticAttr() {
         var staticAttr = MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.get(getModelName());
         if (staticAttr == null)
+            staticAttr = MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS.get(getModelName());
+        if (staticAttr == null)
             throw new NullPointerException("Subsystem model " + getModelName() + "(" + getType() + ") not found");
         if (staticAttr.getType() != getType())
             throw new ClassCastException("Subsystem model " + getModelName() + " type mismatches with subsystem type " + getType());
@@ -57,7 +59,7 @@ abstract public class AbstractSubsystemAttr {
     public float getBasicDurability() {
         var staticAttr = getStaticAttr();
         if (staticAttr == null) {
-            return -1.0f;
+            return 1.0f;
         } else return staticAttr.basicDurability;
     }
 }

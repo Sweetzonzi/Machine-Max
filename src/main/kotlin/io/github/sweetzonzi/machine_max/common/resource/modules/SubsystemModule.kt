@@ -17,7 +17,11 @@ import java.nio.charset.StandardCharsets
 class SubsystemModule : SparkPackModule {
     override val id: String = "subsystems"
     override fun onStart(isClientSide: Boolean) {
-        MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.clear()
+        if (isClientSide) {
+            MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.clear()
+        } else {
+            MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS.clear()
+        }
     }
 
     override fun read(
@@ -35,10 +39,13 @@ class SubsystemModule : SparkPackModule {
             }
             val path = fileName.substringBeforeLast(".")
             val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
-            try{
+            try {
                 val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
                 val staticSubsystemAttr = AbstractSubsystemStaticAttr.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-                MMDynamicRes.STATIC_SUBSYSTEM_ATTRS[id] = staticSubsystemAttr
+                if (isClientSide)
+                    MMDynamicRes.STATIC_SUBSYSTEM_ATTRS[id] = staticSubsystemAttr
+                else
+                    MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS[id] = staticSubsystemAttr
             } catch (e: Exception) {
                 MMDynamicRes.exceptions.add(e)
                 MMDynamicRes.errorFiles.add("[Subsystem]" + id)
@@ -49,6 +56,9 @@ class SubsystemModule : SparkPackModule {
 
 
     override fun onFinish(isClientSide: Boolean) {
-        MachineMax.LOGGER.info("已加载${MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.size}种子系统型号")
+        if (isClientSide)
+            MachineMax.LOGGER.info("已加载${MMDynamicRes.STATIC_SUBSYSTEM_ATTRS.size}型子系统")
+        else
+            MachineMax.LOGGER.info("已加载${MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS.size}型子系统")
     }
 }

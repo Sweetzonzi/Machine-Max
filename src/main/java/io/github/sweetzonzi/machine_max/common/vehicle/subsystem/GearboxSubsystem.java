@@ -125,7 +125,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
 
     private void updateFeedback() {
         if (!clutched || remainingSwitchTime > 0.0f) {//空挡时或正在换挡时，不反馈速度信号
-            sendCallbackToAllListeners("speed_feedback", new EmptySignal());
+            sendCallbackToAllListeners("speed_feedback", EmptySignal.INSTANCE);
             return;
         }
         float speed;
@@ -138,7 +138,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
                     return;
                 }
             }
-            sendCallbackToAllListeners("speed_feedback", new EmptySignal());//没有收到反馈速度信号时，发送空信号
+            sendCallbackToAllListeners("speed_feedback", EmptySignal.INSTANCE);//没有收到反馈速度信号时，发送空信号
         }
     }
 

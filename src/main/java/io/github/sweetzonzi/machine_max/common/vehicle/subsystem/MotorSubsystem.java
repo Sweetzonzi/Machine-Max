@@ -70,7 +70,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         if (speedFeedback instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
             rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
-            sendSignalToAllTargets("power", new EmptySignal());//空挡不输出功率
+            sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else if (speedFeedback instanceof Float feedback) {
             //有转速反馈信号时，根据转速反馈信号控制引擎转速

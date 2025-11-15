@@ -72,7 +72,10 @@
           "engine": {
             "type": "machine_max:engine", //子系统类型
             "model": "machine_max:ae86_engine", //子系统型号，需要与子系统类型相匹配
-            "power_output": "gearbox"
+            "power_output": "gearbox", //功率输出目标，可填写任意本部件内其他子系统名称、部件对接口名称，或“part”，或“vehicle”
+            "speed_outputs": { //转速信号输出目标及信号名称，同上，但可以有多个
+              "engine_speed": ["part", "vehicle"]
+            }
           },
           "gearbox": {
             "type": "machine_max:gearbox", //变速箱子系统，改变收到的功率信号的扭矩和转速

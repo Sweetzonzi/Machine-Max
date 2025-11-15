@@ -44,11 +44,11 @@ public class EngineSubsystem extends AbstractSubsystem {
         updateThrottleInput();
         if (rotSpeed / BASE_ROT_SPEED < 1.05) throttleInput = Math.clamp(throttleInput, MIN_IDLE_THROTTLE, 1);
         else throttleInput = Math.clamp(throttleInput, 0, 1);
-
+        // 计算发动机输出扭矩
         double engineTorque = throttleInput * calculateMaxTorque(rotSpeed);//输出扭矩
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
-        Object speedFeedback = null;
+        Object speedFeedback = EmptySignal.INSTANCE;
         for (Map.Entry<ISignalSender, Object> entry : getSignalChannel("speed_feedback").entrySet()) {
             if (entry.getValue() instanceof EmptySignal || entry.getValue() instanceof Float) {
                 speedFeedback = entry.getValue();
@@ -60,7 +60,7 @@ public class EngineSubsystem extends AbstractSubsystem {
             rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
             rotSpeed = Math.max(0.95 * rotSpeed + 0.05 * BASE_ROT_SPEED, 0.1 * BASE_ROT_SPEED);
             if (!isActive()) rotSpeed = 0;
-            sendSignalToAllTargets("power", new EmptySignal());//空挡不输出功率
+            sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else if (speedFeedback instanceof Float feedback) {
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
