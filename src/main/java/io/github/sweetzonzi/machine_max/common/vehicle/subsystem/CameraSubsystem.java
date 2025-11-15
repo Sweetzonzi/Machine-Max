@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.CameraSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CameraSubsystemAttr;
 
 import java.util.List;
 import java.util.Map;

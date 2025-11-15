@@ -4,7 +4,7 @@ import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.CarControllerSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CarControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import lombok.Getter;
@@ -154,9 +154,9 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         avgEngineMaxTorqueSpeed = 0;
                         avgEngineMaxSpeed = 0;
                         for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
-                            avgEngineMinSpeed += ((EngineSubsystem) entry.getKey()).attr.baseRpm;
-                            avgEngineMaxTorqueSpeed += ((EngineSubsystem) entry.getKey()).attr.maxTorqueRpm;
-                            avgEngineMaxSpeed += ((EngineSubsystem) entry.getKey()).attr.maxRpm;
+                            avgEngineMinSpeed += ((EngineSubsystem) entry.getKey()).attr.staticAttribute.baseRpm;
+                            avgEngineMaxTorqueSpeed += ((EngineSubsystem) entry.getKey()).attr.staticAttribute.maxTorqueRpm;
+                            avgEngineMaxSpeed += ((EngineSubsystem) entry.getKey()).attr.staticAttribute.maxRpm;
                         }
                         engineCount = engines.size();
                         if (engineCount > 0) {
@@ -232,7 +232,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         byte[] moveInput = null;
         byte[] moveInputConflict = null;
         boolean hasMoveInput = false;
-        for (String inputKey : attr.controlInputKeys) {//遍历输入信号 Iterate over input signalChannel
+        for (String inputKey : attr.staticAttribute.controlInputKeys) {//遍历输入信号 Iterate over input signalChannel
             SignalChannel signalChannel = getSignalChannel(inputKey);
             for (Object signal : signalChannel.values()) {
                 if (signal instanceof MoveInputSignal moveInputSignal) {//找到移动输入信号 Find move input signal
@@ -271,7 +271,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     }
                     avgEngineSpeed /= engineCount;
                     //起步时自动松离合和手刹 Auto release hand brake when starting
-                    if (attr.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
+                    if (attr.staticAttribute.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                         handBrake = false;
                         overrideCountDown.put(this, 2f);
                     }
@@ -323,7 +323,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 avgEngineSpeed /= engineCount;
                 if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low
                     actualBrake = actualBrake * 0.9f + 1 * 0.1f;
-                    if (attr.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
+                    if (attr.staticAttribute.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                         handBrake = true;
                         overrideCountDown.put(this, 0.5f);
                     }
@@ -395,7 +395,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
      */
     private int autoGearShift(GearboxSubsystem gearbox, float engineSpeed, float threshold, byte direction) {
         int gear = gearbox.getCurrentGear();
-        if (attr.manualGearShift) return gear;//手动变速箱时不自动换挡 Manual gearbox shifting is not automatic
+        if (attr.staticAttribute.manualGearShift) return gear;//手动变速箱时不自动换挡 Manual gearbox shifting is not automatic
         double ratio = gearbox.gearRatios[gear];
         float index = (engineSpeed - avgEngineMaxTorqueSpeed) / Math.max(0.1f, avgEngineMaxSpeed - avgEngineMaxTorqueSpeed);
         float index2 = (engineSpeed - avgEngineMinSpeed) / Math.max(0.1f, avgEngineMaxTorqueSpeed - avgEngineMinSpeed);
@@ -434,7 +434,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             else result = gearbox.minNegativeGear;
         }
         if (result != gear)
-            overrideCountDown.put(gearbox, Math.max(0.2f, gearbox.attr.switchTime + 0.05f));//自动切换后一段时间内不自动切换 Cooldown after automatic gear shift
+            overrideCountDown.put(gearbox, Math.max(0.2f, gearbox.attr.staticAttribute.switchTime + 0.05f));//自动切换后一段时间内不自动切换 Cooldown after automatic gear shift
         return result;
     }
 
@@ -446,11 +446,11 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         if (steeringInput == 0) {
             return 0;
         } else {
-            float steeringRadius = attr.steeringRadius / steeringInput * 100f;//实际转向半径(米) Actual steering radius (m)
+            float steeringRadius = attr.staticAttribute.steeringRadius / steeringInput * 100f;//实际转向半径(米) Actual steering radius (m)
             if (speed > 15f) steeringRadius *= 1 + (speed - 15) / 15;//限制高速下的转弯半径确保安全 Limit the steering radius under high speed to ensure safety
-            double deltaRadius = pivot.x - attr.steeringCenter.x;
+            double deltaRadius = pivot.x - attr.staticAttribute.steeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
-            double deltaForward = pivot.z - attr.steeringCenter.z;
+            double deltaForward = pivot.z - attr.staticAttribute.steeringCenter.z;
             return (float) Math.atan(deltaForward / (steeringRadius + deltaRadius));
         }
     }

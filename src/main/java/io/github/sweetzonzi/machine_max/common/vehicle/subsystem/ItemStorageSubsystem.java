@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.ItemStorageSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.ItemStorageSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.menu.ItemStorageSubsystemMenu;
 import lombok.Getter;
 import net.minecraft.core.NonNullList;
@@ -34,7 +34,7 @@ public class ItemStorageSubsystem extends AbstractSubsystem implements MenuProvi
     public ItemStorageSubsystem(ISubsystemHost owner, String name, ItemStorageSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        container = new SimpleContainer(attr.rows * attr.columns);
+        container = new SimpleContainer(attr.staticAttribute.rows * attr.staticAttribute.columns);
     }
 
     @Override
@@ -57,8 +57,8 @@ public class ItemStorageSubsystem extends AbstractSubsystem implements MenuProvi
         if (entity instanceof ServerPlayer player && this.active) {
             player.openMenu(this, (buf) -> {
                 buf.writeInt(container.getContainerSize());
-                buf.writeInt(attr.rows);
-                buf.writeInt(attr.columns);
+                buf.writeInt(attr.staticAttribute.rows);
+                buf.writeInt(attr.staticAttribute.columns);
             });
         }
     }
@@ -93,7 +93,7 @@ public class ItemStorageSubsystem extends AbstractSubsystem implements MenuProvi
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
-        return new ItemStorageSubsystemMenu(containerId, playerInventory, this.container, attr.rows, attr.columns);
+        return new ItemStorageSubsystemMenu(containerId, playerInventory, this.container, attr.staticAttribute.rows, attr.staticAttribute.columns);
     }
 
     @Override

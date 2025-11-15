@@ -11,10 +11,11 @@ import net.neoforged.neoforge.common.NeoForge
 
 object MMPackModuleRegistries {
     fun reg(event: SparkPackageReaderRegisterEvent) {
+        event.register(SubsystemModule())//子系统型号
         event.register(PartModule())//自定义部件
+        event.register(BlueprintInfoModule())//自定义蓝图描述信息
         event.register(BlueprintModule())//自定义蓝图
         event.register(HudModule())//自定义HUD元素
-        event.register(BlueprintInfoModule())//自定义蓝图描述信息
         event.register(ColorModule())//自定义色板
     }
 

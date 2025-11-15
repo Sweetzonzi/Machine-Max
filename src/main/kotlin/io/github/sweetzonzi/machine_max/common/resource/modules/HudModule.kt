@@ -7,8 +7,8 @@ import com.mojang.serialization.JsonOps
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
-import net.neoforged.fml.loading.FMLEnvironment
 import java.nio.charset.StandardCharsets
 
 class HudModule : SparkPackModule {
@@ -35,9 +35,15 @@ class HudModule : SparkPackModule {
             }
             val path = fileName.substringBeforeLast(".")
             val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
-            val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-            val hud = AnimatableParams.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-            MMDynamicRes.CUSTOM_HUD[id] = hud
+            try {
+                val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
+                val hud = AnimatableParams.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+                MMDynamicRes.CUSTOM_HUD[id] = hud
+            } catch (e: Exception) {
+                MMDynamicRes.exceptions.add(e)
+                MMDynamicRes.errorFiles.add("[HUD]" + id)
+                MMDynamicRes.errorMessages.add(Component.literal(e.message))
+            }
         }
     }
 

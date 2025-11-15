@@ -8,7 +8,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WheelDriverSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.WheelDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import jme3utilities.math.MyQuaternion;
@@ -30,12 +30,12 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
     public WheelDriverSubsystem(ISubsystemHost owner, String name, WheelDriverSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        MAX_SPEED = attr.rollingAxis.maxSpeed();
-        MAX_STEERING_SPEED = attr.steeringAxis.maxSpeed();
-        MAX_DRIVE_FORCE = attr.rollingAxis.maxForce();
-        MAX_BRAKE_FORCE = attr.rollingAxis.maxBrakeForce();
-        MAX_HAND_BRAKE_FORCE = attr.rollingAxis.maxHandBrakeForce();
-        MAX_STEERING_FORCE = attr.steeringAxis.maxForce();
+        MAX_SPEED = attr.staticAttribute.rollingAxis.maxSpeed();
+        MAX_STEERING_SPEED = attr.staticAttribute.steeringAxis.maxSpeed();
+        MAX_DRIVE_FORCE = attr.staticAttribute.rollingAxis.maxForce();
+        MAX_BRAKE_FORCE = attr.staticAttribute.rollingAxis.maxBrakeForce();
+        MAX_HAND_BRAKE_FORCE = attr.staticAttribute.rollingAxis.maxHandBrakeForce();
+        MAX_STEERING_FORCE = attr.staticAttribute.steeringAxis.maxForce();
         if (owner.getSubPart() != null &&
                 owner.getSubPart().connectors.get(this.attr.controlledConnector) instanceof SpecialConnector specialConnector) {
             this.connector = specialConnector;
@@ -120,9 +120,9 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
         if (this.connector != null && this.connector.joint instanceof New6Dof) {
             Vector3f relativeAngle = getRelativeAngle();
             Vector3f relativeAngularVel = getRelativeAngularVel();
-            for (String signalKey : attr.rollingAxis.speedSignalOutputs().keySet())//转动速度信号
+            for (String signalKey : attr.rollingSpeedOutputs.keySet())//转动速度信号
                 sendSignalToAllTargets(signalKey, relativeAngularVel.get(1));
-            for (String signalKey : attr.steeringAxis.positionSignalOutputs().keySet())//转向位置信号
+            for (String signalKey : attr.steeringAngleOutputs.keySet())//转向位置信号
                 sendSignalToAllTargets(signalKey, -relativeAngle.get(1));
             sendCallbackToAllListeners("speed_feedback", relativeAngularVel.get(0));//反馈转动速度信号
         }
@@ -131,7 +131,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
     private Signal<?> getControlInput() {
         SignalChannel controlChannels = new SignalChannel();
         //获取控制信号
-        for (String signalKey : attr.controlSignalKeys) {
+        for (String signalKey : attr.staticAttribute.controlSignalKeys) {
             controlChannels = getSignalChannel(signalKey);//获取目标速度信号(马达，仅控制速度)
             if (!controlChannels.isEmpty() && !(controlChannels.getFirstSignal() instanceof EmptySignal)) break;
         }
@@ -164,8 +164,8 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(4);
-        result.putAll(attr.rollingAxis.speedSignalOutputs());
-        result.putAll(attr.steeringAxis.positionSignalOutputs());
+        result.putAll(attr.rollingSpeedOutputs);
+        result.putAll(attr.steeringAngleOutputs);
         return result;
     }
 }

@@ -129,58 +129,63 @@ public class PartItem extends Item implements ICustomModelItem {
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int portId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (level.isClientSide() && isSelected) {
-            PartType partType = getPartType(stack, level);//获取物品保存的部件类型
-            PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
-            String variant = info.variant();//获取物品保存的部件变体
-            var subpart_connector = info.connector();//获取物品保存的部件接口
-            String connectorType = info.connectorType();//获取物品保存的部件接口类型
-            var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
-            AbstractConnector targetConnector = eyesight.getConnector();
-            MutableComponent message = Component.empty();
-            if (targetConnector != null) {
-                if (targetConnector.conditionCheck(partType, variant)) {
-                    if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {
-                        message.append("目标接口:" + targetConnector.name + "部件接口:" + subpart_connector);
-                        if (!variant.equals("default") && partType.variants.size() > 1)
-                            message.append(" 部件变体类型:" + variant);
-                        if (VisualEffectHelper.partToPlace != null) {
-                            VisualEffectHelper.partToPlace.setTransform(
-                                    targetConnector.mergeTransform(new Transform(
-                                            PhysicsHelperKt.toBVector3f(info.offset()),
-                                            SparkMathKt.toBQuaternion(info.rotation())
-                                    ).invert())
-                            );
+            try{
+                PartType partType = getPartType(stack, level);//获取物品保存的部件类型
+                PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
+                String variant = info.variant();//获取物品保存的部件变体
+                var subpart_connector = info.connector();//获取物品保存的部件接口
+                String connectorType = info.connectorType();//获取物品保存的部件接口类型
+                var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
+                AbstractConnector targetConnector = eyesight.getConnector();
+                MutableComponent message = Component.empty();
+                if (targetConnector != null) {
+                    if (targetConnector.conditionCheck(partType, variant)) {
+                        if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {
+                            message.append("目标接口:" + targetConnector.name + "部件接口:" + subpart_connector);
+                            if (!variant.equals("default") && partType.variants.size() > 1)
+                                message.append(" 部件变体类型:" + variant);
+                            if (VisualEffectHelper.partToPlace != null) {
+                                VisualEffectHelper.partToPlace.setTransform(
+                                        targetConnector.mergeTransform(new Transform(
+                                                PhysicsHelperKt.toBVector3f(info.offset()),
+                                                SparkMathKt.toBQuaternion(info.rotation())
+                                        ).invert())
+                                );
+                            }
+                        } else message.append("无法连接两个非AttachPoint接口");
+                    } else {
+                        for (String variantName : partType.variants.keySet()) {
+                            if (targetConnector.conditionCheck(partType, variantName)) {
+                                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
+                                return;
+                            }
                         }
-                    } else message.append("无法连接两个非AttachPoint接口");
-                } else {
-                    for (String variantName : partType.variants.keySet()) {
-                        if (targetConnector.conditionCheck(partType, variantName)) {
-                            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
-                            return;
-                        }
+                        message = Component.empty().append(" 连接口" + targetConnector.name + "不接受部件" + partType.name + "的" + variant + "变体");
                     }
-                    message = Component.empty().append(" 连接口" + targetConnector.name + "不接受部件" + partType.name + "的" + variant + "变体");
-                }
-            } else {
-                message.append("未选中可用的部件接口，右键将直接放置零件");
-                if (VisualEffectHelper.partToPlace != null)
-                    VisualEffectHelper.partToPlace.setTransform(
-                            entity instanceof LivingEntity livingEntity ?
-                                    new Transform(
-                                            PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                                                    entity.getEyePosition(),
-                                                    entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
-                                            Quaternion.IDENTITY
-                                    ) : new Transform(
-                                    PhysicsHelperKt.toBVector3f(entity.position()),
-                                    Quaternion.IDENTITY
-                            )
+                } else {
+                    message.append("未选中可用的部件接口，右键将直接放置零件");
+                    if (VisualEffectHelper.partToPlace != null)
+                        VisualEffectHelper.partToPlace.setTransform(
+                                entity instanceof LivingEntity livingEntity ?
+                                        new Transform(
+                                                PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                                        entity.getEyePosition(),
+                                                        entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
+                                                Quaternion.IDENTITY
+                                        ) : new Transform(
+                                        PhysicsHelperKt.toBVector3f(entity.position()),
+                                        Quaternion.IDENTITY
+                                )
 
-                    );
+                        );
+                }
+                if (entity instanceof Player player)
+                    player.displayClientMessage(message, true);
+            } catch (NullPointerException e) {
+                if(entity.tickCount % 100 == 0)
+                    MachineMax.LOGGER.error("Invalid data: {}", stack.getDisplayName(), e);
             }
-            if (entity instanceof Player player)
-                player.displayClientMessage(message, true);
         }
     }
 

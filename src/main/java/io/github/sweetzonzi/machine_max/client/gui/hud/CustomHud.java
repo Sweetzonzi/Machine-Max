@@ -38,24 +38,24 @@ public class CustomHud implements LayeredDraw.Layer {
             if (subsystem instanceof SeatSubsystem seat) {
                 if (view.isFirstPerson()) {
                     //添加缺少的HUD组件
-                    for (ResourceLocation path : seat.attr.views.firstPersonHud()) {
+                    for (ResourceLocation path : seat.attr.staticAttribute.views.firstPersonHud()) {
                         vehicleHud.computeIfAbsent(path, p -> new GuiAnimatable(MMDynamicRes.CUSTOM_HUD.get(p)));
                     }
                     //移除不匹配的HUD组件
                     for (Map.Entry<ResourceLocation, GuiAnimatable> entry : vehicleHud.entrySet()){
-                        if(!seat.attr.views.firstPersonHud().contains(entry.getKey())) {
+                        if(!seat.attr.staticAttribute.views.firstPersonHud().contains(entry.getKey())) {
                             vehicleHud.remove(entry.getKey());
                             entry.getValue().destroy();
                         }
                     }
                 } else {
                     //添加缺少的HUD组件
-                    for (ResourceLocation path : seat.attr.views.thirdPersonHud()){
+                    for (ResourceLocation path : seat.attr.staticAttribute.views.thirdPersonHud()){
                         vehicleHud.computeIfAbsent(path, p -> new GuiAnimatable(MMDynamicRes.CUSTOM_HUD.get(p)));
                     }
                     //移除不匹配的HUD组件
                     for (Map.Entry<ResourceLocation, GuiAnimatable> entry : vehicleHud.entrySet()){
-                        if(!seat.attr.views.thirdPersonHud().contains(entry.getKey())) {
+                        if(!seat.attr.staticAttribute.views.thirdPersonHud().contains(entry.getKey())) {
                             vehicleHud.remove(entry.getKey());
                             entry.getValue().destroy();
                         }

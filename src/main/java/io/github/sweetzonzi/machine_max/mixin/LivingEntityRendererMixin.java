@@ -37,7 +37,7 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
                     seatSubsystem.attr.locator, partialTicks).getRotation();
             poseStack.mulPose(SparkMathKt.toQuaternionf(actualRot));
 
-            Vector3f passengerScale = seatSubsystem.attr.passengerScale.toVector3f();
+            Vector3f passengerScale = seatSubsystem.attr.staticAttribute.passengerScale.toVector3f();
             poseStack.scale(passengerScale.x(), passengerScale.y(), passengerScale.z());
 
             poseStack.translate(0, -0.5f, 0);//复位枢轴点
@@ -59,7 +59,7 @@ public class LivingEntityRendererMixin<T extends LivingEntity> {
         if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seatSubsystem) {
             //根据座椅部件的设置，取消实体模型的渲染
             //According to the seat subsystem settings, cancel the rendering of the entity model
-            if (!seatSubsystem.attr.renderPassenger) ci.cancel();
+            if (!seatSubsystem.attr.staticAttribute.renderPassenger) ci.cancel();
         }
     }
 

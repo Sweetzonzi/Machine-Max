@@ -75,7 +75,7 @@ public class MMGuiManager {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player instanceof IEntityMixin passenger
                 && passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat
-                && !seat.attr.allowUseItems) {
+                && !seat.attr.staticAttribute.allowUseItems) {
             if (event.getName() == VanillaGuiLayers.HOTBAR) event.setCanceled(true);
         }
     }

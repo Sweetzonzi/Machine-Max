@@ -1,7 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.TransmissionSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.TransmissionSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.TransmissionSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import lombok.Getter;
 
@@ -9,7 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+//TODO:测试负传动比的情形
 @Getter
 public class TransmissionSubsystem extends AbstractSubsystem {
     public final TransmissionSubsystemAttr attr;
@@ -23,7 +24,7 @@ public class TransmissionSubsystem extends AbstractSubsystem {
     public TransmissionSubsystem(ISubsystemHost owner, String name, TransmissionSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        if (attr.diffLock == TransmissionSubsystemAttr.diffLockMode.TRUE) diffLock = true;
+        if (attr.staticAttribute.diffLock == TransmissionSubsystemStaticAttr.diffLockMode.TRUE) diffLock = true;
     }
 
     @Override
@@ -36,20 +37,20 @@ public class TransmissionSubsystem extends AbstractSubsystem {
         }
         if (!powerReceivers.isEmpty()) avgFeedBackSpeed /= powerReceivers.size();
         //差速锁控制 Differential Lock Control
-        if (attr.diffLock == TransmissionSubsystemAttr.diffLockMode.AUTO) {
+        if (attr.staticAttribute.diffLock == TransmissionSubsystemStaticAttr.diffLockMode.AUTO) {
             //视情况更新自动差速锁状态 Update differential lock status automatically
             diffLock = false;
             for (float speed : powerReceivers.values()) {
-                if (Math.abs((avgFeedBackSpeed + speed) / avgFeedBackSpeed) > attr.autoDiffLockThreshold / 100f) {
+                if (Math.abs((avgFeedBackSpeed + speed) / avgFeedBackSpeed) > attr.staticAttribute.autoDiffLockThreshold / 100f) {
                     diffLock = true;
                     break;
                 }
             }
-        } else if (attr.diffLock == TransmissionSubsystemAttr.diffLockMode.MANUAL) {
+        } else if (attr.staticAttribute.diffLock == TransmissionSubsystemStaticAttr.diffLockMode.MANUAL) {
             //根据信号进行的手动差速锁控制 Manually control the differential lock according to the input signals
             Boolean targetDiffLockStatus = null;
-            if (!attr.manualDiffLockInputChannels.isEmpty()) {
-                for (String diffLockChannelName : attr.manualDiffLockInputChannels) {
+            if (!attr.staticAttribute.manualDiffLockInputChannels.isEmpty()) {
+                for (String diffLockChannelName : attr.staticAttribute.manualDiffLockInputChannels) {
                     SignalChannel diffLockChannel = getSignalChannel(diffLockChannelName);
                     for (Object signalValue : diffLockChannel.values()) {
                         if (signalValue instanceof Boolean b) {
@@ -147,7 +148,7 @@ public class TransmissionSubsystem extends AbstractSubsystem {
                 } else {//与动力源旋转方向不同则额外分配功率
                     weight = -3f;
                 }
-                weight /= (float) Math.pow(Math.max(1f, Math.abs(speed) + 1f), attr.diffLockSensitivity);
+                weight /= (float) Math.pow(Math.max(1f, Math.abs(speed) + 1f), attr.staticAttribute.diffLockSensitivity);
                 powerReceiverWeights.put(receiver, weight);
                 totalWeight += Math.abs(weight);
             }

@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.external;
 
 import com.google.gson.JsonElement;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.AbstractSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
 import net.minecraft.network.chat.Component;
@@ -41,6 +42,7 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, PartType> PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     //TODO:按维度区分，避免不同服务端物理线程获取到相同的对象
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
+    public static ConcurrentMap<ResourceLocation, AbstractSubsystemStaticAttr> STATIC_SUBSYSTEM_ATTRS = new ConcurrentHashMap<>(); // 静态的子系统属性，所有子系统实例共享，表示单一型号如某型发动机
     public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
     public static ConcurrentMap<ResourceLocation, String> BLUEPRINT_INFO = new ConcurrentHashMap<>(); //蓝图对应的描述信息
     public static ConcurrentMap<ResourceLocation, AnimatableParams> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
@@ -179,16 +181,16 @@ public class MMDynamicRes {
         }
 
         public static void sendErrorToPlayer(Player player) {
-            for (int i = 0; i < errorFiles.size(); i++) {
-                String file = errorFiles.get(i);
+            for (String file : errorFiles) {
+                int i = errorFiles.indexOf(file);
                 MutableComponent message = errorMessages.get(i).withColor(Color.RED.getRGB());
                 player.sendSystemMessage(Component.translatable("error.machine_max.load", file).withColor(Color.WHITE.getRGB()).append(message));
             }
         }
 
         public static void sendErrorToConsole(MinecraftServer server) {
-            for (int i = 0; i < MMDynamicRes.errorFiles.size(); i++) {
-                String file = MMDynamicRes.errorFiles.get(i);
+            for (String file : errorFiles) {
+                int i = errorFiles.indexOf(file);
                 Component message = MMDynamicRes.errorMessages.get(i);
                 server.sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message).withColor(Color.red.getRGB()));
             }

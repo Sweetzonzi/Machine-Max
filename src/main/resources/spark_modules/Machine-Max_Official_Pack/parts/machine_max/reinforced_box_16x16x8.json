@@ -23,9 +23,8 @@
         },
         "subsystems": {//(可选)子系统配置
           "title.machine_max.subsystem.reinforced_box": {
-            "type": "machine_max:item_storage",
-            "rows": 1,
-            "columns": 9
+            "type": "machine_max:item_storage",//子系统类型
+            "model": "machine_max:box_16x16x8"//子系统型号，需要与子系统类型相匹配
           }
         },
         "mass": 30.0,//零件质量(kg)

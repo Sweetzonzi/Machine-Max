@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.EngineSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.EngineSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 
 import java.util.HashMap;
@@ -22,11 +22,11 @@ public class EngineSubsystem extends AbstractSubsystem {
         super(owner, name, attr);
         this.attr = attr;
         // 单位转换（RPM -> rad/s）
-        MAX_ROT_SPEED = attr.maxRpm * Math.PI / 30.0;
-        MAX_TORQUE_SPEED = attr.maxTorqueRpm * Math.PI / 30.0;
-        BASE_ROT_SPEED = attr.baseRpm * Math.PI / 30.0;
+        MAX_ROT_SPEED = attr.staticAttribute.maxRpm * Math.PI / 30.0;
+        MAX_TORQUE_SPEED = attr.staticAttribute.maxTorqueRpm * Math.PI / 30.0;
+        BASE_ROT_SPEED = attr.staticAttribute.baseRpm * Math.PI / 30.0;
         // 计算最大扭矩（基于最大功率点公式 P_max = T_max * ω）
-        MAX_TORQUE = attr.maxPower / MAX_TORQUE_SPEED;
+        MAX_TORQUE = attr.staticAttribute.maxPower / MAX_TORQUE_SPEED;
         rotSpeed = BASE_ROT_SPEED + 5;
         double minThrottle = 1.02 * calculateDampingTorque(BASE_ROT_SPEED) / calculateMaxTorque(BASE_ROT_SPEED);
         MIN_IDLE_THROTTLE = Math.min(minThrottle, 1f);
@@ -57,7 +57,7 @@ public class EngineSubsystem extends AbstractSubsystem {
         }
         if (speedFeedback instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
-            rotSpeed += netTorque / attr.inertia / 60f;
+            rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
             rotSpeed = Math.max(0.95 * rotSpeed + 0.05 * BASE_ROT_SPEED, 0.1 * BASE_ROT_SPEED);
             if (!isActive()) rotSpeed = 0;
             sendSignalToAllTargets("power", new EmptySignal());//空挡不输出功率
@@ -73,7 +73,7 @@ public class EngineSubsystem extends AbstractSubsystem {
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速信号
         } else {
             //没有转速反馈信号时，直接取用引擎转速
-            rotSpeed += netTorque / (7 * attr.inertia) / 60f;
+            rotSpeed += netTorque / (7 * attr.staticAttribute.inertia) / 60f;
             rotSpeed = Math.max(rotSpeed, 0.8 * BASE_ROT_SPEED);
             if (!isActive()) rotSpeed = 0;
             sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));
@@ -96,9 +96,9 @@ public class EngineSubsystem extends AbstractSubsystem {
             double k = 2f / 3f * MAX_TORQUE;
             result = MAX_TORQUE / 3f + (rotSpeed - BASE_ROT_SPEED) / MAX_TORQUE_SPEED * k;
         } else if (rotSpeed <= MAX_ROT_SPEED) {//全功率段
-            result = attr.maxPower / rotSpeed;
+            result = attr.staticAttribute.maxPower / rotSpeed;
         } else { //超速时动力大幅衰减
-            result = Math.pow(2.7, -2.5 * (rotSpeed - MAX_ROT_SPEED) / BASE_ROT_SPEED) * attr.maxPower / rotSpeed;
+            result = Math.pow(2.7, -2.5 * (rotSpeed - MAX_ROT_SPEED) / BASE_ROT_SPEED) * attr.staticAttribute.maxPower / rotSpeed;
         }
         result *= 0.3 + 0.7 * Math.sqrt(getDurability() / getMaxDurability());
         //TODO:扭矩输出根据转速和气缸数周期性变化
@@ -113,8 +113,8 @@ public class EngineSubsystem extends AbstractSubsystem {
      */
     private double calculateDampingTorque(double rotSpeed) {
         double result = 0;
-        for (int i = 0; i < attr.dampingFactors.size(); i++) {
-            result += attr.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i + 1);
+        for (int i = 0; i < attr.staticAttribute.dampingFactors.size(); i++) {
+            result += attr.staticAttribute.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i + 1);
         }
         return Math.signum(rotSpeed) * result;
     }
@@ -124,7 +124,7 @@ public class EngineSubsystem extends AbstractSubsystem {
      */
     private void updateThrottleInput() {
         double powerControlInput = -1;
-        for (String inputKey : attr.throttleInputKeys) {
+        for (String inputKey : attr.staticAttribute.throttleInputKeys) {
             SignalChannel signalChannel = getSignalChannel(inputKey);
             Object signal = signalChannel.getFirstSignal();
             if (signal instanceof Float) {

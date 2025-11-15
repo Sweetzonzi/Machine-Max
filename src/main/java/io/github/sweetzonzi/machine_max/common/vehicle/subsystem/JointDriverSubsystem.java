@@ -10,7 +10,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.MotorAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.JointDriverSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.JointDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import jme3utilities.math.MyQuaternion;
@@ -96,7 +96,7 @@ public class JointDriverSubsystem extends AbstractSubsystem{
             Vector3f relativeLinearVel = getRelativeLinearVel();
 //            for (int axis : attr.axisParams.keySet()) {
 //                if (axis <= 2) {
-//                    WheelRollingAxisAttr axisAttr = attr.axisParams.get(axis);
+//                    StaticWheelRollingAxisAttr axisAttr = attr.axisParams.get(axis);
 //                    //处理速度控制信号
 //                    if (speedControl[axis] == null) {
 //                        translationMotor.setMotorEnabled(axis, false);

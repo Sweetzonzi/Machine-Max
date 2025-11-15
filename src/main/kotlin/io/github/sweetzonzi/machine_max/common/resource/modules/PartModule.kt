@@ -8,7 +8,7 @@ import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.resources.ResourceLocation
-import net.neoforged.fml.loading.FMLEnvironment
+import net.minecraft.network.chat.Component
 import java.nio.charset.StandardCharsets
 
 class PartModule : SparkPackModule {
@@ -37,11 +37,17 @@ class PartModule : SparkPackModule {
             }
             val path = fileName.substringBeforeLast(".")
             val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
-            val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-            val partType = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-            MMDynamicRes.PART_TYPES[id] = partType
-            val partType2 = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-            MMDynamicRes.SERVER_PART_TYPES[id] = partType2
+            try{
+                val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
+                val partType = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+                MMDynamicRes.PART_TYPES[id] = partType
+                val partType2 = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+                MMDynamicRes.SERVER_PART_TYPES[id] = partType2
+            } catch (e: Exception) {
+                MMDynamicRes.exceptions.add(e)
+                MMDynamicRes.errorFiles.add("[Part]" + id)
+                MMDynamicRes.errorMessages.add(Component.literal(e.message))
+            }
         }
     }
 

@@ -1,12 +1,12 @@
 {
-  "name": "mini_ev_hull",//部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
-  "vehicle_durability_rate": 0.8,//(可选，默认0.8)载具耐久贡献系数，部件耐久度按此比例贡献给载具总耐久度
-  "vehicle_damage_rate": 1.0,//(可选，默认1.0)常态载具伤害传导系数，部件受到伤害时按此比例传导给载具
-  "vehicle_damage_rate_destroyed": 0.1,//(可选，默认0.1)部件被摧毁后的载具伤害传导系数，部件被摧毁后受到伤害时按此比例传导给载具
-  "basic_durability": 40.0,//(可选，默认20.0)部件基础生命值，降至0时部件的所有子系统会瘫痪
-  "basic_integrity": 30.0,//(可选，默认15.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
-  "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
-    "icon": "machine_max:textures/icon/mini_ev_hull_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
+  "name": "mini_ev_hull", //部件名称，必须与文件名相同，必须与文件名相同，必须与文件名相同
+  "vehicle_durability_rate": 0.8, //(可选，默认0.8)载具耐久贡献系数，部件耐久度按此比例贡献给载具总耐久度
+  "vehicle_damage_rate": 1.0, //(可选，默认1.0)常态载具伤害传导系数，部件受到伤害时按此比例传导给载具
+  "vehicle_damage_rate_destroyed": 0.1, //(可选，默认0.1)部件被摧毁后的载具伤害传导系数，部件被摧毁后受到伤害时按此比例传导给载具
+  "basic_durability": 40.0, //(可选，默认20.0)部件基础生命值，降至0时部件的所有子系统会瘫痪
+  "basic_integrity": 30.0, //(可选，默认15.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
+  "variants": { //部件变体列表，可有多个变体名和模型路径的键值对
+    "icon": "machine_max:textures/icon/mini_ev_hull_icon.png", //(可选，留空会使用第一张模型贴图)部件图标路径
     "tags": [],//(可选，默认[])部件标签列表
     "sub_parts": {//零件(子部件)列表
       "mini_ev_hull": {//零件(子部件)名称
@@ -18,59 +18,59 @@
           "machine_max:textures/part/mini_ev_pink.png",
           "machine_max:textures/part/mini_ev_white.png"
         ],
-        "mass": 620.0,//零件质量(kg)
-        "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
-        "collision_height": 1.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
-        "hit_boxes": {//键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体，以及将此骨骼下的定位器储存起来供子系统等使用
-          "HullCollisionShape": {//值:碰撞形状属性
-            "name": "part",//(可选，默认"part")碰撞箱名称，供子系统等查找
-            "type": "box",//碰撞形状类型，支持box、sphere、cylinder
-            "block_damage_factor": 1.0,//(可选，默认1.0)方块损伤系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力
-            "angle_effect": true,//(可选，默认true)等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度
-            "un_penetrate_damage_factor": 0.5,//(可选，默认0.0)攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害
+        "mass": 620.0, //零件质量(kg)
+        "block_collision": "ground", //(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
+        "collision_height": 1.5, //(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
+        "hit_boxes": { //键:骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体，以及将此骨骼下的定位器储存起来供子系统等使用
+          "HullCollisionShape": { //值:碰撞形状属性
+            "name": "part", //(可选，默认"part")碰撞箱名称，供子系统等查找
+            "type": "box", //碰撞形状类型，支持box、sphere、cylinder
+            "block_damage_factor": 1.0, //(可选，默认1.0)方块损伤系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力
+            "angle_effect": true, //(可选，默认true)等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度
+            "un_penetrate_damage_factor": 0.5, //(可选，默认0.0)攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害
             "rha": 1 //(可选，默认1)等效护甲厚度，单位mm，减免伤害并控制碰撞时的能量分配情况
           },
-          "EngineCollisionShape": {//值:碰撞形状属性
-            "name": "engine",//(可选，默认"part")碰撞箱名称，供子系统等查找
-            "type": "box",//碰撞形状类型，支持box、sphere、cylinder
-            "subsystem": "motor",//(可选，默认"")子系统名称，对此碰撞形状造成的伤害会等量地传导给此子系统，若为空则不属于任何子系统
-            "block_damage_factor": 2.0,//(可选，默认1.0)方块损伤系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力
-            "angle_effect": true,//(可选，默认true)等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度
-            "un_penetrate_damage_factor": 0.5,//(可选，默认0.0)攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害
+          "EngineCollisionShape": { //值:碰撞形状属性
+            "name": "engine", //(可选，默认"part")碰撞箱名称，供子系统等查找
+            "type": "box", //碰撞形状类型，支持box、sphere、cylinder
+            "subsystem": "motor", //(可选，默认"")子系统名称，对此碰撞形状造成的伤害会等量地传导给此子系统，若为空则不属于任何子系统
+            "block_damage_factor": 2.0, //(可选，默认1.0)方块损伤系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力
+            "angle_effect": true, //(可选，默认true)等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度
+            "un_penetrate_damage_factor": 0.5, //(可选，默认0.0)攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害
             "rha": 3 //(可选，默认1)等效护甲厚度，单位mm，减免伤害并控制碰撞时的能量分配情况
           }
         },
-        "interact_boxes": {//交互判定区列表
-          "interact.machine_max.mini_ev.left_front_door": {//键:交互判定区名称
-            "bone": "LeftFrontDoorInteractZone",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+        "interact_boxes": { //交互判定区列表
+          "interact.machine_max.mini_ev.left_front_door": { //键:交互判定区名称
+            "bone": "LeftFrontDoorInteractZone", //骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
               "left_front_door_interact": ["driver_seat"] //将交互信号转发给驾驶座
             },
             "interact_mode": "fast" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
           },
-          "interact.machine_max.mini_ev.right_front_door": {//键:交互判定区名称
-            "bone": "RightFrontDoorInteractZone",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+          "interact.machine_max.mini_ev.right_front_door": { //键:交互判定区名称
+            "bone": "RightFrontDoorInteractZone", //骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
               "left_back_door_interact": ["copilot_seat"] //将交互信号转发给副驾驶座
             },
             "interact_mode": "fast" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
           },
-          "interact.machine_max.mini_ev.left_back_door": {//键:交互判定区名称
-            "bone": "LeftBackDoorInteractZone",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+          "interact.machine_max.mini_ev.left_back_door": { //键:交互判定区名称
+            "bone": "LeftBackDoorInteractZone", //骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
               "right_front_door_interact": ["left_back_seat"] //将交互信号转发给后排座椅
             },
             "interact_mode": "fast" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
           },
-          "interact.machine_max.mini_ev.right_back_door": {//键:交互判定区名称
-            "bone": "RightBackDoorInteractZone",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+          "interact.machine_max.mini_ev.right_back_door": { //键:交互判定区名称
+            "bone": "RightBackDoorInteractZone", //骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
               "right_back_door_interact": ["right_back_seat"] //将交互信号转发给后排座椅
             },
             "interact_mode": "fast" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
           },
-          "interact.machine_max.mini_ev.glove_box": {//键:交互判定区名称
-            "bone": "GloveBoxInteractZone",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+          "interact.machine_max.mini_ev.glove_box": { //键:交互判定区名称
+            "bone": "GloveBoxInteractZone", //骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
               "right_back_door_interact": ["title.machine_max.subsystem.mini_ev.glove_box"] //将交互信号转发给储物子系统
             },
@@ -80,82 +80,36 @@
         "subsystems": {
           "driver_seat": {
             "type": "machine_max:seat", //子系统类型
+            "model": "machine_max:default_seat", //子系统型号，需要与子系统类型相匹配
             "seat_point_locator": "LeftFrontSeatPoint", //乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
-            "render_passenger": true, //(可选,默认true)是否渲染乘客
-            "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
-            "views": {
-              "enable_first_person": true, //(可选,默认true)是否启用第一人称视角
-              "first_person_hud": ["machine_max:example_hud"],//(可选,默认[])第一人称视角下的HUD组件
-              "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
-              "third_person_hud": ["machine_max:example_hud"],//(可选,默认[])第三人称视角下的HUD组件
-              "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
-              "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
-              "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率
-            },
-            "allow_use_items": false, //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
-            "move_outputs": {
+            "move_outputs": { //(可选,默认为空)子系统移动控制输出列表
               "move_control": ["car_controller"] //将控制信号转发给车辆控制系统
             },
-            "regular_outputs": {
+            "regular_outputs": { //(可选,默认为空)子系统常规按键输出列表
               "regular_control": ["car_controller"] //将控制信号转发给车辆控制系统
             },
-            "view_outputs": {
+            "view_outputs": { //(可选,默认为空)子系统视角控制输出列表
               "view_control": ["car_controller"]
             }
           },
           "copilot_seat": {
             "type": "machine_max:seat", //子系统类型
-            "seat_point_locator": "RightFrontSeatPoint", //乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
-            "render_passenger": true, //(可选,默认true)是否渲染乘客
-            "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
-            "views": {
-              "enable_first_person": true, //(可选,默认true)是否启用第一人称视角
-              "first_person_hud": ["machine_max:example_hud"],//(可选,默认[])第一人称视角下的HUD组件
-              "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
-              "third_person_hud": ["machine_max:example_hud"],//(可选,默认[])第三人称视角下的HUD组件
-              "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
-              "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
-              "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率
-            },
-            "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
+            "model": "machine_max:default_seat", //子系统型号，需要与子系统类型相匹配
+            "seat_point_locator": "RightFrontSeatPoint" //乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
           },
           "left_back_seat": {
             "type": "machine_max:seat", //子系统类型
-            "seat_point_locator": "LeftBackSeatPoint", //乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
-            "render_passenger": true, //(可选,默认true)是否渲染乘客
-            "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
-            "views": {
-              "enable_first_person": true, //(可选,默认true)是否启用第一人称视角
-              "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
-              "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
-              "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
-              "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率
-            },
-            "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
+            "model": "machine_max:default_seat", //子系统型号，需要与子系统类型相匹配
+            "seat_point_locator": "LeftBackSeatPoint" //乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
           },
           "right_back_seat": {
             "type": "machine_max:seat", //子系统类型
-            "seat_point_locator": "RightBackSeatPoint", //乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
-            "render_passenger": true, //(可选,默认true)是否渲染乘客
-            "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
-            "views": {
-              "enable_first_person": true, //(可选,默认true)是否启用第一人称视角
-              "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
-              "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
-              "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
-              "distance_scale": 1.1 //(可选,默认1.1)第三人称视角距离倍率
-            },
-            "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
+            "model": "machine_max:default_seat", //子系统型号，需要与子系统类型相匹配
+            "seat_point_locator": "RightBackSeatPoint" //乘坐点定位器名称，该定位器需要位于任意零件的碰撞箱骨骼中，乘客将被定位于此
           },
           "car_controller": {
             "type": "machine_max:car_controller", //子系统类型
-            "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
-            "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
-            "manual_gear_shift": false, //(可选，默认false)是否强制手动挡
-            "auto_hand_brake": true, //(可选，默认true)是否自动在停车和起步时切换手刹车状态
-            "steering_center": [0,0,2.4036],//(可选，默认[0, 0, 0])转向中心点(m)，对于前轮转向的四轮载具，此位置应取后轮轴中点；对于全轮转向的载具，此位置应取四轮位置的几何中心
-            "steering_radius": 4.2, //(可选，默认5.0)最小转向半径(m)
-            "control_inputs": ["move_control"],//(可选，默认["move_control"])接受的控制信号频道，优先级递减
+            "model": "machine_max:mini_ev_car_controller",//子系统型号，需要与子系统类型相匹配
             "engine_outputs": {
               "motor_control": ["motor"]
             },
@@ -164,7 +118,8 @@
                 "left_front_wheel_driver",
                 "right_front_wheel_driver",
                 "left_back_wheel_driver",
-                "right_back_wheel_driver"]
+                "right_back_wheel_driver"
+              ]
             },
             "gearbox_outputs": {},
             "speed_outputs": { //(可选，默认将移动速度(m/s)发至部件和载具的vehicle_speed频道)移动速度信号输出频道及目标
@@ -185,28 +140,19 @@
           },
           "motor": {
             "type": "machine_max:motor", //电动机子系统，低速下恒扭矩，高速下恒功率
-            "basic_durability": 15, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
-            "hit_box": "engine",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
-            "max_power": 20000, //最大功率(W)
-            "max_torque": 85, //(可选，默认100)峰值扭矩(N·m)，实际输出扭矩(特别是转速较低时)的上限
+            "model": "machine_max:mini_ev_motor",//子系统型号，需要与子系统类型相匹配
             "power_output": "transmission", //功率输出目标，可填写任意本部件内其他子系统名称、部件对接口名称，或“part”，或“vehicle”
             "speed_outputs": { //(可选，默认将引擎转速(rad/s)发至部件和载具的engine_speed频道)引擎转速信号输出频道及目标
               "engine_speed": ["part", "vehicle"]
             }
           },
           "title.machine_max.subsystem.mini_ev.glove_box": {
-            "type": "machine_max:item_storage",
-            "rows": 2,
-            "columns": 3
+            "type": "machine_max:item_storage", //储物子系统，互动可打开存储容器
+            "model": "machine_max:glove_box" //子系统型号，需要与子系统类型相匹配
           },
           "transmission": {
             "type": "machine_max:transmission", //传动子系统，将接收到的功率分配至各个输出目标
-            "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
-            "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
-            "diff_lock": "auto", //(可选，默认auto)是否开启差速锁，差速锁模式(true)下各输出端会有相同的转速，差速器模式(false)下各输出端会有相同的扭矩，自动模式(auto)下根据输出端转速差距自动开关差速锁，手动模式(manual)下根据信号开关差速锁
-            "diff_lock_sensitivity": 0.75, //(可选，默认1.0)差速锁灵敏度，值越大灵敏度越高，统一输出端转速的能力越强
-            "auto_diff_lock_threshold": 15.0, //(可选，默认10.0)自动差速锁启用的转速差距百分比阈值
-            "distribute_inputs": ["diff_lock_control"],//(可选，默认["diff_lock_control"])接收的控制差速锁的信号频道列表，优先级递减
+            "model": "machine_max:mini_ev_transmission", //子系统型号，需要与子系统类型相匹配
             "power_outputs": { //动力输出目标及减速比
               "left_back_wheel_driver": 8,
               "right_back_wheel_driver": 8
@@ -214,77 +160,41 @@
           },
           "left_front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统，驱动对接口上的部件滚动和转向
-            "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
-            "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
-            "connector": "left_front_wheel", //控制的对接口名称
-            "roll": {//(可选)轮胎滚动相关属性，默认最大驱动力矩10000N*m，最大刹车力矩3500N*m，最大手刹车力矩0N*m，最大转速3140rad/s，不反馈转速值到任何频道的任何目标
-              "max_drive_force": 0, //(可选，默认10000)最大驱动力矩(N*m)
-              "max_brake_force": 1500.0, //(可选，默认3500)最大刹车力矩(N*m)
-              "max_speed": 3140.0, //(可选，默认3140)最大转速(rad/s)
-              "speed_outputs": {} //(可选，默认{})转速信号输出频道及目标名称列表
-            },
-            "control_inputs": ["wheel_control", "move_control"]//(可选，默认["wheel_control", "move_control"])接收的控制信号的频道列表，优先级递减
+            "model": "machine_max:mini_ev_front_wheel_driver", //子系统型号，需要与子系统类型相匹配
+            "connector": "left_front_wheel" //控制的对接口名称
           },
           "right_front_wheel_driver": {
-            "type": "machine_max:wheel_driver",
-            "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
-            "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
-            "connector": "right_front_wheel",
-            "roll": {//(可选)轮胎滚动相关属性，默认最大驱动力矩10000N*m，最大刹车力矩3500N*m，最大手刹车力矩0N*m，最大转速3140rad/s，不反馈转速值到任何频道的任何目标
-              "max_drive_force": 0, //(可选，默认10000)最大驱动力矩(N*m)
-              "max_brake_force": 1500.0, //(可选，默认3500)最大刹车力矩(N*m)
-              "max_speed": 3140.0, //(可选，默认3140)最大转速(rad/s)
-              "speed_outputs": {} //(可选，默认{})转速信号输出频道及目标名称列表
-            },
-            "steering": {//(可选)轮胎转向相关属性，默认最大转向力矩4000N*m，最大转速3.14rad/s，不反馈转角值到任何频道的任何目标
-              "max_force": 4000,
-              "max_speed": 3.14,
-              "position_outputs": {} //(可选，默认{})转角信号输出频道及目标名称列表
-            }
+            "type": "machine_max:wheel_driver", //轮胎驱动子系统，驱动对接口上的部件滚动和转向
+            "model": "machine_max:mini_ev_front_wheel_driver", //子系统型号，需要与子系统类型相匹配
+            "connector": "right_front_wheel" //控制的对接口名称
           },
           "left_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
-            "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
-            "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
-            "connector": "left_back_wheel",
-            "roll": {//(可选)轮胎滚动相关属性，默认最大驱动力矩10000N*m，最大刹车力矩3500N*m，最大手刹车力矩0N*m，最大转速3140rad/s，不反馈转速值到任何频道的任何目标
-              "max_drive_force": 1500.0, //(可选，默认10000)最大驱动力矩(N*m)
-              "max_brake_force": 5500.0, //(可选，默认3500)最大刹车力矩(N*m)
-              "max_hand_brake_force": 5000.0, //(可选，默认0)最大手刹车力矩(N*m)
-              "max_speed": 3140.0, //(可选，默认3140)最大转速(rad/s)
-              "speed_outputs": {} //(可选，默认{})转速信号输出频道及目标名称列表
-            }
+            "model": "machine_max:mini_ev_back_wheel_driver",
+            "connector": "left_back_wheel"
           },
           "right_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
-            "basic_durability": 100, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
-            "hit_box": "",//(可选，默认为空)对应的判定区名称，判定区受击时会对此子系统造成相同伤害
-            "connector": "right_back_wheel",
-            "roll": {//(可选)轮胎滚动相关属性，默认最大驱动力矩10000N*m，最大刹车力矩3500N*m，最大手刹车力矩0N*m，最大转速3140rad/s，不反馈转速值到任何频道的任何目标
-              "max_drive_force": 1500.0, //(可选，默认10000)最大驱动力矩(N*m)
-              "max_brake_force": 5500.0, //(可选，默认3500)最大刹车力矩(N*m)
-              "max_hand_brake_force": 5000.0, //(可选，默认0)最大手刹车力矩(N*m)
-              "max_speed": 3140.0, //(可选，默认3140)最大转速(rad/s)
-              "speed_outputs": {} //(可选，默认{})转速信号输出频道及目标名称列表
-            }
+            "model": "machine_max:mini_ev_back_wheel_driver",
+            "connector": "right_back_wheel"
           }
         },
-        "connectors": {//子部件用于与其他零件连接的对接口列表
-          "left_front_wheel": {//接口名称
-            "locator": "left_front_wheel",//Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
-            "type": "Special",//对接口类型，支持AttachPoint和Special
-            "required_tags": ["variant:left"],//(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
-            "acceptable_tags": [],//(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
-            "forbidden_tags": [],//(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
-            "joint_attrs": {//关节属性，目前仅在关节类型为Special时生效
+        "connectors": { //子部件用于与其他零件连接的对接口列表
+          "left_front_wheel": { //接口名称
+            "locator": "left_front_wheel", //Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为对接口的位置和姿态
+            "type": "Special", //对接口类型，支持AttachPoint和Special
+            "required_tags": ["variant:left"], //(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
+            "acceptable_tags": [], //(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
+            "forbidden_tags": [], //(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
+            "joint_attrs": { //关节属性，目前仅在关节类型为Special时生效
               "y": {
-                "lower_limit": -1.0,//关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
-                "upper_limit": 1.0,//关节位置上限，当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
-                "equilibrium": -0.1,//(可选，默认0)弹簧阻尼关节的平衡位置，当关节处于此位置时，关节受到的刚度力(力矩)等于0
-                "stiffness": 20000,//刚度系数(N/m)
+                "lower_limit": -1.0, //关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
+                "upper_limit": 1.0, //关节位置上限，当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
+                "equilibrium": -0.1, //(可选，默认0)弹簧阻尼关节的平衡位置，当关节处于此位置时，关节受到的刚度力(力矩)等于0
+                "stiffness": 20000, //刚度系数(N/m)
                 "damping": 1000 //阻尼系数(N/(m/s))
               },
-              "xr": {//控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
+              "xr": { //控制的轴，x、y、z分别对应x、y、z轴的平动，xr、yr、zr分别对应x、y、z轴的旋转
                 "lower_limit": 1.0, //关节位置下限，对于平动轴单位为m，对于旋转轴单位为度
                 "upper_limit": -1.0 //当下限高于上限时，指定的轴自由活动，下限低于上限时，指定的轴被限定于区间内活动，下线等于上限时，指定的轴被固定死
               },
@@ -307,9 +217,9 @@
           "left_back_wheel": {
             "locator": "left_back_wheel",
             "type": "Special",
-            "required_tags": ["variant:left"],//(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
-            "acceptable_tags": [],//(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
-            "forbidden_tags": [],//(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
+            "required_tags": ["variant:left"], //(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
+            "acceptable_tags": [], //(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
+            "forbidden_tags": [], //(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
             "joint_attrs": {
               "y": {
                 "lower_limit": -1.0,
@@ -334,9 +244,9 @@
           "right_front_wheel": {
             "locator": "right_front_wheel",
             "type": "Special",
-            "required_tags": ["variant:right"],//(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
-            "acceptable_tags": [],//(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
-            "forbidden_tags": [],//(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
+            "required_tags": ["variant:right"], //(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
+            "acceptable_tags": [], //(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
+            "forbidden_tags": [], //(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
             "joint_attrs": {
               "y": {
                 "lower_limit": -1.0,
@@ -368,9 +278,9 @@
           "right_back_wheel": {
             "locator": "right_back_wheel",
             "type": "Special",
-            "required_tags": ["variant:right"],//(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
-            "acceptable_tags": [],//(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
-            "forbidden_tags": [],//(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
+            "required_tags": ["variant:right"], //(可选，默认[])连接部件必须全部拥有的标签，留空以允许任意标签
+            "acceptable_tags": [], //(可选，默认[])连接部件必须至少拥有其中一个的标签，留空以允许任意标签
+            "forbidden_tags": [], //(可选，默认[])连接部件不可包含的标签，留空以允许任意标签
             "joint_attrs": {
               "y": {
                 "lower_limit": -1.0,
@@ -394,16 +304,16 @@
           }
         },
         "hydro_priority": 1, //(可选，默认0)空气阻力计算优先级，值越大优先级越高，优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化
-        "hydrodynamics": {//(可选，默认单点质心位置计算流体动力)流体动力计算定位点列表，键值对的键名为空字符串时表示以质心位置计算
-          "": {//流体动力计算点定位器名，空字符串代表质心
-            "scale": 1.0,//(可选，默认1.0)整体上缩放流体动力的作用效果，以多点而非单点计算流体动力时可相应调整此数值以确保数值可靠
-            "transonic_amplifier": 5.0,//(可选，默认5.0)跨声速段的阻力缩放因子，当来流速度达到0.8~1.2马赫时，阻力系数会逐渐从1x缩放到此倍数
-            "front_drag": [0.1,0.45],//(可选，默认[0.1,1.0])前向各阶阻力系数，默认值下部件在前进时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Z向(前后方向)投影面积，v为前进速度
-            "back_drag": [0.1,0.7],//(可选，默认[0.1,1.0])后向各阶阻力系数，默认值下部件在后退时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Z向(前后方向)投影面积，v为后退速度
-            "left_drag": [0.1,1.0],//(可选，默认[0.1,1.0])左向各阶阻力系数，默认值下部件在左移时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Y向(前后方向)投影面积，v为左移速度
-            "right_drag": [0.1,1.0],//(可选，默认[0.1,1.0])右向各阶升力系数，默认值下部件在右移时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Y向(前后方向)投影面积，v为右移速度
-            "up_drag": [0.1,1.0],//(可选，默认[0.1,1.0])上向各阶阻力系数，默认值下部件在上升时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为X向(前后方向)投影面积，v为上升速度
-            "down_drag": [0.1,1.0]//(可选，默认[0.1,1.0])下向各阶阻力系数，默认值下部件在坠落时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为X向(前后方向)投影面积，v为下降速度
+        "hydrodynamics": { //(可选，默认单点质心位置计算流体动力)流体动力计算定位点列表，键值对的键名为空字符串时表示以质心位置计算
+          "": { //流体动力计算点定位器名，空字符串代表质心
+            "scale": 1.0, //(可选，默认1.0)整体上缩放流体动力的作用效果，以多点而非单点计算流体动力时可相应调整此数值以确保数值可靠
+            "transonic_amplifier": 5.0, //(可选，默认5.0)跨声速段的阻力缩放因子，当来流速度达到0.8~1.2马赫时，阻力系数会逐渐从1x缩放到此倍数
+            "front_drag": [0.1,0.45], //(可选，默认[0.1,1.0])前向各阶阻力系数，默认值下部件在前进时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Z向(前后方向)投影面积，v为前进速度
+            "back_drag": [0.1,0.7], //(可选，默认[0.1,1.0])后向各阶阻力系数，默认值下部件在后退时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Z向(前后方向)投影面积，v为后退速度
+            "left_drag": [0.1,1.0], //(可选，默认[0.1,1.0])左向各阶阻力系数，默认值下部件在左移时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Y向(前后方向)投影面积，v为左移速度
+            "right_drag": [0.1,1.0], //(可选，默认[0.1,1.0])右向各阶升力系数，默认值下部件在右移时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为Y向(前后方向)投影面积，v为右移速度
+            "up_drag": [0.1,1.0], //(可选，默认[0.1,1.0])上向各阶阻力系数，默认值下部件在上升时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为X向(前后方向)投影面积，v为上升速度
+            "down_drag": [0.1,1.0] //(可选，默认[0.1,1.0])下向各阶阻力系数，默认值下部件在坠落时受到0.5*ρ*S*(0.1v+1.0v^2)的阻力，其中ρ为空气密度，S为X向(前后方向)投影面积，v为下降速度
           }
         }
       }

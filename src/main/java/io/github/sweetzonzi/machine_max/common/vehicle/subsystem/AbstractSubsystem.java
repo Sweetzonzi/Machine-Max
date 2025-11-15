@@ -5,7 +5,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalSender;
@@ -58,7 +58,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         this.attr = attr;
         this.name = name;
         SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
-        syncheddata$builder.define(DATA_DURABILITY_ID, attr.basicDurability);
+        syncheddata$builder.define(DATA_DURABILITY_ID, attr.getBasicDurability());
         this.defineSynchedData(syncheddata$builder);
         this.synchedData = syncheddata$builder.build();
         if (this instanceof ISignalSender signalSender) {
@@ -227,7 +227,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public float getMaxDurability() {
-        return attr.basicDurability;
+        return attr.getBasicDurability();
     }
 
 

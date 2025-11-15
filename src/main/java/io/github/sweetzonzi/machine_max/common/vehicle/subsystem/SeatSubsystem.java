@@ -2,10 +2,9 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
-import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SeatSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
@@ -27,7 +26,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
         super(owner, name, attr);
         this.attr = attr;
         setUp(attr.moveSignalTargets, attr.viewSignalTargets, attr.regularSignalTargets);
-        this.disableVanillaActions = !this.attr.allowUseItems;
+        this.disableVanillaActions = !this.attr.staticAttribute.allowUseItems;
     }
 
     @Override

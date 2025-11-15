@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.network.chat.Component
 import java.nio.charset.StandardCharsets
 
 class BlueprintModule : SparkPackModule {
@@ -32,9 +33,15 @@ class BlueprintModule : SparkPackModule {
             }
             val path = fileName.substringBeforeLast(".")
             val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
-            val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-            val blueprint = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-            MMDynamicRes.BLUEPRINTS[id] = blueprint
+            try {
+                val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
+                val blueprint = VehicleData.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+                MMDynamicRes.BLUEPRINTS[id] = blueprint
+            } catch (e: Exception) {
+                MMDynamicRes.exceptions.add(e)
+                MMDynamicRes.errorFiles.add("[Blueprint]" + id)
+                MMDynamicRes.errorMessages.add(Component.literal(e.message))
+            }
         }
     }
 

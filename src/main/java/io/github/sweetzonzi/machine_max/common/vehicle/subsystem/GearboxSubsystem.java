@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.GearboxSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.GearboxSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,7 +26,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
     public GearboxSubsystem(ISubsystemHost owner, String name, GearboxSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.gearRatios = attr.ratios.stream().mapToDouble(Float::floatValue).map(r -> r * attr.finalRatio).toArray();
+        this.gearRatios = attr.staticAttribute.ratios.stream().mapToDouble(Float::floatValue).map(r -> r * attr.staticAttribute.finalRatio).toArray();
         gearNames = generateGears(this.gearRatios);
         switchGear(0);
         int tempMinPositiveGear = this.gearRatios.length - 1;
@@ -73,7 +73,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
         if (currentGear == gear) return;//当前挡位与目标挡位相同，无需切换
         if (gear >= 0 && gear < gearRatios.length) {//目标挡位有效
             this.currentGear = gear;//更新当前挡位
-            if (clutched) this.remainingSwitchTime = attr.switchTime;//若未踩离合，开始换挡时间倒计时
+            if (clutched) this.remainingSwitchTime = attr.staticAttribute.switchTime;//若未踩离合，开始换挡时间倒计时
             //更新挡位信号
             for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
                 String signalChannel = entry.getKey();

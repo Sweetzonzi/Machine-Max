@@ -1,13 +1,12 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
-import cn.solarmoon.spark_core.SparkCore;
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.MotorSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
@@ -23,7 +22,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     public final MotorSubsystemAttr attr;
     public double rotSpeed;//当前转速(rad/s)
     public double throttleInput;//当前电门输入（-1~1）
-    private MotorSubsystemAttr.WorkingState currentState = null;//当前引擎工况及对应音效
+    private MotorSubsystemStaticAttr.WorkingState currentState = null;//当前引擎工况及对应音效
     private UUID currentSoundUUID = UUID.randomUUID();
     private int sinceLastSoundUpdate = 0;
 
@@ -39,7 +38,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         Level level = getSubPart().getLevel();
         if (level.isClientSide() && this.isActive()) {
             sinceLastSoundUpdate++;
-            MotorSubsystemAttr.WorkingState bestState = attr.getBestMatchWorkingState(
+            MotorSubsystemStaticAttr.WorkingState bestState = attr.getBestMatchWorkingState(
                     Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
             if (bestState != null) {
                 if(bestState != currentState || sinceLastSoundUpdate > 30) {
@@ -70,7 +69,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         }
         if (speedFeedback instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
-            rotSpeed += netTorque / attr.inertia / 60f;
+            rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
             sendSignalToAllTargets("power", new EmptySignal());//空挡不输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else if (speedFeedback instanceof Float feedback) {
@@ -82,7 +81,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else {
             //没有转速反馈信号时，直接取用引擎转速
-            rotSpeed += netTorque / (7 * attr.inertia) / 60f;
+            rotSpeed += netTorque / (7 * attr.staticAttribute.inertia) / 60f;
             sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         }
@@ -97,7 +96,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     private double calculateMaxTorque(double rotSpeed) {
         double result = 0;
         if (!isActive()) return result;
-        result = Math.min(attr.maxPower / Math.max(Math.abs(rotSpeed), 0.1f), attr.maxTorque);
+        result = Math.min(attr.staticAttribute.maxPower / Math.max(Math.abs(rotSpeed), 0.1f), attr.staticAttribute.maxTorque);
         result *= 0.3 + 0.7 * Math.sqrt(getDurability() / getMaxDurability());
         return result;
     }
@@ -110,8 +109,8 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
      */
     private double calculateDampingTorque(double rotSpeed) {
         double result = 0;
-        for (int i = 0; i < attr.dampingFactors.size(); i++) {
-            result += attr.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i);
+        for (int i = 0; i < attr.staticAttribute.dampingFactors.size(); i++) {
+            result += attr.staticAttribute.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i);
         }
         return Math.signum(rotSpeed) * result;
     }
@@ -121,7 +120,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
      */
     private void updateThrottleInput() {
         double powerControlInput = 0;
-        for (String inputKey : attr.throttleInputKeys) {
+        for (String inputKey : attr.staticAttribute.throttleInputKeys) {
             SignalChannel signalChannel = getSignalChannel(inputKey);
             if (signalChannel.getFirstSignal() instanceof Float) {
                 powerControlInput = (float) signalChannel.getFirstSignal() / 100f;
@@ -167,16 +166,16 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     @Override
     public float getVolume(UUID uuid, SoundEvent event) {
         if (currentState != null) {
-            if (Math.abs(30 * rotSpeed / Math.PI) > MotorSubsystemAttr.baseRPM)
+            if (Math.abs(30 * rotSpeed / Math.PI) > MotorSubsystemStaticAttr.baseRPM)
                 return (float) (0.7 + 0.3 * Math.abs(throttleInput));
-            else return (float) (Math.abs(30 * rotSpeed / Math.PI) / MotorSubsystemAttr.baseRPM);
+            else return (float) (Math.abs(30 * rotSpeed / Math.PI) / MotorSubsystemStaticAttr.baseRPM);
         } else return 0f;
     }
 
     @Override
     public float getPitch(UUID uuid, SoundEvent event) {
         if (currentState != null) {
-            double rpm = Math.max(Math.abs(30 * rotSpeed / Math.PI), 0.5 * MotorSubsystemAttr.baseRPM);
+            double rpm = Math.max(Math.abs(30 * rotSpeed / Math.PI), 0.5 * MotorSubsystemStaticAttr.baseRPM);
             double rpmRatio = rpm / currentState.rpm();
             return (float) Math.clamp(rpmRatio, 0.25, 4);
         } else return 1f;

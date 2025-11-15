@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.AbstractSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.MoveInputSignal;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.RegularInputSignal;

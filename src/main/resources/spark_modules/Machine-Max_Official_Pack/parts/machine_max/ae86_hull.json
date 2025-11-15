@@ -76,8 +76,7 @@
         "subsystems": {//(可选)子系统配置
           "title.machine_max.subsystem.ae86.trunk": {
             "type": "machine_max:item_storage",
-            "rows": 6,
-            "columns": 9
+            "model": "machine_max:default_trunk" //子系统型号，需要与子系统类型相匹配
           }
         },
         "connectors": {//子部件用于与其他零件连接的对接口列表
