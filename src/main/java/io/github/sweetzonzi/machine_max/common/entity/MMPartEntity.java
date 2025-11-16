@@ -137,7 +137,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                 Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
                 Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
                 HitBox hitBox = mixinProjectile.machine_Max$getHitBox();
-                return subPart.onHurt(source, amount, null, hitSubPart, normal,
+                return hitSubPart.onHurt(source, amount, null, normal,
                         PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
                                 .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBox);
             } else return false;
@@ -169,7 +169,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                         nearest = subPart;
                         contactPoint = PhysicsBodyExtensionKt.stateOf(subPart.body).getTransform().getTranslation();
                         normal = delta.multLocal(-1).normalize();
-                        nearestDistance = d;
                     }
                     if (nearest != null) {
                         HitBox hitBox = null;
@@ -178,19 +177,19 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                             if (subPart.hitBoxes.get(hitBoxName).getRHA(subPart) > maxThickness)
                                 hitBox = subPart.hitBoxes.get(hitBoxName);
                         }
-                        return subPart.onHurt(source, amount, null, nearest, normal, normal.mult(-1), contactPoint, hitBox);
+                        return nearest.onHurt(source, amount, null, normal, normal.mult(-1), contactPoint, hitBox);
                     } else throw new IllegalStateException("No subpart found for explosion damage.");
                 } else {//一般伤害处理
                     var results = level.getWorld().rayTest(start, end);
                     for (var result : results) {
                         PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
-                        if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart) {
+                        if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart someSubPart) {
                             //TODO: new一个新的source存储攻击来袭方向
                             Vector3f normal = result.getHitNormalLocal(null);
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
-                            HitBox hitBox = subPart.getHitBox(result.triangleIndex());
+                            HitBox hitBox = someSubPart.getHitBox(result.triangleIndex());
                             //将伤害转发给部件进行操作
-                            return subPart.onHurt(source, amount, null, subPart, normal, end.subtract(start).normalize(), contactPoint, hitBox);
+                            return someSubPart.onHurt(source, amount, null, normal, end.subtract(start).normalize(), contactPoint, hitBox);
                         }
                     }
                 }
@@ -198,7 +197,27 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                 MachineMax.LOGGER.error("Damage source {} is too close to entity position, causing a zero-length ray.", entity);
             }
             return false;//未能命中任何部件碰撞箱则不处理伤害
-        } else return false;
+        } else return hurtWithoutRayTest(source, amount);
+    }
+
+    /**
+     * 无来源位置的伤害的处理
+     * @param source 伤害来源
+     * @param amount 伤害值
+     * @return 是否处理了伤害
+     */
+    public boolean hurtWithoutRayTest(@NotNull DamageSource source, float amount){
+        if (this.subPart == null) return false;
+        Vector3f normal = Vector3f.UNIT_Y;
+        Vector3f contactPoint = PhysicsHelperKt.toBVector3f(this.position());
+        HitBox hitBox = null;
+        //找到装甲最厚的的部分造成伤害
+        float maxThickness = -1;
+        for (String hitBoxName : this.subPart.attr.hitBoxNames.values()) {
+            if (subPart.hitBoxes.get(hitBoxName).getRHA(subPart) > maxThickness)
+                hitBox = subPart.hitBoxes.get(hitBoxName);
+        }
+        return this.subPart.onHurt(source, amount, null, normal, Vector3f.ZERO, contactPoint, hitBox);
     }
 
     @Override

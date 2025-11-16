@@ -416,7 +416,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     float partDamage = (float) (finalActualPartEnergy / 250);
                     if (partDamage > 1)
                         onHurt(level.damageSources().flyIntoWall(), partDamage,
-                                null, this, normal, vel, worldContactPoint, hitBox);
+                                null, normal, vel, worldContactPoint, hitBox);
                     return;
                 } else {//否则以三分之一的能量计算伤害，冲量交给物理引擎处理
                     // 与一个物体发生碰撞时会创建3个(4个?)碰撞点，因此在单点处理计算时只取部分能量用于计算伤害
@@ -425,7 +425,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     float partDamage = (float) (0.2 * 0.33 * partEnergy / 250);
                     if (partDamage > hitBox.getCollisionDamageReduction())
                         onHurt(level.damageSources().flyIntoWall(), partDamage - hitBox.getCollisionDamageReduction(),
-                                null, this, normal, vel, worldContactPoint, hitBox);
+                                null, normal, vel, worldContactPoint, hitBox);
                 }
             }
             //通常粒子效果
@@ -511,7 +511,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float partDamage = (float) (0.2 * contactEnergy * miu / (250 * partMass));
             if (partDamage > hitBox.getCollisionDamageReduction())
                 onHurt(level.damageSources().flyIntoWall(), partDamage - hitBox.getCollisionDamageReduction(),
-                        null, this, normal, vel, worldContactPoint, hitBox);
+                        null, normal, vel, worldContactPoint, hitBox);
             //部件减速
             getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_entity_impulse", PPhase.PRE, () -> {
                 body.applyImpulse(impulseVec.mult(-0.3f), worldContactPoint.subtract(body.getPhysicsLocation(null)));
@@ -755,10 +755,20 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         getAnimController().physTick();
     }
 
+    /**
+     * 实际处理伤害
+     * @param source
+     * @param damage
+     * @param projectileSource
+     * @param normal
+     * @param worldContactSpeed
+     * @param worldContactPoint
+     * @param hitBox
+     * @return 伤害是否被正常处理
+     */
     public boolean onHurt(DamageSource source,
                           float damage,
                           IPhysicsProjectile projectileSource,
-                          SubPart subPart,
                           Vector3f normal,
                           Vector3f worldContactSpeed,
                           Vector3f worldContactPoint,
@@ -767,12 +777,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         if (sourcePos == null)
             sourcePos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(body).getTransform().getTranslation());
         Vec3 finalSourcePos = sourcePos;
-        float armor = hitBox.getRHA(subPart);
+        float armor = hitBox.getRHA(this);
         float armorPenetration = 0;
         //击退处理与特殊逻辑
         if (projectileSource == null && !level.isClientSide) {//原版伤害处理
             //冲击效果
-            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 150f);//伤害转化为动量
+            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 250f);//伤害转化为动量，使用log函数以使冲量与部件耐久匹配
             if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
                 knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
             }
@@ -781,7 +791,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float finalKnockBack = knockBack;
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
                 part.vehicle.activate();
-                subPart.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(subPart.body.getPhysicsLocation(null)));
+                this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(this.body.getPhysicsLocation(null)));
                 return null;
             });
             //换算穿深
@@ -794,7 +804,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 //                armorPenetration = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
             } catch (Exception e) {
                 armorPenetration = damage / 2f;
-                MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", subPart.part.name);
+                MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", this.part.name);
             }
         }
         //线性减伤处理
@@ -811,9 +821,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //对部件造成伤害
             PartDamageData data = new PartDamageData(source, projectileSource, normal, worldContactSpeed, worldContactPoint, hitBox);
             accumulateDamage(impactDamage, data);
-            return true;
         } else {
-            if (!level.isClientSide) {
+            if (level.isClientSide) {
                 level.submitImmediateTask(PPhase.ALL, () -> {
                     //播放命中音效
                     SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"), 64f);
@@ -823,8 +832,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     return null;
                 });
             }
-            return false;
         }
+        return true; //返回true表示命中，且伤害已被处理
     }
 
     /**

@@ -14,15 +14,16 @@ import java.util.Set;
 
 @Getter
 public class SeatSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+    public final boolean blockDamage; //是否无视命中情况转嫁乘客伤害到部件
     public final boolean renderPassenger;
     public final Vec3 passengerScale;
     public final boolean allowUseItems;
     public final ViewAttr views;
     public final Set<String> viewInputs;
-    //TODO:是否无视命中情况转嫁乘客伤害到部件
 
     public static final MapCodec<SeatSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            Codec.BOOL.optionalFieldOf("block_damage", false).forGetter(SeatSubsystemStaticAttr::isBlockDamage),
             Codec.BOOL.optionalFieldOf("render_passenger", true).forGetter(SeatSubsystemStaticAttr::isRenderPassenger),
             Vec3.CODEC.optionalFieldOf("passenger_scale", new Vec3(1, 1, 1)).forGetter(SeatSubsystemStaticAttr::getPassengerScale),
             ViewAttr.CODEC.optionalFieldOf("views", new ViewAttr(
@@ -42,11 +43,14 @@ public class SeatSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
 
     public SeatSubsystemStaticAttr(
             float basicDurability,
-            boolean renderPassenger, Vec3 passengerScale,
+            boolean blockDamage,
+            boolean renderPassenger,
+            Vec3 passengerScale,
             ViewAttr views,
             List<String> viewInputs,
             boolean allowUseItems) {
         super(basicDurability);
+        this.blockDamage = blockDamage;
         //合法性检查
         if (!views.enableFirstPerson() && !views.enableThirdPerson())
             throw new IllegalArgumentException("error.machine_max.seat_subsystem.no_view");
