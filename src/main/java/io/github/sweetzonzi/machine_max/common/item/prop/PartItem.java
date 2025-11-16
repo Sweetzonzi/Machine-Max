@@ -81,15 +81,12 @@ public class PartItem extends Item implements ICustomModelItem {
                 String connectorType = info.connectorType();//获取物品保存的部件接口类型
                 var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
                 AbstractConnector targetConnector = eyesight.getConnector();
-                int damage = stack.getDamageValue();
-                float durability = Math.clamp(partType.basicDurability - damage + 1, 1f, partType.basicDurability);
                 if (targetConnector != null) {//若有可用的接口
                     if (targetConnector.conditionCheck(partType, variant)) {//检查变体条件
                         //TODO:检查connectorType，骑乘姿态拆卸零件后这一内容会变null
                         if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
                             Part part = new Part(partType, variant, level);
-                            part.sharedDurability = durability;
                             targetConnector.adjustTransform(part, part.externalConnectors.get(subpart_connector));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(subpart_connector), part);//尝试将新部件连接至接口
                             stack.consume(1, player);
@@ -100,7 +97,6 @@ public class PartItem extends Item implements ICustomModelItem {
                     } else return InteractionResultHolder.pass(stack);
                 } else {
                     Part part = new Part(partType, variant, level);
-                    part.sharedDurability = durability;
                     part.setTransform(
                             new Transform(
                                     PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
@@ -218,9 +214,10 @@ public class PartItem extends Item implements ICustomModelItem {
     public int getMaxDamage(@NotNull ItemStack stack) {
         ResourceLocation type = stack.get(MMDataComponents.getPART_TYPE());
         PartType partType = MMDynamicRes.PART_TYPES.get(type);
-        if (partType != null) {
-            return (int) Math.ceil(partType.basicDurability);
-        } else return super.getMaxDamage(stack);
+//        if (partType != null) {
+//            return (int) Math.ceil(partType.basicDurability);
+//        } else return super.getMaxDamage(stack);
+        return super.getMaxDamage(stack);
     }
 
     public static PartAssemblyCacheComponent getPartAssemblyCache(ItemStack stack, Level level) {

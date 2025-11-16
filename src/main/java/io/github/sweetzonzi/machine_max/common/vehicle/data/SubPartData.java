@@ -31,10 +31,10 @@ public class SubPartData {
     public static final Codec<SubPartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("id").forGetter(SubPartData::getId),
             Codec.FLOAT.optionalFieldOf("durability", 20f).forGetter(SubPartData::getDurability),
-            PosRotVelVel.CODEC.fieldOf("posRotVelVel").forGetter(SubPartData::getPosRotVelVel),
-            Codec.INT.optionalFieldOf("textureIndex", 0).forGetter(SubPartData::getTextureIndex),
-            DATA_CODEC.optionalFieldOf("connectorData", Map.of()).forGetter(SubPartData::getConnectorData),
-            DATA_CODEC.optionalFieldOf("subsystemData", Map.of()).forGetter(SubPartData::getSubsystemData)
+            PosRotVelVel.CODEC.fieldOf("pos_rot_vel_vel").forGetter(SubPartData::getPosRotVelVel),
+            Codec.INT.optionalFieldOf("texture_index", 0).forGetter(SubPartData::getTextureIndex),
+            DATA_CODEC.optionalFieldOf("connector_data", Map.of()).forGetter(SubPartData::getConnectorData),
+            DATA_CODEC.optionalFieldOf("subsystem_data", Map.of()).forGetter(SubPartData::getSubsystemData)
     ).apply(instance, SubPartData::new));
 
     public static final Codec<Map<String, SubPartData>> MAP_CODEC = Codec.unboundedMap(Codec.STRING, CODEC);

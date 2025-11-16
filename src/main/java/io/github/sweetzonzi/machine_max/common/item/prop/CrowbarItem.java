@@ -14,6 +14,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -59,8 +60,14 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
             if (subPart != null) {
                 Part part = subPart.part;
                 PartType partType = part.type;
-                float durability = part.sharedDurability;
-                if (part.integrity > 0.05 * partType.basicIntegrity && !player.isCreative()) {
+                boolean hasConnection = false;
+                for (AbstractConnector connector : part.externalConnectors.values()){
+                    if (connector.hasPart()) {
+                        hasConnection = true;
+                        break;
+                    }
+                }
+                if (hasConnection && !player.isCreative()) {
                     if (subPart.entity != null) {
                         float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
                         float scale = player.getAttackStrengthScale(0.5f);
@@ -68,7 +75,11 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
                         float finalDamage = EnchantmentHelper.modifyDamage((ServerLevel) level, player.getWeaponItem(), subPart.entity, damageSource, damage);
                         level.getPhysicsLevel().submitDeduplicatedTask("disassembly_" + player.getStringUUID(), PPhase.PRE, () -> {
                             if (subPart.entity != null) {
-                                part.integrity = Math.clamp(part.integrity - finalDamage * scale, 0, part.type.basicIntegrity);
+                                for (AbstractConnector connector : part.externalConnectors.values()){
+                                    if (connector.hasPart()) {
+                                        connector.accumulateImpact(finalDamage * scale * 2);
+                                    }
+                                }
                                 subPart.entity.hurt(damageSource, finalDamage * scale * 2);
                                 subPart.syncToClient();
                             }
@@ -80,8 +91,6 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
                     if (!player.isCreative()) {//非创造模式，则尝试获取为物品
                         ItemStack itemStack = new ItemStack(MMItems.getPART_ITEM());
                         itemStack.set(MMDataComponents.getPART_TYPE(), partType.registryKey);
-                        itemStack.set(DataComponents.MAX_DAMAGE, (int) partType.basicDurability);
-                        itemStack.set(DataComponents.DAMAGE, (int) Math.clamp(partType.basicDurability - durability, 0, Math.ceil(partType.basicDurability)));
                         if (!player.addItem(itemStack)) {//尝试直接放入物品栏，失败则掉落为实体
                             Entity itemStackEntity = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), itemStack);
                             level.addFreshEntity(itemStackEntity);
@@ -105,9 +114,16 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {//提示信息
                 Part part = subPart.part;
-                if (part.integrity > 0.05 * part.type.basicIntegrity && !player.isCreative())
+                boolean hasConnection = false;
+                for (AbstractConnector connector : part.externalConnectors.values()){
+                    if (connector.hasPart()) {
+                        hasConnection = true;
+                        break;
+                    }
+                }
+                if (hasConnection && !player.isCreative())
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.unsafe_disassembly",
-                            part.integrity, part.type.basicIntegrity, Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
+                            Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
                 else
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.safe_disassembly",
                             Component.translatable(part.type.registryKey.toLanguageKey())), true);

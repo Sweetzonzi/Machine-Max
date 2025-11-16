@@ -43,30 +43,30 @@ public class WrenchItem extends Item {
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {
                 Part part = subPart.part;
-                if ((player.isCrouching() || subPart.destroyed) && part.integrity > 0) {
+                if ((player.isCrouching() || subPart.destroyed)) {
                     //潜行时拆除模式
                     float repair = 10;
                     float scale = player.getAttackStrengthScale(0.5f);
                     level.getPhysicsLevel().submitDeduplicatedTask("repair_" + player.getStringUUID(), PPhase.PRE, () -> {
                         if (subPart.entity != null) {
-                            part.integrity = Math.clamp(part.integrity - repair * scale, 0, part.type.basicIntegrity);
-                            subPart.syncToClient();
+//                            part.integrity = Math.clamp(part.integrity - repair * scale, 0, part.type.basicIntegrity);
+//                            subPart.syncToClient();
                         }
                         return null;
                     });
-                } else if (!subPart.destroyed && (part.sharedDurability < part.type.basicDurability || part.integrity < part.type.basicIntegrity)) {
+                } else {
                     //一般状态下修复模式
                     float repair = 10;
                     float scale = player.getAttackStrengthScale(0.5f);
                     level.getPhysicsLevel().submitDeduplicatedTask("repair_" + player.getStringUUID(), PPhase.PRE, () -> {
                         if (subPart.entity != null) {
-                            part.integrity = Math.clamp(part.integrity + repair * scale, 0, part.type.basicIntegrity);
-                            part.sharedDurability = Math.clamp(part.sharedDurability + repair * scale, 0, part.type.basicDurability);
+//                            part.integrity = Math.clamp(part.integrity + repair * scale, 0, part.type.basicIntegrity);
+//                            part.sharedDurability = Math.clamp(part.sharedDurability + repair * scale, 0, part.type.basicDurability);
                             subPart.syncToClient();
                         }
                         return null;
                     });
-                } else return InteractionResultHolder.pass(player.getItemInHand(usedHand));
+                }
                 player.resetAttackStrengthTicker();
                 wrench.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));
@@ -82,18 +82,14 @@ public class WrenchItem extends Item {
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {//提示信息
                 Part part = subPart.part;
-                if (entity.isCrouching() && part.integrity > 0)
-                    player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.disassembly",
-                            part.integrity, part.type.basicIntegrity, Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
-                else if (!subPart.destroyed && (part.sharedDurability < part.type.basicDurability || part.integrity < part.type.basicIntegrity))
+                if (entity.isCrouching())
+                    player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.disassembly", Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
+                else if (!subPart.destroyed)
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.repair",
-                            Component.translatable(part.type.registryKey.toLanguageKey()),
-                            part.integrity, part.type.basicIntegrity, part.sharedDurability, part.type.basicDurability).withColor(Color.GREEN.getRGB()), true);
-                else if (subPart.destroyed)
+                            Component.translatable(part.type.registryKey.toLanguageKey()).withColor(Color.GREEN.getRGB())), true);
+                else
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.cant_repair",
                             Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.RED.getRGB()), true);
-                else player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.no_need_to_repair",
-                            Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.GREEN.getRGB()), true);
             } else player.displayClientMessage(Component.empty(), true);
         }
     }

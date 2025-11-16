@@ -1,8 +1,10 @@
 package io.github.sweetzonzi.machine_max.client.gui.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.menu.VehicleNamingMenu;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleConfigPayload;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -91,6 +93,14 @@ public class VehicleNamingScreen extends AbstractContainerScreen<VehicleNamingMe
         } else if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             this.onClose();
             return true;
+        }
+        if (nameEditBox != null && nameEditBox.isFocused()) {
+            // E 键 - 在搜索框中输入 'e' 而不是关闭界面
+            if (Minecraft.getInstance().options.keyInventory.isActiveAndMatches(InputConstants.getKey(keyCode, scanCode))) {
+                // 让搜索框处理 E 键输入
+                nameEditBox.keyPressed(keyCode, scanCode, modifiers);
+                return true;
+            }
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
     }

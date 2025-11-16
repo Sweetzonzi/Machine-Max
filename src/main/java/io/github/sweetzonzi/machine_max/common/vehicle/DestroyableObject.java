@@ -36,8 +36,8 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     public int hurtTime = 0;
     public int hurtDuration = 3;
     //物理属性 Physical attributes
-    public Transform transform = new Transform();
-    public Transform oldTransform = new Transform();//用于渲染插值
+    public volatile Transform transform = new Transform();
+    public volatile Transform oldTransform = new Transform();//用于渲染插值
     public Transform syncTransformBuffer = new Transform();//用于缓存同步数据
     public long lastSync;//记录距离上次同步经过的时间，用于外推
     protected static final EntityDataAccessor<org.joml.Vector3f> DATA_POS_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.VECTOR3);

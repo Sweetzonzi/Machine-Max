@@ -22,8 +22,7 @@ public class PartData {
     public final String name;//部件的名称
     public final String uuid;//部件的UUID
     public final String variant;//部件的变体
-    public final float durability;//部件的耐久度
-    public final float integrity;//部件的完整度
+    public final float sharedDurability;//部件的耐久度
     public final Map<String, SubPartData> subParts;//尚存的零件数据
 
     public static final Codec<PartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -31,8 +30,7 @@ public class PartData {
             Codec.STRING.fieldOf("name").forGetter(PartData::getName),
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),
             Codec.STRING.fieldOf("variant").forGetter(PartData::getVariant),
-            Codec.FLOAT.fieldOf("durability").forGetter(PartData::getDurability),
-            Codec.FLOAT.optionalFieldOf("integrity", 20f).forGetter(PartData::getIntegrity),
+            Codec.FLOAT.fieldOf("durability").forGetter(PartData::getSharedDurability),
             SubPartData.MAP_CODEC.fieldOf("sub_parts").forGetter(PartData::getSubParts)
     ).apply(instance, PartData::new));
 
@@ -47,9 +45,8 @@ public class PartData {
             String uuid = buffer.readUtf();
             String variant = buffer.readUtf();
             float durability = buffer.readFloat();
-            float integrity = buffer.readFloat();
             var subParts = SubPartData.MAP_STREAM_CODEC.decode(buffer);
-            return new PartData(registryKey, name, uuid, variant, durability, integrity, subParts);
+            return new PartData(registryKey, name, uuid, variant, durability, subParts);
         }
 
         @Override
@@ -58,8 +55,7 @@ public class PartData {
             buffer.writeUtf(value.name);
             buffer.writeUtf(value.uuid);
             buffer.writeUtf(value.variant);
-            buffer.writeFloat(value.durability);
-            buffer.writeFloat(value.integrity);
+            buffer.writeFloat(value.sharedDurability);
             SubPartData.MAP_STREAM_CODEC.encode(buffer, value.subParts);
         }
     };
@@ -94,15 +90,13 @@ public class PartData {
             String name,
             String uuid,
             String variant,
-            float durability,
-            float integrity,
+            float sharedDurability,
             Map<String, SubPartData> subParts) {
         this.registryKey = registryKey;
         this.name = name;
         this.uuid = uuid;
         this.variant = variant;
-        this.durability = durability;
-        this.integrity = integrity;
+        this.sharedDurability = sharedDurability;
         this.subParts = subParts;
     }
 
@@ -116,8 +110,7 @@ public class PartData {
         this.name = part.name;
         this.uuid = part.getUuid().toString();
         this.variant = part.variant;
-        this.durability = part.sharedDurability;
-        this.integrity = part.integrity;
+        this.sharedDurability = part.sharedDurability;
         this.subParts = new HashMap<>();
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {
             subParts.put(entry.getKey(), new SubPartData(entry.getValue()));

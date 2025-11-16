@@ -49,8 +49,7 @@ public class Part {
     public final Level level;
     public final String variant;
     public final UUID uuid;
-    public volatile float sharedDurability;//仅在部件内共享耐久度启用时有效
-    public volatile float integrity;
+    public volatile float sharedDurability;//仅在部件内共享耐久度启用时有效，仅用于传递数据，各类实际判断在零件中进行
     public final SubPart rootSubPart;
     public float totalMass;
     //模块化属性 Modular attributes
@@ -73,8 +72,7 @@ public class Part {
         this.variant = variant;
         this.level = level;
         this.uuid = UUID.randomUUID();
-        this.sharedDurability = partType.basicDurability;
-        this.integrity = partType.basicIntegrity;
+        this.sharedDurability = getSharedMaxDurability();
         this.rootSubPart = createSubParts(type.getVariants().get(variant).subParts());//创建子部件并指定根子部件
         updateMass();
     }
@@ -104,9 +102,8 @@ public class Part {
         this.level = level;
         this.variant = data.variant;
         this.uuid = UUID.fromString(data.uuid);
-        this.sharedDurability = readAdditionalData ? Math.min(data.durability, type.basicDurability) : type.basicDurability;
-        this.integrity = readAdditionalData ? Math.min(data.integrity, type.basicIntegrity) : type.basicIntegrity;
         this.rootSubPart = createSubParts(type.getVariants().get(variant).subParts());//重建子部件并指定根子部件
+        this.sharedDurability = readAdditionalData ? Math.min(data.sharedDurability, getSharedMaxDurability()) : getSharedMaxDurability();
         //遍历零件，录入基本数据
         for (Map.Entry<String, SubPart> entry : subParts.entrySet()) {
             String subPartName = entry.getKey();
@@ -317,16 +314,6 @@ public class Part {
     }
 
     /**
-     * <p>获取此部件为载具提供的最大耐久度</p>
-     * <p>Gets the maximum durability of this part as a vehicle</p>
-     *
-     * @return 最大耐久度 max durability
-     */
-    public float getDurabilityForVehicle() {
-        return type.vehicleDurabilityRate * type.basicDurability;
-    }
-
-    /**
      * 主线程 Main thread
      * <p>将部件的所有零件添加到物理世界，开始物理运算</p>
      * <p>Adds all sub-parts of the part to the physical world and starts the physical calculation.</p>
@@ -355,14 +342,26 @@ public class Part {
 
     private void setTransformRaw(Transform transform) {
         Transform rootTransform = rootSubPart.body.getTransform(null).invert();
+        rootSubPart.setPosition(transform.getTranslation());
+        rootSubPart.setRotation(transform.getRotation());
+        rootSubPart.transform = transform.clone();
+        rootSubPart.oldTransform = transform.clone();
         rootSubPart.body.setPhysicsTransform(transform);
+        PhysicsBodyExtensionKt.stateOf(rootSubPart.body).setTransform(transform);
+        PhysicsBodyExtensionKt.stateOf(rootSubPart.body).setLastTransform(transform);
         Transform subPartTransform = new Transform();
         for (SubPart subPart : subParts.values()) {
             if (subPart == rootSubPart) continue;
             subPart.body.getTransform(subPartTransform);
             MyMath.combine(subPartTransform, rootTransform, subPartTransform);
             MyMath.combine(subPartTransform, transform, subPartTransform);
+            subPart.setPosition(subPartTransform.getTranslation());
+            subPart.setRotation(subPartTransform.getRotation());
+            subPart.transform = subPartTransform.clone();
+            subPart.oldTransform = subPartTransform.clone();
             subPart.body.setPhysicsTransform(subPartTransform);
+            PhysicsBodyExtensionKt.stateOf(subPart.body).setTransform(subPartTransform);
+            PhysicsBodyExtensionKt.stateOf(subPart.body).setLastTransform(subPartTransform);
         }
     }
 

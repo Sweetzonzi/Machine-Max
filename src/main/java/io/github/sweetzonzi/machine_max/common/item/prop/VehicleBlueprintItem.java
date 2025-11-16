@@ -264,7 +264,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
             } else throw new NullPointerException();
         } catch (NullPointerException e) {
             animatable.getModelController().setModel(new ModelIndex(
-                    "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item/blueprint")));
+                    "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint")));
             animatable.getModelController().setTextureLocation(
                     ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"));
         }

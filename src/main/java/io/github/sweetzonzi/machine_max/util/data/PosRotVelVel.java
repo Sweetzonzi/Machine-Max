@@ -30,8 +30,8 @@ public record PosRotVelVel(
     public static final Codec<PosRotVelVel> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             VECTOR3F_CODEC.fieldOf("position").forGetter(PosRotVelVel::position),
             ExtraCodecs.QUATERNIONF.fieldOf("rotation").forGetter(PosRotVelVel::rotation),
-            VECTOR3F_CODEC.fieldOf("linearVel").forGetter(PosRotVelVel::linearVel),
-            VECTOR3F_CODEC.fieldOf("angularVel").forGetter(PosRotVelVel::angularVel)
+            VECTOR3F_CODEC.fieldOf("linear_vel").forGetter(PosRotVelVel::linearVel),
+            VECTOR3F_CODEC.fieldOf("angular_vel").forGetter(PosRotVelVel::angularVel)
     ).apply(instance, PosRotVelVel::new));
 
     public static final Codec<Map<String, PosRotVelVel>> MAP_CODEC = Codec.unboundedMap(

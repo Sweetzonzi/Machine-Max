@@ -22,9 +22,7 @@ public class PartType {
     public final float vehicleDurabilityRate;//载具耐久度贡献系数
     public final float vehicleDamageRate;//载具伤害传递系数
     public final float vehicleDamageRateDestroyed;//部件被摧毁时的伤害传递系数
-    public final float basicDurability;//部件基础耐久度
     public final boolean shareDurability;//部件内零件是否共享耐久度
-    public final float basicIntegrity;//部件基础结构完整度
     public final Map<String, VariantAttr> variants;//部件所有变体列表
     public final ResourceLocation registryKey;
 
@@ -51,9 +49,7 @@ public class PartType {
             Codec.FLOAT.optionalFieldOf("vehicle_durability_rate", 0.8f).forGetter(PartType::getVehicleDurabilityRate),
             Codec.FLOAT.optionalFieldOf("vehicle_damage_rate", 1.0f).forGetter(PartType::getVehicleDamageRate),
             Codec.FLOAT.optionalFieldOf("vehicle_damage_rate_destroyed", 0.1f).forGetter(PartType::getVehicleDamageRateDestroyed),
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(PartType::getBasicDurability),
             Codec.BOOL.optionalFieldOf("share_durability", true).forGetter(PartType::isShareDurability),
-            Codec.FLOAT.optionalFieldOf("basic_integrity", 20f).forGetter(PartType::getBasicIntegrity),
             VARIANT_MAP_CODEC.fieldOf("variants").forGetter(PartType::getVariants)
     ).apply(instance, PartType::new));
 
@@ -64,12 +60,9 @@ public class PartType {
             float vehicleDurabilityRate = buffer.readFloat();
             float vehicleDamageRate = buffer.readFloat();
             float vehicleDamageRateDestroyed = buffer.readFloat();
-            float basicDurability = buffer.readFloat();
             boolean shareDurability = buffer.readBoolean();
-            float basicIntegrity = buffer.readFloat();
             Map<String, VariantAttr> variants = buffer.readJsonWithCodec(VARIANT_MAP_CODEC);
-            return new PartType(name, vehicleDurabilityRate, vehicleDamageRate, vehicleDamageRateDestroyed,
-                    basicDurability, shareDurability, basicIntegrity, variants);
+            return new PartType(name, vehicleDurabilityRate, vehicleDamageRate, vehicleDamageRateDestroyed, shareDurability, variants);
         }
 
         @Override
@@ -78,9 +71,7 @@ public class PartType {
             buffer.writeFloat(value.vehicleDurabilityRate);
             buffer.writeFloat(value.vehicleDamageRate);
             buffer.writeFloat(value.vehicleDamageRateDestroyed);
-            buffer.writeFloat(value.basicDurability);
             buffer.writeBoolean(value.shareDurability);
-            buffer.writeFloat(value.basicIntegrity);
             buffer.writeJsonWithCodec(VARIANT_MAP_CODEC, value.variants);
         }
     };
@@ -90,18 +81,14 @@ public class PartType {
             float vehicleDurabilityRate,
             float vehicleDamageRate,
             float vehicleDamageRateDestroyed,
-            float basicDurability,
             boolean shareDurability,
-            float basicIntegrity,
             Map<String, VariantAttr> variants
     ) {
         this.name = name;
         this.vehicleDurabilityRate = vehicleDurabilityRate;
         this.vehicleDamageRate = vehicleDamageRate;
         this.vehicleDamageRateDestroyed = vehicleDamageRateDestroyed;
-        this.basicDurability = basicDurability;
         this.shareDurability = shareDurability;
-        this.basicIntegrity = basicIntegrity;
         this.variants = variants;
         this.registryKey = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, name);
     }
@@ -127,7 +114,7 @@ public class PartType {
         return variants.keySet().iterator();
     }
 
-    public ResourceLocation getDefaultIcon(){
+    public ResourceLocation getDefaultIcon() {
         var variant = getVariantIterator().next();
         return variants.get(variant).icon();
     }

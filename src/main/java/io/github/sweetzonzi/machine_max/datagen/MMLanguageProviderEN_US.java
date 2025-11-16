@@ -55,7 +55,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("message.machine_max.watch_interact_box_info", "[%1$s]");
         this.add("error.machine_max.use_part_item", "An error occurred while trying to deploy %1$s：%2$s");
         this.add("tooltip.machine_max.crowbar.safe_disassembly", "Interact to safely disassemble %1$s");
-        this.add("tooltip.machine_max.crowbar.unsafe_disassembly", "Integrity: %1$s/%2$s Interact to force disassemble %3$s (Could damage part)");
+        this.add("tooltip.machine_max.crowbar.unsafe_disassembly", "Interact to force disassemble %3$s (Could damage part)");
         this.add("tooltip.machine_max.wrench.disassembly", "Integrity: %1$s/%2$s Interact to safely unbolt %3$s");
         this.add("tooltip.machine_max.wrench.repair", "Integrity: %2$s/%3$s Durability: %4$s/%5$s Interact to repair %1$s");
         this.add("tooltip.machine_max.wrench.cant_repair", "%1$s has been destroyed, cannot repair. Crouch and interact to unbolt the part");

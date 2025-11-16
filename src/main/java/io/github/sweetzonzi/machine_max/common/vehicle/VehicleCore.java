@@ -86,7 +86,7 @@ public class VehicleCore {
         this.uuid = UUID.fromString(savedData.uuid);
         this.hp = savedData.hp;
         this.position = savedData.pos;
-        this.oldPosition = this.position;
+        this.oldPosition = savedData.pos;
         this.name = savedData.name;
         try {
             //重建部件
