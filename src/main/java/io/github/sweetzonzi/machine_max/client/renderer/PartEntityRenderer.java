@@ -44,10 +44,9 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         if (entity.subPart != null) {
             float renderDistance = Minecraft.getInstance().gameRenderer.getRenderDistance();
             double sqrDist = entity.distanceToSqr(camX, entity.getY(), camZ);
-            if (sqrDist > renderDistance*renderDistance) {
+            if (sqrDist > renderDistance * renderDistance) {
                 return false;
-            }
-            else{
+            } else {
                 AABB aabb = entity.getBoundingBox();
                 return camera.isVisible(aabb);
             }
@@ -61,11 +60,11 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         ModelInstance modelInstance = modelController.getModel();
         if (modelInstance == null) return;
         var worldMatrix = entity.subPart.getWorldPositionMatrix(partialTick);
-        Color color = entity.subPart.isDestroyed() ? new Color(64, 64, 64, 255) : Color.WHITE;
+        Color color = entity.subPart.isDestroyed() ? new Color(64, 64, 64, entity.subPart.getDestroyTime() < 20 ? 255 * entity.subPart.getDestroyTime() / 20 : 255) : Color.WHITE;
         int overlay = OverlayTexture.NO_OVERLAY;
         if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);
-        var pos =entity.subPart.transform.getTranslation();
-        BlockPos blockpos = new BlockPos((int)pos.x, (int)pos.y, (int)pos.z);
+        var pos = entity.subPart.transform.getTranslation();
+        BlockPos blockpos = new BlockPos((int) pos.x, (int) pos.y, (int) pos.z);
         poseStack.pushPose();//开始渲染
         ModelRenderHelperKt.render(
                 modelController.getOriginModel(),

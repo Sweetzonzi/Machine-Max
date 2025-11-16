@@ -67,7 +67,7 @@ public class ItemStorageSubsystem extends AbstractSubsystem implements MenuProvi
         for (int i = 0; i < container.getContainerSize(); i++) {
             ItemStack stack = container.getItem(i);
             if (!stack.isEmpty()) {
-                Vec3 pos = SparkMathKt.toVec3(getOwner().getSubPart().getWorldPositionMatrix(1).getTranslation(null));
+                Vec3 pos = SparkMathKt.toVec3(getOwner().getSubPart().getPosition());
                 ItemEntity item = new ItemEntity(getOwner().getLevel(), pos.x, pos.y, pos.z, stack);
                 getOwner().getLevel().addFreshEntity(item);
             }

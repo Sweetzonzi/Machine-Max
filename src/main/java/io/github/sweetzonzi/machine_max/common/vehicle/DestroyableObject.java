@@ -50,7 +50,8 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     private int id = ENTITY_COUNTER.incrementAndGet();//客户端的ID应当根据收到的创建包更新
     protected static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.FLOAT);
     public volatile boolean destroyed = false;
-    protected final ConcurrentLinkedQueue<Pair<Float, PartDamageData>> accumulatedDamage = new ConcurrentLinkedQueue<>();
+    protected static final EntityDataAccessor<Integer> DESTROY_TIME_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.INT);
+    ConcurrentLinkedQueue<Pair<Float, PartDamageData>> accumulatedDamage = new ConcurrentLinkedQueue<>();
     protected final SynchedEntityData syncedData;
     //运行中
     public int tickCount = 0;
@@ -65,6 +66,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         syncheddata$builder.define(DATA_VEL_ID, new org.joml.Vector3f());
         syncheddata$builder.define(DATA_ANG_VEL_ID, new org.joml.Vector3f());
         syncheddata$builder.define(DATA_DURABILITY_ID, 20.0F);
+        syncheddata$builder.define(DESTROY_TIME_ID, 200);
         this.defineSyncedData(syncheddata$builder);
         this.syncedData = syncheddata$builder.build();
     }
@@ -86,8 +88,15 @@ public abstract class DestroyableObject implements SyncedDataHolder {
 
     public void postTick() {
         if (!level.isClientSide()) {
+            if (isDestroyed()) {//物体已被摧毁，倒计时结束后移除
+                int destroyTime = getDestroyTime();
+                if (destroyTime > 0) {
+                    setDestroyTime(destroyTime - 1);
+                }
+            }
             syncToClient();
         }
+        if(isDestroyed() && getDestroyTime() <= 0) this.destroy();
     }
 
     public void prePhysicsTick() {
@@ -266,6 +275,14 @@ public abstract class DestroyableObject implements SyncedDataHolder {
 
     public void setDurability(float durability) {
         this.syncedData.set(DATA_DURABILITY_ID, Mth.clamp(durability, 0.0F, this.getMaxDurability()));
+    }
+
+    public int getDestroyTime() {
+        return this.syncedData.get(DESTROY_TIME_ID);
+    }
+
+    public void setDestroyTime(int time) {
+        this.syncedData.set(DESTROY_TIME_ID, time);
     }
 
     abstract public float getMaxDurability();
