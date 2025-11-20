@@ -113,8 +113,8 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
 //            MachineMax.LOGGER.debug("angle: {}, normal: {}, originalVec: {} ,finalVec: {}", angle, normal, originalVec, finalVec);
         if (angle * 180 / (float) Math.PI < 45f) {
             //TODO: 配置文件控制是否全量碰撞或水平方向无碰撞
-            boolean horizontalCollision = true;
-            if (horizontalCollision || normal.dot(new Vec3(0, 1, 0)) > 0.7071f) {
+            boolean noHorizontalCollision = false;
+            if (noHorizontalCollision || normal.dot(new Vec3(0, 1, 0)) > 0.7071f) {
                 //爬坡角度小于45°时
                 if (originalVec.horizontalDistanceSqr() > 0.0001f)
                     //水平方向有运动时，取原始向量的长度，方便爬坡

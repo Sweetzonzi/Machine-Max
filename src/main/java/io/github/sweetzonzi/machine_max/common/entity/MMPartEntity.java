@@ -291,6 +291,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     public @NotNull Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {
         if (subPart != null && onBoardPositions.containsKey(passenger)) { //优先使用记录的登车位置
             Vec3 pos = SparkMathKt.toVec3(MMMath.relPointWorldPos(onBoardPositions.get(passenger), subPart.body));
+            pos = pos.add(0, 0.1, 0); //防止陷地
             onBoardPositions.remove(passenger); //移除登车位置记录
             for (Pose pose : passenger.getDismountPoses()) { //尝试所有可用姿势（站立，潜行，匍匐等）
                 AABB aabb = passenger.getLocalBoundsForPose(pose);
