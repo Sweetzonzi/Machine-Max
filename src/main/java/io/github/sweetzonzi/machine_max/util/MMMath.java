@@ -60,6 +60,20 @@ public class MMMath {
         return result;
     }
 
+    /**
+     * 计算世界坐标系中的一个点相对于刚体的局部坐标
+     *
+     * @param worldPointPos 世界坐标系中的点坐标
+     * @param obj           刚体对象
+     * @return 相对于刚体的局部坐标
+     */
+    public static Vector3f worldPointLocalPos(Vector3f worldPointPos, PhysicsCollisionObject obj) {
+        Vector3f absPos = obj.getPhysicsLocation(null); // 获取物体质心世界坐标
+        Quaternion worldToLocal = obj.getPhysicsRotation(null).inverse(); // 获取物体从世界坐标到局部坐标的四元数（逆）
+        Vector3f relativePos = worldPointPos.subtract(absPos); // 计算相对于质心的位置
+        return MyQuaternion.rotate(worldToLocal, relativePos, null); // 将相对位置向量从世界坐标系旋转到局部坐标系
+    }
+    
     public static Vector3f localVectorToWorldVector(Vector3f localVec, PhysicsRigidBody obj) {
         Quaternion localToWorld = obj.getPhysicsRotation(null); //获取物体相对世界坐标的四元数
         return MyQuaternion.rotate(localToWorld, localVec, null);

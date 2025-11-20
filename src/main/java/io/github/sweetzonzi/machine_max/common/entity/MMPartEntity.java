@@ -19,6 +19,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
+import io.github.sweetzonzi.machine_max.util.MMMath;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -29,6 +30,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -39,6 +41,8 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -50,6 +54,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     public String subPartName;
     public AtomicReference<BoundingBox> boundingBox = new AtomicReference<>();
     public AtomicReference<Vector3f> bodyCenter = new AtomicReference<>();
+    private final Map<Entity, Vector3f> onBoardPositions = HashMap.newHashMap(1);
 
     /**
      * 不应被使用！
@@ -202,11 +207,12 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     /**
      * 无来源位置的伤害的处理
+     *
      * @param source 伤害来源
      * @param amount 伤害值
      * @return 是否处理了伤害
      */
-    public boolean hurtWithoutRayTest(@NotNull DamageSource source, float amount){
+    public boolean hurtWithoutRayTest(@NotNull DamageSource source, float amount) {
         if (this.subPart == null) return false;
         Vector3f normal = Vector3f.UNIT_Y;
         Vector3f contactPoint = PhysicsHelperKt.toBVector3f(this.position());
@@ -257,6 +263,20 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     }
 
     @Override
+    protected void addPassenger(Entity passenger) {
+        super.addPassenger(passenger);
+        if (subPart != null) {
+            Vector3f relPos = MMMath.worldPointLocalPos(PhysicsHelperKt.toBVector3f(passenger.position()), subPart.body);
+            onBoardPositions.put(passenger, relPos); //记录登车位置（相对刚体）
+        }
+    }
+
+    @Override
+    protected void removePassenger(Entity passenger) {
+        super.removePassenger(passenger);
+    }
+
+    @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
         var subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
         if (entity instanceof LivingEntity && subsystem instanceof SeatSubsystem seat) {
@@ -269,7 +289,16 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @Override
     public @NotNull Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {
-        return super.getDismountLocationForPassenger(passenger);
+        if (subPart != null && onBoardPositions.containsKey(passenger)) { //优先使用记录的登车位置
+            Vec3 pos = SparkMathKt.toVec3(MMMath.relPointWorldPos(onBoardPositions.get(passenger), subPart.body));
+            onBoardPositions.remove(passenger); //移除登车位置记录
+            for (Pose pose : passenger.getDismountPoses()) { //尝试所有可用姿势（站立，潜行，匍匐等）
+                AABB aabb = passenger.getLocalBoundsForPose(pose);
+                if(DismountHelper.canDismountTo(this.level(), passenger, aabb.move(pos.subtract(passenger.position()))))
+                    return pos;
+            }
+        }
+        return super.getDismountLocationForPassenger(passenger);//回退
     }
 
     @Override
