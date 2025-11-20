@@ -52,6 +52,7 @@ public class Part {
     public volatile float sharedDurability;//仅在部件内共享耐久度启用时有效，仅用于传递数据，各类实际判断在零件中进行
     public final SubPart rootSubPart;
     public float totalMass;
+    public boolean destroyed = false;
     //模块化属性 Modular attributes
     public final Map<String, SubPart> subParts = HashMap.newHashMap(1);
     public final Map<Pair<String, String>, AbstractConnector> externalConnectors = HashMap.newHashMap(1);
@@ -160,6 +161,12 @@ public class Part {
     }
 
     public void onTick() {
+        boolean shouldDestroy = true;
+        for (SubPart subPart : subParts.values()) {
+            if (subPart.getDestroyTime() > 0) shouldDestroy = false;
+            break;
+        }
+        if (shouldDestroy) this.destroyed = true;
     }
 
     public void onPrePhysicsTick() {

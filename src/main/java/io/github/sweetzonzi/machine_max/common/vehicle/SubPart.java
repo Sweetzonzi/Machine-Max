@@ -757,6 +757,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     /**
      * 实际处理伤害
+     *
      * @param source
      * @param damage
      * @param projectileSource
@@ -780,58 +781,67 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         float armor = hitBox.getRHA(this);
         float armorPenetration = 0;
         //击退处理与特殊逻辑
-        if (projectileSource == null && !level.isClientSide) {//原版伤害处理
-            //冲击效果
-            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 250f);//伤害转化为动量，使用log函数以使冲量与部件耐久匹配
-            if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
-                knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
-            }
-            if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION))
-                knockBack *= 15.0f;
-            float finalKnockBack = knockBack;
-            level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
-                part.vehicle.activate();
-                this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(this.body.getPhysicsLocation(null)));
-                return null;
-            });
-            //换算穿深
-            armorPenetration = damage / 2f;
-        } else if (projectileSource != null) {//甲弹对抗处理
-            //获取穿深
-            try {
-                armorPenetration = damage;
-                //TODO:研究一下Key是怎么用的
-//                armorPenetration = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
-            } catch (Exception e) {
-                armorPenetration = damage / 2f;
-                MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", this.part.name);
-            }
-        }
-        //线性减伤处理
-        float impactDamage = damage - hitBox.getDamageReduction();
-        //分配冲击至对接口
-        distributeImpactToConnectors(impactDamage, worldContactPoint);
-        //甲弹对抗相关处理
-        if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
-        //击穿判定
-        if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
-            if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
-                impactDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
-            impactDamage *= hitBox.getDamageMultiplier();
-            //对部件造成伤害
-            PartDamageData data = new PartDamageData(source, projectileSource, normal, worldContactSpeed, worldContactPoint, hitBox);
-            accumulateDamage(impactDamage, data);
-        } else {
-            if (level.isClientSide) {
-                level.submitImmediateTask(PPhase.ALL, () -> {
-                    //播放命中音效
-                    SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"), 64f);
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
-                            (float) ((2 - Math.min(7f, damage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
-                            0.1f + 0.4f * Math.min(7f, damage) / 7f);
+        if (!level.isClientSide) {
+            if (projectileSource == null) {//原版伤害处理
+                //冲击效果
+                float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 250f);//伤害转化为动量，使用log函数以使冲量与部件耐久匹配
+                if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
+                    knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
+                }
+                if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION))
+                    knockBack *= 15.0f;
+                float finalKnockBack = knockBack;
+                level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
+                    part.vehicle.activate();
+                    this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(this.body.getPhysicsLocation(null)));
                     return null;
                 });
+                //换算穿深
+                armorPenetration = damage / 2f;
+            } else {//甲弹对抗处理
+                //获取穿深
+                try {
+                    armorPenetration = damage;
+                    //TODO:研究一下Key是怎么用的
+//                armorPenetration = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
+                } catch (Exception e) {
+                    armorPenetration = damage / 2f;
+                    MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", this.part.name);
+                }
             }
+            //线性减伤处理
+            float impactDamage = damage - hitBox.getDamageReduction();
+            //分配冲击至对接口
+            distributeImpactToConnectors(impactDamage, worldContactPoint);
+            //甲弹对抗相关处理
+            if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
+            //击穿判定
+            if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
+                if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
+                    impactDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
+                impactDamage *= hitBox.getDamageMultiplier();
+                //对部件造成伤害
+                PartDamageData data = new PartDamageData(source, projectileSource, normal, worldContactSpeed, worldContactPoint, hitBox);
+                accumulateDamage(impactDamage, data);
+            }
+        } else {
+            level.submitImmediateTask(PPhase.ALL, () -> {
+                //播放命中音效
+                SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"), 64f);
+                SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
+                        (float) ((2 - Math.min(7f, damage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
+                        0.1f + 0.4f * Math.min(7f, damage) / 7f);
+                //添加粒子
+                var pos = SparkMathKt.toVec3(worldContactPoint);
+//                for (int i = 0; i < 3; i++) {
+//                    var dir = normal.mult(0.3f).add(new Vector3f(
+//                            (float) (Math.random() - 0.5f),
+//                            (float) (Math.random() - 0.5f),
+//                            (float) (Math.random() - 0.5f)).mult(0.1f));
+//                    level.addParticle(ParticleTypes.FIREWORK, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
+//                }
+                return null;
+            });
         }
         return true; //返回true表示命中，且伤害已被处理
     }
@@ -839,27 +849,28 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     /**
      * <p>根据伤害和各对接口的距离，施加冲击力至各个对接口</p>
      * <p>Distributes the impact to each connector based on the damage and distance to each connector</p>
-     * @param impact 冲击
+     *
+     * @param impact      冲击
      * @param impactPoint 冲击点
      */
-    protected void distributeImpactToConnectors(float impact, Vector3f impactPoint){
+    protected void distributeImpactToConnectors(float impact, Vector3f impactPoint) {
         // 累积冲击效果用于削减对接口结构完整性
         Map<AbstractConnector, Float> impactWeights = new HashMap<>();
         float totalImpactWeight = 0;
         // 可调节参数
         final float DISTANCE_EXPONENT = 2.0f; // 距离指数：1=反比，2=平方反比
         final float MIN_DISTANCE = 0.1f; // 最小距离，防止除零和过大的权重
-        for(AbstractConnector connector : this.connectors.values()){
-            if(!connector.hasPart() || !connector.isBreakable()) continue; // 仅有连接且可破坏的对接口参与分配
+        for (AbstractConnector connector : this.connectors.values()) {
+            if (!connector.hasPart() || !connector.isBreakable()) continue; // 仅有连接且可破坏的对接口参与分配
             Vector3f connectorPos = MMMath.relPointWorldPos(connector.offsetFromMassCenter.getTranslation(), this.body);
             float distance = Math.max(connectorPos.distance(impactPoint), MIN_DISTANCE);
             // 权重是距离的指数反比，距离越远权重越小
-            float weight = 1.0f / (float)Math.pow(distance, DISTANCE_EXPONENT);
+            float weight = 1.0f / (float) Math.pow(distance, DISTANCE_EXPONENT);
             impactWeights.put(connector, weight);
             totalImpactWeight += weight;
         }
         // 分配冲击伤害
-        for (Map.Entry<AbstractConnector, Float> entry : impactWeights.entrySet()){
+        for (Map.Entry<AbstractConnector, Float> entry : impactWeights.entrySet()) {
             float impactFraction = entry.getValue() / totalImpactWeight;
             entry.getKey().accumulateImpact(impact * impactFraction);
         }

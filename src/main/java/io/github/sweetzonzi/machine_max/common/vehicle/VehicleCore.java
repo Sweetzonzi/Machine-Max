@@ -153,6 +153,10 @@ public class VehicleCore {
         Vec3 newVel = new Vec3(0, 0, 0);
         int count = 0;
         for (Part part : partMap.values()) {
+            if(part.isDestroyed()){
+                removePart(part);
+                continue;
+            }
             Vec3 partPos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(part.rootSubPart.body).getTransform().getTranslation());
             Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.body.getLinearVelocity(null));
             newPos = newPos.add(partPos);//计算载具形心位置

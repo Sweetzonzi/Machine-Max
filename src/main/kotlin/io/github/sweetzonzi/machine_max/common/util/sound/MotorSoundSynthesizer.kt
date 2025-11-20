@@ -53,7 +53,7 @@ object MotorSoundSynthesizer {
         )
 
         // 应用随速变化的低通滤波器
-        return applySpeedDependentFilter(mixed, load, config, sampleRate)
+        return applySpeedDependentFilter(mixed, load, config)
     }
 
     /**
@@ -151,8 +151,7 @@ object MotorSoundSynthesizer {
     private fun applySpeedDependentFilter(
         soundData: SoundData,
         rpm: Double,
-        config: MotorConfig,
-        sampleRate: Int
+        config: MotorConfig
     ): SoundData {
         // 转速越高，截止频率越高
         val speedRatio = rpm / config.maxRPM
@@ -285,50 +284,5 @@ object MotorSoundSynthesizer {
         val pulseWidth: Double = 0.5,
         val usePulseWave: Boolean = true
     )
-
-    /**
-     * 快速创建常见类型无刷电机的预设配置 - 改进版
-     */
-    object MotorPresets {
-        @JvmStatic
-        fun droneMotor(): MotorConfig {
-            return MotorConfig(
-                polePairs = 7,
-                pwmFrequency = 24000.0, // 更高频率减少可闻啸叫
-                maxRPM = 25000.0,
-                mechanicalResonanceFreq = 1800.0 // 更高共振频率
-            )
-        }
-
-        @JvmStatic
-        fun evMotor(): MotorConfig {
-            return MotorConfig(
-                polePairs = 4,
-                pwmFrequency = 12000.0,
-                maxRPM = 15000.0,
-                mechanicalResonanceFreq = 600.0 // 较低共振频率，更厚重的音色
-            )
-        }
-
-        @JvmStatic
-        fun industrialMotor(): MotorConfig {
-            return MotorConfig(
-                polePairs = 6,
-                pwmFrequency = 8000.0, // 较低PWM频率，更明显的啸叫
-                maxRPM = 8000.0,
-                mechanicalResonanceFreq = 400.0 // 低频共振
-            )
-        }
-
-        @JvmStatic
-        fun highPerformanceDrone(): MotorConfig {
-            return MotorConfig(
-                polePairs = 10, // 更多极对数，更高基频
-                pwmFrequency = 32000.0, // 超高频PWM
-                maxRPM = 30000.0,
-                mechanicalResonanceFreq = 2200.0
-            )
-        }
-    }
 
 }
