@@ -429,25 +429,35 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 }
             }
             //通常粒子效果
-            float speed = vel.length();
-            if (contactVel.length() > 1f) {
-                if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SAND) || blockState.is(BlockTags.SNOW)) {
+            if(level.isClientSide()) {
+                float speed = vel.length();
+                level.submitImmediateTask(PPhase.PRE, () -> {
                     if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
-                        level.submitImmediateTask(PPhase.PRE, () -> {
-                            //飞溅草石
-                            level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockState),
-                                    worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
-                                    contactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
-                                    contactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
-                                    contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
+                        //飞溅草石
+                        if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SAND) || blockState.is(BlockTags.SNOW)) {
+                            if (Math.random() < Math.max(1f, 0.05f * speed))
+                                level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockState),
+                                        worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
+                                        contactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
+                                        contactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
+                                        contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
+                        }
+                    }
+                    if (contactVel.length() > 2.5f) {
+                        // 漂移烟雾与音效
+                        if (Math.random() < Math.max(1f, 0.05f * contactVel.length()))
+                            level.addParticle(ParticleTypes.CLOUD,
+                                    worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
+                                    contactVel.x * (0.03f + 0.02f * (Math.random() - 0.5f)),
+                                    contactVel.y * (0.03f + 0.02f * (Math.random() - 0.5f)),
+                                    contactVel.z * (0.03f + 0.02f * (Math.random() - 0.5f)));
+                        level.submitDeduplicatedTask(part.uuid + "_" + name + "_slide_sound", PPhase.PRE, () -> {
+                            level.playLocalSound(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
+                                    blockState.getSoundType(part.level, blockPos, null).getStepSound(), SoundSource.BLOCKS,
+                                    (float) (0.3f * (1f - Math.exp(-0.1 * (vel.length() - 2)))), 0.75f, false);
                             return null;
                         });
                     }
-                }
-                level.submitDeduplicatedTask(part.uuid + "_" + name + "_slide_sound", PPhase.PRE, () -> {
-                    level.playLocalSound(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
-                            blockState.getSoundType(part.level, blockPos, null).getStepSound(), SoundSource.BLOCKS,
-                            (float) (0.3f * (1f - Math.exp(-0.1 * (vel.length() - 2)))), 0.75f, false);
                     return null;
                 });
             }

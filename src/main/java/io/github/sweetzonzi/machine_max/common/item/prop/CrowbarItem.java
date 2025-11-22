@@ -43,7 +43,7 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Objects;
 
-public class CrowbarItem extends Item implements IPartInteractableItem, ICustomModelItem {
+public class CrowbarItem extends Item implements ICustomModelItem {
     public CrowbarItem() {
         super(new Properties()
                 .stacksTo(1)
@@ -52,7 +52,7 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand usedHand) {
+    public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand usedHand) {
         if (!player.level().isClientSide) {
             ItemStack crowbar = player.getItemInHand(usedHand);
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
@@ -151,23 +151,6 @@ public class CrowbarItem extends Item implements IPartInteractableItem, ICustomM
     @Override
     public void postHurtEnemy(ItemStack stack, @NotNull LivingEntity target, @NotNull LivingEntity attacker) {
         stack.hurtAndBreak(1, attacker, EquipmentSlot.MAINHAND);
-    }
-
-    @Override
-    public void interactWitchPart(@NotNull Part part, @NotNull Player player) {
-
-    }
-
-    @Override
-    public void watchingPart(@NotNull Part part, @NotNull Player player) {
-        if (player.level().isClientSide)
-            player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.interact").append(part.name), true);
-    }
-
-    @Override
-    public void stopWatchingPart(@NotNull Player player) {
-        if (player.level().isClientSide)
-            player.displayClientMessage(Component.empty(), true);
     }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {

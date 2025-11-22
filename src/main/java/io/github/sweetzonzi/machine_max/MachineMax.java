@@ -13,7 +13,7 @@ import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
 @Mod(MOD_ID)
 public class MachineMax {
-    //TODO:重构网络包及各类同步系统，特别是断开移除逻辑，使之支持移除个别零件
+    //TODO:重构网络包及各类同步系统，将拆除等事件化，特别是断开移除逻辑，使之支持移除个别零件
     //TODO:优化关节断开逻辑：Vehicle每刻/事件触发检查关节连接关系，检测到不连通再断开记录的关系；断开网络包靠id识别SubPart而非载具uuid-部件uuid-接口名的方式以节约带宽
     //TODO:限制带阻尼关节安装部件时的质量差距？
     //TODO:排查AE86AT左轮胎转动惯量计算BUG（可能已修复）

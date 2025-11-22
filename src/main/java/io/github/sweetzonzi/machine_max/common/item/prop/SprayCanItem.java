@@ -30,7 +30,7 @@ import org.joml.Vector3f;
 import java.util.HashMap;
 import java.util.Objects;
 
-public class SprayCanItem extends Item implements IPartInteractableItem, ICustomModelItem {
+public class SprayCanItem extends Item implements ICustomModelItem {
     public SprayCanItem() {
         super(new Properties());
     }
@@ -64,23 +64,6 @@ public class SprayCanItem extends Item implements IPartInteractableItem, ICustom
                 player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(partEntity.subPart.name), true);
             } else player.displayClientMessage(Component.empty(), true);
         }
-    }
-
-    @Override
-    public void interactWitchPart(@NotNull Part part, @NotNull Player player) {
-
-    }
-
-    @Override
-    public void watchingPart(@NotNull Part part, @NotNull Player player) {
-        if (player.level().isClientSide)
-            player.displayClientMessage(Component.translatable("tooltip.machine_max.spray_can.interact").append(part.name), true);
-    }
-
-    @Override
-    public void stopWatchingPart(@NotNull Player player) {
-        if (player.level().isClientSide)
-            player.displayClientMessage(Component.empty(), true);
     }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
