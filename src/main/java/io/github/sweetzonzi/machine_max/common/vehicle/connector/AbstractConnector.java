@@ -25,6 +25,9 @@ import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.JointAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorAttachEvent;
+import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorDetachEvent;
+import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorTickEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalPort;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.ConnectorSyncPayload;
@@ -43,6 +46,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,6 +68,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     protected static final EntityDataAccessor<Float> DATA_INTEGRITY_ID = SynchedEntityData.defineId(AbstractConnector.class, EntityDataSerializers.FLOAT);
     protected final SynchedEntityData synchedData;
     protected final ConcurrentLinkedQueue<Float> accumulatedImpact = new ConcurrentLinkedQueue<>();
+    protected final ConcurrentLinkedQueue<Float> accumulatedIntegrityChange = new ConcurrentLinkedQueue<>();
     public final boolean breakable;//对接口是否可被破坏
     @Setter
     public AbstractConnector attachedConnector;//与本接口对接的接口
@@ -91,6 +96,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     public void prePhysicsTick() {
+        NeoForge.EVENT_BUS.post(new ConnectorTickEvent.PrePhys(this));
         if (!this.hasPart()) {//更新判定点位置姿态
             if (body == null) {
                 createAttachPointBody(
@@ -107,10 +113,11 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     public void postPhysicsTick() {
-
+        NeoForge.EVENT_BUS.post(new ConnectorTickEvent.PostPhys(this));
     }
 
     public void mcTick() {
+        NeoForge.EVENT_BUS.post(new ConnectorTickEvent.Pre(this));
         if (subPart.level.isClientSide() && body != null) {
             if (!this.hasPart()) {
                 VisualEffectHelper.attachPoints.put(this, body);
@@ -119,8 +126,22 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             }
         }
         if (!subPart.level.isClientSide()) {
+            handleAccumulatedIntegrityChange();
             handleAccumulatedImpact();
             syncToClient();
+        }
+        NeoForge.EVENT_BUS.post(new ConnectorTickEvent.Post(this));
+    }
+
+    /**
+     * <p>线程安全地改变接口结构完整性，会被在主线程统一处理，参见 {@link #handleAccumulatedIntegrityChange()}</p>
+     * <p>Thread-safe change of the interface structure integrity, which will be handled in the main thread, see {@link #handleAccumulatedIntegrityChange()}</p>
+     *
+     * @param integrity 结构完整性改变量，可小于0 delta of the structure integrity, can be negative
+     */
+    public void addIntegrity(float integrity) {
+        if (!subPart.level.isClientSide()) {
+            accumulatedIntegrityChange.add(integrity);
         }
     }
 
@@ -131,8 +152,24 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      * @param impact 伤害值 impact value
      */
     public void accumulateImpact(float impact) {
-        if (impact > 0) {
+        if (!subPart.level.isClientSide() && impact > 0) {
             accumulatedImpact.add(impact);
+        }
+    }
+
+    /**
+     * <p>处理各线程对接口造成的完整性改变量，在主线程中统一处理，参见 {@link #mcTick()}</p>
+     * <p>Handles the integrity change caused by other threads to the connector, which will be handled in the main thread, see {@link #mcTick()}</p>
+     */
+    protected void handleAccumulatedIntegrityChange() {
+        if (!subPart.level.isClientSide() && !accumulatedIntegrityChange.isEmpty()){
+            float totalChange = 0;
+            while (!accumulatedIntegrityChange.isEmpty()) {
+                totalChange += accumulatedIntegrityChange.poll();
+            }
+            if (totalChange != 0) {
+                setIntegrityInternal(Math.clamp(getIntegrity() + totalChange, 0, getBasicIntegrity()));
+            }
         }
     }
 
@@ -143,8 +180,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     protected void handleAccumulatedImpact() {
         if (!subPart.level.isClientSide()) {
             float totalImpact = 0;
-            if(breakable && !accumulatedImpact.isEmpty()){
-                while (!accumulatedImpact.isEmpty()){
+            if (breakable && !accumulatedImpact.isEmpty()) {
+                while (!accumulatedImpact.isEmpty()) {
                     totalImpact += accumulatedImpact.poll();
                 }
                 if (totalImpact > 0) {
@@ -161,7 +198,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                         });
                     }
                     //削减部件完整性
-                    setIntegrity(Math.clamp(getIntegrity() - (subPart.destroyed ? totalImpact : 0.1f * totalImpact), 0, getBasicIntegrity()));
+                    setIntegrityInternal(Math.clamp(getIntegrity() - (subPart.destroyed ? totalImpact : 0.1f * totalImpact), 0, getBasicIntegrity()));
                 }
                 accumulatedImpact.clear();
             }
@@ -174,6 +211,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      *
      * @param targetConnector 要对接的接口
      * @param force           是否跳过安装条件检查，强制安装
+     * @return 是否成功安装
      */
     public boolean attach(AttachPointConnector targetConnector, boolean force) {
         if (hasPart()) {
@@ -187,7 +225,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         if ((!conditionCheck(targetConnector.subPart.part) || !targetConnector.conditionCheck(this.subPart.part) && !force)) {
             MachineMax.LOGGER.error("零件安装失败，零件不符合对接口安装条件！");
             return false;
-        } else {
+        } else if(!NeoForge.EVENT_BUS.post(new ConnectorAttachEvent.Pre(this, targetConnector)).isCanceled()){
             this.attachedConnector = targetConnector;
             targetConnector.attachedConnector = this;
             this.attachJoint(targetConnector);
@@ -195,8 +233,9 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                 this.signalPort.onConnectorAttach();
                 attachedConnector.signalPort.onConnectorAttach();
             }
+            NeoForge.EVENT_BUS.post(new ConnectorAttachEvent.Post(this, targetConnector));
             return true;
-        }
+        } else return false;
     }
 
     /**
@@ -289,22 +328,26 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      */
     public void detach(boolean destroy) {
         if ((destroy || !internal) && hasPart()) {
-            if (this.signalPort != null && attachedConnector.signalPort != null) {
-                this.signalPort.onConnectorDetach();
-                attachedConnector.signalPort.onConnectorDetach();
+            if(destroy || !NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Pre(this, attachedConnector)).isCanceled()) {
+                AbstractConnector attachedConnector = this.attachedConnector;
+                if (this.signalPort != null && attachedConnector.signalPort != null) {
+                    this.signalPort.onConnectorDetach();
+                    attachedConnector.signalPort.onConnectorDetach();
+                }
+                detachJoint();
+                //重建部件连接点
+                if (!destroy) {
+                    this.createAttachPointBody(
+                            MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body),
+                            subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
+                    attachedConnector.createAttachPointBody(
+                            MMMath.relPointWorldPos(attachedConnector.offsetFromMassCenter.getTranslation(), attachedConnector.subPart.body),
+                            attachedConnector.subPart.body.getPhysicsRotation(null).mult(attachedConnector.offsetFromMassCenter.getRotation()));
+                }
+                this.attachedConnector.attachedConnector = null;
+                this.attachedConnector = null;
+                NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Post(this, attachedConnector));
             }
-            detachJoint();
-            //重建部件连接点
-            if (!destroy) {
-                this.createAttachPointBody(
-                        MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body),
-                        subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
-                attachedConnector.createAttachPointBody(
-                        MMMath.relPointWorldPos(attachedConnector.offsetFromMassCenter.getTranslation(), attachedConnector.subPart.body),
-                        attachedConnector.subPart.body.getPhysicsRotation(null).mult(attachedConnector.offsetFromMassCenter.getRotation()));
-            }
-            this.attachedConnector.attachedConnector = null;
-            this.attachedConnector = null;
         }
     }
 
@@ -412,7 +455,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
 
     public void loadData(CompoundTag data) {
         //加载子系统耐久度
-        setIntegrity(data.getFloat("integrity"));
+        setIntegrityInternal(data.getFloat("integrity"));
     }
 
     public CompoundTag saveData(CompoundTag data) {
@@ -421,15 +464,15 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         return data;
     }
 
-    public void setIntegrity(float integrity){
+    private void setIntegrityInternal(float integrity) {
         getSynchedData().set(DATA_INTEGRITY_ID, integrity);
     }
 
-    public float getIntegrity(){
+    public float getIntegrity() {
         return getSynchedData().get(DATA_INTEGRITY_ID);
     }
 
-    public float getBasicIntegrity(){
+    public float getBasicIntegrity() {
         return attr.integrity();
     }
 
