@@ -162,7 +162,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      * <p>Handles the integrity change caused by other threads to the connector, which will be handled in the main thread, see {@link #mcTick()}</p>
      */
     protected void handleAccumulatedIntegrityChange() {
-        if (!subPart.level.isClientSide() && !accumulatedIntegrityChange.isEmpty()){
+        if (!subPart.level.isClientSide() && !accumulatedIntegrityChange.isEmpty()) {
             float totalChange = 0;
             while (!accumulatedIntegrityChange.isEmpty()) {
                 totalChange += accumulatedIntegrityChange.poll();
@@ -225,17 +225,19 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         if ((!conditionCheck(targetConnector.subPart.part) || !targetConnector.conditionCheck(this.subPart.part) && !force)) {
             MachineMax.LOGGER.error("零件安装失败，零件不符合对接口安装条件！");
             return false;
-        } else if(!NeoForge.EVENT_BUS.post(new ConnectorAttachEvent.Pre(this, targetConnector)).isCanceled()){
-            this.attachedConnector = targetConnector;
-            targetConnector.attachedConnector = this;
-            this.attachJoint(targetConnector);
-            if (this.signalPort != null && attachedConnector.signalPort != null) {
-                this.signalPort.onConnectorAttach();
-                attachedConnector.signalPort.onConnectorAttach();
-            }
-            NeoForge.EVENT_BUS.post(new ConnectorAttachEvent.Post(this, targetConnector));
-            return true;
-        } else return false;
+        } else {
+            if (!NeoForge.EVENT_BUS.post(new ConnectorAttachEvent.Pre(this, targetConnector)).isCanceled()) {
+                this.attachedConnector = targetConnector;
+                targetConnector.attachedConnector = this;
+                this.attachJoint(targetConnector);
+                if (this.signalPort != null && attachedConnector.signalPort != null) {
+                    this.signalPort.onConnectorAttach();
+                    attachedConnector.signalPort.onConnectorAttach();
+                }
+                NeoForge.EVENT_BUS.post(new ConnectorAttachEvent.Post(this, targetConnector));
+                return true;
+            } else return false;
+        }
     }
 
     /**
@@ -328,8 +330,10 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      */
     public void detach(boolean destroy) {
         if ((destroy || !internal) && hasPart()) {
-            if(destroy || !NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Pre(this, attachedConnector)).isCanceled()) {
-                AbstractConnector attachedConnector = this.attachedConnector;
+            AbstractConnector attachedConnector = this.attachedConnector;
+            AbstractConnector specialConnector = this instanceof AttachPointConnector ? attachedConnector : this;
+            AttachPointConnector attachPointConnector = this == specialConnector ? (AttachPointConnector) attachedConnector : (AttachPointConnector) this;
+            if (destroy || !NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Pre(specialConnector, attachPointConnector)).isCanceled()) {
                 if (this.signalPort != null && attachedConnector.signalPort != null) {
                     this.signalPort.onConnectorDetach();
                     attachedConnector.signalPort.onConnectorDetach();
@@ -346,7 +350,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                 }
                 this.attachedConnector.attachedConnector = null;
                 this.attachedConnector = null;
-                NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Post(this, attachedConnector));
+                NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Post(specialConnector, attachPointConnector));
             }
         }
     }

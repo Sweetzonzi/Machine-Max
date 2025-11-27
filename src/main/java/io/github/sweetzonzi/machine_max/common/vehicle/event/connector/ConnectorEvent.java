@@ -4,13 +4,12 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnect
 import lombok.Getter;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.Event;
+import org.jetbrains.annotations.NotNull;
 
 @Getter
 public abstract class ConnectorEvent extends Event {
-    private final AbstractConnector connector;
     private final Level level;
-    protected ConnectorEvent(AbstractConnector connector) {
-        this.connector = connector;
-        this.level = connector.subPart.getLevel();
+    protected ConnectorEvent(@NotNull AbstractConnector connector) {
+        this.level = connector.getSubPart().getLevel();
     }
 }

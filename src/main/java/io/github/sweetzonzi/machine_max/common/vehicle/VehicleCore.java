@@ -17,6 +17,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnecto
 import io.github.sweetzonzi.machine_max.common.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorAttachEvent;
+import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorDetachEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload;
@@ -30,6 +32,9 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
@@ -38,6 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
+@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class VehicleCore {
     //存储所有部件与连接关系
     public final MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
@@ -51,6 +57,7 @@ public class VehicleCore {
     private ChunkPos oldChunkPos = new ChunkPos(0, 0);
     public int tickCount = 0;
     public volatile boolean inLevel = false;
+    private boolean structureRemoved = false;
     //属性
     @Setter
     public float hp = 20;//耐久度
@@ -78,6 +85,7 @@ public class VehicleCore {
     public VehicleCore(Level level, Part rootPart) {
         this.level = level;
         this.uuid = rootPart.uuid;
+        ObjectManager.initVehicle(this);
         this.addPart(rootPart);
     }
 
@@ -88,23 +96,25 @@ public class VehicleCore {
         this.position = savedData.pos;
         this.oldPosition = savedData.pos;
         this.name = savedData.name;
+        ObjectManager.initVehicle(this);
         try {
             //重建部件
-            for (PartData partData : savedData.parts.values()) this.addPart(new Part(partData, level, readAdditionalData));
+            for (PartData partData : savedData.parts.values())
+                this.addPart(new Part(partData, level, readAdditionalData));
             //重建连接关系
             for (ConnectionData connectionData : savedData.connections) {
                 Part partA = partMap.get(UUID.fromString(connectionData.partUuidS));
                 Part partB = partMap.get(UUID.fromString(connectionData.partUuidA));
                 if (partA != null && partB != null) {
                     this.attachConnector(
-                            partMap.get(UUID.fromString(connectionData.partUuidS)).subParts.get(connectionData.subPartNameS).connectors.get(connectionData.specialConnectorName),
-                            partMap.get(UUID.fromString(connectionData.partUuidA)).subParts.get(connectionData.subPartNameA).connectors.get(connectionData.attachPointConnectorName),
+                            partA.subParts.get(connectionData.subPartNameS).connectors.get(connectionData.specialConnectorName),
+                            partB.subParts.get(connectionData.subPartNameA).connectors.get(connectionData.attachPointConnectorName),
                             null);
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
             recalculateCameraDistance();
         } catch (Exception e) {
-            onRemoveFromLevel();//移除数据出错的载具
+            onRemoveFromLevel(); // 移除数据出错的载具
             throw e;
         }
     }
@@ -113,8 +123,8 @@ public class VehicleCore {
      * <p>载具因拓扑结构发生变化而分裂为多个部分时使用的构造方法</p>
      * <p>Method used to create a new vehicle when the topology of the vehicle changes and splits into multiple parts</p>
      *
-     * @param uuid    新载具的UUID UUID of the new Vehicle
-     * @param partNet 新载具的拓扑结构 Structure of the new Vehicle
+     * @param uuid       新载具的UUID UUID of the new Vehicle
+     * @param partNet    新载具的拓扑结构 Structure of the new Vehicle
      * @param oldVehicle 被分裂的载具 The vehicle that was split
      */
     public VehicleCore(Level level, UUID uuid, MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> partNet, VehicleCore oldVehicle) {
@@ -153,7 +163,7 @@ public class VehicleCore {
         Vec3 newVel = new Vec3(0, 0, 0);
         int count = 0;
         for (Part part : partMap.values()) {
-            if(part.isDestroyed()){
+            if (part.isDestroyed()) {
                 removePart(part);
                 continue;
             }
@@ -321,6 +331,45 @@ public class VehicleCore {
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, uuid.toString());
     }
 
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onConnectorAttach(ConnectorAttachEvent.Post event) {
+        MachineMax.LOGGER.debug("收到连接器{}与{}的连接事件", event.getSpecialConnector().name, event.getAttachPointConnector().name);
+        AbstractConnector specialConnector = event.getSpecialConnector();
+        AttachPointConnector attachPointConnector = event.getAttachPointConnector();
+        VehicleCore vehicle1 = specialConnector.getSubPart().getPart().vehicle;
+        VehicleCore vehicle2 = attachPointConnector.getSubPart().getPart().vehicle;
+        if (vehicle1 != vehicle2 && vehicle1 != null && vehicle2 != null) {
+            throw new UnsupportedOperationException("暂不支持连接不同载具之间的对接口"); //TODO:支持不同载具之间的对接口链接
+        }
+        VehicleCore vehicle = vehicle1 != null ? vehicle1 : vehicle2;
+        if (vehicle != null) {
+            Part part1 = specialConnector.getSubPart().getPart();
+            Part part2 = attachPointConnector.getSubPart().getPart();
+            vehicle.partMap.put(part1.uuid, part1);//保险起见，再次添加
+            vehicle.partMap.put(part2.uuid, part2);
+//            vehicle.partNet.addEdge(
+//                    specialConnector.getSubPart().getPart(),
+//                    attachPointConnector.getSubPart().getPart(),
+//                    Pair.of(specialConnector, attachPointConnector)
+//            );
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onConnectorDetach(ConnectorDetachEvent.Post event) {
+        MachineMax.LOGGER.debug("收到连接器{}与{}的断开事件", event.getSpecialConnector().name, event.getAttachPointConnector().name);
+        VehicleCore vehicle1 = event.getSpecialConnector().getSubPart().part.vehicle;
+        VehicleCore vehicle2 = event.getAttachPointConnector().getSubPart().part.vehicle;
+        if (vehicle1 != vehicle2 && vehicle1 != null && vehicle2 != null) { // 若是不同载具之间的接口断开
+            vehicle1.structureRemoved = true;
+            vehicle2.structureRemoved = true;
+        }
+        VehicleCore vehicle = vehicle1 != null ? vehicle1 : vehicle2;
+        if (vehicle != null) {
+            vehicle.structureRemoved = true;
+        }
+    }
+
     /**
      * 连接两个接口
      * 若是新安装的部件，则尝试连接部件接口与载具其他已有接口
@@ -333,7 +382,7 @@ public class VehicleCore {
         if (newPart != null && !partMap.containsKey(newPart.uuid) && (connector1.subPart.part == newPart || connector2.subPart.part == newPart))
             this.addPart(newPart);
         if (connector1.subPart.part == connector2.subPart.part)
-            throw new IllegalArgumentException("不能连接同一个部件内的接口");
+            throw new UnsupportedOperationException("不能连接同一个部件内的接口");
         AbstractConnector specialConnector;
         AttachPointConnector attachPoint;
         if (connector2 instanceof AttachPointConnector) {
@@ -342,7 +391,7 @@ public class VehicleCore {
         } else if (connector1 instanceof AttachPointConnector) {
             attachPoint = (AttachPointConnector) connector1;
             specialConnector = connector2;
-        } else throw new IllegalArgumentException("对接口之一必须是AttachPointConnector类型");
+        } else throw new UnsupportedOperationException("对接口之一必须是AttachPointConnector类型");
         List<ConnectionData> comboList = new java.util.ArrayList<>(1);
         boolean attached = specialConnector.attach(attachPoint);//连接部件
         if (attached) {
@@ -582,6 +631,8 @@ public class VehicleCore {
             part.destroy();
         }
         partMap.clear();
+        ObjectManager.clientVehiclesToAdd.remove(this);
+        ObjectManager.serverVehiclesToAdd.remove(this);
     }
 
     /**

@@ -55,9 +55,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class PartItem extends Item implements ICustomModelItem {
-    public PartItem(Properties properties) {
-        super(properties);
-        properties.stacksTo(1);
+    public PartItem() {
+        super(new Properties().stacksTo(1).durability(100));
     }
 
     /**

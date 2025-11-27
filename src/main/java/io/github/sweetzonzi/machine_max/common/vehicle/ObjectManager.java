@@ -39,10 +39,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class ObjectManager {
-    public static final Map<Level, Set<VehicleCore>> levelVehicles = new ConcurrentHashMap<>();
+    public static final Map<Level, Map<UUID, VehicleCore>> levelVehicles = new ConcurrentHashMap<>();
     public static final Map<Level, Map<Integer, DestroyableObject>> levelDestroyableObjects = new ConcurrentHashMap<>();
     public static final Map<UUID, VehicleCore> serverAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> clientAllVehicles = HashMap.newHashMap(64);
+    public static final Map<UUID, VehicleCore> serverVehiclesToAdd = new HashMap<>();
+    public static final Map<UUID, VehicleCore> clientVehiclesToAdd = new HashMap<>();
 
     public static void addDestroyableObject(DestroyableObject object) {
         Level level = object.level;
@@ -64,9 +66,15 @@ public class ObjectManager {
 
     @Nullable
     public static DestroyableObject getDestroyableObject(Level level, int id) {
-        if (levelDestroyableObjects.containsKey(level)){
+        if (levelDestroyableObjects.containsKey(level)) {
             return levelDestroyableObjects.get(level).get(id);
         } else return null;
+    }
+
+    public static void initVehicle(VehicleCore vehicle){
+        if (vehicle.level.isClientSide()){
+            clientVehiclesToAdd.put(vehicle.getUuid(), vehicle);
+        } else serverVehiclesToAdd.put(vehicle.getUuid(), vehicle);
     }
 
     /**
@@ -76,14 +84,18 @@ public class ObjectManager {
      * @param vehicle 载具核心
      */
     public static void addVehicle(VehicleCore vehicle) {
-        levelVehicles.computeIfAbsent(vehicle.level, k -> ConcurrentHashMap.newKeySet()).add(vehicle);
+        levelVehicles.computeIfAbsent(vehicle.level, k -> new ConcurrentHashMap<>()).put(vehicle.getUuid(), vehicle);
         if (!vehicle.level.isClientSide()) {
             serverAllVehicles.put(vehicle.getUuid(), vehicle);
+            serverVehiclesToAdd.remove(vehicle.getUuid());
             saveVehicles((ServerLevel) vehicle.level);//维度内载具发生变更，保存维度载具数据到Level的Attachment
             PacketDistributor.sendToPlayersInDimension(//发包给维度内玩家，在他们的客户端添加载具
                     (ServerLevel) vehicle.level,
                     new VehicleCreatePayload(vehicle.level.dimension(), new VehicleData(vehicle)));
-        } else clientAllVehicles.put(vehicle.getUuid(), vehicle);
+        } else {
+            clientVehiclesToAdd.remove(vehicle.getUuid());
+            clientAllVehicles.put(vehicle.getUuid(), vehicle);
+        }
         vehicle.onAddToLevel();
     }
 
@@ -93,11 +105,15 @@ public class ObjectManager {
      * @param vehicle 载具核心
      */
     public static void addSpiltVehicle(VehicleCore vehicle) {
-        levelVehicles.computeIfAbsent(vehicle.level, k -> ConcurrentHashMap.newKeySet()).add(vehicle);
+        levelVehicles.computeIfAbsent(vehicle.level, k -> new ConcurrentHashMap<>()).put(vehicle.getUuid(), vehicle);
         if (!vehicle.level.isClientSide()) {
             serverAllVehicles.put(vehicle.getUuid(), vehicle);
+            serverVehiclesToAdd.remove(vehicle.getUuid());
             saveVehicles((ServerLevel) vehicle.level);//维度内载具发生变更，保存维度载具数据到Level的Attachment
-        } else clientAllVehicles.put(vehicle.getUuid(), vehicle);
+        } else {
+            clientAllVehicles.put(vehicle.getUuid(), vehicle);
+            clientVehiclesToAdd.remove(vehicle.getUuid());
+        }
         vehicle.inLevel = true;
     }
 
@@ -122,7 +138,7 @@ public class ObjectManager {
 
     public static int removeAllVehiclesInLevel(Level level) {
         // 获取该Level中的所有物体
-        Set<VehicleCore> vehicles = levelVehicles.getOrDefault(level, Set.of());
+        var vehicles = levelVehicles.getOrDefault(level, Map.of()).values();
         // 遍历并移除所有物体
         int i = 0;
         for (VehicleCore vehicle : new HashSet<>(vehicles)) {
@@ -132,38 +148,41 @@ public class ObjectManager {
         return i;
     }
 
+    @Nullable
+    public static VehicleCore getVehicle(Level level, UUID uuid) {
+        var vehicles = levelVehicles.getOrDefault(level, Map.of());
+        VehicleCore vehicle = vehicles.get(uuid);
+        if (vehicle == null) {
+            if (level.isClientSide()) vehicle = clientVehiclesToAdd.get(uuid);
+            else vehicle = serverVehiclesToAdd.get(uuid);
+        }
+        return vehicle;
+    }
+
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onPreTick(LevelTickEvent.Pre event) {
-        levelVehicles.computeIfAbsent(event.getLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(vehicleCore -> {
+        levelVehicles.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).values().forEach(vehicleCore -> {
             vehicleCore.preTick();
             updateVehicleChunk(vehicleCore);
         });
-        levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).forEach((id, object) -> {
-            object.preTick();
-        });
+        levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::preTick);
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onPostTick(LevelTickEvent.Post event) {
-        levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).forEach((id, object) -> {
-            object.postTick();
-        });
+        levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::postTick);
     }
 
     @SubscribeEvent
     public static void onPrePhysicsTick(PhysicsLevelTickEvent.Pre event) {
-        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::prePhysicsTick);
-        levelDestroyableObjects.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).forEach((id, object) -> {
-            object.prePhysicsTick();
-        });
+        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).values().forEach(VehicleCore::prePhysicsTick);
+        levelDestroyableObjects.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::prePhysicsTick);
     }
 
     @SubscribeEvent
     public static void onPostPhysicsTick(PhysicsLevelTickEvent.Post event) {
-        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> ConcurrentHashMap.newKeySet()).forEach(VehicleCore::postPhysicsTick);
-        levelDestroyableObjects.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).forEach((id, object) -> {
-            object.postPhysicsTick();
-        });
+        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).values().forEach(VehicleCore::postPhysicsTick);
+        levelDestroyableObjects.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::postPhysicsTick);
     }
 
     private static void updateVehicleChunk(VehicleCore vehicle) {
@@ -178,7 +197,7 @@ public class ObjectManager {
 
     public static void saveVehicles(ServerLevel serverLevel) {
         Set<VehicleData> savedVehicles = new HashSet<>();
-        for (VehicleCore vehicle : levelVehicles.getOrDefault(serverLevel, Set.of())) {
+        for (VehicleCore vehicle : levelVehicles.getOrDefault(serverLevel, Map.of()).values()) {
             savedVehicles.add(new VehicleData(vehicle));
         }
         serverLevel.setData(MMAttachments.getLEVEL_VEHICLES(), savedVehicles);
@@ -207,7 +226,7 @@ public class ObjectManager {
      * @param level 世界
      */
     public static void loadVehicles(Level level) {
-        levelVehicles.computeIfAbsent(level, k -> ConcurrentHashMap.newKeySet()).clear();
+        levelVehicles.computeIfAbsent(level, k -> new ConcurrentHashMap<>()).clear();
         if (level.isClientSide()) {//客户端清空可能的已有载具数据，从服务器获取新维度的载具数据
             MachineMax.LOGGER.info("客户端进入维度{}，清理维度载具数据", level.dimension().location());
             clientAllVehicles.clear();

@@ -79,8 +79,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                     int contact = physicsLevel.getWorld().contactTest(testGhost, null);
                     if (contact == 0) {
                         level.submitImmediateTask(PPhase.PRE, () -> {
-                            VehicleCore vehicle = new VehicleCore(level, vehicleData, false);
-                            vehicle.setUuid(UUID.randomUUID());
+                            VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), false);
                             vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
                             ObjectManager.addVehicle(vehicle);
                             return null;

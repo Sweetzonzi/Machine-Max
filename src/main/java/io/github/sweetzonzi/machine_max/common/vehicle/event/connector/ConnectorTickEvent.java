@@ -1,11 +1,16 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.event.connector;
 
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import lombok.Getter;
+import org.jetbrains.annotations.NotNull;
 
+@Getter
 public abstract class ConnectorTickEvent extends ConnectorEvent {
+    public final AbstractConnector connector;
 
-    protected ConnectorTickEvent(AbstractConnector connector) {
+    protected ConnectorTickEvent(@NotNull AbstractConnector connector) {
         super(connector);
+        this.connector = connector;
     }
 
     public static class Pre extends ConnectorTickEvent {

@@ -60,7 +60,7 @@ public class VehicleNamingMenu extends AbstractContainerMenu {
                 VehicleData vehicleData = new VehicleData(subPart.part.vehicle);
 
                 // 设置载具名称
-                vehicleData = vehicleData.setName(vehicleName);
+                vehicleData = vehicleData.withNewName(vehicleName);
                 //TODO: 配置是否保存为文件，否则仅保存为物品
                 // 生成安全的文件名
                 String safeFileName = makeSafeFileName(vehicleName);

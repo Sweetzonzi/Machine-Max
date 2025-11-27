@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 @Getter
 public class VehicleData {
@@ -155,7 +156,11 @@ public class VehicleData {
         return Objects.hash(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
     }
 
-    public VehicleData setName(String name) {
+    public VehicleData withNewName(String name) {
         return new VehicleData(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
+    }
+
+    public VehicleData withNewUUID(UUID uuid) {
+        return new VehicleData(name, tooltip, icon, uuid.toString(), pos, min, max, hp, parts, connections);
     }
 }
