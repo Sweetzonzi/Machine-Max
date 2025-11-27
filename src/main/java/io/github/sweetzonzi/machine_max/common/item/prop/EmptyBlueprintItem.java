@@ -29,6 +29,9 @@ import java.util.HashMap;
 import java.util.Objects;
 
 public class EmptyBlueprintItem extends Item implements ICustomModelItem, MenuProvider {
+    public static final ModelIndex MODEL = new ModelIndex(
+            "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"));
+    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png");
     public EmptyBlueprintItem() {
         super(new Properties());
     }
@@ -56,10 +59,8 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem, MenuPr
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
-        animatable.getModelController().setModel(new ModelIndex(
-                "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint")));
-        animatable.getModelController().setTextureLocation(
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png"));
+        animatable.getModelController().setModel(MODEL);
+        animatable.getModelController().setTextureLocation(TEXTURE);
         if (customModels != null) {
             customModels.put(context, animatable);
             itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);

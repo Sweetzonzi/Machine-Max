@@ -3,7 +3,9 @@ package io.github.sweetzonzi.machine_max.common.registry
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.client.renderer.BlockEntityItemRenderer
 import io.github.sweetzonzi.machine_max.client.renderer.CustomModelItemRenderer
+import io.github.sweetzonzi.machine_max.client.renderer.MultiAnimatableRenderer
 import io.github.sweetzonzi.machine_max.common.item.MaterialItem
+import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
@@ -30,7 +32,14 @@ object MMItems {
     @JvmStatic
     val PART_ITEM = MachineMax.REGISTER.item {
         id="part"
-        factory = { PartItem(Item.Properties().stacksTo(1).durability(100)) }
+        factory = { PartItem() }
+    }
+
+    //装配体物品原型
+    @JvmStatic
+    val ASSEMBLY_ITEM = MachineMax.REGISTER.item {
+        id="assembly"
+        factory = { AssemblyItem() }
     }
 
     //制造台
@@ -60,6 +69,7 @@ object MMItems {
         id="empty_blueprint"
         factory = { EmptyBlueprintItem() }
     }
+
     //撬棍，用于拆卸载具部件，也可作为武器
     @JvmStatic
     val CROWBAR_ITEM = MachineMax.REGISTER.item {
@@ -141,6 +151,10 @@ object MMItems {
             CustomModelBlockEntityExtension(),
             FABRICATOR_BLOCK_ITEM
         )
+        event.registerItem(
+            MultiAnimatableItemExtension(),
+            ASSEMBLY_ITEM
+        )
     }
 
     class CustomModelItemExtension : IClientItemExtensions {
@@ -153,6 +167,14 @@ object MMItems {
 
     class CustomModelBlockEntityExtension : IClientItemExtensions {
         private val renderer = BlockEntityItemRenderer()
+
+        override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
+            return renderer
+        }
+    }
+
+    class MultiAnimatableItemExtension: IClientItemExtensions {
+        private val renderer = MultiAnimatableRenderer()
 
         override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
             return renderer

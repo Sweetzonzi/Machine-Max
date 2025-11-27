@@ -3,6 +3,8 @@ package io.github.sweetzonzi.machine_max.external;
 import com.google.gson.JsonElement;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.AbstractSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
 import net.minecraft.network.chat.Component;
@@ -44,8 +46,10 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static ConcurrentMap<ResourceLocation, AbstractSubsystemStaticAttr> STATIC_SUBSYSTEM_ATTRS = new ConcurrentHashMap<>(); // 静态的子系统属性，所有子系统实例共享，表示单一型号如某型发动机
     public static ConcurrentMap<ResourceLocation, AbstractSubsystemStaticAttr> SERVER_STATIC_SUBSYSTEM_ATTRS = new ConcurrentHashMap<>(); // 静态的子系统属性，所有子系统实例共享，表示单一型号如某型发动机
-    public static ConcurrentMap<ResourceLocation, VehicleData> BLUEPRINTS = new ConcurrentHashMap<>(); // 读取为蓝图数据，每个包可以有多个蓝图 key是自带构造函数生成的registryKey， value是暂存的VehicleData
-    public static ConcurrentMap<ResourceLocation, String> BLUEPRINT_INFO = new ConcurrentHashMap<>(); //蓝图对应的描述信息
+    public static ConcurrentMap<ResourceLocation, VehicleData> TEMPLATES = new ConcurrentHashMap<>(); // 已组装的结构数据
+    public static ConcurrentMap<ResourceLocation, BlueprintData> BLUEPRINTS = new ConcurrentHashMap<>(); // 蓝图数据
+    public static ConcurrentMap<ResourceLocation, AssemblyData> ASSEMBLIES = new ConcurrentHashMap<>(); // 装配体数据
+    public static ConcurrentMap<ResourceLocation, String> TOOLTIPS = new ConcurrentHashMap<>(); //蓝图或装配体物品对应的描述信息
     public static ConcurrentMap<ResourceLocation, AnimatableParams> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常

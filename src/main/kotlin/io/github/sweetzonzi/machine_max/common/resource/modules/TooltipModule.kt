@@ -5,16 +5,16 @@ import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.resources.ResourceLocation
-import net.neoforged.fml.loading.FMLEnvironment
+import net.minecraft.network.chat.Component
 import java.nio.charset.StandardCharsets
 
-class BlueprintInfoModule : SparkPackModule {
+class TooltipModule : SparkPackModule {
 
-    override val id: String = "contents"
+    override val id: String = "tooltips"
 
     override fun onStart(isClientSide: Boolean) {
         if (isClientSide) {
-            MMDynamicRes.BLUEPRINT_INFO.clear()
+            MMDynamicRes.TOOLTIPS.clear()
         }
     }
 
@@ -34,9 +34,11 @@ class BlueprintInfoModule : SparkPackModule {
             try{
                 val id = ResourceLocation.fromNamespaceAndPath(nameSpace, fileName)
                 val string = String(content, StandardCharsets.UTF_8)
-                MMDynamicRes.BLUEPRINT_INFO[id] = string
+                MMDynamicRes.TOOLTIPS[id] = string
             } catch (e: Exception){
-                MachineMax.LOGGER.error("无法解析文本内容文件: $fileName")
+                MMDynamicRes.exceptions.add(e)
+                MMDynamicRes.errorFiles.add("[Tooltip]" + id)
+                MMDynamicRes.errorMessages.add(Component.literal(e.message))
             }
         }
     }
@@ -44,7 +46,7 @@ class BlueprintInfoModule : SparkPackModule {
 
     override fun onFinish(isClientSide: Boolean) {
         if (isClientSide) {
-            MachineMax.LOGGER.info("已加载${MMDynamicRes.BLUEPRINT_INFO.size}种文本内容")
+            MachineMax.LOGGER.info("已加载${MMDynamicRes.TOOLTIPS.size}种文本内容")
         }
     }
 

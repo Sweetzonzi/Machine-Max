@@ -6,6 +6,8 @@ import com.mojang.serialization.Codec
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.component.PartAssemblyCacheComponent
 import io.github.sweetzonzi.machine_max.common.component.PartAssemblyInfoComponent
+import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData
+import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemDisplayContext
@@ -55,7 +57,20 @@ object MMDataComponents {
     }
 
     /**
-     * 保存在蓝图物品上的蓝图资源路径，用于重建载具
+     * 保存在蓝图物品上的蓝图路径，用于重建载具
+     */
+    @JvmStatic
+    val BLUEPRINT_DATA = MachineMax.REGISTER.dataComponentType<BlueprintData> {
+        id = "blueprint_data"
+        factory = dataComponentBuilder {
+            persistent(BlueprintData.CODEC)
+            networkSynchronized(BlueprintData.STREAM_CODEC)
+            cacheEncoding()
+        }
+    }
+
+    /**
+     * 保存在蓝图物品上的预装配结构体模板资源路径，用于重建载具
      */
     @JvmStatic
     val VEHICLE_DATA = MachineMax.REGISTER.dataComponentType<VehicleData> {
@@ -63,6 +78,33 @@ object MMDataComponents {
         factory = dataComponentBuilder {
             persistent(VehicleData.CODEC)
             networkSynchronized(VehicleData.STREAM_CODEC)
+            cacheEncoding()
+        }
+    }
+
+
+    /**
+     * 保存在装配体物品上的装配体资源路径，用于重建载具
+     */
+    @JvmStatic
+    val ASSEMBLY_PATH = MachineMax.REGISTER.dataComponentType<ResourceLocation> {
+        id = "assembly_path"
+        factory = dataComponentBuilder {
+            persistent(ResourceLocation.CODEC)
+            networkSynchronized(ResourceLocation.STREAM_CODEC)
+            cacheEncoding()
+        }
+    }
+
+    /**
+     * 保存在蓝图物品上的蓝图或结构体资源路径，用于重建载具
+     */
+    @JvmStatic
+    val ASSEMBLY_DATA = MachineMax.REGISTER.dataComponentType<AssemblyData> {
+        id = "assembly_data"
+        factory = dataComponentBuilder {
+            persistent(AssemblyData.CODEC)
+            networkSynchronized(AssemblyData.STREAM_CODEC)
             cacheEncoding()
         }
     }

@@ -125,7 +125,7 @@ public class ObjectManager {
      */
     public static void removeVehicle(VehicleCore vehicle) {
         vehicle.isRemoved = true;
-        levelVehicles.get(vehicle.level).remove(vehicle);
+        levelVehicles.get(vehicle.level).remove(vehicle.uuid);
         if (!vehicle.level.isClientSide()) {
             serverAllVehicles.remove(vehicle.getUuid());
             saveVehicles((ServerLevel) vehicle.level);//维度内载具发生变更，保存维度载具数据到Level的Attachment

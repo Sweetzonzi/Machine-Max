@@ -5,17 +5,18 @@ import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import com.google.gson.JsonParser
 import com.mojang.serialization.JsonOps
 import io.github.sweetzonzi.machine_max.MachineMax
-import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData
+import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData
+import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.network.chat.Component
 import java.nio.charset.StandardCharsets
 
-class BlueprintModule : SparkPackModule {
+class AssemblyModule : SparkPackModule {
 
-    override val id: String = "blueprints"
+    override val id: String = "assemblies"
     override fun onStart(isClientSide: Boolean) {
-        MMDynamicRes.BLUEPRINTS.clear()
+        MMDynamicRes.ASSEMBLIES.clear()
     }
 
     override fun read(
@@ -35,11 +36,11 @@ class BlueprintModule : SparkPackModule {
             val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
             try {
                 val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-                val blueprint = BlueprintData.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-                MMDynamicRes.BLUEPRINTS[id] = blueprint
+                val assembly = AssemblyData.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+                MMDynamicRes.ASSEMBLIES[id] = assembly
             } catch (e: Exception) {
                 MMDynamicRes.exceptions.add(e)
-                MMDynamicRes.errorFiles.add("[Blueprint]" + id)
+                MMDynamicRes.errorFiles.add("[Assembly]" + id)
                 MMDynamicRes.errorMessages.add(Component.literal(e.message))
             }
         }
@@ -47,7 +48,7 @@ class BlueprintModule : SparkPackModule {
 
 
     override fun onFinish(isClientSide: Boolean) {
-        MachineMax.LOGGER.info("已加载${MMDynamicRes.BLUEPRINTS.size}种载具蓝图")
+        MachineMax.LOGGER.info("已加载${MMDynamicRes.ASSEMBLIES.size}种装配体")
     }
 
 }

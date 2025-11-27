@@ -1,0 +1,304 @@
+{
+  "hp": 20.0,
+  "parts": {
+    "7ecde817-c2b5-4c6b-927d-2ab006ac353c": {
+      "variant": "right",
+      "durability": 0.0,
+      "sub_parts": {
+        "mini_ev_wheel": {
+          "connector_data": {
+            "chassis_connection": {
+              "integrity": 10.0
+            }
+          },
+          "id": 1,
+          "pos_rot_vel_vel": {
+            "position": [
+              65.55868,
+              -59.59439,
+              -50.482227
+            ],
+            "rotation": [
+              -0.050791908,
+              0.004005956,
+              0.0090589095,
+              0.99866015
+            ],
+            "linear_vel": [
+              0.0016902302,
+              5.427003E-5,
+              2.0290539E-4
+            ],
+            "angular_vel": [
+              -1.495829E-5,
+              1.8247557E-4,
+              -1.8728408E-10
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:mini_ev_wheel",
+      "name": "mini_ev_wheel",
+      "uuid": "7ecde817-c2b5-4c6b-927d-2ab006ac353c"
+    },
+    "fedaa68d-e08e-4fee-aaf1-8766272f1220": {
+      "variant": "left",
+      "durability": 0.0,
+      "sub_parts": {
+        "mini_ev_wheel": {
+          "connector_data": {
+            "chassis_connection": {
+              "integrity": 10.0
+            }
+          },
+          "id": 2,
+          "pos_rot_vel_vel": {
+            "position": [
+              63.42679,
+              -59.59429,
+              -50.46357
+            ],
+            "rotation": [
+              -0.040951785,
+              0.0046356,
+              -0.008028478,
+              0.9991181
+            ],
+            "linear_vel": [
+              7.034807E-4,
+              -4.684925E-5,
+              4.811221E-4
+            ],
+            "angular_vel": [
+              4.4055173E-6,
+              -1.9127579E-4,
+              1.569217E-9
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:mini_ev_wheel",
+      "name": "mini_ev_wheel",
+      "uuid": "fedaa68d-e08e-4fee-aaf1-8766272f1220"
+    },
+    "2922d971-a7a6-4b6f-a89f-2c9611d85745": {
+      "variant": "right",
+      "durability": 0.0,
+      "sub_parts": {
+        "mini_ev_wheel": {
+          "connector_data": {
+            "chassis_connection": {
+              "integrity": 10.0
+            }
+          },
+          "id": 3,
+          "pos_rot_vel_vel": {
+            "position": [
+              65.5839,
+              -59.593956,
+              -47.607216
+            ],
+            "rotation": [
+              -0.004081759,
+              0.004424941,
+              0.00895309,
+              0.99994177
+            ],
+            "linear_vel": [
+              0.0014265786,
+              3.181398E-5,
+              3.0485447E-5
+            ],
+            "angular_vel": [
+              -7.1468157E-6,
+              1.240446E-4,
+              -1.1980926E-9
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:mini_ev_wheel",
+      "name": "mini_ev_wheel",
+      "uuid": "2922d971-a7a6-4b6f-a89f-2c9611d85745"
+    },
+    "9dec2339-1d95-413c-95ba-eb1ffabdaa7a": {
+      "variant": "default",
+      "durability": 0.0,
+      "sub_parts": {
+        "mini_ev_hull": {
+          "connector_data": {
+            "right_front_wheel": {
+              "integrity": 10.0
+            },
+            "right_back_wheel": {
+              "integrity": 10.0
+            },
+            "left_back_wheel": {
+              "integrity": 10.0
+            },
+            "left_front_wheel": {
+              "integrity": 10.0
+            }
+          },
+          "subsystem_data": {
+            "motor": {
+              "durability": 15.0
+            },
+            "transmission": {
+              "durability": 100.0
+            },
+            "right_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "left_back_seat": {
+              "durability": 20.0
+            },
+            "car_controller": {
+              "durability": 100.0
+            },
+            "left_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "title.machine_max.subsystem.mini_ev.glove_box": {
+              "Items": [],
+              "durability": 20.0
+            },
+            "driver_seat": {
+              "durability": 20.0
+            },
+            "right_back_wheel_driver": {
+              "durability": 100.0
+            },
+            "copilot_seat": {
+              "durability": 20.0
+            },
+            "right_back_seat": {
+              "durability": 20.0
+            },
+            "left_back_wheel_driver": {
+              "durability": 100.0
+            }
+          },
+          "id": 4,
+          "pos_rot_vel_vel": {
+            "position": [
+              64.50299,
+              -59.30415,
+              -49.283356
+            ],
+            "rotation": [
+              -0.0046445313,
+              0.004380122,
+              3.1150412E-4,
+              0.99997956
+            ],
+            "linear_vel": [
+              7.042277E-4,
+              1.7106533E-5,
+              -2.3499684E-5
+            ],
+            "angular_vel": [
+              -2.9957404E-5,
+              4.320941E-5,
+              1.3760362E-4
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:mini_ev_hull",
+      "name": "mini_ev_hull",
+      "uuid": "9dec2339-1d95-413c-95ba-eb1ffabdaa7a"
+    },
+    "e85aae02-e5fa-452d-bcfd-3aa708522364": {
+      "variant": "left",
+      "durability": 0.0,
+      "sub_parts": {
+        "mini_ev_wheel": {
+          "connector_data": {
+            "chassis_connection": {
+              "integrity": 10.0
+            }
+          },
+          "id": 5,
+          "pos_rot_vel_vel": {
+            "position": [
+              63.45195,
+              -59.593822,
+              -47.58854
+            ],
+            "rotation": [
+              -0.0036509053,
+              0.0043273144,
+              -0.008293635,
+              0.9999496
+            ],
+            "linear_vel": [
+              7.1188866E-4,
+              -2.0429492E-5,
+              -1.0950983E-4
+            ],
+            "angular_vel": [
+              4.772367E-6,
+              1.6191197E-4,
+              -1.14424E-9
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:mini_ev_wheel",
+      "name": "mini_ev_wheel",
+      "uuid": "e85aae02-e5fa-452d-bcfd-3aa708522364"
+    }
+  },
+  "connections": [
+    {
+      "partUuidA": "e85aae02-e5fa-452d-bcfd-3aa708522364",
+      "subPartNameA": "mini_ev_wheel",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "9dec2339-1d95-413c-95ba-eb1ffabdaa7a",
+      "subPartNameS": "mini_ev_hull",
+      "specialConnectorName": "left_back_wheel"
+    },
+    {
+      "partUuidA": "2922d971-a7a6-4b6f-a89f-2c9611d85745",
+      "subPartNameA": "mini_ev_wheel",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "9dec2339-1d95-413c-95ba-eb1ffabdaa7a",
+      "subPartNameS": "mini_ev_hull",
+      "specialConnectorName": "right_back_wheel"
+    },
+    {
+      "partUuidA": "fedaa68d-e08e-4fee-aaf1-8766272f1220",
+      "subPartNameA": "mini_ev_wheel",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "9dec2339-1d95-413c-95ba-eb1ffabdaa7a",
+      "subPartNameS": "mini_ev_hull",
+      "specialConnectorName": "left_front_wheel"
+    },
+    {
+      "partUuidA": "7ecde817-c2b5-4c6b-927d-2ab006ac353c",
+      "subPartNameA": "mini_ev_wheel",
+      "attachPointConnectorName": "chassis_connection",
+      "partUuidS": "9dec2339-1d95-413c-95ba-eb1ffabdaa7a",
+      "subPartNameS": "mini_ev_hull",
+      "specialConnectorName": "right_front_wheel"
+    }
+  ],
+  "min": [
+    -1.3223739624023523,
+    -0.6241600036621051,
+    -2.268472290039057
+  ],
+  "max": [
+    1.3364242553710852,
+    2.2977416992187543,
+    2.418203735351568
+  ],
+  "uuid": "9dec2339-1d95-413c-95ba-eb1ffabdaa7a",
+  "pos": [
+    64.50489196777345,
+    -59.53612213134766,
+    -49.08498229980469
+  ],
+  "vehicle_name": "miniEV"
+}

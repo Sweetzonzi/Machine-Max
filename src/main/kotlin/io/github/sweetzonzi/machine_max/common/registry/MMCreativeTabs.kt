@@ -41,6 +41,26 @@ object MMCreativeTabs {
     }
 
     @JvmStatic
+    val MACHINE_MAX_ASSEMBLY_TAB = MachineMax.REGISTER.creativeModeTab {
+        id = "machine_max_tab_assembly"
+        factory = {
+            CreativeModeTab.builder()
+                .title(Component.translatable("itemGroup.machine_max.assembly"))
+                // 动态设置图标
+                .icon {
+                    if (MMDynamicRes.PART_TYPES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
+                    else {
+                        val randomIndex = (0 until MMDynamicRes.PART_TYPES.size).random() //随机的一个蓝图在图标上展示
+                        val item = ItemStack(MMItems.PART_ITEM)
+                        item.set(MMDataComponents.PART_TYPE, MMDynamicRes.PART_TYPES.keys.toList()[randomIndex])
+                        item
+                    }
+                }
+                .build()
+        }
+    }
+
+    @JvmStatic
     val MACHINE_MAX_PART_TAB = MachineMax.REGISTER.creativeModeTab {
         id = "machine_max_tab_part"
         factory = {
@@ -96,7 +116,7 @@ object MMCreativeTabs {
         } else if (event.tab == MACHINE_MAX_VEHICLE_BLUEPRINT_TAB.get()) {
             MachineMax.LOGGER.info("Putting blueprints into creative tab...")
             val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
-            MMDynamicRes.BLUEPRINTS.forEach { (loc, _) ->
+            MMDynamicRes.TEMPLATES.forEach { (loc, _) ->
                 val itemStack = ItemStack(MMItems.VEHICLE_BLUEPRINT)
                 itemStack.set(MMDataComponents.VEHICLE_BLUEPRINT_PATH, loc)
                 externalBlueprints.add(itemStack)

@@ -92,7 +92,7 @@ public class RecipeDetailsWidget extends AbstractScrollWidget {
         contentLines.addAll(minecraft.font.split(outputText, width - SCROLLBAR_WIDTH - PADDING * 2));
         //TODO: 添加配方描述
         String tip = currentRecipe.getTooltip();
-        if (!tip.isEmpty() && MMDynamicRes.BLUEPRINT_INFO.get(ResourceLocation.parse(tip)) instanceof String content) {
+        if (!tip.isEmpty() && MMDynamicRes.TOOLTIPS.get(ResourceLocation.parse(tip)) instanceof String content) {
             tip = content;
         }
         // 添加物品描述

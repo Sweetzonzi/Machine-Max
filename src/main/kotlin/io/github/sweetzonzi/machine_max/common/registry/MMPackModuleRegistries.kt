@@ -2,19 +2,17 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import cn.solarmoon.spark_core.event.SparkPackageReaderRegisterEvent
 import io.github.sweetzonzi.machine_max.common.resource.modules.*
-import net.neoforged.api.distmarker.Dist
 import net.neoforged.bus.api.IEventBus
-import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent
-import net.neoforged.neoforge.common.NeoForge
 
 object MMPackModuleRegistries {
     fun reg(event: SparkPackageReaderRegisterEvent) {
         event.register(SubsystemModule())//子系统型号
         event.register(PartModule())//自定义部件
-        event.register(BlueprintInfoModule())//自定义蓝图描述信息
+        event.register(TooltipModule())//自定义描述信息
+        event.register(TemplateModule())//预装配结构体模板
         event.register(BlueprintModule())//自定义蓝图
+        event.register(AssemblyModule())//自定义装配体
         event.register(HudModule())//自定义HUD元素
         event.register(ColorModule())//自定义色板
     }

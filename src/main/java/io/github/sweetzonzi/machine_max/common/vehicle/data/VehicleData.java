@@ -26,8 +26,6 @@ import java.util.UUID;
 @Getter
 public class VehicleData {
     public final String name;
-    public final String tooltip;
-    public final ResourceLocation icon;
     public final String uuid;
     public final Vec3 pos;
     public final Vec3 min;
@@ -38,8 +36,6 @@ public class VehicleData {
 
     public static final Codec<VehicleData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("vehicle_name").forGetter(VehicleData::getName),
-            Codec.STRING.fieldOf("tooltip").forGetter(VehicleData::getTooltip),
-            ResourceLocation.CODEC.optionalFieldOf("icon", ResourceLocation.withDefaultNamespace("missingno")).forGetter(VehicleData::getIcon),
             Codec.STRING.fieldOf("uuid").forGetter(VehicleData::getUuid),
             Vec3.CODEC.fieldOf("pos").forGetter(VehicleData::getPos),
             Vec3.CODEC.optionalFieldOf("min", Vec3.ZERO).forGetter(VehicleData::getMin),
@@ -47,15 +43,12 @@ public class VehicleData {
             Codec.FLOAT.fieldOf("hp").forGetter(VehicleData::getHp),
             PartData.MAP_CODEC.fieldOf("parts").forGetter(VehicleData::getParts),
             ConnectionData.CODEC.listOf().fieldOf("connections").forGetter(VehicleData::getConnections)
-
     ).apply(instance, VehicleData::new));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, VehicleData> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull VehicleData decode(RegistryFriendlyByteBuf buffer) {
             String name = buffer.readUtf();
-            String tooltip = buffer.readUtf();
-            ResourceLocation icon = buffer.readResourceLocation();
             String uuid = buffer.readUtf();
             double x = buffer.readFloat();
             double y = buffer.readFloat();
@@ -72,14 +65,12 @@ public class VehicleData {
             float hp = buffer.readFloat();
             Map<String, PartData> parts = PartData.MAP_STREAM_CODEC.decode(buffer);
             List<ConnectionData> connections = buffer.readList(ConnectionData.STREAM_CODEC);
-            return new VehicleData(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
+            return new VehicleData(name, uuid, pos, min, max, hp, parts, connections);
         }
 
         @Override
         public void encode(RegistryFriendlyByteBuf buffer, @NotNull VehicleData value) {
             buffer.writeUtf(value.name);
-            buffer.writeUtf(value.tooltip);
-            buffer.writeResourceLocation(value.icon);
             buffer.writeUtf(value.uuid);
             buffer.writeFloat((float) value.pos.x);
             buffer.writeFloat((float) value.pos.y);
@@ -96,12 +87,10 @@ public class VehicleData {
         }
     };
 
-    public VehicleData(String name, String tooltip, ResourceLocation icon, String uuid,
+    public VehicleData(String name, String uuid,
                        Vec3 pos, Vec3 min, Vec3 max,
                        float hp, Map<String, PartData> parts, List<ConnectionData> connections) {
         this.name = name;
-        this.tooltip = tooltip;
-        this.icon = icon;
         this.uuid = uuid;
         this.pos = pos;
         this.min = min;
@@ -118,8 +107,6 @@ public class VehicleData {
      */
     public VehicleData(VehicleCore vehicle) {
         this.name = vehicle.name;
-        this.tooltip = "";
-        this.icon = ResourceLocation.withDefaultNamespace("missingno");
         this.uuid = vehicle.getUuid().toString();
         this.pos = vehicle.getPosition();
         AABB aabb = vehicle.getAABB();
@@ -148,19 +135,19 @@ public class VehicleData {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof VehicleData that)) return false;
-        return Float.compare(hp, that.hp) == 0 && Objects.equals(name, that.name) && Objects.equals(tooltip, that.tooltip) && Objects.equals(icon, that.icon) && Objects.equals(uuid, that.uuid) && Objects.equals(pos, that.pos) && Objects.equals(min, that.min) && Objects.equals(max, that.max) && Objects.equals(parts, that.parts) && Objects.equals(connections, that.connections);
+        return Float.compare(hp, that.hp) == 0 && Objects.equals(name, that.name) && Objects.equals(uuid, that.uuid) && Objects.equals(pos, that.pos) && Objects.equals(min, that.min) && Objects.equals(max, that.max) && Objects.equals(parts, that.parts) && Objects.equals(connections, that.connections);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
+        return Objects.hash(name, uuid, pos, min, max, hp, parts, connections);
     }
 
     public VehicleData withNewName(String name) {
-        return new VehicleData(name, tooltip, icon, uuid, pos, min, max, hp, parts, connections);
+        return new VehicleData(name, uuid, pos, min, max, hp, parts, connections);
     }
 
     public VehicleData withNewUUID(UUID uuid) {
-        return new VehicleData(name, tooltip, icon, uuid.toString(), pos, min, max, hp, parts, connections);
+        return new VehicleData(name, uuid.toString(), pos, min, max, hp, parts, connections);
     }
 }

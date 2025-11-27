@@ -624,15 +624,14 @@ public class VehicleCore {
     }
 
     public void onRemoveFromLevel() {
-        this.position = null;
         subSystemController.destroy();
         for (Part part : partMap.values()) {
             partNet.removeNode(part);
             part.destroy();
         }
         partMap.clear();
-        ObjectManager.clientVehiclesToAdd.remove(this);
-        ObjectManager.serverVehiclesToAdd.remove(this);
+        ObjectManager.clientVehiclesToAdd.remove(this.uuid);
+        ObjectManager.serverVehiclesToAdd.remove(this.uuid);
     }
 
     /**
