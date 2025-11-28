@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.registry
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.client.renderer.BlockEntityItemRenderer
 import io.github.sweetzonzi.machine_max.client.renderer.CustomModelItemRenderer
-import io.github.sweetzonzi.machine_max.client.renderer.MultiAnimatableRenderer
 import io.github.sweetzonzi.machine_max.common.item.MaterialItem
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
@@ -145,15 +144,17 @@ object MMItems {
         //Register custom model item renderer here, items need to implement ICustomModelItem interface
         event.registerItem(
             CustomModelItemExtension(),
-            CROWBAR_ITEM, SPRAY_CAN_ITEM, PART_ITEM, FABRICATING_BLUEPRINT, VEHICLE_BLUEPRINT, EMPTY_BLUEPRINT
+            CROWBAR_ITEM,
+            SPRAY_CAN_ITEM,
+            PART_ITEM,
+            FABRICATING_BLUEPRINT,
+            VEHICLE_BLUEPRINT,
+            EMPTY_BLUEPRINT,
+            ASSEMBLY_ITEM
         )
         event.registerItem(
             CustomModelBlockEntityExtension(),
             FABRICATOR_BLOCK_ITEM
-        )
-        event.registerItem(
-            MultiAnimatableItemExtension(),
-            ASSEMBLY_ITEM
         )
     }
 
@@ -167,14 +168,6 @@ object MMItems {
 
     class CustomModelBlockEntityExtension : IClientItemExtensions {
         private val renderer = BlockEntityItemRenderer()
-
-        override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
-            return renderer
-        }
-    }
-
-    class MultiAnimatableItemExtension: IClientItemExtensions {
-        private val renderer = MultiAnimatableRenderer()
 
         override fun getCustomRenderer(): BlockEntityWithoutLevelRenderer {
             return renderer

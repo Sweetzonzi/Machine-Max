@@ -50,9 +50,10 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             poseStack.translate(0.5F, 0.5F, 0.5F);
             if (displayContext == ItemDisplayContext.GUI) {
                 poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
-                poseStack.last().normal().rotateLocalY((float) Math.toRadians(-90.0));
+                poseStack.last().normal().rotateLocalY((float) Math.toRadians(-45.0));
                 if (customModelItem instanceof VehicleBlueprintItem
-                        && VehicleBlueprintItem.getBlueprintData(stack).getIcon() != BlueprintData.EMPTY) {
+                        && VehicleBlueprintItem.getBlueprintData(stack).getIcon() != BlueprintData.EMPTY
+                        && VehicleBlueprintItem.getBlueprintData(stack).isRenderBackground()) {
                     // 图标下额外渲染蓝图背景，以和装配体做出区分
                     ModelRenderHelperKt.render(
                             animatable.getModelController().getOriginModel(),

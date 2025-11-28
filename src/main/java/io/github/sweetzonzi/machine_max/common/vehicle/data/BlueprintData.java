@@ -12,6 +12,7 @@ public class BlueprintData {
     public final ResourceLocation template;
     public final ResourceLocation tooltip;
     public final ResourceLocation icon;
+    public final boolean renderBackground;
 
     public static final BlueprintData EMPTY_BLUEPRINT = new BlueprintData();
 
@@ -20,7 +21,8 @@ public class BlueprintData {
     public static final Codec<BlueprintData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("template").forGetter(BlueprintData::getTemplate),
             ResourceLocation.CODEC.optionalFieldOf("tooltip", EMPTY).forGetter(BlueprintData::getTooltip),
-            ResourceLocation.CODEC.optionalFieldOf("icon", EMPTY).forGetter(BlueprintData::getIcon)
+            ResourceLocation.CODEC.optionalFieldOf("icon", EMPTY).forGetter(BlueprintData::getIcon),
+            Codec.BOOL.optionalFieldOf("render_background", true).forGetter(BlueprintData::isRenderBackground)
     ).apply(instance, BlueprintData::new));
 
     public static final StreamCodec<FriendlyByteBuf, BlueprintData> STREAM_CODEC = new StreamCodec<>() {
@@ -29,7 +31,8 @@ public class BlueprintData {
             ResourceLocation template = buffer.readResourceLocation();
             ResourceLocation tooltip = buffer.readResourceLocation();
             ResourceLocation icon = buffer.readResourceLocation();
-            return new BlueprintData(template, tooltip, icon);
+            boolean renderBackground = buffer.readBoolean();
+            return new BlueprintData(template, tooltip, icon, renderBackground);
         }
 
         @Override
@@ -37,16 +40,18 @@ public class BlueprintData {
             buffer.writeResourceLocation(value.template);
             buffer.writeResourceLocation(value.tooltip);
             buffer.writeResourceLocation(value.icon);
+            buffer.writeBoolean(value.renderBackground);
         }
     };
 
-    public BlueprintData(ResourceLocation template, ResourceLocation tooltip, ResourceLocation icon) {
+    public BlueprintData(ResourceLocation template, ResourceLocation tooltip, ResourceLocation icon, boolean renderBackground) {
         this.template = template;
         this.tooltip = tooltip;
         this.icon = icon;
+        this.renderBackground = renderBackground;
     }
 
     public BlueprintData() {
-        this(EMPTY, EMPTY, EMPTY);
+        this(EMPTY, EMPTY, EMPTY, true);
     }
 }

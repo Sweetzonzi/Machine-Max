@@ -88,6 +88,7 @@ public class PartItem extends Item implements ICustomModelItem {
                             Part part = new Part(partType, variant, level);
                             targetConnector.adjustTransform(part, part.externalConnectors.get(subpart_connector));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(subpart_connector), part);//尝试将新部件连接至接口
+                            if (!player.hasInfiniteMaterials()) VisualEffectHelper.partToPlace = null;
                             stack.consume(1, player);
                             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
                             SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);

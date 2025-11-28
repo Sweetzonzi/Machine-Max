@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
+import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
@@ -8,11 +9,12 @@ import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
-import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
@@ -32,6 +34,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ClipContext;
@@ -41,11 +44,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.UUID;
 
-public class AssemblyItem extends Item {
+import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem.MODEL;
+import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem.TEXTURE;
+
+public class AssemblyItem extends Item implements ICustomModelItem {
 
     public AssemblyItem() {
         super(new Properties().stacksTo(1));
@@ -73,13 +78,15 @@ public class AssemblyItem extends Item {
                 PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(shape));
                 testGhost.setPhysicsLocation(transform.getTranslation());
                 PhysicsLevel physicsLevel = level.getPhysicsLevel();
-                physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_blueprint", PPhase.PRE, () -> {
+                physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_assembly", PPhase.PRE, () -> {
                     int contact = physicsLevel.getWorld().contactTest(testGhost, null);
                     if (contact == 0) {
                         level.submitImmediateTask(PPhase.PRE, () -> {
-                            VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), false);
+                            VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), true);
                             vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
                             ObjectManager.addVehicle(vehicle);
+                            if (!player.hasInfiniteMaterials()) VisualEffectHelper.boundingBox = null;
+                            stack.consume(1, player);
                             return null;
                         });
                     } else
@@ -135,8 +142,12 @@ public class AssemblyItem extends Item {
                         return null;
                     });
                 } else if (entity instanceof LivingEntity livingEntity) {
-                    if (livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof VehicleBlueprintItem
-                            || livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof VehicleBlueprintItem) {
+                    var leftItem = livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem();
+                    var rightItem = livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem();
+                    if (leftItem instanceof VehicleBlueprintItem
+                            || rightItem instanceof VehicleBlueprintItem
+                            || leftItem instanceof AssemblyItem
+                            || rightItem instanceof AssemblyItem) {
                     } else VisualEffectHelper.boundingBox = null;
                 }
             } catch (NullPointerException ignored) {
@@ -229,15 +240,10 @@ public class AssemblyItem extends Item {
     public static AssemblyData getAssemblyData(ItemStack stack) {
         AssemblyData assemblyData = AssemblyData.DEFAULT;
         if (stack.has(MMDataComponents.getASSEMBLY_PATH())) {
-            //从物品Component中获取内容包蓝图
-            try {
-                assemblyData = MMDynamicRes.ASSEMBLIES.getOrDefault(stack.get(MMDataComponents.getASSEMBLY_PATH()), AssemblyData.DEFAULT);
-            } catch (Exception e) {
-                stack.remove(MMDataComponents.getASSEMBLY_PATH());
-                MachineMax.LOGGER.error("物品{}中存储的蓝图数据{}读取异常，已清除该数据", stack, stack.get(MMDataComponents.getASSEMBLY_PATH()), e);
-            }
+            //从物品Component中获取内容包装配体数据
+            assemblyData = MMDynamicRes.ASSEMBLIES.getOrDefault(stack.get(MMDataComponents.getASSEMBLY_PATH()), AssemblyData.DEFAULT);
         } else if (stack.has(MMDataComponents.getBLUEPRINT_DATA())) {
-            //从物品Component中获取nbt保存的蓝图
+            //从物品Component中获取nbt保存的装配体数据
             assemblyData = stack.getOrDefault(MMDataComponents.getASSEMBLY_DATA(), AssemblyData.DEFAULT);
         }
         return assemblyData;
@@ -248,17 +254,29 @@ public class AssemblyItem extends Item {
         VehicleData vehicleData = null;
         AssemblyData assemblyData = getAssemblyData(stack);
         if (assemblyData.getTemplate() != AssemblyData.EMPTY) {
-            //从物品Component中获取内容包蓝图
-            try {
-                vehicleData = MMDynamicRes.TEMPLATES.get(assemblyData.getTemplate());
-            } catch (Exception e) {
-                stack.remove(MMDataComponents.getASSEMBLY_PATH());
-                MachineMax.LOGGER.error("物品{}中存储的蓝图数据{}读取异常，已清除该数据", stack, stack.get(MMDataComponents.getASSEMBLY_PATH()), e);
-            }
+            //从物品Component中获取内容包装配模板
+            vehicleData = MMDynamicRes.TEMPLATES.get(assemblyData.getTemplate());
         } else if (stack.has(MMDataComponents.getVEHICLE_DATA())) {
-            //从物品Component中获取nbt保存的蓝图
+            //从物品Component中获取nbt保存的装配模板
             vehicleData = stack.get(MMDataComponents.getVEHICLE_DATA());
         }
         return vehicleData;
+    }
+
+    @Override
+    public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
+        var animatable = new ItemAnimatable(itemStack, level);
+        HashMap<ItemDisplayContext, ItemAnimatable> customModels;
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
+            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+        else customModels = new HashMap<>();
+        AssemblyData assemblyData = getAssemblyData(itemStack);//获取物品保存的部件类型
+        animatable.getModelController().setModel(VehicleBlueprintItem.ICON_MODEL);
+        animatable.getModelController().setTextureLocation(assemblyData.getIcon());
+        if (customModels != null) {
+            customModels.put(context, animatable);
+            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
+        }
+        return animatable;
     }
 }

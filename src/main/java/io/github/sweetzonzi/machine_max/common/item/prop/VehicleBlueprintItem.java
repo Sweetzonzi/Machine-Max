@@ -54,8 +54,11 @@ import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintIt
 import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem.TEXTURE;
 
 public class VehicleBlueprintItem extends Item implements ICustomModelItem {
+    public static final ModelIndex ICON_MODEL = new ModelIndex("item",
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x"));
+    public static final ResourceLocation BG_TEXTURE = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID,
+            "textures/item/blueprint_bg.png");
 
-    public static final ResourceLocation BG_TEXTURE = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint_bg.png");
     public VehicleBlueprintItem() {
         super(new Properties().stacksTo(1));
     }
@@ -144,8 +147,12 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                         return null;
                     });
                 } else if (entity instanceof LivingEntity livingEntity) {
-                    if (livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof VehicleBlueprintItem
-                            || livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof VehicleBlueprintItem) {
+                    var leftItem = livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem();
+                    var rightItem = livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem();
+                    if (leftItem instanceof VehicleBlueprintItem
+                            || rightItem instanceof VehicleBlueprintItem
+                            || leftItem instanceof AssemblyItem
+                            || rightItem instanceof AssemblyItem) {
                     } else VisualEffectHelper.boundingBox = null;
                 }
             } catch (NullPointerException ignored) {
@@ -239,12 +246,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         BlueprintData bluePrintData = BlueprintData.EMPTY_BLUEPRINT;
         if (stack.has(MMDataComponents.getVEHICLE_BLUEPRINT_PATH())) {
             //从物品Component中获取内容包蓝图
-            try {
-                bluePrintData = MMDynamicRes.BLUEPRINTS.getOrDefault(stack.get(MMDataComponents.getVEHICLE_BLUEPRINT_PATH()), BlueprintData.EMPTY_BLUEPRINT);
-            } catch (Exception e) {
-                stack.remove(MMDataComponents.getVEHICLE_BLUEPRINT_PATH());
-                MachineMax.LOGGER.error("物品{}中存储的蓝图数据{}读取异常，已清除该数据", stack, stack.get(MMDataComponents.getVEHICLE_BLUEPRINT_PATH()), e);
-            }
+            bluePrintData = MMDynamicRes.BLUEPRINTS.getOrDefault(stack.get(MMDataComponents.getVEHICLE_BLUEPRINT_PATH()), BlueprintData.EMPTY_BLUEPRINT);
         } else if (stack.has(MMDataComponents.getBLUEPRINT_DATA())) {
             //从物品Component中获取nbt保存的蓝图
             bluePrintData = stack.getOrDefault(MMDataComponents.getBLUEPRINT_DATA(), BlueprintData.EMPTY_BLUEPRINT);
@@ -257,15 +259,10 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         VehicleData vehicleData = null;
         BlueprintData blueprintData = getBlueprintData(stack);
         if (blueprintData.getTemplate() != BlueprintData.EMPTY) {
-            //从物品Component中获取内容包蓝图
-            try {
-                vehicleData = MMDynamicRes.TEMPLATES.get(blueprintData.getTemplate());
-            } catch (Exception e) {
-                stack.remove(MMDataComponents.getVEHICLE_BLUEPRINT_PATH());
-                MachineMax.LOGGER.error("物品{}中存储的蓝图数据{}读取异常，已清除该数据", stack, stack.get(MMDataComponents.getVEHICLE_BLUEPRINT_PATH()), e);
-            }
+            //从物品Component中获取内容包装配模板
+            vehicleData = MMDynamicRes.TEMPLATES.get(blueprintData.getTemplate());
         } else if (stack.has(MMDataComponents.getVEHICLE_DATA())) {
-            //从物品Component中获取nbt保存的蓝图
+            //从物品Component中获取nbt保存的装配模板
             vehicleData = stack.get(MMDataComponents.getVEHICLE_DATA());
         }
         return vehicleData;
@@ -283,8 +280,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                     && context == ItemDisplayContext.GUI
                     && !blueprintData.getIcon().equals(BlueprintData.EMPTY)
             ) {
-                animatable.getModelController().setModel(new ModelIndex(
-                        "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
+                animatable.getModelController().setModel(ICON_MODEL);
                 animatable.getModelController().setTextureLocation(blueprintData.getIcon());
             } else throw new NullPointerException();
         } catch (NullPointerException e) {
