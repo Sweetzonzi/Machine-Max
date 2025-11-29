@@ -28,9 +28,11 @@ import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -89,27 +91,30 @@ public class PartItem extends Item implements ICustomModelItem {
                             targetConnector.adjustTransform(part, part.externalConnectors.get(subpart_connector));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(subpart_connector), part);//尝试将新部件连接至接口
                             if (!player.hasInfiniteMaterials()) VisualEffectHelper.partToPlace = null;
+                            var pos = part.rootSubPart.getPosition();
                             stack.consume(1, player);
                             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
                             SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
+                            ((ServerLevel)level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.2f);
                             return InteractionResultHolder.consume(stack);
                         } else return InteractionResultHolder.pass(stack);
                     } else return InteractionResultHolder.pass(stack);
                 } else {
                     Part part = new Part(partType, variant, level);
-                    part.setTransform(
-                            new Transform(
-                                    PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                                            player.getEyePosition(),
-                                            player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
-                                    Quaternion.IDENTITY
-                            )
+                    Transform transform = new Transform(
+                            PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                    player.getEyePosition(),
+                                    player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                            Quaternion.IDENTITY
                     );
+                    part.setTransform(transform);
+                    var pos = transform.getTranslation();
                     ObjectManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
                     stack.consume(1, player);
                     SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
                     SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
+                    ((ServerLevel)level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
                     return InteractionResultHolder.consume(stack);
                 }
             } catch (Exception e) {

@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.renderer;
 
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.renderer.GeoEntityRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -9,6 +10,7 @@ import cn.solarmoon.spark_core.util.RenderTypeUtil;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import net.minecraft.client.Camera;
@@ -25,6 +27,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
 
 import java.awt.*;
 
@@ -81,11 +84,32 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         poseStack.setIdentity();
         poseStack.mulPose(worldMatrix);
         poseStack.pushPose();
+//        var bones = modelController.getOriginModel().getBones().values().toArray();
+//        int boneCount = bones.length;
+//        for (int i = 0; i < boneCount; i++) {
+//            VertexConsumer buffer;
+//            if (i > boneCount / 3) {
+//                buffer = bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity)));
+//            } else buffer = bufferSource.getBuffer(RenderType.lines());
+//            ModelRenderHelperKt.render(
+//                    (OBone) bones[i],
+//                    modelInstance.getPose(),
+//                    new Matrix4f(poseStack.last().pose()),
+//                    poseStack.last().normal(),
+//                    buffer,
+//                    LightTexture.pack(this.getBlockLightLevel(entity, blockpos), this.getSkyLightLevel(entity, blockpos)),
+//                    overlay,
+//                    color.getRGB(),
+//                    partialTick,
+//                    false
+//            );
+//        }
         ModelRenderHelperKt.render(
                 modelController.getOriginModel(),
                 modelInstance.getPose(),
                 poseStack.last().pose(),
                 poseStack.last().normal(),
+//                bufferSource.getBuffer(RenderType.lines()),
                 bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
 //                bufferSource.getBuffer(RenderTypeUtil.transparentRepair(getTextureLocation(entity), false)),
                 LightTexture.pack(this.getBlockLightLevel(entity, blockpos), this.getSkyLightLevel(entity, blockpos)),

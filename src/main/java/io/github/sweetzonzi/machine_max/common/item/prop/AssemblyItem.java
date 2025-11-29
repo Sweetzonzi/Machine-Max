@@ -24,9 +24,11 @@ import io.github.sweetzonzi.machine_max.external.html.HtmlLikeParser;
 import io.github.sweetzonzi.machine_max.external.html.TagHtNode;
 import io.github.sweetzonzi.machine_max.external.html.TextHtNode;
 import io.github.sweetzonzi.machine_max.external.style.StyleProvider;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -83,10 +85,13 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                     if (contact == 0) {
                         level.submitImmediateTask(PPhase.PRE, () -> {
                             VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), true);
-                            vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
+                            var pos = transform.getTranslation();
+                            vehicle.setPos(SparkMathKt.toVec3(pos));
                             ObjectManager.addVehicle(vehicle);
                             if (!player.hasInfiniteMaterials()) VisualEffectHelper.boundingBox = null;
                             stack.consume(1, player);
+                            ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, Math.max((int) shape.length(), 30),
+                                    shape.x / 1.5, shape.y / 1.5, shape.z / 1.5, 0.2f);
                             return null;
                         });
                     } else
