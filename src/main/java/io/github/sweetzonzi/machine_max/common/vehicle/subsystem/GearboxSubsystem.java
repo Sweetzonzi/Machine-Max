@@ -5,6 +5,9 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_at
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,7 +21,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
     public final int minPositiveGear;
     public final int minNegativeGear;
     public final List<String> gearNames;//各级挡位的名称 Names of each gear position
-    private int currentGear = 1; //当前挡位 Current gear position
+    protected static final EntityDataAccessor<Integer> CURRENT_GEAR_ID = SynchedEntityData.defineId(GearboxSubsystem.class, EntityDataSerializers.INT);
     @Setter
     private boolean clutched = true;//离合状态，true为正常传动，false为不传动 Clutch status, true for normal transmission, false for no transmission
     private float remainingSwitchTime = 0.0f;//剩余换挡无动力时间 Remaining no-power time caused by switching gears
@@ -42,7 +45,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
         }
         minPositiveGear = tempMinPositiveGear;
         minNegativeGear = tempMinNegativeGear;
-        currentGear = minPositiveGear;
+        setCurrentGear(minPositiveGear);
     }
 
     @Override
@@ -95,30 +98,30 @@ public class GearboxSubsystem extends AbstractSubsystem {
     }
 
     public void switchGear(int gear) {
-        if (currentGear == gear) return;//当前挡位与目标挡位相同，无需切换
+        if (getCurrentGear() == gear) return;//当前挡位与目标挡位相同，无需切换
         if (gear >= 0 && gear < gearRatios.length) {//目标挡位有效
-            this.currentGear = gear;//更新当前挡位
+            setCurrentGear(gear);//更新当前挡位
             if (clutched) this.remainingSwitchTime = attr.staticAttribute.switchTime;//若未踩离合，开始换挡时间倒计时
             //更新挡位信号
             for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
                 String signalChannel = entry.getKey();
                 List<String> targets = entry.getValue();
                 for (String targetName : targets) {
-                    sendSignalToTarget(signalChannel, targetName, currentGear);
+                    sendSignalToTarget(signalChannel, targetName, gear);
                 }
             }
         }
     }
 
     public void upShift() {
-        if (currentGear < gearRatios.length - 1) {
-            switchGear(currentGear + 1);
+        if (getCurrentGear() < gearRatios.length - 1) {
+            switchGear(getCurrentGear() + 1);
         }
     }
 
     public void downShift() {
-        if (currentGear > 0) {
-            switchGear(currentGear - 1);
+        if (getCurrentGear() > 0) {
+            switchGear(getCurrentGear() - 1);
         }
     }
 
@@ -143,7 +146,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
             }
         }
         if (count > 0) averageSpeed /= count;//计算转速平均值
-        MechPowerSignal powerSignalToSend = new MechPowerSignal((float) totalPower, (float) (averageSpeed / gearRatios[currentGear]));
+        MechPowerSignal powerSignalToSend = new MechPowerSignal((float) totalPower, (float) (averageSpeed / gearRatios[getCurrentGear()]));
         if (isActive()) sendSignalToTarget("power", attr.powerOutputTarget, powerSignalToSend);//发送功率信号
         else resetSignalOutputs();
     }
@@ -159,12 +162,26 @@ public class GearboxSubsystem extends AbstractSubsystem {
             for (Object value : speedSignal.values()) {
                 if (value instanceof Float f) {
                     speed = f;//发送第一个反馈转速 TODO:发送平均值？
-                    sendCallbackToAllListeners("speed_feedback", (float) (speed * gearRatios[currentGear]));
+                    sendCallbackToAllListeners("speed_feedback", (float) (speed * gearRatios[getCurrentGear()]));
                     return;
                 }
             }
             sendCallbackToAllListeners("speed_feedback", EmptySignal.INSTANCE);//没有收到反馈速度信号时，发送空信号
         }
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CURRENT_GEAR_ID, 1);
+    }
+
+    public int getCurrentGear() {
+        return getSynchedData().get(CURRENT_GEAR_ID);
+    }
+
+    public void setCurrentGear(int currentGear) {
+        getSynchedData().set(CURRENT_GEAR_ID, currentGear);
     }
 
     /**
