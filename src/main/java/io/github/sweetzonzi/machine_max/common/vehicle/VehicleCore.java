@@ -87,6 +87,7 @@ public class VehicleCore {
         this.uuid = rootPart.uuid;
         ObjectManager.initVehicle(this);
         this.addPart(rootPart);
+        subSystemController.initAllSubsystems();//子系统初始化
     }
 
     public VehicleCore(Level level, VehicleData savedData, boolean readAdditionalData) {
@@ -112,6 +113,7 @@ public class VehicleCore {
                             null);
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
+            subSystemController.initAllSubsystems();//子系统初始化
             recalculateCameraDistance();
         } catch (Exception e) {
             onRemoveFromLevel(); // 移除数据出错的载具
@@ -141,7 +143,7 @@ public class VehicleCore {
             this.partMap.put(part.uuid, part);
             this.partNet.addNode(part);
             part.vehicle = this;
-            this.subSystemController.addSubsystems(subsystems, false);
+            this.subSystemController.addSubsystems(subsystems);
         }
         for (Pair<AbstractConnector, AttachPointConnector> edge : partNet.edges()) {
             EndpointPair<Part> connectedParts = partNet.incidentNodes(edge);
@@ -262,7 +264,6 @@ public class VehicleCore {
         for (AbstractSubsystem subSystem : part.getAllSubsystems()) {//连接部件内子系统的信号传输关系
             subSystem.setTargetFromNames();
         }
-        subSystemController.addSubsystems(part.getAllSubsystems(), true);
         for (AbstractConnector connector : part.allConnectors.values()) {//连接部件内信号端口的传输关系
             if (connector.signalPort != null) connector.signalPort.setTargetFromNames();
         }
@@ -270,13 +271,14 @@ public class VehicleCore {
             if (subPart.interactBoxes != null) {
                 for (InteractBox interactBox : subPart.interactBoxes.values()) {
                     interactBox.setTargetFromNames();
-                    interactBox.onVehicleStructureChanged();
+                    if (isInLevel()) interactBox.onVehicleStructureChanged();
                 }
             }
         }
         this.updateTotalMass();
         partMap.put(part.uuid, part);
         partNet.addNode(part);
+        subSystemController.addSubsystems(part.getAllSubsystems());
     }
 
     public void removePart(Part part) {
@@ -286,7 +288,7 @@ public class VehicleCore {
     public void removePart(Part part, Map<UUID, UUID> spiltVehicles) {
         if (partMap.containsValue(part)) {
             UUID partUuid = part.getUuid();
-            subSystemController.removeSubsystems(part.getAllSubsystems(), true);
+            subSystemController.removeSubsystems(part.getAllSubsystems(), false);
             partNet.removeNode(part);
             partMap.remove(part.uuid, part);
             part.destroy();
@@ -404,19 +406,21 @@ public class VehicleCore {
                 if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
                 newPart.addToLevel();//将新部件加入到世界
             }
-            if (isInLevel()) specialConnector.addToLevel();//将关节约束加入到世界
-            this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
-            recalculateCameraDistance();
-            this.activate();
-            if (inLevel && !level.isClientSide()) {
-                comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊对接口在前面，以保证对接口属性得到正确应用
-                //发包客户端创建连接关系
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new ConnectorAttachPayload(
-                        this.uuid,
-                        comboList,
-                        newPart != null,
-                        newPart == null ? null : new PartData(newPart)
-                ));
+            if (isInLevel()) {
+                specialConnector.addToLevel();//将关节约束加入到世界
+                this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
+                recalculateCameraDistance();
+                this.activate();
+                if (!level.isClientSide()) {
+                    comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊对接口在前面，以保证对接口属性得到正确应用
+                    //发包客户端创建连接关系
+                    PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new ConnectorAttachPayload(
+                            this.uuid,
+                            comboList,
+                            newPart != null,
+                            newPart == null ? null : new PartData(newPart)
+                    ));
+                }
             }
         }
     }

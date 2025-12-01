@@ -48,13 +48,42 @@ public class SubsystemController implements ISignalReceiver {
         }
     }
 
-    public void addSubsystems(Collection<AbstractSubsystem> subSystems, boolean newlyAdded) {
-        for (AbstractSubsystem subSystem : subSystems) this.addSubsystem(subSystem, newlyAdded);
+    /**
+     * 初始化子系统，调用{@link AbstractSubsystem#onAttach}方法
+     */
+    public void initAllSubsystems() {
+        allSubsystems.forEach(AbstractSubsystem::onAttach);
+    }
+
+    /**
+     * 初始化子系统，调用{@link AbstractSubsystem#onAttach}方法
+     * @param subsystems 子系统集合
+     */
+    public void initSubsystems(Collection<AbstractSubsystem> subsystems) {
+        subsystems.forEach(AbstractSubsystem::onAttach);
+    }
+
+    /**
+     * 初始化子系统，调用{@link AbstractSubsystem#onAttach}方法
+     * @param subsystem 子系统
+     */
+    public void initSubsystem(AbstractSubsystem subsystem){
+        subsystem.onAttach();
+    }
+
+    /**
+     * 将子系统加入控制器，等待初始化
+     * @param subSystems 子系统集合
+     */
+    public void addSubsystems(Collection<AbstractSubsystem> subSystems) {
         allSubsystems.addAll(subSystems);
     }
 
-    public void addSubsystem(AbstractSubsystem subSystem, boolean newlyAdded) {
-        if (newlyAdded) subSystem.onAttach();
+    /**
+     * 将子系统加入控制器，等待初始化
+     * @param subSystem 子系统
+     */
+    public void addSubsystem(AbstractSubsystem subSystem) {
         allSubsystems.add(subSystem);
     }
 

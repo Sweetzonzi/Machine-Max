@@ -107,15 +107,25 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         }
     }
 
+    @Override
+    public void onAttach() {
+        super.onAttach();
+        handShake();
+    }
+
+    @Override
+    public void onVehicleStructureChanged() {
+        super.onVehicleStructureChanged();
+        handShake();
+    }
+
     /**
-     * 每当载具结构发生变化时，发送空信号，根据回调重新建立连接<p>
+     * 子系统初始化或载具结构发生变化时，发送空信号，根据回调重新建立连接<p>
      * Every time the vehicle structure changes, send an empty signal, and reestablish connections based on callbacks.
      *
      * @see CarControllerSubsystem#onSignalUpdated(String signalKey, ISignalSender sender)
      */
-    @Override
-    public void onVehicleStructureChanged() {
-        super.onVehicleStructureChanged();
+    private void handShake() {
         for (String signalKey : attr.engineControlOutputTargets.keySet()) {
             sendSignalToAllTargetsWithCallback(signalKey, EmptySignal.INSTANCE, false);
         }

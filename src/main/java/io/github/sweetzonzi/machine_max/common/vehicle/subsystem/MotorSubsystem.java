@@ -89,6 +89,12 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     }
 
     @Override
+    public void onAttach() {
+        super.onAttach();
+        sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);//发送握手信号建立转速反馈链接
+    }
+
+    @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
         sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);//发送握手信号建立转速反馈链接

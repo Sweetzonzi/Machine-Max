@@ -140,7 +140,7 @@
                 "lower_limit": 1.0,
                 "upper_limit": 15.0,
                 "equilibrium": 1.0,
-                "stiffness": 25000,
+                "stiffness": 50000,
                 "damping": 1000
               }
             },
@@ -167,7 +167,7 @@
                 "lower_limit": 1.0,
                 "upper_limit": 15.0,
                 "equilibrium": 1.0,
-                "stiffness": 25000,
+                "stiffness": 50000,
                 "damping": 1000
               }
             }
@@ -199,7 +199,7 @@
                 "lower_limit": -15.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 25000,
+                "stiffness": 50000,
                 "damping": 1000
               }
             },
@@ -226,7 +226,7 @@
                 "lower_limit": -15.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 25000,
+                "stiffness": 50000,
                 "damping": 1000
               }
             }

@@ -74,6 +74,13 @@ public class TransmissionSubsystem extends AbstractSubsystem {
         updateFeedback();
     }
 
+    @Override
+    public void onAttach() {
+        super.onAttach();
+        //初始化握手功率信号
+        handShakeWithTargets();
+    }
+
     /**
      * <p>初始化功率信号并发送握手功率信号到输出目标</p>
      * <p>Initialize power signals and send handshaking power signals to output targets.</p>
@@ -83,6 +90,14 @@ public class TransmissionSubsystem extends AbstractSubsystem {
         super.onVehicleStructureChanged();
         powerReceivers.clear();//清空功率接收者列表
         powerReceiverGearRatios.clear();//清空功率输出通道列表
+        //初始化握手功率信号
+        handShakeWithTargets();
+    }
+
+    /**
+     * 初始化握手功率信号
+     */
+    private void handShakeWithTargets(){
         //初始化握手功率信号
         for (Map.Entry<String, Float> entry : attr.powerOutputs.entrySet()) {
             String targetName = entry.getKey();

@@ -70,6 +70,12 @@ public class GearboxSubsystem extends AbstractSubsystem {
     }
 
     @Override
+    public void onAttach() {
+        super.onAttach();
+        sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);
+    }
+
+    @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
         sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);
