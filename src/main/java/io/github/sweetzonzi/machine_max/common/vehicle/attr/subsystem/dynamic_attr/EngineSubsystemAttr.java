@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.EngineSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.EngineSubsystem;
@@ -36,6 +37,12 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
         this.staticAttribute = (EngineSubsystemStaticAttr) getStaticAttr();
         this.powerOutputTarget = powerOutputTarget;
         this.rpmOutputTargets = rpmOutputTargets;
+    }
+
+    public WorkingState getBestMatchWorkingState(double rpm, double load) {
+        var staticAttr = getStaticAttribute();
+        if (staticAttr instanceof EngineSubsystemStaticAttr staticEngineAttr) return staticEngineAttr.getBestMatchWorkingState(rpm, load);
+        else return EngineSubsystemStaticAttr.EMPTY_WORKING_STATE;
     }
 
     @Override

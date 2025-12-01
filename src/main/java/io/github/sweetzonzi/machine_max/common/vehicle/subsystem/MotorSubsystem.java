@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
@@ -22,7 +23,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     public final MotorSubsystemAttr attr;
     public double rotSpeed;//当前转速(rad/s)
     public double throttleInput;//当前电门输入（-1~1）
-    private MotorSubsystemStaticAttr.WorkingState currentState = null;//当前引擎工况及对应音效
+    private WorkingState currentState = null;//当前引擎工况及对应音效
     private UUID currentSoundUUID = UUID.randomUUID();
     private int sinceLastSoundUpdate = 0;
 
@@ -38,7 +39,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         Level level = getSubPart().getLevel();
         if (level.isClientSide() && this.isActive()) {
             sinceLastSoundUpdate++;
-            MotorSubsystemStaticAttr.WorkingState bestState = attr.getBestMatchWorkingState(
+            WorkingState bestState = attr.getBestMatchWorkingState(
                     Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
             if (bestState != null) {
                 if(bestState != currentState || sinceLastSoundUpdate > 30) {
@@ -70,21 +71,27 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         if (speedFeedback instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
             rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
-            sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
+            sendSignalToTarget("power", attr.getPowerOutputTarget(), EmptySignal.INSTANCE);//空挡不输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else if (speedFeedback instanceof Float feedback) {
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
             feedback = -feedback;
             //TODO:如何和转动惯量属性挂钩？
             rotSpeed = 0.95 * rotSpeed + 0.05 * feedback;
-            sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率
+            sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         } else {
             //没有转速反馈信号时，直接取用引擎转速
             rotSpeed += netTorque / (7 * attr.staticAttribute.inertia) / 60f;
-            sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));
+            sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
         }
+    }
+
+    @Override
+    public void onVehicleStructureChanged() {
+        super.onVehicleStructureChanged();
+        sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);//发送握手信号建立转速反馈链接
     }
 
     /**

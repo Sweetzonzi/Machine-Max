@@ -69,6 +69,25 @@ public class GearboxSubsystem extends AbstractSubsystem {
         updateFeedback();//更新反馈信号
     }
 
+    @Override
+    public void onVehicleStructureChanged() {
+        super.onVehicleStructureChanged();
+        sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);
+    }
+
+    @Override
+    public void onSignalUpdated(String channelName, ISignalSender sender) {
+        super.onSignalUpdated(channelName, sender);
+        SignalChannel channel = getSignalChannel(channelName);
+        for (Map.Entry<ISignalSender, Object> entry : channel.entrySet()) {
+            if (entry.getValue() instanceof MechPowerSignal) {
+                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
+                    addCallbackTarget("speed_feedback", receiver);
+                }
+            }
+        }
+    }
+
     public void switchGear(int gear) {
         if (currentGear == gear) return;//当前挡位与目标挡位相同，无需切换
         if (gear >= 0 && gear < gearRatios.length) {//目标挡位有效
@@ -99,7 +118,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
 
     private void distributePower() {
         if (!clutched || remainingSwitchTime > 0.0f) {
-            sendSignalToTarget("power", attr.powerOutputTarget, new MechPowerSignal(0.0f, 0f));
+            sendSignalToTarget("power", attr.powerOutputTarget, MechPowerSignal.ZERO);
             return;
         }
         double totalPower = 0.0;
@@ -133,7 +152,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
         if (!speedSignal.values().isEmpty()) {
             for (Object value : speedSignal.values()) {
                 if (value instanceof Float f) {
-                    speed = f;
+                    speed = f;//发送第一个反馈转速 TODO:发送平均值？
                     sendCallbackToAllListeners("speed_feedback", (float) (speed * gearRatios[currentGear]));
                     return;
                 }

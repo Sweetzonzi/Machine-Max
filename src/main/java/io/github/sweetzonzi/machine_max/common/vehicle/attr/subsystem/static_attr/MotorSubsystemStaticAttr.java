@@ -6,6 +6,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.util.sound.MotorSoundSynthesizer;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
@@ -107,10 +108,10 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     }
 
     public double distanceSqr(WorkingState state1, WorkingState state2) {
-        double rpm1Coordinate = getRPMCoordinate(state1.rpm);
-        double rpm2Coordinate = getRPMCoordinate(state2.rpm);
-        double load1Coordinate = getLoadCoordinate(state1.load);
-        double load2Coordinate = getLoadCoordinate(state2.load);
+        double rpm1Coordinate = getRPMCoordinate(state1.rpm());
+        double rpm2Coordinate = getRPMCoordinate(state2.rpm());
+        double load1Coordinate = getLoadCoordinate(state1.load());
+        double load2Coordinate = getLoadCoordinate(state2.load());
         return (rpm1Coordinate - rpm2Coordinate) * (rpm1Coordinate - rpm2Coordinate) + (load1Coordinate - load2Coordinate) * (load1Coordinate - load2Coordinate);
     }
 
@@ -145,14 +146,4 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
         return SubsystemTypes.MOTOR;
     }
 
-    public record WorkingState(float rpm, float load, ResourceLocation sound) {
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) return true;
-            if (other instanceof WorkingState state) {
-                return rpm == state.rpm && load == state.load;
-            } else return false;
-        }
-    }
 }

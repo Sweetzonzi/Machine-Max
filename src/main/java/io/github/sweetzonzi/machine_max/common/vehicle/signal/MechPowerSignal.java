@@ -13,6 +13,8 @@ public class MechPowerSignal extends Signal<Pair<Float, Float>> implements IPowe
         super(new Pair<>(power, speed));
     }
 
+    public static final MechPowerSignal ZERO = new MechPowerSignal(0, 0);
+
     @Override
     public float getPower() {
         return getValue().getFirst();

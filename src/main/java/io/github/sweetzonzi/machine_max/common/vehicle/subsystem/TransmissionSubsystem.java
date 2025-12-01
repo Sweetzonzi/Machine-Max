@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 //TODO:测试负传动比的情形
 @Getter
 public class TransmissionSubsystem extends AbstractSubsystem {
@@ -87,8 +88,7 @@ public class TransmissionSubsystem extends AbstractSubsystem {
             String targetName = entry.getKey();
             float gearRatio = entry.getValue();
             sendSignalToTargetWithCallback("power", targetName, gearRatio, true);//发送对应的减速比等待回传
-            MechPowerSignal powerSignalToSend = new MechPowerSignal(0f, 0f);
-            sendSignalToTarget("power", targetName, powerSignalToSend);//发送空功率信号
+            sendSignalToTarget("power", targetName, MechPowerSignal.ZERO);//发送空功率信号
         }
     }
 
@@ -99,7 +99,11 @@ public class TransmissionSubsystem extends AbstractSubsystem {
     public void onSignalUpdated(String channelName, ISignalSender sender) {
         super.onSignalUpdated(channelName, sender);
         Object signalValue = getSignalChannel(channelName).get(sender);
-        if (channelName.equals("speed_feedback") && signalValue instanceof Float speedFeedback) {
+        if (channelName.equals("power") && signalValue instanceof MechPowerSignal) {
+            if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
+                addCallbackTarget("speed_feedback", receiver);
+            }
+        } else if (channelName.equals("speed_feedback") && signalValue instanceof Float speedFeedback) {
             if (sender instanceof ISignalReceiver receiver) {
                 if (powerReceiverGearRatios.get(receiver) != null)//存在减速比时视为一般反馈
                     powerReceivers.put(receiver, speedFeedback * powerReceiverGearRatios.get(receiver));//更新功率接收者的速度反馈信号
