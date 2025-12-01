@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import com.google.gson.JsonParser
@@ -15,6 +16,7 @@ class ColorModule : SparkPackModule {
     override fun onStart(isClientSide: Boolean) {
         if (isClientSide) {
             MMDynamicRes.COLORS.clear()
+            SparkCore.LOGGER.info("开始注册色板方案…")
         }
     }
 

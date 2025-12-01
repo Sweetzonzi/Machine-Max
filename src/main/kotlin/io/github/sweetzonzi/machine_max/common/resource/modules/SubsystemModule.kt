@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import com.google.gson.JsonParser
@@ -22,6 +23,7 @@ class SubsystemModule : SparkPackModule {
         } else {
             MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS.clear()
         }
+        SparkCore.LOGGER.info("开始注册子系统…")
     }
 
     override fun read(

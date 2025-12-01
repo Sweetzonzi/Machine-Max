@@ -1,23 +1,42 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.sound.ISoundSpreader;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.EngineSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
-public class EngineSubsystem extends AbstractSubsystem {
+public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader {
     public final EngineSubsystemAttr attr;
     public final double MAX_ROT_SPEED;//最大转速(rad/s)
     public final double MAX_TORQUE_SPEED;//最大扭矩转速(rad/s)
     public final double BASE_ROT_SPEED;//怠速转速(rad/s)
     public final double MAX_TORQUE;//最大扭矩(N·m)
     public final double MIN_IDLE_THROTTLE;//怠速转速下的最小油门
-    public double rotSpeed;//当前转速(rad/s)
+    protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(EngineSubsystem.class, EntityDataSerializers.FLOAT);
     public double throttleInput;//当前油门输入（0~1）
+    private WorkingState currentState = null;//当前引擎工况及对应音效
+    private UUID currentSoundUUID = UUID.randomUUID();
+    private int sinceLastSoundUpdate = 0;
+    // 状态记录变量
+    private double lastRotSpeed = 0;
+    private double lastNetTorque = 0;
 
     public EngineSubsystem(ISubsystemHost owner, String name, EngineSubsystemAttr attr) {
         super(owner, name, attr);
@@ -28,21 +47,39 @@ public class EngineSubsystem extends AbstractSubsystem {
         BASE_ROT_SPEED = attr.staticAttribute.baseRpm * Math.PI / 30.0;
         // 计算最大扭矩（基于最大功率点公式 P_max = T_max * ω）
         MAX_TORQUE = attr.staticAttribute.maxPower / MAX_TORQUE_SPEED;
-        rotSpeed = BASE_ROT_SPEED + 5;
-        double minThrottle = 1.02 * calculateDampingTorque(BASE_ROT_SPEED) / calculateMaxTorque(BASE_ROT_SPEED);
+        setRotSpeed((float) (BASE_ROT_SPEED + 1));
+        double minThrottle = 1.005 * calculateDampingTorque(BASE_ROT_SPEED) / calculateMaxTorque(BASE_ROT_SPEED);
         MIN_IDLE_THROTTLE = Math.min(minThrottle, 1f);
     }
 
     @Override
     public void onTick() {
         super.onTick();
-        //TODO:根据转速和油门播放声音
+        //根据转速和油门播放声音
+        Level level = getSubPart().getLevel();
+        if (level.isClientSide() && this.isActive()) {
+            double rotSpeed = getRotSpeed();
+            sinceLastSoundUpdate++;
+            WorkingState bestState = attr.getBestMatchWorkingState(
+                    Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
+            if (bestState != null) {
+                if (bestState != currentState || sinceLastSoundUpdate > 30) {
+                    currentState = bestState;
+                    sinceLastSoundUpdate = 0;
+                    currentSoundUUID = transitionSound(level, currentSoundUUID, SoundEvent.createFixedRangeEvent(bestState.sound(), 64f), SoundSource.PLAYERS, 10, 10);
+                }
+            } else {
+                MachineMax.LOGGER.debug("No working state found for rotSpeed: {}, throttleInput: {}", rotSpeed, throttleInput);
+                currentState = null;
+            }
+        } else currentState = null;
     }
 
     @Override
     public void onPrePhysicsTick() {
         // 获取并钳位油门输入（自动维持怠速）
         updateThrottleInput();
+        double rotSpeed = getRotSpeed();
         if (rotSpeed / BASE_ROT_SPEED < 1.05) throttleInput = Math.clamp(throttleInput, MIN_IDLE_THROTTLE, 1);
         else throttleInput = Math.clamp(throttleInput, 0, 1);
         // 计算发动机输出扭矩
@@ -56,29 +93,47 @@ public class EngineSubsystem extends AbstractSubsystem {
             }
             break;
         }
+        // 计算角加速度并更新外部阻力矩估计
+        double angularAcceleration = (rotSpeed - lastRotSpeed) * 60;
+        // 根据转动定律：总扭矩 = 转动惯量 * 角加速度
+        double totalTorque = angularAcceleration * attr.staticAttribute.inertia;
+        // 外部阻力矩 = 总扭矩 - 上一tick的净扭矩
+        double estimatedExternalTorque = totalTorque - lastNetTorque;
+        // 使用低通滤波器平滑估计值，避免突变
+        estimatedExternalTorque = 0.7 * estimatedExternalTorque + 0.3 * (totalTorque - lastNetTorque);
+        // 记录当前状态供下一tick使用
+        lastRotSpeed = rotSpeed;
+        lastNetTorque = netTorque;
+
         if (speedFeedback instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
             rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
-            rotSpeed = Math.max(0.95 * rotSpeed + 0.05 * BASE_ROT_SPEED, 0.1 * BASE_ROT_SPEED);
-            if (!isActive()) rotSpeed = 0;
+            rotSpeed = 0.99 * rotSpeed + 0.01 * BASE_ROT_SPEED;//额外修正
             sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
+            setRotSpeed((float) rotSpeed);
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         } else if (speedFeedback instanceof Float feedback) {
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
             feedback = -feedback;
-            //TODO:如何和转动惯量属性挂钩？
-            rotSpeed = 0.95 * rotSpeed + 0.05 * feedback;
-            rotSpeed = Math.max(rotSpeed, 0.1 * BASE_ROT_SPEED);
-            if (!isActive()) rotSpeed = 0;
+            //与转动惯量属性挂钩的转速改变量
+            rotSpeed = rotSpeed + (netTorque - estimatedExternalTorque) / attr.staticAttribute.inertia / 60f;
+            rotSpeed = 0.98 * rotSpeed + 0.02 * feedback;//额外修正
+            rotSpeed = Math.clamp(rotSpeed, 0.1 * BASE_ROT_SPEED, MAX_ROT_SPEED * 2);
+            if (!isActive()) {
+                rotSpeed = feedback;
+                netTorque = 0;
+            }
             sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率信号
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速信号
+            setRotSpeed((float) rotSpeed);
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速信号
         } else {
             //没有转速反馈信号时，直接取用引擎转速
             rotSpeed += netTorque / (7 * attr.staticAttribute.inertia) / 60f;
             rotSpeed = Math.max(rotSpeed, 0.8 * BASE_ROT_SPEED);
             if (!isActive()) rotSpeed = 0;
             sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
+            setRotSpeed((float) rotSpeed);
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         }
     }
 
@@ -151,12 +206,64 @@ public class EngineSubsystem extends AbstractSubsystem {
         throttleInput = powerControlInput;
     }
 
+    public double getRotSpeed() {
+        return getSynchedData().get(ROT_SPEED_ID);
+    }
+
+    public void setRotSpeed(float rotSpeed) {
+        getSynchedData().set(ROT_SPEED_ID, rotSpeed);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ROT_SPEED_ID, 0f);
+    }
+
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(2);
         result.put("power", List.of(attr.powerOutputTarget));
         result.putAll(attr.rpmOutputTargets);
         return result;
+    }
+
+    /**
+     * 获取声源的实时位置
+     *
+     * <p>此方法在每个游戏tick都会被调用，用于更新声音波面的发射源位置。
+     * 返回的位置将作为声音传播的起点，声音会从此位置以音速向外传播。</p>
+     *
+     * <p>实现注意事项：</p>
+     * <ul>
+     *   <li>应返回当前帧声源在世界中的精确位置</li>
+     *   <li>位置变化应平滑，避免剧烈跳跃</li>
+     *   <li>对于移动声源，建议返回质心或主要发声部位的位置</li>
+     * </ul>
+     *
+     * @param uuid  声源的UUID
+     * @param event 当前播放的声音事件
+     * @return 声源在当前游戏刻的三维世界坐标，单位：方块
+     */
+    @Override
+    public @NotNull Vec3 getPosition(UUID uuid, SoundEvent event) {
+        return SparkMathKt.toVec3(getSubPart().getPosition());
+    }
+
+    @Override
+    public float getVolume(UUID uuid, SoundEvent event) {
+        if (currentState != null) {
+            return 1f;
+        } else return 0f;
+    }
+
+    @Override
+    public float getPitch(UUID uuid, SoundEvent event) {
+        if (currentState != null) {
+            double rpm = Math.max(Math.abs(30 * getRotSpeed() / Math.PI), 0.5 * MotorSubsystemStaticAttr.baseRPM);
+            double rpmRatio = rpm / currentState.rpm();
+            return (float) Math.clamp(rpmRatio, 0.25, 4);
+        } else return 1f;
     }
 
 }

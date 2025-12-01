@@ -88,7 +88,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(
                 MachineMax.MOD_ID,
                 "subsystem/motor/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(load));
-        MachineMax.LOGGER.debug("Creating motor sound: {}", id);
+//        MachineMax.LOGGER.debug("Creating motor sound: {}", id);
         MotorSoundSynthesizer.synthesizeBrushlessMotor(3f, rpm, load,
                 new MotorSoundSynthesizer.MotorConfig(6, 8000, this.maxRPM, 1200)).register(id);
         MachineMax.LOGGER.debug("Motor sound created: {}", id);

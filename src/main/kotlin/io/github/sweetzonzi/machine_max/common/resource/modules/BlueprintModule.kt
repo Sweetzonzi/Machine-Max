@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import com.google.gson.JsonParser
@@ -16,6 +17,7 @@ class BlueprintModule : SparkPackModule {
     override val id: String = "blueprints"
     override fun onStart(isClientSide: Boolean) {
         MMDynamicRes.BLUEPRINTS.clear()
+        SparkCore.LOGGER.info("开始注册载具蓝图…")
     }
 
     override fun read(

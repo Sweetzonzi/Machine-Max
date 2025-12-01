@@ -1,10 +1,12 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr;
 
+import cn.solarmoon.spark_core.pack.modules.SoundModule;
+import cn.solarmoon.spark_core.sound.SoundData;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.util.sound.MotorSoundSynthesizer;
+import io.github.sweetzonzi.machine_max.common.util.sound.EngineSoundSynthesizer;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import lombok.Getter;
@@ -34,8 +36,8 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             Codec.FLOAT.optionalFieldOf("base_rpm", 500f).forGetter(EngineSubsystemStaticAttr::getBaseRpm),
             Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5500f).forGetter(EngineSubsystemStaticAttr::getMaxTorqueRpm),
             Codec.FLOAT.optionalFieldOf("max_rpm", 7500f).forGetter(EngineSubsystemStaticAttr::getMaxRpm),
-            Codec.DOUBLE.optionalFieldOf("inertia", 500.0).forGetter(EngineSubsystemStaticAttr::getInertia),
-            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.005, 0.00003)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
+            Codec.DOUBLE.optionalFieldOf("inertia", 50.0).forGetter(EngineSubsystemStaticAttr::getInertia),
+            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.01, 0.00000)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys)
     ).apply(instance, EngineSubsystemStaticAttr::new));
     public static final int LOAD_STATE_COUNT = 5;
@@ -46,7 +48,7 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
 
 
     public EngineSubsystemStaticAttr(
-            float basicDurability, 
+            float basicDurability,
             String particleLocator,
             float maxPower,
             float baseRpm,
@@ -70,30 +72,39 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     private void createWorkingStates() {
         workingStates.clear();
         //确定转速区间数量
-        int rpmCount = getRpmStateIndex(getMaxRpm() * 1.5);
+        int rpmCount = getRpmStateIndex(getMaxRpm() * 2) + 1;
         //外层循环：转速区间
-        for (int i = 1; i < rpmCount + 1; i++) {
+        for (int i = 0; i < rpmCount; i++) {
             //内层循环：负载区间
             ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
             for (int j = 0; j < LOAD_STATE_COUNT; j++) {
                 //创建工况
-                float rpm = 2 * getBaseRpm() * (float) Math.pow(2, i);
+                float rpm = getBaseRpm() * (float) Math.pow(2, i);
                 float load = 0.25f * j;
-                ResourceLocation sound = createStateSound(rpm, load);
+                EngineSoundSynthesizer synthesizer = new EngineSoundSynthesizer();
+                synthesizer.setEngineParams(
+                        new EngineSoundSynthesizer.EngineParams(
+                                6, 4, 500, getMaxRpm(), getBaseRpm(), 30.0, 2));
+                ResourceLocation sound = createStateSound(synthesizer, rpm, load);
                 loadWorkingStates.add(new WorkingState(rpm, load, sound));
             }
             workingStates.add(loadWorkingStates);
         }
     }
 
-    private ResourceLocation createStateSound(float rpm, float load){
+    private ResourceLocation createStateSound(EngineSoundSynthesizer synthesizer, float rpm, float load) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(
                 MachineMax.MOD_ID,
                 "subsystem/engine/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(load));
-        MachineMax.LOGGER.debug("Creating engine sound: {}", id);
-        MotorSoundSynthesizer.synthesizeBrushlessMotor(3f, rpm, load,
-                new MotorSoundSynthesizer.MotorConfig(6, 8000, this.getMaxRpm(), 1200)).register(id);
-        MachineMax.LOGGER.debug("Engine sound created: {}", id);
+//        MachineMax.LOGGER.debug("Creating engine sound: {}", id);
+        SoundData ignition = SoundModule.getSound(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "ignite"));
+        if (ignition != null) {
+            synthesizer.updateEngineState(rpm, load);
+            synthesizer.synthesizeEngineSound(3f).register(id);
+            MachineMax.LOGGER.debug("Engine sound created: {}", id);
+        } else {
+            MachineMax.LOGGER.warn("Failed to synthesize engine sound because ignition sound is missing: {}", id);
+        }
         return id;
     }
 
@@ -101,8 +112,8 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
         int rpmIndex = (int) getRPMCoordinate(rpm);
         int loadIndex = (int) getLoadCoordinate(load);
         WorkingState result = null;
-        if(rpmIndex >=0 && rpmIndex < workingStates.size()){
-            if (loadIndex >= 0 && loadIndex < workingStates.get(rpmIndex).size()){
+        if (rpmIndex >= 0 && rpmIndex < workingStates.size()) {
+            if (loadIndex >= 0 && loadIndex < workingStates.get(rpmIndex).size()) {
                 result = workingStates.get(rpmIndex).get(loadIndex);
             }
         }

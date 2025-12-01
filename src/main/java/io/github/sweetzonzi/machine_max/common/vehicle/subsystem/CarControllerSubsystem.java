@@ -273,11 +273,11 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     actualBrake = actualBrake * 0.8f + 0 * 0.2f;
                     for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
                         sendCallbackToAllListeners(entry.getValue(), actualThrottle);
-                        avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
+                        avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).getRotSpeed();
                     }
                     for (Map.Entry<ISignalReceiver, String> entry : motors.entrySet()) {
                         sendCallbackToAllListeners(entry.getValue(), (float) moveInput[2]);
-                        avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).rotSpeed;
+                        avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).getRotSpeed();
                     }
                     avgEngineSpeed /= engineCount;
                     //起步时自动松离合和手刹 Auto release hand brake when starting
@@ -299,11 +299,11 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     actualBrake = actualBrake * 0.9f + 1 * 0.1f;
                     for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
                         sendCallbackToAllListeners(entry.getValue(), actualThrottle);
-                        avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
+                        avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).getRotSpeed();
                     }
                     for (Map.Entry<ISignalReceiver, String> entry : motors.entrySet()) {
                         sendCallbackToAllListeners(entry.getValue(), (float) moveInput[2]);
-                        avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).rotSpeed;
+                        avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).getRotSpeed();
                     }
                     avgEngineSpeed /= engineCount;
                     for (ISignalReceiver gearbox : gearboxes.keySet()) {//减速时积极降档 Shift down early when braking
@@ -324,11 +324,11 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 actualThrottle = actualThrottle * 0.9f + 0 * 0.1f;
                 for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
                     sendCallbackToAllListeners(entry.getValue(), actualThrottle);
-                    avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).rotSpeed;
+                    avgEngineSpeed += (float) ((EngineSubsystem) entry.getKey()).getRotSpeed();
                 }
                 for (Map.Entry<ISignalReceiver, String> entry : motors.entrySet()) {
                     sendCallbackToAllListeners(entry.getValue(), 0f);
-                    avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).rotSpeed;
+                    avgEngineSpeed += (float) ((MotorSubsystem) entry.getKey()).getRotSpeed();
                 }
                 avgEngineSpeed /= engineCount;
                 if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low

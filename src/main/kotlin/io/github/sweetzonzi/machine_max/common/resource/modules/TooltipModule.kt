@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.resource.modules
 
+import cn.solarmoon.spark_core.SparkCore
 import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import io.github.sweetzonzi.machine_max.MachineMax
@@ -15,6 +16,7 @@ class TooltipModule : SparkPackModule {
     override fun onStart(isClientSide: Boolean) {
         if (isClientSide) {
             MMDynamicRes.TOOLTIPS.clear()
+            SparkCore.LOGGER.info("开始注册文本内容…")
         }
     }
 

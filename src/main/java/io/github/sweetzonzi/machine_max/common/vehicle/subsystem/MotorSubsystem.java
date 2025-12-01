@@ -8,6 +8,10 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingSta
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
+import lombok.Getter;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
@@ -18,14 +22,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
+@Getter
 public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader {
     public final MotorSubsystemAttr attr;
-    public double rotSpeed;//当前转速(rad/s)
+    protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(EngineSubsystem.class, EntityDataSerializers.FLOAT);
     public double throttleInput;//当前电门输入（-1~1）
     private WorkingState currentState = null;//当前引擎工况及对应音效
     private UUID currentSoundUUID = UUID.randomUUID();
     private int sinceLastSoundUpdate = 0;
+    // 状态记录变量
+    private double lastRotSpeed = 0;
+    private double lastNetTorque = 0;
 
     public MotorSubsystem(ISubsystemHost owner, String name, MotorSubsystemAttr attr) {
         super(owner, name, attr);
@@ -40,7 +47,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         if (level.isClientSide() && this.isActive()) {
             sinceLastSoundUpdate++;
             WorkingState bestState = attr.getBestMatchWorkingState(
-                    Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
+                    Math.abs(30 * getRotSpeed() / Math.PI), Math.abs(throttleInput));
             if (bestState != null) {
                 if(bestState != currentState || sinceLastSoundUpdate > 30) {
                     currentState = bestState;
@@ -48,7 +55,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
                     currentSoundUUID = transitionSound(level, currentSoundUUID, SoundEvent.createFixedRangeEvent(bestState.sound(), 64f), SoundSource.PLAYERS, 10, 10);
                 }
             } else {
-                MachineMax.LOGGER.debug("No working state found for rotSpeed: {}, throttleInput: {}", rotSpeed, throttleInput);
+                MachineMax.LOGGER.debug("No working state found for rotSpeed: {}, throttleInput: {}", getRotSpeed(), throttleInput);
                 currentState = null;
             }
         } else currentState = null;
@@ -57,6 +64,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     @Override
     public void onPrePhysicsTick() {
         updateThrottleInput();
+        double rotSpeed = getRotSpeed();
         //TODO:电门输入与转速方向相反时，发电模式
         double engineTorque = throttleInput * calculateMaxTorque(rotSpeed);//输出扭矩
         double dampingTorque = calculateDampingTorque(rotSpeed);
@@ -68,23 +76,43 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
             }
             break;
         }
+        // 计算角加速度并更新外部阻力矩估计
+        double angularAcceleration = (rotSpeed - lastRotSpeed) * 60;
+        // 根据转动定律：总扭矩 = 转动惯量 * 角加速度
+        double totalTorque = angularAcceleration * attr.staticAttribute.inertia;
+        // 外部阻力矩 = 总扭矩 - 上一tick的净扭矩
+        double estimatedExternalTorque = totalTorque - lastNetTorque;
+        // 使用低通滤波器平滑估计值，避免突变
+        estimatedExternalTorque = 0.7 * estimatedExternalTorque + 0.3 * (totalTorque - lastNetTorque);
+        // 记录当前状态供下一tick使用
+        lastRotSpeed = rotSpeed;
+        lastNetTorque = netTorque;
+
         if (speedFeedback instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
             rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
             sendSignalToTarget("power", attr.getPowerOutputTarget(), EmptySignal.INSTANCE);//空挡不输出功率
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
+            setRotSpeed((float) rotSpeed);
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         } else if (speedFeedback instanceof Float feedback) {
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
             feedback = -feedback;
-            //TODO:如何和转动惯量属性挂钩？
-            rotSpeed = 0.95 * rotSpeed + 0.05 * feedback;
+            //与转动惯量属性挂钩的转速改变量
+            rotSpeed = rotSpeed + (netTorque + estimatedExternalTorque) / attr.staticAttribute.inertia / 60f;
+            rotSpeed = 0.99 * rotSpeed + 0.01 * feedback; //额外修正
+            if (!isActive()) {
+                rotSpeed = feedback;
+                netTorque = 0;
+            }
             sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
+            setRotSpeed((float) rotSpeed);
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         } else {
             //没有转速反馈信号时，直接取用引擎转速
             rotSpeed += netTorque / (7 * attr.staticAttribute.inertia) / 60f;
             sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, (float) rotSpeed));//输出转速
+            setRotSpeed((float) rotSpeed);
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         }
     }
 
@@ -146,6 +174,20 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         throttleInput = powerControlInput;
     }
 
+    public float getRotSpeed() {
+        return getSynchedData().get(ROT_SPEED_ID);
+    }
+
+    public void setRotSpeed(float rotSpeed) {
+        getSynchedData().set(ROT_SPEED_ID, rotSpeed);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ROT_SPEED_ID, 0f);
+    }
+
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(2);
@@ -179,16 +221,16 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     @Override
     public float getVolume(UUID uuid, SoundEvent event) {
         if (currentState != null) {
-            if (Math.abs(30 * rotSpeed / Math.PI) > MotorSubsystemStaticAttr.baseRPM)
+            if (Math.abs(30 * getRotSpeed() / Math.PI) > MotorSubsystemStaticAttr.baseRPM)
                 return (float) (0.7 + 0.3 * Math.abs(throttleInput));
-            else return (float) (Math.abs(30 * rotSpeed / Math.PI) / MotorSubsystemStaticAttr.baseRPM);
+            else return (float) (Math.abs(30 * getRotSpeed() / Math.PI) / MotorSubsystemStaticAttr.baseRPM);
         } else return 0f;
     }
 
     @Override
     public float getPitch(UUID uuid, SoundEvent event) {
         if (currentState != null) {
-            double rpm = Math.max(Math.abs(30 * rotSpeed / Math.PI), 0.5 * MotorSubsystemStaticAttr.baseRPM);
+            double rpm = Math.max(Math.abs(30 * getRotSpeed() / Math.PI), 0.5 * MotorSubsystemStaticAttr.baseRPM);
             double rpmRatio = rpm / currentState.rpm();
             return (float) Math.clamp(rpmRatio, 0.25, 4);
         } else return 1f;
