@@ -6,7 +6,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.util.sound.EngineSoundSynthesizer;
+import io.github.sweetzonzi.machine_max.common.util.sound.PistonEngineSoundSynthesizer;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import lombok.Getter;
@@ -37,10 +37,11 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5500f).forGetter(EngineSubsystemStaticAttr::getMaxTorqueRpm),
             Codec.FLOAT.optionalFieldOf("max_rpm", 7500f).forGetter(EngineSubsystemStaticAttr::getMaxRpm),
             Codec.DOUBLE.optionalFieldOf("inertia", 50.0).forGetter(EngineSubsystemStaticAttr::getInertia),
-            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.01, 0.00000)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
+            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.01, 0.000001)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys)
     ).apply(instance, EngineSubsystemStaticAttr::new));
-    public static final int LOAD_STATE_COUNT = 5;
+    public static final int LOAD_STATE_COUNT = 4;
+    public static final double RPM_INCREASE_RATIO = 1.5; // 50% 增加，即 1.5 倍
 
     public final ArrayList<ArrayList<WorkingState>> workingStates = new ArrayList<>();//工况-音效列表，外层转速，内层负载，对应音效文件名
 
@@ -71,20 +72,18 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
 
     private void createWorkingStates() {
         workingStates.clear();
-        //确定转速区间数量
-        int rpmCount = getRpmStateIndex(getMaxRpm() * 2) + 1;
-        //外层循环：转速区间
-        for (int i = 0; i < rpmCount; i++) {
-            //内层循环：负载区间
+        // 确定转速区间数量，按照 1.5 倍递增
+        int rpmCount = getRpmStateIndex(getMaxRpm() * 2);
+        // 外层循环：转速区间
+        for (int i = 0; i < rpmCount + 1; i++) {
+            // 内层循环：负载区间
             ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
             for (int j = 0; j < LOAD_STATE_COUNT; j++) {
-                //创建工况
-                float rpm = getBaseRpm() * (float) Math.pow(2, i);
+                // 创建工况
+                float rpm = getBaseRpm() * (float) Math.pow(RPM_INCREASE_RATIO, i);
                 float load = 0.25f * j;
-                EngineSoundSynthesizer synthesizer = new EngineSoundSynthesizer();
-                synthesizer.setEngineParams(
-                        new EngineSoundSynthesizer.EngineParams(
-                                6, 4, 500, getMaxRpm(), getBaseRpm(), 30.0, 2));
+                PistonEngineSoundSynthesizer synthesizer = new PistonEngineSoundSynthesizer();
+                synthesizer.setEngineParams(new PistonEngineSoundSynthesizer.EngineParams());
                 ResourceLocation sound = createStateSound(synthesizer, rpm, load);
                 loadWorkingStates.add(new WorkingState(rpm, load, sound));
             }
@@ -92,7 +91,7 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
         }
     }
 
-    private ResourceLocation createStateSound(EngineSoundSynthesizer synthesizer, float rpm, float load) {
+    private ResourceLocation createStateSound(PistonEngineSoundSynthesizer synthesizer, float rpm, float load) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(
                 MachineMax.MOD_ID,
                 "subsystem/engine/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(load));
@@ -109,8 +108,8 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     }
 
     public WorkingState getBestMatchWorkingState(double rpm, double load) {
-        int rpmIndex = (int) getRPMCoordinate(rpm);
-        int loadIndex = (int) getLoadCoordinate(load);
+        int rpmIndex = (int) Math.round(getRPMCoordinate(rpm));
+        int loadIndex = (int) Math.round(getLoadCoordinate(load));
         WorkingState result = null;
         if (rpmIndex >= 0 && rpmIndex < workingStates.size()) {
             if (loadIndex >= 0 && loadIndex < workingStates.get(rpmIndex).size()) {
@@ -138,7 +137,8 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
 
     public double getRPMCoordinate(double rpm) {
         if (Math.abs(rpm) <= getBaseRpm()) return 0;
-        return Math.log(Math.abs(rpm) / getBaseRpm()) / Math.log(2);
+        // 使用频率增加量为底的对数计算转速坐标
+        return Math.log(Math.abs(rpm) / getBaseRpm()) / Math.log(RPM_INCREASE_RATIO);
     }
 
     public int getLoadStateIndex(double load) {

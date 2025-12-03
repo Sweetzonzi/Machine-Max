@@ -25,7 +25,7 @@ import java.util.UUID;
 @Getter
 public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader {
     public final MotorSubsystemAttr attr;
-    protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(EngineSubsystem.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(MotorSubsystem.class, EntityDataSerializers.FLOAT);
     public double throttleInput;//当前电门输入（-1~1）
     private WorkingState currentState = null;//当前引擎工况及对应音效
     private UUID currentSoundUUID = UUID.randomUUID();
@@ -83,7 +83,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         // 外部阻力矩 = 总扭矩 - 上一tick的净扭矩
         double estimatedExternalTorque = totalTorque - lastNetTorque;
         // 使用低通滤波器平滑估计值，避免突变
-        estimatedExternalTorque = 0.7 * estimatedExternalTorque + 0.3 * (totalTorque - lastNetTorque);
+        estimatedExternalTorque = 0.4 * estimatedExternalTorque + 0.6 * (totalTorque - lastNetTorque);
         // 记录当前状态供下一tick使用
         lastRotSpeed = rotSpeed;
         lastNetTorque = netTorque;

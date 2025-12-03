@@ -1,7 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.util.sound
 
 import cn.solarmoon.spark_core.sound.SoundData
-import cn.solarmoon.spark_core.util.SoundSynthesizers
+import cn.solarmoon.spark_core.util.sound.WaveGenerators
+import cn.solarmoon.spark_core.util.sound.WaveEffects
+import cn.solarmoon.spark_core.util.sound.filter.MonoFilter
+import cn.solarmoon.spark_core.util.toSoundData
 
 /**
  * 无刷电机音效合成器
@@ -44,7 +47,7 @@ object MotorSoundSynthesizer {
         val pwmWhine = synthesizePWMWhine(duration, rpm, load, config, sampleRate)
 
         // 混合所有层并应用动态滤波器
-        val mixed = SoundSynthesizers.mixSounds(
+        val mixed = WaveEffects.mixSamples(
             listOf(
                 electromagneticNoise,
                 mechanicalNoise,
@@ -53,7 +56,7 @@ object MotorSoundSynthesizer {
         )
 
         // 应用随速变化的低通滤波器
-        return applySpeedDependentFilter(mixed, load, config)
+        return applySpeedDependentFilter(mixed, load, config).toSoundData()
     }
 
     /**
@@ -65,7 +68,7 @@ object MotorSoundSynthesizer {
         load: Double,
         config: MotorConfig,
         sampleRate: Int
-    ): SoundData {
+    ): DoubleArray {
         val baseFrequency = calculateBaseFrequency(rpm, config.polePairs)
         val nyquistFrequency = sampleRate / 2.0
 
@@ -77,7 +80,7 @@ object MotorSoundSynthesizer {
             ForceWaveComponent(1, 0.1, 0.05, false)  // 1阶基频，正弦波，能量很低
         )
 
-        val waves = mutableListOf<SoundData>()
+        val waves = mutableListOf<DoubleArray>()
 
         // 为每个分量生成随机初始相位
         val initialPhases = forceWaveComponents.associate {
@@ -96,7 +99,7 @@ object MotorSoundSynthesizer {
 
             val wave = if (component.usePulseWave) {
                 // 使用脉冲波模拟电磁力脉冲
-                SoundSynthesizers.sawtoothWave(
+                WaveGenerators.sawtoothWave(
                     duration = duration,
                     frequency = harmonicFreq,
                     amplitude = amplitude,
@@ -106,7 +109,7 @@ object MotorSoundSynthesizer {
                 )
             } else {
                 // 低阶次使用正弦波
-                SoundSynthesizers.squareWave(
+                WaveGenerators.squareWave(
                     duration = duration,
                     frequency = harmonicFreq,
                     amplitude = amplitude,
@@ -117,7 +120,7 @@ object MotorSoundSynthesizer {
             waves.add(wave)
         }
 
-        val mixedWaves = SoundSynthesizers.mixSounds(waves)
+        val mixedWaves = WaveEffects.mixSamples(waves)
 
         // 应用负载相关的振幅调制，模拟转矩脉动
         return applyLoadModulation(mixedWaves, load, baseFrequency)
@@ -127,10 +130,10 @@ object MotorSoundSynthesizer {
      * 应用负载调制 - 模拟转矩脉动
      */
     private fun applyLoadModulation(
-        soundData: SoundData,
+        soundData: DoubleArray,
         load: Double,
         baseFrequency: Double
-    ): SoundData {
+    ): DoubleArray {
         if (load < 0.1) return soundData // 轻载时不调制
 
         // 负载越大，调制深度越深
@@ -138,8 +141,8 @@ object MotorSoundSynthesizer {
         // 调制频率与基频相关
         val modFrequency = baseFrequency * 2.0
 
-        return SoundSynthesizers.amplitudeModulation(
-            soundData = soundData,
+        return MonoFilter.amplitudeModulation(
+            samples = soundData,
             modFrequency = modFrequency,
             modDepth = modDepth
         )
@@ -149,18 +152,18 @@ object MotorSoundSynthesizer {
      * 应用随速变化的低通滤波器
      */
     private fun applySpeedDependentFilter(
-        soundData: SoundData,
+        soundData: DoubleArray,
         rpm: Double,
         config: MotorConfig
-    ): SoundData {
+    ): DoubleArray {
         // 转速越高，截止频率越高
         val speedRatio = rpm / config.maxRPM
         val minCutoff = 500.0
         val maxCutoff = 8000.0
         val cutoff = minCutoff + (maxCutoff - minCutoff) * speedRatio.coerceIn(0.0, 1.0)
 
-        return SoundSynthesizers.lowPassFilter(
-            soundData = soundData,
+        return MonoFilter.lowPassFilter(
+            samples = soundData,
             cutoff = cutoff,
             resonance = 0.3
         )
@@ -175,9 +178,9 @@ object MotorSoundSynthesizer {
         load: Double,
         config: MotorConfig,
         sampleRate: Int
-    ): SoundData {
+    ): DoubleArray {
         // 基础机械噪音（轴承、齿轮等）- 使用高斯噪声更自然
-        val baseNoise = SoundSynthesizers.gaussianWhiteNoise(
+        val baseNoise = WaveGenerators.gaussianWhiteNoise(
             duration = duration,
             amplitude = load * (0.3 + 0.7 * rpm / config.maxRPM),
             sampleRate = sampleRate
@@ -185,8 +188,8 @@ object MotorSoundSynthesizer {
 
         // 应用带通滤波突出机械共振频率范围
         val centerFreq = config.mechanicalResonanceFreq * (0.8 + 0.4 * rpm / config.maxRPM)
-        val filteredNoise = SoundSynthesizers.bandPassFilter(
-            soundData = baseNoise,
+        val filteredNoise = MonoFilter.bandPassFilter(
+            samples = baseNoise,
             centerFreq = centerFreq,
             bandwidth = 300.0
         )
@@ -194,8 +197,8 @@ object MotorSoundSynthesizer {
         // 添加与转速相关的振幅调制，模拟旋转机械的周期性
         val modulationFreq = calculateBaseFrequency(rpm, config.polePairs) * 0.5
 
-        return SoundSynthesizers.amplitudeModulation(
-            soundData = filteredNoise,
+        return MonoFilter.amplitudeModulation(
+            samples = filteredNoise,
             modFrequency = modulationFreq,
             modDepth = 0.1 + load * 0.2
         )
@@ -210,17 +213,17 @@ object MotorSoundSynthesizer {
         load: Double,
         config: MotorConfig,
         sampleRate: Int
-    ): SoundData {
+    ): DoubleArray {
         // PWM啸叫在轻载和中速时更明显
         val pwmAmplitude = 0.1 * (1.0 - load * 0.5) *
                 (1.0 - Math.abs(rpm / config.maxRPM - 0.5) * 1.5).coerceAtLeast(0.0)
 
         if (pwmAmplitude < 0.01) {
             // 振幅太小，返回静音
-            return SoundSynthesizers.sineWave(duration, 1.0, 0.0, sampleRate = sampleRate)
+            return WaveGenerators.sineWave(duration, 1.0, 0.0, sampleRate = sampleRate)
         }
 
-        val pwmFundamental = SoundSynthesizers.squareWave(
+        val pwmFundamental = WaveGenerators.squareWave(
             duration = duration,
             frequency = config.pwmFrequency,
             amplitude = pwmAmplitude,
@@ -228,7 +231,7 @@ object MotorSoundSynthesizer {
             sampleRate = sampleRate
         )
 
-        val pwmSecondHarmonic = SoundSynthesizers.squareWave(
+        val pwmSecondHarmonic = WaveGenerators.squareWave(
             duration = duration,
             frequency = 2 * config.pwmFrequency,
             amplitude = pwmAmplitude * 0.3,
@@ -237,8 +240,8 @@ object MotorSoundSynthesizer {
         )
 
         // 对PWM高频成分进行轻微低通滤波，使其不那么刺耳
-        val filteredPwm = SoundSynthesizers.lowPassFilter(
-            soundData = SoundSynthesizers.mixSounds(listOf(pwmFundamental, pwmSecondHarmonic)),
+        val filteredPwm = MonoFilter.lowPassFilter(
+            samples = WaveEffects.mixSamples(listOf(pwmFundamental, pwmSecondHarmonic)),
             cutoff = 12000.0,
             resonance = 0.1
         )

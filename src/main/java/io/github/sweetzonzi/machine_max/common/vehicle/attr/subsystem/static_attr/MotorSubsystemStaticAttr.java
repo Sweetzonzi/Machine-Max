@@ -7,7 +7,6 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.util.sound.MotorSoundSynthesizer;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
@@ -31,13 +30,14 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             Codec.FLOAT.fieldOf("max_power").forGetter(MotorSubsystemStaticAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("max_torque", 100f).forGetter(MotorSubsystemStaticAttr::getMaxTorque),
             Codec.FLOAT.optionalFieldOf("max_rpm", 10000f).forGetter(MotorSubsystemStaticAttr::getMaxRPM),
-            Codec.DOUBLE.optionalFieldOf("inertia", 100.0).forGetter(MotorSubsystemStaticAttr::getInertia),
-            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.003, 0.00002)).forGetter(MotorSubsystemStaticAttr::getDampingFactors),
+            Codec.DOUBLE.optionalFieldOf("inertia", 50.0).forGetter(MotorSubsystemStaticAttr::getInertia),
+            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.001, 0.000001)).forGetter(MotorSubsystemStaticAttr::getDampingFactors),
             Codec.FLOAT.optionalFieldOf("generator_efficiency", 0.85f).forGetter(MotorSubsystemStaticAttr::getGeneratorEfficiency),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("motor_control", "move_control")).forGetter(MotorSubsystemStaticAttr::getThrottleInputKeys)
     ).apply(instance, MotorSubsystemStaticAttr::new));
     public static final float baseRPM = 400.0f;
-    public static final int LOAD_STATE_COUNT = 5;
+    public static final int LOAD_STATE_COUNT = 4;
+    public static final double RPM_INCREASE_RATIO = 1.5; // 50% 增加，即 1.5 倍
 
     public final ArrayList<ArrayList<WorkingState>> workingStates = new ArrayList<>();//工况-音效列表，外层转速，内层负载，对应音效文件名
 
@@ -75,7 +75,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
             for (int j = 0; j < LOAD_STATE_COUNT; j++) {
                 //创建工况
-                float rpm = 2 * baseRPM * (float) Math.pow(2, i);
+                float rpm = 2 * baseRPM * (float) Math.pow(RPM_INCREASE_RATIO, i);
                 float load = 0.25f * j;
                 ResourceLocation sound = createStateSound(rpm, load);
                 loadWorkingStates.add(new WorkingState(rpm, load, sound));
@@ -96,8 +96,8 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     }
 
     public WorkingState getBestMatchWorkingState(double rpm, double load) {
-        int rpmIndex = (int) getRPMCoordinate(rpm);
-        int loadIndex = (int) getLoadCoordinate(load);
+        int rpmIndex = (int) Math.round(getRPMCoordinate(rpm));
+        int loadIndex = (int) Math.round(getLoadCoordinate(load));
         WorkingState result = null;
         if(rpmIndex >=0 && rpmIndex < workingStates.size()){
             if (loadIndex >= 0 && loadIndex < workingStates.get(rpmIndex).size()){
@@ -125,7 +125,8 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
 
     public double getRPMCoordinate(double rpm) {
         if (Math.abs(rpm) <= baseRPM) return 0;
-        return Math.log(Math.abs(rpm) / baseRPM) / Math.log(2);
+        // 使用频率增加量为底的对数计算转速坐标
+        return Math.log(Math.abs(rpm) / baseRPM) / Math.log(RPM_INCREASE_RATIO);
     }
 
     public int getLoadStateIndex(double load) {

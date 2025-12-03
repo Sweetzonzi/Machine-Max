@@ -66,10 +66,10 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
                 if (bestState != currentState || sinceLastSoundUpdate > 30) {
                     currentState = bestState;
                     sinceLastSoundUpdate = 0;
-                    currentSoundUUID = transitionSound(level, currentSoundUUID, SoundEvent.createFixedRangeEvent(bestState.sound(), 64f), SoundSource.PLAYERS, 10, 10);
+                    currentSoundUUID = transitionSound(level, currentSoundUUID, SoundEvent.createFixedRangeEvent(bestState.sound(), 64f), SoundSource.PLAYERS, 5, 5);
                 }
             } else {
-                MachineMax.LOGGER.debug("No working state found for rotSpeed: {}, throttleInput: {}", rotSpeed, throttleInput);
+                MachineMax.LOGGER.debug("No working state found for rpm: {}, throttleInput: {}", rotSpeed * Math.PI / 30, throttleInput);
                 currentState = null;
             }
         } else currentState = null;
@@ -100,15 +100,15 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
         // 外部阻力矩 = 总扭矩 - 上一tick的净扭矩
         double estimatedExternalTorque = totalTorque - lastNetTorque;
         // 使用低通滤波器平滑估计值，避免突变
-        estimatedExternalTorque = 0.7 * estimatedExternalTorque + 0.3 * (totalTorque - lastNetTorque);
+        estimatedExternalTorque = 0.4 * estimatedExternalTorque + 0.6 * (totalTorque - lastNetTorque);
         // 记录当前状态供下一tick使用
         lastRotSpeed = rotSpeed;
         lastNetTorque = netTorque;
-
         if (speedFeedback instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
             rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
             rotSpeed = 0.99 * rotSpeed + 0.01 * BASE_ROT_SPEED;//额外修正
+            lastRotSpeed = rotSpeed;
             sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
             setRotSpeed((float) rotSpeed);
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
@@ -260,10 +260,11 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
     @Override
     public float getPitch(UUID uuid, SoundEvent event) {
         if (currentState != null) {
-            double rpm = Math.max(Math.abs(30 * getRotSpeed() / Math.PI), 0.5 * MotorSubsystemStaticAttr.baseRPM);
+            double rpm = Math.max(Math.abs(30 * getRotSpeed() / Math.PI), 0.5 * attr.getStaticAttribute().getBaseRpm());
             double rpmRatio = rpm / currentState.rpm();
             return (float) Math.clamp(rpmRatio, 0.25, 4);
         } else return 1f;
+//        return 1f;
     }
 
 }
