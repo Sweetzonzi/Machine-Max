@@ -164,9 +164,9 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         avgEngineMaxTorqueSpeed = 0;
                         avgEngineMaxSpeed = 0;
                         for (Map.Entry<ISignalReceiver, String> entry : engines.entrySet()) {
-                            avgEngineMinSpeed += ((EngineSubsystem) entry.getKey()).attr.staticAttribute.baseRpm;
+                            avgEngineMinSpeed += ((EngineSubsystem) entry.getKey()).attr.staticAttribute.idleRpm;
                             avgEngineMaxTorqueSpeed += ((EngineSubsystem) entry.getKey()).attr.staticAttribute.maxTorqueRpm;
-                            avgEngineMaxSpeed += ((EngineSubsystem) entry.getKey()).attr.staticAttribute.maxRpm;
+                            avgEngineMaxSpeed += ((EngineSubsystem) entry.getKey()).attr.staticAttribute.redLineRpm;
                         }
                         engineCount = engines.size();
                         if (engineCount > 0) {

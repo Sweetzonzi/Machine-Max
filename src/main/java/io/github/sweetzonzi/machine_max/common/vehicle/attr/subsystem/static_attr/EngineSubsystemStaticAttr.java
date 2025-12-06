@@ -18,11 +18,13 @@ import java.util.Map;
 
 @Getter
 public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
-    public final String particleLocator;
     public final float maxPower;
-    public final float baseRpm;
+    public final float maxTorque;
+    public final float idleRpm;
+    public final float idleRpmTorqueRatio;
     public final float maxTorqueRpm;
-    public final float maxRpm;
+    public final float redLineRpm;
+    public final float redLineRpmTorqueRatio;
     public final double inertia;//发动机系统转动惯量(kg·m²)
     public final List<Double> dampingFactors;//发动机系统各阶阻力系数，分别为一次项，二次项，…递增
     public final List<String> throttleInputKeys;//优先级从高至低
@@ -31,11 +33,13 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
 
     public static final MapCodec<EngineSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
-            Codec.STRING.optionalFieldOf("particle_locator", "").forGetter(EngineSubsystemStaticAttr::getParticleLocator),
             Codec.FLOAT.fieldOf("max_power").forGetter(EngineSubsystemStaticAttr::getMaxPower),
-            Codec.FLOAT.optionalFieldOf("base_rpm", 500f).forGetter(EngineSubsystemStaticAttr::getBaseRpm),
-            Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5500f).forGetter(EngineSubsystemStaticAttr::getMaxTorqueRpm),
-            Codec.FLOAT.optionalFieldOf("max_rpm", 7500f).forGetter(EngineSubsystemStaticAttr::getMaxRpm),
+            Codec.FLOAT.fieldOf("max_torque").forGetter(EngineSubsystemStaticAttr::getMaxTorqueRpm),
+            Codec.FLOAT.optionalFieldOf("idle_rpm", 500f).forGetter(EngineSubsystemStaticAttr::getIdleRpm),
+            Codec.FLOAT.optionalFieldOf("idle_rpm_torque_ratio", 0.333f).forGetter(EngineSubsystemStaticAttr::getIdleRpmTorqueRatio),
+            Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5200f).forGetter(EngineSubsystemStaticAttr::getMaxTorqueRpm),
+            Codec.FLOAT.optionalFieldOf("red_line_rpm", 7500f).forGetter(EngineSubsystemStaticAttr::getRedLineRpm),
+            Codec.FLOAT.optionalFieldOf("red_line_torque_ratio", 0.9f).forGetter(EngineSubsystemStaticAttr::getRedLineRpmTorqueRatio),
             Codec.DOUBLE.optionalFieldOf("inertia", 50.0).forGetter(EngineSubsystemStaticAttr::getInertia),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.01, 0.000001)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys)
@@ -50,20 +54,24 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
 
     public EngineSubsystemStaticAttr(
             float basicDurability,
-            String particleLocator,
             float maxPower,
-            float baseRpm,
+            float maxTorque,
+            float idleRpm,
+            float idleRpmTorqueRatio,
             float maxTorqueRpm,
-            float maxRpm,
+            float redLineRpm,
+            float redLineRpmTorqueRatio,
             double inertia,
             List<Double> dampingFactors,
             List<String> throttleInputKeys) {
         super(basicDurability);
-        this.particleLocator = particleLocator;
         this.maxPower = maxPower;
-        this.baseRpm = baseRpm;
+        this.maxTorque = maxTorque;
+        this.idleRpm = idleRpm;
+        this.idleRpmTorqueRatio = idleRpmTorqueRatio;
         this.maxTorqueRpm = maxTorqueRpm;
-        this.maxRpm = maxRpm;
+        this.redLineRpm = redLineRpm;
+        this.redLineRpmTorqueRatio = redLineRpmTorqueRatio;
         this.inertia = inertia;
         this.dampingFactors = dampingFactors;
         this.throttleInputKeys = throttleInputKeys;
@@ -73,17 +81,17 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     private void createWorkingStates() {
         workingStates.clear();
         // 确定转速区间数量，按照 1.5 倍递增
-        int rpmCount = getRpmStateIndex(getMaxRpm() * 2);
+        int rpmCount = getRpmStateIndex(getRedLineRpm() * 2);
         // 外层循环：转速区间
         for (int i = 0; i < rpmCount + 1; i++) {
             // 内层循环：负载区间
             ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
             for (int j = 0; j < LOAD_STATE_COUNT; j++) {
                 // 创建工况
-                float rpm = getBaseRpm() * (float) Math.pow(RPM_INCREASE_RATIO, i);
+                float rpm = getIdleRpm() * (float) Math.pow(RPM_INCREASE_RATIO, i);
                 float load = 0.25f * j;
                 PistonEngineSoundSynthesizer synthesizer = new PistonEngineSoundSynthesizer();
-                synthesizer.setEngineParams(new PistonEngineSoundSynthesizer.EngineParams());
+                synthesizer.setEngineParams(new PistonEngineSoundSynthesizer.EngineParams());//TODO: 根据静态属性修改引擎参数，进而影响音效
                 ResourceLocation sound = createStateSound(synthesizer, rpm, load);
                 loadWorkingStates.add(new WorkingState(rpm, load, sound));
             }
@@ -136,9 +144,9 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     }
 
     public double getRPMCoordinate(double rpm) {
-        if (Math.abs(rpm) <= getBaseRpm()) return 0;
+        if (Math.abs(rpm) <= getIdleRpm()) return 0;
         // 使用频率增加量为底的对数计算转速坐标
-        return Math.log(Math.abs(rpm) / getBaseRpm()) / Math.log(RPM_INCREASE_RATIO);
+        return Math.log(Math.abs(rpm) / getIdleRpm()) / Math.log(RPM_INCREASE_RATIO);
     }
 
     public int getLoadStateIndex(double load) {
