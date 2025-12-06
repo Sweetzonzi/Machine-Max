@@ -18,7 +18,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     public final String particleLocator;
     public final float maxPower;
     public final float maxTorque;
-    public final float maxRPM;
+    public final float redLineRPM;
     public final double inertia;//电机系统转动惯量(kg·m²)
     public final List<Double> dampingFactors;//电机系统各阶阻力系数，分别为一次项，二次项，…递增
     public final float generatorEfficiency; // 发电效率（0-1）
@@ -29,7 +29,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             Codec.STRING.optionalFieldOf("particle_locator", "").forGetter(MotorSubsystemStaticAttr::getParticleLocator),
             Codec.FLOAT.fieldOf("max_power").forGetter(MotorSubsystemStaticAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("max_torque", 100f).forGetter(MotorSubsystemStaticAttr::getMaxTorque),
-            Codec.FLOAT.optionalFieldOf("max_rpm", 10000f).forGetter(MotorSubsystemStaticAttr::getMaxRPM),
+            Codec.FLOAT.optionalFieldOf("red_line_rpm", 10000f).forGetter(MotorSubsystemStaticAttr::getRedLineRPM),
             Codec.DOUBLE.optionalFieldOf("inertia", 50.0).forGetter(MotorSubsystemStaticAttr::getInertia),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.001, 0.000001)).forGetter(MotorSubsystemStaticAttr::getDampingFactors),
             Codec.FLOAT.optionalFieldOf("generator_efficiency", 0.85f).forGetter(MotorSubsystemStaticAttr::getGeneratorEfficiency),
@@ -48,7 +48,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             String particleLocator,
             float maxPower,
             float maxTorque,
-            float maxRPM,
+            float redLineRPM,
             double inertia,
             List<Double> dampingFactors,
             float generatorEfficiency,
@@ -57,7 +57,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
         this.particleLocator = particleLocator;
         this.maxPower = maxPower;
         this.maxTorque = maxTorque;
-        this.maxRPM = maxRPM;
+        this.redLineRPM = redLineRPM;
         this.inertia = inertia;
         this.dampingFactors = dampingFactors;
         this.generatorEfficiency = generatorEfficiency;
@@ -68,7 +68,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     private void createWorkingStates() {
         workingStates.clear();
         //确定转速区间数量
-        int rpmCount = getRpmStateIndex(maxRPM);
+        int rpmCount = getRpmStateIndex(redLineRPM);
         //外层循环：转速区间
         for (int i = 1; i < rpmCount + 1; i++) {
             //内层循环：负载区间
@@ -90,7 +90,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
                 "subsystem/motor/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(load));
 //        MachineMax.LOGGER.debug("Creating motor sound: {}", id);
         MotorSoundSynthesizer.synthesizeBrushlessMotor(3f, rpm, load,
-                new MotorSoundSynthesizer.MotorConfig(6, 8000, this.maxRPM, 1200)).register(id);
+                new MotorSoundSynthesizer.MotorConfig(6, 8000, this.redLineRPM, 1200)).register(id);
         MachineMax.LOGGER.debug("Motor sound created: {}", id);
         return id;
     }
