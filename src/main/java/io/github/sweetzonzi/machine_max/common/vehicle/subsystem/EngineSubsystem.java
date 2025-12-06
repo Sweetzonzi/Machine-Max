@@ -116,7 +116,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             feedback = -feedback;
             //与转动惯量属性挂钩的转速改变量
             rotSpeed = rotSpeed + (netTorque - estimatedExternalTorque) / attr.staticAttribute.inertia / 60f;
-            rotSpeed = 0.98 * rotSpeed + 0.02 * feedback;//额外修正
+            rotSpeed = 0.95 * rotSpeed + 0.05 * feedback;//额外修正
             rotSpeed = Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 2);
             if (!isActive()) {
                 rotSpeed = feedback;
