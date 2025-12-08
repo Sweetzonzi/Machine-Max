@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.TransmissionSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.TransmissionSubsystemStaticAttr;

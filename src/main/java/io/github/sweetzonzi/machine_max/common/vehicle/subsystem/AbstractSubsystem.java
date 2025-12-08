@@ -21,6 +21,7 @@ import net.minecraft.network.syncher.SyncedDataHolder;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -230,5 +231,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         return attr.getBasicDurability();
     }
 
+    public Level getLevel() {
+        return getOwner().getLevel();
+    }
 
 }

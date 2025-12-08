@@ -92,7 +92,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             }
             break;
         }
-        double estimatedExternalTorque = getEstimatedExternalTorque(rotSpeed);
+        double estimatedExternalTorque = estimatedExternalTorque(rotSpeed);
         // 记录当前状态供下一tick使用
         lastRotSpeed = rotSpeed;
         lastNetTorque = netTorque;
@@ -128,21 +128,6 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             setRotSpeed((float) rotSpeed);
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         }
-    }
-
-    private double getEstimatedExternalTorque(double rotSpeed) {
-        double estimatedExternalTorque = 0;
-        if (!getSubPart().level.isClientSide()) {//与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
-            // 计算角加速度并更新外部阻力矩估计
-            double angularAcceleration = (rotSpeed - lastRotSpeed) * 60;
-            // 根据转动定律：总扭矩 = 转动惯量 * 角加速度
-            double totalTorque = angularAcceleration * attr.staticAttribute.inertia;
-            // 外部阻力矩 = 总扭矩 - 上一tick的净扭矩
-            estimatedExternalTorque = totalTorque - lastNetTorque;
-            // 使用低通滤波器平滑估计值，避免突变
-            estimatedExternalTorque = 0.6 * estimatedExternalTorque + 0.4 * (totalTorque - lastNetTorque);
-        }
-        return estimatedExternalTorque;
     }
 
     @Override
@@ -195,6 +180,21 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             result += attr.staticAttribute.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i + 1);
         }
         return Math.signum(rotSpeed) * result;
+    }
+
+    private double estimatedExternalTorque(double rotSpeed) {
+        double estimatedExternalTorque = 0;
+        if (!getSubPart().level.isClientSide()) {//与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
+            // 计算角加速度并更新外部阻力矩估计
+            double angularAcceleration = (rotSpeed - lastRotSpeed) * 60;
+            // 根据转动定律：总扭矩 = 转动惯量 * 角加速度
+            double totalTorque = angularAcceleration * attr.staticAttribute.inertia;
+            // 外部阻力矩 = 总扭矩 - 上一tick的净扭矩
+            estimatedExternalTorque = totalTorque - lastNetTorque;
+            // 使用低通滤波器平滑估计值，避免突变
+            estimatedExternalTorque = 0.7 * estimatedExternalTorque + 0.3 * (totalTorque - lastNetTorque);
+        }
+        return estimatedExternalTorque;
     }
 
     /**
