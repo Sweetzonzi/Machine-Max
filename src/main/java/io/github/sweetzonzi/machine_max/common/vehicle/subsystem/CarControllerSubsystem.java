@@ -451,7 +451,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             else result = gearbox.minNegativeGear;
         }
         if (result != gear)
-            overrideCountDown.put(gearbox, Math.max(0.2f, gearbox.attr.staticAttribute.switchTime + 0.3f));//自动切换后一段时间内不自动切换 Cooldown after automatic gear shift
+            overrideCountDown.put(gearbox, Math.max(0.2f, gearbox.attr.staticAttribute.switchTime + 0.5f));//自动切换后一段时间内不自动切换 Cooldown after automatic gear shift
         return result;
     }
 

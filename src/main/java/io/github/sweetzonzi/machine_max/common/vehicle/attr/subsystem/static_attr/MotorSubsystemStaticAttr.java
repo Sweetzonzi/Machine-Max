@@ -20,7 +20,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     public final float maxTorque;
     public final float redLineRPM;
     public final double inertia;//电机系统转动惯量(kg·m²)
-    public final List<Double> dampingFactors;//电机系统各阶阻力系数，分别为一次项，二次项，…递增
+    public final List<Double> dampingFactors;//电机系统各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
     public final float generatorEfficiency; // 发电效率（0-1）
     public final List<String> throttleInputKeys;//优先级从高至低
 
@@ -30,8 +30,8 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             Codec.FLOAT.fieldOf("max_power").forGetter(MotorSubsystemStaticAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("max_torque", 100f).forGetter(MotorSubsystemStaticAttr::getMaxTorque),
             Codec.FLOAT.optionalFieldOf("red_line_rpm", 10000f).forGetter(MotorSubsystemStaticAttr::getRedLineRPM),
-            Codec.DOUBLE.optionalFieldOf("inertia", 50.0).forGetter(MotorSubsystemStaticAttr::getInertia),
-            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.001, 0.000001)).forGetter(MotorSubsystemStaticAttr::getDampingFactors),
+            Codec.DOUBLE.optionalFieldOf("inertia", 10.0).forGetter(MotorSubsystemStaticAttr::getInertia),
+            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(10.0, 0.1, 0.00005)).forGetter(MotorSubsystemStaticAttr::getDampingFactors),
             Codec.FLOAT.optionalFieldOf("generator_efficiency", 0.85f).forGetter(MotorSubsystemStaticAttr::getGeneratorEfficiency),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("motor_control", "move_control")).forGetter(MotorSubsystemStaticAttr::getThrottleInputKeys)
     ).apply(instance, MotorSubsystemStaticAttr::new));

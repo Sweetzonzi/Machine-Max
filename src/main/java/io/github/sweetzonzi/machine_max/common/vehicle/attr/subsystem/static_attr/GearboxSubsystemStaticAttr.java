@@ -30,8 +30,8 @@ public class GearboxSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
 
     public static final MapCodec<GearboxSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
-            Codec.FLOAT.optionalFieldOf("final_ratio", 5f).forGetter(GearboxSubsystemStaticAttr::getFinalRatio),
-            Codec.list(Codec.FLOAT).optionalFieldOf("ratios", List.of(-3.5f, 3.5f, 2f, 1.3f, 1.0f, 0.8f)).forGetter(GearboxSubsystemStaticAttr::getRatios),
+            Codec.FLOAT.optionalFieldOf("final_ratio", 10f).forGetter(GearboxSubsystemStaticAttr::getFinalRatio),
+            Codec.list(Codec.FLOAT).optionalFieldOf("ratios", List.of(-3.5f, 3.5f, 2.5f, 1.7f, 1.4f, 1.1f)).forGetter(GearboxSubsystemStaticAttr::getRatios),
             Codec.FLOAT.optionalFieldOf("switch_time", 0.3f).forGetter(GearboxSubsystemStaticAttr::getSwitchTime),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("gearbox_control")).forGetter(GearboxSubsystemStaticAttr::getRatioControlSignalKeys)
     ).apply(instance, GearboxSubsystemStaticAttr::new));

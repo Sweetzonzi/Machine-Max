@@ -51,10 +51,12 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
             WorkingState bestState = attr.getBestMatchWorkingState(
                     Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
             if (bestState != null) {
-                if (bestState != currentState || sinceLastSoundUpdate > 30) {
+                if ((bestState != currentState && sinceLastSoundUpdate > 8) || sinceLastSoundUpdate > 30) {
                     currentState = bestState;
                     sinceLastSoundUpdate = 0;
-                    currentSoundUUID = transitionSound(level, currentSoundUUID, SoundEvent.createFixedRangeEvent(bestState.sound(), 64f), SoundSource.PLAYERS, 5, 5);
+                    currentSoundUUID = transitionSound(level, currentSoundUUID,
+                            SoundEvent.createFixedRangeEvent(bestState.sound(), 64f),
+                            SoundSource.PLAYERS, 8, 8);
                 }
             } else {
                 MachineMax.LOGGER.debug("No working state found for rpm: {}, throttleInput: {}", Math.abs(30 * rotSpeed / Math.PI), throttleInput);
@@ -148,8 +150,9 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
      */
     private double calculateDampingTorque(double rotSpeed) {
         double result = 0;
+        if (Math.abs(rotSpeed) <= MotorSubsystemStaticAttr.baseRPM / Math.PI * 30) return result;
         for (int i = 0; i < attr.staticAttribute.dampingFactors.size(); i++) {
-            result += attr.staticAttribute.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i + 1);
+            result += attr.staticAttribute.dampingFactors.get(i) * Math.pow(Math.abs(rotSpeed), i);
         }
         return Math.signum(rotSpeed) * result;
     }
@@ -254,7 +257,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         if (currentState != null) {
             double rpm = Math.max(Math.abs(30 * getRotSpeed() / Math.PI), 0.5 * MotorSubsystemStaticAttr.baseRPM);
             double rpmRatio = rpm / currentState.rpm();
-            return (float) Math.clamp(rpmRatio, 0.25, 4);
+            return (float) Math.clamp(rpmRatio, 0.5, 2);
         } else return 1f;
     }
 }

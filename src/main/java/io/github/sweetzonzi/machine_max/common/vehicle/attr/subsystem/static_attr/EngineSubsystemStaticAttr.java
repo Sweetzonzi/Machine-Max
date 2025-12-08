@@ -26,7 +26,7 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     public final float redLineRpm;
     public final float redLineRpmTorqueRatio;
     public final double inertia;//发动机系统转动惯量(kg·m²)
-    public final List<Double> dampingFactors;//发动机系统各阶阻力系数，分别为一次项，二次项，…递增
+    public final List<Double> dampingFactors;//发动机各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
     public final List<String> throttleInputKeys;//优先级从高至低
 
     public static final Codec<Map<String, List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
@@ -40,12 +40,12 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             Codec.FLOAT.optionalFieldOf("max_torque_rpm", 5200f).forGetter(EngineSubsystemStaticAttr::getMaxTorqueRpm),
             Codec.FLOAT.optionalFieldOf("red_line_rpm", 7500f).forGetter(EngineSubsystemStaticAttr::getRedLineRpm),
             Codec.FLOAT.optionalFieldOf("red_line_torque_ratio", 0.9f).forGetter(EngineSubsystemStaticAttr::getRedLineRpmTorqueRatio),
-            Codec.DOUBLE.optionalFieldOf("inertia", 50.0).forGetter(EngineSubsystemStaticAttr::getInertia),
-            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(0.01, 0.000001)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
+            Codec.DOUBLE.optionalFieldOf("inertia", 10.0).forGetter(EngineSubsystemStaticAttr::getInertia),
+            Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(20.0, 0.1, 0.00005)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys)
     ).apply(instance, EngineSubsystemStaticAttr::new));
     public static final int LOAD_STATE_COUNT = 4;
-    public static final double RPM_INCREASE_RATIO = 1.5; // 50% 增加，即 1.5 倍
+    public static final double RPM_INCREASE_RATIO = 1.4; // 40% 增加，即 1.4 倍
 
     public final ArrayList<ArrayList<WorkingState>> workingStates = new ArrayList<>();//工况-音效列表，外层转速，内层负载，对应音效文件名
 

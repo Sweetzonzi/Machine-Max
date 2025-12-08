@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.util.sound
 import cn.solarmoon.spark_core.sound.SoundData
 import cn.solarmoon.spark_core.util.SoundHelper
 import cn.solarmoon.spark_core.util.sound.WaveEffects
+import cn.solarmoon.spark_core.util.sound.filter.ConvolutionFilter
 import cn.solarmoon.spark_core.util.sound.filter.MonoFilter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -193,7 +194,7 @@ class PistonEngineSoundSynthesizer {
                     }
 
                     // 脉冲波形：带随机变化的爆炸声
-                    val randomFactor = 0.8 + 0.4 * random.nextDouble()
+                    val randomFactor = 0.7 + 0.5 * random.nextDouble()
                     val loadFactor = 0.5 + 0.5 * engineState.load
 
                     // 基频 + 谐波
@@ -239,14 +240,21 @@ class PistonEngineSoundSynthesizer {
         var processed = samples
 
         // 1. 应用共振效果（模拟排气系统共振）
-//        if (soundParams.resonance > 0.01) {
-//            processed = MonoFilter.bandPassFilter(
-//                samples = processed,
-//                centerFreq = calculateResonantFrequency(),
-//                bandwidth = 1000.0 * soundParams.resonance,
-//                sampleRate = soundParams.sampleRate.toDouble()
-//            )
-//        }
+        if (soundParams.resonance > 0.01) {
+//            processed = ConvolutionFilter(ConvolutionFilter.loadImpulseFromWavResource("/impulses/test.wav")).apply(processed)
+            processed = MonoFilter.applyFeedbackDelay(
+                samples = processed,
+                delayTime = 0.03,
+                feedback = 0.8
+            )
+        }
+
+        // 2. 应用低通滤波模拟机械结构阻碍
+        processed = MonoFilter.lowPassFilter(
+            samples = processed,
+            cutoff = calculateSingleCylinderFiringFrequency() * 6,
+            sampleRate = soundParams.sampleRate.toDouble()
+        )
 
         // 2. 应用频率增强
         processed = applyFrequencyEnhancement(processed)
@@ -275,7 +283,7 @@ class PistonEngineSoundSynthesizer {
      * 应用频率增强
      */
     private fun applyFrequencyEnhancement(samples: DoubleArray): DoubleArray {
-        val result = samples.copyOf()
+        var result = samples.copyOf()
 
         // 分离处理不同频段
         val lowCutoff = 100.0
@@ -314,8 +322,10 @@ class PistonEngineSoundSynthesizer {
 
             result[i] = (low * soundParams.lowFreqBoost +
                     mid * soundParams.midFreqBoost +
-                    high * soundParams.highFreqBoost).coerceIn(-1.0, 1.0)
+                    high * soundParams.highFreqBoost)
         }
+
+        result = WaveEffects.mixSamples(listOf(MonoFilter.dcFilter(result)), autoNormalize = true)
 
         return result
     }
@@ -391,10 +401,10 @@ class PistonEngineSoundSynthesizer {
         fun main(args: Array<String>) {
             val synthesizer = PistonEngineSoundSynthesizer()
             val engine = EngineParams(
-                cylinders = 2,
+                cylinders = 4,
                 fourStroke = false,
-                firingAngles = listOf(0.0, 360.0),
-                exhaustLengths = List(2) { 0.6 }
+                firingAngles = listOf(0.0, 180.0, 360.0, 540.0),
+                exhaustLengths = List(4) { 0.6 }
             )
             synthesizer.engineParams = engine
             // 设置音效参数
@@ -414,13 +424,13 @@ class PistonEngineSoundSynthesizer {
 
             // 测试不同转速
             println("合成怠速声音...")
-            synthesizer.updateEngineState(rpm = 500.0, load = 0.7)
+            synthesizer.updateEngineState(rpm = 1000.0, load = 0.7)
             val idleSound = synthesizer.synthesizeEngineSound(2.0)
             println("合成中速声音...")
-            synthesizer.updateEngineState(rpm = 1000.0, load = 0.7)
+            synthesizer.updateEngineState(rpm = 3000.0, load = 0.7)
             val midSound = synthesizer.synthesizeEngineSound(2.0)
             println("合成高速声音...")
-            synthesizer.updateEngineState(rpm = 2500.0, load = 0.8)
+            synthesizer.updateEngineState(rpm = 6500.0, load = 0.8)
             val highSound = synthesizer.synthesizeEngineSound(2.0)
             println("播放怠速声音...")
             SoundHelper.playSound(idleSound)
