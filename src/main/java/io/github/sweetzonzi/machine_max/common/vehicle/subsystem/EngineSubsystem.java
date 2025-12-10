@@ -96,11 +96,12 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
         double netTorque = engineTorque - dampingTorque;
         if (speedFeedback instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
-            if (!getSubPart().level.isClientSide()) //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
+            if (!getSubPart().level.isClientSide()){ //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
                 rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
-            rotSpeed = 0.995 * rotSpeed + 0.005 * IDLE_SPEED;//额外修正
+                rotSpeed = 0.995 * rotSpeed + 0.005 * IDLE_SPEED;//额外修正
+                setRotSpeed((float) rotSpeed);
+            }
             sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
-            setRotSpeed((float) rotSpeed);
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         } else if (speedFeedback instanceof Float feedback) {
             addToHistory(rotSpeedHistory, rotSpeed);

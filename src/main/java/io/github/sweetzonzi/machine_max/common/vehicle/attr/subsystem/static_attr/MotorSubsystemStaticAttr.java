@@ -37,7 +37,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     ).apply(instance, MotorSubsystemStaticAttr::new));
     public static final float baseRPM = 400.0f;
     public static final int LOAD_STATE_COUNT = 4;
-    public static final double RPM_INCREASE_RATIO = 1.5; // 50% 增加，即 1.5 倍
+    public static final double RPM_INCREASE_RATIO = 1.4; // 40% 增加，即 1.4 倍
 
     public final ArrayList<ArrayList<WorkingState>> workingStates = new ArrayList<>();//工况-音效列表，外层转速，内层负载，对应音效文件名
 
@@ -75,7 +75,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
             for (int j = 0; j < LOAD_STATE_COUNT; j++) {
                 //创建工况
-                float rpm = 2 * baseRPM * (float) Math.pow(RPM_INCREASE_RATIO, i);
+                float rpm = baseRPM * (float) Math.pow(RPM_INCREASE_RATIO, i);
                 float load = 0.25f * j;
                 ResourceLocation sound = createStateSound(rpm, load);
                 loadWorkingStates.add(new WorkingState(rpm, load, sound));

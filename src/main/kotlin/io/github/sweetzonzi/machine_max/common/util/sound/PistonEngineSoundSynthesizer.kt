@@ -242,11 +242,11 @@ class PistonEngineSoundSynthesizer {
         // 1. 应用共振效果（模拟排气系统共振）
         if (soundParams.resonance > 0.01) {
 //            processed = ConvolutionFilter(ConvolutionFilter.loadImpulseFromWavResource("/impulses/test.wav")).apply(processed)
-            processed = MonoFilter.applyFeedbackDelay(
-                samples = processed,
-                delayTime = 0.03,
-                feedback = 0.8
-            )
+//            processed = MonoFilter.applyFeedbackDelay(
+//                samples = processed,
+//                delayTime = 0.03,
+//                feedback = 0.8
+//            )
         }
 
         // 2. 应用低通滤波模拟机械结构阻碍
