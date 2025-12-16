@@ -67,51 +67,45 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         if (modelInstance == null) return;
         var worldMatrix = entity.subPart.getWorldPositionMatrix(partialTick);
         int color = Color.WHITE.getRGB();
-        float progress = 1.0f;
-        int alpha = 255;
         var pos = entity.subPart.transform.getTranslation();
         BlockPos blockpos = new BlockPos((int) pos.x, (int) pos.y, (int) pos.z);
         int blockLight = this.getBlockLightLevel(entity, blockpos);
         int skyLight = this.getSkyLightLevel(entity, blockpos);
-        var buffer = bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity)));
-        if (entity.subPart.isDestroyed()) {
-            color = new Color(64, 64, 64, entity.subPart.getDestroyTime() < 20 ? 255 * entity.subPart.getDestroyTime() / 20 : 255).getRGB();
-        } else if (entity.subPart.tickCount < 15) {
-            progress = (entity.subPart.tickCount + partialTick) / 15.0f;
-            // 计算 alpha 值，progress 从 0 到 1，alpha 从 0 到 255
-            alpha = (int) (progress * progress * 255);
-            blockLight = (int) ((1 - progress) * 15 + progress * blockLight);
-            skyLight = (int) ((1 - progress) * 15 + progress * skyLight);
-        }
-        int overlay = OverlayTexture.NO_OVERLAY;
-        if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);
         poseStack.pushPose();//开始渲染
         poseStack.setIdentity();
         poseStack.mulPose(worldMatrix);
         poseStack.pushPose();
-        var bones = modelController.getOriginModel().getBones().values().toArray();
-        int light = LightTexture.pack(blockLight, skyLight);
         var normal = poseStack.last().normal();
-        for (Object bone : bones) {
-            //TODO: 组装表示，线框渲染
-            ((OBone) bone).applyTransformWithParents(modelInstance.getPose(), new Matrix4f(poseStack.last().pose()), partialTick);
-            for (OCube cube : ((OBone) bone).getCubes()) {
-                // 将 HSB 转换为 RGB
-                Color rgb = new Color(Color.HSBtoRGB((float) Math.random(), 1 - progress * progress, 1));
-                // 创建新的颜色对象，包含 alpha 值
-                color = new Color(rgb.getRed(), rgb.getGreen(), rgb.getBlue(), alpha).getRGB();
-                cube.renderVertexes(
-                        new Matrix4f(poseStack.last().pose()),
-                        normal,
-                        buffer,
-                        light,
-                        overlay,
-                        color,
-                        false
-                );
+        int overlay = OverlayTexture.NO_OVERLAY;
+        // 受击闪烁效果
+        if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);
+        // 常规渲染
+        if (entity.subPart.tickCount >= 15) {
+            if (entity.subPart.isDestroyed()) {
+                color = new Color(64, 64, 64, entity.subPart.getDestroyTime() < 20 ? 255 * entity.subPart.getDestroyTime() / 20 : 255).getRGB();
             }
-        }
-        if (entity.subPart.tickCount < 17) { // 部件放置时的淡入效果
+            int light = LightTexture.pack(blockLight, skyLight);
+            // 整体渲染
+            ModelRenderHelperKt.render(
+                    modelController.getOriginModel(),
+                    modelInstance.getPose(),
+                    poseStack.last().pose(),
+                    normal,
+                    bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                    light,
+                    overlay,
+                    color,
+                    partialTick
+            );
+        } else {
+            // 刚刚放置时的淡入效果
+            float progress = (entity.subPart.tickCount + partialTick) / 15.0f;
+            // 计算 alpha 值，progress 从 0 到 1，alpha 从 0 到 255
+            int alpha = (int) (progress * progress * 255);
+            blockLight = (int) ((1 - progress) * 15 + progress * blockLight);
+            skyLight = (int) ((1 - progress) * 15 + progress * skyLight);
+            int light = LightTexture.pack(blockLight, skyLight);
+            // 波动效果
             poseStack.pushPose();
             poseStack.scale(1.3f, 1.3f, 1.3f);
             ModelRenderHelperKt.render(
@@ -126,6 +120,29 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                     partialTick,
                     false);
             poseStack.popPose();
+            // 按块渲染
+            var bones = modelController.getOriginModel().getBones().values().toArray();
+            for (Object bone : bones) {
+                //TODO: 组装表示，线框渲染
+                ((OBone) bone).applyTransformWithParents(modelInstance.getPose(), new Matrix4f(poseStack.last().pose()), partialTick);
+                for (OCube cube : ((OBone) bone).getCubes()) {
+                    if (entity.subPart.tickCount < 15) {
+                        // 将 HSB 转换为 RGB
+                        Color rgb = new Color(Color.HSBtoRGB((float) Math.random(), 1 - progress * progress, 1));
+                        // 创建新的颜色对象，包含 alpha 值
+                        color = new Color(rgb.getRed(), rgb.getGreen(), rgb.getBlue(), alpha).getRGB();
+                    }
+                    cube.renderVertexes(
+                            new Matrix4f(poseStack.last().pose()),
+                            normal,
+                            bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                            light,
+                            overlay,
+                            color,
+                            false
+                    );
+                }
+            }
         }
         poseStack.popPose();
         poseStack.popPose();//结束渲染
