@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.EngineSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
+import io.github.sweetzonzi.machine_max.util.control.PDController;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -30,12 +31,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
     private WorkingState currentState = null;//当前引擎工况及对应音效
     private UUID currentSoundUUID = UUID.randomUUID();
     private int sinceLastSoundUpdate = 0;
-    // 历史记录缓冲区
-    private final int HISTORY_SIZE = 5;
-    private final Deque<Double> rotSpeedHistory = new ArrayDeque<>(HISTORY_SIZE);
-    private final Deque<Double> netTorqueHistory = new ArrayDeque<>(HISTORY_SIZE);
-
-    private double externalTorqueEstimate = 0;
+    private final PDController coupleTorquePD;
 
     //TODO: 引擎输出功率随曲轴转角周期性变化，气缸数越多输出扭矩越平稳
     public EngineSubsystem(ISubsystemHost owner, String name, EngineSubsystemAttr attr) {
@@ -49,6 +45,11 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
         setRotSpeed((float) (IDLE_SPEED + 1));
         double minThrottle = 1.005 * calculateDampingTorque(IDLE_SPEED) / calculateMaxTorque(IDLE_SPEED);
         MIN_IDLE_THROTTLE = Math.min(minThrottle, 1f);
+        coupleTorquePD = new PDController(
+                2.5 * attr.getStaticAttribute().getInertia(), //kp
+                0.5 * attr.getStaticAttribute().getInertia(), //kd
+                1 / 60f //step
+        );
     }
 
     @Override
@@ -104,17 +105,21 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         } else if (speedFeedback instanceof Float feedback) {
-            addToHistory(rotSpeedHistory, rotSpeed);
-            addToHistory(netTorqueHistory, netTorque);
-            updateExternalTorque();//更新外部扭矩估计
-            //有转速反馈信号时，根据转速反馈信号控制引擎转速
-            if (!getSubPart().level.isClientSide()) //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
-                rotSpeed += (netTorque - externalTorqueEstimate) / attr.staticAttribute.inertia / 60f;
-            rotSpeed = Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 2);
-            sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));//输出功率信号
             feedback = -feedback; // 修正方向
-            rotSpeed = 0.9 * Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.1 * feedback; // 额外修正
-            setRotSpeed((float) rotSpeed);
+            double speedDiff = rotSpeed - feedback;
+            double coupleTorque = Math.clamp(
+                    this.coupleTorquePD.step(0, speedDiff),
+                    -0.25 * attr.getStaticAttribute().maxTorque,
+                    0.25 * attr.getStaticAttribute().maxTorque
+            ); // 使用耦合扭矩补偿转速差，考虑饱和模拟打滑
+            //有转速反馈信号时，根据转速反馈信号控制引擎转速
+            if (!getSubPart().level.isClientSide()){ //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
+                rotSpeed += (netTorque - coupleTorque) / attr.staticAttribute.inertia / 60f;
+                rotSpeed = Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 2);
+                rotSpeed = 0.95 * Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.05 * feedback; // 额外修正
+                setRotSpeed((float) rotSpeed);
+            }
+            sendSignalToAllTargets("power", new MechPowerSignal((float) ((netTorque + coupleTorque) * rotSpeed), (float) rotSpeed));//输出功率信号
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速信号
         } else {
             //没有转速反馈信号时，直接取用引擎转速
@@ -180,43 +185,6 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
         return Math.signum(rotSpeed) * result;
     }
 
-    private void updateExternalTorque() {
-        if (!getSubPart().level.isClientSide() && rotSpeedHistory.size() >= 3) {
-            // 从历史中获取数据
-            Object[] speeds = rotSpeedHistory.toArray();
-            Object[] torques = netTorqueHistory.toArray();
-
-            // 计算角加速度
-            double avgAngularAcc = 0;
-            int count = 0;
-            for (int i = 1; i < speeds.length; i++) {
-                double speedPrev = (Double) speeds[i - 1];
-                double speedCurr = (Double) speeds[i];
-                avgAngularAcc += (speedCurr - speedPrev) * 60;
-                count++;
-            }
-            if (count > 0) {
-                avgAngularAcc /= count;
-            }
-
-            // 使用引擎自身转动惯量
-            double estimatedTotalTorque = attr.staticAttribute.inertia * avgAngularAcc;
-
-            // 使用历史净扭矩（避免即时反馈）
-            double historicalNetTorque = (Double) torques[Math.max(0, torques.length - 2)];
-
-            // 滤波更新
-            externalTorqueEstimate = 0.7 * externalTorqueEstimate +
-                    0.3 * (estimatedTotalTorque - historicalNetTorque);
-        }
-    }
-
-    private void addToHistory(Deque<Double> deque, double value) {
-        deque.addLast(value);
-        while (deque.size() > HISTORY_SIZE) {
-            deque.removeFirst();
-        }
-    }
 
     /**
      * 获取油门信号，控制油门开度进而控制发动机输出功率
