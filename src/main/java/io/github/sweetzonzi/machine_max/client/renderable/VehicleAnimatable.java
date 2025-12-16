@@ -32,7 +32,7 @@
 //            UUID uuid = entry.getKey();
 //            Part part = entry.getValue();
 //            AnimatableParams partParams = new AnimatableParams(
-//                    part.type.getVariant(part.variant),
+//                    part.type.getVariantName(part.variantName),
 //                    part.type.animation,
 //                    part.type.textures.getFirst()
 //            );

@@ -105,16 +105,16 @@
 //        if (player.getMainHandItem().getItem() instanceof PartItem) {
 //            ItemStack partItem = player.getMainHandItem();
 //            PartType partType = PartItem.getPartType(partItem, player.level());
-//            String variant = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
+//            String variantName = PartItem.getPartAssemblyInfo(partItem, player.level()).variantName();
 //            if (partToAssembly == null || !partType.equals(partToAssembly.type)) {
-//                partToAssembly = new PartProjection(partType, player.level(), variant,
+//                partToAssembly = new PartProjection(partType, player.level(), variantName,
 //                        new Transform(
 //                                new Vector3f(),
 //                                Quaternion.IDENTITY
 //                        ));
 //            }
-//            if (!partToAssembly.variant.equals(variant)) {
-//                partToAssembly.setVariant(variant);
+//            if (!partToAssembly.variantName.equals(variantName)) {
+//                partToAssembly.setVariant(variantName);
 //            }
 //            renderPartProjection(partToAssembly, poseStack, bufferSource, partialTick, camPos, centerX, centerY);
 //        }

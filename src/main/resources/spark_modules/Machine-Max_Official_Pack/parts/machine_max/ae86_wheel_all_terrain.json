@@ -8,21 +8,21 @@
   "variants": {//部件变体列表，支持单值或多键值对
     "left": {//变体名称
       "icon": "machine_max:textures/icon/ae86_wheel_all_terrain_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
+      "models": {//(必须)状态差分模型映射，支持单值或多状态映射，暂时只支持default状态
+        "default": "machine_max:ae86_wheel_all_terrain_left.geo"//状态名称 -> 模型路径
+      },
+      "textures": {//(必须)状态差分贴图映射，支持单值或多状态映射
+        "default": [//状态名称 -> 贴图路径列表
+          "machine_max:textures/part/ae86_all_terrain_1.png",
+          "machine_max:textures/part/ae86_all_terrain_2.png"
+        ]
+      },
+      "animations": {//(可选)状态差分动画映射，支持单值或多状态映射
+        "default": "machine_max:empty"//状态名称 -> 动画路径
+      },
       "tags": ["wheel", "all_terrain", "left"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "ae86_wheel_all_terrain": {//零件(子部件)名称
-          "models": {//(必须)状态差分模型映射，支持单值或多状态映射
-            "default": "machine_max:ae86_wheel_all_terrain_left.geo"//状态名称 -> 模型路径
-          },
-          "textures": {//(必须)状态差分贴图映射，支持单值或多状态映射
-            "default": [//状态名称 -> 贴图路径列表
-              "machine_max:textures/part/ae86_all_terrain_1.png",
-              "machine_max:textures/part/ae86_all_terrain_2.png"
-            ]
-          },
-          "animations": {//(可选)状态差分动画映射，支持单值或多状态映射
-            "default": "machine_max:empty"//状态名称 -> 动画路径
-          },
           "mass": 150.0,//零件质量(kg)
           "block_collision": "ground",//(可选，默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
           "collision_height": 2,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
@@ -49,21 +49,21 @@
     },
     "right": {//变体名称
       "icon": "machine_max:textures/icon/ae86_wheel_all_terrain_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
+      "models": {//(必须)状态差分模型映射，支持单值或多状态映射，暂时只支持default状态
+        "default": "machine_max:ae86_wheel_all_terrain_right.geo"//状态名称 -> 模型路径
+      },
+      "textures": {//(必须)状态差分贴图映射，支持单值或多状态映射
+        "default": [//状态名称 -> 贴图路径列表
+          "machine_max:textures/part/ae86_all_terrain_1.png",
+          "machine_max:textures/part/ae86_all_terrain_2.png"
+        ]
+      },
+      "animations": {//(可选)状态差分动画映射，支持单值或多状态映射
+        "default": "machine_max:empty"//状态名称 -> 动画路径
+      },
       "tags": ["wheel", "all_terrain", "right"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "ae86_wheel_all_terrain": {//零件(子部件)名称
-          "models": {//(必须)状态差分模型映射，支持单值或多状态映射
-            "default": "machine_max:ae86_wheel_all_terrain_right.geo"//状态名称 -> 模型路径
-          },
-          "textures": {//(必须)状态差分贴图映射，支持单值或多状态映射
-            "default": [//状态名称 -> 贴图路径列表
-              "machine_max:textures/part/ae86_all_terrain_1.png",
-              "machine_max:textures/part/ae86_all_terrain_2.png"
-            ]
-          },
-          "animations": {//(可选)状态差分动画映射，支持单值或多状态映射
-            "default": "machine_max:empty"//状态名称 -> 动画路径
-          },
           "mass": 150.0,//零件质量(kg)
           "block_collision": "ground",//(可选，默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
           "collision_height": 2,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞

@@ -109,7 +109,7 @@ public class PartData {
         this.registryKey = part.type.registryKey;
         this.name = part.name;
         this.uuid = part.getUuid().toString();
-        this.variant = part.variant;
+        this.variant = part.variantName;
         this.sharedDurability = part.sharedDurability;
         this.subParts = new HashMap<>();
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {

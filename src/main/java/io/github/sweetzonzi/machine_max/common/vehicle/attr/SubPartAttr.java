@@ -30,11 +30,6 @@ import java.util.concurrent.ConcurrentMap;
 
 @Getter
 public class SubPartAttr {
-    // 渲染属性 - 支持状态差分
-    public final Map<String, ResourceLocation> models; // 状态 -> 模型
-    public final Map<String, List<ResourceLocation>> textures; // 状态 -> 纹理列表
-    public final Map<String, ResourceLocation> animations; // 状态 -> 动画
-
     // 物理属性
     public final float mass;
     public final Vec3 projectedArea;
@@ -62,62 +57,7 @@ public class SubPartAttr {
         TRUE, FALSE, GROUND
     }
 
-    // 编解码器 - 支持单值或映射
-    public static final Codec<Map<String, ResourceLocation>> MODELS_CODEC = Codec.either(
-            ResourceLocation.CODEC,
-            Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC)
-    ).xmap(
-            either -> either.map(
-                    model -> Map.of("default", model),
-                    map -> map
-            ),
-            map -> {
-                if (map.size() == 1 && map.containsKey("default")) {
-                    return Either.left(map.get("default"));
-                } else {
-                    return Either.right(map);
-                }
-            }
-    );
-
-    public static final Codec<Map<String, List<ResourceLocation>>> TEXTURES_CODEC = Codec.either(
-            ResourceLocation.CODEC.listOf(),
-            Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC.listOf())
-    ).xmap(
-            either -> either.map(
-                    textures -> Map.of("default", textures),
-                    map -> map
-            ),
-            map -> {
-                if (map.size() == 1 && map.containsKey("default")) {
-                    return Either.left(map.get("default"));
-                } else {
-                    return Either.right(map);
-                }
-            }
-    );
-
-    public static final Codec<Map<String, ResourceLocation>> ANIMATIONS_CODEC = Codec.either(
-            ResourceLocation.CODEC,
-            Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC)
-    ).xmap(
-            either -> either.map(
-                    anim -> Map.of("default", anim),
-                    map -> map
-            ),
-            map -> {
-                if (map.size() == 1 && map.containsKey("default")) {
-                    return Either.left(map.get("default"));
-                } else {
-                    return Either.right(map);
-                }
-            }
-    );
-
     public static final Codec<SubPartAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            MODELS_CODEC.fieldOf("models").forGetter(SubPartAttr::getModels),
-            TEXTURES_CODEC.optionalFieldOf("textures", Map.of()).forGetter(SubPartAttr::getTextures),
-            ANIMATIONS_CODEC.optionalFieldOf("animations", Map.of()).forGetter(SubPartAttr::getAnimations),
             Codec.FLOAT.optionalFieldOf("durability", 20f).forGetter(SubPartAttr::getDurability),
             Codec.FLOAT.optionalFieldOf("mass", 25f).forGetter(SubPartAttr::getMass),
             Vec3.CODEC.optionalFieldOf("projected_area", Vec3.ZERO).forGetter(SubPartAttr::getProjectedArea),
@@ -138,9 +78,6 @@ public class SubPartAttr {
     );
 
     public SubPartAttr(
-            Map<String, ResourceLocation> models,
-            Map<String, List<ResourceLocation>> textures,
-            Map<String, ResourceLocation> animations,
             float durability,
             float mass,
             Vec3 projectedArea,
@@ -154,10 +91,6 @@ public class SubPartAttr {
             int hydroPriority,
             Map<String, HydrodynamicAttr> hydrodynamics
     ) {
-        this.models = models;
-        this.textures = textures;
-        this.animations = animations;
-
         this.durability = durability;
         if (mass <= 0) throw new IllegalArgumentException("error.machine_max.subpart.zero_mass");
         this.mass = mass;
@@ -176,33 +109,11 @@ public class SubPartAttr {
     }
 
     /**
-     * 获取指定状态的模型
-     */
-    public ResourceLocation getModel(String state) {
-        return models.getOrDefault(state, models.get("default"));
-    }
-
-    /**
-     * 获取指定状态的纹理
-     */
-    public List<ResourceLocation> getTextures(String state) {
-        return textures.getOrDefault(state, textures.getOrDefault("default", List.of()));
-    }
-
-    /**
-     * 获取指定状态的动画
-     */
-    public ResourceLocation getAnimation(String state) {
-        return animations.getOrDefault(state, animations.getOrDefault("default",
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty")));
-    }
-
-    /**
      * 获取子部件在指定状态的碰撞体积
      */
-    public CompoundCollisionShape getCollisionShape(String state) {
+    public CompoundCollisionShape getCollisionShape(VariantAttr attr, String state) {
         return hitBoxShape.computeIfAbsent(state, s -> {
-            ResourceLocation modelLocation = getModel(state);
+            ResourceLocation modelLocation = attr.getModel(state);
             var shape = new CompoundCollisionShape(1);
             LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones();
 
@@ -335,9 +246,9 @@ public class SubPartAttr {
     /**
      * 获取子部件在指定状态的交互体积
      */
-    public CompoundCollisionShape getInteractBoxShape(String state) {
+    public CompoundCollisionShape getInteractBoxShape(VariantAttr attr, String state) {
         return interactBoxShape.computeIfAbsent(state, s -> {
-            ResourceLocation modelLocation = getModel(state);
+            ResourceLocation modelLocation = attr.getModel(state);
             var shape = new CompoundCollisionShape(1);
             LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones();
 

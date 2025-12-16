@@ -392,7 +392,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      * @return 给定零件是否满足当前接口安装条件
      */
     public boolean conditionCheck(Part part) {
-        return conditionCheck(part.type, part.variant);
+        return conditionCheck(part.type, part.variantName);
     }
 
     /**

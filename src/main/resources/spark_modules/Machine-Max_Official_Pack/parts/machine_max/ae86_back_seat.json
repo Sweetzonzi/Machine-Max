@@ -7,15 +7,15 @@
   "basic_integrity": 40.0,//(可选，默认15.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
   "variants": {
     "icon": "machine_max:textures/icon/ae86_back_seat_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
+    "models": "machine_max:ae86_back_seat.geo",//模型路径
+    "textures": [//贴图路径列表
+      "machine_max:textures/part/ae86_all_terrain_1.png",
+      "machine_max:textures/part/ae86_all_terrain_2.png"
+    ],
+    "animations": "machine_max:empty",//(可选，留空则不播放动画)动画路径
     "tags": [],//(可选，默认[])部件标签列表
     "sub_parts": {//零件(子部件)列表
       "ae86_back_seat": {//零件(子部件)名称
-        "models": "machine_max:ae86_back_seat.geo",//(必须)状态差分模型映射，单值模式
-        "textures": [//(必须)状态差分贴图映射，单值模式
-          "machine_max:textures/part/ae86_all_terrain_1.png",
-          "machine_max:textures/part/ae86_all_terrain_2.png"
-        ],
-        "animations": "machine_max:empty",//(可选)状态差分动画映射，单值模式
         "subsystems": {//(可选)子系统配置
           "left_seat": {
             "type": "machine_max:seat",

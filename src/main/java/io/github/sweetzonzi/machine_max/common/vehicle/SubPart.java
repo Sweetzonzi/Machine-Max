@@ -113,17 +113,17 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public HashSet<BlockPos> climbableBlocks = new HashSet<>();
 
     public SubPart(String name, Part part, SubPartAttr attr) {
-        super(part.level, attr.getCollisionShape("default"), attr.mass);
+        super(part.level, attr.getCollisionShape(part.variant, "default"), attr.mass);
         this.part = part;
         this.name = name;
         this.attr = attr;
         this.setDurability(getMaxDurability());
         this.modelController = new ModelController(this);
         this.animController = new AnimController(this);
-        this.getModelController().setModel(new ModelIndex("part", attr.getModel("default")));
-        this.getModelController().setTextureLocation(attr.getTextures("default").get(textureIndex % attr.getTextures("default").size()));
+        this.getModelController().setModel(new ModelIndex("part", part.variant.getModel("default")));
+        this.getModelController().setTextureLocation(part.variant.getTextures("default").get(textureIndex % part.variant.getTextures("default").size()));
         if (!attr.interactBoxes.isEmpty()) {
-            this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape("default"));
+            this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape(part.variant, "default"));
         } else this.interactBoxes = null;
         PhysicsBodyExtensionKt.setOwner(this.body, this);
         this.body.setSleepingThresholds(0.1f, 0.1f);
@@ -133,7 +133,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         Vector3f inverseInertia = new Vector3f();
         this.body.getInverseInertiaLocal(inverseInertia);
         if (inverseInertia.length() > 5) {
-            MachineMax.LOGGER.error("{} ({})转动惯量异常: {}", name, part.variant, body.getInverseInertiaLocal(null));
+            MachineMax.LOGGER.error("{} ({})转动惯量异常: {}", name, part.variantName, body.getInverseInertiaLocal(null));
         }
         this.body.setFriction(1.0f);
         this.body.setCollisionGroup(CollisionGroups.PHYSICS_BODY);
@@ -197,9 +197,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      * @param index 纹理索引
      */
     public void switchTexture(int index) {
-        if (attr.getTextures("default").size() == 1) return;
-        this.textureIndex = index % attr.getTextures("default").size();
-        this.getModelController().setTextureLocation(attr.getTextures("default").get(textureIndex));
+        if (part.variant.getTextures("default").size() == 1) return;
+        this.textureIndex = index % part.variant.getTextures("default").size();
+        this.getModelController().setTextureLocation(part.variant.getTextures("default").get(textureIndex));
         //同步客户端
         if (!getLevel().isClientSide() && part.vehicle != null)
             PacketDistributor.sendToPlayersInDimension((ServerLevel) getLevel(),
@@ -429,7 +429,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 }
             }
             //通常粒子效果
-            if(level.isClientSide()) {
+            if (level.isClientSide()) {
                 float speed = vel.length();
                 level.submitImmediateTask(PPhase.PRE, () -> {
                     if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
@@ -590,11 +590,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 entity.boundingBox.set(box);
                 entity.bodyCenter.set(center);
             }
-            var animSet = OAnimationSet.getORIGINS().get(new ModelIndex("part", attr.getAnimation("default")));
+            var animSet = OAnimationSet.getORIGINS().get(new ModelIndex("part", part.variant.getAnimation("default")));
             if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
                 for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
                     String name = entry.getKey();
-                    var animInstance = new AnimInstance(this, new AnimIndex(new ModelIndex("part", attr.getAnimation("default")), name));
+                    var animInstance = new AnimInstance(this, new AnimIndex(new ModelIndex("part", part.variant.getAnimation("default")), name));
                     animInstance.enter();
                 }
             }
@@ -977,7 +977,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Transform getLerpedLocatorWorldTransform(String locatorName, Transform offset, float partialTick) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            Transform localTransform = MyMath.combine(offset, attr.getLocatorTransforms().get(part.variant).get(locatorName), null);
+            Transform localTransform = MyMath.combine(offset, attr.getLocatorTransforms().get(part.variantName).get(locatorName), null);
             Transform pose = MyMath.combine(localTransform, PhysicsBodyExtensionKt.stateOf(body).getTransform(), null);
             Transform oldPose = MyMath.combine(localTransform, PhysicsBodyExtensionKt.stateOf(body).getLastTransform(), null);
             return SparkMathKt.lerp(oldPose, pose, partialTick);
@@ -989,7 +989,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Transform getLocatorWorldTransform(String locatorName) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            Transform localTransform = attr.getLocatorTransforms().get(part.variant).get(locatorName);
+            Transform localTransform = attr.getLocatorTransforms().get(part.variantName).get(locatorName);
             return MyMath.combine(localTransform, body.getTransform(null), null);
         } catch (Exception e) {
             return body.getTransform(null);
@@ -999,7 +999,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Transform getLocatorLocalTransform(String locatorName) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            return attr.getLocatorTransforms().get(part.variant).get(locatorName);
+            return attr.getLocatorTransforms().get(part.variantName).get(locatorName);
         } catch (Exception e) {
             return new Transform();
         }
@@ -1074,7 +1074,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @NotNull
     @Override
     public ModelIndex getDefaultModelIndex() {
-        return new ModelIndex("part", attr.getModel("default"));
+        return new ModelIndex("part", part.variant.getModel("default"));
     }
 
     @Override

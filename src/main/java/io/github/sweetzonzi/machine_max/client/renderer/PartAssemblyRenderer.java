@@ -55,10 +55,9 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
             PartType partType = PartItem.getPartType(partItem, player.level());
             String variantName = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
             VariantAttr variantAttr = partType.getVariant(variantName);
-            SubPartAttr subPartAttr = variantAttr.subParts().values().iterator().next();
-            ResourceLocation model = subPartAttr.getModel("default");
-            ResourceLocation texture = subPartAttr.getTextures("default").getFirst();
-            ResourceLocation animation = subPartAttr.getAnimation("default");
+            ResourceLocation model = variantAttr.getModel("default");
+            ResourceLocation texture = variantAttr.getTextures("default").getFirst();
+            ResourceLocation animation = variantAttr.getAnimation("default");
             if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.getModelIndex().getLocation() != model) {
                 VisualEffectHelper.partToPlace = new AnimatableParams(new ModelIndex("part", model), animation, texture);
                 VisualEffectHelper.partToPlace.setTransparency(64);

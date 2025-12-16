@@ -15,6 +15,7 @@ import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
@@ -47,8 +48,10 @@ public class Part {
     public String name;
     public final PartType type;
     public final Level level;
-    public final String variant;
+    public final String variantName;
+    public final VariantAttr variant;
     public final UUID uuid;
+    public float assemblyProgress = 0;
     public volatile float sharedDurability;//仅在部件内共享耐久度启用时有效，仅用于传递数据，各类实际判断在零件中进行
     public final SubPart rootSubPart;
     public float totalMass;
@@ -63,18 +66,19 @@ public class Part {
      * <p>仅应在服务端新建部件时使用</p>
      *
      * @param partType 部件类型
-     * @param variant  部件变体类型
+     * @param variantName  部件变体类型
      * @param level    部件被加入的世界
      */
-    public Part(PartType partType, @Nullable String variant, Level level) {
-        if (variant == null) variant = "default";
+    public Part(PartType partType, @Nullable String variantName, Level level) {
+        if (variantName == null) variantName = "default";
         this.name = partType.getName();
         this.type = partType;
-        this.variant = variant;
+        this.variantName = variantName;
+        this.variant = partType.getVariants().get(variantName);
         this.level = level;
         this.uuid = UUID.randomUUID();
         this.sharedDurability = getSharedMaxDurability();
-        this.rootSubPart = createSubParts(type.getVariants().get(variant).subParts());//创建子部件并指定根子部件
+        this.rootSubPart = createSubParts(variant.subParts());//创建子部件并指定根子部件
         updateMass();
     }
 
@@ -101,9 +105,10 @@ public class Part {
         this.name = data.name;
         this.type = getPartType(level, data.registryKey);
         this.level = level;
-        this.variant = data.variant;
+        this.variantName = data.variant;
+        this.variant = type.getVariants().get(variantName);
         this.uuid = UUID.fromString(data.uuid);
-        this.rootSubPart = createSubParts(type.getVariants().get(variant).subParts());//重建子部件并指定根子部件
+        this.rootSubPart = createSubParts(type.getVariants().get(variantName).subParts());//重建子部件并指定根子部件
         this.sharedDurability = readAdditionalData ? Math.min(data.sharedDurability, getSharedMaxDurability()) : getSharedMaxDurability();
         //遍历零件，录入基本数据
         for (Map.Entry<String, SubPart> entry : subParts.entrySet()) {
@@ -314,7 +319,7 @@ public class Part {
 
     public void updateMass() {
         float totalMass = 0;
-        for (SubPartAttr subPart : type.getVariants().get(variant).subParts().values()) {
+        for (SubPartAttr subPart : type.getVariants().get(variantName).subParts().values()) {
             totalMass += subPart.mass;
         }
         this.totalMass = totalMass;

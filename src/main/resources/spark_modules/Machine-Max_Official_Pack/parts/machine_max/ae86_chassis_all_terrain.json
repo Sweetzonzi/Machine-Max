@@ -7,15 +7,15 @@
   "basic_integrity": 80.0,//(可选，默认15.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
   "variants": {//部件变体列表，可有多个变体名和模型路径的键值对
     "icon": "machine_max:textures/icon/ae86_chassis_all_terrain_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
+    "models": "machine_max:ae86_chassis_all_terrain.geo",//模型路径
+    "textures": [ //贴图路径列表
+      "machine_max:textures/part/ae86_all_terrain_1.png",
+      "machine_max:textures/part/ae86_all_terrain_2.png"
+    ],
+    "animations": "machine_max:ae86", //(可选，留空则不播放动画)动画路径
     "tags": [],//(可选)部件标签列表
     "sub_parts": {//零件(子部件)列表，这是部件运动的最小单元，部件的每个可动部分都应当是一个零件(子部件)
       "ae86_chassis_all_terrain": {//零件(子部件)名称
-        "models": "machine_max:ae86_chassis_all_terrain.geo",
-        "textures": [//部件可用贴图列表，不同变体模型应共享一张贴图
-          "machine_max:textures/part/ae86_all_terrain_1.png",
-          "machine_max:textures/part/ae86_all_terrain_2.png"
-        ],
-        "animations": "machine_max:ae86", //(可选，留空则不播放动画)动画文件路径
         "mass": 1200.0,//零件质量(kg)
         "block_collision": "ground",//(可选)地形碰撞模式:true(默认，与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
         "collision_height": 2.5,//(可选)碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground)，默认所有障碍均碰撞
