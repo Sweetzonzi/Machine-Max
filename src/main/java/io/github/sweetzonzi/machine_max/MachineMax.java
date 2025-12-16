@@ -8,6 +8,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
@@ -40,7 +41,7 @@ public class MachineMax {
     //TODO:改装件，改变部件或子系统属性
     //TODO:molang驱动的实时属性？护甲水平，摩擦等（性能问题？）
     public static final String MOD_ID = "machine_max";
-    public static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LoggerFactory.getLogger("MachineMax");
     public static final ObjectRegister REGISTER = new ObjectRegister(MachineMax.MOD_ID);//一体化注册器
 
     public MachineMax(IEventBus bus, ModContainer container) {

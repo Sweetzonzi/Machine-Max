@@ -123,8 +123,9 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             // 按块渲染
             var bones = modelController.getOriginModel().getBones().values().toArray();
             for (Object bone : bones) {
+                Matrix4f transform = new Matrix4f(poseStack.last().pose());
                 //TODO: 组装表示，线框渲染
-                ((OBone) bone).applyTransformWithParents(modelInstance.getPose(), new Matrix4f(poseStack.last().pose()), partialTick);
+                ((OBone) bone).applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
                 for (OCube cube : ((OBone) bone).getCubes()) {
                     if (entity.subPart.tickCount < 15) {
                         // 将 HSB 转换为 RGB
@@ -133,7 +134,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                         color = new Color(rgb.getRed(), rgb.getGreen(), rgb.getBlue(), alpha).getRGB();
                     }
                     cube.renderVertexes(
-                            new Matrix4f(poseStack.last().pose()),
+                            new Matrix4f(transform),
                             normal,
                             bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
                             light,
