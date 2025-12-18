@@ -1,0 +1,37 @@
+{
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "tag": "c:ingots/copper"
+      },
+      "count": 3
+    },
+    {
+      "ingredient": {
+        "tag": "c:ingots/iron"
+      },
+      "count": 5
+    },
+    {
+      "ingredient": {
+        "tag": "c:ingots/gold"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:gunpowder"
+      },
+      "count": 124
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 1,
+    "components": {
+      "machine_max:part_type": "machine_max:ae86_chassis_all_terrain"
+    }
+  },
+  "time": 60
+}

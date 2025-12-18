@@ -77,19 +77,23 @@ public class WrenchItem extends Item {
     @Override
     public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity entity, int portId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, portId, isSelected);
-        if (isSelected && level.isClientSide() && entity instanceof Player player) {
+        if (isSelected && !level.isClientSide() && entity instanceof Player player) {
+            if (player.tickCount % 5 != 0) return;
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getSubPart();
             if (subPart != null) {//提示信息
                 Part part = subPart.part;
-                if (entity.isCrouching())
+                if (entity.isCrouching()) {
+                    part.assemble(player.getInventory(), 5);
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.disassembly", Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
-                else if (!subPart.destroyed)
+                } else if (!subPart.destroyed) {
+                    part.disAssemble(player.getInventory(), 5);
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.repair",
                             Component.translatable(part.type.registryKey.toLanguageKey()).withColor(Color.GREEN.getRGB())), true);
-                else
+                } else {
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.cant_repair",
                             Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.RED.getRGB()), true);
+                }
             } else player.displayClientMessage(Component.empty(), true);
         }
     }

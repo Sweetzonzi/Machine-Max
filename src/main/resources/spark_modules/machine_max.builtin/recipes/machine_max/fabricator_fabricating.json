@@ -1,0 +1,16 @@
+{
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "tag": "c:ingots/copper"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "machine_max:fabricator",
+    "count": 1
+  },
+  "time": 1200
+}

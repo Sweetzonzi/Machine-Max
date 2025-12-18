@@ -7,7 +7,7 @@ import net.minecraft.world.item.crafting.RecipeType
 
 object MMResources {
     @JvmStatic
-    val FABRICATE_RECIPE_TYPE = MachineMax.REGISTER.recipeType{
+    val FABRICATION_RECIPE_TYPE = MachineMax.REGISTER.recipeType{
         id = "fabricating"
         factory = {
             RecipeType.simple<FabricatingRecipe>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fabricating"))
@@ -15,7 +15,7 @@ object MMResources {
     }
 
     @JvmStatic
-    val FABRICATE_RECIPE_SERIALIZER = MachineMax.REGISTER.recipeSerializer{
+    val FABRICATION_RECIPE_SERIALIZER = MachineMax.REGISTER.recipeSerializer{
         id = "fabricating"
         factory = {
             FabricatingRecipe.Serializer.INSTANCE

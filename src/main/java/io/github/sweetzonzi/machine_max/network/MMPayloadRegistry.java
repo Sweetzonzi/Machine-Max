@@ -80,10 +80,15 @@ public class MMPayloadRegistry {
                 PartRemovePayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartRemovePayload::handle)
         );
-        sync.playToClient(//通知客户端移除部件
+        sync.playToClient(//通知客户端涂装变化
                 PartPaintPayload.TYPE,
                 PartPaintPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartPaintPayload::handle)
+        );
+        sync.playToClient(//通知客户端部件组转进度改变
+                PartAssemblySyncPayload.TYPE,
+                PartAssemblySyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PartAssemblySyncPayload::handle)
         );
         sync.commonToServer(//客户端请求维度载具数据
                 ClientRequestVehicleDataPayload.TYPE,

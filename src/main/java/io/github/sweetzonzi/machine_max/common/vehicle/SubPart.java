@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.OAnimation;
 import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
@@ -1032,12 +1033,15 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     /**
      * <p>获取零件的最大耐久度，如果部件内零件共享耐久度，则返回共享最大耐久度；否则返回自身最大耐久度。</p>
      * <p>This method returns the maximum durability of the sub-part, taking into account whether the part shares durability with its sub-parts.</p>
+     * <p>实际最大耐久度会根据部件的组装进度调整。</p>
+     * <p>The actual maximum durability will be adjusted based on the assembling progress of the part.</p>
      *
      * @return 最大耐久度 The maximum durability of the sub-part.
      */
     @Override
     public float getMaxDurability() {
-        return part.type.shareDurability ? attr.durability : part.getSharedMaxDurability();
+        return (part.type.shareDurability ? attr.durability : part.getSharedMaxDurability())
+                * 0.05f + 0.95f * part.assemblingProgress;
     }
 
     /**
@@ -1075,6 +1079,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @Override
     public ModelIndex getDefaultModelIndex() {
         return new ModelIndex("part", part.variant.getModel("default"));
+    }
+
+    public Map<String, OBone> getBonesToRender() {
+        return attr.getBonesToRender(part.variant, part.variantName);
     }
 
     @Override

@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.gui.renderable;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -50,7 +51,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
         Player player = minecraft.player;
         boolean isCreative = player.isCreative();
 
-        for (FabricatingRecipe.IngredientCountPair ingredientPair : currentRecipe.getIngredientPairs()) {
+        for (IngredientCountPair ingredientPair : currentRecipe.getIngredientPairs()) {
             ItemStack[] matchingItems = ingredientPair.ingredient().getItems();
             if (matchingItems.length == 0) continue;
 

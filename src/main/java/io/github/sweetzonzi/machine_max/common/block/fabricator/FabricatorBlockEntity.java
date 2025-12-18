@@ -240,7 +240,7 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
 
         // 创建生产任务
         String recipeId = level.getRecipeManager()
-                .getAllRecipesFor(MMResources.getFABRICATE_RECIPE_TYPE().get())
+                .getAllRecipesFor(MMResources.getFABRICATION_RECIPE_TYPE().get())
                 .stream()
                 .filter(holder -> holder.value() == recipe)
                 .map(holder -> holder.id().toString())

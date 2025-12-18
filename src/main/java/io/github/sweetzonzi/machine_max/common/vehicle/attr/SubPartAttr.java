@@ -10,7 +10,6 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.shapes.*;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
-import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -30,6 +29,9 @@ import java.util.concurrent.ConcurrentMap;
 
 @Getter
 public class SubPartAttr {
+    // 模型属性
+    public final String startBone;
+    public final List<String> endBones;
     // 物理属性
     public final float mass;
     public final Vec3 projectedArea;
@@ -47,6 +49,7 @@ public class SubPartAttr {
     public final Map<String, HydrodynamicAttr> hydrodynamics;
 
     // 运行时缓存 - 按状态缓存
+    public final Map<String, Map<String, OBone>> bones = new LinkedHashMap<>();
     public final ConcurrentMap<String, CompoundCollisionShape> hitBoxShape = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, CompoundCollisionShape> interactBoxShape = new ConcurrentHashMap<>();
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();
@@ -58,6 +61,8 @@ public class SubPartAttr {
     }
 
     public static final Codec<SubPartAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.optionalFieldOf("start_bone", "").forGetter(SubPartAttr::getStartBone),
+            Codec.STRING.listOf().optionalFieldOf("end_bones", List.of()).forGetter(SubPartAttr::getEndBones),
             Codec.FLOAT.optionalFieldOf("durability", 20f).forGetter(SubPartAttr::getDurability),
             Codec.FLOAT.optionalFieldOf("mass", 25f).forGetter(SubPartAttr::getMass),
             Vec3.CODEC.optionalFieldOf("projected_area", Vec3.ZERO).forGetter(SubPartAttr::getProjectedArea),
@@ -78,6 +83,8 @@ public class SubPartAttr {
     );
 
     public SubPartAttr(
+            String startBone,
+            List<String> endBones,
             float durability,
             float mass,
             Vec3 projectedArea,
@@ -91,6 +98,8 @@ public class SubPartAttr {
             int hydroPriority,
             Map<String, HydrodynamicAttr> hydrodynamics
     ) {
+        this.startBone = startBone;
+        this.endBones = endBones;
         this.durability = durability;
         if (mass <= 0) throw new IllegalArgumentException("error.machine_max.subpart.zero_mass");
         this.mass = mass;
@@ -115,13 +124,14 @@ public class SubPartAttr {
         return hitBoxShape.computeIfAbsent(state, s -> {
             ResourceLocation modelLocation = attr.getModel(state);
             var shape = new CompoundCollisionShape(1);
-            LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones();
-
+            // 加载模型骨骼
+            Map<String, OBone> bones = filterBones(
+                    OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
+                    startBone, endBones);
             if (bones.isEmpty()) throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
-
+            // 获取定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
-
             // 添加连接点定位器
             for (ConnectorAttr connectorAttr : connectors.values()) {
                 String locatorName = connectorAttr.locatorName();
@@ -129,7 +139,7 @@ public class SubPartAttr {
             }
 
             // 添加流体动力定位器
-            for (Map.Entry<String, HydrodynamicAttr> hydrodynamicEntry : hydrodynamics.entrySet()){
+            for (Map.Entry<String, HydrodynamicAttr> hydrodynamicEntry : hydrodynamics.entrySet()) {
                 String locatorName = hydrodynamicEntry.getKey();
                 addLocator(state, locatorName, locators);
             }
@@ -221,14 +231,26 @@ public class SubPartAttr {
             }
 
             // 调整零件质心
-            Transform massCenter = new Transform();
+            Transform massCenter = null;
             OLocator locator = locators.get("MassCenter");
-            if (locator!=null) {
+            if (locator != null) {
                 org.joml.Vector3f rotation = locator.getRotation().toVector3f();
                 massCenter = new Transform(
                         PhysicsHelperKt.toBVector3f(locator.getOffset()),
                         SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
                 );
+            } else if (!startBone.isEmpty()) {
+                OBone startBoneInstance = bones.get(this.startBone);
+                if (startBoneInstance != null) {
+                    org.joml.Vector3f rotation = startBoneInstance.getRotation().toVector3f();
+                    var offset = startBoneInstance.getPivot().toVector3f();
+                    massCenter = new Transform(
+                            PhysicsHelperKt.toBVector3f(offset),
+                            SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
+                    );
+                }
+            }
+            if (massCenter != null) {
                 // 重新计算定位器相对质心的变换
                 for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.computeIfAbsent(state, v1 -> new ConcurrentHashMap<>()).entrySet()) {
                     String locatorName = locatorTransform.getKey();
@@ -236,9 +258,10 @@ public class SubPartAttr {
                     MyMath.combine(massCenter.invert(), transform, transform);
                     locatorTransforms.get(state).put(locatorName, transform);
                 }
+                shape.correctAxes(massCenter);
             }
-            shape.correctAxes(massCenter);
-            if (shape.countChildren() <= 0) throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
+            if (shape.countChildren() <= 0)
+                throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
             return shape;
         });
     }
@@ -250,8 +273,11 @@ public class SubPartAttr {
         return interactBoxShape.computeIfAbsent(state, s -> {
             ResourceLocation modelLocation = attr.getModel(state);
             var shape = new CompoundCollisionShape(1);
-            LinkedHashMap<String, OBone> bones = OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones();
-
+            // 加载模型骨骼
+            Map<String, OBone> bones = filterBones(
+                    OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
+                    startBone, endBones);
+            // 获取定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
 
@@ -277,18 +303,80 @@ public class SubPartAttr {
                 }
             }
 
-            Transform massCenter = new Transform();
+            Transform transform = null;
             OLocator locator = locators.get("MassCenter");
             if (locator != null) {
                 org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-                massCenter = new Transform(
+                transform = new Transform(
                         PhysicsHelperKt.toBVector3f(locator.getOffset()),
                         SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
                 );
+            } else if (!startBone.isEmpty()) {
+                OBone startBoneInstance = bones.get(this.startBone);
+                if (startBoneInstance != null) {
+                    org.joml.Vector3f rotation = startBoneInstance.getRotation().toVector3f();
+                    var offset = startBoneInstance.getPivot().toVector3f();
+                    transform = new Transform(
+                            PhysicsHelperKt.toBVector3f(offset),
+                            SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
+                    );
+                }
             }
-            shape.correctAxes(massCenter);
+            if (transform != null)
+                shape.correctAxes(transform);
             return shape;
         });
+    }
+
+    /**
+     * 获取零件所需渲染的骨骼列表
+     *
+     * @param variant 变体属性，存储模型路径
+     * @param state 状态名称
+     * @return 骨骼列表
+     */
+    public Map<String, OBone> getBonesToRender(VariantAttr variant, String state) {
+        return getBones().computeIfAbsent(state, v -> {
+            ResourceLocation modelLocation = variant.getModel(state);
+            // 加载模型骨骼
+            return filterBones(
+                    OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
+                    startBone, endBones);
+        });
+    }
+
+    /**
+     * 将骨骼列表过滤，只保留在指定骨骼之间的骨骼
+     *
+     * @param bones     骨骼列表
+     * @param startBone 起始骨骼名称
+     * @param endBones  结束骨骼名称列表
+     * @return 过滤后的骨骼列表
+     */
+    public static Map<String, OBone> filterBones(LinkedHashMap<String, OBone> bones, String startBone, List<String> endBones) {
+        if (startBone.isEmpty()) return bones;
+        else {
+            LinkedHashMap<String, OBone> filteredBones = new LinkedHashMap<>();
+            for (Map.Entry<String, OBone> entry : bones.entrySet()) {
+                String boneName = entry.getKey();
+                OBone bone = entry.getValue();
+                if (endBones.contains(boneName)) continue; // 跳过子骨骼
+                if (boneName.equals(startBone)) {
+                    filteredBones.put(boneName, bone);
+                } else if (bone.isChildOf(startBone)) {
+                    // 排除子骨骼
+                    boolean isExcluded = false;
+                    for (String excludedBone : endBones) {
+                        if (bone.isChildOf(excludedBone)) {
+                            isExcluded = true;
+                            break;
+                        }
+                    }
+                    if (!isExcluded) filteredBones.put(boneName, bone);
+                }
+            }
+            return filteredBones;
+        }
     }
 
     /**

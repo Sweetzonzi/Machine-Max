@@ -12,6 +12,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
@@ -25,14 +26,23 @@ import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblySyncPayload;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
@@ -51,7 +61,9 @@ public class Part {
     public final String variantName;
     public final VariantAttr variant;
     public final UUID uuid;
-    public float assemblyProgress = 0;
+    public volatile float assemblingProgress = 0f; //组装进度(0~1)，控制最大耐久和质量
+    @Setter
+    public int materialProgress = 0; //材料供给进度，控制最大组装进度，上限取决于配方
     public volatile float sharedDurability;//仅在部件内共享耐久度启用时有效，仅用于传递数据，各类实际判断在零件中进行
     public final SubPart rootSubPart;
     public float totalMass;
@@ -65,9 +77,9 @@ public class Part {
      * <p>创建新部件，使用指定变体</p>
      * <p>仅应在服务端新建部件时使用</p>
      *
-     * @param partType 部件类型
-     * @param variantName  部件变体类型
-     * @param level    部件被加入的世界
+     * @param partType    部件类型
+     * @param variantName 部件变体类型
+     * @param level       部件被加入的世界
      */
     public Part(PartType partType, @Nullable String variantName, Level level) {
         if (variantName == null) variantName = "default";
@@ -109,6 +121,8 @@ public class Part {
         this.variant = type.getVariants().get(variantName);
         this.uuid = UUID.fromString(data.uuid);
         this.rootSubPart = createSubParts(type.getVariants().get(variantName).subParts());//重建子部件并指定根子部件
+        this.assemblingProgress = readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f;
+        this.materialProgress = readAdditionalData ? Math.max(data.materialAssemblingProgress, 0) : 0;
         this.sharedDurability = readAdditionalData ? Math.min(data.sharedDurability, getSharedMaxDurability()) : getSharedMaxDurability();
         //遍历零件，录入基本数据
         for (Map.Entry<String, SubPart> entry : subParts.entrySet()) {
@@ -305,6 +319,7 @@ public class Part {
                 subPart.hitBoxes.put(hitBoxAttr.hitBoxName(), new HitBox(subPart, hitBoxAttr));
             }
         }
+        //TODO: 连接内部连接器
         //设置默认根零件，取质量最大的
         float maxMass = -100;
         SubPart rootSubPart = null;
@@ -315,6 +330,218 @@ public class Part {
             }
         }
         return rootSubPart;
+    }
+
+    /**
+     * <p>每被调用一次，尝试增加组装进度，并消耗材料</p>
+     * <p>Attempts to increase assembling progress, and consumes materials.</p>
+     *
+     * @param container 消耗材料的容器 Material container
+     * @param progress  增加的进度 Progress to be increased
+     * @return 是否成功改变进度 Whether the progress is successfully changed
+     */
+    public boolean assemble(Container container, float progress) {
+        boolean ignoreMaterial = level.isClientSide();
+        if (!level.isClientSide() && container instanceof Inventory inventory) {
+            ignoreMaterial = inventory.player.hasInfiniteMaterials();
+        }
+        FabricatingRecipe recipe = getRecipe();
+        // 未找到配方则不改变组装进度
+        if (recipe != null) {
+            int totalTime = recipe.getProcessingTime();
+            float step = progress / totalTime;
+            float newProgress = assemblingProgress + step;
+
+            // 计算新的组装进度对应的材料需求
+            int totalMaterials = recipe.getIngredientList().size(); // 总材料数量
+            int targetMaterialProgress = (int) Math.ceil(newProgress * totalMaterials);
+
+            // 尝试提升材料进度
+            if (targetMaterialProgress > materialProgress) {
+                if (ignoreMaterial) { // 创造模式无视材料需求
+                    materialProgress = targetMaterialProgress;
+                } else { // 检查材料是否足够，如果不够则组装进度最多提升至材料供给进度的值
+                    int materialsToConsume = targetMaterialProgress - materialProgress;
+                    for (int i = 0; i < materialsToConsume; i++) {
+                        // 获取下一个需要消耗的材料
+                        int materialIndex = materialProgress + i;
+                        if (materialIndex < totalMaterials) {
+                            Ingredient requiredIngredient = recipe.getIngredientList().get(materialIndex);
+
+                            // 在容器中查找匹配的物品
+                            boolean found = false;
+                            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                                ItemStack stack = container.getItem(slot);
+                                if (!stack.isEmpty() && requiredIngredient.test(stack)) {
+                                    // 消耗一个物品
+                                    stack.shrink(1);
+                                    if (stack.isEmpty()) {
+                                        container.setItem(slot, ItemStack.EMPTY);
+                                    }
+                                    materialProgress++;
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            // 如果某个材料不足，停止组装
+                            if (!found) {
+                                newProgress = (float) materialProgress / totalMaterials;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Clamp进度并设置
+            newProgress = Math.min(newProgress, (float) materialProgress / totalMaterials);
+            if (newProgress != assemblingProgress) {
+                setAssemblingProgress(newProgress);
+                if (!level.isClientSide()) {
+                    PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblySyncPayload(
+                            vehicle.uuid,
+                            uuid,
+                            assemblingProgress,
+                            materialProgress
+                    ));
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * <p>每被调用一次，尝试降低组装进度，并返还材料</p>
+     * <p>Attempts to decrease assembling progress, and returns materials.</p>
+     *
+     * @param container 返还材料的容器 Material container
+     * @param progress  降低的进度 Progress to be decreased
+     * @return 是否成功改变进度 Whether the progress is successfully changed
+     */
+    public boolean disAssemble(Container container, float progress) {
+        boolean ignoreMaterial = level.isClientSide();
+        if (!level.isClientSide() && container instanceof Inventory inventory) {
+            ignoreMaterial = inventory.player.hasInfiniteMaterials();
+        }
+        FabricatingRecipe recipe = getRecipe();
+        // 未找到配方则不改变组装进度
+        if (recipe != null) {
+            int totalTime = recipe.getProcessingTime();
+            float step = progress / totalTime;
+            float newProgress = assemblingProgress - step;
+
+            // 计算新的组装进度对应的材料需求
+            int totalMaterials = recipe.getIngredientList().size(); // 总材料数量
+            int targetMaterialProgress = (int) Math.floor(newProgress * totalMaterials);
+
+            // 检查是否需要返还材料
+            if (targetMaterialProgress < materialProgress) {
+                if (ignoreMaterial) { // 创造模式不返还材料
+                    materialProgress = Math.max(targetMaterialProgress, 0);
+                } else {
+                    int materialsToReturn = materialProgress - targetMaterialProgress;
+                    // 从后往前返还材料（后消耗的先返还）
+                    for (int i = 0; i < materialsToReturn; i++) {
+                        if (materialProgress > 0) {
+                            materialProgress--;
+                            int materialIndex = materialProgress;
+                            Ingredient ingredientToReturn = recipe.getIngredientList().get(materialIndex);
+
+                            // 创建要返还的物品（取第一个匹配项）
+                            ItemStack[] matchingStacks = ingredientToReturn.getItems();
+                            if (matchingStacks.length > 0) {
+                                ItemStack returnStack = matchingStacks[0].copy();
+                                returnStack.setCount(1);
+
+                                // 尝试放入容器
+                                boolean added = false;
+                                for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                                    ItemStack stack = container.getItem(slot);
+                                    if (stack.isEmpty()) {
+                                        container.setItem(slot, returnStack);
+                                        added = true;
+                                        break;
+                                    } else if (ItemStack.isSameItemSameComponents(stack, returnStack) &&
+                                            stack.getCount() < stack.getMaxStackSize()) {
+                                        stack.grow(1);
+                                        added = true;
+                                        break;
+                                    }
+                                }
+
+                                // 容器已满，掉落物品
+                                if (!added && !level.isClientSide()) {
+                                    // 在部件位置掉落物品
+                                    net.minecraft.world.entity.item.ItemEntity itemEntity =
+                                            new net.minecraft.world.entity.item.ItemEntity(
+                                                    level,
+                                                    rootSubPart.getPosition().x,
+                                                    rootSubPart.getPosition().y,
+                                                    rootSubPart.getPosition().z,
+                                                    returnStack
+                                            );
+                                    level.addFreshEntity(itemEntity);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Clamp进度并设置
+            newProgress = Math.max(newProgress, 0f);
+            if (newProgress != assemblingProgress) {
+                setAssemblingProgress(newProgress);
+                if (!level.isClientSide()) {
+                    PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblySyncPayload(
+                            vehicle.uuid,
+                            uuid,
+                            assemblingProgress,
+                            materialProgress
+                    ));
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * <p>获取部件的手动组装配方，无则返回null</p>
+     * <p>Gets the manual assembly recipe of the part, returns null if there is no manual assembly recipe.</p>
+     *
+     * @return 配方，包含使用材料，时间等信息 Recipe, including the materials, time, etc.
+     */
+    @Nullable
+    public FabricatingRecipe getRecipe() {
+        try {
+            RecipeHolder<?> recipeHolder = level.getRecipeManager().byKey(type.registryKey).orElseThrow();
+            if (recipeHolder.value() instanceof FabricatingRecipe recipe) {
+                return recipe;
+            } else return null;
+        } catch (NoSuchElementException ignore) {
+            return null;
+        }
+    }
+
+    /**
+     * <p>设置部件的组装进度，并影响零件的最大耐久和实际质量</p>
+     * <p>Sets the assembling progress of the part, which affects the maximum durability and actual mass of the part.</p>
+     *
+     * @param progress 组装进度，0~1
+     */
+    public void setAssemblingProgress(float progress) {
+        progress = Math.clamp(progress, 0f, 1f);
+        if (progress != this.assemblingProgress) {
+            this.assemblingProgress = progress;
+            level.getPhysicsLevel().submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
+                for (SubPart subPart : subParts.values()) {
+                    subPart.body.setMass(subPart.attr.mass * (0.05f + 0.95f * this.assemblingProgress));
+                }
+                updateMass();
+                return null;
+            });
+        }
     }
 
     public void updateMass() {

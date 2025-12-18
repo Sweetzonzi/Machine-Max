@@ -28,6 +28,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 import java.awt.*;
@@ -85,18 +86,58 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 color = new Color(64, 64, 64, entity.subPart.getDestroyTime() < 20 ? 255 * entity.subPart.getDestroyTime() / 20 : 255).getRGB();
             }
             int light = LightTexture.pack(blockLight, skyLight);
-            // 整体渲染
-            ModelRenderHelperKt.render(
-                    modelController.getOriginModel(),
-                    modelInstance.getPose(),
-                    poseStack.last().pose(),
-                    normal,
-                    bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
-                    light,
-                    overlay,
-                    color,
-                    partialTick
-            );
+            var bones = entity.subPart.getBonesToRender();
+            if (entity.subPart.part.assemblingProgress >= 1.0f) {
+                // 整体渲染
+                for (OBone bone : bones.values()) {
+                    ModelRenderHelperKt.render(
+                            bone,
+                            modelInstance.getPose(),
+                            poseStack.last().pose(),
+                            poseStack.last().normal(),
+                            bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                            light,
+                            overlay,
+                            color,
+                            partialTick,
+                            false
+                    );
+                }
+            } else { // 未组装完成的部分渲染为线框
+                int cubeCount = 0;
+                for (OBone bone : bones.values()) {
+                    cubeCount += bone.getCubes().size();
+                }
+                float i = 0f;
+                for (OBone bone : bones.values()) {
+                    Matrix4f transform = new Matrix4f(poseStack.last().pose());
+                    bone.applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
+                    for (OCube cube : bone.getCubes()) {
+                        if (i / cubeCount >= entity.subPart.part.assemblingProgress) {
+                            cube.renderVertexes(
+                                    new Matrix4f(transform),
+                                    new Matrix3f(transform),
+                                    bufferSource.getBuffer(RenderType.lines()),
+                                    light,
+                                    overlay,
+                                    color,
+                                    false
+                            );
+                        } else {
+                            cube.renderVertexes(
+                                    new Matrix4f(transform),
+                                    new Matrix3f(transform),
+                                    bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                                    light,
+                                    overlay,
+                                    color,
+                                    false
+                            );
+                        }
+                        i++;
+                    }
+                }
+            }
         } else {
             // 刚刚放置时的淡入效果
             float progress = (entity.subPart.tickCount + partialTick) / 15.0f;
@@ -105,43 +146,61 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             blockLight = (int) ((1 - progress) * 15 + progress * blockLight);
             skyLight = (int) ((1 - progress) * 15 + progress * skyLight);
             int light = LightTexture.pack(blockLight, skyLight);
+            var bones = entity.subPart.getBonesToRender();
+            int cubeCount = 0;
+            for (OBone bone : bones.values()) {
+                cubeCount += bone.getCubes().size();
+            }
             // 波动效果
             poseStack.pushPose();
             poseStack.scale(1.3f, 1.3f, 1.3f);
-            ModelRenderHelperKt.render(
-                    modelController.getOriginModel(),
-                    modelInstance.getPose(),
-                    poseStack.last().pose(),
-                    poseStack.last().normal(),
-                    bufferSource.getBuffer(RenderTypeUtil.pureEffect(partialTick, (float) (15f * Math.sqrt((17.0 - entity.subPart.tickCount - partialTick) / 17)))),
-                    light,
-                    overlay,
-                    color,
-                    partialTick,
-                    false);
+            for (OBone bone : bones.values()) {
+                ModelRenderHelperKt.render(
+                        bone,
+                        modelInstance.getPose(),
+                        poseStack.last().pose(),
+                        poseStack.last().normal(),
+                        bufferSource.getBuffer(RenderTypeUtil.pureEffect(partialTick, (float) (15f * Math.sqrt((17.0 - entity.subPart.tickCount - partialTick) / 17)))),
+                        light,
+                        overlay,
+                        color,
+                        partialTick,
+                        false
+                );
+            }
             poseStack.popPose();
-            // 按块渲染
-            var bones = modelController.getOriginModel().getBones().values().toArray();
-            for (Object bone : bones) {
+            // 按块渲染，附带随机颜色
+            float i = 0f;
+            for (OBone bone : bones.values()) {
                 Matrix4f transform = new Matrix4f(poseStack.last().pose());
-                //TODO: 组装表示，线框渲染
-                ((OBone) bone).applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
-                for (OCube cube : ((OBone) bone).getCubes()) {
-                    if (entity.subPart.tickCount < 15) {
+                bone.applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
+                for (OCube cube : bone.getCubes()) {
+                    if (entity.subPart.part.assemblingProgress >= 1.0f || i / cubeCount < entity.subPart.part.assemblingProgress) {
                         // 将 HSB 转换为 RGB
                         Color rgb = new Color(Color.HSBtoRGB((float) Math.random(), 1 - progress * progress, 1));
                         // 创建新的颜色对象，包含 alpha 值
                         color = new Color(rgb.getRed(), rgb.getGreen(), rgb.getBlue(), alpha).getRGB();
+                        cube.renderVertexes(
+                                new Matrix4f(transform),
+                                new Matrix3f(transform),
+                                bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                                light,
+                                overlay,
+                                color,
+                                false
+                        );
+                    } else {
+                        cube.renderVertexes(
+                                new Matrix4f(transform),
+                                new Matrix3f(transform),
+                                bufferSource.getBuffer(RenderType.lines()),
+                                light,
+                                overlay,
+                                color,
+                                false
+                        );
                     }
-                    cube.renderVertexes(
-                            new Matrix4f(transform),
-                            normal,
-                            bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
-                            light,
-                            overlay,
-                            color,
-                            false
-                    );
+                    i++;
                 }
             }
         }

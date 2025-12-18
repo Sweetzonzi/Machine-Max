@@ -23,7 +23,7 @@
       "ingredient": {
         "item": "minecraft:gunpowder"
       },
-      "count": 224
+      "count": 124
     }
   ],
   "result": {
@@ -33,5 +33,5 @@
       "machine_max:part_type": "machine_max:ae86_chassis"
     }
   },
-  "time": 2000
+  "time": 60
 }

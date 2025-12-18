@@ -53,7 +53,7 @@ public class RecipeListWidget extends AbstractScrollWidget {
         RecipeManager recipeManager = minecraft.level.getRecipeManager();
         allRecipes.clear();
 
-        allRecipes.addAll(recipeManager.getAllRecipesFor(MMResources.getFABRICATE_RECIPE_TYPE().get()));
+        allRecipes.addAll(recipeManager.getAllRecipesFor(MMResources.getFABRICATION_RECIPE_TYPE().get()));
 
         applySearchFilter();
     }

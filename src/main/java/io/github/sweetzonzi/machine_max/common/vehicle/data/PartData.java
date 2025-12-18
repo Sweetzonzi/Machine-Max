@@ -22,6 +22,8 @@ public class PartData {
     public final String name;//部件的名称
     public final String uuid;//部件的UUID
     public final String variant;//部件的变体
+    public final float assemblingProgress;//部件的组装进度
+    public final int materialAssemblingProgress;//部件的材料供给进度
     public final float sharedDurability;//部件的耐久度
     public final Map<String, SubPartData> subParts;//尚存的零件数据
 
@@ -30,6 +32,8 @@ public class PartData {
             Codec.STRING.fieldOf("name").forGetter(PartData::getName),
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),
             Codec.STRING.fieldOf("variant").forGetter(PartData::getVariant),
+            Codec.FLOAT.optionalFieldOf("assembling_progress", 1f).forGetter(PartData::getAssemblingProgress),
+            Codec.INT.optionalFieldOf("material_assembling_progress", 99999).forGetter(PartData::getMaterialAssemblingProgress),
             Codec.FLOAT.fieldOf("durability").forGetter(PartData::getSharedDurability),
             SubPartData.MAP_CODEC.fieldOf("sub_parts").forGetter(PartData::getSubParts)
     ).apply(instance, PartData::new));
@@ -44,9 +48,11 @@ public class PartData {
             String name = buffer.readUtf();
             String uuid = buffer.readUtf();
             String variant = buffer.readUtf();
+            float assemblingProgress = buffer.readFloat();
+            int materialAssemblingProgress = buffer.readInt();
             float durability = buffer.readFloat();
             var subParts = SubPartData.MAP_STREAM_CODEC.decode(buffer);
-            return new PartData(registryKey, name, uuid, variant, durability, subParts);
+            return new PartData(registryKey, name, uuid, variant, assemblingProgress, materialAssemblingProgress, durability, subParts);
         }
 
         @Override
@@ -55,6 +61,8 @@ public class PartData {
             buffer.writeUtf(value.name);
             buffer.writeUtf(value.uuid);
             buffer.writeUtf(value.variant);
+            buffer.writeFloat(value.assemblingProgress);
+            buffer.writeInt(value.materialAssemblingProgress);
             buffer.writeFloat(value.sharedDurability);
             SubPartData.MAP_STREAM_CODEC.encode(buffer, value.subParts);
         }
@@ -90,12 +98,16 @@ public class PartData {
             String name,
             String uuid,
             String variant,
+            float assemblingProgress,
+            int materialAssemblingProgress,
             float sharedDurability,
             Map<String, SubPartData> subParts) {
         this.registryKey = registryKey;
         this.name = name;
         this.uuid = uuid;
         this.variant = variant;
+        this.assemblingProgress = assemblingProgress;
+        this.materialAssemblingProgress = materialAssemblingProgress;
         this.sharedDurability = sharedDurability;
         this.subParts = subParts;
     }
@@ -108,8 +120,10 @@ public class PartData {
     public PartData(Part part) {
         this.registryKey = part.type.registryKey;
         this.name = part.name;
-        this.uuid = part.getUuid().toString();
+        this.uuid = part.uuid.toString();
         this.variant = part.variantName;
+        this.assemblingProgress = part.assemblingProgress;
+        this.materialAssemblingProgress = part.materialProgress;
         this.sharedDurability = part.sharedDurability;
         this.subParts = new HashMap<>();
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {
