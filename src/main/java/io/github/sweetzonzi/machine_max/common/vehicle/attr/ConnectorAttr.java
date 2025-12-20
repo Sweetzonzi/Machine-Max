@@ -17,6 +17,7 @@ import java.util.Set;
  * @param acceptableTags 对接口的可接受标签
  * @param forbiddenTags 对接口的禁止标签
  * @param jointAttrs 对接口的关节属性(限制，刚性与阻尼)
+ * @param signalTranslations 接收到的信靠频道转译规则(channel_a->channel_c; channel_b->channel_c)
  * @param signalTargets 对接口的控制信号传输目标(子系统/对接口名/part/vehicle)
  * @param collideBetweenParts 对接口是否允许部件间碰撞
  * @param breakable 对接口是否可被破坏(与内部零件相连接的对接口恒定不可破坏，不受此影响)
@@ -30,6 +31,7 @@ public record ConnectorAttr(
         List<String> acceptableTags,
         List<String> forbiddenTags,
         Map<String, JointAttr> jointAttrs,
+        Map<String, String> signalTranslations,
         Map<String, List<String>> signalTargets,
         boolean collideBetweenParts,
         boolean breakable,
@@ -49,6 +51,7 @@ public record ConnectorAttr(
             Codec.STRING.listOf().optionalFieldOf("acceptable_tags", List.of()).forGetter(ConnectorAttr::requiredTags),
             Codec.STRING.listOf().optionalFieldOf("forbidden_tags", List.of()).forGetter(ConnectorAttr::requiredTags),
             JointAttr.MAP_CODEC.optionalFieldOf("joint_attrs", Map.of()).forGetter(ConnectorAttr::jointAttrs),
+            Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("signal_translations", Map.of()).forGetter(ConnectorAttr::signalTranslations),
             SIGNAL_TARGET_CODEC.optionalFieldOf("signal_targets", Map.of()).forGetter(ConnectorAttr::signalTargets),
             Codec.BOOL.optionalFieldOf("collide_between_parts", false).forGetter(ConnectorAttr::collideBetweenParts),
             Codec.BOOL.optionalFieldOf("break_impact", true).forGetter(ConnectorAttr::breakable),

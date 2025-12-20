@@ -52,13 +52,13 @@ public class WeldingTorchItem extends Item {
                     stack.hurtAndBreak(1, livingEntity, EquipmentSlot.MAINHAND);
                     if (remainingUseDuration % 5 != 0) return;
                     Part part = subPart.part;
-                    if (!livingEntity.isCrouching() && !subPart.destroyed) {
+                    if (!livingEntity.isCrouching() && !subPart.destroyed) { // 一般状态下组装部件并尝试维修
                         part.assemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);
                         subPart.repair(
                                 5 * SUBPART_REPAIR_PER_TICK,
                                 5 * SUBSYSTEM_REPAIR_PER_TICK,
                                 5 * CONNECTOR_REPAIR_PER_TICK);
-                    } else {
+                    } else { // 潜行时拆解部件为原材料
                         part.disassemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);
                         if (part.assemblingProgress <= 0) part.vehicle.removePart(part);
                     }
