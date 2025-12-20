@@ -87,7 +87,7 @@ public class WrenchItem extends Item {
                     part.assemble(player.getInventory(), 5);
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.disassembly", Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
                 } else if (!subPart.destroyed) {
-                    part.disAssemble(player.getInventory(), 5);
+                    part.disassemble(player.getInventory(), 5);
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.wrench.repair",
                             Component.translatable(part.type.registryKey.toLanguageKey()).withColor(Color.GREEN.getRGB())), true);
                 } else {

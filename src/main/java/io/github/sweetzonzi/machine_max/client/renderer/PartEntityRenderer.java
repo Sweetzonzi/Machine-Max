@@ -87,13 +87,13 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             }
             int light = LightTexture.pack(blockLight, skyLight);
             var bones = entity.subPart.getBonesToRender();
-            if (entity.subPart.part.assemblingProgress >= 1.0f) {
+            if (entity.subPart.part.getAssemblingProgress() >= 1.0f) {
                 // 整体渲染
                 for (OBone bone : bones.values()) {
                     ModelRenderHelperKt.render(
                             bone,
                             modelInstance.getPose(),
-                            poseStack.last().pose(),
+                            new Matrix4f(poseStack.last().pose()),
                             poseStack.last().normal(),
                             bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
                             light,
@@ -113,7 +113,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                     Matrix4f transform = new Matrix4f(poseStack.last().pose());
                     bone.applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
                     for (OCube cube : bone.getCubes()) {
-                        if (i / cubeCount >= entity.subPart.part.assemblingProgress) {
+                        if (i / cubeCount >= entity.subPart.part.getAssemblingProgress()) {
                             cube.renderVertexes(
                                     new Matrix4f(transform),
                                     new Matrix3f(transform),
@@ -158,7 +158,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 ModelRenderHelperKt.render(
                         bone,
                         modelInstance.getPose(),
-                        poseStack.last().pose(),
+                        new Matrix4f(poseStack.last().pose()),
                         poseStack.last().normal(),
                         bufferSource.getBuffer(RenderTypeUtil.pureEffect(partialTick, (float) (15f * Math.sqrt((17.0 - entity.subPart.tickCount - partialTick) / 17)))),
                         light,
@@ -175,7 +175,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 Matrix4f transform = new Matrix4f(poseStack.last().pose());
                 bone.applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
                 for (OCube cube : bone.getCubes()) {
-                    if (entity.subPart.part.assemblingProgress >= 1.0f || i / cubeCount < entity.subPart.part.assemblingProgress) {
+                    if (entity.subPart.part.getAssemblingProgress() >= 1.0f || i / cubeCount < entity.subPart.part.getAssemblingProgress()) {
                         // 将 HSB 转换为 RGB
                         Color rgb = new Color(Color.HSBtoRGB((float) Math.random(), 1 - progress * progress, 1));
                         // 创建新的颜色对象，包含 alpha 值

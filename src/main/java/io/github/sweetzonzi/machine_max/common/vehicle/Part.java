@@ -350,7 +350,7 @@ public class Part {
         if (recipe != null) {
             int totalTime = recipe.getProcessingTime();
             float step = progress / totalTime;
-            float newProgress = assemblingProgress + step;
+            float newProgress = Math.clamp(assemblingProgress + step, 0f, 1f);
 
             // 计算新的组装进度对应的材料需求
             int totalMaterials = recipe.getIngredientList().size(); // 总材料数量
@@ -359,14 +359,13 @@ public class Part {
             // 尝试提升材料进度
             if (targetMaterialProgress > materialProgress) {
                 if (ignoreMaterial) { // 创造模式无视材料需求
-                    materialProgress = targetMaterialProgress;
+                    materialProgress = Math.clamp(targetMaterialProgress, 0, totalMaterials);
                 } else { // 检查材料是否足够，如果不够则组装进度最多提升至材料供给进度的值
-                    int materialsToConsume = targetMaterialProgress - materialProgress;
-                    for (int i = 0; i < materialsToConsume; i++) {
+                    materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
+                    for (int i = materialProgress; i < targetMaterialProgress; i++) {
                         // 获取下一个需要消耗的材料
-                        int materialIndex = materialProgress + i;
-                        if (materialIndex < totalMaterials) {
-                            Ingredient requiredIngredient = recipe.getIngredientList().get(materialIndex);
+                        if (i < totalMaterials) {
+                            Ingredient requiredIngredient = recipe.getIngredientList().get(i);
 
                             // 在容器中查找匹配的物品
                             boolean found = false;
@@ -385,7 +384,6 @@ public class Part {
                             }
                             // 如果某个材料不足，停止组装
                             if (!found) {
-                                newProgress = (float) materialProgress / totalMaterials;
                                 break;
                             }
                         }
@@ -397,14 +395,6 @@ public class Part {
             newProgress = Math.min(newProgress, (float) materialProgress / totalMaterials);
             if (newProgress != assemblingProgress) {
                 setAssemblingProgress(newProgress);
-                if (!level.isClientSide()) {
-                    PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblySyncPayload(
-                            vehicle.uuid,
-                            uuid,
-                            assemblingProgress,
-                            materialProgress
-                    ));
-                }
                 return true;
             }
         }
@@ -419,7 +409,7 @@ public class Part {
      * @param progress  降低的进度 Progress to be decreased
      * @return 是否成功改变进度 Whether the progress is successfully changed
      */
-    public boolean disAssemble(Container container, float progress) {
+    public boolean disassemble(Container container, float progress) {
         boolean ignoreMaterial = level.isClientSide();
         if (!level.isClientSide() && container instanceof Inventory inventory) {
             ignoreMaterial = inventory.player.hasInfiniteMaterials();
@@ -438,15 +428,15 @@ public class Part {
             // 检查是否需要返还材料
             if (targetMaterialProgress < materialProgress) {
                 if (ignoreMaterial) { // 创造模式不返还材料
-                    materialProgress = Math.max(targetMaterialProgress, 0);
+                    materialProgress = Math.clamp(targetMaterialProgress, 0, totalMaterials);
                 } else {
+                    materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
                     int materialsToReturn = materialProgress - targetMaterialProgress;
                     // 从后往前返还材料（后消耗的先返还）
                     for (int i = 0; i < materialsToReturn; i++) {
                         if (materialProgress > 0) {
                             materialProgress--;
-                            int materialIndex = materialProgress;
-                            Ingredient ingredientToReturn = recipe.getIngredientList().get(materialIndex);
+                            Ingredient ingredientToReturn = recipe.getIngredientList().get(materialProgress);
 
                             // 创建要返还的物品（取第一个匹配项）
                             ItemStack[] matchingStacks = ingredientToReturn.getItems();
@@ -492,14 +482,6 @@ public class Part {
             newProgress = Math.max(newProgress, 0f);
             if (newProgress != assemblingProgress) {
                 setAssemblingProgress(newProgress);
-                if (!level.isClientSide()) {
-                    PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblySyncPayload(
-                            vehicle.uuid,
-                            uuid,
-                            assemblingProgress,
-                            materialProgress
-                    ));
-                }
                 return true;
             }
         }
@@ -541,6 +523,14 @@ public class Part {
                 updateMass();
                 return null;
             });
+            if (!level.isClientSide()) {
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblySyncPayload(
+                        vehicle.uuid,
+                        uuid,
+                        assemblingProgress,
+                        materialProgress
+                ));
+            }
         }
     }
 

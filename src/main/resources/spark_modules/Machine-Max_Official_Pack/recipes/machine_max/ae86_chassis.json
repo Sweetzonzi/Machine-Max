@@ -5,13 +5,13 @@
       "ingredient": {
         "tag": "c:ingots/copper"
       },
-      "count": 3
+      "count": 1
     },
     {
       "ingredient": {
         "tag": "c:ingots/iron"
       },
-      "count": 5
+      "count": 1
     },
     {
       "ingredient": {
@@ -23,7 +23,7 @@
       "ingredient": {
         "item": "minecraft:gunpowder"
       },
-      "count": 124
+      "count": 1
     }
   ],
   "result": {
