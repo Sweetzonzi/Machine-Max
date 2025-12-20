@@ -1,236 +1,324 @@
 package io.github.sweetzonzi.machine_max.client.gui.hud;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import org.joml.Vector2i;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class AssemblyHud implements LayeredDraw.Layer {
-    private static final int HUD_WIDTH = 120;
-    private static final int HUD_HEIGHT = 200;
-    private static final int PROGRESS_BAR_WIDTH = 10;
-    private static final int PROGRESS_BAR_HEIGHT = 150;
-    private static final int MATERIAL_ITEM_SIZE = 16;
-    private static final int MATERIAL_ITEM_SPACING = 20;
-    private static final int LINE_COLOR = 0xFFFFFFFF; // 白色
-    private static final int BACKGROUND_COLOR = 0x80000000; // 半透明黑色背景
-    private static final int PROGRESS_BAR_BG_COLOR = 0x80808080; // 半透明灰色
-    private static final int PROGRESS_BAR_FILL_COLOR = 0xFF00FF00; // 绿色填充
-    private static final int TEXT_COLOR = 0xFFFFFFFF; // 白色文字
+
+    /* ================== 布局参数 ================== */
+
+    private static final int HUD_WIDTH = 150;
+    private static final int HEADER_HEIGHT = 76;
+    private static final int LINE_HEIGHT = 18;
+    private static final int PADDING = 8;
+
+    /* ================== 颜色定义（半透明扁平化） ================== */
+
+    private static final int HUD_BG = 0xCC111111;
+    private static final int HUD_SIDE = 0xFF66CCFF;
+    private static final int BAR_BG = 0xAA2A2A2A;
+
+    private static final int ROW_BG_DARK = 0x66222222;
+    private static final int ROW_BG_LIGHT = 0xAA3A3A3A;
+    private static final int ROW_BG_ACTIVE = 0xAA355C99;
+    private static final int ROW_BG_LACK = 0xAA7A2222;
+
+    private static final int TEXT_MAIN = 0xFFFFFFFF;
+    private static final int TEXT_SUB = 0xFFBBBBBB;
+    private static final int TEXT_DIM = 0xFF888888;
+
+    /* ================== 动画状态 ================== */
+
+    /** 总进度条动画进度（客户端 View 状态） */
+    private float animatedProgress = 0f;
+
+    /* ================== 材料状态模型 ================== */
+
+    private record MaterialStatus(
+            IngredientCountPair pair,
+            int consumed,
+            int inventory,
+            boolean consuming
+    ) {
+        int required() {
+            return pair.count();
+        }
+
+        boolean completed() {
+            return consumed >= required();
+        }
+
+        boolean lacking() {
+            return inventory < (required() - consumed);
+        }
+
+        float progress() {
+            return required() == 0 ? 1f : consumed / (float) required();
+        }
+    }
+
+    /* ================== HUD 入口 ================== */
 
     @Override
-    public void render(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
+    public void render(GuiGraphics g, DeltaTracker delta) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return;
-        if (player.getMainHandItem().getItem() == MMItems.getWELDING_TORCH_ITEM().get()) {
-            LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            SubPart subPart = eyesight.getSubPart();
-            if (subPart != null) {
-                Part part = subPart.part;
-                renderPartAssemblingProgress(part, guiGraphics);
-            }
+
+//        if (player.getMainHandItem().getItem() != MMItems.getWELDING_TORCH_ITEM().get()) return;
+
+        LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
+        SubPart subPart = eyesight.getSubPart();
+        if (subPart == null) return;
+
+        renderPartHud(subPart.part, g, player, delta.getRealtimeDeltaTicks());
+    }
+
+    /* ================== 主 HUD 渲染 ================== */
+
+    /**
+     * 渲染零部件装配 HUD（高度随材料数量自适应）
+     */
+    private void renderPartHud(
+            Part part,
+            GuiGraphics g,
+            LocalPlayer player,
+            float deltaTicks
+    ) {
+        if (!(part.getRecipe() instanceof FabricatingRecipe recipe)) return;
+
+        List<MaterialStatus> materials = buildMaterialStatus(recipe, part, player);
+
+        int hudHeight = HEADER_HEIGHT + materials.size() * LINE_HEIGHT + PADDING;
+
+        int screenW = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int screenH = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+
+        int x =  48;
+        int y = (screenH - hudHeight) / 2;
+
+        g.fill(x, y, x + HUD_WIDTH, y + hudHeight, HUD_BG);
+        g.fill(x, y, x + 3,y + hudHeight, HUD_SIDE);
+
+        var font = Minecraft.getInstance().font;
+
+        /* ---------- 标题 ---------- */
+
+        String partName = Component
+                .translatable(part.type.getRegistryKey().toLanguageKey())
+                .getString();
+        g.pose().pushPose();
+        g.pose().translate(x + PADDING, y + 6, 0);
+        g.pose().scale(1.3f, 1.3f, 1.3f);
+        g.drawString(font, partName, 0, 0, TEXT_MAIN, false);
+        g.pose().popPose();
+        g.drawString(font, "Status: Functional", x + PADDING, y + 20, TEXT_SUB, false);
+
+        /* ---------- 总进度条 ---------- */
+
+        drawAnimatedProgressBar(
+                g,
+                x + PADDING,
+                y + 34,
+                HUD_WIDTH - PADDING * 2,
+                part.getAssemblingProgress(),
+                deltaTicks
+        );
+
+        /* ---------- 材料列表 ---------- */
+
+        int listY = y + HEADER_HEIGHT - 6;
+        g.drawString(font, "Components:", x + PADDING, listY, TEXT_MAIN, false);
+        listY += 10;
+
+        for (MaterialStatus m : materials) {
+            drawMaterialRow(g, font, x, listY, m);
+            listY += LINE_HEIGHT;
         }
     }
 
+    /* ================== 总进度条 ================== */
+
     /**
-     * 渲染零部件的组装进度和材料需求情况
+     * 绘制带动画与渐变的总体装配进度条，并居中显示百分比
      */
-    public void renderPartAssemblingProgress(Part part, GuiGraphics guiGraphics) {
-        if (part.getRecipe() instanceof FabricatingRecipe recipe) {
-            // 获取屏幕尺寸
-            int screenWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
-            int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+    private void drawAnimatedProgressBar(
+            GuiGraphics g,
+            int x,
+            int y,
+            int width,
+            float targetProgress,
+            float deltaTicks
+    ) {
+        // 平滑动画
+        animatedProgress += (targetProgress - animatedProgress)
+                * Math.min(1f, deltaTicks * 0.3f);
 
-            // 计算HUD位置（屏幕右侧）
-            int hudX = screenWidth - HUD_WIDTH - 10;
-            int hudY = (screenHeight - HUD_HEIGHT) / 2;
+        int height = 10;
 
-            // 绘制半透明背景
-            guiGraphics.fill(hudX, hudY, hudX + HUD_WIDTH, hudY + HUD_HEIGHT, BACKGROUND_COLOR);
+        g.fill(x, y, x + width, y + height, BAR_BG);
 
-            // 绘制进度条背景
-            int progressBarX = hudX + 10;
-            int progressBarY = hudY + 20;
-            guiGraphics.fill(progressBarX, progressBarY,
-                    progressBarX + PROGRESS_BAR_WIDTH,
-                    progressBarY + PROGRESS_BAR_HEIGHT,
-                    PROGRESS_BAR_BG_COLOR);
+        int filled = (int) (width * animatedProgress);
 
-            // 绘制进度条填充
-            float progress = part.getAssemblingProgress();
-            int fillHeight = (int)(PROGRESS_BAR_HEIGHT * progress);
-            guiGraphics.fill(progressBarX, progressBarY + PROGRESS_BAR_HEIGHT - fillHeight,
-                    progressBarX + PROGRESS_BAR_WIDTH,
-                    progressBarY + PROGRESS_BAR_HEIGHT,
-                    PROGRESS_BAR_FILL_COLOR);
+        int fillColor = lerpColor(0xFF4A90E2, 0xFF6AFF6A, animatedProgress);
+        g.fill(x, y, x + filled, y + height, fillColor);
 
-            // 绘制进度百分比文本
-            String progressText = String.format("%.0f%%", progress * 100);
-            guiGraphics.drawString(Minecraft.getInstance().font, progressText,
-                    progressBarX + PROGRESS_BAR_WIDTH - 10,
-                    progressBarY + PROGRESS_BAR_HEIGHT / 2 - 4,
-                    TEXT_COLOR);
+        String percent = Math.round(animatedProgress * 100) + "%";
+        int textW = Minecraft.getInstance().font.width(percent);
 
-            // 绘制材料需求
-            List<IngredientCountPair> ingredientPairs = recipe.getIngredientPairs();
-
-            // 计算材料进度
-            int totalMaterialSteps = recipe.getIngredientList().size();
-            int currentMaterialProgress = part.getMaterialProgress();
-
-            // 绘制每个材料需求
-            int materialY = progressBarY;
-            int materialX = progressBarX + PROGRESS_BAR_WIDTH + 30;
-
-            // 获取玩家背包（用于检查已有材料数量）
-            LocalPlayer player = Minecraft.getInstance().player;
-            boolean isCreative = player != null && player.isCreative();
-
-            for (int i = 0; i < ingredientPairs.size(); i++) {
-                IngredientCountPair pair = ingredientPairs.get(i);
-                Ingredient ingredient = pair.ingredient();
-                int requiredCount = pair.count();
-
-                // 计算该材料对应的进度位置
-                // 首先计算该材料之前的进度步骤数
-                int previousSteps = 0;
-                for (int j = 0; j < i; j++) {
-                    previousSteps += ingredientPairs.get(j).count();
-                }
-
-                // 计算该材料结束的进度位置
-                float endProgress = (float) (previousSteps + requiredCount) / totalMaterialSteps;
-
-                // 在进度条上的Y坐标
-                int endY = progressBarY + PROGRESS_BAR_HEIGHT - (int)(PROGRESS_BAR_HEIGHT * endProgress);
-
-                // 当前材料进度
-                int currentStepInThisMaterial = Math.max(0, Math.min(requiredCount,
-                        currentMaterialProgress - previousSteps));
-
-                // 绘制连接到进度条的线
-                int lineX1 = progressBarX + PROGRESS_BAR_WIDTH;
-                int lineY1 = endY + MATERIAL_ITEM_SIZE / 2;
-                int lineX2 = materialX - 5;
-
-                // 绘制虚线
-                guiGraphics.hLine(lineX1, lineX2, lineY1, LINE_COLOR);
-
-                // 绘制材料图标
-                ItemStack[] matchingStacks = ingredient.getItems();
-                if (matchingStacks.length > 0) {
-                    ItemStack displayStack = matchingStacks[0].copy();
-                    displayStack.setCount(requiredCount);
-
-                    // 渲染物品图标
-                    guiGraphics.renderItem(displayStack, materialX, endY);
-
-                    // 渲染物品数量（在物品右下角）
-                    guiGraphics.renderItemDecorations(Minecraft.getInstance().font,
-                            displayStack, materialX, endY);
-
-                    // 计算玩家已有数量
-                    int playerHasCount = 0;
-                    if (isCreative) {
-                        playerHasCount = Integer.MAX_VALUE; // 创造模式显示∞
-                    } else if (player != null) {
-                        for (ItemStack stack : player.getInventory().items) {
-                            if (!stack.isEmpty() && ingredient.test(stack)) {
-                                playerHasCount += stack.getCount();
-                            }
-                        }
-                    }
-
-                    // 绘制数量文本
-                    String countText;
-                    if (isCreative) {
-                        countText = requiredCount + "/∞";
-                    } else {
-                        countText = requiredCount + "/" + playerHasCount;
-                    }
-
-                    // 根据是否足够改变颜色
-                    int countColor = (playerHasCount >= requiredCount) ? 0xFF00FF00 : 0xFFFF0000;
-
-                    guiGraphics.drawString(Minecraft.getInstance().font, countText,
-                            materialX + MATERIAL_ITEM_SIZE + 5,
-                            materialY + 4,
-                            countColor);
-
-                    // 绘制材料进度（已完成/总共）
-                    String materialProgressText = currentStepInThisMaterial + "/" + requiredCount;
-                    int progressColor = (currentStepInThisMaterial == requiredCount) ? 0xFF00FF00 : 0xFFFFFF00;
-
-                    guiGraphics.drawString(Minecraft.getInstance().font, materialProgressText,
-                            materialX + MATERIAL_ITEM_SIZE + 5,
-                            materialY + 14,
-                            progressColor);
-                }
-
-                materialY += MATERIAL_ITEM_SPACING;
-            }
-
-            // 绘制部件名称
-            String partName = Component.translatable(part.type.getRegistryKey().toLanguageKey()).getString();
-            guiGraphics.drawCenteredString(Minecraft.getInstance().font, partName,
-                    hudX + HUD_WIDTH / 2,
-                    hudY + 5,
-                    TEXT_COLOR);
-        }
+        g.drawString(
+                Minecraft.getInstance().font,
+                percent,
+                x + width / 2 - textW / 2,
+                y + height / 2 - 4,
+                TEXT_MAIN,
+                false
+        );
     }
 
+    /* ================== 材料行 ================== */
+
     /**
-     * 绘制虚线
+     * 绘制单个材料条目：
+     * - 行底色反映状态
+     * - 上层填充条反映材料消耗进度
+     * - 填充条带轻微颜色渐变
      */
-    private void drawDottedLine(GuiGraphics guiGraphics, int x1, int y1, int x2, int y2, int color) {
-        PoseStack poseStack = guiGraphics.pose();
-        poseStack.pushPose();
+    private void drawMaterialRow(
+            GuiGraphics g,
+            net.minecraft.client.gui.Font font,
+            int hudX,
+            int y,
+            MaterialStatus m
+    ) {
+        int rowX = hudX + PADDING;
+        int rowW = HUD_WIDTH - PADDING * 2;
+        int rowH = LINE_HEIGHT - 2;
 
-        // 计算线段长度和方向
-        float dx = x2 - x1;
-        float dy = y2 - y1;
-        float distance = (float)Math.sqrt(dx * dx + dy * dy);
-
-        if (distance > 0) {
-            // 绘制虚线（每段4像素，间隔2像素）
-            float step = 6; // 虚线段长度+间隔
-            int segments = (int)(distance / step);
-
-            for (int i = 0; i < segments; i++) {
-                float startRatio = (i * step) / distance;
-                float endRatio = ((i * step) + 4) / distance; // 4像素实线
-
-                if (endRatio > 1) endRatio = 1;
-
-                int segX1 = (int)(x1 + dx * startRatio);
-                int segY1 = (int)(y1 + dy * startRatio);
-                int segX2 = (int)(x1 + dx * endRatio);
-                int segY2 = (int)(y1 + dy * endRatio);
-
-                guiGraphics.hLine(segX1, segX2, segY1, color);
-            }
+        int baseColor;
+        if (m.lacking()) {
+            baseColor = ROW_BG_LACK;
+        } else if (m.consuming) {
+            baseColor = ROW_BG_ACTIVE;
+        } else if (m.completed()) {
+            baseColor = ROW_BG_LIGHT;
+        } else {
+            baseColor = ROW_BG_DARK;
         }
 
-        poseStack.popPose();
+        /* 底层背景 */
+        g.fill(rowX, y, rowX + rowW, y + rowH, baseColor);
+
+        /* 消耗进度填充 */
+        int fillW = (int) (rowW * m.progress());
+        if (fillW > 0) {
+            int fillColor = lerpColor(
+                    brighten(baseColor, 1.3f),
+                    brighten(baseColor, 0.7f),
+                    m.progress()
+            );
+            g.fill(rowX, y, rowX + fillW, y + rowH, fillColor);
+        }
+
+        ItemStack icon = m.pair.ingredient().getItems()[0];
+        g.renderItem(icon, rowX + 2, y + 1);
+
+        int textColor = m.completed() ? TEXT_MAIN : TEXT_DIM;
+
+        g.drawString(font,
+                icon.getHoverName().getString(),
+                rowX + 22,
+                y + 5,
+                textColor,
+                false);
+
+        g.drawString(font,
+                String.valueOf(m.required()),
+                rowX + rowW - 46,
+                y + 5,
+                TEXT_SUB,
+                false);
+
+        if (m.completed()) {
+            g.drawString(font, "✔", rowX + rowW - 30, y + 5, TEXT_MAIN, false);
+        }
+
+        String inv = m.inventory == Integer.MAX_VALUE ? "∞" : String.valueOf(m.inventory);
+        g.drawString(font, inv, rowX + rowW - 16, y + 5, TEXT_SUB, false);
+    }
+
+    /* ================== 材料状态构建 ================== */
+
+    /**
+     * 根据配方、装配进度和库存构建材料状态列表
+     */
+    private List<MaterialStatus> buildMaterialStatus(
+            FabricatingRecipe recipe,
+            Part part,
+            LocalPlayer player
+    ) {
+        List<MaterialStatus> list = new ArrayList<>();
+
+        int consumedTotal = part.getMaterialProgress();
+
+        for (IngredientCountPair pair : recipe.getIngredientPairs()) {
+            int required = pair.count();
+            int consumed = Math.min(required, consumedTotal);
+
+            boolean consuming = consumedTotal > 0 && consumedTotal < required;
+            consumedTotal -= consumed;
+
+            int inventory = 0;
+            if (player.isCreative()) {
+                inventory = Integer.MAX_VALUE;
+            } else {
+                for (ItemStack stack : player.getInventory().items) {
+                    if (!stack.isEmpty() && pair.ingredient().test(stack)) {
+                        inventory += stack.getCount();
+                    }
+                }
+            }
+
+            list.add(new MaterialStatus(pair, consumed, inventory, consuming));
+        }
+        return list;
+    }
+
+    /* ================== 工具方法 ================== */
+
+    /** 颜色线性插值 */
+    private int lerpColor(int a, int b, float t) {
+        t = Math.max(0f, Math.min(1f, t));
+        int ar = (a >> 16) & 0xFF, ag = (a >> 8) & 0xFF, ab = a & 0xFF;
+        int br = (b >> 16) & 0xFF, bg = (b >> 8) & 0xFF, bb = b & 0xFF;
+        return 0xFF000000 |
+                ((int) (ar + (br - ar) * t) << 16) |
+                ((int) (ag + (bg - ag) * t) << 8) |
+                (int) (ab + (bb - ab) * t);
+    }
+
+    /** 简单提亮颜色 */
+    private int brighten(int color, float factor) {
+        int r = Math.min(255, (int) (((color >> 16) & 0xFF) * factor));
+        int g = Math.min(255, (int) (((color >> 8) & 0xFF) * factor));
+        int b = Math.min(255, (int) ((color & 0xFF) * factor));
+        return (color & 0xFF000000) | (r << 16) | (g << 8) | b;
     }
 }

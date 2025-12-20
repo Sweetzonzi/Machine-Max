@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
+import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
@@ -15,6 +16,10 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageSources;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -47,10 +52,12 @@ public class WeldingTorchItem extends Item {
         if (livingEntity instanceof Player player) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getSubPart();
+            Entity entity = eyesight.getEntity();
             if (subPart != null) {
                 if (!level.isClientSide()) { // 服务端负责实际数值的更新
                     stack.hurtAndBreak(1, livingEntity, EquipmentSlot.MAINHAND);
-                    if (remainingUseDuration % 5 != 0) return;
+                    if (getUseDuration(stack, livingEntity) - remainingUseDuration < 10 || remainingUseDuration % 5 != 0)
+                        return;
                     Part part = subPart.part;
                     if (!livingEntity.isCrouching() && !subPart.destroyed) { // 一般状态下组装部件并尝试维修
                         part.assemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);
@@ -96,9 +103,57 @@ public class WeldingTorchItem extends Item {
                             );
                         }
                         playWeldingSound(level, player, 1.0f, 1.0f);
-                    } else playWeldingSound(level, player, 1.5f, 0.5f);
+                    } else {
+                        if (Math.random() < 0.1) {
+                            level.addParticle(
+                                    ParticleTypes.FIREWORK,
+                                    player.getEyePosition().x,
+                                    player.getEyePosition().y,
+                                    player.getEyePosition().z,
+                                    0.2 * (Math.random() - 0.5),
+                                    0.2 * (Math.random() - 0.5),
+                                    0.2 * (Math.random() - 0.5)
+                            );
+                        }
+                        playWeldingSound(level, player, 1.5f, 0.3f);
+                    }
                 }
-            } else if (level.isClientSide()) playWeldingSound(level, player, 1.5f, 0.5f);
+            } else if (entity != null) {
+                if (!level.isClientSide()) {
+                    stack.hurtAndBreak(1, livingEntity, EquipmentSlot.MAINHAND);
+                    if (getUseDuration(stack, livingEntity) - remainingUseDuration < 10) return; // 0.5秒预热时间
+                    DamageSource damageSource = level.damageSources().source(DamageTypes.IN_FIRE, player);
+                    entity.hurt(damageSource, 0.1f);
+                    if (entity instanceof LivingEntity living) living.invulnerableTime = 0;
+                    entity.igniteForSeconds(3);
+                } else {
+                    for (int i = 0; i < 5; i++) {
+                        level.addParticle(
+                                ParticleTypes.FIREWORK,
+                                entity.getX(),
+                                entity.getY(),
+                                entity.getZ(),
+                                1.5 * (Math.random() - 0.5),
+                                1.5 * (Math.random() - 0.5),
+                                1.5 * (Math.random() - 0.5)
+                        );
+                    }
+                    playWeldingSound(level, player, 1.0f, 1.0f);
+                }
+            } else if (level.isClientSide()) {
+                if (Math.random() < 0.1) {
+                    level.addParticle(
+                            ParticleTypes.FIREWORK,
+                            player.getEyePosition().x,
+                            player.getEyePosition().y,
+                            player.getEyePosition().z,
+                            0.2 * (Math.random() - 0.5),
+                            0.2 * (Math.random() - 0.5),
+                            0.2 * (Math.random() - 0.5)
+                    );
+                }
+                playWeldingSound(level, player, 1.5f, 0.3f);
+            }
         }
     }
 
