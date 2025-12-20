@@ -19,6 +19,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.network.payload.SubsystemInteractPayload;
@@ -34,6 +35,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -47,6 +49,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class LivingEntityEyesightAttachment implements PhysicsCollisionListener {
     public final LivingEntity owner;
     public final PhysicsGhostObject trigger;
+    private Vector3f startPos;
+    private Vector3f view;
+    private Vector3f endPos;
     private final ConcurrentMap<PhysicsRigidBody, PhysicsRayTestResult> targets = new ConcurrentHashMap<>(2);
     private final List<PhysicsRigidBody> sortedTargets = new LinkedList<>();
     private final CopyOnWriteArraySet<InteractBox> fastInteractBoxes = new CopyOnWriteArraySet<>();
@@ -74,15 +79,15 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             LivingEntityEyesightAttachment eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT().get());
             eyesight.eyesightRange = entity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE);//更新射线距离
             if (eyesight.eyesightRange <= 0) return;
+            eyesight.startPos = PhysicsHelperKt.toBVector3f(entity.getEyePosition());
+            eyesight.view = PhysicsHelperKt.toBVector3f(entity.getForward().normalize().scale(eyesight.eyesightRange));
+            eyesight.endPos = eyesight.startPos.add(eyesight.view);
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
                 eyesight.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
-                Vector3f startPos = PhysicsHelperKt.toBVector3f(entity.getEyePosition());
-                Vector3f view = PhysicsHelperKt.toBVector3f(entity.getForward().normalize().scale(eyesight.eyesightRange));
-                Vector3f endPos = startPos.add(view);
                 eyesight.targets.clear();//清空射线检测结果列表
                 eyesight.sortedTargets.clear();//清空排序后的射线检测结果列表
                 eyesight.accurateInteractBoxes.clear();//清空交互判定区列表
-                var rayTestResults = level.getPhysicsLevel().getWorld().rayTest(startPos, endPos);
+                var rayTestResults = level.getPhysicsLevel().getWorld().rayTest(eyesight.startPos, eyesight.endPos);
                 rayTestResults.forEach(//获取射线命中物体
                         result -> {
                             PhysicsCollisionObject object = result.getCollisionObject();
@@ -190,6 +195,26 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     }
 
     /**
+     * 获取命中点坐标
+     *
+     * @param result 射线检测结果
+     * @return 命中点坐标
+     */
+    public Vector3f getHitPoint(PhysicsRayTestResult result) {
+        return startPos.add(view.mult(result.getHitFraction()));
+    }
+
+    /**
+     * 获取命中点坐标
+     *
+     * @param hitFraction 命中点距离起点的比例
+     * @return 命中点坐标
+     */
+    public Vector3f getHitPoint(float hitFraction) {
+        return startPos.add(view.mult(hitFraction));
+    }
+
+    /**
      * 获取指向的最近的实体，如果没有则返回null
      *
      * @return 线段命中的最近的实体
@@ -203,6 +228,22 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             }
         }
         return null;
+    }
+
+    /**
+     * 获取射线检测命中的零件的碰撞箱，如果没有则返回null
+     *
+     * @return 射线检测命中的零件的碰撞箱
+     */
+    @Nullable
+    public HitBox getHitBox() {
+        HitBox result = null;
+        for (PhysicsRigidBody body : sortedTargetsCache) {
+            if (PhysicsBodyExtensionKt.getOwner(body) != null && PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart) {
+                result = subPart.getHitBox(getTargetsCache().get(body).triangleIndex());
+            }
+        }
+        return result;
     }
 
     public InteractBox getAccurateInteractBox() {

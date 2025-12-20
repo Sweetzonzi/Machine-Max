@@ -94,6 +94,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             int group = pco.getCollisionGroup();
             if (group == CollisionGroups.PHYSICS_BODY) {
                 if (PhysicsBodyExtensionKt.getOwner(pco) instanceof SubPart subPart) {
+                    if (subPart.part.getAssemblingProgress() <= 0) continue; // 未组装时不检测碰撞
                     if (result.getHitFraction() < hitFraction) {
                         normal = SparkMathKt.toVec3(result.getHitNormalLocal(null).normalize());
                         hitFraction = result.getHitFraction();

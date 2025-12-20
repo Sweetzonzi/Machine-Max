@@ -888,6 +888,46 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     /**
+     * <p>维修零件和子系统并加固对接口</p>
+     * <p>Repairs the sub-part and subsystems and strengthen the connectors</p>
+     *
+     * @param amount          零件维修量 (>0) sub-part repair amount (>0)
+     * @param subSystemAmount 子系统维修量 (>0) subsystem repair amount (>0)
+     * @param connectorAmount 对接口结构完整性加固量 (>0) connector integrity strengthen amount (>0)
+     * @return 是否成功修理
+     */
+    public boolean repair(float amount, float subSystemAmount, float connectorAmount) {
+        if (!level.isClientSide) {
+            // 修理零件
+            //TODO: 传递修复至载具
+            float repairAmount = Math.min(Math.max(amount, 0), getMaxDurability() - getDurability());
+            float subsystemsRepairAmount = Math.max(subSystemAmount, 0);
+            float connectorsRepairAmount = Math.max(connectorAmount, 0);
+            setDurability(getDurability() + repairAmount);
+            // 修理子系统
+            for (AbstractSubsystem subsystem : subsystems.values()) {
+                if (subsystemsRepairAmount <= 0) break;
+                if (subsystem.getDurability() < subsystem.getMaxDurability()) {
+                    float subSystemRepairAmount = Math.min(subsystemsRepairAmount, subsystem.getMaxDurability() - subsystem.getDurability());
+                    subsystem.setDurability(subsystem.getDurability() + subSystemRepairAmount);
+                    subsystemsRepairAmount -= subSystemRepairAmount;
+                }
+            }
+            // 加固对接口
+            for (AbstractConnector connector : connectors.values()) {
+                if (connectorsRepairAmount <= 0) break;
+                if (connector.getIntegrity() < connector.getBasicIntegrity()) {
+                    float connectorRepairAmount = Math.min(connectorsRepairAmount, connector.getBasicIntegrity() - connector.getIntegrity());
+                    connector.addIntegrity(connector.getIntegrity() + connectorRepairAmount);
+                    connectorsRepairAmount -= connectorRepairAmount;
+                }
+            }
+            syncToClient();
+            return !(repairAmount == 0 && subSystemAmount == subsystemsRepairAmount && connectorAmount == connectorsRepairAmount);
+        } else return false;
+    }
+
+    /**
      * <p>处理各线程造成的伤害并相应对子系统造成伤害，在主线程中统一处理，参见 {@link DestroyableObject#preTick()}</p>
      * <p>Handles the damage caused by each thread and applies it to the subsystem, which will be handled in the main thread, see {@link DestroyableObject#preTick()}</p>
      */
@@ -910,10 +950,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //发包同步部件状态
             syncToClient();
             //播放音效
-            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"), 64f);
-            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, soundPos, Vec3.ZERO,
-                    (float) ((2 - 2 * Math.min(0.5f * getMaxDurability(), totalDamage) / getMaxDurability()) * (1f + 0.2f * (Math.random() - 0.5f))),
-                    0.2f + 0.8f * 2 * Math.min(0.5f * getMaxDurability(), totalDamage) / getMaxDurability());
+            if (totalDamage > 0) {
+                SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"), 64f);
+                SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, soundPos, Vec3.ZERO,
+                        (float) ((2 - 2 * Math.min(0.5f * getMaxDurability(), totalDamage) / getMaxDurability()) * (1f + 0.2f * (Math.random() - 0.5f))),
+                        0.2f + 0.8f * 2 * Math.min(0.5f * getMaxDurability(), totalDamage) / getMaxDurability());
+            }
         }
     }
 

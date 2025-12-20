@@ -11,7 +11,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
 import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabicatingBlueprintItem
-import io.github.sweetzonzi.machine_max.common.item.prop.WrenchItem
+import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
@@ -76,11 +76,11 @@ object MMItems {
         factory = { CrowbarItem() }
     }
 
-    //扳手，用于修复和组装载具部件，也可作为武器
+    //焊枪，用于修复和组装载具部件，也可作为武器
     @JvmStatic
     val WRENCH_ITEM = MachineMax.REGISTER.item{
-        id="wrench"
-        factory = { WrenchItem() }
+        id="welding_torch"
+        factory = { WeldingTorchItem() }
     }
 
     //油漆喷罐，为部件切换贴图
