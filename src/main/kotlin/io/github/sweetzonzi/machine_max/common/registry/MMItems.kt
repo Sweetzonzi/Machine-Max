@@ -78,7 +78,7 @@ object MMItems {
 
     //焊枪，用于修复和组装载具部件，也可作为武器
     @JvmStatic
-    val WRENCH_ITEM = MachineMax.REGISTER.item{
+    val WELDING_TORCH_ITEM = MachineMax.REGISTER.item{
         id="welding_torch"
         factory = { WeldingTorchItem() }
     }

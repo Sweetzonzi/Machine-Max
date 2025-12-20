@@ -25,7 +25,7 @@ object MMCreativeTabs {
                 .displayItems { _, output ->
                     output.accept(MMItems.FABRICATOR_BLOCK_ITEM.get())
                     output.accept(MMItems.CROWBAR_ITEM.get())
-                    output.accept(MMItems.WRENCH_ITEM.get())
+                    output.accept(MMItems.WELDING_TORCH_ITEM.get())
                     output.accept(MMItems.SPRAY_CAN_ITEM.get())
                     output.accept(MMItems.EMPTY_BLUEPRINT.get())
                     //材料

@@ -83,14 +83,14 @@ public class Part {
      */
     public Part(PartType partType, @Nullable String variantName, Level level) {
         if (variantName == null) variantName = "default";
-        this.name = partType.getName();
+        this.name = Component.translatable(partType.getRegistryKey().toLanguageKey()).getString();
         this.type = partType;
         this.variantName = variantName;
         this.variant = partType.getVariants().get(variantName);
         this.level = level;
         this.uuid = UUID.randomUUID();
         this.sharedDurability = getSharedMaxDurability();
-        this.rootSubPart = createSubParts(variant.subParts());//创建子部件并指定根子部件
+        this.rootSubPart = createSubParts(variant.getSubParts());//创建子部件并指定根子部件
         updateMass();
     }
 
@@ -120,7 +120,7 @@ public class Part {
         this.variantName = data.variant;
         this.variant = type.getVariants().get(variantName);
         this.uuid = UUID.fromString(data.uuid);
-        this.rootSubPart = createSubParts(type.getVariants().get(variantName).subParts());//重建子部件并指定根子部件
+        this.rootSubPart = createSubParts(type.getVariants().get(variantName).getSubParts());//重建子部件并指定根子部件
         this.assemblingProgress = readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f;
         this.materialProgress = readAdditionalData ? Math.max(data.materialAssemblingProgress, 0) : 0;
         this.sharedDurability = readAdditionalData ? Math.min(data.sharedDurability, getSharedMaxDurability()) : getSharedMaxDurability();
@@ -258,13 +258,13 @@ public class Part {
                                     posRot
                             );
                     default ->
-                            throw new NullPointerException(Component.translatable("error.machine_max.part.invalid_connector_type", type.name, connectorName, connectorAttr.type()).getString());
+                            throw new NullPointerException(Component.translatable("error.machine_max.part.invalid_connector_type", type.getRegistryKey(), connectorName, connectorAttr.type()).getString());
                 };
                 subPart.connectors.put(connectorName, connector);
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
-                throw new NullPointerException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.name, connectorName, connectorAttr.locatorName()).getString());
+                throw new NullPointerException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey(), connectorName, connectorAttr.locatorName()).getString());
         }
     }
 
@@ -497,7 +497,7 @@ public class Part {
     @Nullable
     public FabricatingRecipe getRecipe() {
         try {
-            RecipeHolder<?> recipeHolder = level.getRecipeManager().byKey(type.registryKey).orElseThrow();
+            RecipeHolder<?> recipeHolder = level.getRecipeManager().byKey(type.getRegistryKey()).orElseThrow();
             if (recipeHolder.value() instanceof FabricatingRecipe recipe) {
                 return recipe;
             } else return null;
@@ -536,7 +536,7 @@ public class Part {
 
     public void updateMass() {
         float totalMass = 0;
-        for (SubPartAttr subPart : type.getVariants().get(variantName).subParts().values()) {
+        for (SubPartAttr subPart : type.getVariants().get(variantName).getSubParts().values()) {
             totalMass += subPart.mass;
         }
         this.totalMass = totalMass;

@@ -8,7 +8,7 @@
   "variants": { //部件变体列表，可有多个变体名和模型路径的键值对
     "icon": "machine_max:textures/icon/mini_ev_hull_icon.png", //(可选，留空会使用第一张模型贴图)部件图标路径
     "models": "machine_max:mini_ev_hull.geo",
-    "textures": [//部件可用贴图列表
+    "textures": [ //贴图路径列表
       "machine_max:textures/part/mini_ev_ae86.png",
       "machine_max:textures/part/mini_ev_black.png",
       "machine_max:textures/part/mini_ev_brown.png",

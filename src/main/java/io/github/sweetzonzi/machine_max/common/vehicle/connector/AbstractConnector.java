@@ -58,23 +58,23 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Getter
 public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder {
-    public final String name;//接口名称
-    public final SubPart subPart;//接口所属的零件
+    public final String name;//连接点名称
+    public final SubPart subPart;//连接点所属的零件
     public final boolean collideBetweenParts;//是否允许零件间碰撞
-    public final boolean internal;//是否为内部接口
-    public final ConnectorAttr attr;//接口属性
-    public New6Dof joint;//在两个对接口间共享的关节
-    public final SignalPort signalPort;//接口资源/信号传输端口
+    public final boolean internal;//是否为内部连接点
+    public final ConnectorAttr attr;//连接点属性
+    public New6Dof joint;//在两个连接点间共享的关节
+    public final SignalPort signalPort;//连接点资源/信号传输端口
     protected static final EntityDataAccessor<Float> DATA_INTEGRITY_ID = SynchedEntityData.defineId(AbstractConnector.class, EntityDataSerializers.FLOAT);
     protected final SynchedEntityData synchedData;
     protected final ConcurrentLinkedQueue<Float> accumulatedImpact = new ConcurrentLinkedQueue<>();
     protected final ConcurrentLinkedQueue<Float> accumulatedIntegrityChange = new ConcurrentLinkedQueue<>();
-    public final boolean breakable;//对接口是否可被破坏
+    public final boolean breakable;//连接点是否可被破坏
     @Setter
-    public AbstractConnector attachedConnector;//与本接口对接的接口
+    public AbstractConnector attachedConnector;//与本连接点对接的连接点
     public final Transform offsetFromMassCenter;//被安装零件的连接点相对本部件质心的位置与姿态
-    public final CollisionShape shape = new BoxCollisionShape(0.25f);//接口碰撞形状
-    public PhysicsRigidBody body;//部件接口安装判定区
+    public final CollisionShape shape = new BoxCollisionShape(0.25f);//连接点碰撞形状
+    public PhysicsRigidBody body;//部件连接点安装判定区
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
 
     protected AbstractConnector(String name, ConnectorAttr attr, SubPart subPart, Transform offsetFromMassCenter) {
@@ -134,7 +134,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     /**
-     * <p>线程安全地改变接口结构完整性，会被在主线程统一处理，参见 {@link #handleAccumulatedIntegrityChange()}</p>
+     * <p>线程安全地改变连接点结构完整性，会被在主线程统一处理，参见 {@link #handleAccumulatedIntegrityChange()}</p>
      * <p>Thread-safe change of the interface structure integrity, which will be handled in the main thread, see {@link #handleAccumulatedIntegrityChange()}</p>
      *
      * @param integrity 结构完整性改变量，可小于0 delta of the structure integrity, can be negative
@@ -158,7 +158,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     /**
-     * <p>处理各线程对接口造成的完整性改变量，在主线程中统一处理，参见 {@link #mcTick()}</p>
+     * <p>处理各线程连接点造成的完整性改变量，在主线程中统一处理，参见 {@link #mcTick()}</p>
      * <p>Handles the integrity change caused by other threads to the connector, which will be handled in the main thread, see {@link #mcTick()}</p>
      */
     protected void handleAccumulatedIntegrityChange() {
@@ -174,7 +174,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     /**
-     * <p>处理各线程对对接口造成的冲击，在主线程中统一处理，参见 {@link #mcTick()}</p>
+     * <p>处理各线程对连接点造成的冲击，在主线程中统一处理，参见 {@link #mcTick()}</p>
      * <p>Handles the impact caused by other threads to the connector, which will be handled in the main thread, see {@link #mcTick()}</p>
      */
     protected void handleAccumulatedImpact() {
@@ -206,24 +206,24 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     /**
-     * 进行安装条件检查(可选)，尝试将对方接口对接到本接口上
-     * 特别地，所有类型的接口都仅可与连接点接口连接
+     * 进行安装条件检查(可选)，尝试将对方连接点对接到本连接点上
+     * 特别地，所有类型的连接点都仅可与连接点连接点连接
      *
-     * @param targetConnector 要对接的接口
+     * @param targetConnector 要对接的连接点
      * @param force           是否跳过安装条件检查，强制安装
      * @return 是否成功安装
      */
     public boolean attach(AttachPointConnector targetConnector, boolean force) {
         if (hasPart()) {
-            MachineMax.LOGGER.error("零件安装失败，对接口{}已被占用！", this.getName());
+            MachineMax.LOGGER.error("零件安装失败，连接点{}已被占用！", this.getName());
             return false;
         }
         if (targetConnector.hasPart()) {
-            MachineMax.LOGGER.error("零件安装失败，对接口{}已被占用！", targetConnector.getName());
+            MachineMax.LOGGER.error("零件安装失败，连接点{}已被占用！", targetConnector.getName());
             return false;
         }
         if ((!conditionCheck(targetConnector.subPart.part) || !targetConnector.conditionCheck(this.subPart.part) && !force)) {
-            MachineMax.LOGGER.error("零件安装失败，零件不符合对接口安装条件！");
+            MachineMax.LOGGER.error("零件安装失败，零件不符合连接点安装条件！");
             return false;
         } else {
             if (!NeoForge.EVENT_BUS.post(new ConnectorAttachEvent.Pre(this, targetConnector)).isCanceled()) {
@@ -241,10 +241,10 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     /**
-     * 进行安装条件检查，尝试将对方接口对接到本接口上
-     * 特别地，所有类型的接口都仅可与连接点接口连接
+     * 进行安装条件检查，尝试将对方连接点对接到本连接点上
+     * 特别地，所有类型的连接点都仅可与一般连接点连接
      *
-     * @param targetConnector 要对接的接口
+     * @param targetConnector 要对接的连接点
      */
     public boolean attach(AttachPointConnector targetConnector) {
         return this.attach(targetConnector, false);
@@ -296,7 +296,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     if (jointAttr.stiffness() != null) {
                         float maxStiffness = 4 * m_eff / (1f / 60f / 60f);  // 稳定性条件: k_max = 4·m_eff/Δt²
                         if (jointAttr.stiffness() > maxStiffness)
-                            MachineMax.LOGGER.warn("接口{}(部件{})与接口{}(部件{})的{}轴的刚度值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.stiffness(), maxStiffness);
+                            MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的刚度值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.stiffness(), maxStiffness);
                         joint.set(MotorParam.Stiffness, i, Math.min(jointAttr.stiffness(), maxStiffness));
                         joint.enableSpring(i, true);
                     }
@@ -310,7 +310,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                         if (jointAttr.damping() > maxDamping) {
                             joint.set(MotorParam.MotorErp, i, 0.5f);
                             joint.set(MotorParam.StopErp, i, 0.2f);
-                            MachineMax.LOGGER.warn("接口{}(部件{})与接口{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.damping(), maxDamping);
+                            MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.damping(), maxDamping);
                         }
                         joint.set(MotorParam.Damping, i, Math.min(jointAttr.damping(), maxDamping));
                         joint.set(MotorParam.MotorCfm, i, 1e-4f);
@@ -325,8 +325,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     /**
-     * 将此接口连接的零件从此接口拆下
-     * 特别地，部件内零件之间的内部接口不允许被断开连接
+     * 将此连接点连接的零件从此连接点拆下
+     * 特别地，部件内零件之间的内部连接点不允许被断开连接
      */
     public void detach(boolean destroy) {
         if ((destroy || !internal) && hasPart()) {
@@ -386,21 +386,21 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     /**
-     * 检查给定零件是否符合本接口的安装要求
+     * 检查给定零件是否符合本连接点的安装要求
      *
      * @param part 要检查的待安装部件
-     * @return 给定零件是否满足当前接口安装条件
+     * @return 给定零件是否满足当前连接点安装条件
      */
     public boolean conditionCheck(Part part) {
         return conditionCheck(part.type, part.variantName);
     }
 
     /**
-     * 检查给定零件是否符合本接口的安装要求
+     * 检查给定零件是否符合本连接点的安装要求
      *
      * @param partType 要检查的待安装部件的类型
      * @param variant  要检查的待安装部件的变体类型
-     * @return 给定零件是否满足当前接口安装条件
+     * @return 给定零件是否满足当前连接点安装条件
      */
     public boolean conditionCheck(PartType partType, String variant) {
         if (!this.hasPart()) {
@@ -409,7 +409,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     /**
-     * 检查该接口是否安装了零件
+     * 检查该连接点是否安装了零件
      *
      * @return 检查结果
      */
@@ -487,7 +487,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     private void createAttachPointBody(Vector3f position, Quaternion rotation) {
-        if (!internal && this.body == null) {//为与外部部件连接的接口创建碰撞判定，供玩家通过视线选取
+        if (!internal && this.body == null) {//为与外部部件连接的连接点创建碰撞判定，供玩家通过视线选取
             body = new PhysicsRigidBody(shape, PhysicsBody.massForStatic);
             PhysicsBodyExtensionKt.setOwner(this.body, this);
             body.setProtectGravity(true);

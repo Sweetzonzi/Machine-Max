@@ -47,6 +47,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("error.machine_max.item_storage_subsystem.invalid_row_num", "The row number of item-storage subsystem must be greater than 1");
         this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "The column number of item-storage subsystem must be greater than 1");
         //Part assembly exception handler
+        this.add("error.machine_max.part.model_not_found", "Model file not found at: %1$s");
         this.add("error.machine_max.part.connector_locator_not_found", "Failed to find locator %2$s's locator %3$s in the model of part %1$");
         this.add("error.machine_max.part.invalid_connector_type", "Invalid locator type: \"%3$s\" in part: %1$: %2$s, must be \"Special\" or \"AttachPoint\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "Illegal internal locator connection between %2$s and %3$s in part %1$s. Only at most one \"Special\" locator is allowed");

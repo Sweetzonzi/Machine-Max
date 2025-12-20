@@ -49,6 +49,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -76,13 +77,14 @@ public class PartItem extends Item implements ICustomModelItem {
         if (!level.isClientSide()) {
             try {
                 PartType partType = getPartType(stack, level);//获取物品保存的部件类型
-                PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
-                String variant = info.variant();//获取物品保存的部件变体
-                var subpart_connector = info.connector();//获取物品保存的部件接口
-                String connectorType = info.connectorType();//获取物品保存的部件接口类型
+                if (partType == null) return InteractionResultHolder.pass(stack);
+                PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, partType);//获取物品保存的组装信息
+                String variant = info.getVariant();//获取物品保存的部件变体
+                var subpart_connector = info.getConnector();//获取物品保存的部件接口
+                String connectorType = info.getConnectorType();//获取物品保存的部件接口类型
                 var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
                 AbstractConnector targetConnector = eyesight.getConnector();
-                if (targetConnector != null) {//若有可用的接口
+                if (targetConnector != null && subpart_connector!= null) {//若有可用的接口
                     if (targetConnector.conditionCheck(partType, variant)) {//检查变体条件
                         //TODO:检查connectorType，骑乘姿态拆卸零件后这一内容会变null
                         if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
@@ -94,8 +96,8 @@ public class PartItem extends Item implements ICustomModelItem {
                             var pos = part.rootSubPart.getPosition();
                             stack.consume(1, player);
                             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
-                            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
-                            ((ServerLevel)level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.2f);
+                            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
+                            ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.2f);
                             return InteractionResultHolder.consume(stack);
                         } else return InteractionResultHolder.pass(stack);
                     } else return InteractionResultHolder.pass(stack);
@@ -113,8 +115,8 @@ public class PartItem extends Item implements ICustomModelItem {
                     ObjectManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
                     stack.consume(1, player);
                     SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random()-0.5f)), 1.0f);
-                    ((ServerLevel)level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
+                    ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
                     return InteractionResultHolder.consume(stack);
                 }
             } catch (Exception e) {
@@ -130,12 +132,12 @@ public class PartItem extends Item implements ICustomModelItem {
     public void inventoryTick(ItemStack stack, Level level, Entity entity, int portId, boolean isSelected) {
         super.inventoryTick(stack, level, entity, portId, isSelected);
         if (level.isClientSide() && isSelected) {
-            try{
+            try {
                 PartType partType = getPartType(stack, level);//获取物品保存的部件类型
-                PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, level);//获取物品保存的组装信息
-                String variant = info.variant();//获取物品保存的部件变体
-                var subpart_connector = info.connector();//获取物品保存的部件接口
-                String connectorType = info.connectorType();//获取物品保存的部件接口类型
+                PartAssemblyInfoComponent info = getPartAssemblyInfo(stack, partType);//获取物品保存的组装信息
+                String variant = info.getVariant();//获取物品保存的部件变体
+                var subpart_connector = info.getConnector();//获取物品保存的部件接口
+                String connectorType = info.getConnectorType();//获取物品保存的部件接口类型
                 var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
                 AbstractConnector targetConnector = eyesight.getConnector();
                 MutableComponent message = Component.empty();
@@ -148,8 +150,8 @@ public class PartItem extends Item implements ICustomModelItem {
                             if (VisualEffectHelper.partToPlace != null) {
                                 VisualEffectHelper.partToPlace.setTransform(
                                         targetConnector.mergeTransform(new Transform(
-                                                PhysicsHelperKt.toBVector3f(info.offset()),
-                                                SparkMathKt.toBQuaternion(info.rotation())
+                                                PhysicsHelperKt.toBVector3f(info.getOffset()),
+                                                SparkMathKt.toBQuaternion(info.getRotation())
                                         ).invert())
                                 );
                             }
@@ -161,7 +163,7 @@ public class PartItem extends Item implements ICustomModelItem {
                                 return;
                             }
                         }
-                        message = Component.empty().append(" 连接口" + targetConnector.name + "不接受部件" + partType.name + "的" + variant + "变体");
+                        message = Component.empty().append(" 连接口" + targetConnector.name + "不接受部件" + partType.getRegistryKey() + "的" + variant + "变体");
                     }
                 } else {
                     message.append("未选中可用的部件接口，右键将直接放置零件");
@@ -184,7 +186,7 @@ public class PartItem extends Item implements ICustomModelItem {
                 if (entity instanceof Player player)
                     player.displayClientMessage(message, true);
             } catch (NullPointerException e) {
-                if(entity.tickCount % 100 == 0)
+                if (entity.tickCount % 100 == 0)
                     MachineMax.LOGGER.error("Invalid data: {}", stack.getDisplayName(), e);
             }
         }
@@ -225,7 +227,7 @@ public class PartItem extends Item implements ICustomModelItem {
         return super.getMaxDamage(stack);
     }
 
-    public static PartAssemblyCacheComponent getPartAssemblyCache(ItemStack stack, Level level) {
+    public static PartAssemblyCacheComponent getPartAssemblyCache(ItemStack stack) {
         if (!stack.has(MMDataComponents.getPART_ASSEMBLY_CACHE())) {
             PartAssemblyCacheComponent cache = new PartAssemblyCacheComponent(stack.get(MMDataComponents.getPART_TYPE()));
             stack.set(MMDataComponents.getPART_ASSEMBLY_CACHE(), cache);
@@ -233,22 +235,26 @@ public class PartItem extends Item implements ICustomModelItem {
         } else return stack.get(MMDataComponents.getPART_ASSEMBLY_CACHE());
     }
 
-    public static PartAssemblyInfoComponent getPartAssemblyInfo(ItemStack stack, Level level) {
-        PartType partType = getPartType(stack, level);
+    public static PartAssemblyInfoComponent getPartAssemblyInfo(@NotNull ItemStack stack, @NotNull PartType partType) {
         if (!stack.has(MMDataComponents.getPART_ASSEMBLY_INFO())) {//若物品Component中无组装信息，则新建
-            PartAssemblyCacheComponent iterators = getPartAssemblyCache(stack, level);//获取物品保存的组装信息
+            PartAssemblyCacheComponent iterators = getPartAssemblyCache(stack);//获取物品保存的组装信息
             String variant = iterators.getNextVariant();
-            var subpart_connector = iterators.getNextConnector();
             VariantAttr variantAttr = partType.getVariant(variant);
             var connectors = variantAttr.getPartOutwardConnectors();
+            if (connectors.isEmpty()) {
+                PartAssemblyInfoComponent info = new PartAssemblyInfoComponent(variant);
+                stack.set(MMDataComponents.getPART_ASSEMBLY_INFO(), info);//将组装信息存入物品，并自动同步至客户端
+                return info;
+            }
+            var subpart_connector = iterators.getNextConnector();
             ConnectorAttr connectorAttr = connectors.get(subpart_connector);
             OModel model = OModel.getOrEmpty(new ModelIndex("part", partType.getVariant(variant).getModel("default")));
             if (model.getBones().isEmpty())
-                throw new IllegalStateException("未找到部件" + partType.name + "的" + variant + "变体的模型:" + partType.variants.get(variant));
+                throw new IllegalStateException("未找到部件" + partType.getRegistryKey() + "的" + variant + "变体的模型:" + partType.variants.get(variant));
             var locators = model.getLocators();
             OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
             if (partConnectorLocator == null)
-                throw new NullPointerException("部件" + partType.name + "的" + variant + "变体缺少" + connectorAttr.locatorName() + "定位器");
+                throw new NullPointerException("部件" + partType.getRegistryKey() + "的" + variant + "变体缺少" + connectorAttr.locatorName() + "定位器");
             Vector3f offset = partConnectorLocator.getOffset().toVector3f();
             Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
             Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
@@ -258,6 +264,7 @@ public class PartItem extends Item implements ICustomModelItem {
         } else return stack.get(MMDataComponents.getPART_ASSEMBLY_INFO());
     }
 
+    @Nullable
     public static PartType getPartType(ItemStack stack, Level level) {
         PartType partType;
         if (stack.has(MMDataComponents.getPART_TYPE())) {
@@ -265,15 +272,15 @@ public class PartItem extends Item implements ICustomModelItem {
                 partType = MMDynamicRes.PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));
             } else
                 partType = MMDynamicRes.SERVER_PART_TYPES.get(stack.get(MMDataComponents.getPART_TYPE()));
-        } else throw new IllegalStateException("物品" + stack + "中未找到部件类型数据");//如果物品Component中部件类型为空，则抛出异常
-        if (partType == null) throw new IllegalStateException("未找到物品" + stack + "中存储的数据类型");
+        } else return null;
         return partType;
     }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
         PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
-        String variant = getPartAssemblyInfo(itemStack, level).variant();
+        if (partType == null) return animatable;
+        String variant = getPartAssemblyInfo(itemStack, partType).getVariant();
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());

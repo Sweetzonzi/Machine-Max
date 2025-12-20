@@ -56,7 +56,7 @@ public class PartAssemblyCacheComponent {
         } else if (connectorIterator != null) {
             this.connectorIterator = partType.getVariants().get(getNextVariant()).getConnectorIterator();
             return connectorIterator.next();
-        } else return Pair.of(partType.name, "empty");
+        } else return Pair.of(partType.getRegistryKey().toLanguageKey(), "empty");
     }
 
     @Override

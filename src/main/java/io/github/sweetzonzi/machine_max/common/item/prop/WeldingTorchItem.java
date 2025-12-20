@@ -63,7 +63,7 @@ public class WeldingTorchItem extends Item {
                         if (part.assemblingProgress <= 0) part.vehicle.removePart(part);
                     }
                 } else { // 客户端仅负责音效与粒子效果
-                    boolean shouldPlayEffect = subPart.part.getAssemblingProgress() >= 1;
+                    boolean shouldPlayEffect = subPart.part.getAssemblingProgress() < 1;
                     if (!shouldPlayEffect)
                         shouldPlayEffect = subPart.getDurability() < subPart.getMaxDurability();
                     if (!shouldPlayEffect)

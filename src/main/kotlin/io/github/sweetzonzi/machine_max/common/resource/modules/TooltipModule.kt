@@ -28,7 +28,7 @@ class TooltipModule : SparkPackModule {
         isClientSide: Boolean
     ) {
         if (isClientSide) {
-            val nameSpace: String = if (pathSegments.size > 1) {
+            val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
                 MachineMax.MOD_ID

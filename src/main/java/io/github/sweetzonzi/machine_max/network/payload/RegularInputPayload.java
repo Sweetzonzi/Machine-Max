@@ -111,10 +111,11 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     targetConnector = eyesightBody.getConnector();//获取视线看着的部件对接口
                     if (targetConnector != null && !targetConnector.hasPart()) {
                         PartType partType = PartItem.getPartType(heldItem, level);
-                        PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, level);
-                        String variantName = info.variant();
+                        if (partType == null) return;
+                        PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, partType);
+                        String variantName = info.getVariant();
                         VariantAttr variantAttr = partType.getVariant(variantName);
-                        PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem, level);
+                        PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem);
                         Map<Pair<String, String>, ConnectorAttr> partConnectors = variantAttr.getPartOutwardConnectors();
                         int i = partConnectors.size();//设置最大迭代次数
                         var connectors = variantAttr.getPartOutwardConnectors();
@@ -151,8 +152,9 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
                     targetConnector = eyesightBody.getConnector();//获取视线看着的部件对接口
                     PartType partType = PartItem.getPartType(heldItem, level);
-                    PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, level);
-                    PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem, level);
+                    if (partType == null) return;
+                    PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, partType);
+                    PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem);
                     int i = partType.variants.size();//设置最大迭代次数
                     while (i >= 0) {
                         //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限
@@ -162,11 +164,11 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                         if (targetConnector == null || targetConnector.conditionCheck(partType, variantName)) {
                             OModel model = OModel.getOrEmpty(new ModelIndex("part", partType.variants.get(variantName).getModel("default")));
                             var locators = model.getLocators();
-                            OLocator partConnectorLocator = locators.get(connectors.get(info.connector()).locatorName());
+                            OLocator partConnectorLocator = locators.get(connectors.get(info.getConnector()).locatorName());
                             Vector3f offset = partConnectorLocator.getOffset().toVector3f();
                             Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
                             Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
-                            info = new PartAssemblyInfoComponent(variantName, info.connector(), info.connectorType(), offset, quaternion);
+                            info = new PartAssemblyInfoComponent(variantName, info.getConnector(), info.getConnectorType(), offset, quaternion);
                             break;
                         }
                         i--;

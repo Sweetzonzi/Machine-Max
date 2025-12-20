@@ -88,7 +88,7 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                     part.vehicle.removePart(part);
                     if (!player.isCreative()) {//非创造模式，则尝试获取为物品
                         ItemStack itemStack = new ItemStack(MMItems.getPART_ITEM());
-                        itemStack.set(MMDataComponents.getPART_TYPE(), partType.registryKey);
+                        itemStack.set(MMDataComponents.getPART_TYPE(), partType.getRegistryKey());
                         if (!player.addItem(itemStack)) {//尝试直接放入物品栏，失败则掉落为实体
                             Entity itemStackEntity = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), itemStack);
                             level.addFreshEntity(itemStackEntity);
@@ -121,10 +121,10 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                 }
                 if (hasConnection && !player.isCreative())
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.unsafe_disassembly",
-                            Component.translatable(part.type.registryKey.toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
+                            Component.translatable(part.type.getRegistryKey().toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
                 else
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.safe_disassembly",
-                            Component.translatable(part.type.registryKey.toLanguageKey())), true);
+                            Component.translatable(part.type.getRegistryKey().toLanguageKey())), true);
             } else player.displayClientMessage(Component.empty(), true);
         }
     }

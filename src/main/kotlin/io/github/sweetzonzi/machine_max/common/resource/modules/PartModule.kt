@@ -32,7 +32,7 @@ class PartModule : SparkPackModule {
         isClientSide: Boolean
     ) {
         if (fileName.endsWith(".json")) {
-            val nameSpace: String = if (pathSegments.size > 1) {
+            val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
                 MachineMax.MOD_ID
@@ -42,6 +42,7 @@ class PartModule : SparkPackModule {
             try{
                 val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
                 val partType = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+                partType.registryKey = id // 注册部件
                 if (isClientSide)
                     MMDynamicRes.PART_TYPES[id] = partType
                 else

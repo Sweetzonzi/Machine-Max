@@ -118,7 +118,7 @@ public class PartData {
      * @param part 部件实例
      */
     public PartData(Part part) {
-        this.registryKey = part.type.registryKey;
+        this.registryKey = part.type.getRegistryKey();
         this.name = part.name;
         this.uuid = part.uuid.toString();
         this.variant = part.variantName;

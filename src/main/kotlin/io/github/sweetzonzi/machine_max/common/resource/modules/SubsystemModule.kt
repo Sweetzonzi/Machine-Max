@@ -34,7 +34,7 @@ class SubsystemModule : SparkPackModule {
         isClientSide: Boolean
     ) {
         if (fileName.endsWith(".json")) {
-            val nameSpace: String = if (pathSegments.size > 1) {
+            val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
                 MachineMax.MOD_ID

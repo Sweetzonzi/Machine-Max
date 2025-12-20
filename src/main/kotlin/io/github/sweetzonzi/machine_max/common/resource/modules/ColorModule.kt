@@ -28,7 +28,7 @@ class ColorModule : SparkPackModule {
         isClientSide: Boolean
     ) {
         if (FMLEnvironment.dist.isClient && fileName.endsWith(".json")) {
-            val nameSpace: String = if (pathSegments.size > 1) {
+            val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
                 MachineMax.MOD_ID

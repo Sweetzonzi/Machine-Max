@@ -52,8 +52,10 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         if (player == null) return;
         if (player.getMainHandItem().getItem() instanceof PartItem) {
             ItemStack partItem = player.getMainHandItem();
-            PartType partType = PartItem.getPartType(partItem, player.level());
-            String variantName = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
+            PartType partType;
+            partType = PartItem.getPartType(partItem, player.level());
+            if (partType == null) return;
+            String variantName = PartItem.getPartAssemblyInfo(partItem, partType).getVariant();
             VariantAttr variantAttr = partType.getVariant(variantName);
             ResourceLocation model = variantAttr.getModel("default");
             ResourceLocation texture = variantAttr.getTextures("default").getFirst();
@@ -91,7 +93,8 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         if (player.getMainHandItem().getItem() instanceof PartItem) {
             ItemStack partItem = player.getMainHandItem();
             PartType partType = PartItem.getPartType(partItem, player.level());
-            String variant = PartItem.getPartAssemblyInfo(partItem, player.level()).variant();
+            if (partType == null) return;
+            String variant = PartItem.getPartAssemblyInfo(partItem, partType).getVariant();
             renderAttachPoints(partType, variant, camPos, poseStack, bufferSource, partialTick);
             renderPart(camPos, poseStack, bufferSource, partialTick);
         } else {

@@ -1,22 +1,27 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.attr;
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import lombok.Getter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public record VariantAttr(
-        ResourceLocation icon, //图标路径
-        List<String> tags, //部件标签
-        Map<String, ResourceLocation> models, // 状态 -> 模型路径
-        Map<String, List<ResourceLocation>> textures, // 状态 -> 纹理
-        Map<String, ResourceLocation> animations, // 状态 -> 动画
-        Map<String, SubPartAttr> subParts //子部件名称-子部件属性
-) {
+@Getter
+public class VariantAttr {
+    public final ResourceLocation icon; //图标路径
+    public final List<String> tags; //部件标签
+    public final Map<String, ResourceLocation> models; // 状态 -> 模型路径
+    public final Map<String, List<ResourceLocation>> textures; // 状态 -> 纹理
+    public final Map<String, ResourceLocation> animations; // 状态 -> 动画
+    public final Map<String, SubPartAttr> subParts; //子部件名称-子部件属性
     // 编解码器 - 支持单值或映射
     public static final Codec<Map<String, ResourceLocation>> MODELS_CODEC = Codec.either(
             ResourceLocation.CODEC,
@@ -70,13 +75,28 @@ public record VariantAttr(
     );
 
     public static final Codec<VariantAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("icon").forGetter(VariantAttr::icon),
-            Codec.STRING.listOf().optionalFieldOf("tags", List.of()).forGetter(VariantAttr::tags),
-            MODELS_CODEC.fieldOf("models").forGetter(VariantAttr::models),
-            TEXTURES_CODEC.optionalFieldOf("textures", Map.of()).forGetter(VariantAttr::textures),
-            ANIMATIONS_CODEC.optionalFieldOf("animations", Map.of()).forGetter(VariantAttr::animations),
-            SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(VariantAttr::subParts)
+            ResourceLocation.CODEC.fieldOf("icon").forGetter(VariantAttr::getIcon),
+            Codec.STRING.listOf().optionalFieldOf("tags", List.of()).forGetter(VariantAttr::getTags),
+            MODELS_CODEC.fieldOf("models").forGetter(VariantAttr::getModels),
+            TEXTURES_CODEC.optionalFieldOf("textures", Map.of()).forGetter(VariantAttr::getTextures),
+            ANIMATIONS_CODEC.optionalFieldOf("animations", Map.of()).forGetter(VariantAttr::getAnimations),
+            SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(VariantAttr::getSubParts)
     ).apply(instance, VariantAttr::new));
+
+    public VariantAttr(ResourceLocation icon, List<String> tags, Map<String, ResourceLocation> models, Map<String, List<ResourceLocation>> textures, Map<String, ResourceLocation> animations, Map<String, SubPartAttr> subParts) {
+        this.icon = icon;
+        this.tags = tags;
+        this.models = models;
+        this.textures = textures;
+        this.animations = animations;
+        this.subParts = subParts;
+        for (ResourceLocation modelPath : models.values()) {
+            OModel oModel = OModel.getOrEmpty(new ModelIndex("part", modelPath));
+            if (oModel.equals(OModel.Companion.getEMPTY())){
+                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.model_not_found", modelPath.toString()).getString());
+            }
+        }
+    }
 
     /**
      * 获取指定状态的模型
@@ -100,16 +120,19 @@ public record VariantAttr(
                 ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty")));
     }
 
+    @Nullable
     public Iterator<Pair<String, String>> getConnectorIterator() {
         Set<Pair<String, String>> connectors = new HashSet<>();
-        for (Map.Entry <String, SubPartAttr> subParts : this.subParts.entrySet()) {//遍历零件
+        for (Map.Entry<String, SubPartAttr> subParts : this.subParts.entrySet()) {//遍历零件
             String subPartName = subParts.getKey();
             SubPartAttr subPart = subParts.getValue();
             for (Map.Entry<String, ConnectorAttr> connector : subPart.connectors.entrySet()) {//遍历零件的接口
-                if (connector.getValue().connectedTo().isEmpty()) connectors.add(Pair.of(subPartName, connector.getKey()));//外部接口加入可用接口集合
+                if (connector.getValue().connectedTo().isEmpty())
+                    connectors.add(Pair.of(subPartName, connector.getKey()));//外部接口加入可用接口集合
             }
         }
-        return connectors.iterator();
+        if (!connectors.isEmpty()) return connectors.iterator();
+        else return null;
     }
 
     /**
