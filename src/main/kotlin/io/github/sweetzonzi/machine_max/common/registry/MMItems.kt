@@ -146,6 +146,7 @@ object MMItems {
             CustomModelItemExtension(),
             CROWBAR_ITEM,
             SPRAY_CAN_ITEM,
+            WELDING_TORCH_ITEM,
             PART_ITEM,
             FABRICATING_BLUEPRINT,
             VEHICLE_BLUEPRINT,

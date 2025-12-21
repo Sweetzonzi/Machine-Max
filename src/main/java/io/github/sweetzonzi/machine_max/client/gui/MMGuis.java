@@ -26,7 +26,7 @@ public class MMGuis {
     public static void registerHud(RegisterGuiLayersEvent event){
         event.registerAboveAll(id("custom_hud"), new CustomHud());
         event.registerAboveAll(id("interact_hud"), new InteractHud());
-        event.registerAboveAll(id("assembly_hud"), new AssemblyHud());
+//        event.registerAboveAll(id("assembly_hud"), new AssemblyHud());
         Hud3DRenderer.register(new AssemblyHud3D());
     }
 

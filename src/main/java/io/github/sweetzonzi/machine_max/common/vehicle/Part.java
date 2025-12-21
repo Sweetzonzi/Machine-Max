@@ -523,7 +523,7 @@ public class Part {
                 updateMass();
                 return null;
             });
-            if (!level.isClientSide()) {
+            if (!level.isClientSide() && vehicle!= null && vehicle.inLevel) {
                 PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblySyncPayload(
                         vehicle.uuid,
                         uuid,

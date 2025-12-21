@@ -10,6 +10,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
@@ -21,10 +22,9 @@ public class Hud3DContext {
     public final PoseStack poseStack;
     public final MultiBufferSource buffer;
     public final float partialTicks;
-    public final int packedLight;
     public final Font font;
     public final ItemRenderer itemRenderer;
-
+    public static final int FULL_BRIGHT = Brightness.FULL_BRIGHT.pack();
     /**
      * 构造一个Hud3D上下文对象
      * @param mc Minecraft客户端实例
@@ -32,22 +32,19 @@ public class Hud3DContext {
      * @param poseStack 姿态栈
      * @param buffer 多缓冲源
      * @param partialTicks 部分刻度
-     * @param packedLight 打包的光照信息
      */
     public Hud3DContext(
             Minecraft mc,
             LocalPlayer player,
             PoseStack poseStack,
             MultiBufferSource buffer,
-            float partialTicks,
-            int packedLight
+            float partialTicks
     ) {
         this.mc = mc;
         this.player = player;
         this.poseStack = poseStack;
         this.buffer = buffer;
         this.partialTicks = partialTicks;
-        this.packedLight = packedLight;
         this.font = mc.font;
         this.itemRenderer = mc.getItemRenderer();
     }
@@ -160,7 +157,7 @@ public class Hud3DContext {
                 buffer,
                 Font.DisplayMode.NORMAL,
                 0,
-                packedLight
+                FULL_BRIGHT
         );
     }
 
@@ -205,7 +202,7 @@ public class Hud3DContext {
         itemRenderer.renderStatic(
                 stack,
                 ItemDisplayContext.GUI,
-                packedLight,
+                FULL_BRIGHT,
                 OverlayTexture.NO_OVERLAY,
                 poseStack,
                 buffer,

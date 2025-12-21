@@ -1,10 +1,14 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
+import cn.solarmoon.spark_core.animation.ItemAnimatable;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
+import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
@@ -24,11 +28,16 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
 
-public class WeldingTorchItem extends Item {
+import java.util.HashMap;
+import java.util.Objects;
+
+public class WeldingTorchItem extends Item implements ICustomModelItem {
     public static final float ASSEMBLY_PER_TICK = 1f;
     public static final float SUBPART_REPAIR_PER_TICK = 1f;
     public static final float SUBSYSTEM_REPAIR_PER_TICK = 1f;
@@ -165,6 +174,50 @@ public class WeldingTorchItem extends Item {
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity entity) {
         return 72000;
+    }
+
+
+    public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
+        var animatable = new ItemAnimatable(itemStack, level);
+        HashMap<ItemDisplayContext, ItemAnimatable> customModels;
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
+            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+        else customModels = new HashMap<>();
+        animatable.getModelController().setModel(
+                new ModelIndex("item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "spray_can")));
+        animatable.getModelController().setTextureLocation(
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/spray_can.png"));
+        if (customModels != null) {
+            customModels.put(context, animatable);
+            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
+        }
+        return animatable;
+    }
+
+    @Override
+    public Vector3f getRenderOffset(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext.firstPerson())
+            return new Vector3f(0, 0, 0);
+        else return new Vector3f(0.05f, -0.1f, 0);
+    }
+
+    @Override
+    public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext.firstPerson()
+                || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+                || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+            return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
+        return new Vector3f(0, 45, 30).mul((float) (Math.PI / 180));
+    }
+
+    @Override
+    public Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
+                || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND
+                || displayContext == ItemDisplayContext.GROUND
+                || displayContext == ItemDisplayContext.FIXED)
+            return new Vector3f(0.5f, 0.5f, 0.5f);
+        return ICustomModelItem.super.getRenderScale(itemStack, level, displayContext);
     }
 
 }

@@ -90,6 +90,7 @@ public class PartItem extends Item implements ICustomModelItem {
                         if ((targetConnector instanceof AttachPointConnector || connectorType.equals("AttachPoint"))) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标对接口所属的载具
                             Part part = new Part(partType, variant, level);
+                            part.setAssemblingProgress(1f);
                             targetConnector.adjustTransform(part, part.externalConnectors.get(subpart_connector));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(subpart_connector), part);//尝试将新部件连接至接口
                             if (!player.hasInfiniteMaterials()) VisualEffectHelper.partToPlace = null;
@@ -103,6 +104,7 @@ public class PartItem extends Item implements ICustomModelItem {
                     } else return InteractionResultHolder.pass(stack);
                 } else {
                     Part part = new Part(partType, variant, level);
+                    part.setAssemblingProgress(1f);
                     Transform transform = new Transform(
                             PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                     player.getEyePosition(),

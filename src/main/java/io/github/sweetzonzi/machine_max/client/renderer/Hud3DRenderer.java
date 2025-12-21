@@ -5,6 +5,7 @@ import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.gui.hud3d.Hud3DContext;
 import io.github.sweetzonzi.machine_max.client.gui.hud3d.IHud3DElement;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -15,6 +16,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderHandEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,9 +42,9 @@ public class Hud3DRenderer {
      * 第一人称手部渲染阶段事件
      */
     @SubscribeEvent
-    public static void onRenderHand(RenderHandEvent event) {
+    public static void onRenderHand(RenderLevelStageEvent event) {
         // 只在主手阶段渲染一次，避免左右手重复
-        if (event.getHand() != InteractionHand.MAIN_HAND) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -52,11 +54,11 @@ public class Hud3DRenderer {
         }
         render(
                 mc,
+                event.getCamera(),
                 player,
                 event.getPoseStack(),
-                event.getMultiBufferSource(),
-                event.getPartialTick(),
-                event.getPackedLight()
+                mc.renderBuffers().bufferSource(),
+                event.getPartialTick().getGameTimeDeltaPartialTick(false)
         );
     }
 
@@ -65,24 +67,29 @@ public class Hud3DRenderer {
      */
     private static void render(
             Minecraft mc,
+            Camera camera,
             LocalPlayer player,
             PoseStack poseStack,
             MultiBufferSource buffer,
-            float partialTicks,
-            int packedLight
+            float partialTicks
     ) {
         if (ELEMENTS.isEmpty()) {
             return;
         }
 
         poseStack.pushPose();
+        // 保持处于画面中
+        poseStack.mulPose(Axis.YN.rotationDegrees(camera.getYRot()+180));
+        poseStack.mulPose(Axis.XN.rotationDegrees(camera.getXRot()));
+        poseStack.mulPose(Axis.ZN.rotationDegrees(camera.getRoll()));
+        poseStack.pushPose();
         if (mc.options.bobView().get()) {
             // 补偿视角摇晃
             float f = player.walkDist - player.walkDistO;
             float f1 = -(player.walkDist + f * partialTicks);
             float f2 = Mth.lerp(partialTicks, player.oBob, player.bob);
-            poseStack.translate(0.5f * Mth.sin(f1 * (float) Math.PI) * f2 * 0.5F,
-                    0.5f * Math.abs(Mth.cos(f1 * (float) Math.PI) * f2), -0.5F);
+            poseStack.translate(-0.5f * Mth.sin(f1 * (float) Math.PI) * f2 * 0.5F,
+                    -0.5f * Math.abs(Mth.cos(f1 * (float) Math.PI) * f2), -0.5F);
         } else {
             // 否则仅挪动视平面
             poseStack.translate(0, 0, -0.5F);
@@ -104,8 +111,7 @@ public class Hud3DRenderer {
                 player,
                 poseStack,
                 buffer,
-                partialTicks,
-                packedLight
+                partialTicks
         );
         // 遍历所有已注册的 3D HUD 元素
         for (IHud3DElement element : ELEMENTS) {
@@ -116,6 +122,7 @@ public class Hud3DRenderer {
             element.render(context);// 渲染当前元素
             poseStack.popPose();
         }
+        poseStack.popPose();
         poseStack.popPose();
         poseStack.popPose();
     }

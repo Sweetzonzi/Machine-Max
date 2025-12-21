@@ -18,12 +18,6 @@
         "tag": "c:ingots/gold"
       },
       "count": 1
-    },
-    {
-      "ingredient": {
-        "item": "minecraft:gunpowder"
-      },
-      "count": 1
     }
   ],
   "result": {

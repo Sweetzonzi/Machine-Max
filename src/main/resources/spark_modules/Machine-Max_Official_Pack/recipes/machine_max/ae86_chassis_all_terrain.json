@@ -21,9 +21,9 @@
     },
     {
       "ingredient": {
-        "item": "minecraft:gunpowder"
+        "tag": "c:ingots/iron"
       },
-      "count": 64
+      "count": 15
     }
   ],
   "result": {
