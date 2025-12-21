@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
-import io.github.sweetzonzi.machine_max.client.renderer.BlockEntityItemRenderer
-import io.github.sweetzonzi.machine_max.client.renderer.CustomModelItemRenderer
+import io.github.sweetzonzi.machine_max.client.render.renderer.BlockEntityItemRenderer
+import io.github.sweetzonzi.machine_max.client.render.renderer.CustomModelItemRenderer
 import io.github.sweetzonzi.machine_max.common.item.MaterialItem
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem

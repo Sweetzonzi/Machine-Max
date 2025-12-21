@@ -1,6 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
-import io.github.sweetzonzi.machine_max.client.renderer.PartAssemblyRenderer
+import io.github.sweetzonzi.machine_max.client.render.renderer.PartAssemblyRenderer
 
 object MMVisualEffects {
 
