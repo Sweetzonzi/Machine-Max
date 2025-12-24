@@ -167,6 +167,7 @@ public class AssemblyHud3D implements IHud3DElement {
                 startX + PADDING,
                 startY + 34,
                 Math.max(animatedHudWidth.get() - PADDING * 2, 0),
+                10f,
                 subPart != null ? subPart.part.getAssemblingProgress() : 0f,
                 currentTime
         );
@@ -184,31 +185,7 @@ public class AssemblyHud3D implements IHud3DElement {
         }
 
         if (subPart != null) {
-            poseStack.pushPose();
-            poseStack.scale(20, -20, 0.001f);
-            var normal = new Matrix3f();
-            Quaternionf rot = resolveViewOrientation(subPart, ctx);
-            normal.rotate(rot);
-            if (rot.dot(projectionRot.getTarget()) < 0.99f) {
-                projectionRot.animateTo(rot, 0.25f, currentTime);
-            }
-            projectionRot.update(currentTime);
-            poseStack.mulPose(projectionRot.get());
-            ModelController modelController = subPart.getModelController();
-            ModelInstance modelInstance = modelController.getModel();
-            ModelRenderHelperKt.render(
-                    modelInstance.getOrigin(),
-                    modelInstance.getPose(),
-                    poseStack.last().pose(),
-                    normal,
-                    ctx.buffer.getBuffer(MMRenderTypes.alwaysVisibleLines()),
-                    Brightness.FULL_BRIGHT.pack(),
-                    OverlayTexture.NO_OVERLAY,
-                    Color.WHITE.getRGB(),
-                    ctx.partialTicks,
-                    true
-            );
-            poseStack.popPose();
+            drawSubPartProjection(ctx, poseStack, subPart, startX, startY, animatedHudWidth.get(), animatedHudHeight.get(), currentTime);
         }
 
         poseStack.popPose();
@@ -217,11 +194,49 @@ public class AssemblyHud3D implements IHud3DElement {
 
     /* ================== 绘制辅助方法 ================== */
 
+    private void drawSubPartProjection(
+            Hud3DContext ctx,
+            PoseStack poseStack,
+            SubPart subPart,
+            float x,
+            float y,
+            float width,
+            float height,
+            float currentTime
+    ) {
+        poseStack.pushPose();
+        poseStack.scale(20, -20, 0.001f);
+        var normal = new Matrix3f();
+        Quaternionf rot = resolveViewOrientation(subPart, ctx);
+        normal.rotate(rot);
+        if (rot.dot(projectionRot.getTarget()) < 0.99f) {
+            projectionRot.animateTo(rot, 0.25f, currentTime);
+        }
+        projectionRot.update(currentTime);
+        poseStack.mulPose(projectionRot.get());
+        ModelController modelController = subPart.getModelController();
+        ModelInstance modelInstance = modelController.getModel();
+        ModelRenderHelperKt.render(
+                modelInstance.getOrigin(),
+                modelInstance.getPose(),
+                poseStack.last().pose(),
+                normal,
+                ctx.buffer.getBuffer(MMRenderTypes.alwaysVisibleLines()),
+                Brightness.FULL_BRIGHT.pack(),
+                OverlayTexture.NO_OVERLAY,
+                Easing.lerpColorFromTransparent(Color.WHITE.getRGB(), animatedHudWidth.get() / HUD_WIDTH),
+                ctx.partialTicks,
+                true
+        );
+        poseStack.popPose();
+    }
+
     private void drawAnimatedProgressBar(
             Hud3DContext ctx,
             float x,
             float y,
             float width,
+            float height,
             float targetProgress,
             float currentTime
     ) {
@@ -230,8 +245,6 @@ public class AssemblyHud3D implements IHud3DElement {
             animatedProgressFloat.animateTo(targetProgress, 0.5f, currentTime);
 
         animatedProgressFloat.update(currentTime);
-
-        float height = 10;
 
         // 进度条背景
         ctx.fill(x, y, x + width, y + height, BAR_BG, 0.002f);

@@ -5,19 +5,19 @@
   "basic_durability": 50.0,//(可选，默认20.0)部件基础生命值，降至0时部件的所有子系统会瘫痪
   "basic_integrity": 25.0,//(可选，默认15.0)部件基础结构完整度，部件可承受不高于此数值的伤害(计算甲弹对抗前)而不脱落，受到伤害(计算甲弹对抗前)或连接处承受过大负载时会降低完整度
   "variants": {//部件变体列表，支持单值或多键值对
-    "icon": "machine_max:textures/icon/reinforced_box_16x16x8_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
-    "models": "machine_max:box_16x16x8.geo", //模型路径
+    "icon": "machine_max:textures/icon/reinforced_container_16x16x8_icon.png",//(可选，留空会使用第一张模型贴图)部件图标路径
+    "models": "machine_max:container_16x16x8.geo", //模型路径
     "textures": [ //贴图路径列表
-      "machine_max:textures/part/reinforced_box_16x16x8.png"
+      "machine_max:textures/part/reinforced_container_16x16x8.png"
     ],
     "animations": "machine_max:empty", //(可选，留空则不播放动画)动画路径
     "tags": ["reinforced", "storage"],//(可选)部件标签列表
     "sub_parts": {//零件(子部件)列表
       "box": {//零件(子部件)名称
         "subsystems": {//(可选)子系统配置
-          "title.machine_max.subsystem.reinforced_box": {
+          "title.machine_max.subsystem.reinforced_container_16x16x8": {
             "type": "machine_max:item_storage",//子系统类型
-            "model": "machine_max:box_16x16x8"//子系统型号，需要与子系统类型相匹配
+            "model": "machine_max:container_16x16x8"//子系统型号，需要与子系统类型相匹配
           }
         },
         "mass": 30.0,//零件质量(kg)
@@ -38,10 +38,10 @@
           }
         },
         "interact_boxes": {//交互判定区列表
-          "interact.machine_max.reinforced_box": {//键:交互判定区名称
+          "interact.machine_max.reinforced_container_16x16x8": {//键:交互判定区名称
             "bone": "Interact",//骨骼名称，会寻找名称匹配的骨骼，以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "trunk_interact": ["title.machine_max.subsystem.reinforced_box"] //将交互信号转发给与车体连接的对接口
+              "trunk_interact": ["title.machine_max.subsystem.reinforced_container_16x16x8"] //将交互信号转发给与车体连接的对接口
             },
             "interact_mode": "accurate" //(可选，默认fast)交互模式，fast为玩家碰撞箱与交互区碰撞时按下交互键触发，accurate为玩家瞄准交互区按下交互键触发
           }

@@ -1,0 +1,78 @@
+{
+  "vehicle_durability_rate": 1.0,
+  "vehicle_damage_rate": 0.1,
+  "vehicle_damage_rate_destroyed": 0.1,
+  "basic_durability": 4000.0,
+  "basic_integrity": 4000.0,
+  "variants": {
+    "models": {
+      "default": "machine_max:container_16x32x32.geo"
+    },
+    "icon": "machine_max:textures/icon/container_16x32x32_icon.png",
+    "textures": {
+      "default": [
+        "machine_max:textures/part/container_16x32x32.png"
+      ]
+    },
+    "sub_parts": {
+      "container": {
+        "subsystems": {
+          "title.machine_max.subsystem.container_16x32x32": {
+            "type": "machine_max:item_storage",
+            "model": "machine_max:container_16x32x32"
+          }
+        },
+        "mass": 300.0,
+        "block_collision": "true",
+        "collision_height": 0,
+        "hit_boxes": {
+          "Shape": {
+            "type": "box",
+            "restitution": 0.1,
+            "rolling_friction": 0.5,
+            "slip_adaptation": 0.5,
+            "block_damage_factor": 0.1,
+            "collision_damage_reduction": 10.0
+          }
+        },
+        "interact_boxes": {
+          "interact.machine_max.container_16x32x32": {
+            "bone": "ContainerXL",
+            "signal_targets": {
+              "trunk_interact": [
+                "title.machine_max.subsystem.container_16x32x32"
+              ]
+            },
+            "interact_mode": "accurate"
+          }
+        },
+        "connectors": {
+          "up": {
+            "locator": "up",
+            "type": "AttachPoint"
+          },
+          "side_left": {
+            "locator": "side_left",
+            "type": "AttachPoint"
+          },
+          "side_right": {
+            "locator": "side_right",
+            "type": "AttachPoint"
+          },
+          "down": {
+            "locator": "down",
+            "type": "AttachPoint"
+          },
+          "front": {
+            "locator": "front",
+            "type": "AttachPoint"
+          },
+          "back": {
+            "locator": "back",
+            "type": "AttachPoint"
+          }
+        }
+      }
+    }
+  }
+}
