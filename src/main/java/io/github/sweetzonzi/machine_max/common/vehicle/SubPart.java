@@ -917,7 +917,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 if (connectorsRepairAmount <= 0) break;
                 if (connector.getIntegrity() < connector.getBasicIntegrity()) {
                     float connectorRepairAmount = Math.min(connectorsRepairAmount, connector.getBasicIntegrity() - connector.getIntegrity());
-                    connector.addIntegrity(connector.getIntegrity() + connectorRepairAmount);
+                    connector.addIntegrity(connectorRepairAmount);
+                    connectorsRepairAmount -= connectorRepairAmount;
+                }
+                if (connector.hasPart() && connector.attachedConnector.getIntegrity() < connector.attachedConnector.getBasicIntegrity()) {
+                    float connectorRepairAmount = Math.min(connectorsRepairAmount,
+                            connector.attachedConnector.getBasicIntegrity() - connector.attachedConnector.getIntegrity());
+                    connector.attachedConnector.addIntegrity(connectorRepairAmount);
                     connectorsRepairAmount -= connectorRepairAmount;
                 }
             }

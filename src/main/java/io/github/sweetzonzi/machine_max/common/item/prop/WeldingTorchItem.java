@@ -184,9 +184,9 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
         animatable.getModelController().setModel(
-                new ModelIndex("item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "spray_can")));
+                new ModelIndex("item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "welding_torch")));
         animatable.getModelController().setTextureLocation(
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/spray_can.png"));
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/welding_torch.png"));
         if (customModels != null) {
             customModels.put(context, animatable);
             itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
@@ -197,15 +197,18 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
     @Override
     public Vector3f getRenderOffset(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
         if (displayContext.firstPerson())
-            return new Vector3f(0, 0, 0);
-        else return new Vector3f(0.05f, -0.1f, 0);
+            return new Vector3f(0.4f, -0.3f, 0);
+        if (displayContext == ItemDisplayContext.GROUND) return new Vector3f(0, -0.2f, 0);
+        if (displayContext == ItemDisplayContext.GUI) return new Vector3f(0.23f, -0.28f, 0);
+        return new Vector3f(0, -0.15f, 0);
     }
 
     @Override
     public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
         if (displayContext.firstPerson()
                 || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
-                || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND
+                || displayContext == ItemDisplayContext.GROUND)
             return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
         return new Vector3f(0, 45, 30).mul((float) (Math.PI / 180));
     }
@@ -216,7 +219,9 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                 || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND
                 || displayContext == ItemDisplayContext.GROUND
                 || displayContext == ItemDisplayContext.FIXED)
-            return new Vector3f(0.5f, 0.5f, 0.5f);
+            return new Vector3f(0.45f);
+        if (displayContext == ItemDisplayContext.GUI)
+            return new Vector3f(0.75f);
         return ICustomModelItem.super.getRenderScale(itemStack, level, displayContext);
     }
 

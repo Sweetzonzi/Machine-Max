@@ -351,16 +351,18 @@ public class AssemblyHud3D implements IHud3DElement {
             ctx.poseStack.mulPose(SparkMathKt.toMatrix4f(connector.getOffsetFromMassCenter().toTransformMatrix()));
             ctx.poseStack.pushPose();
             ctx.poseStack.mulPose(rot.invert());//标记面向hud平面
+            int redShiftGreen = Easing.lerpColor(0xff008800, 0xff880000, 0.5f * (1 - connector.getIntegrity() / connector.getBasicIntegrity()));
+            int redShiftBlue = Easing.lerpColor(0xff000088, 0xff880000, 0.5f * (1 - connector.getIntegrity() / connector.getBasicIntegrity()));
             // 绘制十字表示连接点完整性
             ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
             ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, 0xff880000, 0, MMRenderTypes.additiveSolidAlwaysVisible());
             ctx.fill(-halfWidth, -halfSize, halfWidth, halfSize, 0xff880000, 0, MMRenderTypes.additiveSolidAlwaysVisible());
             ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
-            ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, 0xff008800, 0, MMRenderTypes.additiveSolidAlwaysVisible());
-            ctx.fill(-halfWidth, -halfSize, halfWidth, halfSize, 0xff008800, 0, MMRenderTypes.additiveSolidAlwaysVisible());
+            ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, redShiftGreen, 0, MMRenderTypes.additiveSolidAlwaysVisible());
+            ctx.fill(-halfWidth, -halfSize, halfWidth, halfSize, redShiftGreen, 0, MMRenderTypes.additiveSolidAlwaysVisible());
             ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
-            ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, 0xff000088, 0, MMRenderTypes.additiveSolidAlwaysVisible());
-            ctx.fill(-halfWidth, -halfSize, halfWidth, halfSize, 0xff000088, 0, MMRenderTypes.additiveSolidAlwaysVisible());
+            ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, redShiftBlue, 0, MMRenderTypes.additiveSolidAlwaysVisible());
+            ctx.fill(-halfWidth, -halfSize, halfWidth, halfSize, redShiftBlue, 0, MMRenderTypes.additiveSolidAlwaysVisible());
 
             ctx.poseStack.popPose();
             ctx.poseStack.popPose();
