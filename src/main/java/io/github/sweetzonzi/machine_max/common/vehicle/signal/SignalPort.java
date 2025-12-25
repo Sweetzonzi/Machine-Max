@@ -23,7 +23,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     public ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();//仅应被查询
 
     /**
-     * 为部件对接口创建信号传输端口（兼容旧版本构造函数）
+     * 为部件连接点创建信号传输端口（兼容旧版本构造函数）
      *
      * @param owner         部件连接器
      * @param signalTargets 信号提供目标
@@ -33,7 +33,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     }
 
     /**
-     * 为部件对接口创建信号传输端口（新增带转译层的构造函数）
+     * 为部件连接点创建信号传输端口（新增带转译层的构造函数）
      *
      * @param owner             部件连接器
      * @param signalTargets     信号提供目标
@@ -99,7 +99,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     }
 
     /**
-     * 对接口连接时，立即为对方更新一次信号
+     * 连接点连接时，立即为对方更新一次信号
      * 注意：需要应用转译规则
      */
     public void onConnectorAttach() {

@@ -110,7 +110,7 @@ public class MMPayloadRegistry {
                 SubsystemSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(SubsystemSyncPayload::handler)
         );
-        sync.playToClient(//运动体对接口的同步数据
+        sync.playToClient(//运动体连接点的同步数据
                 ConnectorSyncPayload.TYPE,
                 ConnectorSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ConnectorSyncPayload::handler)

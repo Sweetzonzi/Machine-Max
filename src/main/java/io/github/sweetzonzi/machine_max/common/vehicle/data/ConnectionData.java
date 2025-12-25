@@ -14,7 +14,7 @@ import net.minecraft.network.codec.StreamCodec;
 public class ConnectionData {
     public final String partUuidS;
     public final String subPartNameS;
-    public final String specialConnectorName;//要链接的对接口中存在非连接点的特殊接口时，必须放置于第一个位置
+    public final String specialConnectorName;//要链接的连接点中存在非连接点的特殊接口时，必须放置于第一个位置
     public final String partUuidA;
     public final String subPartNameA;
     public final String attachPointConnectorName;

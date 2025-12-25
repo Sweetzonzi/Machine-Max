@@ -118,7 +118,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         this.part = part;
         this.name = name;
         this.attr = attr;
-        this.setDurability(getMaxDurability());
         this.modelController = new ModelController(this);
         this.animController = new AnimController(this);
         this.getModelController().setModel(new ModelIndex("part", part.variant.getModel("default")));
@@ -447,10 +446,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     if (contactVel.length() > 2.5f) {
                         // 漂移烟雾与音效
                         if (Math.random() < Math.max(1f, 0.05f * contactVel.length()))
-                            level.addParticle(ParticleTypes.CLOUD,
+                            level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
                                     worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
                                     contactVel.x * (0.03f + 0.02f * (Math.random() - 0.5f)),
-                                    contactVel.y * (0.03f + 0.02f * (Math.random() - 0.5f)),
+                                    contactVel.y * (0.03f + 0.02f * (Math.random() - 0.5f)) + 0.01f,
                                     contactVel.z * (0.03f + 0.02f * (Math.random() - 0.5f)));
                         level.submitDeduplicatedTask(part.uuid + "_" + name + "_slide_sound", PPhase.PRE, () -> {
                             level.playLocalSound(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
@@ -822,8 +821,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
             //线性减伤处理
             float impactDamage = damage - hitBox.getDamageReduction();
-            //分配冲击至对接口
-            distributeImpactToConnectors(impactDamage, worldContactPoint);
+            //分配冲击至连接点
+            distributeDamageImpactToConnectors(impactDamage, worldContactPoint);
             //甲弹对抗相关处理
             if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
             //击穿判定
@@ -858,21 +857,21 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     /**
-     * <p>根据伤害和各对接口的距离，施加冲击力至各个对接口</p>
+     * <p>根据伤害和各连接点的距离，施加冲击力至各个连接点</p>
      * <p>Distributes the impact to each connector based on the damage and distance to each connector</p>
      *
      * @param impact      冲击
      * @param impactPoint 冲击点
      */
-    protected void distributeImpactToConnectors(float impact, Vector3f impactPoint) {
-        // 累积冲击效果用于削减对接口结构完整性
+    protected void distributeDamageImpactToConnectors(float impact, Vector3f impactPoint) {
+        // 累积冲击效果用于削减连接点结构完整性
         Map<AbstractConnector, Float> impactWeights = new HashMap<>();
         float totalImpactWeight = 0;
         // 可调节参数
         final float DISTANCE_EXPONENT = 2.0f; // 距离指数：1=反比，2=平方反比
         final float MIN_DISTANCE = 0.1f; // 最小距离，防止除零和过大的权重
         for (AbstractConnector connector : this.connectors.values()) {
-            if (!connector.hasPart() || !connector.isBreakable()) continue; // 仅有连接且可破坏的对接口参与分配
+            if (!connector.hasPart() || connector.getImpactMultiplier() == 0) continue; // 仅有连接且可破坏的连接点参与分配
             Vector3f connectorPos = MMMath.relPointWorldPos(connector.offsetFromMassCenter.getTranslation(), this.body);
             float distance = Math.max(connectorPos.distance(impactPoint), MIN_DISTANCE);
             // 权重是距离的指数反比，距离越远权重越小
@@ -888,12 +887,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     /**
-     * <p>维修零件和子系统并加固对接口</p>
+     * <p>维修零件和子系统并加固连接点</p>
      * <p>Repairs the sub-part and subsystems and strengthen the connectors</p>
      *
      * @param amount          零件维修量 (>0) sub-part repair amount (>0)
      * @param subSystemAmount 子系统维修量 (>0) subsystem repair amount (>0)
-     * @param connectorAmount 对接口结构完整性加固量 (>0) connector integrity strengthen amount (>0)
+     * @param connectorAmount 连接点结构完整性加固量 (>0) connector integrity strengthen amount (>0)
      * @return 是否成功修理
      */
     public boolean repair(float amount, float subSystemAmount, float connectorAmount) {
@@ -913,7 +912,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     subsystemsRepairAmount -= subSystemRepairAmount;
                 }
             }
-            // 加固对接口
+            // 加固连接点
             for (AbstractConnector connector : connectors.values()) {
                 if (connectorsRepairAmount <= 0) break;
                 if (connector.getIntegrity() < connector.getBasicIntegrity()) {
@@ -966,7 +965,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
         for (AbstractConnector connector : connectors.values()) {
             //TODO:随机锁定/解锁某个关节的自由度？
-            if (connector.attr.breakable()) {
+            if (connector.attr.impactMultiplier() > 0) {
 
             }
         }
@@ -1073,17 +1072,31 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     /**
+     * <p>获取零件的耐久度，如果部件内零件共享耐久度，则返回共享耐久度；否则返回自身耐久度。</p>
+     * <p>This method returns the durability of the sub-part, taking into account whether the part shares durability with its sub-parts.</p>
+     *
+     * @return 耐久度 The durability of the sub-part.
+     */
+    @Override
+    public float getDurability() {
+        return (part.type.shareDurability ? part.getSharedDurability() : super.getDurability())
+                * (0.05f + 0.95f * part.getAssemblingProgress());
+    }
+
+    @Override
+    public void setDurability(float durability) {
+        this.syncedData.set(DATA_DURABILITY_ID, Math.clamp(durability, 0.0F, this.getMaxDurability()));
+    }
+
+    /**
      * <p>获取零件的最大耐久度，如果部件内零件共享耐久度，则返回共享最大耐久度；否则返回自身最大耐久度。</p>
      * <p>This method returns the maximum durability of the sub-part, taking into account whether the part shares durability with its sub-parts.</p>
-     * <p>实际最大耐久度会根据部件的组装进度调整。</p>
-     * <p>The actual maximum durability will be adjusted based on the assembling progress of the part.</p>
      *
      * @return 最大耐久度 The maximum durability of the sub-part.
      */
     @Override
     public float getMaxDurability() {
-        return (part.type.shareDurability ? attr.durability : part.getSharedMaxDurability())
-                * 0.05f + 0.95f * part.assemblingProgress;
+        return (part.type.shareDurability ? part.getSharedMaxDurability() : attr.durability);
     }
 
     /**

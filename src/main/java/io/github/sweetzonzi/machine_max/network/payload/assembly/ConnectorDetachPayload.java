@@ -60,7 +60,7 @@ public record ConnectorDetachPayload(
                     AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(connection.partUuidS)).externalConnectors.get(Pair.of(connection.subPartNameS,connection.specialConnectorName));
                     AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(connection.partUuidA)).externalConnectors.get(Pair.of(connection.subPartNameA,connection.attachPointConnectorName));
                     if (connectorA == null || connectorB == null)
-                        throw new NullPointerException("未找到对接口: " + payload.connections);
+                        throw new NullPointerException("未找到连接点: " + payload.connections);
                     connections.add(Pair.of(connectorA, (AttachPointConnector) connectorB));
                 }
                 vehicle.detachConnections(connections, payload.splitVehicles);

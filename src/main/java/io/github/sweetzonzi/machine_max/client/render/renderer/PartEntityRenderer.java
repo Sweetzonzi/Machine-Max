@@ -121,6 +121,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                                     light,
                                     overlay,
                                     color,
+                                    false,
                                     false
                             );
                         } else {
@@ -131,6 +132,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                                     light,
                                     overlay,
                                     color,
+                                    false,
                                     false
                             );
                         }
@@ -187,6 +189,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                                 light,
                                 overlay,
                                 color,
+                                false,
                                 false
                         );
                     } else {
@@ -197,6 +200,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                                 light,
                                 overlay,
                                 color,
+                                false,
                                 false
                         );
                     }

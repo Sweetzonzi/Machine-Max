@@ -69,7 +69,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     protected final SynchedEntityData synchedData;
     protected final ConcurrentLinkedQueue<Float> accumulatedImpact = new ConcurrentLinkedQueue<>();
     protected final ConcurrentLinkedQueue<Float> accumulatedIntegrityChange = new ConcurrentLinkedQueue<>();
-    public final boolean breakable;//连接点是否可被破坏
+    public final float impactReduction;//连接点是否可被伤害破坏
+    public final float impactMultiplier;//连接点是否可被伤害破坏
     @Setter
     public AbstractConnector attachedConnector;//与本连接点对接的连接点
     public final Transform offsetFromMassCenter;//被安装零件的连接点相对本部件质心的位置与姿态
@@ -83,7 +84,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.offsetFromMassCenter = offsetFromMassCenter;
         this.signalPort = new SignalPort(this, attr.signalTargets());
         this.collideBetweenParts = attr.collideBetweenParts();
-        this.breakable = attr.breakable() && attr.connectedTo().isEmpty();
+        this.impactReduction = attr.connectedTo().isEmpty() ? attr.impactReduction() : 0;
+        this.impactMultiplier = attr.connectedTo().isEmpty() ? Math.max(attr.impactMultiplier(), 0) : 0;
         this.internal = !attr.connectedTo().isEmpty();
         this.attr = attr;
         SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
@@ -180,10 +182,12 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     protected void handleAccumulatedImpact() {
         if (!subPart.level.isClientSide()) {
             float totalImpact = 0;
-            if (breakable && !accumulatedImpact.isEmpty()) {
+            if (impactMultiplier >= 0 && !accumulatedImpact.isEmpty()) {
                 while (!accumulatedImpact.isEmpty()) {
                     totalImpact += accumulatedImpact.poll();
                 }
+                totalImpact -= getImpactReduction();
+                totalImpact *= getImpactMultiplier();
                 if (totalImpact > 0) {
                     if (totalImpact >= getIntegrity() && hasPart()) {
                         //强冲击，立即击落部件

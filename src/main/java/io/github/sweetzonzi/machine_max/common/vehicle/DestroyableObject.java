@@ -274,7 +274,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     }
 
     public void setDurability(float durability) {
-        this.syncedData.set(DATA_DURABILITY_ID, Mth.clamp(durability, 0.0F, this.getMaxDurability()));
+        this.syncedData.set(DATA_DURABILITY_ID, Math.clamp(durability, 0.0f, this.getMaxDurability()));
     }
 
     public int getDestroyTime() {

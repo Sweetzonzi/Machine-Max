@@ -341,7 +341,7 @@ public class VehicleCore {
         VehicleCore vehicle1 = specialConnector.getSubPart().getPart().vehicle;
         VehicleCore vehicle2 = attachPointConnector.getSubPart().getPart().vehicle;
         if (vehicle1 != vehicle2 && vehicle1 != null && vehicle2 != null) {
-            throw new UnsupportedOperationException("暂不支持连接不同载具之间的对接口"); //TODO:支持不同载具之间的对接口链接
+            throw new UnsupportedOperationException("暂不支持连接不同载具之间的连接点"); //TODO:支持不同载具之间的连接点链接
         }
         VehicleCore vehicle = vehicle1 != null ? vehicle1 : vehicle2;
         if (vehicle != null) {
@@ -393,7 +393,7 @@ public class VehicleCore {
         } else if (connector1 instanceof AttachPointConnector) {
             attachPoint = (AttachPointConnector) connector1;
             specialConnector = connector2;
-        } else throw new UnsupportedOperationException("对接口之一必须是AttachPointConnector类型");
+        } else throw new UnsupportedOperationException("连接点之一必须是AttachPointConnector类型");
         List<ConnectionData> comboList = new java.util.ArrayList<>(1);
         boolean attached = specialConnector.attach(attachPoint);//连接部件
         if (attached) {
@@ -412,7 +412,7 @@ public class VehicleCore {
                 recalculateCameraDistance();
                 this.activate();
                 if (!level.isClientSide()) {
-                    comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊对接口在前面，以保证对接口属性得到正确应用
+                    comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊连接点在前面，以保证连接点属性得到正确应用
                     //发包客户端创建连接关系
                     PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new ConnectorAttachPayload(
                             this.uuid,

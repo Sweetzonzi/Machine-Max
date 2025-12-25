@@ -48,8 +48,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "储物子系统储物空间列数必须大于1之间");
         //组装异常处理
         this.add("error.machine_max.part.model_not_found", "未找到模型文件: %1$s");
-        this.add("error.machine_max.part.connector_locator_not_found", "部件%1$的模型中未找到的对接口%2$s的定位器%3$s");
-        this.add("error.machine_max.part.invalid_connector_type", "部件%1$的对接口%2$s的类型%3$s非法，必须为\"Special\"或\"AttachPoint\"");
+        this.add("error.machine_max.part.connector_locator_not_found", "部件%1$的模型中未找到的连接点%2$s的定位器%3$s");
+        this.add("error.machine_max.part.invalid_connector_type", "部件%1$的连接点%2$s的类型%3$s非法，必须为\"Special\"或\"AttachPoint\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "部件%1$s中的内部接口%2$s与%3$s的类型不匹配，至多只能有一个接口的类型为\"Special\"");
         //提示信息
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");

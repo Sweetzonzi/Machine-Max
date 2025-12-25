@@ -1,0 +1,31 @@
+{ // 你也可以在这个目录下放置其他类型的配方，如工作台，熔炉或其他mod内容，但更推荐使用数据包
+  "type": "machine_max:fabricating", // 代表此配方用于打印机制造和手工部件组装，当配方名和某个部件的注册名匹配时，将自动成为它的手动组装配方
+  "ingredients": [ // 配方的原料列表，代表接收的原料类型和数量，可存在重复的内容。手工组装时按顺序依次消耗
+    {
+      "ingredient": { // 原料的类型
+        "tag": "c:ingots/copper" // 标签，接收所有标签包含c:ingots/copper的原料，例如原版铜锭或其他mod添加的铜锭(虽然现版本已经统一了)
+      },
+      "count": 1 // 原料的数量，制造或组装时会搜索整个背包的库存来消耗，因此可大于64。
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot" // 物品，仅接受物品id为minecraft:iron_ingot的原料，即铁锭
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "tag": "c:ingots/gold"
+      },
+      "count": 1
+    }
+  ],
+  "result": { // 产物，仅控制打印机该配方的产出，不影响部件组装
+    "id": "machine_max:part", // 产物的id，即制作出的物品的注册名
+    "count": 1, // 产物的数量，不应大于产物的可堆叠数量
+    "components": { // (可选) 产物额外附带的数据组件，在这里用于控制具体造出了什么部件
+      "machine_max:part_type": "machine_max:ae86_chassis" // 组件类型和组件内容，在组件内容填入部件的注册名以控制产出什么部件
+    }
+  },
+  "time": 60 // 手工组装或打印机的制作时间，单位为tick，1秒=20tick
+}

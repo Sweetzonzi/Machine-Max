@@ -23,14 +23,14 @@ public class SubPartData {
     public final float durability;// 零件的耐久度
     public final PosRotVelVel posRotVelVel;// 零件的位置、朝向、速度、角速度
     public final int textureIndex;// 零件的纹理索引
-    public final Map<String, CompoundTag> connectorData;// 对接口结构完整性
+    public final Map<String, CompoundTag> connectorData;// 连接点结构完整性
     public final Map<String, CompoundTag> subsystemData;// 零件的子系统数据
 
     public static final Codec<Map<String, CompoundTag>> DATA_CODEC = Codec.unboundedMap(Codec.STRING, CompoundTag.CODEC);
 
     public static final Codec<SubPartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.INT.fieldOf("id").forGetter(SubPartData::getId),
-            Codec.FLOAT.optionalFieldOf("durability", 20f).forGetter(SubPartData::getDurability),
+            Codec.FLOAT.optionalFieldOf("durability", Float.MAX_VALUE).forGetter(SubPartData::getDurability),
             PosRotVelVel.CODEC.fieldOf("pos_rot_vel_vel").forGetter(SubPartData::getPosRotVelVel),
             Codec.INT.optionalFieldOf("texture_index", 0).forGetter(SubPartData::getTextureIndex),
             DATA_CODEC.optionalFieldOf("connector_data", Map.of()).forGetter(SubPartData::getConnectorData),
@@ -122,7 +122,7 @@ public class SubPartData {
      * @param durability         零件的耐久度
      * @param posRotVelVel       零件的位置、朝向、速度、角速度
      * @param textureIndex       零件的纹理索引
-     * @param connectorData      零件的对接口数据
+     * @param connectorData      零件的连接点数据
      * @param subsystemData      零件的子系统数据
      */
     public SubPartData(int id, float durability, PosRotVelVel posRotVelVel, int textureIndex,

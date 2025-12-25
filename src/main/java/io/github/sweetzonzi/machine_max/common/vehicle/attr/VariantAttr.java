@@ -136,15 +136,15 @@ public class VariantAttr {
     }
 
     /**
-     * @return 部件所有外部对接口名称与对应的接口属性 The external connectors of the part and their corresponding locator attributes.
+     * @return 部件所有外部连接点名称与对应的接口属性 The external connectors of the part and their corresponding locator attributes.
      */
     public Map<Pair<String, String>, ConnectorAttr> getPartOutwardConnectors() {
-        Map<Pair<String, String>, ConnectorAttr> connectors = new HashMap<>(1);//获取部件所有外部对接口名称与类型
+        Map<Pair<String, String>, ConnectorAttr> connectors = new HashMap<>(1);//获取部件所有外部连接点名称与类型
         for (Map.Entry<String, SubPartAttr> entry : this.subParts.entrySet()) {
             String subPartName = entry.getKey();
             SubPartAttr subPart = entry.getValue();
             for (Map.Entry<String, ConnectorAttr> entry1 : subPart.connectors.entrySet()) {
-                if (entry1.getValue().connectedTo().isEmpty())//外部零件对接口
+                if (entry1.getValue().connectedTo().isEmpty())//外部零件连接点
                     connectors.put(Pair.of(subPartName, entry1.getKey()), entry1.getValue());
             }
         }

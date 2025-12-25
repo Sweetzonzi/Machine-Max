@@ -146,9 +146,9 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     }
 
     /**
-     * 获取指向的最近的部件对接口，如果没有则返回null
+     * 获取指向的最近的部件连接点，如果没有则返回null
      *
-     * @return 线段命中的最近的部件对接口
+     * @return 线段命中的最近的部件连接点
      */
     public AbstractConnector getConnector() {
         if (!sortedTargetsCache.isEmpty()) {

@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.hud3d;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
+import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -90,6 +91,20 @@ public class Hud3DContext {
      * @param z    z坐标（深度）
      */
     public void fill(float x1, float y1, float x2, float y2, int argb, float z) {
+        fill(x1, y1, x2, y2, argb, z, MMRenderTypes.SOLID_ALWAYS_VISIBLE);
+    }
+
+    /**
+     * 绘制一个指定颜色和z坐标的矩形
+     *
+     * @param x1   矩形左上角x坐标
+     * @param y1   矩形左上角y坐标
+     * @param x2   矩形右下角x坐标
+     * @param y2   矩形右下角y坐标
+     * @param argb 颜色值（ARGB格式）
+     * @param z    z坐标（深度）
+     */
+    public void fill(float x1, float y1, float x2, float y2, int argb, float z, RenderType renderType) {
         float a = (argb >>> 24) / 255f;
         float r = ((argb >> 16) & 0xFF) / 255f;
         float g = ((argb >> 8) & 0xFF) / 255f;
@@ -97,7 +112,7 @@ public class Hud3DContext {
 
         PoseStack.Pose pose = poseStack.last();
         Matrix4f matrix = pose.pose();
-        VertexConsumer vc = buffer.getBuffer(RenderType.gui());
+        VertexConsumer vc = buffer.getBuffer(renderType);
 
         vc.addVertex(matrix, x1, y2, z).setColor(r, g, b, a);
         vc.addVertex(matrix, x2, y2, z).setColor(r, g, b, a);

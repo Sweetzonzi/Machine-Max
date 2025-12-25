@@ -41,7 +41,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
             this.connector = specialConnector;
         } else {
             this.connector = null;
-            MachineMax.LOGGER.error("轮胎驱动子系统 {} 无法找到特殊对接口 {}", name, this.attr.controlledConnector);
+            MachineMax.LOGGER.error("轮胎驱动子系统 {} 无法找到特殊连接点 {}", name, this.attr.controlledConnector);
         }
     }
 

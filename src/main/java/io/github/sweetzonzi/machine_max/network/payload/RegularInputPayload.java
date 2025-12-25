@@ -108,7 +108,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                         if (!heldItem.is(MMItems.getPART_ITEM())) break;
                     }
                     eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
-                    targetConnector = eyesightBody.getConnector();//获取视线看着的部件对接口
+                    targetConnector = eyesightBody.getConnector();//获取视线看着的部件连接点
                     if (targetConnector != null && !targetConnector.hasPart()) {
                         PartType partType = PartItem.getPartType(heldItem, level);
                         if (partType == null) return;
@@ -150,7 +150,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                         if (!heldItem.is(MMItems.getPART_ITEM())) break;
                     }
                     eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
-                    targetConnector = eyesightBody.getConnector();//获取视线看着的部件对接口
+                    targetConnector = eyesightBody.getConnector();//获取视线看着的部件连接点
                     PartType partType = PartItem.getPartType(heldItem, level);
                     if (partType == null) return;
                     PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, partType);

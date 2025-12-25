@@ -30,7 +30,6 @@ import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblySyn
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -61,10 +60,8 @@ public class Part {
     public final String variantName;
     public final VariantAttr variant;
     public final UUID uuid;
-    public volatile float assemblingProgress = 0f; //组装进度(0~1)，控制最大耐久和质量
-    @Setter
-    public int materialProgress = 0; //材料供给进度，控制最大组装进度，上限取决于配方
-    public volatile float sharedDurability;//仅在部件内共享耐久度启用时有效，仅用于传递数据，各类实际判断在零件中进行
+    public volatile float assemblingProgress = 1f; //组装进度(0~1)，控制最大耐久和质量
+    public int materialProgress = Integer.MAX_VALUE; //材料供给进度，控制最大组装进度，上限取决于配方
     public final SubPart rootSubPart;
     public float totalMass;
     public boolean destroyed = false;
@@ -89,7 +86,6 @@ public class Part {
         this.variant = partType.getVariants().get(variantName);
         this.level = level;
         this.uuid = UUID.randomUUID();
-        this.sharedDurability = getSharedMaxDurability();
         this.rootSubPart = createSubParts(variant.getSubParts());//创建子部件并指定根子部件
         updateMass();
     }
@@ -120,10 +116,9 @@ public class Part {
         this.variantName = data.variant;
         this.variant = type.getVariants().get(variantName);
         this.uuid = UUID.fromString(data.uuid);
-        this.rootSubPart = createSubParts(type.getVariants().get(variantName).getSubParts());//重建子部件并指定根子部件
+        this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : Integer.MAX_VALUE);
         this.assemblingProgress = readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f;
-        this.materialProgress = readAdditionalData ? Math.max(data.materialAssemblingProgress, 0) : 0;
-        this.sharedDurability = readAdditionalData ? Math.min(data.sharedDurability, getSharedMaxDurability()) : getSharedMaxDurability();
+        this.rootSubPart = createSubParts(type.getVariants().get(variantName).getSubParts());//重建子部件并指定根子部件
         //遍历零件，录入基本数据
         for (Map.Entry<String, SubPart> entry : subParts.entrySet()) {
             String subPartName = entry.getKey();
@@ -210,8 +205,21 @@ public class Part {
 
     public float getSharedMaxDurability() {
         float result = 0;
-        for (SubPart subPart : subParts.values()) {
-            result += subPart.getSharedMaxDurability();
+        if (type.shareDurability && !subParts.isEmpty()) {
+            for (SubPart subPart : subParts.values()) {
+                result += subPart.getSharedMaxDurability();
+            }
+        }
+        return result;
+    }
+
+    public float getSharedDurability() {
+        float result = 0;
+        if (type.shareDurability && !subParts.isEmpty()) {
+            for (SubPart subPart : subParts.values()) {
+                result += subPart.getSyncedData().get(DestroyableObject.DATA_DURABILITY_ID);
+            }
+            result /= subParts.size();
         }
         return result;
     }
@@ -236,9 +244,9 @@ public class Part {
         for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartAttr.connectors.entrySet()) {
             String connectorName = connectorEntry.getKey();
             ConnectorAttr connectorAttr = connectorEntry.getValue();
-            if (locators.get(connectorAttr.locatorName()) instanceof OLocator locator) {//若找到了对应的零件对接口Locator
+            if (locators.get(connectorAttr.locatorName()) instanceof OLocator locator) {//若找到了对应的零件连接点Locator
                 org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-                Transform posRot = new Transform(//对接口的位置与姿态
+                Transform posRot = new Transform(//连接点的位置与姿态
                         PhysicsHelperKt.toBVector3f(locator.getOffset()).subtract(subPart.massCenterTransform.getTranslation()),
                         SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z)).mult(subPart.massCenterTransform.getRotation().inverse())
                 );
@@ -310,7 +318,7 @@ public class Part {
             subPart.body.setMass(subPartAttr.mass > 0 ? subPartAttr.mass : 20);//设置质量
             subPart.body.setCcdSweptSphereRadius(subPart.collisionShape.maxRadius());//设置CCD半径
             subPart.projectedArea = calculateProjectedArea(subPart);
-            //创建零件对接口
+            //创建零件连接点
             createConnectors(subPart, subPartAttr, locators);
             //创建部件内子系统
             createSubsystems(subPart, subPartAttr.subsystems);//创建子系统，赋予部件实际功能
@@ -324,6 +332,7 @@ public class Part {
         float maxMass = -100;
         SubPart rootSubPart = null;
         for (SubPart subPart : subParts.values()) {
+            subPart.setDurability(subPart.getMaxDurability());
             if (subPart.body.getMass() > maxMass) {
                 maxMass = subPart.body.getMass();
                 rootSubPart = subPart;
@@ -507,8 +516,28 @@ public class Part {
     }
 
     /**
-     * <p>设置部件的组装进度，并影响零件的最大耐久和实际质量</p>
-     * <p>Sets the assembling progress of the part, which affects the maximum durability and actual mass of the part.</p>
+     * <p>设置部件的材料进度，用于计算组装状态，不存在配方时无效</p>
+     *
+     * @param progress 材料进度，0~材料总量
+     */
+    public void setMaterialProgress(int progress) {
+        if (getRecipe() instanceof FabricatingRecipe recipe) {
+            materialProgress = Math.clamp(progress, 0, recipe.getIngredientList().size());
+        } else materialProgress = Math.max(0, progress);
+    }
+
+    /**
+     * <p>获取部件组装进度</p>
+     *
+     * @return 组装进度，0~1f
+     */
+    public float getAssemblingProgress() {
+        return Math.clamp(assemblingProgress, 0f, 1f);
+    }
+
+    /**
+     * <p>设置部件的组装进度，并影响零件的最大耐久、重力和实际质量</p>
+     * <p>Sets the assembling progress of the part, which affects the maximum durability, gravity, and actual mass of the part.</p>
      *
      * @param progress 组装进度，0~1
      */
@@ -518,12 +547,13 @@ public class Part {
             this.assemblingProgress = progress;
             level.getPhysicsLevel().submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
                 for (SubPart subPart : subParts.values()) {
-                    subPart.body.setMass(subPart.attr.mass * (0.05f + 0.95f * this.assemblingProgress));
+                    subPart.body.setMass(subPart.attr.mass * (0.1f + 0.9f * this.assemblingProgress));
+                    subPart.body.setGravity(getLevel().getPhysicsLevel().getWorld().getGravity(null).mult(this.assemblingProgress));
                 }
                 updateMass();
                 return null;
             });
-            if (!level.isClientSide() && vehicle!= null && vehicle.inLevel) {
+            if (!level.isClientSide() && vehicle != null && vehicle.inLevel) {
                 PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblySyncPayload(
                         vehicle.uuid,
                         uuid,

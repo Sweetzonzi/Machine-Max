@@ -25,7 +25,7 @@ public class ViewOrientationResolver {
     /**
      * 主观察面
      */
-    private enum Facing {
+    public enum Facing {
         POS_X, NEG_X,
         POS_Y, NEG_Y,
         POS_Z, NEG_Z
@@ -34,7 +34,7 @@ public class ViewOrientationResolver {
     /**
      * 在观察面内的“向上方向”
      */
-    private enum UpDir {
+    public enum UpDir {
         POS_X, NEG_X,
         POS_Y, NEG_Y,
         POS_Z, NEG_Z
@@ -86,28 +86,28 @@ public class ViewOrientationResolver {
                     UpDir.NEG_X, new Vector3f(0, 180, -90)
             ),
             Facing.POS_X, Map.of(
-                    UpDir.POS_Y, new Vector3f(0, 90, 0),
-                    UpDir.NEG_Y, new Vector3f(0, 90, 180),
-                    UpDir.POS_Z, new Vector3f(0, 90, 90),
-                    UpDir.NEG_Z, new Vector3f(0, 90, -90)
-            ),
-            Facing.NEG_X, Map.of(
                     UpDir.POS_Y, new Vector3f(0, -90, 0),
                     UpDir.NEG_Y, new Vector3f(0, -90, 180),
-                    UpDir.POS_Z, new Vector3f(0, -90, -90),
-                    UpDir.NEG_Z, new Vector3f(0, -90, 90)
+                    UpDir.POS_Z, new Vector3f(0, -90, 90),
+                    UpDir.NEG_Z, new Vector3f(0, -90, -90)
+            ),
+            Facing.NEG_X, Map.of(
+                    UpDir.POS_Y, new Vector3f(0, 90, 0),
+                    UpDir.NEG_Y, new Vector3f(0, 90, 180),
+                    UpDir.POS_Z, new Vector3f(0, 90, -90),
+                    UpDir.NEG_Z, new Vector3f(0, 90, 90)
             ),
             Facing.POS_Y, Map.of(
                     UpDir.POS_Z, new Vector3f(-90, 180, 0),
                     UpDir.NEG_Z, new Vector3f(90, 0, 0),
-                    UpDir.POS_X, new Vector3f(0, -90, -90),
-                    UpDir.NEG_X, new Vector3f(0, 90, 90)
+                    UpDir.POS_X, new Vector3f(0, 90, 90),
+                    UpDir.NEG_X, new Vector3f(0, -90, -90)
             ),
             Facing.NEG_Y, Map.of(
                     UpDir.POS_Z, new Vector3f(-90, 0, 0),
                     UpDir.NEG_Z, new Vector3f(90, 180, 0),
-                    UpDir.POS_X, new Vector3f(0, 90, -90),
-                    UpDir.NEG_X, new Vector3f(0, -90, 90)
+                    UpDir.POS_X, new Vector3f(0, -90, 90),
+                    UpDir.NEG_X, new Vector3f(0, 90, -90)
             )
     );
 
@@ -132,8 +132,6 @@ public class ViewOrientationResolver {
         }
 
         Vector3f rot = byUp.get(upDir);
-        if (Math.random() < 0.02)
-            MachineMax.LOGGER.debug("resolveViewRotation: facing={}, upDir={}, rot={}", facing, upDir, rot);
 
         return rot != null ? new Quaternionf().rotateYXZ(
                 (float) Math.toRadians(rot.y()),
@@ -144,7 +142,7 @@ public class ViewOrientationResolver {
     /**
      * 根据 forward 向量解析主观察面，并应用滞后阈值
      */
-    private Facing resolveFacingWithHysteresis(Vector3f forward) {
+    public Facing resolveFacingWithHysteresis(Vector3f forward) {
         Vector3f f = new Vector3f(forward).normalize();
 
         float ax = Math.abs(f.x());
@@ -196,7 +194,7 @@ public class ViewOrientationResolver {
      * 说明：
      * - 会先将 up 正交化到 forward 的切平面内，避免抖动
      */
-    private UpDir resolveUpDir(Vector3f forward, Vector3f up, Facing face) {
+    public UpDir resolveUpDir(Vector3f forward, Vector3f up, Facing face) {
         Vector3f f = new Vector3f(forward).normalize();
         Vector3f u = new Vector3f(up).normalize();
 

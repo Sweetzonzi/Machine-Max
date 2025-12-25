@@ -229,7 +229,7 @@ public class RawInputHandler {
         /*
           载具组装
          */
-            //切换部件对接口
+            //切换部件连接点
             new KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey)
                     .OnKeyDown(() -> {
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));

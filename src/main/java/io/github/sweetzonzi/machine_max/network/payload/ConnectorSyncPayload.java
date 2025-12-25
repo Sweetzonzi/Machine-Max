@@ -57,6 +57,6 @@ public record ConnectorSyncPayload(
             AbstractConnector connector = subPart.connectors.get(payload.connectorName());
             context.enqueueWork(() -> connector.getSynchedData().assignValues(payload.syncData()));
         } else
-            MachineMax.LOGGER.error("维度{}收到不存在物体{}的对接口同步数据包: {}", context.player().level().dimension().location(), payload.id, payload.connectorName);
+            MachineMax.LOGGER.error("维度{}收到不存在物体{}的连接点同步数据包: {}", context.player().level().dimension().location(), payload.id, payload.connectorName);
     }
 }
