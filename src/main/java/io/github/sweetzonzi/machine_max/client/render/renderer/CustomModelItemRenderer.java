@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.animation.renderer.layer.RenderLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
+import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import net.minecraft.client.Minecraft;
@@ -50,10 +51,11 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             if (displayContext == ItemDisplayContext.GUI) {
                 poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
                 poseStack.last().normal().rotateLocalY((float) Math.toRadians(-45.0));
-                if (customModelItem instanceof VehicleBlueprintItem
+                if ((customModelItem instanceof VehicleBlueprintItem
                         && VehicleBlueprintItem.getBlueprintData(stack).getIcon() != BlueprintData.EMPTY
-                        && VehicleBlueprintItem.getBlueprintData(stack).isRenderBackground()) {
-                    // 图标下额外渲染蓝图背景，以和装配体做出区分
+                        && VehicleBlueprintItem.getBlueprintData(stack).isRenderBackground())
+                        || customModelItem instanceof FabricatingBlueprintItem) {
+                    // 图标下额外渲染蓝图背景，以和装配体/部件物品做出区分
                     ModelRenderHelperKt.render(
                             animatable.getModelController().getOriginModel(),
                             modelInstance.getPose(),

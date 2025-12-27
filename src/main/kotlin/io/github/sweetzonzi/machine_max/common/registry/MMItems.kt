@@ -7,7 +7,7 @@ import io.github.sweetzonzi.machine_max.common.item.MaterialItem
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
 import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
-import io.github.sweetzonzi.machine_max.common.item.prop.FabicatingBlueprintItem
+import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
 import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
@@ -59,7 +59,7 @@ object MMItems {
     @JvmStatic
     val FABRICATING_BLUEPRINT = MachineMax.REGISTER.item {
         id="fabricating_blueprint"
-        factory = { FabicatingBlueprintItem() }
+        factory = { FabricatingBlueprintItem() }
     }
 
     //载具保存物品原型

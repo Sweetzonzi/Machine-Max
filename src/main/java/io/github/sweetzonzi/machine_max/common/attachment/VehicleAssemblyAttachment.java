@@ -10,11 +10,9 @@ import com.jme3.math.Transform;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
+import io.github.sweetzonzi.machine_max.common.item.prop.PartItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.vehicle.*;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
@@ -47,6 +45,8 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
 
 @Getter
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
@@ -168,32 +168,54 @@ public class VehicleAssemblyAttachment {
         }
     }
 
-    public InteractionResultHolder<ItemStack> assembly(Level level, LivingEntity entity, ItemStack stack) {
+    public InteractionResultHolder<ItemStack> assembly(
+            Level level,
+            LivingEntity entity,
+            ItemStack stack,
+            Part part
+    ) {
         ConnectorAttr connector = getConnector();
         if (level.isClientSide() || connector == null || partType == null || variantName == null) {
             return InteractionResultHolder.pass(stack);
         } else {
             try {
                 var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
+                SubPart targetSubPart = eyesight.getSubPart();
                 AbstractConnector targetConnector = eyesight.getConnector();
-                if (targetConnector != null && connectorName != null) {//若有可用的接口
+                if (targetSubPart != null // 直接填满未组装的蓝图部件进度
+                        && targetSubPart.part.type.getRegistryKey() == partType.getRegistryKey()
+                        && Objects.equals(part.variantName, targetSubPart.part.variantName)
+                        && targetSubPart.part.getAssemblingProgress() == 0
+                        && targetSubPart.part.getMaterialProgress() == 0
+                        && part.getMaterialProgress() > 0 && part.getAssemblingProgress() > 0) {
+                    targetSubPart.part.setMaterialProgress(part.getMaterialProgress());
+                    targetSubPart.part.setAssemblingProgress(part.getAssemblingProgress());
+                    targetSubPart.part.customRecipe = part.customRecipe;
+                    for (Map.Entry<String, SubPart> entry : targetSubPart.part.subParts.entrySet()) {
+                        entry.getValue().setDurability(part.subParts.get(entry.getKey()).getDurability());
+                    }
+                    if (stack.getItem() instanceof PartItem) {
+                        var pos = targetSubPart.getPosition();
+                        ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
+                    }
+                    return InteractionResultHolder.consume(stack);
+                } else if (targetConnector != null && connectorName != null) {//若有可用的接口
                     if (targetConnector.conditionCheck(partType, variantName)) {//检查变体条件
                         if ((targetConnector instanceof AttachPointConnector || connector.type().equals("AttachPoint"))) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标连接点所属的载具
-                            Part part = new Part(partType, variantName, level);
                             targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
-                            if (!entity.hasInfiniteMaterials()) VisualEffectHelper.partToPlace = null;
-                            var pos = part.rootSubPart.getPosition();
-                            stack.consume(1, entity);
-                            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
-                            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, entity.getPosition(1), entity.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
-                            ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.2f);
+                            if (!entity.hasInfiniteMaterials()) {
+                                VisualEffectHelper.partToPlace = null;
+                            }
+                            if (stack.getItem() instanceof PartItem) {
+                                var pos = part.rootSubPart.getPosition();
+                                ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.2f);
+                            }
                             return InteractionResultHolder.consume(stack);
                         } else return InteractionResultHolder.pass(stack);
                     } else return InteractionResultHolder.pass(stack);
                 } else {
-                    Part part = new Part(partType, variantName, level);
                     Transform transform = new Transform(
                             PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                     entity.getEyePosition(),
@@ -202,12 +224,11 @@ public class VehicleAssemblyAttachment {
                             Quaternion.IDENTITY
                     );
                     part.setTransform(transform);
-                    var pos = transform.getTranslation();
                     ObjectManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
-                    stack.consume(1, entity);
-                    SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, entity.getPosition(1), entity.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
-                    ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
+                    if (stack.getItem() instanceof PartItem) {
+                        var pos = transform.getTranslation();
+                        ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
+                    }
                     return InteractionResultHolder.consume(stack);
                 }
             } catch (Exception e) {

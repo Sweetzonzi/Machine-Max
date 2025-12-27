@@ -2,6 +2,8 @@ package io.github.sweetzonzi.machine_max.common.vehicle.data;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import lombok.Getter;
@@ -12,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 用于保存部件动态数据(位置，耐久度等)
@@ -22,6 +25,7 @@ public class PartData {
     public final String name;//部件的名称
     public final String uuid;//部件的UUID
     public final String variant;//部件的变体
+    public final ResourceLocation customRecipe;//部件的自定义配方
     public final float assemblingProgress;//部件的组装进度
     public final int materialAssemblingProgress;//部件的材料供给进度
     public final Map<String, SubPartData> subParts;//尚存的零件数据
@@ -31,6 +35,7 @@ public class PartData {
             Codec.STRING.fieldOf("name").forGetter(PartData::getName),
             Codec.STRING.fieldOf("uuid").forGetter(PartData::getUuid),
             Codec.STRING.fieldOf("variant").forGetter(PartData::getVariant),
+            ResourceLocation.CODEC.optionalFieldOf("custom_recipe", FabricatingRecipe.EMPTY).forGetter(PartData::getCustomRecipe),
             Codec.FLOAT.optionalFieldOf("assembling_progress", 1f).forGetter(PartData::getAssemblingProgress),
             Codec.INT.optionalFieldOf("material_assembling_progress", 99999).forGetter(PartData::getMaterialAssemblingProgress),
             SubPartData.MAP_CODEC.fieldOf("sub_parts").forGetter(PartData::getSubParts)
@@ -46,10 +51,11 @@ public class PartData {
             String name = buffer.readUtf();
             String uuid = buffer.readUtf();
             String variant = buffer.readUtf();
+            ResourceLocation customRecipe = buffer.readResourceLocation();
             float assemblingProgress = buffer.readFloat();
             int materialAssemblingProgress = buffer.readInt();
             var subParts = SubPartData.MAP_STREAM_CODEC.decode(buffer);
-            return new PartData(registryKey, name, uuid, variant, assemblingProgress, materialAssemblingProgress, subParts);
+            return new PartData(registryKey, name, uuid, variant, customRecipe, assemblingProgress, materialAssemblingProgress, subParts);
         }
 
         @Override
@@ -58,6 +64,7 @@ public class PartData {
             buffer.writeUtf(value.name);
             buffer.writeUtf(value.uuid);
             buffer.writeUtf(value.variant);
+            buffer.writeResourceLocation(value.customRecipe);
             buffer.writeFloat(value.assemblingProgress);
             buffer.writeInt(value.materialAssemblingProgress);
             SubPartData.MAP_STREAM_CODEC.encode(buffer, value.subParts);
@@ -94,6 +101,7 @@ public class PartData {
             String name,
             String uuid,
             String variant,
+            ResourceLocation customRecipe,
             float assemblingProgress,
             int materialAssemblingProgress,
             Map<String, SubPartData> subParts) {
@@ -101,6 +109,7 @@ public class PartData {
         this.name = name;
         this.uuid = uuid;
         this.variant = variant;
+        this.customRecipe = customRecipe;
         this.assemblingProgress = assemblingProgress;
         this.materialAssemblingProgress = materialAssemblingProgress;
         this.subParts = subParts;
@@ -116,6 +125,7 @@ public class PartData {
         this.name = part.name;
         this.uuid = part.uuid.toString();
         this.variant = part.variantName;
+        this.customRecipe = part.customRecipe == null ? FabricatingRecipe.EMPTY : part.customRecipe;
         this.assemblingProgress = part.assemblingProgress;
         this.materialAssemblingProgress = part.materialProgress;
         this.subParts = new HashMap<>();

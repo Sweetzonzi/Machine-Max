@@ -16,11 +16,12 @@ public interface PartAssemblyItem {
         PartType partType = null;
         if (stack.has(MMDataComponents.getPART_TYPE())) {
             partType = PartType.get(level, stack.get(MMDataComponents.getPART_TYPE()));
-        } else if (stack.has(MMDataComponents.getRECIPE_TYPE())) {
+        }
+        if (partType == null && stack.has(MMDataComponents.getRECIPE_TYPE())) {
             Recipe<?> recipe = getRecipe(stack, level);
             if (recipe != null) {
-                ItemStack resultItem =recipe.getResultItem(level.registryAccess());
-                return getPartType(resultItem, level);
+                ItemStack resultItem = recipe.getResultItem(level.registryAccess());
+                partType = getPartType(resultItem, level);
             }
         }
         return partType;

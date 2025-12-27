@@ -9,6 +9,7 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
+import io.github.sweetzonzi.machine_max.network.payload.SubPartSyncPayload;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +17,9 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SyncedDataHolder;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -183,7 +186,13 @@ public abstract class DestroyableObject implements SyncedDataHolder {
      * <p>立即同步发生变化的数据至客户端</p>
      */
     public void syncToClient() {
-
+        if (!level.isClientSide()) {
+            SynchedEntityData synchedentitydata = this.getSyncedData();
+            List<SynchedEntityData.DataValue<?>> list = synchedentitydata.packDirty();
+            if (list != null) {
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new SubPartSyncPayload(getId(), list));
+            }
+        }
     }
 
     protected void clientSyncPose() {

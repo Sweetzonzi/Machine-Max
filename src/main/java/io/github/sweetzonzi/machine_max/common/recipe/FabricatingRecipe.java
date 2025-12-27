@@ -3,11 +3,13 @@ package io.github.sweetzonzi.machine_max.common.recipe;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
 import lombok.Getter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -24,6 +26,8 @@ import java.util.List;
 //TODO: 材料需求检查与消耗仍然可能存在一个物品对应多个需求的问题
 @Getter
 public class FabricatingRecipe implements Recipe<FabricatingInput> {
+    public static final ResourceLocation EMPTY = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
+
     private final List<IngredientCountPair> ingredientPairs;
     private final List<Ingredient> ingredientList = new ArrayList<>(); // 列表形式的原料，方便分步推进合成
     private final ItemStack result;

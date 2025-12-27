@@ -60,6 +60,7 @@ public class Part {
     public final String variantName;
     public final VariantAttr variant;
     public final UUID uuid;
+    public ResourceLocation customRecipe = null;
     public volatile float assemblingProgress = 1f; //组装进度(0~1)，控制最大耐久和质量
     public int materialProgress = Integer.MAX_VALUE; //材料供给进度，控制最大组装进度，上限取决于配方
     public final SubPart rootSubPart;
@@ -111,10 +112,11 @@ public class Part {
      */
     public Part(PartData data, Level level, boolean readAdditionalData) {
         this.name = data.name;
-        this.type = getPartType(level, data.registryKey);
+        this.type = PartType.get(level, data.registryKey);
         this.level = level;
         this.variantName = data.variant;
         this.variant = type.getVariants().get(variantName);
+        this.customRecipe = data.customRecipe == FabricatingRecipe.EMPTY ? null : data.customRecipe;
         this.uuid = UUID.fromString(data.uuid);
         this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : Integer.MAX_VALUE);
         this.assemblingProgress = readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f;
@@ -163,15 +165,6 @@ public class Part {
             }
         }
         updateMass();//更新部件总质量
-    }
-
-    public PartType getPartType(Level level, ResourceLocation registryKey) {
-        PartType pt;
-        if (level.isClientSide) pt = MMDynamicRes.PART_TYPES.get(registryKey);
-        else pt = MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
-        if (pt == null)
-            throw new NullPointerException("部件类型" + registryKey + "不存在，请检查数据。可用部件列表: " + (level.isClientSide() ? MMDynamicRes.PART_TYPES.keySet() : MMDynamicRes.SERVER_PART_TYPES.keySet()));
-        return pt;
     }
 
     public void onTick() {
@@ -506,7 +499,14 @@ public class Part {
     @Nullable
     public FabricatingRecipe getRecipe() {
         try {
-            RecipeHolder<?> recipeHolder = level.getRecipeManager().byKey(type.getRegistryKey()).orElseThrow();
+            RecipeHolder<?> recipeHolder = null;
+            if (customRecipe != null && level.getRecipeManager().byKey(customRecipe).isPresent()) {
+                recipeHolder = level.getRecipeManager().byKey(customRecipe).get();
+                if (!(recipeHolder.value() instanceof FabricatingRecipe)) recipeHolder = null;
+            }
+            if (recipeHolder == null) { // 未找到自定义配方，则使用默认配方
+                recipeHolder = level.getRecipeManager().byKey(type.getRegistryKey()).orElseThrow();
+            }
             if (recipeHolder.value() instanceof FabricatingRecipe recipe) {
                 return recipe;
             } else return null;
@@ -547,7 +547,7 @@ public class Part {
             this.assemblingProgress = progress;
             level.getPhysicsLevel().submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
                 for (SubPart subPart : subParts.values()) {
-                    subPart.body.setMass(subPart.attr.mass * (0.1f + 0.9f * this.assemblingProgress));
+                    subPart.body.setMass(subPart.attr.mass * (0.3f + 0.7f * this.assemblingProgress));
                     subPart.body.setGravity(getLevel().getPhysicsLevel().getWorld().getGravity(null).mult(this.assemblingProgress));
                 }
                 updateMass();
