@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.util.sound
 import cn.solarmoon.spark_core.sound.SoundData
 import cn.solarmoon.spark_core.util.SoundHelper
 import cn.solarmoon.spark_core.util.sound.WaveEffects
-import cn.solarmoon.spark_core.util.sound.filter.ConvolutionFilter
 import cn.solarmoon.spark_core.util.sound.filter.MonoFilter
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

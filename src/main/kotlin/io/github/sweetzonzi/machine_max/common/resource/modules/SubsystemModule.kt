@@ -8,8 +8,8 @@ import com.mojang.serialization.JsonOps
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.AbstractSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 import java.nio.charset.StandardCharsets
 
 /**

@@ -1,9 +1,9 @@
 package io.github.sweetzonzi.machine_max.client.render.gui;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.AssemblyHud3D;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.CustomHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.InteractHud;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.AssemblyHud3D;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScreen;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.ItemStorageSubsystemScreen;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.VehicleNamingScreen;

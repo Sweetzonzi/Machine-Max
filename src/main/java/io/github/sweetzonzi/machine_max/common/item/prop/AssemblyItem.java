@@ -14,7 +14,6 @@ import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
@@ -46,11 +45,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
-import java.util.*;
 import java.util.List;
-
-import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem.MODEL;
-import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem.TEXTURE;
+import java.util.*;
 
 public class AssemblyItem extends Item implements ICustomModelItem {
 

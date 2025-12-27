@@ -1,10 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
-import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment
+import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment
+import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
 import net.minecraft.client.Minecraft
-import net.neoforged.neoforge.attachment.AttachmentType
 import net.neoforged.neoforge.common.util.NeoForgeExtraCodecs
 
 object MMAttachments {
@@ -12,11 +12,19 @@ object MMAttachments {
     fun register() {
     }
 
-    //实体视线，用于获取看着的载具、部件、对接口等
+    //实体视线，用于获取看着的载具、部件、连接点等
     @JvmStatic
     val ENTITY_EYESIGHT = MachineMax.REGISTER.attachment {
         id = "entity_eyesight"
         factory = { _ -> LivingEntityEyesightAttachment(Minecraft.getInstance().player) }
+    }
+
+
+    //实体组装部件时的缓存信息，如持有的部件类型，变体类型，选中的连接点等
+    @JvmStatic
+    val VEHICLE_ASSEMBLY = MachineMax.REGISTER.attachment {
+        id = "vehicle_assembly_cache"
+        factory = { _ -> VehicleAssemblyAttachment(Minecraft.getInstance().player) }
     }
 
     //世界的载具列表，用于保存、加载和管理世界中的载具

@@ -17,7 +17,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader {
     public final EngineSubsystemAttr attr;

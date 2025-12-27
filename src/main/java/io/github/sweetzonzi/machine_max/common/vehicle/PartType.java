@@ -3,13 +3,13 @@ package io.github.sweetzonzi.machine_max.common.vehicle;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
@@ -87,6 +87,11 @@ public class PartType {
         this.variants = variants;
     }
 
+    public static PartType get(Level level, ResourceLocation registryKey) {
+        if (level.isClientSide) return MMDynamicRes.PART_TYPES.get(registryKey);
+        else return MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
+    }
+
     @Override
     public boolean equals(Object other) {
         if (this == other) return true;
@@ -121,6 +126,7 @@ public class PartType {
 
     /**
      * 注册部件类型，仅应被调用一次
+     *
      * @param registryKey 注册名
      */
     public void setRegistryKey(ResourceLocation registryKey) {

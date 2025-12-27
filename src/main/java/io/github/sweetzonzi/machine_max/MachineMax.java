@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max;
 
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
-import com.mojang.logging.LogUtils;
 import io.github.sweetzonzi.machine_max.common.registry.*;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;

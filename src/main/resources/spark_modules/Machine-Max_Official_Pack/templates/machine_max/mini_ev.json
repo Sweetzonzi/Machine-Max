@@ -8,7 +8,7 @@
         "mini_ev_wheel": {
           "connector_data": {
             "chassis_connection": {
-              "integrity": 10.0
+              "integrity": 20.0
             }
           },
           "id": 1,
@@ -48,7 +48,7 @@
         "mini_ev_wheel": {
           "connector_data": {
             "chassis_connection": {
-              "integrity": 10.0
+              "integrity": 20.0
             }
           },
           "id": 2,

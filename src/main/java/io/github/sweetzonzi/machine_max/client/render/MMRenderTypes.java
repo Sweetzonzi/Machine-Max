@@ -15,7 +15,7 @@ public class MMRenderTypes {
      */
     public static final RenderType LINES_ALWAYS_VISIBLE = RenderType.create(
             "machine_max_lines_always_visible",
-            DefaultVertexFormat.POSITION_COLOR_NORMAL,
+            DefaultVertexFormat.POSITION_COLOR,
             VertexFormat.Mode.LINES,
             1536,
             RenderType.CompositeState.builder()

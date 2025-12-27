@@ -14,9 +14,8 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.client.render.renderable.ModelAnimatable;
-import io.github.sweetzonzi.machine_max.common.item.prop.PartItem;
+import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
@@ -28,7 +27,6 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
@@ -43,19 +41,19 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     private Player player;
     private ModelAnimatable partToPlace = null;
-    private VehicleCore vehicleCore;
 
     @Override
     public void tick() {
         player = Minecraft.getInstance().player;
         if (player == null) return;
-        if (player.getMainHandItem().getItem() instanceof PartItem) {
-            ItemStack partItem = player.getMainHandItem();
-            PartType partType;
-            partType = PartItem.getPartType(partItem, player.level());
-            if (partType == null) return;
-            String variantName = PartItem.getPartAssemblyInfo(partItem, partType).getVariant();
-            VariantAttr variantAttr = partType.getVariant(variantName);
+        var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+        if (cache.getPartType() instanceof PartType) {
+            VariantAttr variantAttr = cache.getVariant();
+            if (variantAttr == null) {
+                this.partToPlace = null;
+                VisualEffectHelper.partToPlace = null;
+                return;
+            }
             ResourceLocation model = variantAttr.getModel("default");
             ResourceLocation texture = variantAttr.getTextures("default").getFirst();
             ResourceLocation animation = variantAttr.getAnimation("default");
@@ -89,11 +87,9 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     public void renderPartToAssembly(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
-        if (player.getMainHandItem().getItem() instanceof PartItem) {
-            ItemStack partItem = player.getMainHandItem();
-            PartType partType = PartItem.getPartType(partItem, player.level());
-            if (partType == null) return;
-            String variant = PartItem.getPartAssemblyInfo(partItem, partType).getVariant();
+        var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+        if (cache.getPartType() instanceof PartType partType) {
+            String variant = cache.getVariantName();
             renderAttachPoints(partType, variant, camPos, poseStack, bufferSource, partialTick);
             renderPart(camPos, poseStack, bufferSource, partialTick);
         } else {

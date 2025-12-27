@@ -13,27 +13,27 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-public record PartAssemblySyncPayload (
+public record PartAssemblyProgressSyncPayload(
         UUID vehicleUUID,
         UUID partUUID,
         float assemblingProgress,
         int materialProgress
 ) implements CustomPacketPayload {
-    public static final Type<PartAssemblySyncPayload> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_assembly_sync_payload")
+    public static final Type<PartAssemblyProgressSyncPayload> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_assembly_progress_sync_payload")
     );
-    public static final StreamCodec<FriendlyByteBuf, PartAssemblySyncPayload> STREAM_CODEC = new StreamCodec<>() {
+    public static final StreamCodec<FriendlyByteBuf, PartAssemblyProgressSyncPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override
-        public @NotNull PartAssemblySyncPayload decode(@NotNull FriendlyByteBuf buffer) {
+        public @NotNull PartAssemblyProgressSyncPayload decode(@NotNull FriendlyByteBuf buffer) {
             UUID vehicleUUID = buffer.readUUID();
             UUID partUUID = buffer.readUUID();
             float assemblingProgress = buffer.readFloat();
             int materialProgress = buffer.readInt();
-            return new PartAssemblySyncPayload(vehicleUUID, partUUID, assemblingProgress, materialProgress);
+            return new PartAssemblyProgressSyncPayload(vehicleUUID, partUUID, assemblingProgress, materialProgress);
         }
 
         @Override
-        public void encode(@NotNull FriendlyByteBuf buffer, @NotNull PartAssemblySyncPayload value) {
+        public void encode(@NotNull FriendlyByteBuf buffer, @NotNull PartAssemblyProgressSyncPayload value) {
             buffer.writeUUID(value.vehicleUUID);
             buffer.writeUUID(value.partUUID);
             buffer.writeFloat(value.assemblingProgress);
@@ -46,7 +46,7 @@ public record PartAssemblySyncPayload (
         return TYPE;
     }
 
-    public static void handle(PartAssemblySyncPayload payload, IPayloadContext context) {
+    public static void handle(PartAssemblyProgressSyncPayload payload, IPayloadContext context) {
         VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
         if (vehicle != null) {
             Part part = vehicle.partMap.get(payload.partUUID);

@@ -1,23 +1,9 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
-import cn.solarmoon.spark_core.animation.model.ModelIndex;
-import cn.solarmoon.spark_core.animation.model.origin.OLocator;
-import cn.solarmoon.spark_core.animation.model.origin.OModel;
-import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
-import io.github.sweetzonzi.machine_max.common.component.PartAssemblyCacheComponent;
-import io.github.sweetzonzi.machine_max.common.component.PartAssemblyInfoComponent;
+import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machine_max.common.item.prop.PartItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.registry.MMItems;
-import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -29,15 +15,10 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-
-import java.util.Map;
 
 public record RegularInputPayload(int key, int tick_count) implements CustomPacketPayload {
     public static final Type<RegularInputPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "regular_input_payload"));
@@ -61,7 +42,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
 
     public static void serverHandler(final RegularInputPayload payload, final IPayloadContext context) {
         handle(payload, context);
-        //将玩家输入转发给其他玩家，以在其他玩家客户端模拟自己的操作
+        //将玩家输入转发给其他玩家，以在其他玩家客户端模拟自己的操作 TODO: 这可行吗？
         Player player = context.player();
         PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload);
     }
@@ -69,9 +50,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
     public static void handle(final RegularInputPayload payload, final IPayloadContext context) {
         Player player = context.player();
         Level level = player.level();
-        ItemStack heldItem;
-        LivingEntityEyesightAttachment eyesightBody;
-        AbstractConnector targetConnector;
+        VehicleAssemblyAttachment assemblyCache;
         switch (KeyInputMapping.fromValue(payload.key())) {
             /*
              *  通用功能
@@ -102,78 +81,14 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
              */
             case CYCLE_PART_CONNECTORS://切换部件连接点
                 if (!level.isClientSide()) {//仅在服务器端处理
-                    heldItem = player.getMainHandItem();
-                    if (!heldItem.is(MMItems.getPART_ITEM())) {//确保手持物品为部件物品
-                        heldItem = player.getOffhandItem();
-                        if (!heldItem.is(MMItems.getPART_ITEM())) break;
-                    }
-                    eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
-                    targetConnector = eyesightBody.getConnector();//获取视线看着的部件连接点
-                    if (targetConnector != null && !targetConnector.hasPart()) {
-                        PartType partType = PartItem.getPartType(heldItem, level);
-                        if (partType == null) return;
-                        PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, partType);
-                        String variantName = info.getVariant();
-                        VariantAttr variantAttr = partType.getVariant(variantName);
-                        PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem);
-                        Map<Pair<String, String>, ConnectorAttr> partConnectors = variantAttr.getPartOutwardConnectors();
-                        int i = partConnectors.size();//设置最大迭代次数
-                        var connectors = variantAttr.getPartOutwardConnectors();
-                        while (i > 0) {
-                            //循环获取下一个端口，直到找到合适的接口或到达迭代次数上限
-                            var connectorPair = iterators.getNextConnector();//获取下一个部件接口
-                            ConnectorAttr connectorAttr = connectors.get(connectorPair);
-                            if (connectorAttr.type().equals("AttachPoint") || targetConnector instanceof AttachPointConnector) {
-                                //检查部件Tag是否与目标接口接受的类型匹配
-                                if(targetConnector.conditionCheck(partType, variantName) && connectorAttr.conditionCheck(partType, variantName)) {
-                                    OModel model = OModel.getOrEmpty(new ModelIndex("part", partType.variants.get(variantName).getModel("default")));
-                                    var locators = model.getLocators();
-                                    OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
-                                    Vector3f offset = partConnectorLocator.getOffset().toVector3f();
-                                    Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
-                                    Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
-                                    info = new PartAssemblyInfoComponent(variantName, connectorPair, connectorAttr.type(), offset, quaternion);
-                                    break;
-                                }
-                            }
-                            i--;
-                        }
-                        heldItem.set(MMDataComponents.getPART_ASSEMBLY_INFO(), info);//更新物品保存的部件连接信息
-                    }
+                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache.cycleConnectors();
                 }
                 break;
             case CYCLE_PART_VARIANTS://切换部件变体
                 if (!level.isClientSide()) {//仅在服务器端处理
-                    heldItem = player.getMainHandItem();
-                    if (!heldItem.is(MMItems.getPART_ITEM())) {//确保手持物品为部件物品
-                        heldItem = player.getOffhandItem();
-                        if (!heldItem.is(MMItems.getPART_ITEM())) break;
-                    }
-                    eyesightBody = player.getData(MMAttachments.getENTITY_EYESIGHT());
-                    targetConnector = eyesightBody.getConnector();//获取视线看着的部件连接点
-                    PartType partType = PartItem.getPartType(heldItem, level);
-                    if (partType == null) return;
-                    PartAssemblyInfoComponent info = PartItem.getPartAssemblyInfo(heldItem, partType);
-                    PartAssemblyCacheComponent iterators = PartItem.getPartAssemblyCache(heldItem);
-                    int i = partType.variants.size();//设置最大迭代次数
-                    while (i >= 0) {
-                        //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限
-                        String variantName = iterators.getNextVariant();//获取下一个部件变体
-                        VariantAttr variantAttr = partType.getVariant(variantName);
-                        var connectors = variantAttr.getPartOutwardConnectors();
-                        if (targetConnector == null || targetConnector.conditionCheck(partType, variantName)) {
-                            OModel model = OModel.getOrEmpty(new ModelIndex("part", partType.variants.get(variantName).getModel("default")));
-                            var locators = model.getLocators();
-                            OLocator partConnectorLocator = locators.get(connectors.get(info.getConnector()).locatorName());
-                            Vector3f offset = partConnectorLocator.getOffset().toVector3f();
-                            Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
-                            Quaternionf quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
-                            info = new PartAssemblyInfoComponent(variantName, info.getConnector(), info.getConnectorType(), offset, quaternion);
-                            break;
-                        }
-                        i--;
-                    }
-                    heldItem.set(MMDataComponents.getPART_ASSEMBLY_INFO(), info);//更新物品保存的部件连接信息
+                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache.cycleVariants();
                 }
                 break;
         }

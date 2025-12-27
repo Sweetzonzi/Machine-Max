@@ -26,7 +26,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
-import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblySyncPayload;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyProgressSyncPayload;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
@@ -554,7 +554,7 @@ public class Part {
                 return null;
             });
             if (!level.isClientSide() && vehicle != null && vehicle.inLevel) {
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblySyncPayload(
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
                         vehicle.uuid,
                         uuid,
                         assemblingProgress,

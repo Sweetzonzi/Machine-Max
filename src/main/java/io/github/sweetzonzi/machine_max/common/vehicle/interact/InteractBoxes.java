@@ -1,21 +1,16 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.interact;
 
-import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.InteractBoxAttr;
 import lombok.Getter;
-import net.minecraft.network.syncher.EntityDataAccessor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;

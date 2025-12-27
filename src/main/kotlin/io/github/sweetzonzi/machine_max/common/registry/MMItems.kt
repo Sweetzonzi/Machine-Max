@@ -5,12 +5,12 @@ import io.github.sweetzonzi.machine_max.client.render.renderer.BlockEntityItemRe
 import io.github.sweetzonzi.machine_max.client.render.renderer.CustomModelItemRenderer
 import io.github.sweetzonzi.machine_max.common.item.MaterialItem
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
-import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem
-import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
-import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabicatingBlueprintItem
+import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
+import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
+import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer
 import net.minecraft.world.item.BlockItem

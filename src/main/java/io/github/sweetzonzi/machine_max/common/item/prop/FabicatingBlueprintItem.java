@@ -4,10 +4,10 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
-import io.github.sweetzonzi.machine_max.common.recipe.FabricatingInput;
+import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
@@ -16,7 +16,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
@@ -25,27 +24,28 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Objects;
 
-public class FabicatingBlueprintItem extends Item implements ICustomModelItem {
+public class FabicatingBlueprintItem extends Item implements ICustomModelItem, PartAssemblyItem {
     public FabicatingBlueprintItem() {
-        super(new Properties().stacksTo(1));
+        super(new Properties());
     }
 
+    /**
+     * 右键点击物品，尝试将零件放置到世界中或尝试与选择的连接口连接
+     *
+     * @param level    世界
+     * @param player   玩家
+     * @param usedHand 玩家使用的手
+     * @return 互动结果
+     */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
-        FabricatingInput input = new FabricatingInput(player.getInventory().items);
-        Recipe<?> recipe = getRecipe(player.getItemInHand(usedHand), level);
-//        if (recipe.matches(input, level)) {
-//            MachineMax.LOGGER.debug("材料充足，可以制造{}", recipe.getResult().toString());
-//            player.addItem(recipe.getResult().copy());
-//        } else {
-//            for (var pair : recipe.getMaterials()) {
-//                Ingredient ingredient = pair.getFirst();
-//                int requiredCount = pair.getSecond();
-//                int count = recipe.checkMaterials(input.inputs(), ingredient);
-//                MachineMax.LOGGER.debug("缺少材料:{}{}/{}个", ingredient.getItems()[0].getDisplayName(), count, requiredCount);
-//            }
-//        }
-        return super.use(level, player, usedHand);
+        ItemStack stack = player.getItemInHand(usedHand);
+        stack.set(DataComponents.MAX_DAMAGE, getMaxDamage(stack));
+        if (!level.isClientSide()) {
+            if (player.hasData(MMAttachments.getVEHICLE_ASSEMBLY())) {
+                return player.getData(MMAttachments.getVEHICLE_ASSEMBLY()).assembly(level, player, stack);
+            } else return InteractionResultHolder.pass(stack);
+        } else return InteractionResultHolder.success(stack);
     }
 
     /**
@@ -64,35 +64,15 @@ public class FabicatingBlueprintItem extends Item implements ICustomModelItem {
         }
     }
 
-    public static Recipe<?> getRecipe(ItemStack stack, Level level) {
-        ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
-        if (type != null) {
-            return level.getRecipeManager().byKey(type).orElseThrow().value();
-        } else throw new NullPointerException("物品" + stack + "中未找到制造配方类型数据");
-    }
-
-    public static PartType getPartType(ItemStack stack, Level level) {
-        PartType partType;
-        if (stack.has(MMDataComponents.getRECIPE_TYPE())) {
-            ResourceLocation type = getRecipe(stack, level).getResultItem(level.registryAccess()).get(MMDataComponents.getPART_TYPE());
-            //从物品Component中获取部件类型
-            if (level.isClientSide) {
-                partType = MMDynamicRes.PART_TYPES.get(type);
-            } else
-                partType = MMDynamicRes.SERVER_PART_TYPES.get(type);
-        } else throw new IllegalStateException("物品" + stack + "中未找到部件类型数据");//如果物品Component中部件类型为空，则抛出异常
-        if (partType == null) throw new IllegalStateException("未找到物品" + stack + "中存储的数据类型");
-        return partType;
-    }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
-        PartType partType = getPartType(itemStack, level);//获取物品保存的部件类型
+        PartType partType = PartAssemblyItem.getPartType(itemStack, level);//获取物品保存的部件类型
         HashMap<ItemDisplayContext, ItemAnimatable> customModels;
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();
-        if (context == ItemDisplayContext.GUI) {
+        if (context == ItemDisplayContext.GUI && partType != null) {
             animatable.getModelController().setModel(new ModelIndex(
                     "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
             animatable.getModelController().setTextureLocation(partType.getDefaultIcon());

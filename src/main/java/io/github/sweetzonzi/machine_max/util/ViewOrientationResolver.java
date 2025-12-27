@@ -1,10 +1,8 @@
 package io.github.sweetzonzi.machine_max.util;
 
-import io.github.sweetzonzi.machine_max.MachineMax;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import javax.crypto.Mac;
 import java.util.Map;
 
 /**

@@ -5,8 +5,8 @@ import cn.solarmoon.spark_core.pack.graph.SparkPackage
 import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 import java.nio.charset.StandardCharsets
 
 class TooltipModule : SparkPackModule {

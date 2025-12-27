@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.registry
 import cn.solarmoon.spark_core.entry_builder.entityTypeBuilder
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity
-import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.MobCategory
 
 object MMEntities {

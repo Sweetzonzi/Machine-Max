@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.mixin_interface;
 
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import net.minecraft.world.phys.HitResult;
 
 public interface IProjectileMixin {

@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.math.Quaternion;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
@@ -180,6 +179,14 @@ public class AssemblyHud3D implements IHud3DElement {
         ctx.fill(startX, startY, startX + 3, startY + animatedHudHeight.get(), HUD_THEME, zBg);
 
         /* ---------- 标题部分 ---------- */
+        if (subPart != null)
+            ctx.drawLine( // 连接零件和hud
+                    new Vector3f(startX, startY + 1, 0),
+                    ctx.worldToLocal(SparkMathKt.toVector3f(subPart.getPosition())),
+                    HUD_THEME,
+                    MMRenderTypes.alwaysVisibleLines()
+            );
+
         String partName = part != null ? Component
                 .translatable(part.type.getRegistryKey().toLanguageKey())
                 .getString() : "";
@@ -226,7 +233,7 @@ public class AssemblyHud3D implements IHud3DElement {
             }
 
             // 组装总进度条
-            ctx.drawText(Component.literal(part != null ? "材料与组装进度: " : ""), startX + PADDING, startY, TEXT_SUB);
+            ctx.drawText(part != null ? Component.literal("材料与组装进度: ") : Component.empty(), startX + PADDING, startY, TEXT_SUB);
             startY += TEXT_LINE_HEIGHT;
             drawAnimatedProgressBar(
                     ctx,
@@ -344,15 +351,18 @@ public class AssemblyHud3D implements IHud3DElement {
         // 渲染连接点结构完整性
         for (Map.Entry<String, AbstractConnector> entry : subPart.getConnectors().entrySet()) {
             AbstractConnector connector = entry.getValue();
+            float integrityProgress = connector.getIntegrity() / connector.getBasicIntegrity();
+            integrityProgress *= integrityProgress;
+            integrityProgress = 1 - Math.clamp(integrityProgress, 0, 1);
             if (!connector.isInternal()) {
-                crossOffset = connector.hasPart() ? 0.1f * (1 - (connector.getIntegrity() / connector.getBasicIntegrity())) : 0;
+                crossOffset = connector.hasPart() ? 0.1f * integrityProgress : 0;
             }
             ctx.poseStack.pushPose();
             ctx.poseStack.mulPose(SparkMathKt.toMatrix4f(connector.getOffsetFromMassCenter().toTransformMatrix()));
             ctx.poseStack.pushPose();
-            ctx.poseStack.mulPose(rot.invert());//标记面向hud平面
-            int redShiftGreen = Easing.lerpColor(0xff008800, 0xff880000, 0.5f * (1 - connector.getIntegrity() / connector.getBasicIntegrity()));
-            int redShiftBlue = Easing.lerpColor(0xff000088, 0xff880000, 0.5f * (1 - connector.getIntegrity() / connector.getBasicIntegrity()));
+            ctx.poseStack.mulPose(rot.invert()); // 标记面向hud平面
+            int redShiftGreen = Easing.lerpColor(0xff008800, 0xff880000, 0.25f * integrityProgress);
+            int redShiftBlue = Easing.lerpColor(0xff000088, 0xff880000, 0.25f * integrityProgress);
             // 绘制十字表示连接点完整性
             ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
             ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, 0xff880000, 0, MMRenderTypes.additiveSolidAlwaysVisible());
@@ -363,10 +373,21 @@ public class AssemblyHud3D implements IHud3DElement {
             ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
             ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, redShiftBlue, 0, MMRenderTypes.additiveSolidAlwaysVisible());
             ctx.fill(-halfWidth, -halfSize, halfWidth, halfSize, redShiftBlue, 0, MMRenderTypes.additiveSolidAlwaysVisible());
-
             ctx.poseStack.popPose();
             ctx.poseStack.popPose();
         }
+        ctx.drawLine(
+                new Vector3f(),
+                new Vector3f(halfSize * 5, 0, 0),
+                0xffff0000, MMRenderTypes.alwaysVisibleLines());
+        ctx.drawLine(
+                new Vector3f(),
+                new Vector3f(0, halfSize * 5, 0),
+                0xff00ff00, MMRenderTypes.alwaysVisibleLines());
+        ctx.drawLine(
+                new Vector3f(),
+                new Vector3f(0, 0, halfSize * 5),
+                0xff0000ff, MMRenderTypes.alwaysVisibleLines());
         ctx.poseStack.popPose();
         ctx.poseStack.popPose();
         // 渲染零件耐久度

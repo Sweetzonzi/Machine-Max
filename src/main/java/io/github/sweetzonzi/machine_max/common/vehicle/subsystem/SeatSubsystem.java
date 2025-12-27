@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
@@ -85,7 +86,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             }
             occupied = true;
             for (String channel : attr.passengerNumSignalTargets.keySet()) {
-                sendSignalToAllTargets(channel, 1f);
+                sendSignalToAllTargets(channel, 1);
             }
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
@@ -97,13 +98,16 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
 
     public void removePassenger() {
         if (passenger != null) {
-            if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() == this)
+            if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() == this) {
                 ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(null);
+                // TODO: 似乎未成功施加速度，检查原因
+                passenger.addDeltaMovement(SparkMathKt.toVec3(getSubPart().getLinearVelocity().add(0,1,0).mult(0.05f)));
+            }
             passenger = null;
         }
         occupied = false;
         for (String channel : attr.passengerNumSignalTargets.keySet()) {
-            sendSignalToAllTargets(channel, 0f);
+            sendSignalToAllTargets(channel, 0);
         }
         resetSignalOutputs();
         hintTicks = 0;

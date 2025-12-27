@@ -4,10 +4,8 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.entry_builder.dataComponentBuilder
 import com.mojang.serialization.Codec
 import io.github.sweetzonzi.machine_max.MachineMax
-import io.github.sweetzonzi.machine_max.common.component.PartAssemblyCacheComponent
-import io.github.sweetzonzi.machine_max.common.component.PartAssemblyInfoComponent
-import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData
 import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData
+import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemDisplayContext
@@ -18,7 +16,7 @@ object MMDataComponents {
     }
 
     /**
-     * 保存在部件物品上的配方类型
+     * 保存在部件物品上的配方路径
      */
     @JvmStatic
     val RECIPE_TYPE = MachineMax.REGISTER.dataComponentType<ResourceLocation> {
@@ -118,24 +116,4 @@ object MMDataComponents {
         }
     }
 
-    @JvmStatic
-    val PART_ASSEMBLY_INFO = MachineMax.REGISTER.dataComponentType<PartAssemblyInfoComponent> {
-        id = "part_assembly_info"
-        factory = dataComponentBuilder {
-            networkSynchronized(PartAssemblyInfoComponent.STREAM_CODEC)
-            cacheEncoding()
-        }
-    }
-
-    /**
-     * 用于在不创建部件的情况下暂存部件变体与部件对接口的迭代器
-     */
-    @JvmStatic
-    val PART_ASSEMBLY_CACHE = MachineMax.REGISTER.dataComponentType<PartAssemblyCacheComponent> {
-        id = "part_assembly_cache"
-        factory = dataComponentBuilder {
-            networkSynchronized(PartAssemblyCacheComponent.STREAM_CODEC)
-            cacheEncoding()
-        }
-    }
 }

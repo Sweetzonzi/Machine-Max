@@ -86,9 +86,14 @@ public class MMPayloadRegistry {
                 new MainThreadPayloadHandler<>(PartPaintPayload::handle)
         );
         sync.playToClient(//通知客户端部件组转进度改变
-                PartAssemblySyncPayload.TYPE,
-                PartAssemblySyncPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(PartAssemblySyncPayload::handle)
+                PartAssemblyProgressSyncPayload.TYPE,
+                PartAssemblyProgressSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PartAssemblyProgressSyncPayload::handle)
+        );
+        sync.playToClient(//同步客户端玩家部件组装缓存
+                PlayerPartAssemblyCacheSyncPayload.TYPE,
+                PlayerPartAssemblyCacheSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PlayerPartAssemblyCacheSyncPayload::handle)
         );
         sync.commonToServer(//客户端请求维度载具数据
                 ClientRequestVehicleDataPayload.TYPE,

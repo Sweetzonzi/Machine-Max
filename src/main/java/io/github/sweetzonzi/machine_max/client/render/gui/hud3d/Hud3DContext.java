@@ -1,15 +1,15 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud3d;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
@@ -18,7 +18,8 @@ import net.minecraft.util.Brightness;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 public class Hud3DContext {
 
@@ -250,6 +251,39 @@ public class Hud3DContext {
     }
 
     /**
+     * 在当前 PoseStack 空间中绘制一条直线
+     *
+     * @param from       起点（局部坐标）
+     * @param to         终点（局部坐标）
+     * @param argb       颜色（ARGB）
+     * @param renderType 使用的 RenderType
+     */
+    public void drawLine(
+            Vector3f from,
+            Vector3f to,
+            int argb,
+            RenderType renderType
+    ) {
+        float a = (argb >>> 24) / 255f;
+        float r = ((argb >> 16) & 0xFF) / 255f;
+        float g = ((argb >> 8) & 0xFF) / 255f;
+        float b = (argb & 0xFF) / 255f;
+
+        PoseStack.Pose pose = poseStack.last();
+        Matrix4f matrix = pose.pose();
+        VertexConsumer vc = buffer.getBuffer(renderType);
+
+        vc.addVertex(matrix, from.x(), from.y(), from.z())
+                .setNormal(0, 0, 1)
+                .setColor(r, g, b, a);
+
+        vc.addVertex(matrix, to.x(), to.y(), to.z())
+                .setNormal(0, 0, 1)
+                .setColor(r, g, b, a);
+    }
+
+
+    /**
      * 从纹理中绘制一块区域，支持 Z 偏移
      */
     public void blit(
@@ -288,6 +322,31 @@ public class Hud3DContext {
                 .setUv(u0, v0)
                 .setColor(1f, 1f, 1f, 1f);
     }
+
+    /**
+     * 将世界坐标转换为当前 HUD PoseStack 下的局部坐标
+     *
+     * @param worldPos 世界坐标
+     * @return HUD 局部空间坐标（UI 单位）
+     */
+    public Vector3f worldToLocal(Vector3f worldPos) {
+        // 取得当前 PoseStack 的变换矩阵（local -> world）
+        // 拷贝矩阵，避免破坏原始 PoseStack
+        Matrix4f inverse = new Matrix4f().translate(camera.getPosition().toVector3f()).mul(poseStack.last().pose()).invert();
+
+        // 齐次坐标
+        Vector4f vec4 = new Vector4f(
+                worldPos.x(),
+                worldPos.y(),
+                worldPos.z(),
+                1.0F
+        );
+
+        vec4.mul(inverse);
+
+        return new Vector3f(vec4.x(), vec4.y(), vec4.z());
+    }
+
 
 
     /* ====================== 现版本RenderSystem不支持Stencil Test，相关方法无效，暂时注释 ======================= */

@@ -60,7 +60,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
             "textures/item/blueprint_bg.png");
 
     public VehicleBlueprintItem() {
-        super(new Properties().stacksTo(1));
+        super(new Properties());
     }
 
     @Override
