@@ -1073,8 +1073,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      */
     @Override
     public float getDurability() {
-        return (part.type.shareDurability ? part.getSharedDurability() : super.getDurability())
-                * (0.05f + 0.95f * part.getAssemblingProgress());
+        return getDurabilityRaw() * (0.05f + 0.95f * part.getAssemblingProgress());
+    }
+
+    public float getDurabilityRaw() {
+        return (part.type.shareDurability ? part.getSharedDurability() : super.getDurability());
     }
 
     @Override

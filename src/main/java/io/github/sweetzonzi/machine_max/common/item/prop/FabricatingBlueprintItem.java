@@ -72,9 +72,6 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                     Part part = new Part(cache.getPartType(), cache.getVariantName(), level);
                     part.setMaterialProgress(0);
                     part.setAssemblingProgress(0);
-                    for (SubPart subPart : part.subParts.values()) {
-                        subPart.setDurability(subPart.getDurability());
-                    }
                     if (PartAssemblyItem.getRecipe(stack, level) instanceof FabricatingRecipe) {
                         part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE());
                     }

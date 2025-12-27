@@ -153,7 +153,7 @@ public class SubPartData {
             subPartSubsystemData.put(subsystemName, subsystem.saveData(new CompoundTag()));
         }
         this.id = subPart.getId();
-        this.durability = subPart.getDurability();
+        this.durability = subPart.getDurabilityRaw();
         this.posRotVelVel = new PosRotVelVel(position, rotation, linearVel, angularVel);
         this.textureIndex = subPart.getTextureIndex();
         this.connectorData = connectorData;
