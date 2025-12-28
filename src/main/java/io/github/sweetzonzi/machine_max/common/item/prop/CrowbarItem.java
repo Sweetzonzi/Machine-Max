@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
@@ -37,7 +38,6 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import java.awt.*;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -59,27 +59,29 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                 Part part = subPart.part;
                 PartType partType = part.type;
                 boolean hasConnection = false;
-                for (AbstractConnector connector : part.externalConnectors.values()){
+                for (AbstractConnector connector : part.externalConnectors.values()) {
                     if (connector.hasPart()) {
                         hasConnection = true;
                         break;
                     }
                 }
-                if (hasConnection && !player.isCreative()) {
-                    if (subPart.entity != null) {
+                if (hasConnection && (player.isCrouching() || !player.isCreative())) {
+                    AbstractConnector targetConnector = eyesight.getAttachedConnector();
+                    if (player.isCrouching() && targetConnector != null && targetConnector.hasPart() && !targetConnector.isInternal()) {
+                        part.vehicle.detachConnector(targetConnector);
+                    } else if (subPart.entity != null) {
                         float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
                         float scale = player.getAttackStrengthScale(0.5f);
                         DamageSource damageSource = level.damageSources().playerAttack(player);
                         float finalDamage = EnchantmentHelper.modifyDamage((ServerLevel) level, player.getWeaponItem(), subPart.entity, damageSource, damage);
+                        for (AbstractConnector connector : part.externalConnectors.values()) {
+                            if (connector.hasPart()) {
+                                connector.accumulateImpact(finalDamage * scale * 2);
+                            }
+                        }
                         level.getPhysicsLevel().submitDeduplicatedTask("disassembly_" + player.getStringUUID(), PPhase.PRE, () -> {
                             if (subPart.entity != null) {
-                                for (AbstractConnector connector : part.externalConnectors.values()){
-                                    if (connector.hasPart()) {
-                                        connector.accumulateImpact(finalDamage * scale * 2);
-                                    }
-                                }
                                 subPart.entity.hurt(damageSource, finalDamage * scale * 2);
-                                subPart.syncToClient();
                             }
                             return null;
                         });
@@ -87,11 +89,15 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                 } else {
                     part.vehicle.removePart(part);
                     if (!player.isCreative()) {//非创造模式，则尝试获取为物品
-                        ItemStack itemStack = new ItemStack(MMItems.getPART_ITEM());
-                        itemStack.set(MMDataComponents.getPART_TYPE(), partType.getRegistryKey());
-                        if (!player.addItem(itemStack)) {//尝试直接放入物品栏，失败则掉落为实体
-                            Entity itemStackEntity = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), itemStack);
-                            level.addFreshEntity(itemStackEntity);
+                        if (part.assemblingProgress >= 1f) { // 仅完成组装的部件可作为物品掉落
+                            ItemStack itemStack = new ItemStack(MMItems.getPART_ITEM());
+                            itemStack.set(MMDataComponents.getPART_TYPE(), partType.getRegistryKey());
+                            if (!player.addItem(itemStack)) {//尝试直接放入物品栏，失败则掉落为实体
+                                Entity itemStackEntity = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), itemStack);
+                                level.addFreshEntity(itemStackEntity);
+                            }
+                        } else if (part.getRecipe() instanceof FabricatingRecipe) {
+                            part.disassemble(player.getInventory(), Float.MAX_VALUE);
                         }
                     }
                     SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.removed"), 32f);
@@ -113,16 +119,22 @@ public class CrowbarItem extends Item implements ICustomModelItem {
             if (subPart != null) {//提示信息
                 Part part = subPart.part;
                 boolean hasConnection = false;
-                for (AbstractConnector connector : part.externalConnectors.values()){
+                for (AbstractConnector connector : part.externalConnectors.values()) {
                     if (connector.hasPart()) {
                         hasConnection = true;
                         break;
                     }
                 }
-                if (hasConnection && !player.isCreative())
-                    player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.unsafe_disassembly",
-                            Component.translatable(part.type.getRegistryKey().toLanguageKey())).withColor(Color.ORANGE.getRGB()), true);
-                else
+                if (hasConnection && (player.isCrouching() || !player.isCreative())) {
+                    AbstractConnector targetConnector = eyesight.getAttachedConnector();
+                    if (player.isCrouching() && targetConnector != null && targetConnector.hasPart() && !targetConnector.isInternal()) {
+                        player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.detach_connector",
+                                Component.translatable(targetConnector.getName()), Component.translatable(targetConnector.attachedConnector.getName())), true);
+                    } else {
+                        player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.unsafe_disassembly",
+                                Component.translatable(part.type.getRegistryKey().toLanguageKey())), true);
+                    }
+                } else
                     player.displayClientMessage(Component.translatable("tooltip.machine_max.crowbar.safe_disassembly",
                             Component.translatable(part.type.getRegistryKey().toLanguageKey())), true);
             } else player.displayClientMessage(Component.empty(), true);

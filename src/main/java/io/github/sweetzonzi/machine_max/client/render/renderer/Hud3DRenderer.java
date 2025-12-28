@@ -10,12 +10,14 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.util.Mth;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,9 +51,12 @@ public class Hud3DRenderer {
             render(
                     mc,
                     event.getCamera(),
+                    event.getFrustum(),
                     player,
                     event.getPoseStack(),
                     mc.renderBuffers().bufferSource(),
+                    event.getModelViewMatrix(),
+                    event.getProjectionMatrix(),
                     event.getPartialTick().getGameTimeDeltaPartialTick(false)
             );
         }
@@ -63,9 +68,12 @@ public class Hud3DRenderer {
     private static void render(
             Minecraft mc,
             Camera camera,
+            Frustum frustum,
             LocalPlayer player,
             PoseStack poseStack,
             MultiBufferSource buffer,
+            Matrix4f modelViewMatrix,
+            Matrix4f projectionMatrix,
             float partialTicks
     ) {
         if (ELEMENTS.isEmpty()) {
@@ -110,9 +118,12 @@ public class Hud3DRenderer {
         Hud3DContext context = new Hud3DContext(
                 mc,
                 camera,
+                frustum,
                 player,
                 poseStack,
                 buffer,
+                modelViewMatrix,
+                projectionMatrix,
                 partialTicks
         );
         // 遍历所有已注册的 3D HUD 元素

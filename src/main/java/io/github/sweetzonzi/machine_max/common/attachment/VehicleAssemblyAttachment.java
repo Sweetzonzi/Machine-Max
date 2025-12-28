@@ -4,7 +4,6 @@ import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.datafixers.util.Pair;
@@ -23,11 +22,8 @@ import io.github.sweetzonzi.machine_max.network.payload.assembly.PlayerPartAssem
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -93,7 +89,7 @@ public class VehicleAssemblyAttachment {
                 cache.setPartType(newPartType);
                 if (!level.isClientSide() && entity.hasData(MMAttachments.getENTITY_EYESIGHT().get())) {
                     var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
-                    AbstractConnector targetConnector = eyesight.getConnector();
+                    AbstractConnector targetConnector = eyesight.getEmptyConnector();
                     // 服务端额外根据选中的目标连接点自动切换使用的变体和连接点
                     if (targetConnector != null && !targetConnector.hasPart() && cache.getConnector() != null) {
                         if (cache.getVariant() != null && !targetConnector.conditionCheck(cache.getPartType(), cache.getVariantName())) {
@@ -110,7 +106,7 @@ public class VehicleAssemblyAttachment {
 
     public void cycleConnectors() {
         var eyesight = owner.getData(MMAttachments.getENTITY_EYESIGHT());
-        AbstractConnector targetConnector = eyesight.getConnector();//获取视线看着的部件连接点
+        AbstractConnector targetConnector = eyesight.getEmptyConnector();//获取视线看着的部件连接点
         if (targetConnector != null && !targetConnector.hasPart()) {
             PartType partType = this.getPartType();
             if (partType == null) return;
@@ -152,7 +148,7 @@ public class VehicleAssemblyAttachment {
 
     public void cycleVariants() {
         var eyesight = owner.getData(MMAttachments.getENTITY_EYESIGHT());
-        AbstractConnector targetConnector = eyesight.getConnector();//获取视线看着的部件连接点
+        AbstractConnector targetConnector = eyesight.getEmptyConnector();//获取视线看着的部件连接点
         PartType partType = this.getPartType();
         if (partType == null) return;
         int i = partType.variants.size();//设置最大迭代次数
@@ -181,7 +177,7 @@ public class VehicleAssemblyAttachment {
             try {
                 var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
                 SubPart targetSubPart = eyesight.getSubPart();
-                AbstractConnector targetConnector = eyesight.getConnector();
+                AbstractConnector targetConnector = eyesight.getEmptyConnector();
                 if (targetSubPart != null // 直接填满未组装的蓝图部件进度
                         && targetSubPart.part.type.getRegistryKey() == partType.getRegistryKey()
                         && Objects.equals(part.variantName, targetSubPart.part.variantName)

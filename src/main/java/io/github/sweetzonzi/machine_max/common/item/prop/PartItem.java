@@ -20,8 +20,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
-import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
-import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -40,7 +38,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -99,7 +96,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                 String variantName = cache.getVariantName();//获取物品保存的部件变体
                 ConnectorAttr connectorAttr = cache.getConnector();
                 SubPart targetSubPart = eyesight.getSubPart();
-                AbstractConnector targetConnector = eyesight.getConnector();
+                AbstractConnector targetConnector = eyesight.getEmptyConnector();
                 MutableComponent message = Component.empty();
                 if (targetSubPart != null // 直接填满未组装的蓝图部件进度
                         && targetSubPart.part.type.getRegistryKey() == partType.getRegistryKey()

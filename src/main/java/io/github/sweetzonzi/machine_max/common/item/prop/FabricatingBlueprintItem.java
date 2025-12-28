@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -14,7 +13,6 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
@@ -25,8 +23,6 @@ import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -39,7 +35,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -95,7 +90,7 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                 if (variantAttr == null) return;
                 String variant = cache.getVariantName();//获取物品保存的部件变体
                 ConnectorAttr connectorAttr = cache.getConnector();
-                AbstractConnector targetConnector = eyesight.getConnector();
+                AbstractConnector targetConnector = eyesight.getEmptyConnector();
                 MutableComponent message = Component.empty();
                 if (targetConnector != null && connectorAttr != null) {
                     if (targetConnector.conditionCheck(partType, variant)) {

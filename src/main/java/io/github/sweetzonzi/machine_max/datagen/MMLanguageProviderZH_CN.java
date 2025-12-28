@@ -56,7 +56,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("message.machine_max.watch_interact_box_info", "[%1$s]");
         this.add("error.machine_max.use_part_item", "尝试放置%1$s时出现错误：%2$s");
         this.add("tooltip.machine_max.crowbar.safe_disassembly", "互动以安全拆除%1$s");
-        this.add("tooltip.machine_max.crowbar.unsafe_disassembly", "互动以强行拆除%3$s (可能损坏部件)");
+        this.add("tooltip.machine_max.crowbar.detach_connector", "互动以断开%1$s和%2$s的连接");
+        this.add("tooltip.machine_max.crowbar.unsafe_disassembly", "互动以强行拆除%1$s (可能损坏部件)");
         this.add("tooltip.machine_max.wrench.disassembly", "结构完整性：%1$s/%2$s 潜行互动以安全解除%3$s的固定");
         this.add("tooltip.machine_max.wrench.repair", "结构完整性：%2$s/%3$s 部件耐久：%4$s/%5$s 互动以维修%1$s");
         this.add("tooltip.machine_max.wrench.cant_repair", "%1$s已被摧毁，无法修复，潜行互动以解除固定便于拆除");

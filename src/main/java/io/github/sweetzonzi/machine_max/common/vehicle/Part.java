@@ -412,6 +412,7 @@ public class Part {
      * @return 是否成功改变进度 Whether the progress is successfully changed
      */
     public boolean disassemble(Container container, float progress) {
+        progress = Math.max(progress, 0f);
         boolean ignoreMaterial = level.isClientSide();
         if (!level.isClientSide() && container instanceof Inventory inventory) {
             ignoreMaterial = inventory.player.hasInfiniteMaterials();
@@ -421,7 +422,7 @@ public class Part {
         if (recipe != null) {
             int totalTime = recipe.getProcessingTime();
             float step = progress / totalTime;
-            float newProgress = assemblingProgress - step;
+            float newProgress = Math.clamp(assemblingProgress - step, 0f, 1f);
 
             // 计算新的组装进度对应的材料需求
             int totalMaterials = recipe.getIngredientList().size(); // 总材料数量

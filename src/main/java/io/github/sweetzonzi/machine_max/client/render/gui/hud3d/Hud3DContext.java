@@ -10,6 +10,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
@@ -23,9 +24,16 @@ public class Hud3DContext {
 
     public final Minecraft mc;
     public final Camera camera;
+    public final Frustum frustum;
     public final LocalPlayer player;
     public final PoseStack poseStack;
     public final MultiBufferSource buffer;
+    /** 当前渲染阶段的 ModelView 矩阵 */
+    public final Matrix4f modelViewMatrix;
+    /** 当前渲染阶段的 Projection 矩阵 */
+    public final Matrix4f projectionMatrix;
+    /** 预计算的 MVP 矩阵：Projection * ModelView */
+    public final Matrix4f mvpMatrix;
     public final float partialTicks;
     public final Font font;
     public final ItemRenderer itemRenderer;
@@ -40,25 +48,36 @@ public class Hud3DContext {
     /**
      * 构造一个Hud3D上下文对象
      *
-     * @param mc           Minecraft客户端实例
-     * @param player       本地玩家实例
-     * @param poseStack    姿态栈
-     * @param buffer       多缓冲源
-     * @param partialTicks 部分刻度
+     * @param mc               Minecraft客户端实例
+     * @param camera           相机实例
+     * @param frustum          视锥体实例
+     * @param player           本地玩家实例
+     * @param poseStack        姿态栈
+     * @param buffer           多缓冲源
+     * @param modelViewMatrix  模型视图矩阵
+     * @param projectionMatrix 投影矩阵
+     * @param partialTicks     插值进度
      */
     public Hud3DContext(
             Minecraft mc,
             Camera camera,
+            Frustum frustum,
             LocalPlayer player,
             PoseStack poseStack,
             MultiBufferSource buffer,
+            Matrix4f modelViewMatrix,
+            Matrix4f projectionMatrix,
             float partialTicks
     ) {
         this.mc = mc;
         this.camera = camera;
+        this.frustum = frustum;
         this.player = player;
         this.poseStack = poseStack;
         this.buffer = buffer;
+        this.modelViewMatrix = modelViewMatrix;
+        this.projectionMatrix = projectionMatrix;
+        this.mvpMatrix = new Matrix4f(projectionMatrix).mul(modelViewMatrix);
         this.partialTicks = partialTicks;
         this.font = mc.font;
         this.itemRenderer = mc.getItemRenderer();
@@ -174,10 +193,10 @@ public class Hud3DContext {
         Matrix4f m = new Matrix4f().rotate(camera.rotation());
         VertexConsumer vc = buffer.getBuffer(type);
 
-        vc.addVertex(m, v1.x, v1.y, v1.z).setNormal(0,0,1).setColor(r, g, b, a);
-        vc.addVertex(m, v2.x, v2.y, v2.z).setNormal(0,0,1).setColor(r, g, b, a);
-        vc.addVertex(m, v3.x, v3.y, v3.z).setNormal(0,0,1).setColor(r, g, b, a);
-        vc.addVertex(m, v4.x, v4.y, v4.z).setNormal(0,0,1).setColor(r, g, b, a);
+        vc.addVertex(m, v1.x, v1.y, v1.z).setNormal(0, 0, 1).setColor(r, g, b, a);
+        vc.addVertex(m, v2.x, v2.y, v2.z).setNormal(0, 0, 1).setColor(r, g, b, a);
+        vc.addVertex(m, v3.x, v3.y, v3.z).setNormal(0, 0, 1).setColor(r, g, b, a);
+        vc.addVertex(m, v4.x, v4.y, v4.z).setNormal(0, 0, 1).setColor(r, g, b, a);
     }
 
 
@@ -378,8 +397,6 @@ public class Hud3DContext {
     }
 
 
-
-
     /**
      * 从纹理中绘制一块区域，支持 Z 偏移
      */
@@ -452,17 +469,6 @@ public class Hud3DContext {
     }
 
     /**
-     * 世界坐标 → 相机视空间
-     * 同时考虑相机平移与旋转
-     */
-    public Vector3f worldToView(Vector3f worldPos) {
-        Vector4f view = new Vector4f(worldPos.sub(camera.getPosition().toVector3f()), 1.0F);
-        // local -> view 的旋转
-        new Quaternionf(camera.rotation()).invert().transform(view);
-        return new Vector3f(view.x, view.y, view.z);
-    }
-
-    /**
      * 相机视空间 → 世界坐标
      */
     public Vector3f viewToWorld(Vector3f viewPos) {
@@ -473,23 +479,86 @@ public class Hud3DContext {
     }
 
     /**
-     * HUD 局部坐标 → 相机视空间
+     * 世界坐标 → 相机视空间
+     * （显式使用相机位置 + 旋转）
      */
-    public Vector3f localToView(Vector3f localPos) {
-        var v = new Vector4f(localPos, 1.0f).mul(poseStack.last().pose());
-        // local -> view 的旋转
-        new Quaternionf(camera.rotation()).invert().transform(v);
+    public Vector3f worldToView(Vector3f world) {
+        Vector3f v = new Vector3f(world)
+                .sub(camera.getPosition().toVector3f());
+        camera.rotation().conjugate(new Quaternionf()).transform(v);
+        return v;
+    }
+
+    /**
+     * HUD 局部坐标 → 相机视空间
+     * 使用 PoseStack + modelViewMatrix（不含平移）
+     */
+    public Vector3f localToView(Vector3f local) {
+        Vector4f v = new Vector4f(local, 1.0f)
+                .mul(poseStack.last().pose())
+                .mul(modelViewMatrix);
         return new Vector3f(v.x, v.y, v.z);
     }
 
     /**
      * 相机视空间 → HUD 局部坐标
      */
-    public Vector3f viewToLocal(Vector3f viewPos) {
-        // view -> local 的旋转
-        camera.rotation().transform(viewPos);
-        var v = new Vector4f(viewPos, 1.0f).mul(new Matrix4f(poseStack.last().pose()).invert());
+    public Vector3f viewToLocal(Vector3f view) {
+        Matrix4f inv = new Matrix4f(poseStack.last().pose())
+                .invert()
+                .mul(new Matrix4f(modelViewMatrix).invert());
+        Vector4f v = new Vector4f(view, 1.0f).mul(inv);
         return new Vector3f(v.x, v.y, v.z);
+    }
+
+    /**
+     * 相机视空间 → Clip Space
+     */
+    public Vector4f viewToClip(Vector3f view) {
+        return new Vector4f(view, 1.0f).mul(projectionMatrix);
+    }
+
+    /**
+     * 相机视空间 → NDC
+     */
+    public Vector3f viewToNdc(Vector3f view) {
+        Vector4f clip = viewToClip(view);
+        return new Vector3f(
+                clip.x / clip.w,
+                clip.y / clip.w,
+                clip.z / clip.w
+        );
+    }
+
+    /**
+     * HUD 局部坐标 → NDC
+     */
+    public Vector3f localToNdc(Vector3f local) {
+        return viewToNdc(localToView(local));
+    }
+
+    /**
+     * NDC → 相机视空间
+     *
+     * @param ndc   [-1,1]
+     */
+    public Vector3f ndcToView(Vector3f ndc) {
+        Matrix4f invProj = new Matrix4f(projectionMatrix).invert();
+
+        Vector4f clip = new Vector4f(ndc, 1.0f);
+        Vector4f view = clip.mul(invProj);
+
+        // 反齐次除法
+        view.div(view.w);
+
+        return new Vector3f(view.x, view.y, view.z);
+    }
+
+    /**
+     * NDC → HUD 局部坐标
+     */
+    public Vector3f ndcToLocal(Vector3f ndc) {
+        return viewToLocal(ndcToView(ndc));
     }
 
 

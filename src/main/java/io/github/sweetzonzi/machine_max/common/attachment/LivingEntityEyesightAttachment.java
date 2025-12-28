@@ -22,6 +22,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.network.payload.SubsystemInteractPayload;
+import io.github.sweetzonzi.machine_max.util.MMMath;
 import lombok.Getter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -143,11 +144,11 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     }
 
     /**
-     * 获取指向的最近的部件连接点，如果没有则返回null
+     * 获取指向的最近的尚未被占用的部件连接点，如果没有则返回null
      *
-     * @return 线段命中的最近的部件连接点
+     * @return 线段命中的最近的尚未被占用的部件连接点
      */
-    public AbstractConnector getConnector() {
+    public AbstractConnector getEmptyConnector() {
         if (!sortedTargetsCache.isEmpty()) {
             for (PhysicsRigidBody body : sortedTargetsCache) {
                 if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart && targetsCache.get(body) instanceof PhysicsRayTestResult rayTestResult) {//如果射线命中物体是部件
@@ -160,6 +161,39 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                     for (AbstractConnector connector : subPart.connectors.values()) {
                         if (!connector.internal && !connector.hasPart() && connector.body != null) {
                             Vector3f attachPos = connector.body.getPhysicsLocation(null);
+                            float dist = attachPos.subtract(hitPoint).lengthSquared();
+                            if (dist < distance) {//如果距离更近
+                                distance = dist;//更新距离
+                                result = connector;//更新结果
+                            }
+                        }
+                    }
+                    return result;
+                } else if (PhysicsBodyExtensionKt.getOwner(body) instanceof AbstractConnector connector)
+                    return connector;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取指向的最近的已连接的部件连接点，如果没有则返回null
+     *
+     * @return 线段命中的最近的已连接的部件连接点
+     */
+    public AbstractConnector getAttachedConnector() {
+        if (!sortedTargetsCache.isEmpty()) {
+            for (PhysicsRigidBody body : sortedTargetsCache) {
+                if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart && targetsCache.get(body) instanceof PhysicsRayTestResult rayTestResult) {//如果射线命中物体是部件
+                    rayTestResult.getHitFraction();//获取距离命中点最近的可用部件接口
+                    Vector3f hitPoint = PhysicsHelperKt.toBVector3f(owner.position()
+                            .add(0, owner.getEyeHeight(), 0)
+                            .add(owner.getViewVector(1).normalize().scale(this.eyesightRange * rayTestResult.getHitFraction())));
+                    AbstractConnector result = null;
+                    float distance = Float.MAX_VALUE;
+                    for (AbstractConnector connector : subPart.connectors.values()) {
+                        if (!connector.internal && connector.hasPart()) {
+                            Vector3f attachPos = MMMath.relPointWorldPos(connector.offsetFromMassCenter.getTranslation(), subPart.body);
                             float dist = attachPos.subtract(hitPoint).lengthSquared();
                             if (dist < distance) {//如果距离更近
                                 distance = dist;//更新距离
