@@ -17,9 +17,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
+import org.joml.*;
 
 public class Hud3DContext {
 
@@ -159,6 +157,30 @@ public class Hud3DContext {
         vc.addVertex(matrix, x1, y1, z).setColor(lr, lg, lb, la);
     }
 
+    /**
+     * 绘制四边形，顶点坐标为透视投影下的屏幕空间
+     */
+    private void drawQuad(
+            Vector3f v1, Vector3f v2,
+            Vector3f v3, Vector3f v4,
+            int argb,
+            RenderType type
+    ) {
+        float a = (argb >>> 24) / 255f;
+        float r = ((argb >> 16) & 255) / 255f;
+        float g = ((argb >> 8) & 255) / 255f;
+        float b = (argb & 255) / 255f;
+
+        Matrix4f m = new Matrix4f().rotate(camera.rotation());
+        VertexConsumer vc = buffer.getBuffer(type);
+
+        vc.addVertex(m, v1.x, v1.y, v1.z).setNormal(0,0,1).setColor(r, g, b, a);
+        vc.addVertex(m, v2.x, v2.y, v2.z).setNormal(0,0,1).setColor(r, g, b, a);
+        vc.addVertex(m, v3.x, v3.y, v3.z).setNormal(0,0,1).setColor(r, g, b, a);
+        vc.addVertex(m, v4.x, v4.y, v4.z).setNormal(0,0,1).setColor(r, g, b, a);
+    }
+
+
     /* ======================== 文本 ======================== */
 
     /**
@@ -282,6 +304,81 @@ public class Hud3DContext {
                 .setColor(r, g, b, a);
     }
 
+    /**
+     * 在屏幕空间中绘制一条直线
+     *
+     * @param from       起点（屏幕坐标）
+     * @param to         终点（屏幕坐标）
+     * @param argb       颜色（ARGB）
+     * @param renderType 使用的 RenderType
+     */
+    public void drawScreenLine(
+            Vector3f from,
+            Vector3f to,
+            int argb,
+            RenderType renderType
+    ) {
+        float a = (argb >>> 24) / 255f;
+        float r = ((argb >> 16) & 0xFF) / 255f;
+        float g = ((argb >> 8) & 0xFF) / 255f;
+        float b = (argb & 0xFF) / 255f;
+
+        Matrix4f matrix = new Matrix4f().rotate(camera.rotation());
+        VertexConsumer vc = buffer.getBuffer(renderType);
+
+        vc.addVertex(matrix, from.x(), from.y(), from.z())
+                .setNormal(0, 0, 1)
+                .setColor(r, g, b, a);
+
+        vc.addVertex(matrix, to.x(), to.y(), to.z())
+                .setNormal(0, 0, 1)
+                .setColor(r, g, b, a);
+    }
+
+    /**
+     * 绘制保持朝向屏幕的有宽线段，坐标为当前poseStack下的局部坐标
+     */
+    public void drawScreenFacingLine(
+            Vector3f from,
+            Vector3f to,
+            float screenWidth, // 屏幕空间宽度（NDC 单位）
+            int argb,
+            RenderType renderType
+    ) {
+        // 1. local -> view
+        Vector3f v0 = localToView(new Vector3f(from));
+        Vector3f v1 = localToView(new Vector3f(to));
+
+        if (v0.z >= -0.01f && v1.z >= -0.01f) return;
+
+        // 2. view -> NDC（不含 projection matrix，手动做透视除法）
+        Vector2f s0 = new Vector2f(v0.x / -v0.z, v0.y / -v0.z);
+        Vector2f s1 = new Vector2f(v1.x / -v1.z, v1.y / -v1.z);
+
+        Vector2f dir = new Vector2f(s1).sub(s0);
+        if (dir.lengthSquared() < 1e-6f) return;
+        dir.normalize();
+
+        // 屏幕空间法线
+        Vector2f perp = new Vector2f(-dir.y, dir.x);
+
+        Vector2f p0a = new Vector2f(s0).add(new Vector2f(perp).mul(screenWidth * 0.5f));
+        Vector2f p0b = new Vector2f(s0).sub(new Vector2f(perp).mul(screenWidth * 0.5f));
+        Vector2f p1a = new Vector2f(s1).add(new Vector2f(perp).mul(screenWidth * 0.5f));
+        Vector2f p1b = new Vector2f(s1).sub(new Vector2f(perp).mul(screenWidth * 0.5f));
+
+        // 3. NDC -> view（反透视）
+        Vector3f q0a = new Vector3f(p0a.x * -v0.z, p0a.y * -v0.z, v0.z);
+        Vector3f q0b = new Vector3f(p0b.x * -v0.z, p0b.y * -v0.z, v0.z);
+        Vector3f q1a = new Vector3f(p1a.x * -v1.z, p1a.y * -v1.z, v1.z);
+        Vector3f q1b = new Vector3f(p1b.x * -v1.z, p1b.y * -v1.z, v1.z);
+
+
+        drawQuad(q0a, q0b, q1b, q1a, argb, renderType);
+    }
+
+
+
 
     /**
      * 从纹理中绘制一块区域，支持 Z 偏移
@@ -330,23 +427,70 @@ public class Hud3DContext {
      * @return HUD 局部空间坐标（UI 单位）
      */
     public Vector3f worldToLocal(Vector3f worldPos) {
-        // 取得当前 PoseStack 的变换矩阵（local -> world）
-        // 拷贝矩阵，避免破坏原始 PoseStack
-        Matrix4f inverse = new Matrix4f().translate(camera.getPosition().toVector3f()).mul(poseStack.last().pose()).invert();
+        Matrix4f inverse = new Matrix4f()
+                .translate(camera.getPosition().toVector3f())
+                .mul(poseStack.last().pose())
+                .invert();
 
-        // 齐次坐标
-        Vector4f vec4 = new Vector4f(
-                worldPos.x(),
-                worldPos.y(),
-                worldPos.z(),
-                1.0F
-        );
-
-        vec4.mul(inverse);
-
-        return new Vector3f(vec4.x(), vec4.y(), vec4.z());
+        Vector4f vec4 = new Vector4f(worldPos, 1.0F).mul(inverse);
+        return new Vector3f(vec4.x, vec4.y, vec4.z);
     }
 
+    /**
+     * 将 HUD 局部坐标转换为世界坐标
+     *
+     * @param localPos 局部坐标（UI 单位）
+     * @return 世界坐标
+     */
+    public Vector3f localToWorld(Vector3f localPos) {
+        Matrix4f mat = new Matrix4f()
+                .translate(camera.getPosition().toVector3f())
+                .mul(poseStack.last().pose());
+
+        Vector4f vec4 = new Vector4f(localPos, 1.0F).mul(mat);
+        return new Vector3f(vec4.x, vec4.y, vec4.z);
+    }
+
+    /**
+     * 世界坐标 → 相机视空间
+     * 同时考虑相机平移与旋转
+     */
+    public Vector3f worldToView(Vector3f worldPos) {
+        Vector4f view = new Vector4f(worldPos.sub(camera.getPosition().toVector3f()), 1.0F);
+        // local -> view 的旋转
+        new Quaternionf(camera.rotation()).invert().transform(view);
+        return new Vector3f(view.x, view.y, view.z);
+    }
+
+    /**
+     * 相机视空间 → 世界坐标
+     */
+    public Vector3f viewToWorld(Vector3f viewPos) {
+        // view -> local 的旋转
+        camera.rotation().transform(viewPos);
+        viewPos.add(camera.getPosition().toVector3f());
+        return viewPos;
+    }
+
+    /**
+     * HUD 局部坐标 → 相机视空间
+     */
+    public Vector3f localToView(Vector3f localPos) {
+        var v = new Vector4f(localPos, 1.0f).mul(poseStack.last().pose());
+        // local -> view 的旋转
+        new Quaternionf(camera.rotation()).invert().transform(v);
+        return new Vector3f(v.x, v.y, v.z);
+    }
+
+    /**
+     * 相机视空间 → HUD 局部坐标
+     */
+    public Vector3f viewToLocal(Vector3f viewPos) {
+        // view -> local 的旋转
+        camera.rotation().transform(viewPos);
+        var v = new Vector4f(viewPos, 1.0f).mul(new Matrix4f(poseStack.last().pose()).invert());
+        return new Vector3f(v.x, v.y, v.z);
+    }
 
 
     /* ====================== 现版本RenderSystem不支持Stencil Test，相关方法无效，暂时注释 ======================= */

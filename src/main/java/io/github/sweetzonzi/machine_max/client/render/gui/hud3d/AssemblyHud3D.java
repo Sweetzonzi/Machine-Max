@@ -42,7 +42,9 @@ import java.util.Random;
 
 @OnlyIn(Dist.CLIENT)
 public class AssemblyHud3D implements IHud3DElement {
+    public static final Vector3f ZERO = new Vector3f();
     public static final Vector3f UP = new Vector3f(0, 1, 0);
+    public static final Vector3f RIGHT = new Vector3f(1, 0, 0);
     public static final Vector3f FORWARD = new Vector3f(0, 0, -1);
     private final Random random = new Random();
 
@@ -180,17 +182,16 @@ public class AssemblyHud3D implements IHud3DElement {
 
         /* ---------- 标题部分 ---------- */
         if (subPart != null)
-            ctx.drawLine( // 连接零件和hud
-                    new Vector3f(startX, startY + 1, 0),
+            ctx.drawScreenFacingLine(
+                    new Vector3f(startX + 1, startY + 1, 0),
                     ctx.worldToLocal(SparkMathKt.toVector3f(subPart.getPosition())),
+                    0.01f,
                     HUD_THEME,
-                    MMRenderTypes.alwaysVisibleLines()
+                    MMRenderTypes.alwaysVisibleSolid()
             );
-
         String partName = part != null ? Component
                 .translatable(part.type.getRegistryKey().toLanguageKey())
                 .getString() : "";
-
         // 标题缩放
         startY += 5;
         poseStack.pushPose();
@@ -210,7 +211,7 @@ public class AssemblyHud3D implements IHud3DElement {
         ctx.fill(
                 startX + PADDING, startY,
                 startX + animatedHudWidth.get() - PADDING, startY + 1,
-                TEXT_DIM, zBg
+                Easing.lerpColorFromTransparent(TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH), zBg
         );
 
         // 部件投影
@@ -346,7 +347,7 @@ public class AssemblyHud3D implements IHud3DElement {
                 null
         ).getExtent(null).length() / 3 * 0.2f;
         halfSize = Math.max(0.01f, halfSize);
-        float halfWidth = halfSize * 0.15f;
+        float halfWidth = halfSize * 0.03f;
         float crossOffset = 0f;
         // 渲染连接点结构完整性
         for (Map.Entry<String, AbstractConnector> entry : subPart.getConnectors().entrySet()) {
@@ -365,29 +366,30 @@ public class AssemblyHud3D implements IHud3DElement {
             int redShiftBlue = Easing.lerpColor(0xff000088, 0xff880000, 0.25f * integrityProgress);
             // 绘制十字表示连接点完整性
             ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
-            ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, 0xff880000, 0, MMRenderTypes.additiveSolidAlwaysVisible());
-            ctx.fill(-halfWidth, -halfSize, halfWidth, halfSize, 0xff880000, 0, MMRenderTypes.additiveSolidAlwaysVisible());
+
+            ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), halfWidth, 0xff880000, MMRenderTypes.additiveSolidAlwaysVisible());
+            ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), halfWidth, 0xff880000, MMRenderTypes.additiveSolidAlwaysVisible());
             ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
-            ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, redShiftGreen, 0, MMRenderTypes.additiveSolidAlwaysVisible());
-            ctx.fill(-halfWidth, -halfSize, halfWidth, halfSize, redShiftGreen, 0, MMRenderTypes.additiveSolidAlwaysVisible());
+            ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), halfWidth, redShiftGreen, MMRenderTypes.additiveSolidAlwaysVisible());
+            ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), halfWidth, redShiftGreen, MMRenderTypes.additiveSolidAlwaysVisible());
             ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
-            ctx.fill(-halfSize, -halfWidth, halfSize, halfWidth, redShiftBlue, 0, MMRenderTypes.additiveSolidAlwaysVisible());
-            ctx.fill(-halfWidth, -halfSize, halfWidth, halfSize, redShiftBlue, 0, MMRenderTypes.additiveSolidAlwaysVisible());
+            ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), halfWidth, redShiftBlue, MMRenderTypes.additiveSolidAlwaysVisible());
+            ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), halfWidth, redShiftBlue, MMRenderTypes.additiveSolidAlwaysVisible());
             ctx.poseStack.popPose();
             ctx.poseStack.popPose();
         }
-        ctx.drawLine(
-                new Vector3f(),
-                new Vector3f(halfSize * 5, 0, 0),
-                0xffff0000, MMRenderTypes.alwaysVisibleLines());
-        ctx.drawLine(
-                new Vector3f(),
-                new Vector3f(0, halfSize * 5, 0),
-                0xff00ff00, MMRenderTypes.alwaysVisibleLines());
-        ctx.drawLine(
-                new Vector3f(),
-                new Vector3f(0, 0, halfSize * 5),
-                0xff0000ff, MMRenderTypes.alwaysVisibleLines());
+        ctx.drawScreenFacingLine(
+                ZERO,
+                new Vector3f(halfSize * 5, 0, 0), halfWidth,
+                0xffff0000, MMRenderTypes.additiveSolidAlwaysVisible());
+        ctx.drawScreenFacingLine(
+                ZERO,
+                new Vector3f(0, halfSize * 5, 0), halfWidth,
+                0xff00ff00, MMRenderTypes.additiveSolidAlwaysVisible());
+        ctx.drawScreenFacingLine(
+                ZERO,
+                new Vector3f(0, 0, halfSize * 5), halfWidth,
+                0xff0000ff, MMRenderTypes.additiveSolidAlwaysVisible());
         ctx.poseStack.popPose();
         ctx.poseStack.popPose();
         // 渲染零件耐久度
