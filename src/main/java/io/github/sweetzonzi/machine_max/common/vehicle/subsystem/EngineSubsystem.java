@@ -155,7 +155,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
      */
     private double calculateMaxTorque(double rotSpeed) {
         double result = 0;
-        if (rotSpeed <= 0 || !isActive()) return result;
+        if (rotSpeed <= 0) return result;
         else if (rotSpeed <= IDLE_SPEED) {
             result = rotSpeed / IDLE_SPEED * MAX_TORQUE * attr.getStaticAttribute().getIdleRpmTorqueRatio();
         } else if (rotSpeed <= MAX_TORQUE_SPEED) {//线性上升段：怠速 -> 最大扭矩转速，在怠速扭矩和最大扭矩之间线性插值

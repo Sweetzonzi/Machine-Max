@@ -52,7 +52,7 @@ abstract public class AbstractControllableSubsystem extends AbstractSubsystem {
     }
 
     public void setMoveInputSignal(byte[] inputs, byte[] conflicts) {
-        if (!moveSignalTargets.isEmpty()) {
+        if (!moveSignalTargets.isEmpty() && this.isActive()) {
             for (String signalKey : moveSignalTargets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
             }
@@ -62,24 +62,36 @@ abstract public class AbstractControllableSubsystem extends AbstractSubsystem {
                 }
             }
             this.getOwner().getSubPart().part.vehicle.activate();
+        } else {
+            for (String signalKey : moveSignalTargets.keySet()) {
+                this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
+            }
         }
     }
 
     public void setRegularInputSignal(KeyInputMapping inputType, int tickCount) {
-        if (!regularSignalTargets.isEmpty()) {
+        if (!regularSignalTargets.isEmpty() && this.isActive()) {
             for (String signalKey : regularSignalTargets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
             }
             this.getOwner().getSubPart().part.vehicle.activate();
+        } else {
+            for (String signalKey : regularSignalTargets.keySet()) {
+                this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
+            }
         }
     }
 
     public void setViewInputSignal() {
-        if (!viewSignalTargets.isEmpty()) {
+        if (!viewSignalTargets.isEmpty() && this.isActive()) {
             for (String signalKey : viewSignalTargets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
             }
             this.getOwner().getSubPart().part.vehicle.activate();
+        } else {
+            for (String signalKey : viewSignalTargets.keySet()) {
+                this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
+            }
         }
     }
 }
