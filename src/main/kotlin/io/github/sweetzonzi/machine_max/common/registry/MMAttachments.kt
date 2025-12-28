@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment
+import io.github.sweetzonzi.machine_max.common.attachment.ResearchAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
 import net.minecraft.client.Minecraft
@@ -27,11 +28,20 @@ object MMAttachments {
         factory = { _ -> VehicleAssemblyAttachment(Minecraft.getInstance().player) }
     }
 
+    //实体保存的蓝图与研发点
+    @JvmStatic
+    val RESEARCH_AND_BLUEPRINT = MachineMax.REGISTER.attachment {
+        id = "research_and_blueprint"
+        factory = { _ -> ResearchAttachment(0) }
+        copyOnDeath = true
+        serializer = ResearchAttachment.CODEC
+    }
+
     //世界的载具列表，用于保存、加载和管理世界中的载具
     @JvmStatic
     val LEVEL_VEHICLES = MachineMax.REGISTER.attachment {
         id = "level_vehicles"
-        factory = { _ -> mutableSetOf<VehicleData>()}
+        factory = { _ -> mutableSetOf<VehicleData>() }
         serializer = NeoForgeExtraCodecs.setOf(VehicleData.CODEC)
     }
 }

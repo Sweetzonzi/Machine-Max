@@ -1,0 +1,19 @@
+{ 
+  "type": "machine_max:fabricating", 
+  "ingredients": [ 
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot" 
+      },
+      "count": 10
+    }
+  ],
+  "result": { 
+    "id": "machine_max:part", 
+    "count": 1, 
+    "components": { 
+      "machine_max:part_type": "machine_max:container_16x16x32" 
+    }
+  },
+  "time": 100 
+}

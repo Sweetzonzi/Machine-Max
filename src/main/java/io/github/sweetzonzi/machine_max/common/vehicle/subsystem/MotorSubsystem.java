@@ -97,7 +97,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
             feedback = -feedback; // 修正方向
             double speedDiff = rotSpeed - feedback;
             double coupleTorque = Math.clamp(
-                    this.coupleTorquePD.step(0, speedDiff),
+                    this.isActive() ? this.coupleTorquePD.step(0, speedDiff) : 0,
                     -0.25 * attr.getStaticAttribute().maxTorque,
                     0.25 * attr.getStaticAttribute().maxTorque
             ); // 使用耦合扭矩补偿转速差，考虑饱和模拟打滑

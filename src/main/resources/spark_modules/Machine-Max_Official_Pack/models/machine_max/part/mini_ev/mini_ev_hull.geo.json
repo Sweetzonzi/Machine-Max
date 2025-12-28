@@ -18,7 +18,11 @@
 				{
 					"name": "Hull",
 					"parent": "Root",
-					"pivot": [0, 5, 4]
+					"pivot": [0, 5, 4],
+					"locators": {
+						"BackLeft": [19.5, 10, 31],
+						"BackRight": [-19.5, 10, 31]
+					}
 				},
 				{
 					"name": "door_L",

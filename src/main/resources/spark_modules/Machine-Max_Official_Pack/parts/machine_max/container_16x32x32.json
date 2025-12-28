@@ -2,7 +2,7 @@
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
-  "integrity": 4000.0,
+  "integrity": 800.0,
   "variants": {
     "models": {
       "default": "machine_max:container_16x32x32.geo"
@@ -15,7 +15,7 @@
     },
     "sub_parts": {
       "container": {
-        "durability": 4000.0,
+        "durability": 800.0,
         "mass": 300.0,
         "block_collision": "true",
         "collision_height": 0,

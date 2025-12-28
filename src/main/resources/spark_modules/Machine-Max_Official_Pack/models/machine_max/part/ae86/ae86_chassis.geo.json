@@ -7,8 +7,8 @@
 				"texture_width": 512,
 				"texture_height": 512,
 				"visible_bounds_width": 10,
-				"visible_bounds_height": 3.5,
-				"visible_bounds_offset": [0, 1.25, 0]
+				"visible_bounds_height": 4,
+				"visible_bounds_offset": [0, 1, 0]
 			},
 			"bones": [
 				{
@@ -1667,6 +1667,20 @@
 					"locators": {
 						"EngineDamageSmoke": [0, 10, -31]
 					}
+				},
+				{
+					"name": "mmCollision_Box_Engine",
+					"parent": "mmPartBody_Chassis",
+					"pivot": [0, 1, 0],
+					"cubes": [
+						{
+							"origin": [-17, 4.75, -38.75],
+							"size": [34, 13, 24],
+							"pivot": [0, 0, 0],
+							"rotation": [10, 0, 0],
+							"uv": {}
+						}
+					]
 				},
 				{
 					"name": "rot",

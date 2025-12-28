@@ -1,0 +1,25 @@
+{ 
+  "type": "machine_max:fabricating", 
+  "ingredients": [ 
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot" 
+      },
+      "count": 14
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass_pane"
+      },
+      "count": 8
+    }
+  ],
+  "result": { 
+    "id": "machine_max:part", 
+    "count": 1, 
+    "components": { 
+      "machine_max:part_type": "machine_max:mini_ev_hull" 
+    }
+  },
+  "time": 90 
+}

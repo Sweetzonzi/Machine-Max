@@ -1,0 +1,31 @@
+{ 
+  "type": "machine_max:fabricating", 
+  "ingredients": [ 
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot" 
+      },
+      "count": 6
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:black_wool"
+      },
+      "count": 2
+    },
+    {
+      "ingredient":{
+        "item": "minecraft:dried_kelp"
+      },
+      "count": 4
+    }
+  ],
+  "result": { 
+    "id": "machine_max:part", 
+    "count": 1, 
+    "components": { 
+      "machine_max:part_type": "machine_max:ae86_back_seat" 
+    }
+  },
+  "time": 75 
+}

@@ -13,6 +13,7 @@ import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
 @Mod(MOD_ID)
 public class MachineMax {
+    //TODO:排查上下车扭头问题
     //TODO:保存的蓝图在指定路径储存，可被特定方块访问蓝图库，并制作蓝图物品
     //TODO:重构网络包及各类同步系统，将拆除等事件化，特别是断开移除逻辑，使之支持移除个别零件
     //TODO:优化关节断开逻辑：Vehicle每刻/事件触发检查关节连接关系，检测到不连通再断开记录的关系；断开网络包靠id识别SubPart而非载具uuid-部件uuid-接口名的方式以节约带宽
@@ -35,8 +36,7 @@ public class MachineMax {
     //TODO:使用蓝图快速重新组装部分零件缺失的载具，需要图匹配算法
     //TODO:指定连接口是否有部件连接的molang，或许返回部件名？
     //TODO:显示内含物品的fast_item_storage子系统，容量为1，互动立刻和手中物品交换，无GUI
-    //TODO:连接点支持信号转义，改变接收到的信号内容的频道再输出
-    //TODO:预制装配体，类似于部件的组装，但可预先装好方便使用。与蓝图不同的是使用后消耗，且拆卸时获得的是零散部件而非装配体本身。可json配置，也可动态保存生成，同时保留部件内数据如储物子系统内容物。
+    //TODO:预制装配体的可动态保存生成
     //TODO:改装件，改变部件或子系统属性
     //TODO:molang驱动的实时属性？护甲水平，摩擦等（性能问题？）
     public static final String MOD_ID = "machine_max";

@@ -2533,6 +2533,27 @@
 					}
 				},
 				{
+					"name": "mmCollision_Box_Engine",
+					"parent": "mmPartBody_Chassis",
+					"pivot": [0, 15, 0],
+					"cubes": [
+						{
+							"origin": [-17, 18, -39],
+							"size": [34, 14.25, 24],
+							"pivot": [0, 15, 0],
+							"rotation": [10, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-12, 11, -29],
+							"size": [24, 7, 13],
+							"pivot": [0, 15, 0],
+							"rotation": [10, 0, 0],
+							"uv": {}
+						}
+					]
+				},
+				{
 					"name": "rot",
 					"parent": "Chassis",
 					"pivot": [-8, 26.99134, -9.62049],
@@ -3197,7 +3218,6 @@
 					"name": "stand",
 					"parent": "Chassis",
 					"pivot": [-13.33798, 22.84901, -39.73006],
-					"rotation": [0, 0, 0],
 					"cubes": [
 						{
 							"origin": [-15.567, 19.97303, -39.98006],

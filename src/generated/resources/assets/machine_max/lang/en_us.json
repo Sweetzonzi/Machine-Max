@@ -1,5 +1,5 @@
 {
-  "block.machine_max.fabricator": "Fabricator",
+  "block.machine_max.fabricator": "Fabricator(WIP)",
   "error.machine_max.invalid_resource_location": "Invalid resource location. Only lowercase letters, numbers, hyphens and underscores are allowed.",
   "error.machine_max.item_storage_subsystem.invalid_column_num": "The column number of item-storage subsystem must be greater than 1",
   "error.machine_max.item_storage_subsystem.invalid_row_num": "The row number of item-storage subsystem must be greater than 1",
