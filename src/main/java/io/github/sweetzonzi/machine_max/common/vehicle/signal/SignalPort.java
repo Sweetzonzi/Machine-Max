@@ -23,17 +23,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     public ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();//仅应被查询
 
     /**
-     * 为部件连接点创建信号传输端口（兼容旧版本构造函数）
-     *
-     * @param owner         部件连接器
-     * @param signalTargets 信号提供目标
-     */
-    public SignalPort(AbstractConnector owner, Map<String, List<String>> signalTargets) {
-        this(owner, signalTargets, new HashMap<>());
-    }
-
-    /**
-     * 为部件连接点创建信号传输端口（新增带转译层的构造函数）
+     * 为部件连接点创建信号传输端口
      *
      * @param owner             部件连接器
      * @param signalTargets     信号提供目标
@@ -43,7 +33,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
         this.name = owner.name;
         this.owner = owner;
         this.targetNames = signalTargets;
-        this.signalTranslation = new HashMap<>(signalTranslation); // 防御性复制
+        this.signalTranslation = signalTranslation;
     }
 
     /**
@@ -104,20 +94,18 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
      */
     public void onConnectorAttach() {
         // 检查基本前提条件
-        if (!(owner instanceof AbstractConnector ownerConnector)
-                || ownerConnector.attachedConnector == null
-                || ownerConnector.attachedConnector.signalPort == null) {
+        if (owner.attachedConnector == null || owner.attachedConnector.signalPort == null) {
             return;
         }
 
-        AbstractConnector attachedConnector = ownerConnector.attachedConnector;
+        AbstractConnector attachedConnector = owner.attachedConnector;
         Map<String, Map<String, ISignalReceiver>> attachedTargets = attachedConnector.signalPort.getTargets();
 
         for (Map.Entry<String, SignalChannel> entry : signalInputChannels.entrySet()) {
             String originalChannel = entry.getKey();
 
             // 只转发目标接收方需要的信号
-            String translatedChannel = ownerConnector.attachedConnector.signalPort.translateChannel(originalChannel);
+            String translatedChannel = owner.attachedConnector.signalPort.translateChannel(originalChannel);
             if (attachedTargets.containsKey(translatedChannel)) {
                 onSignalUpdated(originalChannel, this);
             }

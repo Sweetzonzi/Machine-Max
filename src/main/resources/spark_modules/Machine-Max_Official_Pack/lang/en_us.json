@@ -46,5 +46,6 @@
   "title.machine_max.subsystem.container_16x16x8": "1/2SCU Container",
   "title.machine_max.subsystem.reinforced_container_16x16x8": "1/2SCU Reinforced Container",
   "title.machine_max.subsystem.container_16x16x32": "2SCU Container",
-  "title.machine_max.subsystem.container_16x32x32" :"4SCU Container"
+  "title.machine_max.subsystem.container_16x32x32" :"4SCU Container",
+  "interact.golden.seat": "Enter"
 }

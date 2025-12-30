@@ -30,10 +30,70 @@
           "mmCollision_Box_Chassis": {//值:碰撞形状属性
             "name": "chassis",//(可选，默认"part")碰撞箱名称，供子系统等查找
             "type": "box",//碰撞形状类型，支持box、sphere、cylinder
-            "block_damage_factor": 1.8,//(可选，默认1.0)方块损伤系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力
+            "block_damage_factor": 1.8,//(可选，默认1.0)方块破坏系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力
             "angle_effect": true,//(可选，默认true)等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度
-            "damage_reduction": 1.0, //(可选，默认0.0)线性减伤，低于此数值的伤害会被无视，大于此数值的伤害会被减免此数值
-            "damage_multiplier": 0.8, //(可选，默认1.0)伤害减免系数，1为无伤害减免，0为完全无伤害，调整此系数以降低伤害
+            "impact_modifiers": [], // (可选，默认为空列表，造成多少伤害就对连接点施加多少冲击) 冲击修正器，将受到的伤害按照一定规则转换为冲击数值施加到各连接点
+            "penetration_modifiers": [ // (可选，默认在传入的伤害不包含穿深时，以伤害的0.5倍作为穿深) 穿深修正器，根据受到的伤害调整其穿深。若伤害不带穿深数据，则传入伤害值，否则传入穿深
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.5, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将伤害的0.5倍作为穿深
+                "condition": { // 修改器生效条件，若不满足则不生效，不影响传入的数值
+                  "type": "not", // 条件类型，支持always、damage_type、damage_tag、entity_type、entity_tag、not、and、or
+                  "condition": { // not条件需要一个condition字段，里面可以填入其他条件，会将其结果反转
+                    "type": "damage_tag", // 判断伤害是否含有指定标签
+                    "tag": "machine_max:has_pen_depth" // 标签名
+                  }
+                }
+              }
+            ],
+            "damage_modifiers": [// (可选，默认忽视5以下的撞击伤害，大幅减弱史莱姆等每帧造成的伤害) 伤害修正器，将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据，则传入伤害值，否则传入伤害数据
+              {
+                "operation": "add", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": -5.0, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将撞击伤害削减5点（不小于0）
+                "condition": {
+                  "type": "damage_type", // 判断伤害是否为某个类型
+                  "id": "minecraft:fly_into_wall" // 伤害类型注册名
+                }
+              },
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.05, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将浆果丛造成的削减至5%，防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:sweet_berry_bush"
+                }
+              },
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.05, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将史莱姆造成的削减至5%，防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:slime"
+                }
+              },
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.05, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将岩浆怪造成的削减至10%，防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:magma_cube"
+                }
+              },
+              {
+                "operation": "add", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": -1.0, // 全局减伤，将所有伤害削减1点（不小于0）
+                "condition": {
+                  "type": "always" // 此条件永远判定通过，用于全局减伤
+                }
+              },
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.8, // 全局减伤，将所有伤害削减20%
+                "condition": {
+                  "type": "always" // 此条件永远判定通过，用于全局减伤
+                }
+              }
+            ],
             "un_penetrate_damage_factor": 0.1,//(可选，默认0.0)攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害
             "rha": 10 //(可选，默认1)等效护甲厚度，单位mm，减免伤害并控制碰撞时的能量分配情况
           }, 
@@ -41,10 +101,70 @@
             "name": "engine",//(可选，默认"part")碰撞箱名称，供子系统等查找
             "type": "box",//碰撞形状类型，支持box、sphere、cylinder
             "subsystem": "engine",
-            "block_damage_factor": 0.95,//(可选，默认1.0)方块损伤系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力
+            "block_damage_factor": 0.95,//(可选，默认1.0)方块破坏系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力
             "angle_effect": true,//(可选，默认true)等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度
-            "damage_reduction": 1.0, //(可选，默认0.0)线性减伤，低于此数值的伤害会被无视，大于此数值的伤害会被减免此数值
-            "damage_multiplier": 0.75, //(可选，默认1.0)伤害减免系数，1为无伤害减免，0为完全无伤害，调整此系数以降低伤害
+            "impact_modifiers": [], // (可选，默认为空列表，造成多少伤害就对连接点施加多少冲击) 冲击修正器，将受到的伤害按照一定规则转换为冲击数值施加到各连接点
+            "penetration_modifiers": [ // (可选，默认在传入的伤害不包含穿深时，以伤害的0.5倍作为穿深) 穿深修正器，根据受到的伤害调整其穿深。若伤害不带穿深数据，则传入伤害值，否则传入穿深
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.5, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将伤害的0.5倍作为穿深
+                "condition": { // 修改器生效条件，若不满足则不生效，不影响传入的数值
+                  "type": "not", // 条件类型，支持always、damage_type、damage_tag、entity_type、entity_tag、not、and、or
+                  "condition": { // not条件需要一个condition字段，里面可以填入其他条件，会将其结果反转
+                    "type": "damage_tag", // 判断伤害是否含有指定标签
+                    "tag": "machine_max:has_pen_depth" // 标签名
+                  }
+                }
+              }
+            ],
+            "damage_modifiers": [// (可选，默认忽视5以下的撞击伤害，大幅减弱史莱姆等每帧造成的伤害) 伤害修正器，将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据，则传入伤害值，否则传入伤害数据
+              {
+                "operation": "add", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": -5.0, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将撞击伤害削减5点（不小于0）
+                "condition": {
+                  "type": "damage_type", // 判断伤害是否为某个类型
+                  "id": "minecraft:fly_into_wall" // 伤害类型注册名
+                }
+              },
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.05, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将浆果丛造成的削减至5%，防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:sweet_berry_bush"
+                }
+              },
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.05, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将史莱姆造成的削减至5%，防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:slime"
+                }
+              },
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.05, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将岩浆怪造成的削减至10%，防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:magma_cube"
+                }
+              },
+              {
+                "operation": "add", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": -1.0, // 全局减伤，将所有伤害削减1点（不小于0）
+                "condition": {
+                  "type": "always" // 此条件永远判定通过，用于全局减伤
+                }
+              },
+              {
+                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
+                "value": 0.75, // 全局减伤，将所有伤害削减25%
+                "condition": {
+                  "type": "always" // 此条件永远判定通过，用于全局减伤
+                }
+              }
+            ],
             "un_penetrate_damage_factor": 0.1,//(可选，默认0.0)攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害
             "rha": 2 //(可选，默认1)等效护甲厚度，单位mm，减免伤害并控制碰撞时的能量分配情况
           }

@@ -82,7 +82,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.name = name;
         this.subPart = subPart;
         this.offsetFromMassCenter = offsetFromMassCenter;
-        this.signalPort = new SignalPort(this, attr.signalTargets());
+        this.signalPort = new SignalPort(this, attr.signalTargets(), attr.signalTranslations());
         this.collideBetweenParts = attr.collideBetweenParts();
         this.impactReduction = attr.connectedTo().isEmpty() ? attr.impactReduction() : 0;
         this.impactMultiplier = attr.connectedTo().isEmpty() ? Math.max(attr.impactMultiplier(), 0) : 0;
@@ -369,11 +369,48 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         });
     }
 
-    public void adjustTransform(Part part, AbstractConnector partConnector) {
-        Transform targetTransform = mergeTransform(partConnector.offsetFromMassCenter.invert());
+    public void adjustTransform(
+            Part part,
+            AbstractConnector partConnector,
+            float attachRotation
+    ) {
+        /*
+         * === 装配变换流程说明 ===
+         *
+         * 1. partConnector.offsetFromMassCenter
+         *    表示“待安装部件的连接点”在其所属 SubPart 中的局部变换
+         *
+         * 2. attachRotation 是玩家选择的离散安装角（90° 的倍数）
+         *    该旋转必须：
+         *      - 绕连接点的装配法线轴
+         *      - 在连接点的【局部空间】中生效
+         *
+         * 3. 最终仍然复用原有的 mergeTransform 逻辑，
+         *    保证不破坏既有关节与物理结构
+         */
+
+        // --- 1. 获取连接点法线 ---
+        Axis normalAxis = partConnector.attr.normal();
+
+        // --- 2. 构造绕法线的离散旋转 ---
+        Quaternion twist = Axis.discreteTwist(normalAxis, attachRotation);
+
+        // --- 3. 对连接点 offset 施加旋转（局部空间） ---
+        Transform rotatedOffset = partConnector.offsetFromMassCenter.clone();
+
+        Quaternion offsetRot = rotatedOffset.getRotation();
+        offsetRot.set(twist.mult(offsetRot));
+        rotatedOffset.setRotation(offsetRot);
+
+        // --- 4. 复用原有装配逻辑 ---
+        Transform targetTransform = mergeTransform(rotatedOffset.invert(), 0);
+
         Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
+
+        // 设置根部件变换
         part.rootSubPart.body.setPhysicsTransform(targetTransform);
-        //相应调整部件内子零件的位置姿态
+
+        // 同步所有子部件
         for (SubPart subPart : part.subParts.values()) {
             if (subPart == part.rootSubPart) continue;
             Transform transform = subPart.body.getTransform(null);
@@ -383,7 +420,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         }
     }
 
-    public Transform mergeTransform(Transform transform) {
+
+    public Transform mergeTransform(Transform transform, float attachRotation) {
         Transform result = subPart.body.getTransform(null);
         MyMath.combine(this.offsetFromMassCenter, result, result);
         return MyMath.combine(transform, result, result);

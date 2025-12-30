@@ -21,6 +21,7 @@ public record PlayerPartAssemblyCacheSyncPayload(
         String variant,
         String subPart,
         String connector,
+        float attachRotation,
         Quaternionf rotation,
         Vector3f offset
 ) implements CustomPacketPayload {
@@ -38,6 +39,7 @@ public record PlayerPartAssemblyCacheSyncPayload(
                 buffer.writeUtf(payload.variant);
                 buffer.writeUtf(payload.subPart);
                 buffer.writeUtf(payload.connector);
+                buffer.writeFloat(payload.attachRotation);
                 buffer.writeQuaternion(payload.rotation);
                 buffer.writeVector3f(payload.offset);
             }
@@ -50,9 +52,10 @@ public record PlayerPartAssemblyCacheSyncPayload(
             String variant = valid ? buffer.readUtf() : null;
             String subPart = valid ? buffer.readUtf() : null;
             String connector = valid ? buffer.readUtf() : null;
-            Quaternionf rotation = valid ? buffer.readQuaternion() : new Quaternionf();
+            float attachRotation = valid ? buffer.readFloat() : 0;
+            Quaternionf quaternion = valid ? buffer.readQuaternion() : new Quaternionf();
             Vector3f offset = valid ? buffer.readVector3f() : new Vector3f();
-            return new PlayerPartAssemblyCacheSyncPayload(registryKey, variant, subPart, connector, rotation, offset);
+            return new PlayerPartAssemblyCacheSyncPayload(registryKey, variant, subPart, connector, attachRotation, quaternion, offset);
         }
     };
 
@@ -78,6 +81,7 @@ public record PlayerPartAssemblyCacheSyncPayload(
                 while (!connectorName.equals(cache.getConnectorName())) {
                     cache.getNextConnector();
                 }
+                cache.setAttachRotation(payload.attachRotation);
                 cache.setQuaternion(payload.rotation);
                 cache.setOffset(payload.offset);
             }

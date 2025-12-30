@@ -229,6 +229,12 @@ public class RawInputHandler {
         /*
           载具组装
          */
+            //切换部件安装角
+            new KeyHooks.EVENT(KeyBinding.assemblyCycleAttachAngleKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_ATTACH_ANGLE.getValue(), 0));
+                    });
+
             //切换部件连接点
             new KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey)
                     .OnKeyDown(() -> {

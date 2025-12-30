@@ -14,6 +14,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
+import io.github.sweetzonzi.machine_max.util.MMMath;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
@@ -132,27 +133,17 @@ public class SubPartAttr {
             // 获取定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
-            // 添加连接点定位器
-            for (ConnectorAttr connectorAttr : connectors.values()) {
-                String locatorName = connectorAttr.locatorName();
-                addLocator(state, locatorName, locators);
-            }
-
-            // 添加流体动力定位器
-            for (Map.Entry<String, HydrodynamicAttr> hydrodynamicEntry : hydrodynamics.entrySet()) {
-                String locatorName = hydrodynamicEntry.getKey();
-                addLocator(state, locatorName, locators);
+            // 添加定位器
+            for (Map.Entry<String, OLocator> entry : locators.entrySet()) {
+                addLocator(state, entry.getKey(), locators);
             }
 
             for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {
-                    String hitBoxName = hitBoxEntry.getValue().hitBoxName();
+                    String hitBoxName = hitBoxEntry.getValue().getHitBoxName();
                     OBone bone = bones.get(hitBoxEntry.getKey());
-                    for (String locatorName : bone.getLocators().keySet()) {
-                        addLocator(state, locatorName, locators);
-                    }
 
-                    switch (hitBoxEntry.getValue().shapeType()) {
+                    switch (hitBoxEntry.getValue().getShapeType()) {
                         case "box":
                             for (OCube cube : bone.getCubes()) {
                                 org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();

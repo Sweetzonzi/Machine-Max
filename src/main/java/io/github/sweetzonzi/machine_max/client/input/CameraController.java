@@ -95,11 +95,21 @@ public class CameraController {
             if (!type.isFirstPerson() && !seat.attr.staticAttribute.views.followVehicle()) throw new RuntimeException();
             //基于附体坐标系旋转相机
             Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
-            Transform viewTransform = MyMath.combine(new Transform(new Vector3f(), SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
-                            Math.toRadians(roll),
-                            Math.toRadians(-yaw),
-                            Math.toRadians(pitch)))),
-                    extra, null);
+            //TODO: combine的TempVars.get()会IndexOutOfBoundsException？
+            Transform viewTransform;
+            try {
+                viewTransform = MyMath.combine(new Transform(new Vector3f(), SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
+                                Math.toRadians(roll),
+                                Math.toRadians(-yaw),
+                                Math.toRadians(pitch)))),
+                        extra, null);
+            } catch (Exception e) {
+                viewTransform = MyMath.combine(new Transform(new Vector3f(), SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
+                                Math.toRadians(roll),
+                                Math.toRadians(-yaw),
+                                Math.toRadians(pitch)))),
+                        extra, null);
+            }
             //计算对应欧拉角
             org.joml.Vector3f rot = new org.joml.Vector3f();
             SparkMathKt.toQuaternionf(viewTransform.getRotation()).getEulerAnglesYXZ(rot);

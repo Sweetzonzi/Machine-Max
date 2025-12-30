@@ -24,6 +24,7 @@
   "machine_max.reinforced_container_16x16x8": "1/2SCU强化储物箱",
   "machine_max.container_16x16x32": "2SCU储物箱",
   "machine_max.container_16x32x32": "4SCU储物箱",
+  "machine_max.golden_closestool": "黄金马桶",
   "hud.machine_max.default_1.speed": "§o%1$s%2$s%3$s",
   "hud.machine_max.default_1.gear": "§o%1$s",
   "hud.machine_max.default_1.kmh": "§oKM/H",
@@ -46,5 +47,18 @@
   "title.machine_max.subsystem.container_16x16x8": "1/2SCU储物箱",
   "title.machine_max.subsystem.reinforced_container_16x16x8": "1/2SCU强化储物箱",
   "title.machine_max.subsystem.container_16x16x32": "2SCU储物箱",
-  "title.machine_max.subsystem.container_16x32x32" :"4SCU储物箱"
+  "title.machine_max.subsystem.container_16x32x32" :"4SCU储物箱",
+  "interact.golden.seat": "进入马桶",
+  "left_front_wheel": "左前轮",
+  "right_front_wheel":"右前轮",
+  "left_back_wheel": "左后轮",
+  "right_back_wheel":"右后轮",
+  "back_seat":"后排座位",
+  "driver_seat":"驾驶员座位",
+  "copilot_seat":"副驾驶座位",
+  "frontengine":"引擎前部挂点",
+  "upperengine":"引擎上部挂点",
+  "rightback":"右后方挂点",
+  "leftback":"左后方挂点",
+  "chassis_connection": "对底盘接口"
 }

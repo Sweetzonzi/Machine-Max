@@ -79,6 +79,12 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
             /*
              *  载具组装
              */
+            case CYCLE_PART_ATTACH_ANGLE://切换部件安装角度
+                if (!level.isClientSide()) {//仅在服务器端处理
+                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache.cycleAttachAngle();
+                }
+                break;
             case CYCLE_PART_CONNECTORS://切换部件连接点
                 if (!level.isClientSide()) {//仅在服务器端处理
                     assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
@@ -96,7 +102,7 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
 
     private static void handleRegularInputForSeatSubsystem(Player player, KeyInputMapping key, int tickCount) {
         if (player.getVehicle() instanceof MMPartEntity) {
-            AbstractControllableSubsystem subsystem = ((IEntityMixin)player).machine_Max$getControllingSubsystem();
+            AbstractControllableSubsystem subsystem = ((IEntityMixin) player).machine_Max$getControllingSubsystem();
             if (subsystem != null) {
                 subsystem.setRegularInputSignal(key, tickCount);
             }

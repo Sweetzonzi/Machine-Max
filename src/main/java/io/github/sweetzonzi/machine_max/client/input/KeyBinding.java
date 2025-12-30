@@ -8,6 +8,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.settings.KeyModifier;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
@@ -29,6 +30,7 @@ public class KeyBinding {
     public static final String GROUND_HAND_BRAKE_KEY = "key.machine_max.ground.hand_brake";
     public static final String GROUND_TOGGLE_HAND_BRAKE_KEY = "key.machine_max.ground.toggle_hand_brake";
 
+    public static final String ASSEMBLY_CYCLE_ATTACH_ANGLE_KEY = "key.machine_max.assembly.cycle_attach_angle";
     public static final String ASSEMBLY_CYCLE_CONNECTOR_KEY = "key.machine_max.assembly.cycle_connector";
     public static final String ASSEMBLY_CYCLE_VARIANT_KEY = "key.machine_max.assembly.cycle_variant";
     public static final String SCRIPT_HOT_RELOAD_KEY = "key.machine_max.assembly.hot_reload";
@@ -59,6 +61,7 @@ public class KeyBinding {
         //机甲
 
         //部件组装
+        event.register(KeyBinding.assemblyCycleAttachAngleKey);//部件循环选取连接点
         event.register(KeyBinding.assemblyCycleConnectorKey);//部件循环选取连接点
         event.register(KeyBinding.assemblyCycleVariantKey);//部件循环选取变体类型
         event.register(KeyBinding.JavascriptHotReloadKey);//脚本热更新
@@ -133,6 +136,13 @@ public class KeyBinding {
             KeyCategory.GROUND,//键位冲突类型
             InputConstants.UNKNOWN,//默认按键无
             KeyCategory.GROUND.getCategory()//键位类型
+    );
+
+    public static KeyMapping assemblyCycleAttachAngleKey = new KeyMapping(ASSEMBLY_CYCLE_ATTACH_ANGLE_KEY,//键位名称
+            KeyCategory.ASSEMBLY,//键位冲突类型
+            InputConstants.Type.KEYSYM,//默认为键盘
+            GLFW.GLFW_KEY_B,//默认按键
+            KeyCategory.ASSEMBLY.getCategory()//键位类型
     );
 
     public static KeyMapping assemblyCycleConnectorKey = new KeyMapping(ASSEMBLY_CYCLE_CONNECTOR_KEY,//键位名称

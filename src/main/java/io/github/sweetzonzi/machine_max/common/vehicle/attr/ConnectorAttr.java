@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.attr;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.util.data.Axis;
 
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Set;
 /**
  * @param locatorName 连接点对应的Locator名称
  * @param type 连接点类型
+ * @param normal 连接点的法线方向
  * @param impactReduction 连接点受到冲击时减少的冲击量
  * @param impactMultiplier 连接点受到冲击时的伤害倍率(与内部零件相连接的连接点恒定不可破坏，不受此影响)
  * @param integrity 连接点结构完整性，受到大于此数值的伤害时会断开连接的关节
@@ -19,14 +21,15 @@ import java.util.Set;
  * @param acceptableTags 连接点的可接受标签
  * @param forbiddenTags 连接点的禁止标签
  * @param jointAttrs 连接点的关节属性(限制，刚性与阻尼)
- * @param signalTranslations 接收到的信靠频道转译规则(channel_a->channel_c; channel_b->channel_c)
- * @param signalTargets 连接点的控制信号传输目标(子系统/连接点名/part/vehicle)
+ * @param signalTranslations 从对侧连接点接收到的信号频道转译规则(channel_a->channel_c; channel_b->channel_c)
+ * @param signalTargets 连接点在本零件内的控制信号传输目标(子系统/连接点名/part/vehicle)
  * @param collideBetweenParts 连接点是否允许部件间碰撞
  * @param connectedTo 连接点默认连接到的部件内连接点名称(不是骨骼名！)
  */
 public record ConnectorAttr(
         String locatorName,
         String type,
+        Axis normal,
         float integrity,
         float impactReduction,
         float impactMultiplier,
@@ -48,6 +51,7 @@ public record ConnectorAttr(
     public static final Codec<ConnectorAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("locator").forGetter(ConnectorAttr::locatorName),
             Codec.STRING.fieldOf("type").forGetter(ConnectorAttr::type),
+            Axis.CODEC.optionalFieldOf("normal", Axis.YP).forGetter(ConnectorAttr::normal),
             Codec.FLOAT.optionalFieldOf("integrity", 20f).forGetter(ConnectorAttr::integrity),
             Codec.FLOAT.optionalFieldOf("impact_reduction", 2f).forGetter(ConnectorAttr::impactReduction),
             Codec.FLOAT.optionalFieldOf("impact_multiplier", 1.5f).forGetter(ConnectorAttr::impactMultiplier),

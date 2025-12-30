@@ -65,7 +65,7 @@ public record MotorAttr(
             posOut
     )));
 
-    public static final Codec<Map<Integer, MotorAttr>> MAP_CODEC = Codec.unboundedMap(
+    public static final Codec<Map<Axis, MotorAttr>> MAP_CODEC = Codec.unboundedMap(
             Axis.CODEC,//x,y,z代表x,y,z轴平移，xr,yr,zr代表x,y,z轴旋转
             CODEC//关节属性
     );

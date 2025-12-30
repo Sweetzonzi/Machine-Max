@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.MotorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes;
+import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
 
 import java.util.Map;
@@ -13,7 +14,7 @@ import java.util.Map;
 public class JointDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     public final String controlledConnector;
     public final String rotationOrder;
-    public final Map<Integer, MotorAttr> axisParams;
+    public final Map<Axis, MotorAttr> axisParams;
 
     public static final MapCodec<JointDriverSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
@@ -27,7 +28,7 @@ public class JointDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr 
             float basicDurability, 
             String controlledConnector,
             String rotationOrder,
-            Map<Integer, MotorAttr> axisParams) {
+            Map<Axis, MotorAttr> axisParams) {
         super(basicDurability);
         this.controlledConnector = controlledConnector;
         this.rotationOrder = rotationOrder;

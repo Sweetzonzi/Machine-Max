@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemT
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.JointDriverSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.JointDriverSubsystem;
+import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
@@ -19,7 +20,7 @@ public class JointDriverSubsystemAttr extends AbstractSubsystemAttr {
     public final JointDriverSubsystemStaticAttr staticAttribute;
     public final String controlledConnector;
     public final String rotationOrder;
-    public final Map<Integer, MotorAttr> axisParams;
+    public final Map<Axis, MotorAttr> axisParams;
 
     public static final MapCodec<JointDriverSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
@@ -33,7 +34,7 @@ public class JointDriverSubsystemAttr extends AbstractSubsystemAttr {
             ResourceLocation modelName,
             String controlledConnector,
             String rotationOrder,
-            Map<Integer, MotorAttr> axisParams) {
+            Map<Axis, MotorAttr> axisParams) {
         super(modelName);
         this.staticAttribute = (JointDriverSubsystemStaticAttr) getStaticAttr();
         this.controlledConnector = controlledConnector;

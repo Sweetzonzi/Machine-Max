@@ -59,11 +59,13 @@ public class VehicleAssemblyAttachment {
     public Iterator<Pair<String, String>> connectorIterator = null;
     @Nullable
     @Setter
-    private Pair<String, String> connectorName = null;
+    private Pair<String, String> connectorName = null; // 零件-连接点名称
     @Setter
-    private Vector3f offset = new Vector3f();
+    private float attachRotation = 0; // TODO 新增：安装角，90°的倍数，受网络包控制在[0~360)之间循环
     @Setter
-    private Quaternionf quaternion = new Quaternionf();
+    private Vector3f offset = new Vector3f(); // 组装预览用
+    @Setter
+    private Quaternionf quaternion = new Quaternionf(); // 组装预览用
 
     public VehicleAssemblyAttachment(LivingEntity entity) {
         this.owner = entity;
@@ -104,6 +106,30 @@ public class VehicleAssemblyAttachment {
         }
     }
 
+    /**
+     * 以90°为间隔旋转当前部件的安装角，仅应在服务端被主动调用
+     * 安装角的旋转轴为连接点的装配法线
+     */
+    public void cycleAttachAngle() {
+        //TODO: 旋转后检查部件重叠状态，若重叠则取消或跳过？之后再说
+        this.attachRotation = (this.attachRotation + 90) % 360;
+        if (owner instanceof Player player && partType != null && variantName != null && connectorName != null) {
+            boolean hasConnector = this.getConnectorName() != null;
+            PacketDistributor.sendToPlayer((ServerPlayer) player, new PlayerPartAssemblyCacheSyncPayload(
+                    partType.getRegistryKey(),
+                    variantName,
+                    hasConnector ? getConnectorName().getFirst() : null,
+                    hasConnector ? getConnectorName().getSecond() : null,
+                    this.attachRotation,
+                    this.quaternion,
+                    this.offset
+            ));
+        }
+    }
+
+    /**
+     * 循环选择所有连接点直到找到合适的连接点或到达迭代次数上限，仅应在服务端被主动调用
+     */
     public void cycleConnectors() {
         var eyesight = owner.getData(MMAttachments.getENTITY_EYESIGHT());
         AbstractConnector targetConnector = eyesight.getEmptyConnector();//获取视线看着的部件连接点
@@ -139,6 +165,7 @@ public class VehicleAssemblyAttachment {
                         variantName,
                         hasConnector ? getConnectorName().getFirst() : null,
                         hasConnector ? getConnectorName().getSecond() : null,
+                        this.attachRotation,
                         this.quaternion,
                         this.offset
                 ));
@@ -146,6 +173,9 @@ public class VehicleAssemblyAttachment {
         }
     }
 
+    /**
+     * 循环选择所有变体直到找到合适的变体或到达迭代次数上限，随后再寻找可行的连接点，仅应在服务端被主动调用
+     */
     public void cycleVariants() {
         var eyesight = owner.getData(MMAttachments.getENTITY_EYESIGHT());
         AbstractConnector targetConnector = eyesight.getEmptyConnector();//获取视线看着的部件连接点
@@ -199,7 +229,7 @@ public class VehicleAssemblyAttachment {
                     if (targetConnector.conditionCheck(partType, variantName)) {//检查变体条件
                         if ((targetConnector instanceof AttachPointConnector || connector.type().equals("AttachPoint"))) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标连接点所属的载具
-                            targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName));
+                            targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName), attachRotation);
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
                             if (!entity.hasInfiniteMaterials()) {
                                 VisualEffectHelper.partToPlace = null;
