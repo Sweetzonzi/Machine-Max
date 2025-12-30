@@ -7,7 +7,7 @@
   "properties": {
     "icon": {
       "$ref": "../base/resource_location.schema.json",
-      "description": "部件图标路径，用于UI显示。若留空会使用第一张模型贴图作为图标"
+      "description": "部件图标路径，用于UI显示。若留空会使用紫黑缺省图标作为图标"
     },
     "tags": {
       "type": "array",
@@ -87,8 +87,8 @@
       "description": "子部件（零件）定义，键为子部件名称，值是子部件的详细配置。这是部件运动的最小单元，部件的每个可动部分都应当是一个子部件"
     }
   },
-  "required": ["icon", "models", "sub_parts"],
-  "additionalProperties": false,
+  "additionalProperties": true,
+  "required": ["models", "sub_parts"],
   "examples": [
     {
       "icon": "machine_max:textures/icon/ae86_chassis_all_terrain_icon.png",

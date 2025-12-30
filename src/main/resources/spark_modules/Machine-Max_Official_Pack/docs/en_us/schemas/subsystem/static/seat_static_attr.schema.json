@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/seat_static_attr.json",
+  "title": "Seat Subsystem Static Attributes",
+  "description": "Static attributes of the seat, including passenger display, damage blocking, view settings, etc.",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:seat",
+      "description": "Subsystem type, must be 'machine_max:seat'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Subsystem basic durability, becomes paralyzed when reduced to 0, restores functionality when repaired to 30% durability."
+    },
+    "block_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to transfer damage received by passengers to the part. If true, damage received by passengers will be transferred to the part."
+    },
+    "render_passenger": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to render the passenger model."
+    },
+    "passenger_scale": {
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [1, 1, 1],
+      "description": "Scale of the passenger model."
+    },
+    "views": {
+      "$ref": "view_attr.schema.json",
+      "default": {
+        "enable_first_person": true,
+        "first_person_hud": [],
+        "first_person_offset": 0.0,
+        "enable_third_person": true,
+        "third_person_hud": [],
+        "third_person_offset": 0.75,
+        "follow_vehicle": true,
+        "focus_on_center": true,
+        "distance_scale": 1.1
+      },
+      "description": "View attribute settings."
+    },
+    "view_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "List of view switching input signal keys."
+    },
+    "allow_use_items": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to allow passengers to use items (such as weapons, tools)."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:seat",
+      "basic_durability": 30.0,
+      "block_damage": true,
+      "render_passenger": true,
+      "views": {
+        "enable_first_person": true,
+        "first_person_offset": 0.2,
+        "enable_third_person": true,
+        "third_person_offset": 0.8
+      },
+      "allow_use_items": true
+    }
+  ]
+}

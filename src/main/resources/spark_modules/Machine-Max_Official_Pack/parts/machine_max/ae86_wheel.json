@@ -5,7 +5,7 @@
   "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {//部件变体列表, 支持单值或多键值对
     "left": {//变体名称
-      "icon": "machine_max:textures/icon/ae86_wheel_icon.png",//(可选, 留空会使用第一张模型贴图)部件图标路径
+      "icon": "machine_max:textures/icon/ae86_wheel_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
       "models": "machine_max:ae86_wheel_left.geo", //模型路径
       "textures": [ //贴图路径列表
         "machine_max:textures/part/ae86_1.png"
@@ -41,7 +41,7 @@
       }
     },
     "right": {//变体名称
-      "icon": "machine_max:textures/icon/ae86_wheel_icon.png",//(可选, 留空会使用第一张模型贴图)部件图标路径
+      "icon": "machine_max:textures/icon/ae86_wheel_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
       "models": "machine_max:ae86_wheel_right.geo", //模型路径
       "textures": [ //贴图路径列表
         "machine_max:textures/part/ae86_1.png"

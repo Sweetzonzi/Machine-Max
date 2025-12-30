@@ -4,7 +4,7 @@
   "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
   "vehicle_damage_rate_destroyed": 0.0,//(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {
-    "icon": "machine_max:textures/icon/ae86_back_seat_icon.png",//(可选, 留空会使用第一张模型贴图)部件图标路径
+    "icon": "machine_max:textures/icon/ae86_back_seat_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
     "models": "machine_max:ae86_back_seat.geo",//模型路径
     "textures": [ //贴图路径列表
       "machine_max:textures/part/ae86_all_terrain_1.png",

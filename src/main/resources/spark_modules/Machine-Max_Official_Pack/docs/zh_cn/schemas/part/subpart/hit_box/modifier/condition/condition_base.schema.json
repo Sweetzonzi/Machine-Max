@@ -21,7 +21,7 @@
     }
   },
   "required": ["type"],
-  "additionalProperties": false,
+  "additionalProperties": true,
   "oneOf": [
     { "$ref": "condition_types.schema.json#/definitions/Always"},
     { "$ref": "condition_types.schema.json#/definitions/DamageTypeCondition"},

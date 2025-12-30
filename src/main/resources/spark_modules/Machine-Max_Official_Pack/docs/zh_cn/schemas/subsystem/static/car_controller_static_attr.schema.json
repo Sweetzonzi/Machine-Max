@@ -3,14 +3,22 @@
   "$id": "https://machine_max.io/schemas/subsystem/static/car_controller_static_attr.json",
   "title": "车辆控制器子系统静态属性",
   "description": "车辆控制系统的静态属性，负责处理驾驶输入、转向控制等。",
-  "allOf": [
-    { "$ref": "../base/abstract_subsystem_static_attr.schema.json"}
-  ],
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
     "type": {
       "type": "string",
       "const": "machine_max:car_controller",
       "description": "子系统类型，必须为'machine_max:car_controller'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
     },
     "steering_center": {
       "$ref": "../../base/vector_3d.schema.json",

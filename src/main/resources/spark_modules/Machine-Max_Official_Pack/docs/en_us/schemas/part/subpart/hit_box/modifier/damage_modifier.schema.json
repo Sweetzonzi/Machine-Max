@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/part/subpart/hit_box/modifier/damage_modifier.json",
+  "title": "Damage Modifier",
+  "description": "A list containing multiple modifier entries, applied in sequence. Each modifier entry determines whether to take effect based on conditions.",
+  "type": "array",
+  "items": {
+    "$ref": "modifier_entry.schema.json"
+  },
+  "default": [],
+  "examples": [
+    [
+      {
+        "operation": "add",
+        "value": -5.0,
+        "condition": {
+          "type": "damage_type",
+          "id": "minecraft:fly_into_wall"
+        }
+      },
+      {
+        "operation": "multiply",
+        "value": 0.05,
+        "condition": {
+          "type": "damage_type",
+          "id": "minecraft:sweet_berry_bush"
+        }
+      }
+    ]
+  ]
+}

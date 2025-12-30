@@ -3,14 +3,15 @@
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/gearbox_dynamic_attr.json",
   "title": "变速箱子系统动态属性",
   "description": "变速箱的动态属性，定义功率输出目标和挡位信号输出。",
-  "allOf": [
-    { "$ref": "../base/abstract_subsystem_attr.schema.json" }
-  ],
   "properties": {
     "type": {
       "type": "string",
       "const": "machine_max:gearbox",
       "description": "子系统类型，必须为'machine_max:gearbox'。"
+    },
+    "model": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     },
     "power_output": {
       "type": "string",
@@ -23,7 +24,6 @@
     }
   },
   "required": ["type", "model", "power_output"],
-  "additionalProperties": false,
   "examples": [
     {
       "type": "machine_max:gearbox",

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/subsystem_dynamic_attr.json",
   "title": "子系统动态属性",
-  "description": "子系统动态属性的顶层架构，根据type字段分发到具体子系统动态属性架构。",
+  "description": "子系统动态属性的顶层架构，根据 type 字段分派到具体子系统动态属性架构。",
   "type": "object",
   "properties": {
     "type": {
@@ -20,145 +20,106 @@
       "description": "子系统类型，决定使用哪个具体的子系统架构。"
     }
   },
+  "additionalProperties": true,
   "required": [
     "type"
   ],
-  "oneOf": [
+  "allOf": [
     {
-      "properties": {
-        "type": {
-          "const": "machine_max:car_controller"
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:car_controller"
+          }
         }
       },
-      "required": [
-        "type",
-        "model",
-        "engine_outputs",
-        "wheel_outputs",
-        "gearbox_outputs"
-      ],
-      "allOf": [
-        {
-          "$ref": "dynamic/car_controller_dynamic_attr.schema.json"
-        }
-      ]
+      "then": {
+        "$ref": "dynamic/car_controller_dynamic_attr.schema.json"
+      }
     },
     {
-      "properties": {
-        "type": {
-          "const": "machine_max:engine"
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:engine"
+          }
         }
       },
-      "required": [
-        "type",
-        "model",
-        "power_output"
-      ],
-      "allOf": [
-        {
-          "$ref": "dynamic/engine_dynamic_attr.schema.json"
-        }
-      ]
+      "then": {
+        "$ref": "dynamic/engine_dynamic_attr.schema.json"
+      }
     },
     {
-      "properties": {
-        "type": {
-          "const": "machine_max:gearbox"
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:gearbox"
+          }
         }
       },
-      "required": [
-        "type",
-        "model",
-        "power_output"
-      ],
-      "allOf": [
-        {
-          "$ref": "dynamic/gearbox_dynamic_attr.schema.json"
-        }
-      ]
+      "then": {
+        "$ref": "dynamic/gearbox_dynamic_attr.schema.json"
+      }
     },
     {
-      "properties": {
-        "type": {
-          "const": "machine_max:item_storage"
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:item_storage"
+          }
         }
       },
-      "required": [
-        "type",
-        "model"
-      ],
-      "allOf": [
-        {
-          "$ref": "dynamic/item_storage_dynamic_attr.schema.json"
-        }
-      ]
+      "then": {
+        "$ref": "dynamic/item_storage_dynamic_attr.schema.json"
+      }
     },
     {
-      "properties": {
-        "type": {
-          "const": "machine_max:motor"
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:motor"
+          }
         }
       },
-      "required": [
-        "type",
-        "model",
-        "power_output"
-      ],
-      "allOf": [
-        {
-          "$ref": "dynamic/motor_dynamic_attr.schema.json"
-        }
-      ]
+      "then": {
+        "$ref": "dynamic/motor_dynamic_attr.schema.json"
+      }
     },
     {
-      "properties": {
-        "type": {
-          "const": "machine_max:seat"
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:seat"
+          }
         }
       },
-      "required": [
-        "type",
-        "model"
-      ],
-      "allOf": [
-        {
-          "$ref": "dynamic/seat_dynamic_attr.schema.json"
-        }
-      ]
+      "then": {
+        "$ref": "dynamic/seat_dynamic_attr.schema.json"
+      }
     },
     {
-      "properties": {
-        "type": {
-          "const": "machine_max:transmission"
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:transmission"
+          }
         }
       },
-      "required": [
-        "type",
-        "model",
-        "power_outputs"
-      ],
-      "allOf": [
-        {
-          "$ref": "dynamic/transmission_dynamic_attr.schema.json"
-        }
-      ]
+      "then": {
+        "$ref": "dynamic/transmission_dynamic_attr.schema.json"
+      }
     },
     {
-      "properties": {
-        "type": {
-          "const": "machine_max:wheel_driver"
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:wheel_driver"
+          }
         }
       },
-      "required": [
-        "type",
-        "model",
-        "connector"
-      ],
-      "allOf": [
-        {
-          "$ref": "dynamic/wheel_driver_dynamic_attr.schema.json"
-        }
-      ]
+      "then": {
+        "$ref": "dynamic/wheel_driver_dynamic_attr.schema.json"
+      }
     }
   ],
   "examples": [

@@ -3,18 +3,26 @@
   "$id": "https://machine_max.io/schemas/subsystem/static/wheel_driver_static_attr.json",
   "title": "轮驱动子系统静态属性",
   "description": "轮驱动的静态属性，包括驱动力和转向特性。",
-  "allOf": [
-    { "$ref": "../base/abstract_subsystem_static_attr.json" }
-  ],
   "definitions": {
     "StaticWheelRollingAxisAttr": {
       "type": "object",
       "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+          "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+        },
         "max_drive_force": {
           "type": "number",
           "minimum": 0,
           "default": 10000.0,
           "description": "最大驱动力，单位牛顿(N)。"
+        },
+        "basic_durability": {
+          "type": "number",
+          "minimum": 0,
+          "default": 20.0,
+          "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
         },
         "max_brake_force": {
           "type": "number",

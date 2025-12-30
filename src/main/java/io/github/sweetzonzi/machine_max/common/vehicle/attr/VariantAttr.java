@@ -75,7 +75,7 @@ public class VariantAttr {
     );
 
     public static final Codec<VariantAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("icon").forGetter(VariantAttr::getIcon),
+            ResourceLocation.CODEC.optionalFieldOf("icon", ResourceLocation.withDefaultNamespace("missingno")).forGetter(VariantAttr::getIcon),
             Codec.STRING.listOf().optionalFieldOf("tags", List.of()).forGetter(VariantAttr::getTags),
             MODELS_CODEC.fieldOf("models").forGetter(VariantAttr::getModels),
             TEXTURES_CODEC.optionalFieldOf("textures", Map.of()).forGetter(VariantAttr::getTextures),

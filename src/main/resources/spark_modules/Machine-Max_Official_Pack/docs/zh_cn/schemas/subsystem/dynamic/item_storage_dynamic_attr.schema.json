@@ -3,18 +3,18 @@
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/item_storage_dynamic_attr.json",
   "title": "物品存储子系统动态属性",
   "description": "物品存储容器的动态属性，只需指定型号即可。",
-  "allOf": [
-    { "$ref": "../base/abstract_subsystem_attr.schema.json" }
-  ],
   "properties": {
     "type": {
       "type": "string",
       "const": "machine_max:item_storage",
       "description": "子系统类型，必须为'machine_max:item_storage'。"
+    },
+    "model": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     }
   },
   "required": ["type", "model"],
-  "additionalProperties": false,
   "examples": [
     {
       "type": "machine_max:item_storage",

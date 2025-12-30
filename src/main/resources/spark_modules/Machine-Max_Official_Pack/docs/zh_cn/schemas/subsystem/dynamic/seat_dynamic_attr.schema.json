@@ -3,14 +3,15 @@
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",
   "title": "座椅子系统动态属性",
   "description": "座椅的动态属性，定义座椅位置、信号传输目标等。",
-  "allOf": [
-    { "$ref": "../base/abstract_subsystem_attr.schema.json" }
-  ],
   "properties": {
     "type": {
       "type": "string",
       "const": "machine_max:seat",
       "description": "子系统类型，必须为'machine_max:seat'。"
+    },
+    "model": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     },
     "seat_point_locator": {
       "type": "string",
@@ -39,7 +40,6 @@
     }
   },
   "required": ["type", "model"],
-  "additionalProperties": false,
   "examples": [
     {
       "type": "machine_max:seat",

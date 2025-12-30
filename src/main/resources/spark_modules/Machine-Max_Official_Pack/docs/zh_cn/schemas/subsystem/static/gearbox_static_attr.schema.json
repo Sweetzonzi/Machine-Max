@@ -3,14 +3,22 @@
   "$id": "https://machine_max.io/schemas/subsystem/static/gearbox_static_attr.json",
   "title": "变速箱子系统静态属性",
   "description": "变速箱的静态属性，包括减速比、换挡时间等。",
-  "allOf": [
-    { "$ref": "../base/abstract_subsystem_static_attr.schema.json"}
-  ],
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
     "type": {
       "type": "string",
       "const": "machine_max:gearbox",
       "description": "子系统类型，必须为'machine_max:gearbox'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
     },
     "final_ratio": {
       "type": "number",

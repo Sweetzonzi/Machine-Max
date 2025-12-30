@@ -3,14 +3,22 @@
   "$id": "https://machine_max.io/schemas/subsystem/static/transmission_static_attr.json",
   "title": "传动系统子系统静态属性",
   "description": "传动系统的静态属性，负责将输入动力分配至各个输出端。",
-  "allOf": [
-    { "$ref": "../base/abstract_subsystem_static_attr.schema.json"}
-  ],
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
     "type": {
       "type": "string",
       "const": "machine_max:transmission",
       "description": "子系统类型，必须为'machine_max:transmission'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
     },
     "diff_lock": {
       "type": "string",

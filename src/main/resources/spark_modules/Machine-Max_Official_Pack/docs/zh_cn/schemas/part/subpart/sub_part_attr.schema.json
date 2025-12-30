@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://machine_max.io/schemas/part/subpart/sub_part_attr.json",
+  "$id": "https://machine_max.io/schemas/part/subpart/sub_part_attr.schema.json",
   "title": "子部件属性",
   "description": "定义载具部件中的一个子部件（最小运动单元）的属性，包含物理特性、碰撞检测、连接点和子系统等",
   "type": "object",
@@ -91,9 +91,6 @@
     },
     "hydrodynamics": {
       "type": "object",
-      "additionalProperties": {
-        "$ref": "hydrodynamic_attr.schema.json"
-      },
       "default": {
         "": {
           "$ref": "hydrodynamic_attr.schema.json#/$defs/default"
@@ -103,7 +100,6 @@
     }
   },
   "required": ["hit_boxes"],
-  "additionalProperties": false,
   "examples": [
     {
       "start_bone": "chassis",
