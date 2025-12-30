@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/base/abstract_subsystem_attr.json",
+  "title": "子系统动态属性基类",
+  "description": "所有子系统动态属性的基础类，包含共享的基本属性和方法。",
+  "type": "object",
+  "properties": {
+    "model": {
+      "$ref": "../../base/resource_location.schema.json",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+    }
+  },
+  "required": ["model"],
+  "additionalProperties": false
+}

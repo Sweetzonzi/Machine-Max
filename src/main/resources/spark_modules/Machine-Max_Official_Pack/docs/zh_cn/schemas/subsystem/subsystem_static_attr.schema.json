@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/subsystem_static_attr.json",
+  "title": "子系统静态属性",
+  "description": "子系统静态属性的顶层架构，根据type字段分发到具体子系统类型。",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "machine_max:car_controller",
+        "machine_max:engine",
+        "machine_max:gearbox",
+        "machine_max:item_storage",
+        "machine_max:motor",
+        "machine_max:seat",
+        "machine_max:transmission",
+        "machine_max:wheel_driver"
+      ],
+      "description": "子系统类型，决定使用哪个具体的子系统架构。"
+    }
+  },
+  "required": ["type"],
+  "oneOf": [
+    {
+      "properties": { "type": { "const": "machine_max:car_controller" } },
+      "required": ["type"],
+      "allOf": [{ "$ref": "static/car_controller_static_attr.schema.json"}]
+    },
+    {
+      "properties": { "type": { "const": "machine_max:engine" } },
+      "required": ["type"],
+      "allOf": [{ "$ref": "static/engine_static_attr.schema.json" }]
+    },
+    {
+      "properties": { "type": { "const": "machine_max:gearbox" } },
+      "required": ["type"],
+      "allOf": [{ "$ref": "static/gearbox_static_attr.schema.json" }]
+    },
+    {
+      "properties": { "type": { "const": "machine_max:item_storage" } },
+      "required": ["type"],
+      "allOf": [{ "$ref": "static/item_storage_static_attr.schema.json" }]
+    },
+    {
+      "properties": { "type": { "const": "machine_max:motor" } },
+      "required": ["type"],
+      "allOf": [{ "$ref": "static/motor_static_attr.schema.json" }]
+    },
+    {
+      "properties": { "type": { "const": "machine_max:seat" } },
+      "required": ["type"],
+      "allOf": [{ "$ref": "static/seat_static_attr.schema.json" }]
+    },
+    {
+      "properties": { "type": { "const": "machine_max:transmission" } },
+      "required": ["type"],
+      "allOf": [{ "$ref": "static/transmission_static_attr.schema.json" }]
+    },
+    {
+      "properties": { "type": { "const": "machine_max:wheel_driver" } },
+      "required": ["type"],
+      "allOf": [{ "$ref": "static/wheel_driver_static_attr.schema.json" }]
+    }
+  ],
+  "examples": [
+    {
+      "type": "machine_max:item_storage",
+      "basic_durability": 100.0,
+      "rows": 6,
+      "columns": 9
+    },
+    {
+      "type": "machine_max:engine",
+      "max_power": 75000.0,
+      "max_torque": 130.0,
+      "red_line_rpm": 6500.0
+    }
+  ]
+}

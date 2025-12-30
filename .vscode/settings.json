@@ -1,0 +1,16 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "spark_modules/*/parts/**/*.json"
+      ],
+      "url": "./src/main/resources/spark_modules/Machine-Max_Official_Pack/docs/zh_cn/schema/part_definition_schema.json"
+    },
+    {
+      "fileMatch": [
+        "spark_modules/*/subsystems/**/*.json"
+      ],
+      "url": "./src/main/resources/spark_modules/Machine-Max_Official_Pack/docs/zh_cn/schema/subsystem_definition_schema.json"
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/part/subpart/hit_box/hit_box_attr.json",
+  "title": "碰撞箱属性",
+  "description": "定义部件碰撞箱的物理属性、护甲值和伤害修正系统。",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "default": "part",
+      "description": "碰撞箱名称，供子系统等查找。"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["box", "sphere", "cylinder"],
+      "description": "碰撞形状类型，支持box、sphere、cylinder。"
+    },
+    "subsystem": {
+      "type": "string",
+      "default": "",
+      "description": "子系统名称，用于将此碰撞箱与特定子系统关联，当此碰撞箱受到伤害时，关联的子系统会受到等量伤害。"
+    },
+    "friction": {
+      "$ref": "../../../base/vector_3d.schema.json",
+      "description": "摩擦系数向量，分别对应x、y、z轴。"
+    },
+    "slip_adaptation": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.5,
+      "description": "滑移适应系数，用于调整在滑动时的摩擦行为。"
+    },
+    "rolling_friction": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 0.2,
+      "description": "滚动摩擦系数。"
+    },
+    "spinning_friction": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 0.0,
+      "description": "旋转摩擦系数。"
+    },
+    "restitution": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.1,
+      "description": "恢复系数（弹性），0为完全非弹性碰撞，1为完全弹性碰撞。"
+    },
+    "block_damage_factor": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 1.0,
+      "description": "方块破坏系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力。"
+    },
+    "angle_effect": {
+      "type": "boolean",
+      "default": true,
+      "description": "等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度。"
+    },
+    "rha": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 1.0,
+      "description": "等效护甲厚度，单位mm，减免伤害并控制碰撞时的能量分配情况。"
+    },
+    "impact_modifiers": {
+      "$ref": "modifier/damage_modifier.schema.json",
+      "description": "冲击修正器，将受到的伤害按照一定规则转换为冲击数值施加到各连接点。默认为空列表，造成多少伤害就对连接点施加多少冲击。"
+    },
+    "penetration_modifiers": {
+      "$ref": "modifier/damage_modifier.schema.json",
+      "default": [
+        {
+          "operation": "multiply",
+          "value": 0.5,
+          "condition": {
+            "type": "not",
+            "condition": {
+              "type": "damage_tag",
+              "tag": "machine_max:has_pen_depth"
+            }
+          }
+        }
+      ],
+      "description": "穿深修正器，根据受到的伤害调整其穿深。若伤害不带穿深数据，则传入伤害值，否则传入穿深。默认在传入的伤害不包含穿深时，以伤害的0.5倍作为穿深。"
+    },
+    "damage_modifiers": {
+      "$ref": "modifier/damage_modifier.schema.json",
+      "default": [
+        {
+          "operation": "add",
+          "value": -5.0,
+          "condition": {
+            "type": "damage_type",
+            "id": "minecraft:fly_into_wall"
+          }
+        },
+        {
+          "operation": "multiply",
+          "value": 0.05,
+          "condition": {
+            "type": "damage_type",
+            "id": "minecraft:sweet_berry_bush"
+          }
+        },
+        {
+          "operation": "multiply",
+          "value": 0.05,
+          "condition": {
+            "type": "entity_type",
+            "id": "minecraft:slime"
+          }
+        },
+        {
+          "operation": "multiply",
+          "value": 0.1,
+          "condition": {
+            "type": "entity_type",
+            "id": "minecraft:magma_cube"
+          }
+        }
+      ],
+      "description": "伤害修正器，将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据，则传入伤害值，否则传入伤害数据。默认忽视5以下的撞击伤害，大幅减弱史莱姆等每帧造成的伤害。"
+    },
+    "un_penetrate_damage_factor": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 0.0,
+      "description": "攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "name": "chassis",
+      "type": "box",
+      "rha": 10.0,
+      "block_damage_factor": 1.5,
+      "angle_effect": true,
+      "damage_modifiers": [
+        {
+          "operation": "add",
+          "value": -1.0,
+          "condition": {
+            "type": "always"
+          }
+        }
+      ]
+    }
+  ]
+}

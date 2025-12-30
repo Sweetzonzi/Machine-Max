@@ -1,5 +1,5 @@
 {
-  "type": "machine_max:wheel_driver", //轮胎驱动子系统，驱动对接口上的部件滚动和转向
-  "basic_durability": 400, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
-  "control_inputs": ["wheel_control", "move_control"]//(可选，默认["wheel_control", "move_control"])接收的控制信号的频道列表，优先级递减
+  "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动对接口上的部件滚动和转向
+  "basic_durability": 400, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪
+  "control_inputs": ["wheel_control", "move_control"]//(可选, 默认["wheel_control", "move_control"])接收的控制信号的频道列表, 优先级递减
 }

@@ -1,9 +1,9 @@
 {
   "type": "machine_max:car_controller", //子系统类型
-  "basic_durability": 200, //(可选，默认20.0)子系统基础耐久度，降至0时会瘫痪
-  "manual_gear_shift": false, //(可选，默认false)是否强制手动挡
-  "auto_hand_brake": true, //(可选，默认true)是否自动在停车和起步时切换手刹车状态
-  "steering_center": [0,0,2.4036],//(可选，默认[0, 0, 0])转向中心点(m)，对于前轮转向的四轮载具，此位置应取后轮轴中点；对于全轮转向的载具，此位置应取四轮位置的几何中心
-  "steering_radius": 6.5, //(可选，默认5.0)最小转向半径(m)
+  "basic_durability": 200, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪
+  "manual_gear_shift": false, //(可选, 默认false)是否强制手动挡
+  "auto_hand_brake": true, //(可选, 默认true)是否自动在停车和起步时切换手刹车状态
+  "steering_center": [0,0,2.4036],//(可选, 默认[0, 0, 0])转向中心点(m), 对于前轮转向的四轮载具, 此位置应取后轮轴中点；对于全轮转向的载具, 此位置应取四轮位置的几何中心
+  "steering_radius": 6.5, //(可选, 默认5.0)最小转向半径(m)
   "control_inputs": ["move_control"]
 }

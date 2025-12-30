@@ -1,8 +1,8 @@
 {
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "vehicle_durability_rate": 0.1,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
-  "integrity": 4000.0,
   "variants": {
     "icon": "machine_max:textures/icon/golden_closestool_icon.png",
     "models": "machine_max:golden_closestool.geo", 

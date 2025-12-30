@@ -26,7 +26,7 @@ public class InteractBoxAttr {
 
     public static final Codec<InteractBoxAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("bone").forGetter(InteractBoxAttr::getBoneName),
-            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.fieldOf("signal_targets").forGetter(InteractBoxAttr::getSignalTargets),
+            ConnectorAttr.SIGNAL_TARGETS_CODEC.fieldOf("signal_targets").forGetter(InteractBoxAttr::getSignalTargets),
             Codec.STRING.optionalFieldOf("interact_mode", "fast").forGetter(InteractBoxAttr::getMode),
             Codec.STRING.optionalFieldOf("condition", "NOR").forGetter(InteractBoxAttr::getCondition)
     ).apply(instance, InteractBoxAttr::new));

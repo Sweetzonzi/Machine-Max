@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/base/abstract_subsystem_static_attr.json",
+  "title": "子系统静态属性基类",
+  "description": "所有子系统静态属性的基础类，包含共享的基本属性。",
+  "type": "object",
+  "properties": {
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    }
+  },
+  "required": [],
+  "additionalProperties": false
+}

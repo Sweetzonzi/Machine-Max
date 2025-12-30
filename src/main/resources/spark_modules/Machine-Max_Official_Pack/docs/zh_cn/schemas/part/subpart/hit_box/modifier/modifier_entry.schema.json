@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/part/subpart/hit_box/modifier/modifier_entry.json",
+  "title": "修改器条目",
+  "description": "伤害修改器的单个条目，包含操作符、数值和生效条件。多个修改器按顺序应用。",
+  "type": "object",
+  "properties": {
+    "operation": {
+      "$ref": "../../../../base/operation.schema.json",
+      "description": "操作类型。add：将值加到基础值上；multiply：将基础值乘以该值。"
+    },
+    "value": {
+      "type": "number",
+      "description": "操作的值。对于add操作，可以是正数或负数（如-5表示减伤）；对于multiply操作，通常是正数（如0.05表示削减至5%）。"
+    },
+    "condition": {
+      "$ref": "condition/condition.schema.json",
+      "description": "条件，当条件满足时应用此修改器。"
+    }
+  },
+  "required": ["operation", "value", "condition"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "operation": "add",
+      "value": -5.0,
+      "condition": {
+        "type": "damage_type",
+        "id": "minecraft:fly_into_wall"
+      },
+      "description": "将撞击伤害削减5点（不小于0）"
+    },
+    {
+      "operation": "multiply",
+      "value": 0.05,
+      "condition": {
+        "type": "entity_type",
+        "id": "minecraft:slime"
+      },
+      "description": "将史莱姆造成的伤害削减至5%"
+    }
+  ]
+}

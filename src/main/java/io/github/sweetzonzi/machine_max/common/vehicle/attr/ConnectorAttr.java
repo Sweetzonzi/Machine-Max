@@ -43,7 +43,7 @@ public record ConnectorAttr(
         String connectedTo
 ) {
 
-    public static final Codec<Map<String, List<String>>> SIGNAL_TARGET_CODEC = Codec.unboundedMap(
+    public static final Codec<Map<String, List<String>>> SIGNAL_TARGETS_CODEC = Codec.unboundedMap(
             Codec.STRING,
             Codec.STRING.listOf()
     );
@@ -60,7 +60,7 @@ public record ConnectorAttr(
             Codec.STRING.listOf().optionalFieldOf("forbidden_tags", List.of()).forGetter(ConnectorAttr::requiredTags),
             JointAttr.MAP_CODEC.optionalFieldOf("joint_attrs", Map.of()).forGetter(ConnectorAttr::jointAttrs),
             Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("signal_translations", Map.of()).forGetter(ConnectorAttr::signalTranslations),
-            SIGNAL_TARGET_CODEC.optionalFieldOf("signal_targets", Map.of()).forGetter(ConnectorAttr::signalTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("signal_targets", Map.of()).forGetter(ConnectorAttr::signalTargets),
             Codec.BOOL.optionalFieldOf("collide_between_parts", false).forGetter(ConnectorAttr::collideBetweenParts),
             Codec.STRING.optionalFieldOf("connected_to", "").forGetter(ConnectorAttr::connectedTo)
     ).apply(instance, ConnectorAttr::new));

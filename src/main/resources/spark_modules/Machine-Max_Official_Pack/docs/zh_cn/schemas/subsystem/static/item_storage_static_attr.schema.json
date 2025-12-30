@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/item_storage_static_attr.json",
+  "title": "物品存储子系统静态属性",
+  "description": "物品存储容器的静态属性，包括行数和列数。",
+  "allOf": [
+    { "$ref": "../base/abstract_subsystem_static_attr.schema.json"}
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:item_storage",
+      "description": "子系统类型，必须为'machine_max:item_storage'。"
+    },
+    "rows": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 3,
+      "description": "容器的物品槽行数。"
+    },
+    "columns": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 9,
+      "description": "容器的物品槽列数。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:item_storage",
+      "basic_durability": 100.0,
+      "rows": 6,
+      "columns": 9
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 {
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
-  "integrity": 800.0,
   "variants": {
     "models": {
       "default": "machine_max:container_16x32x32.geo"
@@ -26,44 +26,44 @@
             "rolling_friction": 0.5,
             "slip_adaptation": 0.5,
             "block_damage_factor": 0.1,
-            "damage_modifiers": [// (可选，默认忽视5以下的撞击伤害，大幅减弱史莱姆等每帧造成的伤害) 伤害修正器，将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据，则传入伤害值，否则传入伤害数据
+            "damage_modifiers": [// (可选, 默认忽视5以下的撞击伤害, 大幅减弱史莱姆等每帧造成的伤害) 伤害修正器, 将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据, 则传入伤害值, 否则传入伤害数据
               {
-                "operation": "add", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
-                "value": -10.0, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将撞击伤害削减10点（不小于0）
+                "operation": "add", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": -10.0, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减10点（不小于0）
                 "condition": {
                   "type": "damage_type", // 判断伤害是否为某个类型
                   "id": "minecraft:fly_into_wall" // 伤害类型注册名
                 }
               },
               {
-                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
-                "value": 0.05, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将浆果丛造成的削减至5%，防止帧伤快速摧毁载具
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.05, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将浆果丛造成的削减至5%, 防止帧伤快速摧毁载具
                 "condition": {
                   "type": "damage_type",
                   "id": "minecraft:sweet_berry_bush"
                 }
               },
               {
-                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
-                "value": 0.05, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将史莱姆造成的削减至5%，防止帧伤快速摧毁载具
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.05, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将史莱姆造成的削减至5%, 防止帧伤快速摧毁载具
                 "condition": {
                   "type": "entity_type",
                   "id": "minecraft:slime"
                 }
               },
               {
-                "operation": "multiply", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
-                "value": 0.05, // 修正量，根据operation不同，以不同的行为影响传入的数值，这里会将岩浆怪造成的削减至10%，防止帧伤快速摧毁载具
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.05, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将岩浆怪造成的削减至10%, 防止帧伤快速摧毁载具
                 "condition": {
                   "type": "entity_type",
                   "id": "minecraft:magma_cube"
                 }
               },
               {
-                "operation": "add", // 运算符，支持add和multiply，add则将value加到传入的数值上，multiply则乘以value
-                "value": -1.0, // 全局减伤，将所有伤害削减1点（不小于0）
+                "operation": "add", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": -1.0, // 全局减伤, 将所有伤害削减1点（不小于0）
                 "condition": {
-                  "type": "always" // 此条件永远判定通过，用于全局减伤
+                  "type": "always" // 此条件永远判定通过, 用于全局减伤
                 }
               }
             ]
@@ -90,9 +90,9 @@
           "up": {
             "locator": "up",
             "type": "AttachPoint",
-            "integrity": 40.0,//(可选，默认20.0)部件基础结构完整度，部件可承受不高于此数值的冲击力而不脱落，冲击力来自伤害(已实装)或关节应力(暂未实装)
-            "impact_reduction": 3.0, //(可选，默认2.0)连接点的冲击减免值，在计算部件击落前应用，可将冲击削减至0以完全避免对结构完整性的影响
-            "impact_multiplier": 0.8 //(可选，默认1.0)连接点的冲击吸收率，在计算部件击落前，应用冲击减免后应用，大于1将使连接点更容易断开
+            "integrity": 40.0,//(可选, 默认20.0)部件基础结构完整度, 部件可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
+            "impact_multiplier": 0.8 //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
           },
           "side_left": {
             "locator": "side_left",

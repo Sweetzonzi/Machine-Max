@@ -18,10 +18,6 @@ public class TransmissionSubsystemStaticAttr extends AbstractSubsystemStaticAttr
     public final float diffLockSensitivity;//差速锁灵敏度
     public final float autoDiffLockThreshold;//自动差速锁阈值，当输出端反馈转速差距百分比超过该值且diff_lock为auto时，自动启用差速锁
     public final List<String> manualDiffLockInputChannels;//控制信号名，优先级递减，留空接收所有信号
-    public static final Codec<Map<String, Float>> POWER_OUTPUTS_CODEC = Codec.unboundedMap(
-            Codec.STRING,
-            Codec.FLOAT
-    );
 
     public enum diffLockMode {
         TRUE,
@@ -35,7 +31,7 @@ public class TransmissionSubsystemStaticAttr extends AbstractSubsystemStaticAttr
             Codec.STRING.optionalFieldOf("diff_lock", "auto").forGetter(TransmissionSubsystemStaticAttr::getDiffLock),
             Codec.FLOAT.optionalFieldOf("diff_lock_sensitivity", 1f).forGetter(TransmissionSubsystemStaticAttr::getDiffLockSensitivity),
             Codec.FLOAT.optionalFieldOf("auto_diff_lock_threshold", 10f).forGetter(TransmissionSubsystemStaticAttr::getAutoDiffLockThreshold),
-            Codec.STRING.listOf().optionalFieldOf("distribute_inputs", List.of("diff_lock_control")).forGetter(TransmissionSubsystemStaticAttr::getManualDiffLockInputChannels)
+            Codec.STRING.listOf().optionalFieldOf("diff_lock_inputs", List.of("diff_lock_control")).forGetter(TransmissionSubsystemStaticAttr::getManualDiffLockInputChannels)
     ).apply(instance, TransmissionSubsystemStaticAttr::new));
 
     public TransmissionSubsystemStaticAttr(
