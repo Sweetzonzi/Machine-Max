@@ -44,7 +44,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
-import io.github.sweetzonzi.machine_max.network.payload.SubPartSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.ShapeHelper;
@@ -235,15 +234,15 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         //获取参与碰撞的碰撞箱
         HitBox hitBox = this.getHitBox(hitBoxIndex);
         //根据实际接触部位重设摩擦系数
-        Vector3f friction = PhysicsHelperKt.toBVector3f(hitBox.attr.getFriction());
+        Vector3f friction = PhysicsHelperKt.toBVector3f(hitBox.attr.friction());
         if (!friction.equals(body.getAnisotropicFriction(null)))
             body.setAnisotropicFriction(friction, AfMode.basic);
-        if (hitBox.attr.getRollingFriction() != body.getRollingFriction())
-            body.setRollingFriction(hitBox.attr.getRollingFriction());
-        if (hitBox.attr.getRollingFriction() != body.getSpinningFriction())
-            body.setSpinningFriction(hitBox.attr.getSpinningFriction());
-        if (hitBox.attr.getRestitution() != body.getRestitution())
-            body.setRestitution(hitBox.attr.getRestitution());
+        if (hitBox.attr.rollingFriction() != body.getRollingFriction())
+            body.setRollingFriction(hitBox.attr.rollingFriction());
+        if (hitBox.attr.rollingFriction() != body.getSpinningFriction())
+            body.setSpinningFriction(hitBox.attr.spinningFriction());
+        if (hitBox.attr.restitution() != body.getRestitution())
+            body.setRestitution(hitBox.attr.restitution());
         if (other.getCollisionGroup() == CollisionGroups.TERRAIN) {
             //与方块碰撞时
             this.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
@@ -293,7 +292,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
             partMass += 0.05 * (part.vehicle.totalMass - body.getMass());
             //摩擦力修正
-            float slip = (float) 1 - (blockSlip * (1 - hitBox.attr.getSlipAdaptation()));//潮湿与打滑带来的修正系数
+            float slip = (float) 1 - (blockSlip * (1 - hitBox.attr.slipAdaptation()));//潮湿与打滑带来的修正系数
             if (contactVel.length() > 1f && impactAngle > 60f && impactAngle < 120f) {//打滑时
                 slip = (float) (Math.pow(slip, 0.5 * (contactVel.length() - 1)) * 0.9f);//根据打滑情况额外降低摩擦系数
                 //TODO:漂移音效，摩擦力应先上升后下降
@@ -369,7 +368,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //根据碰撞速度、碰撞角、方块硬度和爆炸抗性，摧毁碰撞的方块，同时对自身造成伤害
             //TODO:配置文件开关冲撞可破坏方块
             //碰撞的方块可破坏时
-            if (hitBox.attr.getBlockDamageFactor() > 0 && blockState.getDestroySpeed(part.level, blockPos) >= 0) {
+            if (hitBox.attr.blockDamageFactor() > 0 && blockState.getDestroySpeed(part.level, blockPos) >= 0) {
                 //计算碰撞法线方向上的速度(考虑冲量影响)
                 float blockArmor = ArmorUtil.getBlockArmor(part.level, blockState, blockPos);
                 float subPartArmor = hitBox.getRHA(this);
@@ -387,11 +386,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 }
                 double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);//方块吸收的碰撞能量
                 double partEnergy = contactEnergy - blockEnergy;//部件吸收的碰撞能量
-                if (hitBox.attr.getBlockDamageFactor() * blockEnergy > 250 * blockDurability) {
+                if (hitBox.attr.blockDamageFactor() * blockEnergy > 250 * blockDurability) {
                     //能量能够一次摧毁则摧毁,计算额外冲量使部件减速
                     terrain.markRemoved(blockPos);
                     //被摧毁的方块掉落为物品的概率，方块吸收的碰撞能量恰好与耐久度相同时必定掉落，掉落率随能量增加而递减
-                    double blockDropRate = Math.exp(1 - (hitBox.attr.getBlockDamageFactor() * blockEnergy / (250 * blockDurability)));
+                    double blockDropRate = Math.exp(1 - (hitBox.attr.blockDamageFactor() * blockEnergy / (250 * blockDurability)));
                     if (!level.isClientSide) {
                         level.submitDeduplicatedTask(blockPos.toShortString(), PPhase.PRE, () -> {
                             level.destroyBlock(blockPos, Math.random() < blockDropRate);

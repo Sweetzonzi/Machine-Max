@@ -14,7 +14,7 @@
       "enum": ["AttachPoint", "Special"],
       "description": "连接点类型。AttachPoint：简单连接点；Special：特殊连接点，支持复杂的关节属性。"
     },
-    "normal": {
+    "direction": {
       "$ref": "../../../base/axis.schema.json",
       "description": "连接点的法线方向，用于确定连接方向。"
     },

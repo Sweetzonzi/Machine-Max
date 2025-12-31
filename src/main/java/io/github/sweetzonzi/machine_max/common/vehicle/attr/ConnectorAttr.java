@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * @param locatorName 连接点对应的Locator名称
  * @param type 连接点类型
- * @param normal 连接点的法线方向
+ * @param direction 连接点的法线方向
  * @param impactReduction 连接点受到冲击时减少的冲击量
  * @param impactMultiplier 连接点受到冲击时的伤害倍率(与内部零件相连接的连接点恒定不可破坏，不受此影响)
  * @param integrity 连接点结构完整性，受到大于此数值的伤害时会断开连接的关节
@@ -29,7 +29,7 @@ import java.util.Set;
 public record ConnectorAttr(
         String locatorName,
         String type,
-        Axis normal,
+        Axis direction,
         float integrity,
         float impactReduction,
         float impactMultiplier,
@@ -51,7 +51,7 @@ public record ConnectorAttr(
     public static final Codec<ConnectorAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("locator").forGetter(ConnectorAttr::locatorName),
             Codec.STRING.fieldOf("type").forGetter(ConnectorAttr::type),
-            Axis.CODEC.optionalFieldOf("normal", Axis.YP).forGetter(ConnectorAttr::normal),
+            Axis.CODEC.optionalFieldOf("direction", Axis.YP).forGetter(ConnectorAttr::direction),
             Codec.FLOAT.optionalFieldOf("integrity", 20f).forGetter(ConnectorAttr::integrity),
             Codec.FLOAT.optionalFieldOf("impact_reduction", 2f).forGetter(ConnectorAttr::impactReduction),
             Codec.FLOAT.optionalFieldOf("impact_multiplier", 1.5f).forGetter(ConnectorAttr::impactMultiplier),

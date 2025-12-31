@@ -26,17 +26,17 @@ public final class DamageModifier {
 
     public final List<ModifierEntry> modifiers;
 
-    public static final List<ModifierEntry> DEFAULT_PEN_DEPTH_MODIFIERS = List.of(
+    public static final DamageModifier DEFAULT_PEN_DEPTH_MODIFIERS = new DamageModifier(List.of(
             new ModifierEntry(Operation.MULTIPLY, 0.5f, new Condition.Not(
                     new Condition.DamageTagCondition(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "has_pen_depth"))))
-    );
+    ));
 
-    public static final List<ModifierEntry> DEFAULT_DAMAGE_MODIFIERS = List.of(
+    public static final DamageModifier DEFAULT_DAMAGE_MODIFIERS = new DamageModifier(List.of(
             new ModifierEntry(Operation.ADD, -5f, new Condition.DamageTypeCondition(DamageTypes.FLY_INTO_WALL.location())),
             new ModifierEntry(Operation.MULTIPLY, 0.05f, new Condition.DamageTypeCondition(DamageTypes.SWEET_BERRY_BUSH.location())),
             new ModifierEntry(Operation.MULTIPLY, 0.05f, new Condition.EntityTypeCondition(ResourceLocation.withDefaultNamespace("slime"))),
             new ModifierEntry(Operation.MULTIPLY, 0.1f, new Condition.EntityTypeCondition(ResourceLocation.withDefaultNamespace("magma_cube")))
-    );
+    ));
 
     public DamageModifier(List<ModifierEntry> modifiers) {
         this.modifiers = modifiers;
@@ -305,4 +305,7 @@ public final class DamageModifier {
                     Codec.FLOAT.fieldOf("value").forGetter(e -> e.value),
                     Condition.CODEC.fieldOf("condition").forGetter(e -> e.condition)
             ).apply(inst, ModifierEntry::new));
+
+    public static final Codec<DamageModifier> CODEC = Codec.list(ENTRY_CODEC)
+            .xmap(DamageModifier::new, dm -> dm.modifiers);
 }

@@ -14,7 +14,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
-import io.github.sweetzonzi.machine_max.util.MMMath;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
@@ -140,10 +139,10 @@ public class SubPartAttr {
 
             for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {
-                    String hitBoxName = hitBoxEntry.getValue().getHitBoxName();
+                    String hitBoxName = hitBoxEntry.getValue().hitBoxName();
                     OBone bone = bones.get(hitBoxEntry.getKey());
 
-                    switch (hitBoxEntry.getValue().getShapeType()) {
+                    switch (hitBoxEntry.getValue().shapeType()) {
                         case "box":
                             for (OCube cube : bone.getCubes()) {
                                 org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();

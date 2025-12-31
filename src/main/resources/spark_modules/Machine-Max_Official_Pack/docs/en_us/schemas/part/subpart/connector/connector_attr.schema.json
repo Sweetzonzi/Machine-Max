@@ -14,7 +14,7 @@
       "enum": ["AttachPoint", "Special"],
       "description": "Connection point type. AttachPoint: simple connection point; Special: special connection point, supports complex joint attributes."
     },
-    "normal": {
+    "direction": {
       "$ref": "../../../base/axis.schema.json",
       "description": "Normal direction of the connection point, used to determine the connection direction."
     },

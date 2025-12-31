@@ -316,7 +316,7 @@ public class Part {
             createSubsystems(subPart, subPartAttr.subsystems);//创建子系统，赋予部件实际功能
             //创建命中判定区属性并匹配对应子系统(内部实现)
             for (HitBoxAttr hitBoxAttr : subPart.attr.hitBoxes.values()) {
-                subPart.hitBoxes.put(hitBoxAttr.getHitBoxName(), new HitBox(subPart, hitBoxAttr));
+                subPart.hitBoxes.put(hitBoxAttr.hitBoxName(), new HitBox(subPart, hitBoxAttr));
             }
         }
         //TODO: 连接内部连接器

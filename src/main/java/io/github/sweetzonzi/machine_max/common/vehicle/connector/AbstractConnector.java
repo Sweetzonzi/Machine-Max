@@ -390,7 +390,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
          */
 
         // --- 1. 获取连接点法线 ---
-        Axis normalAxis = partConnector.attr.normal();
+        Axis normalAxis = partConnector.attr.direction();
 
         // --- 2. 构造绕法线的离散旋转 ---
         Quaternion twist = Axis.discreteTwist(normalAxis, attachRotation);

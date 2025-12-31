@@ -13,39 +13,39 @@ public class HitBox {
     public final HitBoxAttr attr;
     public final AbstractSubsystem subsystem;
 
-    public HitBox(SubPart subPart,HitBoxAttr attr) {
+    public HitBox(SubPart subPart, HitBoxAttr attr) {
         this.subPart = subPart;
-        this.name = attr.getHitBoxName();
+        this.name = attr.hitBoxName();
         this.attr = attr;
-        this.subsystem = subPart.subsystems.getOrDefault(attr.getSubsystem(), null);
+        this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem(), null);
     }
 
     public float modifyImpact(DamageSource source, float amount) {
-        return attr.getImpactModifier().apply(source, amount);
+        return attr.impactModifiers().apply(source, amount);
     }
 
     public float modifyPiercing(DamageSource source, float amount) {
-        return attr.getPiercingModifier().apply(source, amount);
+        return attr.piercingModifiers().apply(source, amount);
     }
 
     public float modifyDamage(DamageSource source, float amount) {
-        return attr.getDamageModifier().apply(source, amount);
+        return attr.damageModifiers().apply(source, amount);
     }
 
     public float getRHA(SubPart subPart) {
-        return attr.getRHA() * (subPart.destroyed? 0.5f : 1.0f);
+        return attr.RHA() * (subPart.destroyed ? 0.5f : 1.0f);
     }
 
     public boolean hasAngleEffect() {
-        return attr.isAngleEffect();
+        return attr.angleEffect();
     }
 
     public boolean hasUnPenetrateDamage() {
-        return attr.getUnPenetrateDamageFactor() > 0.0f;
+        return attr.unPenetrateDamageFactor() > 0.0f;
     }
 
     public float getUnPenetrateDamageFactor() {
-        return attr.getUnPenetrateDamageFactor();
+        return attr.unPenetrateDamageFactor();
     }
 
 }
