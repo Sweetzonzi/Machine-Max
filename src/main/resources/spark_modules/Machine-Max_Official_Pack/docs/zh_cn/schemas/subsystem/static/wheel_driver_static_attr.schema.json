@@ -10,7 +10,7 @@
         "$schema": {
           "type": "string",
           "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
-          "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+          "default": "../../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
         },
         "max_drive_force": {
           "type": "number",
@@ -96,7 +96,6 @@
     }
   },
   "required": ["type"],
-  "additionalProperties": false,
   "examples": [
     {
       "type": "machine_max:wheel_driver",

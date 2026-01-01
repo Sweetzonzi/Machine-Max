@@ -116,5 +116,14 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.fabricator.output_count", "产出数量: %s");
         this.add("gui.machine_max.fabricator.recipe_description", "配方描述:");
         this.add("gui.machine_max.fabricator.item_description", "物品描述:");
+        //Hud
+        this.add("hud.warn.machine_max.subpart_destroying", "❌ 零件已损毁，销毁倒计时: %1$s秒");
+        this.add("hud.warn.machine_max.subsystem_malfunction", "❌ %1$s瘫痪");
+        this.add("hud.hint.machine_max.subsystem_durability", "⚠ %1$s耐久度未满: %2$s/%3$s");
+        this.add("hud.warn.machine_max.connector_integrity_low", "❌ %1$s结构完整性极低，存在脱落风险");
+        this.add("hud.hint.machine_max.connector_integrity", "⚠ %1$s结构完整性未满: %2$s/%3$s");
+        this.add("hud.info.machine_max.assembling_progress", "装配进度: ");
+        this.add("hud.key.machine_max.assemble", "[%1$s] 组装&修复&加固");
+        this.add("hud.key.machine_max.disassemble", "[%1$s+%2$s] 拆解");
     }
 }

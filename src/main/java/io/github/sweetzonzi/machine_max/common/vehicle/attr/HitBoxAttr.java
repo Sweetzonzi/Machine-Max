@@ -9,7 +9,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 import java.util.Map;
 
-@Getter
+
 public record HitBoxAttr(
         String hitBoxName,
         String shapeType,

@@ -117,5 +117,14 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("gui.machine_max.fabricator.output_count", "Output Count: %s");
         this.add("gui.machine_max.fabricator.recipe_description", "Recipe Description:");
         this.add("gui.machine_max.fabricator.item_description", "Item Description:");
+        //Hud
+        this.add("hud.warn.machine_max.subpart_destroying", "❌ DESTROYED, DESTRUCT IN: %1$ss");
+        this.add("hud.warn.machine_max.subsystem_malfunction", "❌ %1$s MALFUNCTION");
+        this.add("hud.hint.machine_max.subsystem_durability", "⚠ %1$s DURABILITY: %2$s/%3$s");
+        this.add("hud.warn.machine_max.connector_integrity_low", "❌ %1$s INTEGRITY LOW");
+        this.add("hud.hint.machine_max.connector_integrity", "⚠ %1$s INTEGRITY: %2$s/%3$s");
+        this.add("hud.info.machine_max.assembling_progress", "ASSEMBLY: ");
+        this.add("hud.key.machine_max.assemble", "[%1$s] Assemble & Repair & Reinforce");
+        this.add("hud.key.machine_max.disassemble", "[%1$s+%2$s] Disassemble");
     }
 }
