@@ -16,7 +16,7 @@
     },
     "direction": {
       "$ref": "../../../base/axis.schema.json",
-      "description": "连接点的法线方向，用于确定连接方向。"
+      "description": "连接点的法线方向，用于确定连接点的连接方向。x+为右，y+为上，z+为后。"
     },
     "integrity": {
       "type": "number",

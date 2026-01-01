@@ -54,7 +54,8 @@
         "connectors": {
           "chassis_connection": {
             "locator": "golden_closestool_connect",
-            "type": "AttachPoint", 
+            "type": "AttachPoint",
+            "direction": "yn",
             "integrity": 4000.0,
             "impact_reduction": 3.0, 
             "impact_multiplier": 0.5, 

@@ -16,7 +16,7 @@
     },
     "direction": {
       "$ref": "../../../base/axis.schema.json",
-      "description": "Normal direction of the connection point, used to determine the connection direction."
+      "description": "Normal direction of the connection point, used to determine the connection direction. X+ = right, Y+ = up, Z+ = back. "
     },
     "integrity": {
       "type": "number",

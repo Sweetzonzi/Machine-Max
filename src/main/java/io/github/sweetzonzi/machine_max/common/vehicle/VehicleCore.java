@@ -107,10 +107,13 @@ public class VehicleCore {
                 Part partA = partMap.get(UUID.fromString(connectionData.partUuidS));
                 Part partB = partMap.get(UUID.fromString(connectionData.partUuidA));
                 if (partA != null && partB != null) {
-                    this.attachConnector(
-                            partA.subParts.get(connectionData.subPartNameS).connectors.get(connectionData.specialConnectorName),
-                            partB.subParts.get(connectionData.subPartNameA).connectors.get(connectionData.attachPointConnectorName),
-                            null);
+                    AbstractConnector connectorS = partA.subParts.get(connectionData.subPartNameS).connectors.get(connectionData.specialConnectorName);
+                    AbstractConnector connectorA = partB.subParts.get(connectionData.subPartNameA).connectors.get(connectionData.attachPointConnectorName);
+                    if (connectorS != null && connectorA != null) {
+                        connectorS.setActualTransform(connectionData.posRotS.toTransform());
+                        connectorA.setActualTransform(connectionData.posRotA.toTransform());
+                        this.attachConnector(connectorS, connectorA, null);
+                    } else throw new IllegalArgumentException("未在载具中找到连接数据所需的连接点");
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
             subSystemController.initAllSubsystems();//子系统初始化

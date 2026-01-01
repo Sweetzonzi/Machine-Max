@@ -123,7 +123,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                                         targetConnector.mergeTransform(new Transform(
                                                 PhysicsHelperKt.toBVector3f(cache.getOffset()),
                                                 SparkMathKt.toBQuaternion(cache.getQuaternion())
-                                        ).invert(), cache.getAttachRotation())
+                                        ).invert())
                                 );
                             }
                         } else message.append("无法连接两个高级连接点");

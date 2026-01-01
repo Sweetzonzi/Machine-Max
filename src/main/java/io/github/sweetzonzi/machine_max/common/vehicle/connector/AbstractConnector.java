@@ -49,6 +49,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
 
 import java.util.HashMap;
 import java.util.List;
@@ -69,11 +70,13 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     protected final SynchedEntityData synchedData;
     protected final ConcurrentLinkedQueue<Float> accumulatedImpact = new ConcurrentLinkedQueue<>();
     protected final ConcurrentLinkedQueue<Float> accumulatedIntegrityChange = new ConcurrentLinkedQueue<>();
-    public final float impactReduction;//连接点是否可被伤害破坏
-    public final float impactMultiplier;//连接点是否可被伤害破坏
+    public final float impactReduction;
+    public final float impactMultiplier;
     @Setter
     public AbstractConnector attachedConnector;//与本连接点对接的连接点
     public final Transform offsetFromMassCenter;//被安装零件的连接点相对本部件质心的位置与姿态
+    @Setter
+    public Transform actualTransform;//本安装点为确保法线方向和连接点方向一致所需的实际变换
     public final CollisionShape shape = new BoxCollisionShape(0.25f);//连接点碰撞形状
     public PhysicsRigidBody body;//部件连接点安装判定区
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
@@ -82,6 +85,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.name = name;
         this.subPart = subPart;
         this.offsetFromMassCenter = offsetFromMassCenter;
+        this.actualTransform = offsetFromMassCenter.clone();
         this.signalPort = new SignalPort(this, attr.signalTargets(), attr.signalTranslations());
         this.collideBetweenParts = attr.collideBetweenParts();
         this.impactReduction = attr.connectedTo().isEmpty() ? attr.impactReduction() : 0;
@@ -256,8 +260,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
 
     protected void attachJoint(AttachPointConnector targetConnector) {
         this.joint = new New6Dof(this.subPart.body, targetConnector.subPart.body,
-                this.offsetFromMassCenter.getTranslation(), targetConnector.offsetFromMassCenter.getTranslation(),
-                this.offsetFromMassCenter.getRotation().toRotationMatrix(), targetConnector.offsetFromMassCenter.getRotation().toRotationMatrix(),
+                this.actualTransform.getTranslation(), targetConnector.actualTransform.getTranslation(),
+                this.actualTransform.getRotation().toRotationMatrix(), targetConnector.actualTransform.getRotation().toRotationMatrix(),
                 RotationOrder.XYZ);
         targetConnector.joint = this.joint;
         adjustJoint();//调整关节属性
@@ -352,6 +356,10 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                             MMMath.relPointWorldPos(attachedConnector.offsetFromMassCenter.getTranslation(), attachedConnector.subPart.body),
                             attachedConnector.subPart.body.getPhysicsRotation(null).mult(attachedConnector.offsetFromMassCenter.getRotation()));
                 }
+                //重置安装姿态变换
+                this.actualTransform = this.offsetFromMassCenter.clone();
+                this.attachedConnector.actualTransform = this.attachedConnector.offsetFromMassCenter.clone();
+                //重置安装状态
                 this.attachedConnector.attachedConnector = null;
                 this.attachedConnector = null;
                 NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Post(specialConnector, attachPointConnector));
@@ -369,50 +377,60 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         });
     }
 
-    public void adjustTransform(
-            Part part,
+    /**
+     * 计算使要安装的目标连接点的法线方向与本连接点的法线方向相反所需的实际旋转变换，并存储于 {@link #actualTransform} 中
+     * @param partConnector 将要安装的连接点
+     * @param attachRotation 玩家输入的附加旋转角度
+     * @return 旋转变换
+     */
+    public Transform calculateExtraTransform(
             AbstractConnector partConnector,
             float attachRotation
     ) {
-        /*
-         * === 装配变换流程说明 ===
-         *
-         * 1. partConnector.offsetFromMassCenter
-         *    表示“待安装部件的连接点”在其所属 SubPart 中的局部变换
-         *
-         * 2. attachRotation 是玩家选择的离散安装角（90° 的倍数）
-         *    该旋转必须：
-         *      - 绕连接点的装配法线轴
-         *      - 在连接点的【局部空间】中生效
-         *
-         * 3. 最终仍然复用原有的 mergeTransform 逻辑，
-         *    保证不破坏既有关节与物理结构
-         */
+        // --- 1. 获取双方连接点的装配法线（局部空间） ---
+        Axis partNormalAxis = partConnector.attr.direction();
+        Axis targetNormalAxis = this.attr.direction();
 
-        // --- 1. 获取连接点法线 ---
-        Axis normalAxis = partConnector.attr.direction();
+        var partNormal = SparkMathKt.toVector3f(Axis.axisToVector(partNormalAxis));
+        var targetNormal = SparkMathKt.toVector3f(Axis.axisToVector(targetNormalAxis));
 
-        // --- 2. 构造绕法线的离散旋转 ---
-        Quaternion twist = Axis.discreteTwist(normalAxis, attachRotation);
+        // --- 2. 构造“法线对齐旋转”：targetNormal -> -partNormal ---
+        Quaternionf alignNormal = new Quaternionf();
+        alignNormal.rotationTo(targetNormal, partNormal.negate());
 
-        // --- 3. 对连接点 offset 施加旋转（局部空间） ---
-        Transform rotatedOffset = partConnector.offsetFromMassCenter.clone();
+        // --- 3. 构造绕法线的离散旋转（玩家输入） ---
+        Quaternionf twist = SparkMathKt.toQuaternionf(Axis.discreteTwist(targetNormalAxis, attachRotation));
 
-        Quaternion offsetRot = rotatedOffset.getRotation();
-        offsetRot.set(twist.mult(offsetRot));
-        rotatedOffset.setRotation(offsetRot);
+        // --- 4. 合成最终局部旋转 ---
+        // 顺序非常重要：先对齐法线，再绕法线旋转
+        Quaternion finalRotation = SparkMathKt.toBQuaternion(twist.mul(alignNormal));
 
-        // --- 4. 复用原有装配逻辑 ---
-        Transform targetTransform = mergeTransform(rotatedOffset.invert(), 0);
+        // --- 5. 将旋转作用到待安装连接点的 offset ---
+        this.actualTransform = partConnector.offsetFromMassCenter.clone();
+        Quaternion offsetRot = this.actualTransform.getRotation();
+        offsetRot.set(finalRotation.mult(offsetRot));
+        this.actualTransform.setRotation(offsetRot);
+        return this.actualTransform;
+    }
 
-        Transform rootTransform = part.rootSubPart.body.getTransform(null).invert();
+    public void adjustTransform(
+            AbstractConnector partConnector,
+            float attachRotation
+    ) {
+        calculateExtraTransform(partConnector, attachRotation);
 
-        // 设置根部件变换
-        part.rootSubPart.body.setPhysicsTransform(targetTransform);
+        // 将相对刚体的局部变换与刚体的姿态合并
+        Transform targetTransform = mergeTransform(this.actualTransform.invert());
+
+        Transform rootTransform =
+                partConnector.subPart.body.getTransform(null).invert();
+
+        // 设置根 SubPart 的物理变换
+        partConnector.subPart.body.setPhysicsTransform(targetTransform);
 
         // 同步所有子部件
-        for (SubPart subPart : part.subParts.values()) {
-            if (subPart == part.rootSubPart) continue;
+        for (SubPart subPart : partConnector.subPart.part.subParts.values()) {
+            if (subPart == partConnector.subPart) continue;
             Transform transform = subPart.body.getTransform(null);
             MyMath.combine(transform, rootTransform, transform);
             MyMath.combine(transform, targetTransform, transform);
@@ -421,7 +439,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
 
-    public Transform mergeTransform(Transform transform, float attachRotation) {
+    public Transform mergeTransform(Transform transform) {
         Transform result = subPart.body.getTransform(null);
         MyMath.combine(this.offsetFromMassCenter, result, result);
         return MyMath.combine(transform, result, result);

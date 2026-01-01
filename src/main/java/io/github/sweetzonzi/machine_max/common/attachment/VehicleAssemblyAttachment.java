@@ -229,7 +229,7 @@ public class VehicleAssemblyAttachment {
                     if (targetConnector.conditionCheck(partType, variantName)) {//检查变体条件
                         if ((targetConnector instanceof AttachPointConnector || connector.type().equals("AttachPoint"))) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标连接点所属的载具
-                            targetConnector.adjustTransform(part, part.externalConnectors.get(connectorName), attachRotation);
+                            targetConnector.adjustTransform(part.externalConnectors.get(connectorName), attachRotation);
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
                             if (!entity.hasInfiniteMaterials()) {
                                 VisualEffectHelper.partToPlace = null;
