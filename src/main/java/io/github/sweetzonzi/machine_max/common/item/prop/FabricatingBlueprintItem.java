@@ -36,6 +36,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.awt.*;
@@ -65,11 +66,11 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                 var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                 if (cache.getPartType() != null && cache.getVariantName() != null) {
                     Part part = new Part(cache.getPartType(), cache.getVariantName(), level);
-                    part.setMaterialProgress(0);
-                    part.setAssemblingProgress(0);
                     if (PartAssemblyItem.getRecipe(stack, level) instanceof FabricatingRecipe) {
                         part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE());
                     }
+                    part.setMaterialProgress(0);
+                    part.setAssemblingProgress(0);
                     return cache.assembly(level, player, stack, part);
                 } else return InteractionResultHolder.pass(stack); //TODO:方块拼装和物品拼装？
             } else return InteractionResultHolder.pass(stack);
@@ -122,13 +123,14 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                     message.append("未选中可用的部件接口，右键将直接放置零件");
                     if (VisualEffectHelper.partToPlace != null) {
                         LivingEntity livingEntity = (LivingEntity) entity;
+                        Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(cache.getAttachRotation() + entity.getYRot()));
                         VisualEffectHelper.partToPlace.setTransform(
                                 new Transform(
                                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                                 entity.getEyePosition(),
                                                 entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
                                                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
-                                        Quaternion.IDENTITY
+                                        SparkMathKt.toBQuaternion(rotation)
                                 )
 
                         );

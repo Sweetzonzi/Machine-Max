@@ -32,6 +32,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("key.machine_max.ground.hand_brake", "Hand Brake (Press)");
         this.add("key.machine_max.ground.toggle_hand_brake", "Hand Brake (Toggle)");
         //Key names-Assembly
+        this.add("key.machine_max.assembly.add_attach_angle", "Rotate Attach Angle (+)");
+        this.add("key.machine_max.assembly.sub_attach_angle", "Rotate Attach Angle (-)");
         this.add("key.machine_max.assembly.cycle_connector", "Cycle Part Connector");
         this.add("key.machine_max.assembly.cycle_variant", "Cycle Part Variant");
         //Custom pack exception handler

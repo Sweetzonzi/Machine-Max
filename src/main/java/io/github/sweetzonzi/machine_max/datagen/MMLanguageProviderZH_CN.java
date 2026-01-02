@@ -32,6 +32,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.machine_max.ground.hand_brake", "手刹 (按住)");
         this.add("key.machine_max.ground.toggle_hand_brake", "手刹 (切换)");
         //按键名称-组装
+        this.add("key.machine_max.assembly.add_attach_angle", "旋转部件(+)");
+        this.add("key.machine_max.assembly.sub_attach_angle", "旋转部件(-)");
         this.add("key.machine_max.assembly.cycle_connector", "循环部件连接口");
         this.add("key.machine_max.assembly.cycle_variant", "循环部件变体");
         //内容包异常处理

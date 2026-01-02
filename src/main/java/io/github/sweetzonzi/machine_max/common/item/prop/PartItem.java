@@ -39,6 +39,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.HashMap;
@@ -67,10 +68,10 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                 if (cache.getPartType() != null && cache.getVariantName() != null) {
                     Part part = new Part(cache.getPartType(), cache.getVariantName(), level);
                     if (PartAssemblyItem.getRecipe(stack, level) instanceof FabricatingRecipe) {
-                        part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE());
+                        part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE()); // 设置配方为物品对应的配方
                     }
-                    var result = cache.assembly(level, player, stack, part);
-                    if (result.getResult() == InteractionResult.CONSUME) {
+                    var result = cache.assembly(level, player, stack, part); // 放出部件
+                    if (result.getResult() == InteractionResult.CONSUME) { // 若成功则播放音效
                         stack.consume(1, player);
                         SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
                         SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
@@ -136,13 +137,14 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                     message.append("未选中可用的部件接口，右键将直接放置零件");
                     if (VisualEffectHelper.partToPlace != null) {
                         LivingEntity livingEntity = (LivingEntity) entity;
+                        Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(cache.getAttachRotation() - entity.getYRot()));
                         VisualEffectHelper.partToPlace.setTransform(
                                 new Transform(
                                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                                 entity.getEyePosition(),
                                                 entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
                                                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
-                                        Quaternion.IDENTITY
+                                        SparkMathKt.toBQuaternion(rotation)
                                 )
 
                         );

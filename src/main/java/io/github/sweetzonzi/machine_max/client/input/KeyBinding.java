@@ -66,7 +66,7 @@ public class KeyBinding {
         event.register(KeyBinding.assemblySubAttachAngleKey);//部件降低安装角
         event.register(KeyBinding.assemblyCycleConnectorKey);//部件循环选取连接点
         event.register(KeyBinding.assemblyCycleVariantKey);//部件循环选取变体类型
-        event.register(KeyBinding.assemblyCycleRecipeKey);//循环选取使用的配方
+//        event.register(KeyBinding.assemblyCycleRecipeKey);//循环选取使用的配方
         event.register(KeyBinding.JavascriptHotReloadKey);//脚本热更新
 
     }
@@ -142,15 +142,14 @@ public class KeyBinding {
 
     public static KeyMapping assemblyAddAttachAngleKey = new KeyMapping(ASSEMBLY_ADD_ATTACH_ANGLE_KEY,//键位名称
             KeyCategory.ASSEMBLY,//键位冲突类型
-            InputConstants.Type.MOUSE,//默认为鼠标
-            GLFW.GLFW_MOUSE_BUTTON_5,//默认按键
+            InputConstants.Type.KEYSYM,//默认为键盘
+            GLFW.GLFW_KEY_B,//默认按键
             KeyCategory.ASSEMBLY.getCategory()//键位类型
     );
 
     public static KeyMapping assemblySubAttachAngleKey = new KeyMapping(ASSEMBLY_SUB_ATTACH_ANGLE_KEY,//键位名称
             KeyCategory.ASSEMBLY,//键位冲突类型
-            InputConstants.Type.KEYSYM,//默认为鼠标
-            GLFW.GLFW_MOUSE_BUTTON_4,//默认按键
+            InputConstants.UNKNOWN,//默认按键无
             KeyCategory.ASSEMBLY.getCategory()//键位类型
     );
 

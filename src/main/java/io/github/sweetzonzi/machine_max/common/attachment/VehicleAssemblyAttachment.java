@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.datafixers.util.Pair;
@@ -224,7 +225,9 @@ public class VehicleAssemblyAttachment {
                         ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
                     }
                     return InteractionResultHolder.consume(stack);
-                } else if (targetConnector != null && connectorName != null) {//若有可用的接口
+                }
+                // 若有可用的连接点，则尝试将零件连接至接口
+                if (targetConnector != null && connectorName != null) {
                     if (targetConnector.conditionCheck(partType, variantName)) {//检查变体条件
                         if ((targetConnector instanceof SimpleConnector || connector.isSimpleConnector())) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标连接点所属的载具
@@ -240,22 +243,23 @@ public class VehicleAssemblyAttachment {
                             return InteractionResultHolder.consume(stack);
                         } else return InteractionResultHolder.pass(stack);
                     } else return InteractionResultHolder.pass(stack);
-                } else {
-                    Transform transform = new Transform(
-                            PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
-                                    entity.getEyePosition(),
-                                    entity.getEyePosition().add(entity.getViewVector(1).scale(entity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                    ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
-                            Quaternion.IDENTITY
-                    );
-                    part.setTransform(transform);
-                    ObjectManager.addVehicle(new VehicleCore(level, part));//否则直接放置零件
-                    if (stack.getItem() instanceof PartItem) {
-                        var pos = transform.getTranslation();
-                        ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
-                    }
-                    return InteractionResultHolder.consume(stack);
                 }
+                // 若没有可用的连接点，则尝试直接放置零件
+                Quaternionf rotation = new Quaternionf().rotationY((float) Math.toRadians(attachRotation - entity.getYRot()));
+                Transform transform = new Transform(
+                        PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
+                                entity.getEyePosition(),
+                                entity.getEyePosition().add(entity.getViewVector(1).scale(entity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
+                        SparkMathKt.toBQuaternion(rotation)
+                );
+                part.setTransform(transform);//设置初始位姿
+                ObjectManager.addVehicle(new VehicleCore(level, part));//直接放置零件
+                if (stack.getItem() instanceof PartItem) {
+                    var pos = transform.getTranslation();
+                    ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
+                }
+                return InteractionResultHolder.consume(stack);
             } catch (Exception e) {
                 return InteractionResultHolder.fail(stack);
             }
