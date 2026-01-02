@@ -262,16 +262,17 @@ public abstract class DestroyableObject implements SyncedDataHolder {
 
     @NotNull
     public Matrix4f getWorldPositionMatrix(@NotNull Number number) {
-        long time = System.nanoTime();
-        float deltaTime = (time - lastSync) / 1000000000.0F;//距离上次同步经过的时间(秒)
-        if (deltaTime > 0.05f) {//大于1Tick，根据速度外推新的位置
-            float partialTime = number.floatValue() * 0.05f;
-            Vector3f translation = transform.getTranslation().add(getLinearVelocity().mult(deltaTime + partialTime));
-            Transform result = SparkMathKt.lerp(oldTransform, transform, number.floatValue()).setTranslation(translation);
-            return SparkMathKt.toMatrix4f(result.toTransformMatrix());
-        } else {//否则插值计算位姿
-            return SparkMathKt.toMatrix4f(SparkMathKt.lerp(oldTransform, transform, number.floatValue()).toTransformMatrix());
-        }
+//        long time = System.nanoTime();
+//        float deltaTime = (time - lastSync) / 1000000000.0F;//距离上次同步经过的时间(秒)
+//        if (deltaTime > 0.05f) {//大于1Tick，根据速度外推新的位置
+//            float partialTime = number.floatValue() * 0.05f;
+//            Vector3f translation = transform.getTranslation().add(getLinearVelocity().mult(deltaTime + partialTime));
+//            Transform result = SparkMathKt.lerp(oldTransform, transform, number.floatValue()).setTranslation(translation);
+//            return SparkMathKt.toMatrix4f(result.toTransformMatrix());
+//        } else {//否则插值计算位姿
+//            return SparkMathKt.toMatrix4f(SparkMathKt.lerp(oldTransform, transform, number.floatValue()).toTransformMatrix());
+//        }
+        return SparkMathKt.toMatrix4f(SparkMathKt.lerp(oldTransform, transform, number.floatValue()).toTransformMatrix());
     }
 
     public float getDurability() {

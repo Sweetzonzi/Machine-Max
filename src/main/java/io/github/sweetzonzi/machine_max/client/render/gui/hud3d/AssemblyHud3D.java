@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.client.render.gui.animation.AnimatedFloa
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.AnimatedQuaternion;
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.TimeSource;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
+import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
@@ -116,9 +117,13 @@ public class AssemblyHud3D implements IHud3DElement {
     @Override
     public boolean shouldRender(LocalPlayer player) {
         // 检查视线是否聚焦在部件上
+        boolean flag = (player.getMainHandItem().getItem() instanceof WeldingTorchItem
+                || player.getOffhandItem().getItem() instanceof WeldingTorchItem
+                || player.getMainHandItem().getItem() instanceof CrowbarItem
+                || player.getOffhandItem().getItem() instanceof CrowbarItem);
         LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
         SubPart subPart = eyesight.getSubPart();
-        return subPart != null || (animatedHudWidth.get() > 0);
+        return (flag && subPart != null) || (animatedHudWidth.get() > 0);
     }
 
     @Override
@@ -126,9 +131,13 @@ public class AssemblyHud3D implements IHud3DElement {
         // 获取数据上下文
         float currentTime = TimeSource.getTimeSeconds(ctx.mc, ctx.partialTicks);
         LivingEntityEyesightAttachment eyesight = ctx.player.getData(MMAttachments.getENTITY_EYESIGHT());
+        boolean flag = (ctx.player.getMainHandItem().getItem() instanceof WeldingTorchItem
+                || ctx.player.getOffhandItem().getItem() instanceof WeldingTorchItem
+                || ctx.player.getMainHandItem().getItem() instanceof CrowbarItem
+                || ctx.player.getOffhandItem().getItem() instanceof CrowbarItem);
         SubPart subPart = eyesight.getSubPart();
         // 动画状态更新
-        if (subPart == null) {
+        if (subPart == null || !flag) {
             if (animatedHudWidth.getTarget() != 0) {
                 animatedHudWidth.animateTo(0, 0.25f, currentTime);
                 animatedProgressFloat.setImmediate(0);
@@ -317,20 +326,34 @@ public class AssemblyHud3D implements IHud3DElement {
             }
         }
         // 绘制按键提示
-        if (ctx.mc.player != null && ctx.mc.player.getMainHandItem().getItem() instanceof WeldingTorchItem) {
+        if (ctx.mc.player != null) {
             startY += TEXT_LINE_HEIGHT + 2;
             boolean crouching = ctx.mc.player.isCrouching();
-            ctx.drawText(
-                    Component.translatable("hud.key.machine_max.assemble",
-                            ctx.mc.options.keyUse.getKey().getDisplayName()),
-                    startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
-            );
-            startY += TEXT_LINE_HEIGHT + 2;
-            ctx.drawText(Component.translatable("hud.key.machine_max.disassemble",
-                            ctx.mc.options.keyShift.getKey().getDisplayName(),
-                            ctx.mc.options.keyUse.getKey().getDisplayName()),
-                    startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
-            );
+            if (ctx.mc.player.getMainHandItem().getItem() instanceof WeldingTorchItem) {
+                ctx.drawText(
+                        Component.translatable("hud.key.machine_max.assemble",
+                                ctx.mc.options.keyUse.getKey().getDisplayName()),
+                        startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                );
+                startY += TEXT_LINE_HEIGHT + 2;
+                ctx.drawText(Component.translatable("hud.key.machine_max.disassemble",
+                                ctx.mc.options.keyShift.getKey().getDisplayName(),
+                                ctx.mc.options.keyUse.getKey().getDisplayName()),
+                        startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                );
+            } else if (ctx.mc.player.getMainHandItem().getItem() instanceof CrowbarItem) {
+                ctx.drawText(
+                        Component.translatable("hud.key.machine_max.tear_down",
+                                ctx.mc.options.keyUse.getKey().getDisplayName()),
+                        startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                );
+                startY += TEXT_LINE_HEIGHT + 2;
+                ctx.drawText(Component.translatable("hud.key.machine_max.detach",
+                                ctx.mc.options.keyShift.getKey().getDisplayName(),
+                                ctx.mc.options.keyUse.getKey().getDisplayName()),
+                        startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                );
+            }
         }
         poseStack.popPose();
         poseStack.popPose(); // 恢复变换

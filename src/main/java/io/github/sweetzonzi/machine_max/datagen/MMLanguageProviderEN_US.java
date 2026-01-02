@@ -126,5 +126,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("hud.info.machine_max.assembling_progress", "ASSEMBLY: ");
         this.add("hud.key.machine_max.assemble", "[%1$s] Assemble & Repair & Reinforce");
         this.add("hud.key.machine_max.disassemble", "[%1$s+%2$s] Disassemble");
+        this.add("hud.key.machine_max.tear_down", "[%1$s] Remove part");
+        this.add("hud.key.machine_max.detach", "[%1$s+%2$s] Detach connector");
     }
 }

@@ -313,7 +313,8 @@ public class VehicleCore {
                     clientHandleSpilt(spiltPartNets, spiltVehicles);
                 }
             }
-            if (partMap.values().isEmpty() && !level.isClientSide()) ObjectManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
+            if (partMap.values().isEmpty() && !level.isClientSide())
+                ObjectManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
             else {
                 this.activate();//重新激活，进行部件移除后的物理计算
                 this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
@@ -541,21 +542,58 @@ public class VehicleCore {
         recalculateCameraDistance();
     }
 
+    /**
+     * 服务端处理载具分裂：保留总质量最大的部分，其余部分分裂为新载具
+     *
+     * @param spiltPartNets 连通性检查得出的所有子网络集合
+     * @return 发送给客户端的同步 Map (子网络中某个部件的 UUID -> 新载具 UUID)
+     */
     private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets) {
-        Map<UUID, UUID> spiltVehiclesToSend = new HashMap<>();
-        Iterator<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> iterator = spiltPartNets.iterator();
-        while (iterator.hasNext()) {
-            MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> network = iterator.next();
-            UUID uuid = UUID.randomUUID();
-            //最后一个网络视作此载具本身，不参与分裂
-            if (iterator.hasNext()) {
-                VehicleCore newVehicle = new VehicleCore(level, uuid, network, this);
+        synchronized (partNet) { // 对图对象加锁，防止计算期间结构被修改
+            if (spiltPartNets.size() <= 1) return Map.of();
+
+            // 1. 将子网络转为列表并按总质量降序排序
+            List<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> sortedNets = new ArrayList<>(spiltPartNets);
+            sortedNets.sort((net1, net2) -> {
+                float mass1 = calculateNetworkMass(net1);
+                float mass2 = calculateNetworkMass(net2);
+                return Float.compare(mass2, mass1); // 降序排序
+            });
+
+            Map<UUID, UUID> spiltVehiclesToSend = new HashMap<>();
+
+            // 2. 索引为 0 的网络（质量最大者）保留当前载具身份，不进行处理。
+            // 3. 从索引 1 开始，将较小的部分剥离并创建新载具。
+            for (int i = 1; i < sortedNets.size(); i++) {
+                MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> network = sortedNets.get(i);
+                UUID newVehicleUuid = UUID.randomUUID();
+
+                // 获取该网络中任意一个部件的 UUID，用于客户端识别是哪一部分分裂了
+                UUID referencePartUuid = network.nodes().iterator().next().uuid;
+
+                // 调用分裂构造函数：
+                // 该构造函数内部会从当前载具 (this) 中移除对应的 Part 和子系统
+                VehicleCore newVehicle = new VehicleCore(level, newVehicleUuid, network, this);
                 ObjectManager.addSpiltVehicle(newVehicle);
-                spiltVehiclesToSend.put(network.nodes().iterator().next().uuid, uuid);
+                //TODO: 调整HP
+                spiltVehiclesToSend.put(referencePartUuid, newVehicleUuid);
             }
+
+            // 更新当前载具（即保留下来的最大部分）的总质量
+            this.updateTotalMass();
+            return spiltVehiclesToSend;
         }
-        //TODO:调整hp
-        return spiltVehiclesToSend;
+    }
+
+    /**
+     * 辅助方法：计算一个子网络中所有部件的总质量
+     */
+    private float calculateNetworkMass(MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> network) {
+        float total = 0;
+        for (Part part : network.nodes()) {
+            total += part.totalMass;
+        }
+        return total;
     }
 
     private void clientHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, Map<UUID, UUID> spiltVehicles) {
@@ -580,48 +618,50 @@ public class VehicleCore {
      * @return 连通子图集合 Subgraph set
      */
     public Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> partNetSpiltCheck() {
-        if (partNet.nodes().isEmpty()) return Set.of();
+        synchronized (partNet) { // 对图对象加锁，防止计算期间结构被修改
+            if (partNet.nodes().isEmpty()) return Set.of();
 
-        Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> splitPartNets = new HashSet<>();
-        Set<Part> unvisited = new HashSet<>(partNet.nodes()); // 使用 partNet 的节点集
+            Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> splitPartNets = new HashSet<>();
+            Set<Part> unvisited = new HashSet<>(partNet.nodes()); // 使用 partNet 的节点集
 
-        while (!unvisited.isEmpty()) {
-            // 1. 开启一个新的连通子图搜索
-            Part startPart = unvisited.iterator().next();
-            Set<Part> componentNodes = new HashSet<>();
-            Queue<Part> queue = new LinkedList<>();
+            while (!unvisited.isEmpty()) {
+                // 1. 开启一个新的连通子图搜索
+                Part startPart = unvisited.iterator().next();
+                Set<Part> componentNodes = new HashSet<>();
+                Queue<Part> queue = new LinkedList<>();
 
-            queue.add(startPart);
-            componentNodes.add(startPart);
-            unvisited.remove(startPart);
+                queue.add(startPart);
+                componentNodes.add(startPart);
+                unvisited.remove(startPart);
 
-            // 2. BFS 搜索所有连通的节点
-            while (!queue.isEmpty()) {
-                Part current = queue.poll();
-                for (Part neighbor : partNet.adjacentNodes(current)) {
-                    if (unvisited.contains(neighbor)) {
-                        unvisited.remove(neighbor);
-                        componentNodes.add(neighbor);
-                        queue.add(neighbor);
+                // 2. BFS 搜索所有连通的节点
+                while (!queue.isEmpty()) {
+                    Part current = queue.poll();
+                    for (Part neighbor : partNet.adjacentNodes(current)) {
+                        if (unvisited.contains(neighbor)) {
+                            unvisited.remove(neighbor);
+                            componentNodes.add(neighbor);
+                            queue.add(neighbor);
+                        }
                     }
                 }
-            }
 
-            // 3. 为这个连通分量构建一个新的 Network 实例
-            MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> splitPartNet =
-                    NetworkBuilder.undirected().allowsParallelEdges(true).build();
+                // 3. 为这个连通分量构建一个新的 Network 实例
+                MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> splitPartNet =
+                        NetworkBuilder.undirected().allowsParallelEdges(true).build();
 
-            for (Part node : componentNodes) {
-                splitPartNet.addNode(node);
-                // 将该节点的所有边加入新网络
-                for (Pair<AbstractConnector, SimpleConnector> edge : partNet.incidentEdges(node)) {
-                    EndpointPair<Part> incidentNodes = partNet.incidentNodes(edge);
-                    splitPartNet.addEdge(incidentNodes.nodeU(), incidentNodes.nodeV(), edge);
+                for (Part node : componentNodes) {
+                    splitPartNet.addNode(node);
+                    // 将该节点的所有边加入新网络
+                    for (Pair<AbstractConnector, SimpleConnector> edge : partNet.incidentEdges(node)) {
+                        EndpointPair<Part> incidentNodes = partNet.incidentNodes(edge);
+                        splitPartNet.addEdge(incidentNodes.nodeU(), incidentNodes.nodeV(), edge);
+                    }
                 }
+                splitPartNets.add(splitPartNet);
             }
-            splitPartNets.add(splitPartNet);
+            return splitPartNets;
         }
-        return splitPartNets;
     }
 
     public void setPos(Vec3 pos) {

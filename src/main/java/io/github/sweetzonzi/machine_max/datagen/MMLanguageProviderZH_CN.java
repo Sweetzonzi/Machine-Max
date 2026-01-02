@@ -125,5 +125,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("hud.info.machine_max.assembling_progress", "装配进度: ");
         this.add("hud.key.machine_max.assemble", "[%1$s] 组装&修复&加固");
         this.add("hud.key.machine_max.disassemble", "[%1$s+%2$s] 拆解");
+        this.add("hud.key.machine_max.tear_down", "[%1$s] 拆除部件");
+        this.add("hud.key.machine_max.detach", "[%1$s+%2$s] 断开连接点");
     }
 }
