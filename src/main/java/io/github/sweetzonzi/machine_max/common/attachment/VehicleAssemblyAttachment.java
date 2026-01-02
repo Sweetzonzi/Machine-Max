@@ -15,8 +15,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.*;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PlayerPartAssemblyCacheSyncPayload;
 import lombok.Getter;
@@ -61,7 +61,7 @@ public class VehicleAssemblyAttachment {
     @Setter
     private Pair<String, String> connectorName = null; // 零件-连接点名称
     @Setter
-    private float attachRotation = 0; // TODO 新增：安装角，90°的倍数，受网络包控制在[0~360)之间循环
+    private float attachRotation = 0; // 安装角，90°的倍数，受网络包控制在[0~360)之间循环
     @Setter
     private Vector3f offset = new Vector3f(); // 组装预览用
     @Setter
@@ -87,9 +87,12 @@ public class VehicleAssemblyAttachment {
                 stack = entity.getOffhandItem();
             }
             if (stack != null) {
+                PartType oldPartType = cache.getPartType();
                 PartType newPartType = PartAssemblyItem.getPartType(stack, level);
                 cache.setPartType(newPartType);
                 if (!level.isClientSide() && entity.hasData(MMAttachments.getENTITY_EYESIGHT().get())) {
+                    if (oldPartType != newPartType) // 切换了部件类型时重新计算偏移等数据
+                        cache.reCalculateOffset();
                     var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
                     AbstractConnector targetConnector = eyesight.getEmptyConnector();
                     // 服务端额外根据选中的目标连接点自动切换使用的变体和连接点
@@ -97,7 +100,7 @@ public class VehicleAssemblyAttachment {
                         if (cache.getVariant() != null && !targetConnector.conditionCheck(cache.getPartType(), cache.getVariantName())) {
                             cache.cycleVariants();
                         }
-                        if (targetConnector instanceof SpecialConnector && cache.getConnector().type().equals("Special")) {
+                        if (targetConnector instanceof AdvancedConnector && !cache.getConnector().isSimpleConnector()) {
                             cache.cycleConnectors();
                         }
                     }
@@ -144,21 +147,16 @@ public class VehicleAssemblyAttachment {
                 //循环获取下一个端口，直到找到合适的接口或到达迭代次数上限
                 ConnectorAttr connectorAttr = this.getNextConnector();//获取下一个部件接口
                 if (connectorAttr == null) return;
-                if (connectorAttr.type().equals("AttachPoint") || targetConnector instanceof AttachPointConnector) {
+                if (connectorAttr.isSimpleConnector() || targetConnector instanceof SimpleConnector) {
                     //检查部件Tag是否与目标接口接受的类型匹配
                     if (targetConnector.conditionCheck(partType, variantName) && connectorAttr.conditionCheck(partType, variantName)) {
-                        OModel model = OModel.getOrEmpty(new ModelIndex("part", partType.variants.get(variantName).getModel("default")));
-                        var locators = model.getLocators();
-                        OLocator partConnectorLocator = locators.get(connectorAttr.locatorName());
-                        this.offset = partConnectorLocator.getOffset().toVector3f();
-                        Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
-                        this.quaternion = new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z);
+                        reCalculateOffset();//重新计算渲染用的姿态与偏移
                         break;
                     }
                 }
                 i--;
             }
-            if (owner instanceof Player player) {
+            if (owner instanceof Player player && !player.level().isClientSide()) {
                 boolean hasConnector = this.getConnectorName() != null;
                 PacketDistributor.sendToPlayer((ServerPlayer) player, new PlayerPartAssemblyCacheSyncPayload(
                         partType.getRegistryKey(),
@@ -227,7 +225,7 @@ public class VehicleAssemblyAttachment {
                     return InteractionResultHolder.consume(stack);
                 } else if (targetConnector != null && connectorName != null) {//若有可用的接口
                     if (targetConnector.conditionCheck(partType, variantName)) {//检查变体条件
-                        if ((targetConnector instanceof AttachPointConnector || connector.type().equals("AttachPoint"))) {//检查接口条件
+                        if ((targetConnector instanceof SimpleConnector || connector.isSimpleConnector())) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标连接点所属的载具
                             targetConnector.adjustTransform(part.externalConnectors.get(connectorName), attachRotation);
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
@@ -313,5 +311,19 @@ public class VehicleAssemblyAttachment {
         if (connectorIterator == null) return null;
         this.connectorName = connectorIterator.next();
         return variant.getPartOutwardConnectors().get(connectorName);
+    }
+
+    public void reCalculateOffset() {
+        if (getVariant() == null || getConnector() == null) {
+            this.offset = new Vector3f();
+            this.quaternion = new Quaternionf();
+        } else {
+            OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel("default")));
+            var locators = model.getLocators();
+            OLocator partConnectorLocator = locators.get(getConnector().locatorName());
+            Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
+            this.offset = partConnectorLocator.getOffset().toVector3f();
+            this.quaternion = new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x);
+        }
     }
 }

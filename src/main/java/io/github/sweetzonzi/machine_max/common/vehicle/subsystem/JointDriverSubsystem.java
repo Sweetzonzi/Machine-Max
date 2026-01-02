@@ -11,7 +11,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.MotorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.JointDriverSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import jme3utilities.math.MyQuaternion;
@@ -22,7 +22,7 @@ import java.util.Map;
 
 public class JointDriverSubsystem extends AbstractSubsystem{
     public final JointDriverSubsystemAttr attr;
-    public final SpecialConnector connector;
+    public final AdvancedConnector connector;
     private final Float[] powerAllocation = new Float[6];
     private final Float[] MAX_FORCE = new Float[6];
     private final Float[] MAX_BRAKE_FORCE = new Float[6];
@@ -34,8 +34,8 @@ public class JointDriverSubsystem extends AbstractSubsystem{
         super(owner, name, attr);
         this.attr = attr;
         if (owner.getSubPart() != null &&
-                owner.getSubPart().connectors.get(this.attr.controlledConnector) instanceof SpecialConnector specialConnector) {
-            this.connector = specialConnector;
+                owner.getSubPart().connectors.get(this.attr.controlledConnector) instanceof AdvancedConnector advancedConnector) {
+            this.connector = advancedConnector;
             float totalPowerWeight = 0f;
             for (Axis axis : this.attr.axisParams.keySet()) {
                 MotorAttr axisAttr = this.attr.axisParams.get(axis);

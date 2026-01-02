@@ -5,7 +5,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CarControllerSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import lombok.Getter;
 
@@ -455,7 +455,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         return result;
     }
 
-    private float ackermannSteering(float steeringInput, SpecialConnector wheelDrive) {
+    private float ackermannSteering(float steeringInput, AdvancedConnector wheelDrive) {
         New6Dof joint = wheelDrive.joint;
         Vector3f pivot = new Vector3f();
         if (wheelDrive.subPart.body == joint.getBodyA()) joint.getPivotA(pivot);

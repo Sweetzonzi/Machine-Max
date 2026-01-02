@@ -306,14 +306,15 @@
         "connectors": { //子部件用于与其他零件连接的连接点列表
           "left_front_wheel": { //接口名称
             "locator": "left_front_wheel", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Special", //连接点类型, 支持AttachPoint和Special
+            "type": "Advanced", //连接点类型, 支持Simple和Advanced
+            "direction": "xn",
             "integrity": 290.0,//(可选, 默认20.0)部件基础结构完整度, 部件可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
             "impact_multiplier": 0.8, //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
             "required_tags": ["variant:left"], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
-            "joint_attrs": { //关节属性, 目前仅在关节类型为Special时生效
+            "joint_attrs": { //关节属性, 目前仅在关节类型为Advanced时生效
               "y": {
                 "lower_limit": -1.0, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
@@ -342,7 +343,8 @@
           },
           "left_back_wheel": {
             "locator": "left_back_wheel",
-            "type": "Special",
+            "type": "Advanced",
+            "direction": "xn",
             "required_tags": ["variant:left"], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
@@ -369,7 +371,8 @@
           },
           "right_front_wheel": {
             "locator": "right_front_wheel",
-            "type": "Special",
+            "type": "Advanced",
+            "direction": "xp",
             "required_tags": ["variant:right"], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
@@ -402,7 +405,8 @@
           },
           "right_back_wheel": {
             "locator": "right_back_wheel",
-            "type": "Special",
+            "type": "Advanced",
+            "direction": "xp",
             "required_tags": ["variant:right"], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
@@ -429,7 +433,7 @@
           },
             "backleft":{
             "locator": "BackLeft",
-            "type": "AttachPoint",
+            "type": "Simple",
             "integrity": 290.0,
             "impact_reduction": 3.0,
             "impact_multiplier": 0.8,
@@ -439,7 +443,7 @@
           },
           "backright":{
             "locator": "BackRight",
-            "type": "AttachPoint",
+            "type": "Simple",
             "integrity": 290.0,
             "impact_reduction": 3.0,
             "impact_multiplier": 0.8,

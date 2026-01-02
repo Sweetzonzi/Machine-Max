@@ -9,7 +9,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.WheelDriverSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import jme3utilities.math.MyQuaternion;
 
@@ -19,7 +19,7 @@ import java.util.Map;
 
 public class WheelDriverSubsystem extends AbstractSubsystem {
     public final WheelDriverSubsystemAttr attr;
-    public final SpecialConnector connector;
+    public final AdvancedConnector connector;
     private final float MAX_SPEED;
     private final float MAX_STEERING_SPEED;
     private final float MAX_DRIVE_FORCE;
@@ -37,8 +37,8 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
         MAX_HAND_BRAKE_FORCE = attr.staticAttribute.rollingAxis.maxHandBrakeForce();
         MAX_STEERING_FORCE = attr.staticAttribute.steeringAxis.maxForce();
         if (owner.getSubPart() != null &&
-                owner.getSubPart().connectors.get(this.attr.controlledConnector) instanceof SpecialConnector specialConnector) {
-            this.connector = specialConnector;
+                owner.getSubPart().connectors.get(this.attr.controlledConnector) instanceof AdvancedConnector advancedConnector) {
+            this.connector = advancedConnector;
         } else {
             this.connector = null;
             MachineMax.LOGGER.error("轮胎驱动子系统 {} 无法找到特殊连接点 {}", name, this.attr.controlledConnector);

@@ -2271,7 +2271,10 @@
 					"locators": {
 						"AttachPoint": [0, 4, 6],
 						"MassCenter": [0, 0, 0],
-						"UpperEngine": [0, 7.75, -30],
+						"UpperEngine": {
+							"offset": [0, 7.75, -30],
+							"rotation": [10, 0, 0]
+						},
 						"FrontEngine": [0, 1, -47],
 						"LeftBack": [20.5, 5, 44],
 						"RightBack": [-20.25, 5, 44]

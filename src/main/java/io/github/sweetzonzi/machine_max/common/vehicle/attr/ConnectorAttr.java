@@ -5,10 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @param locatorName 连接点对应的Locator名称
@@ -94,5 +91,9 @@ public record ConnectorAttr(
                 return this.forbiddenTags().isEmpty() || !hasForbiddenTags;
             } else return false;
         } else return false;
+    }
+
+    public boolean isSimpleConnector(){
+        return this.type().toLowerCase(Locale.ROOT).equals("simple");
     }
 }

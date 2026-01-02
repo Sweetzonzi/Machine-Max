@@ -11,8 +11,8 @@
     },
     "type": {
       "type": "string",
-      "enum": ["AttachPoint", "Special"],
-      "description": "Connection point type. AttachPoint: simple connection point; Special: special connection point, supports complex joint attributes."
+      "enum": ["Simple", "simple", "advanced", "Advanced"],
+      "description": "Connection point type. Simple: Simple connection point; Advanced: Advanced connection point, supports complex joint attributes."
     },
     "direction": {
       "$ref": "../../../base/axis.schema.json",

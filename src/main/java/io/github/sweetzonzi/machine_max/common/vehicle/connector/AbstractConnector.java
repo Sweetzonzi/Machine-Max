@@ -77,7 +77,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     public final Transform offsetFromMassCenter;//被安装零件的连接点相对本部件质心的位置与姿态
     @Setter
     public Transform actualTransform;//本安装点为确保法线方向和连接点方向一致所需的实际变换
-    public final CollisionShape shape = new BoxCollisionShape(0.25f);//连接点碰撞形状
+    public final CollisionShape shape = new BoxCollisionShape(0.125f);//连接点碰撞形状
     public PhysicsRigidBody body;//部件连接点安装判定区
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
 
@@ -221,7 +221,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      * @param force           是否跳过安装条件检查，强制安装
      * @return 是否成功安装
      */
-    public boolean attach(AttachPointConnector targetConnector, boolean force) {
+    public boolean attach(SimpleConnector targetConnector, boolean force) {
         if (hasPart()) {
             MachineMax.LOGGER.error("零件安装失败，连接点{}已被占用！", this.getName());
             return false;
@@ -254,11 +254,11 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      *
      * @param targetConnector 要对接的连接点
      */
-    public boolean attach(AttachPointConnector targetConnector) {
+    public boolean attach(SimpleConnector targetConnector) {
         return this.attach(targetConnector, false);
     }
 
-    protected void attachJoint(AttachPointConnector targetConnector) {
+    protected void attachJoint(SimpleConnector targetConnector) {
         this.joint = new New6Dof(this.subPart.body, targetConnector.subPart.body,
                 this.actualTransform.getTranslation(), targetConnector.actualTransform.getTranslation(),
                 this.actualTransform.getRotation().toRotationMatrix(), targetConnector.actualTransform.getRotation().toRotationMatrix(),
@@ -282,7 +282,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         for (Map.Entry<String, JointAttr> entry : attr.jointAttrs().entrySet()) {//设置各轴关节属性(0~2为XYZ轴平动，3~5为XYZ轴转动)
             int i = Axis.getValue(entry.getKey());//获取轴序号
             JointAttr jointAttr = entry.getValue();//获取轴属性
-            if (this instanceof SpecialConnector) {
+            if (this instanceof AdvancedConnector) {
                 if (jointAttr != null) {
                     float m_eff;//有效质量估算值，用于限制关节刚度和阻尼，避免数值不稳定
                     float safe = 0.95f;//安全系数
@@ -339,9 +339,9 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     public void detach(boolean destroy) {
         if ((destroy || !internal) && hasPart()) {
             AbstractConnector attachedConnector = this.attachedConnector;
-            AbstractConnector specialConnector = this instanceof AttachPointConnector ? attachedConnector : this;
-            AttachPointConnector attachPointConnector = this == specialConnector ? (AttachPointConnector) attachedConnector : (AttachPointConnector) this;
-            if (destroy || !NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Pre(specialConnector, attachPointConnector)).isCanceled()) {
+            AbstractConnector advancedConnector = this instanceof SimpleConnector ? attachedConnector : this;
+            SimpleConnector simpleConnector = this == advancedConnector ? (SimpleConnector) attachedConnector : (SimpleConnector) this;
+            if (destroy || !NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Pre(advancedConnector, simpleConnector)).isCanceled()) {
                 if (this.signalPort != null && attachedConnector.signalPort != null) {
                     this.signalPort.onConnectorDetach();
                     attachedConnector.signalPort.onConnectorDetach();
@@ -362,7 +362,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                 //重置安装状态
                 this.attachedConnector.attachedConnector = null;
                 this.attachedConnector = null;
-                NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Post(specialConnector, attachPointConnector));
+                NeoForge.EVENT_BUS.post(new ConnectorDetachEvent.Post(advancedConnector, simpleConnector));
             }
         }
     }
@@ -379,7 +379,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
 
     /**
      * 计算使要安装的目标连接点的法线方向与本连接点的法线方向相反所需的实际旋转变换，并存储于 {@link #actualTransform} 中
-     * @param partConnector 将要安装的连接点
+     *
+     * @param partConnector  将要安装的连接点
      * @param attachRotation 玩家输入的附加旋转角度
      * @return 旋转变换
      */
@@ -387,11 +388,32 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             AbstractConnector partConnector,
             float attachRotation
     ) {
+        return calculateExtraTransform(
+                partConnector.attr.direction(),
+                partConnector.offsetFromMassCenter.getTranslation(),
+                partConnector.offsetFromMassCenter.getRotation(),
+                attachRotation);
+    }
+
+    /**
+     * 计算使要安装的目标连接点的法线方向与本连接点的法线方向相反所需的实际旋转变换，并存储于 {@link #actualTransform} 中
+     *
+     * @param partConnectorDirection 将要安装的连接点方向
+     * @param partConnectorOffset    将要安装的连接点位置
+     * @param partConnectorRotation  将要安装的连接点姿态
+     * @param attachRotation         玩家输入的附加旋转角度
+     * @return 旋转变换
+     */
+    public Transform calculateExtraTransform(
+            Axis partConnectorDirection,
+            Vector3f partConnectorOffset,
+            Quaternion partConnectorRotation,
+            float attachRotation
+    ) {
         // --- 1. 获取双方连接点的装配法线（局部空间） ---
-        Axis partNormalAxis = partConnector.attr.direction();
         Axis targetNormalAxis = this.attr.direction();
 
-        var partNormal = SparkMathKt.toVector3f(Axis.axisToVector(partNormalAxis));
+        var partNormal = SparkMathKt.toVector3f(Axis.axisToVector(partConnectorDirection));
         var targetNormal = SparkMathKt.toVector3f(Axis.axisToVector(targetNormalAxis));
 
         // --- 2. 构造“法线对齐旋转”：targetNormal -> -partNormal ---
@@ -403,24 +425,20 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
 
         // --- 4. 合成最终局部旋转 ---
         // 顺序非常重要：先对齐法线，再绕法线旋转
-        Quaternion finalRotation = SparkMathKt.toBQuaternion(twist.mul(alignNormal));
+        Quaternion finalRotation = SparkMathKt.toBQuaternion(alignNormal.mul(twist));
 
         // --- 5. 将旋转作用到待安装连接点的 offset ---
-        this.actualTransform = partConnector.offsetFromMassCenter.clone();
-        Quaternion offsetRot = this.actualTransform.getRotation();
-        offsetRot.set(finalRotation.mult(offsetRot));
-        this.actualTransform.setRotation(offsetRot);
-        return this.actualTransform;
+        return new Transform(partConnectorOffset, finalRotation.mult(partConnectorRotation));
     }
 
     public void adjustTransform(
             AbstractConnector partConnector,
             float attachRotation
     ) {
-        calculateExtraTransform(partConnector, attachRotation);
-
+        // 计算待安装连接点的局部变换
+        partConnector.actualTransform = calculateExtraTransform(partConnector, attachRotation);
         // 将相对刚体的局部变换与刚体的姿态合并
-        Transform targetTransform = mergeTransform(this.actualTransform.invert());
+        Transform targetTransform = mergeTransform(partConnector.actualTransform.invert());
 
         Transform rootTransform =
                 partConnector.subPart.body.getTransform(null).invert();

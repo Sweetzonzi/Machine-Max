@@ -5,7 +5,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.ConnectionData;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.FriendlyByteBuf;
@@ -55,13 +55,13 @@ public record ConnectorDetachPayload(
             try{
                 VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUuid);
                 if (vehicle == null) throw new NullPointerException("未找到载具: " + payload.vehicleUuid);
-                List<Pair<AbstractConnector, AttachPointConnector>> connections = new ArrayList<>();
+                List<Pair<AbstractConnector, SimpleConnector>> connections = new ArrayList<>();
                 for (ConnectionData connection : payload.connections) {
-                    AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(connection.partUuidS)).externalConnectors.get(Pair.of(connection.subPartNameS,connection.specialConnectorName));
-                    AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(connection.partUuidA)).externalConnectors.get(Pair.of(connection.subPartNameA,connection.attachPointConnectorName));
+                    AbstractConnector connectorA = vehicle.partMap.get(UUID.fromString(connection.partUuidA)).externalConnectors.get(Pair.of(connection.subPartNameA,connection.getAdvConnectorName()));
+                    AbstractConnector connectorB = vehicle.partMap.get(UUID.fromString(connection.partUuidS)).externalConnectors.get(Pair.of(connection.subPartNameS,connection.getSimpleConnectorName()));
                     if (connectorA == null || connectorB == null)
                         throw new NullPointerException("未找到连接点: " + payload.connections);
-                    connections.add(Pair.of(connectorA, (AttachPointConnector) connectorB));
+                    connections.add(Pair.of(connectorA, (SimpleConnector) connectorB));
                 }
                 vehicle.detachConnections(connections, payload.splitVehicles);
             } catch (NullPointerException e){

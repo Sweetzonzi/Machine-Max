@@ -19,8 +19,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
@@ -240,26 +240,24 @@ public class Part {
                 org.joml.Vector3f rotation = locator.getRotation().toVector3f();
                 Transform posRot = new Transform(//连接点的位置与姿态
                         PhysicsHelperKt.toBVector3f(locator.getOffset()).subtract(subPart.massCenterTransform.getTranslation()),
-                        SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z)).mult(subPart.massCenterTransform.getRotation().inverse())
+                        SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x)).mult(subPart.massCenterTransform.getRotation().inverse())
                 );
-                AbstractConnector connector = switch (connectorAttr.type()) {
-                    case "AttachPoint" ->//连接点接口
-                            new AttachPointConnector(
-                                    connectorName,
-                                    connectorAttr,
-                                    subPart,
-                                    posRot
-                            );
-                    case "Special" ->//6自由度自定义关节接口
-                            new SpecialConnector(
-                                    connectorName,
-                                    connectorAttr,
-                                    subPart,
-                                    posRot
-                            );
-                    default ->
-                            throw new NullPointerException(Component.translatable("error.machine_max.part.invalid_connector_type", type.getRegistryKey(), connectorName, connectorAttr.type()).getString());
-                };
+                AbstractConnector connector;
+                if (connectorAttr.isSimpleConnector()) {
+                    connector = new SimpleConnector(
+                            connectorName,
+                            connectorAttr,
+                            subPart,
+                            posRot
+                    );
+                } else {
+                    connector = new AdvancedConnector(
+                            connectorName,
+                            connectorAttr,
+                            subPart,
+                            posRot
+                    );
+                }
                 subPart.connectors.put(connectorName, connector);
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);

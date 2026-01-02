@@ -14,9 +14,10 @@ public class BlueprintData {
     public final ResourceLocation icon;
     public final boolean renderBackground;
 
+    public static final ResourceLocation EMPTY = ResourceLocation.withDefaultNamespace("missingno");
+
     public static final BlueprintData EMPTY_BLUEPRINT = new BlueprintData();
 
-    public static final ResourceLocation EMPTY = ResourceLocation.withDefaultNamespace("missingno");
 
     public static final Codec<BlueprintData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("template").forGetter(BlueprintData::getTemplate),

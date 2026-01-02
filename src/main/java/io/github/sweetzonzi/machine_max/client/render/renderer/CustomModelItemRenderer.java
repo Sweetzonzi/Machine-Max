@@ -52,6 +52,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
                 poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
                 poseStack.last().normal().rotateLocalY((float) Math.toRadians(-45.0));
                 if ((customModelItem instanceof VehicleBlueprintItem
+                        && VehicleBlueprintItem.getBlueprintData(stack) != BlueprintData.EMPTY_BLUEPRINT
                         && VehicleBlueprintItem.getBlueprintData(stack).getIcon() != BlueprintData.EMPTY
                         && VehicleBlueprintItem.getBlueprintData(stack).isRenderBackground())
                         || customModelItem instanceof FabricatingBlueprintItem) {

@@ -18,7 +18,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -114,15 +114,17 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                     }
                 } else if (targetConnector != null && connectorAttr != null) {
                     if (targetConnector.conditionCheck(partType, variantName)) {
-                        if ((targetConnector instanceof AttachPointConnector || connectorAttr.type().equals("AttachPoint"))) {
+                        if ((targetConnector instanceof SimpleConnector || connectorAttr.isSimpleConnector())) {
                             message.append("目标接口:" + targetConnector.name + "部件接口:" + cache.getConnectorName());
                             if (!variantName.equals("default") && partType.variants.size() > 1)
                                 message.append(" 部件变体类型:" + variantName);
                             if (VisualEffectHelper.partToPlace != null) {
                                 VisualEffectHelper.partToPlace.setTransform(
-                                        targetConnector.mergeTransform(new Transform(
+                                        targetConnector.mergeTransform(targetConnector.calculateExtraTransform(
+                                                connectorAttr.direction(),
                                                 PhysicsHelperKt.toBVector3f(cache.getOffset()),
-                                                SparkMathKt.toBQuaternion(cache.getQuaternion())
+                                                SparkMathKt.toBQuaternion(cache.getQuaternion()),
+                                                cache.getAttachRotation()
                                         ).invert())
                                 );
                             }

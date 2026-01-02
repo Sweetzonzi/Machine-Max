@@ -12,8 +12,8 @@ import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AttachPointConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.SpecialConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class VehicleCore {
     //存储所有部件与连接关系
-    public final MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
+    public final MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
     //存储所有部件
     public final ConcurrentMap<UUID, Part> partMap = new java.util.concurrent.ConcurrentHashMap<>();
     public String name = "Vehicle";//载具名称
@@ -104,15 +104,15 @@ public class VehicleCore {
                 this.addPart(new Part(partData, level, readAdditionalData));
             //重建连接关系
             for (ConnectionData connectionData : savedData.connections) {
-                Part partA = partMap.get(UUID.fromString(connectionData.partUuidS));
-                Part partB = partMap.get(UUID.fromString(connectionData.partUuidA));
+                Part partA = partMap.get(UUID.fromString(connectionData.partUuidA));
+                Part partB = partMap.get(UUID.fromString(connectionData.partUuidS));
                 if (partA != null && partB != null) {
-                    AbstractConnector connectorS = partA.subParts.get(connectionData.subPartNameS).connectors.get(connectionData.specialConnectorName);
-                    AbstractConnector connectorA = partB.subParts.get(connectionData.subPartNameA).connectors.get(connectionData.attachPointConnectorName);
-                    if (connectorS != null && connectorA != null) {
-                        connectorS.setActualTransform(connectionData.posRotS.toTransform());
-                        connectorA.setActualTransform(connectionData.posRotA.toTransform());
-                        this.attachConnector(connectorS, connectorA, null);
+                    AbstractConnector advConnector = partA.subParts.get(connectionData.subPartNameA).connectors.get(connectionData.getAdvConnectorName());
+                    AbstractConnector simpleConnector = partB.subParts.get(connectionData.subPartNameS).connectors.get(connectionData.getSimpleConnectorName());
+                    if (advConnector != null && simpleConnector != null) {
+                        advConnector.setActualTransform(connectionData.posRotA.toTransform());
+                        simpleConnector.setActualTransform(connectionData.posRotS.toTransform());
+                        this.attachConnector(advConnector, simpleConnector, null);
                     } else throw new IllegalArgumentException("未在载具中找到连接数据所需的连接点");
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
@@ -132,7 +132,7 @@ public class VehicleCore {
      * @param partNet    新载具的拓扑结构 Structure of the new Vehicle
      * @param oldVehicle 被分裂的载具 The vehicle that was split
      */
-    public VehicleCore(Level level, UUID uuid, MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> partNet, VehicleCore oldVehicle) {
+    public VehicleCore(Level level, UUID uuid, MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet, VehicleCore oldVehicle) {
         this.level = level;
         this.uuid = uuid;
         this.name = oldVehicle.name;
@@ -148,7 +148,7 @@ public class VehicleCore {
             part.vehicle = this;
             this.subSystemController.addSubsystems(subsystems);
         }
-        for (Pair<AbstractConnector, AttachPointConnector> edge : partNet.edges()) {
+        for (Pair<AbstractConnector, SimpleConnector> edge : partNet.edges()) {
             EndpointPair<Part> connectedParts = partNet.incidentNodes(edge);
             this.partNet.addEdge(connectedParts, edge);
         }
@@ -313,7 +313,7 @@ public class VehicleCore {
                     clientHandleSpilt(spiltPartNets, spiltVehicles);
                 }
             }
-            if (partMap.values().isEmpty()) ObjectManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
+            if (partMap.values().isEmpty() && !level.isClientSide()) ObjectManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
             else {
                 this.activate();//重新激活，进行部件移除后的物理计算
                 this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
@@ -338,33 +338,33 @@ public class VehicleCore {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onConnectorAttach(ConnectorAttachEvent.Post event) {
-        MachineMax.LOGGER.debug("收到连接器{}与{}的连接事件", event.getSpecialConnector().name, event.getAttachPointConnector().name);
-        AbstractConnector specialConnector = event.getSpecialConnector();
-        AttachPointConnector attachPointConnector = event.getAttachPointConnector();
-        VehicleCore vehicle1 = specialConnector.getSubPart().getPart().vehicle;
-        VehicleCore vehicle2 = attachPointConnector.getSubPart().getPart().vehicle;
+//        MachineMax.LOGGER.debug("收到连接器{}与{}的连接事件", event.getAdvancedConnector().name, event.getSimpleConnector().name);
+        AbstractConnector advancedConnector = event.getAdvancedConnector();
+        SimpleConnector simpleConnector = event.getSimpleConnector();
+        VehicleCore vehicle1 = advancedConnector.getSubPart().getPart().vehicle;
+        VehicleCore vehicle2 = simpleConnector.getSubPart().getPart().vehicle;
         if (vehicle1 != vehicle2 && vehicle1 != null && vehicle2 != null) {
             throw new UnsupportedOperationException("暂不支持连接不同载具之间的连接点"); //TODO:支持不同载具之间的连接点链接
         }
         VehicleCore vehicle = vehicle1 != null ? vehicle1 : vehicle2;
         if (vehicle != null) {
-            Part part1 = specialConnector.getSubPart().getPart();
-            Part part2 = attachPointConnector.getSubPart().getPart();
-            vehicle.partMap.put(part1.uuid, part1);//保险起见，再次添加
+            Part part1 = advancedConnector.getSubPart().getPart();
+            Part part2 = simpleConnector.getSubPart().getPart();
+            vehicle.partMap.put(part1.uuid, part1);
             vehicle.partMap.put(part2.uuid, part2);
 //            vehicle.partNet.addEdge(
-//                    specialConnector.getSubPart().getPart(),
-//                    attachPointConnector.getSubPart().getPart(),
-//                    Pair.of(specialConnector, attachPointConnector)
+//                    advancedConnector.getSubPart().getPart(),
+//                    simpleConnector.getSubPart().getPart(),
+//                    Pair.of(advancedConnector, simpleConnector)
 //            );
         }
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onConnectorDetach(ConnectorDetachEvent.Post event) {
-        MachineMax.LOGGER.debug("收到连接器{}与{}的断开事件", event.getSpecialConnector().name, event.getAttachPointConnector().name);
-        VehicleCore vehicle1 = event.getSpecialConnector().getSubPart().part.vehicle;
-        VehicleCore vehicle2 = event.getAttachPointConnector().getSubPart().part.vehicle;
+//        MachineMax.LOGGER.debug("收到连接器{}与{}的断开事件", event.getAdvancedConnector().name, event.getSimpleConnector().name);
+        VehicleCore vehicle1 = event.getAdvancedConnector().getSubPart().part.vehicle;
+        VehicleCore vehicle2 = event.getSimpleConnector().getSubPart().part.vehicle;
         if (vehicle1 != vehicle2 && vehicle1 != null && vehicle2 != null) { // 若是不同载具之间的接口断开
             vehicle1.structureRemoved = true;
             vehicle2.structureRemoved = true;
@@ -388,34 +388,34 @@ public class VehicleCore {
             this.addPart(newPart);
         if (connector1.subPart.part == connector2.subPart.part)
             throw new UnsupportedOperationException("不能连接同一个部件内的接口");
-        AbstractConnector specialConnector;
-        AttachPointConnector attachPoint;
-        if (connector2 instanceof AttachPointConnector) {
-            attachPoint = (AttachPointConnector) connector2;
-            specialConnector = connector1;
-        } else if (connector1 instanceof AttachPointConnector) {
-            attachPoint = (AttachPointConnector) connector1;
-            specialConnector = connector2;
-        } else throw new UnsupportedOperationException("连接点之一必须是AttachPointConnector类型");
+        AbstractConnector advancedConnector;
+        SimpleConnector simpleConnector;
+        if (connector2 instanceof SimpleConnector) {
+            simpleConnector = (SimpleConnector) connector2;
+            advancedConnector = connector1;
+        } else if (connector1 instanceof SimpleConnector) {
+            simpleConnector = (SimpleConnector) connector1;
+            advancedConnector = connector2;
+        } else throw new UnsupportedOperationException("连接点之一必须是SimpleConnector类型");
         List<ConnectionData> comboList = new java.util.ArrayList<>(1);
-        boolean attached = specialConnector.attach(attachPoint);//连接部件
+        boolean attached = advancedConnector.attach(simpleConnector);//连接部件
         if (attached) {
             this.partNet.addEdge(//添加连接关系
-                    specialConnector.subPart.part,
-                    attachPoint.subPart.part,
-                    Pair.of(specialConnector, attachPoint)
+                    advancedConnector.subPart.part,
+                    simpleConnector.subPart.part,
+                    Pair.of(advancedConnector, simpleConnector)
             );
             if (newPart != null) {
                 if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
                 newPart.addToLevel();//将新部件加入到世界
             }
             if (isInLevel()) {
-                specialConnector.addToLevel();//将关节约束加入到世界
+                advancedConnector.addToLevel();//将关节约束加入到世界
                 this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
                 recalculateCameraDistance();
                 this.activate();
                 if (!level.isClientSide()) {
-                    comboList.addFirst(new ConnectionData(specialConnector, attachPoint));//特殊连接点在前面，以保证连接点属性得到正确应用
+                    comboList.addFirst(new ConnectionData(advancedConnector, simpleConnector));//特殊连接点在前面，以保证连接点属性得到正确应用
                     //发包客户端创建连接关系
                     PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new ConnectorAttachPayload(
                             this.uuid,
@@ -444,32 +444,32 @@ public class VehicleCore {
                         for (SubPart subPart : part.subParts.values()) {//遍历所有部件部件内的所有零件
                             for (AbstractConnector connector2 : subPart.connectors.values()) {
                                 if (connector2.internal || connector2.hasPart()) continue;//跳过内部接口和已连接接口
-                                AbstractConnector specialConnector;
-                                AttachPointConnector attachPoint;
-                                if (connector2 instanceof AttachPointConnector) {
-                                    attachPoint = (AttachPointConnector) connector2;
-                                    specialConnector = connector1;
-                                } else if (connector1 instanceof AttachPointConnector) {
-                                    attachPoint = (AttachPointConnector) connector1;
-                                    specialConnector = connector2;
+                                AbstractConnector advancedConnector;
+                                SimpleConnector simpleConnector;
+                                if (connector2 instanceof SimpleConnector) {
+                                    simpleConnector = (SimpleConnector) connector2;
+                                    advancedConnector = connector1;
+                                } else if (connector1 instanceof SimpleConnector) {
+                                    simpleConnector = (SimpleConnector) connector1;
+                                    advancedConnector = connector2;
                                 } else continue;//二者中存在AttachPointConnector时才可尝试连接
                                 //检查连接是否合理(连接点位置姿态差异)
-                                float posError = MMMath.relPointWorldPos(attachPoint.offsetFromMassCenter.getTranslation(), attachPoint.subPart.body).subtract(
-                                        MMMath.relPointWorldPos(specialConnector.offsetFromMassCenter.getTranslation(), specialConnector.subPart.body)
+                                float posError = MMMath.relPointWorldPos(simpleConnector.offsetFromMassCenter.getTranslation(), simpleConnector.subPart.body).subtract(
+                                        MMMath.relPointWorldPos(advancedConnector.offsetFromMassCenter.getTranslation(), advancedConnector.subPart.body)
                                 ).length();//计算连接点位置差异
                                 float rotError = SparkMathKt.toQuaternionf(
-                                        attachPoint.subPart.body.getPhysicsRotation(null).mult(attachPoint.offsetFromMassCenter.getRotation()).mult(
-                                                specialConnector.subPart.body.getPhysicsRotation(null).mult(specialConnector.offsetFromMassCenter.getRotation()).inverse()
+                                        simpleConnector.subPart.body.getPhysicsRotation(null).mult(simpleConnector.offsetFromMassCenter.getRotation()).mult(
+                                                advancedConnector.subPart.body.getPhysicsRotation(null).mult(advancedConnector.offsetFromMassCenter.getRotation()).inverse()
                                         )
                                 ).angle();//计算连接点姿态差异
                                 if (posError < 0.1f && rotError < 1f) {//若位置姿态差异小于阈值，则尝试连接
                                     this.partNet.addEdge(//添加连接关系
-                                            specialConnector.subPart.part,
-                                            attachPoint.subPart.part,
-                                            Pair.of(specialConnector, attachPoint)
+                                            advancedConnector.subPart.part,
+                                            simpleConnector.subPart.part,
+                                            Pair.of(advancedConnector, simpleConnector)
                                     );
-                                    specialConnector.attach(attachPoint);//连接部件
-                                    result.add(new ConnectionData(specialConnector, attachPoint));//打包新增连接关系
+                                    advancedConnector.attach(simpleConnector);//连接部件
+                                    result.add(new ConnectionData(advancedConnector, simpleConnector));//打包新增连接关系
                                 }
                             }
                         }
@@ -485,14 +485,14 @@ public class VehicleCore {
     }
 
     public void detachConnectors(List<AbstractConnector> connectors) {
-        List<Pair<AbstractConnector, AttachPointConnector>> connections = new ArrayList<>();
+        List<Pair<AbstractConnector, SimpleConnector>> connections = new ArrayList<>();
         for (AbstractConnector connector : connectors) {
             if (connector.subPart.part.vehicle == this) {
                 if (!connector.internal) {//若是与外部部件连接的接口，则需要移除载具核心中记录的连接关系
                     if (connector.hasPart()) {
-                        if (connector instanceof SpecialConnector)
-                            connections.add(Pair.of(connector, (AttachPointConnector) connector.attachedConnector));
-                        else connections.add(Pair.of(connector.attachedConnector, (AttachPointConnector) connector));
+                        if (connector instanceof AdvancedConnector)
+                            connections.add(Pair.of(connector, (SimpleConnector) connector.attachedConnector));
+                        else connections.add(Pair.of(connector.attachedConnector, (SimpleConnector) connector));
                     } else
                         MachineMax.LOGGER.warn("载具{}的接口{}未连接到任何部件，无法断开连接", this.name, connector.name);
                 } else MachineMax.LOGGER.warn("载具{}的接口{}为内部接口，无法断开连接", this.name, connector.name);
@@ -501,7 +501,7 @@ public class VehicleCore {
         detachConnections(connections);
     }
 
-    private void detachConnections(List<Pair<AbstractConnector, AttachPointConnector>> connections) {
+    private void detachConnections(List<Pair<AbstractConnector, SimpleConnector>> connections) {
         detachConnections(connections, Map.of());
     }
 
@@ -512,14 +512,14 @@ public class VehicleCore {
      * @param connections
      * @param spiltVehicles
      */
-    public void detachConnections(List<Pair<AbstractConnector, AttachPointConnector>> connections, Map<UUID, UUID> spiltVehicles) {
+    public void detachConnections(List<Pair<AbstractConnector, SimpleConnector>> connections, Map<UUID, UUID> spiltVehicles) {
         List<ConnectionData> connectionsToRemove = new ArrayList<>();
-        for (Pair<AbstractConnector, AttachPointConnector> connection : connections) {
+        for (Pair<AbstractConnector, SimpleConnector> connection : connections) {
             connection.getFirst().detach(false);
             this.activate();
             boolean removed = partNet.removeEdge(connection);
-            if (!removed && connection.getSecond() instanceof AttachPointConnector attachPoint)
-                removed = partNet.removeEdge(Pair.of(connection.getSecond(), attachPoint));
+            if (!removed && connection.getSecond() instanceof SimpleConnector simpleConnector)
+                removed = partNet.removeEdge(Pair.of(connection.getSecond(), simpleConnector));
             if (removed && !level.isClientSide()) connectionsToRemove.add(new ConnectionData(connection));
             if (!removed) MachineMax.LOGGER.error("载具{}中未找到连接关系{}，无法移除", this.name, connection);
         }
@@ -541,11 +541,11 @@ public class VehicleCore {
         recalculateCameraDistance();
     }
 
-    private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> spiltPartNets) {
+    private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets) {
         Map<UUID, UUID> spiltVehiclesToSend = new HashMap<>();
-        Iterator<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> iterator = spiltPartNets.iterator();
+        Iterator<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> iterator = spiltPartNets.iterator();
         while (iterator.hasNext()) {
-            MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> network = iterator.next();
+            MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> network = iterator.next();
             UUID uuid = UUID.randomUUID();
             //最后一个网络视作此载具本身，不参与分裂
             if (iterator.hasNext()) {
@@ -558,7 +558,7 @@ public class VehicleCore {
         return spiltVehiclesToSend;
     }
 
-    private void clientHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> spiltPartNets, Map<UUID, UUID> spiltVehicles) {
+    private void clientHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, Map<UUID, UUID> spiltVehicles) {
         for (Map.Entry<UUID, UUID> entry : spiltVehicles.entrySet()) {
             Part part = partMap.get(entry.getKey());
             UUID spiltVehicleUUID = entry.getValue();
@@ -579,28 +579,47 @@ public class VehicleCore {
      *
      * @return 连通子图集合 Subgraph set
      */
-    public Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> partNetSpiltCheck() {
+    public Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> partNetSpiltCheck() {
         if (partNet.nodes().isEmpty()) return Set.of();
-        Set<MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>>> splitPartNets = new HashSet<>();
-        Set<Part> visitedParts = new HashSet<>();
-        for (Part part : partMap.values()) {
-            if (!visitedParts.contains(part)) {
-                Set<Part> spiltParts = partNet.adjacentNodes(part);//寻找连通子图所有的节点
-                HashSet<Part> parts = new HashSet<>(spiltParts);
-                parts.add(part);
-                MutableNetwork<Part, Pair<AbstractConnector, AttachPointConnector>> splitPartNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
-                for (Part splitPart : parts) {
-                    splitPartNet.addNode(splitPart); // 构建网络节点
-                    for (Pair<AbstractConnector, AttachPointConnector> edge : partNet.incidentEdges(splitPart)) {
-                        EndpointPair<Part> incidentNodes = partNet.incidentNodes(edge);
-                        Part nodeU = incidentNodes.nodeU();
-                        Part nodeV = incidentNodes.nodeV();
-                        splitPartNet.addEdge(nodeU, nodeV, edge); // 构建网络边
+
+        Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> splitPartNets = new HashSet<>();
+        Set<Part> unvisited = new HashSet<>(partNet.nodes()); // 使用 partNet 的节点集
+
+        while (!unvisited.isEmpty()) {
+            // 1. 开启一个新的连通子图搜索
+            Part startPart = unvisited.iterator().next();
+            Set<Part> componentNodes = new HashSet<>();
+            Queue<Part> queue = new LinkedList<>();
+
+            queue.add(startPart);
+            componentNodes.add(startPart);
+            unvisited.remove(startPart);
+
+            // 2. BFS 搜索所有连通的节点
+            while (!queue.isEmpty()) {
+                Part current = queue.poll();
+                for (Part neighbor : partNet.adjacentNodes(current)) {
+                    if (unvisited.contains(neighbor)) {
+                        unvisited.remove(neighbor);
+                        componentNodes.add(neighbor);
+                        queue.add(neighbor);
                     }
                 }
-                splitPartNets.add(splitPartNet);
-                visitedParts.addAll(parts);
             }
+
+            // 3. 为这个连通分量构建一个新的 Network 实例
+            MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> splitPartNet =
+                    NetworkBuilder.undirected().allowsParallelEdges(true).build();
+
+            for (Part node : componentNodes) {
+                splitPartNet.addNode(node);
+                // 将该节点的所有边加入新网络
+                for (Pair<AbstractConnector, SimpleConnector> edge : partNet.incidentEdges(node)) {
+                    EndpointPair<Part> incidentNodes = partNet.incidentNodes(edge);
+                    splitPartNet.addEdge(incidentNodes.nodeU(), incidentNodes.nodeV(), edge);
+                }
+            }
+            splitPartNets.add(splitPartNet);
         }
         return splitPartNets;
     }
