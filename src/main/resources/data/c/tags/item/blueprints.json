@@ -1,0 +1,7 @@
+{
+  "values": [
+    "machine_max:empty_blueprint",
+    "machine_max:vehicle_blueprint",
+    "machine_max:fabricating_blueprint"
+  ]
+}

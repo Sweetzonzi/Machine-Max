@@ -62,7 +62,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
             if (subPart != null) {
                 if (!level.isClientSide()) { // 服务端负责实际数值的更新
                     stack.hurtAndBreak(1, livingEntity, EquipmentSlot.MAINHAND);
-                    if (getUseDuration(stack, livingEntity) - remainingUseDuration < 10 || remainingUseDuration % 5 != 0)
+                    if (getUseDuration(stack, livingEntity) - remainingUseDuration < 15 || remainingUseDuration % 5 != 0)
                         return;
                     Part part = subPart.part;
                     if (!livingEntity.isCrouching() && !subPart.destroyed) { // 一般状态下组装部件并尝试维修
@@ -72,8 +72,15 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                 5 * SUBSYSTEM_REPAIR_PER_TICK,
                                 5 * CONNECTOR_REPAIR_PER_TICK);
                     } else { // 潜行时拆解部件为原材料
-                        part.disassemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);
-                        if (part.assemblingProgress <= 0) part.vehicle.removePart(part);
+                        if (part.getAssemblingProgress() > 0) {
+                            part.disassemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);
+                            if (part.assemblingProgress <= 0) {
+                                // 停止使用动作，保留0进度的部件
+                                livingEntity.stopUsingItem();
+                            }
+                        } else { // 对0进度的部件再次潜行使用物品才会拆除
+                            part.vehicle.removePart(part);
+                        }
                     }
                 } else { // 客户端仅负责音效与粒子效果
                     boolean shouldPlayEffect = subPart.part.getAssemblingProgress() < 1;

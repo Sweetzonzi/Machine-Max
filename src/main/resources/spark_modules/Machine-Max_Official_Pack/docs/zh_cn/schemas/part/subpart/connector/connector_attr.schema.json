@@ -58,7 +58,7 @@
       "type": "object",
       "additionalProperties": { "$ref": "joint_attr.schema.json"},
       "default": {},
-      "description": "关节属性，目前仅在关节类型为Special时生效。键为x、y、z、xr、yr、zr，分别代表x、y、z轴的平动和x、y、z轴的旋转。"
+      "description": "关节属性，目前仅在关节类型为Advanced时生效。键为x、y、z、xr、yr、zr，分别代表x、y、z轴的平动和x、y、z轴的旋转。"
     },
     "signal_translations": {
       "type": "object",
@@ -91,7 +91,7 @@
   "examples": [
     {
       "locator": "LeftFrontWheel",
-      "type": "Special",
+      "type": "Advanced",
       "required_tags": ["variant:left"],
       "joint_attrs": {
         "y": {

@@ -79,10 +79,16 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
             /*
              *  载具组装
              */
-            case CYCLE_PART_ATTACH_ANGLE://切换部件安装角度
+            case ADD_PART_ATTACH_ANGLE://切换部件安装角度
                 if (!level.isClientSide()) {//仅在服务器端处理
                     assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-                    assemblyCache.cycleAttachAngle();
+                    assemblyCache.cycleAttachAngle(true);
+                }
+                break;
+            case SUB_PART_ATTACH_ANGLE://切换部件安装角度
+                if (!level.isClientSide()) {//仅在服务器端处理
+                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache.cycleAttachAngle(false);
                 }
                 break;
             case CYCLE_PART_CONNECTORS://切换部件连接点
@@ -95,6 +101,11 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                 if (!level.isClientSide()) {//仅在服务器端处理
                     assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                     assemblyCache.cycleVariants();
+                }
+                break;
+            case CYCLE_PART_RECIPES://切换部件配方
+                if (!level.isClientSide()) {//仅在服务器端处理
+                    //TODO
                 }
                 break;
         }

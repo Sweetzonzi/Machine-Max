@@ -14,9 +14,11 @@ public enum KeyInputMapping {
     HAND_BRAKE(104),
     TOGGLE_HAND_BRAKE(105),
 
-    CYCLE_PART_ATTACH_ANGLE(500),
-    CYCLE_PART_CONNECTORS(501),
-    CYCLE_PART_VARIANTS(502);
+    ADD_PART_ATTACH_ANGLE(500),
+    SUB_PART_ATTACH_ANGLE(501),
+    CYCLE_PART_CONNECTORS(502),
+    CYCLE_PART_VARIANTS(503),
+    CYCLE_PART_RECIPES(504);
     private final int value;
 
     KeyInputMapping(int value) {

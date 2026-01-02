@@ -309,7 +309,7 @@ public class AssemblyHud3D implements IHud3DElement {
                     Math.max(animatedHudWidth.get() - PADDING * 2, 0),
                     10f,
                     subPart != null ? subPart.part.getAssemblingProgress() : 0f,
-                    Easing.lerpColorFromTransparent(ROW_BG_ACTIVE, animatedProgressFloat.get()),
+                    ROW_BG_ACTIVE,
                     currentTime,
                     false
             );

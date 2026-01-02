@@ -112,10 +112,11 @@ public class VehicleAssemblyAttachment {
     /**
      * 以90°为间隔旋转当前部件的安装角，仅应在服务端被主动调用
      * 安装角的旋转轴为连接点的装配法线
+     * @param add 增加还是减少安装角
      */
-    public void cycleAttachAngle() {
+    public void cycleAttachAngle(boolean add) {
         //TODO: 旋转后检查部件重叠状态，若重叠则取消或跳过？之后再说
-        this.attachRotation = (this.attachRotation + 90) % 360;
+        this.attachRotation = (this.attachRotation + (add ? 90 : -90)) % 360;
         if (owner instanceof Player player && partType != null && variantName != null && connectorName != null) {
             boolean hasConnector = this.getConnectorName() != null;
             PacketDistributor.sendToPlayer((ServerPlayer) player, new PlayerPartAssemblyCacheSyncPayload(

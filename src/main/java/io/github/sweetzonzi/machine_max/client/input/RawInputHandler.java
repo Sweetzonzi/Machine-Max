@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
@@ -122,10 +123,32 @@ public class RawInputHandler {
     public static void handleMouseInputs(ClientTickEvent.Pre event) {
         if (client == null) client = Minecraft.getInstance();
         if (client.player == null) return;
-        if (KeyBinding.generalFreeCamKey.isDown()) {
-            freeCam = true;
-        } else {
-            freeCam = false;
+        freeCam = KeyBinding.generalFreeCamKey.isDown();
+    }
+
+    @SubscribeEvent
+    public static void handleMouseScrollInputs(InputEvent.MouseScrollingEvent event) {
+        if (client == null) client = Minecraft.getInstance();
+        if (client.player == null) return;
+        // 获取窗口
+        long windowHandle = Minecraft.getInstance().getWindow().getWindow();
+        // 检查特定按键是否被按下（原生输入）
+        boolean isAltPressed = GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_LEFT_ALT) == GLFW.GLFW_PRESS;
+        boolean isShiftPressed = GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS;
+        boolean isCtrlPressed = GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS;
+        if (client.player.getMainHandItem().getItem() instanceof PartAssemblyItem) {
+            if (event.getScrollDeltaY() != 0) {
+                int key = -1;
+                if (isAltPressed) {
+                    key = event.getScrollDeltaY() > 0 ? KeyInputMapping.ADD_PART_ATTACH_ANGLE.getValue() : KeyInputMapping.SUB_PART_ATTACH_ANGLE.getValue();
+                } else if (isCtrlPressed) {
+
+                } else if (isShiftPressed) {
+
+                }
+                if (key != -1)
+                    PacketDistributor.sendToServer(new RegularInputPayload(key, 0));
+            }
         }
     }
 
@@ -230,9 +253,14 @@ public class RawInputHandler {
           载具组装
          */
             //切换部件安装角
-            new KeyHooks.EVENT(KeyBinding.assemblyCycleAttachAngleKey)
+            new KeyHooks.EVENT(KeyBinding.assemblyAddAttachAngleKey)
                     .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_ATTACH_ANGLE.getValue(), 0));
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.ADD_PART_ATTACH_ANGLE.getValue(), 0));
+                    });
+
+            new KeyHooks.EVENT(KeyBinding.assemblySubAttachAngleKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.SUB_PART_ATTACH_ANGLE.getValue(), 0));
                     });
 
             //切换部件连接点
@@ -245,6 +273,12 @@ public class RawInputHandler {
             new KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
                     .OnKeyDown(() -> {
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
+                    });
+
+            //切换部件配方
+            new KeyHooks.EVENT(KeyBinding.assemblyCycleRecipeKey)
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_RECIPES.getValue(), 0));
                     });
         }
 

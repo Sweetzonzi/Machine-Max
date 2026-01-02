@@ -58,7 +58,7 @@
       "type": "object",
       "additionalProperties": { "$ref": "joint_attr.schema.json"},
       "default": {},
-      "description": "Joint attributes, currently only effective when joint type is Special. Keys are x, y, z, xr, yr, zr, representing translation along x, y, z axes and rotation around x, y, z axes respectively."
+      "description": "Joint attributes, currently only effective when joint type is Advanced. Keys are x, y, z, xr, yr, zr, representing translation along x, y, z axes and rotation around x, y, z axes respectively."
     },
     "signal_translations": {
       "type": "object",
@@ -91,7 +91,7 @@
   "examples": [
     {
       "locator": "LeftFrontWheel",
-      "type": "Special",
+      "type": "Advanced",
       "required_tags": ["variant:left"],
       "joint_attrs": {
         "y": {
