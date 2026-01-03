@@ -8,6 +8,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.settings.KeyModifier;
 import org.lwjgl.glfw.GLFW;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
@@ -66,7 +67,7 @@ public class KeyBinding {
         event.register(KeyBinding.assemblySubAttachAngleKey);//部件降低安装角
         event.register(KeyBinding.assemblyCycleConnectorKey);//部件循环选取连接点
         event.register(KeyBinding.assemblyCycleVariantKey);//部件循环选取变体类型
-//        event.register(KeyBinding.assemblyCycleRecipeKey);//循环选取使用的配方
+        event.register(KeyBinding.assemblyCycleRecipeKey);//循环选取使用的配方
         event.register(KeyBinding.JavascriptHotReloadKey);//脚本热更新
 
     }
@@ -170,7 +171,7 @@ public class KeyBinding {
     public static KeyMapping assemblyCycleRecipeKey = new KeyMapping(ASSEMBLY_CYCLE_RECIPE_KEY,//键位名称
             KeyCategory.ASSEMBLY,//键位冲突类型
             InputConstants.Type.KEYSYM,//默认为键盘
-            GLFW.GLFW_KEY_C,//默认按键
+            GLFW.GLFW_KEY_C,//默认按键shift+c
             KeyCategory.ASSEMBLY.getCategory()//键位类型
     );
 

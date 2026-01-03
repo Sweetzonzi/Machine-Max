@@ -36,6 +36,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("key.machine_max.assembly.sub_attach_angle", "Rotate Attach Angle (-)");
         this.add("key.machine_max.assembly.cycle_connector", "Cycle Part Connector");
         this.add("key.machine_max.assembly.cycle_variant", "Cycle Part Variant");
+        this.add("key.machine_max.assembly.cycle_recipe", "Cycle Part Recipe");
         //Custom pack exception handler
         this.add("error.machine_max.load", "An error occurred when loading external pack file at: %1$s, Reason: ");
         this.add("error.machine_max.invalid_resource_location", "Invalid resource location. Only lowercase letters, numbers, hyphens and underscores are allowed.");
@@ -128,6 +129,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("hud.info.machine_max.assembling_progress", "ASSEMBLY: ");
         this.add("hud.key.machine_max.assemble", "[%1$s] Assemble & Repair & Reinforce");
         this.add("hud.key.machine_max.disassemble", "[%1$s+%2$s] Disassemble");
+        this.add("hud.key.machine_max.cycle_recipe", "[%1$s] Cycle Recipe (%2$s Available)");
         this.add("hud.key.machine_max.tear_down", "[%1$s] Remove part");
         this.add("hud.key.machine_max.detach", "[%1$s+%2$s] Detach connector");
     }

@@ -186,7 +186,6 @@ public class VehicleAssemblyAttachment {
         var eyesight = owner.getData(MMAttachments.getENTITY_EYESIGHT());
         AbstractConnector targetConnector = eyesight.getEmptyConnector();//获取视线看着的部件连接点
         PartType partType = this.getPartType();
-        this.cycleRecipe();
         if (partType == null) return;
         int i = partType.variants.size();//设置最大迭代次数
         while (i >= 0) {

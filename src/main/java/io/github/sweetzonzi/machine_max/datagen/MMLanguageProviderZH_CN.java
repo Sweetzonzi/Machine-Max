@@ -36,6 +36,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.machine_max.assembly.sub_attach_angle", "旋转部件(-)");
         this.add("key.machine_max.assembly.cycle_connector", "循环部件连接口");
         this.add("key.machine_max.assembly.cycle_variant", "循环部件变体");
+        this.add("key.machine_max.assembly.cycle_recipe", "循环切换配方");
         //内容包异常处理
         this.add("error.machine_max.load", "加载外部包文件: %1$s 时出错，原因: ");
         this.add("error.machine_max.invalid_resource_location", "文件资源路径非法，仅允许小写英文字母、数字、下划线和连字符");
@@ -127,6 +128,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("hud.info.machine_max.assembling_progress", "装配进度: ");
         this.add("hud.key.machine_max.assemble", "[%1$s] 组装&修复&加固");
         this.add("hud.key.machine_max.disassemble", "[%1$s+%2$s] 拆解");
+        this.add("hud.key.machine_max.cycle_recipe", "[%1$s] 切换配方(%2$s可用)");
         this.add("hud.key.machine_max.tear_down", "[%1$s] 拆除部件");
         this.add("hud.key.machine_max.detach", "[%1$s+%2$s] 断开连接点");
     }

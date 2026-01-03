@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.client.render.MMRenderTypes;
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.AnimatedFloat;
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.AnimatedQuaternion;
@@ -341,6 +342,17 @@ public class AssemblyHud3D implements IHud3DElement {
                                 ctx.mc.options.keyUse.getKey().getDisplayName()),
                         startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
                 );
+                if (subPart != null) {
+                    if (ctx.player.isCreative() || (part.getAssemblingProgress() <= 0 && part.getMaterialProgress() <= 0)) {
+                        var availableRecipes = ctx.player.getData(MMAttachments.getRESEARCH_AND_BLUEPRINT()).getAvailableRecipeFor(ctx.player, subPart.part.type.getRegistryKey());
+                        startY += TEXT_LINE_HEIGHT + 2;
+                        ctx.drawText(Component.translatable("hud.key.machine_max.cycle_recipe",
+                                        KeyBinding.assemblyCycleRecipeKey.getKey().getDisplayName(),
+                                        availableRecipes.size()),
+                                startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(availableRecipes.size() > 1 ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                        );
+                    }
+                }
             } else if (ctx.mc.player.getMainHandItem().getItem() instanceof CrowbarItem) {
                 ctx.drawText(
                         Component.translatable("hud.key.machine_max.tear_down",

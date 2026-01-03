@@ -105,7 +105,8 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                 break;
             case CYCLE_PART_RECIPES://切换部件配方
                 if (!level.isClientSide()) {//仅在服务器端处理
-                    //TODO
+                    assemblyCache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
+                    assemblyCache.cycleRecipe();
                 }
                 break;
         }
