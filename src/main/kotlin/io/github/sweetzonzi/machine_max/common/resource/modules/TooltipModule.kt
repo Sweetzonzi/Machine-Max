@@ -13,8 +13,8 @@ class TooltipModule : SparkPackModule {
 
     override val id: String = "tooltips"
 
-    override fun onStart(isClientSide: Boolean) {
-        if (isClientSide) {
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if (isClientSide && fromServer) {
             MMDynamicRes.TOOLTIPS.clear()
             SparkCore.LOGGER.info("开始注册文本内容…")
         }
@@ -25,9 +25,9 @@ class TooltipModule : SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (isClientSide) {
+        if (isClientSide && fromServer) {
             val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
@@ -46,7 +46,7 @@ class TooltipModule : SparkPackModule {
     }
 
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (isClientSide) {
             MachineMax.LOGGER.info("已加载${MMDynamicRes.TOOLTIPS.size}种文本内容")
         }

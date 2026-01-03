@@ -33,6 +33,7 @@ public class DynamicInject {
             });
 
         });
+//        event.registerReloadListener(new MMDynamicRes.DataPackReloader());
     }
 
     @SubscribeEvent

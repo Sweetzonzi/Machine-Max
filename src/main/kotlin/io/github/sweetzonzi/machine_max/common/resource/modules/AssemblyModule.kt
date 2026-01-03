@@ -15,7 +15,8 @@ import java.nio.charset.StandardCharsets
 class AssemblyModule : SparkPackModule {
 
     override val id: String = "assemblies"
-    override fun onStart(isClientSide: Boolean) {
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if (!fromServer) return
         MMDynamicRes.ASSEMBLIES.clear()
         SparkCore.LOGGER.info("开始注册装配体…")
     }
@@ -25,9 +26,9 @@ class AssemblyModule : SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (fileName.endsWith(".json")) {
+        if (fileName.endsWith(".json") && fromServer) {
             val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
@@ -48,7 +49,7 @@ class AssemblyModule : SparkPackModule {
     }
 
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         MachineMax.LOGGER.info("已加载${MMDynamicRes.ASSEMBLIES.size}种装配体")
     }
 

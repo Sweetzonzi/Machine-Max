@@ -85,6 +85,11 @@ public class MMPayloadRegistry {
                 PartPaintPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(PartPaintPayload::handle)
         );
+        sync.playToClient(//通知客户端配方变化
+                PartChangeRecipePayload.TYPE,
+                PartChangeRecipePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(PartChangeRecipePayload::handle)
+        );
         sync.playToClient(//通知客户端部件组转进度改变
                 PartAssemblyProgressSyncPayload.TYPE,
                 PartAssemblyProgressSyncPayload.STREAM_CODEC,

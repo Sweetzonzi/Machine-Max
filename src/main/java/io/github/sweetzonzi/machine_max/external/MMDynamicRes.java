@@ -1,6 +1,10 @@
 package io.github.sweetzonzi.machine_max.external;
 
 import com.google.gson.JsonElement;
+import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
+import io.github.sweetzonzi.machine_max.common.registry.MMResources;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.AbstractSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData;
@@ -11,15 +15,22 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -38,7 +49,7 @@ import java.util.zip.ZipFile;
 import static io.github.sweetzonzi.machine_max.MachineMax.LOGGER;
 import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
+//@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
 public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, DynamicPack> EXTERNAL_RESOURCE = new ConcurrentHashMap<>(); //所有当下读取的外部资源
     public static ConcurrentMap<ResourceLocation, PartType> PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
@@ -51,6 +62,7 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, AssemblyData> ASSEMBLIES = new ConcurrentHashMap<>(); // 装配体数据
     public static ConcurrentMap<ResourceLocation, String> TOOLTIPS = new ConcurrentHashMap<>(); //蓝图或装配体物品对应的描述信息
     public static ConcurrentMap<ResourceLocation, AnimatableParams> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
+    public static HashMap<ResourceLocation, LinkedHashSet<RecipeHolder<FabricatingRecipe>>> PART_RECIPES = new HashMap<>(); // 零件配方
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
     public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
@@ -91,14 +103,14 @@ public class MMDynamicRes {
         }));
     }
 
-    @SubscribeEvent
-    public static void init(FMLCommonSetupEvent event) {
-        loadData();
-    }
+//    @SubscribeEvent
+//    public static void init(FMLCommonSetupEvent event) {
+//        loadData();
+//    }
 
     public static void reload() {
         initResources();
-        loadData();
+//        loadData();
     }
 
     public static void initResources() {
@@ -171,41 +183,57 @@ public class MMDynamicRes {
 //        MMInitialJS.register();//注册所有JS形式的初始化配置
     }
 
-    @EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD)
-    public static class DataPackReloader extends SimplePreparableReloadListener<Void> {
-
+    @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
+    public static class DataPackReloader extends SimplePreparableReloadListener<Set<FabricatingRecipe>> {
+        private static ReloadableServerResources serverResources = null;
         @Override
-        protected Void prepare(ResourceManager manager, ProfilerFiller profiler) {
+        protected Set<FabricatingRecipe> prepare(ResourceManager manager, ProfilerFiller profiler) {
             MMDynamicRes.reload();//异步重新读取资源
+            MMDynamicRes.PART_RECIPES.clear();
             return null;
         }
 
         @Override
-        protected void apply(Void nothing, ResourceManager manager, ProfilerFiller profiler) {
-
-        }
-
-        public static void sendErrorToPlayer(Player player) {
-            for (String file : errorFiles) {
-                int i = errorFiles.indexOf(file);
-                MutableComponent message = errorMessages.get(i).withColor(Color.RED.getRGB());
-                player.sendSystemMessage(Component.translatable("error.machine_max.load", file).withColor(Color.WHITE.getRGB()).append(message));
+        protected void apply(Set<FabricatingRecipe> recipes, ResourceManager manager, ProfilerFiller profiler) {
+            if (serverResources!= null) {
+                int count = 0;
+                RecipeManager recipeManager = serverResources.getRecipeManager();
+                var fabricatingRecipes = recipeManager.getAllRecipesFor(MMResources.getFABRICATION_RECIPE_TYPE().get());
+                for (RecipeHolder<FabricatingRecipe> recipeHolder : fabricatingRecipes) {
+                    FabricatingRecipe recipe = recipeHolder.value();
+                    ItemStack stack = recipe.getResultItem(serverResources.getRegistryLookup());
+                    if (stack.has(MMDataComponents.getPART_TYPE())) {
+                        ResourceLocation partType = stack.get(MMDataComponents.getPART_TYPE());
+                        PART_RECIPES.computeIfAbsent(partType, k -> new LinkedHashSet<>()).add(recipeHolder);
+                        count++;
+                    }
+                }
+//                LOGGER.debug("从服务器数据为{}种个零件配方添加了{}种配方", PART_RECIPES.size(), count);
             }
         }
 
-        public static void sendErrorToConsole(MinecraftServer server) {
-            for (String file : errorFiles) {
-                int i = errorFiles.indexOf(file);
-                Component message = MMDynamicRes.errorMessages.get(i);
-                server.sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message).withColor(Color.red.getRGB()));
-            }
+        @SubscribeEvent(priority = EventPriority.LOWEST)
+        public static void register(AddReloadListenerEvent event) {
+            event.addListener(new DataPackReloader());
+            DataPackReloader.serverResources = event.getServerResources();
         }
 
-        @SubscribeEvent
-        public static void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
-            event.registerReloadListener(new MMDynamicRes.DataPackReloader());
-        }
+    }
 
+    public static void sendErrorToPlayer(Player player) {
+        for (String file : errorFiles) {
+            int i = errorFiles.indexOf(file);
+            MutableComponent message = errorMessages.get(i).withColor(Color.RED.getRGB());
+            player.sendSystemMessage(Component.translatable("error.machine_max.load", file).withColor(Color.WHITE.getRGB()).append(message));
+        }
+    }
+
+    public static void sendErrorToConsole(MinecraftServer server) {
+        for (String file : errorFiles) {
+            int i = errorFiles.indexOf(file);
+            Component message = MMDynamicRes.errorMessages.get(i);
+            server.sendSystemMessage(Component.translatable("error.machine_max.load", file).append(message).withColor(Color.red.getRGB()));
+        }
     }
 
     public static void GenerateChannels(String jsCode) {

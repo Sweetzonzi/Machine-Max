@@ -13,8 +13,8 @@ import java.nio.charset.StandardCharsets
 class ColorModule : SparkPackModule {
 
     override val id: String = "colors"
-    override fun onStart(isClientSide: Boolean) {
-        if (isClientSide) {
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if (isClientSide && fromServer) {
             MMDynamicRes.COLORS.clear()
             SparkCore.LOGGER.info("开始注册色板方案…")
         }
@@ -25,9 +25,9 @@ class ColorModule : SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (FMLEnvironment.dist.isClient && fileName.endsWith(".json")) {
+        if (FMLEnvironment.dist.isClient && fileName.endsWith(".json") && fromServer) {
             val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
@@ -41,7 +41,7 @@ class ColorModule : SparkPackModule {
     }
 
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (isClientSide) {
             MachineMax.LOGGER.info("已加载${MMDynamicRes.COLORS.size}种色板方案")
         }

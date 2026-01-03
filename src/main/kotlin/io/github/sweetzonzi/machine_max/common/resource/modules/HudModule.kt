@@ -15,8 +15,8 @@ import java.nio.charset.StandardCharsets
 class HudModule : SparkPackModule {
 
     override val id: String = "huds"
-    override fun onStart(isClientSide: Boolean) {
-        if (isClientSide) {
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if (isClientSide && fromServer) {
             MMDynamicRes.CUSTOM_HUD.clear()
             SparkCore.LOGGER.info("开始注册自定义HUD元素…")
         }
@@ -27,9 +27,9 @@ class HudModule : SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (isClientSide && fileName.endsWith(".json")) {
+        if (isClientSide && fileName.endsWith(".json") && fromServer) {
             val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
@@ -50,7 +50,7 @@ class HudModule : SparkPackModule {
     }
 
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (isClientSide) {
             MachineMax.LOGGER.info("已加载${MMDynamicRes.CUSTOM_HUD.size}种HUD元素")
         }

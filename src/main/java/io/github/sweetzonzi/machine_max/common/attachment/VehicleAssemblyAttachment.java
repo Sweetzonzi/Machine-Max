@@ -9,8 +9,10 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem;
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.*;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
@@ -19,10 +21,12 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnect
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.PartChangeRecipePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PlayerPartAssemblyCacheSyncPayload;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResultHolder;
@@ -30,6 +34,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.EventPriority;
@@ -113,6 +118,7 @@ public class VehicleAssemblyAttachment {
     /**
      * 以90°为间隔旋转当前部件的安装角，仅应在服务端被主动调用
      * 安装角的旋转轴为连接点的装配法线
+     *
      * @param add 增加还是减少安装角
      */
     public void cycleAttachAngle(boolean add) {
@@ -180,6 +186,7 @@ public class VehicleAssemblyAttachment {
         var eyesight = owner.getData(MMAttachments.getENTITY_EYESIGHT());
         AbstractConnector targetConnector = eyesight.getEmptyConnector();//获取视线看着的部件连接点
         PartType partType = this.getPartType();
+        this.cycleRecipe();
         if (partType == null) return;
         int i = partType.variants.size();//设置最大迭代次数
         while (i >= 0) {
@@ -191,6 +198,37 @@ public class VehicleAssemblyAttachment {
                 break;
             }
             i--;
+        }
+    }
+
+    public void cycleRecipe() {
+        if (owner instanceof Player player && !player.level().isClientSide()) {
+            var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
+            SubPart subPart = eyesight.getSubPart();
+            if (subPart != null && (player.isCreative() ||
+                    (subPart.part.getMaterialProgress() <= 0
+                            && subPart.part.getAssemblingProgress() <= 0))) {
+                var blueprints = player.getData(MMAttachments.getRESEARCH_AND_BLUEPRINT());
+                var availableRecipes = blueprints.getAvailableRecipeFor(player, subPart.part.getType().getRegistryKey());
+                Iterator<RecipeHolder<FabricatingRecipe>> recipeIterator = availableRecipes.iterator();
+                // 使用下一个配方
+                if (subPart.part.getCustomRecipe() != FabricatingRecipe.EMPTY && subPart.part.getRecipe() != null) {
+                    // 首先找到当前使用的配方
+                    while (subPart.part.customRecipe != recipeIterator.next().id()) {
+                        if (!recipeIterator.hasNext()) { // 若没有找到当前使用的配方，则重置迭代器
+                            break;
+                        }
+                    }
+                    if (!recipeIterator.hasNext()) recipeIterator = availableRecipes.iterator();
+                } // 未指定配方或为默认配方则直接取用第一个配方
+                if (recipeIterator.hasNext()) {
+                    ResourceLocation newRecipe = recipeIterator.next().id();
+                    if (newRecipe != subPart.part.getCustomRecipe()) {
+                        subPart.part.customRecipe = newRecipe;
+                        PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), new PartChangeRecipePayload(subPart.part.vehicle.getUuid(), subPart.part.getUuid(), newRecipe));
+                    }
+                }
+            }
         }
     }
 
@@ -208,23 +246,30 @@ public class VehicleAssemblyAttachment {
                 var eyesight = entity.getData(MMAttachments.getENTITY_EYESIGHT());
                 SubPart targetSubPart = eyesight.getSubPart();
                 AbstractConnector targetConnector = eyesight.getEmptyConnector();
-                if (targetSubPart != null // 直接填满未组装的蓝图部件进度
-                        && targetSubPart.part.type.getRegistryKey() == partType.getRegistryKey()
-                        && Objects.equals(part.variantName, targetSubPart.part.variantName)
+                // 待安装部件配方产出结果与当前部件类型一致且尚未装配时
+                if (targetSubPart != null && targetSubPart.part.type.getRegistryKey() == partType.getRegistryKey()
                         && targetSubPart.part.getAssemblingProgress() == 0
-                        && targetSubPart.part.getMaterialProgress() == 0
-                        && part.getMaterialProgress() > 0 && part.getAssemblingProgress() > 0) {
-                    targetSubPart.part.setMaterialProgress(part.getMaterialProgress());
-                    targetSubPart.part.setAssemblingProgress(part.getAssemblingProgress());
-                    targetSubPart.part.customRecipe = part.customRecipe;
-                    for (Map.Entry<String, SubPart> entry : targetSubPart.part.subParts.entrySet()) {
-                        entry.getValue().setDurability(part.subParts.get(entry.getKey()).getDurability());
+                        && targetSubPart.part.getMaterialProgress() == 0) {
+                    // 是已装配的部件则直接填满未组装的蓝图部件进度并更新使用的配方
+                    if (Objects.equals(part.variantName, targetSubPart.part.variantName)
+                            && part.getMaterialProgress() > 0 && part.getAssemblingProgress() > 0) {
+                        targetSubPart.part.setMaterialProgress(part.getMaterialProgress());
+                        targetSubPart.part.setAssemblingProgress(part.getAssemblingProgress());
+                        targetSubPart.part.customRecipe = part.customRecipe;
+                        for (Map.Entry<String, SubPart> entry : targetSubPart.part.subParts.entrySet()) {
+                            entry.getValue().setDurability(part.subParts.get(entry.getKey()).getDurability());
+                        }
+                        if (stack.getItem() instanceof PartItem) {
+                            var pos = targetSubPart.getPosition();
+                            ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
+                        }
+                        return InteractionResultHolder.consume(stack);
+                    } else if (entity.isCrouching() // 若玩家蹲下且持有的是蓝图则仅更新配方
+                            && entity.getMainHandItem().getItem() instanceof FabricatingBlueprintItem
+                            && targetSubPart.part.customRecipe != null && !targetSubPart.part.customRecipe.equals(part.customRecipe)) {
+                        targetSubPart.part.customRecipe = part.customRecipe;
+                        return InteractionResultHolder.consume(stack);
                     }
-                    if (stack.getItem() instanceof PartItem) {
-                        var pos = targetSubPart.getPosition();
-                        ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.01);
-                    }
-                    return InteractionResultHolder.consume(stack);
                 }
                 // 若有可用的连接点，则尝试将零件连接至接口
                 if (targetConnector != null && connectorName != null) {

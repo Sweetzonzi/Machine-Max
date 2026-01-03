@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
@@ -36,6 +35,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -67,7 +67,8 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                 var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                 if (cache.getPartType() != null && cache.getVariantName() != null) {
                     Part part = new Part(cache.getPartType(), cache.getVariantName(), level);
-                    if (PartAssemblyItem.getRecipe(stack, level) instanceof FabricatingRecipe) {
+                    RecipeHolder<?> recipeHolder = PartAssemblyItem.getRecipeHolder(stack, level);
+                    if (recipeHolder != null && recipeHolder.value() instanceof FabricatingRecipe) {
                         part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE()); // 设置配方为物品对应的配方
                     }
                     var result = cache.assembly(level, player, stack, part); // 放出部件

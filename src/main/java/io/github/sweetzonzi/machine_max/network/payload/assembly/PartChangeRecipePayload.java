@@ -1,0 +1,56 @@
+package io.github.sweetzonzi.machine_max.network.payload.assembly;
+
+import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.UUID;
+
+public record PartChangeRecipePayload(
+        UUID vehicleUUID,
+        UUID partUUID,
+        ResourceLocation recipeId
+) implements CustomPacketPayload {
+    public static final Type<PartChangeRecipePayload> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_change_recipe_payload")
+    );
+    public static final StreamCodec<FriendlyByteBuf, PartChangeRecipePayload> STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public @NotNull PartChangeRecipePayload decode(@NotNull FriendlyByteBuf buffer) {
+            UUID vehicleUUID = buffer.readUUID();
+            UUID partUUID = buffer.readUUID();
+            ResourceLocation recipeId = buffer.readResourceLocation();
+            return new PartChangeRecipePayload(vehicleUUID, partUUID, recipeId);
+        }
+
+        @Override
+        public void encode(@NotNull FriendlyByteBuf buffer, @NotNull PartChangeRecipePayload value) {
+            buffer.writeUUID(value.vehicleUUID);
+            buffer.writeUUID(value.partUUID);
+            buffer.writeResourceLocation(value.recipeId);
+        }
+    };
+
+    @Override
+    public @NotNull Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
+
+    public static void handle(PartChangeRecipePayload payload, IPayloadContext context) {
+        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
+        if (vehicle != null) {
+            Part part = vehicle.partMap.get(payload.partUUID);
+            if (part != null) {
+                context.enqueueWork(() -> part.customRecipe = payload.recipeId);
+            } else MachineMax.LOGGER.error("{}中未找到部件{}，无法切换涂装。", vehicle, payload.partUUID);
+        } else MachineMax.LOGGER.error("未找到载具{}，无法切换涂装。", payload.partUUID);
+    }
+}

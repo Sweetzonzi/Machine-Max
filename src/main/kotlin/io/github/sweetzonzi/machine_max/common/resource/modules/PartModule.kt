@@ -15,7 +15,8 @@ import java.nio.charset.StandardCharsets
 class PartModule : SparkPackModule {
 
     override val id: String = "parts"
-    override fun onStart(isClientSide: Boolean) {
+    override fun onStart(isClientSide: Boolean, fromServer: Boolean) {
+        if (!fromServer) return
         if (isClientSide) {
             MMDynamicRes.PART_TYPES.clear()
         } else {
@@ -29,9 +30,9 @@ class PartModule : SparkPackModule {
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
-        isClientSide: Boolean
+        isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (fileName.endsWith(".json")) {
+        if (fileName.endsWith(".json") && fromServer) {
             val nameSpace: String = if (pathSegments.isNotEmpty()) {
                 pathSegments[0]
             } else {
@@ -56,7 +57,7 @@ class PartModule : SparkPackModule {
     }
 
 
-    override fun onFinish(isClientSide: Boolean) {
+    override fun onFinish(isClientSide: Boolean, fromServer: Boolean) {
         if (isClientSide) {
             MachineMax.LOGGER.info("已加载${MMDynamicRes.PART_TYPES.size}个部件")
         } else {

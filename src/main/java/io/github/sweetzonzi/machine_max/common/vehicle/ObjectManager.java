@@ -257,13 +257,13 @@ public class ObjectManager {
     @SubscribeEvent
     public static void displayCustomPackError(EntityJoinLevelEvent event) {
         if (event.getLevel().isClientSide() && event.getEntity() instanceof Player player) {
-            MMDynamicRes.DataPackReloader.sendErrorToPlayer(player);
+            MMDynamicRes.sendErrorToPlayer(player);
         }
     }
 
     @SubscribeEvent
     public static void onServerStart(ServerAboutToStartEvent event) {
-        MMDynamicRes.DataPackReloader.sendErrorToConsole(event.getServer());
+        MMDynamicRes.sendErrorToConsole(event.getServer());
         serverAllVehicles.clear();
         levelVehicles.clear();
     }
