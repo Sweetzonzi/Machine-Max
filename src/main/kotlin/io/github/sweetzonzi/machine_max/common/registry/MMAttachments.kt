@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.common.attachment.BluePrintAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment
-import io.github.sweetzonzi.machine_max.common.attachment.PlayerBluePrintAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
 import net.minecraft.client.Minecraft
@@ -30,11 +30,11 @@ object MMAttachments {
 
     //实体保存的蓝图与研发点
     @JvmStatic
-    val RESEARCH_AND_BLUEPRINT = MachineMax.REGISTER.attachment {
-        id = "research_and_blueprint"
-        factory = { _ -> PlayerBluePrintAttachment(0) }
+    val BLUEPRINT = MachineMax.REGISTER.attachment {
+        id = "blueprint"
+        factory = { _ -> BluePrintAttachment(0) }
         copyOnDeath = true
-        serializer = PlayerBluePrintAttachment.CODEC
+        serializer = BluePrintAttachment.CODEC
     }
 
     //世界的载具列表，用于保存、加载和管理世界中的载具

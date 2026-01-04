@@ -123,7 +123,7 @@ public class PartData {
         this.name = part.name;
         this.uuid = part.uuid.toString();
         this.variant = part.variantName;
-        this.customRecipe = part.customRecipe == null ? FabricatingRecipe.EMPTY : part.customRecipe;
+        this.customRecipe = part.customRecipe;
         this.assemblingProgress = part.assemblingProgress;
         this.materialAssemblingProgress = part.materialProgress;
         this.subParts = new HashMap<>();

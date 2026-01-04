@@ -229,13 +229,13 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
         }
 
         // 检查玩家是否有足够原料
-        if (!recipe.hasRequiredIngredients(player) && !player.isCreative()) {
+        if (!recipe.hasRequiredIngredients(player, false) && !player.isCreative()) {
             return false;
         }
 
         // 消耗原料
         if (!player.isCreative()) {
-            recipe.consumeIngredients(player);
+            recipe.consumeIngredients(player, false);
         }
 
         // 创建生产任务

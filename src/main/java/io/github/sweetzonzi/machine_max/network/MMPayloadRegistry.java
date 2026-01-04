@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationC
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationStartPayload;
+import io.github.sweetzonzi.machine_max.network.payload.research.*;
 import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -124,6 +125,31 @@ public class MMPayloadRegistry {
                 ConnectorSyncPayload.TYPE,
                 ConnectorSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ConnectorSyncPayload::handler)
+        );
+        sync.playToClient(//玩家蓝图的自由研发点同步
+                FreeRpSyncPayload.TYPE,
+                FreeRpSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(FreeRpSyncPayload::handler)
+        );
+        sync.playToClient(//玩家蓝图的研发进度同步
+                ResearchPushPayload.TYPE,
+                ResearchPushPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchPushPayload::handler)
+        );
+        sync.playToClient(//玩家蓝图的研发选择同步
+                ResearchSetPayload.TYPE,
+                ResearchSetPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchSetPayload::handler)
+        );
+        sync.playToClient(//玩家蓝图的研发选择同步
+                ResearchCancelPayload.TYPE,
+                ResearchCancelPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchCancelPayload::handler)
+        );
+        sync.playToClient(//通知客户端蓝图研发完成
+                ResearchCompletePayload.TYPE,
+                ResearchCompletePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchCompletePayload::handler)
         );
         misc.playToServer(//通过GUI配置载具属性
                 VehicleConfigPayload.TYPE,

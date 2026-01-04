@@ -59,7 +59,7 @@ public class Part {
     public final String variantName;
     public final VariantAttr variant;
     public final UUID uuid;
-    public ResourceLocation customRecipe = null;
+    public ResourceLocation customRecipe = FabricatingRecipe.EMPTY;
     public volatile float assemblingProgress = 1f; //组装进度(0~1)，控制最大耐久和质量
     public int materialProgress = Integer.MAX_VALUE; //材料供给进度，控制最大组装进度，上限取决于配方
     public final SubPart rootSubPart;
@@ -115,7 +115,7 @@ public class Part {
         this.level = level;
         this.variantName = data.variant;
         this.variant = type.getVariants().get(variantName);
-        this.customRecipe = data.customRecipe == FabricatingRecipe.EMPTY ? null : data.customRecipe;
+        this.customRecipe = data.customRecipe == FabricatingRecipe.EMPTY ? FabricatingRecipe.EMPTY : data.customRecipe;
         this.uuid = UUID.fromString(data.uuid);
         this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : Integer.MAX_VALUE);
         this.assemblingProgress = readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f;
@@ -498,7 +498,7 @@ public class Part {
     public FabricatingRecipe getRecipe() {
         try {
             RecipeHolder<?> recipeHolder = null;
-            if (customRecipe != null && level.getRecipeManager().byKey(customRecipe).isPresent()) {
+            if (customRecipe != FabricatingRecipe.EMPTY && level.getRecipeManager().byKey(customRecipe).isPresent()) {
                 recipeHolder = level.getRecipeManager().byKey(customRecipe).get();
                 if (!(recipeHolder.value() instanceof FabricatingRecipe)) recipeHolder = null;
             }

@@ -211,7 +211,7 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
             // 等待服务器同步前提前更新客户端物品栏
             Player player = minecraft.player;
             if (!player.isCreative()) {
-                selectedRecipe.value().consumeIngredients(player);
+                selectedRecipe.value().consumeIngredients(player, false);
             }
             updateTaskActionButtons();
         }
@@ -254,7 +254,7 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
     private void updateProductionButtonState() {
         if (startProductionButton == null || selectedRecipe == null || minecraft == null) return;
 
-        boolean canProduce = selectedRecipe.value().hasRequiredIngredients(minecraft.player) || minecraft.player.isCreative();
+        boolean canProduce = selectedRecipe.value().hasRequiredIngredients(minecraft.player, false) || minecraft.player.isCreative();
         boolean hasFreeSlot = menu.getFabricatorBlockEntity().getIdleTaskCount() > 0;
 
         startProductionButton.active = canProduce && hasFreeSlot;

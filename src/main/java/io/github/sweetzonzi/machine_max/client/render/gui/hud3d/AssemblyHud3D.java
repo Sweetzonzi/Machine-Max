@@ -26,7 +26,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsyst
 import io.github.sweetzonzi.machine_max.util.Easing;
 import io.github.sweetzonzi.machine_max.util.ViewOrientationResolver;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Brightness;
@@ -344,7 +343,7 @@ public class AssemblyHud3D implements IHud3DElement {
                 );
                 if (subPart != null) {
                     if (ctx.player.isCreative() || (part.getAssemblingProgress() <= 0 && part.getMaterialProgress() <= 0)) {
-                        var availableRecipes = ctx.player.getData(MMAttachments.getRESEARCH_AND_BLUEPRINT()).getAvailableRecipeFor(ctx.player, subPart.part.type.getRegistryKey());
+                        var availableRecipes = ctx.player.getData(MMAttachments.getBLUEPRINT()).getAvailablePartRecipeFor(ctx.player, subPart.part.type.getRegistryKey());
                         startY += TEXT_LINE_HEIGHT + 2;
                         ctx.drawText(Component.translatable("hud.key.machine_max.cycle_recipe",
                                         KeyBinding.assemblyCycleRecipeKey.getKey().getDisplayName(),

@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -207,11 +206,11 @@ public class VehicleAssemblyAttachment {
             if (subPart != null && (player.isCreative() ||
                     (subPart.part.getMaterialProgress() <= 0
                             && subPart.part.getAssemblingProgress() <= 0))) {
-                var blueprints = player.getData(MMAttachments.getRESEARCH_AND_BLUEPRINT());
-                var availableRecipes = blueprints.getAvailableRecipeFor(player, subPart.part.getType().getRegistryKey());
+                var blueprints = player.getData(MMAttachments.getBLUEPRINT());
+                var availableRecipes = blueprints.getAvailablePartRecipeFor(player, subPart.part.getType().getRegistryKey());
                 Iterator<RecipeHolder<FabricatingRecipe>> recipeIterator = availableRecipes.iterator();
                 // 使用下一个配方
-                if (subPart.part.getCustomRecipe() != FabricatingRecipe.EMPTY && subPart.part.getRecipe() != null) {
+                if (subPart.part.getCustomRecipe() != FabricatingRecipe.EMPTY) {
                     // 首先找到当前使用的配方
                     while (subPart.part.customRecipe != recipeIterator.next().id()) {
                         if (!recipeIterator.hasNext()) { // 若没有找到当前使用的配方，则重置迭代器
@@ -265,7 +264,7 @@ public class VehicleAssemblyAttachment {
                         return InteractionResultHolder.consume(stack);
                     } else if (entity.isCrouching() // 若玩家蹲下且持有的是蓝图则仅更新配方
                             && entity.getMainHandItem().getItem() instanceof FabricatingBlueprintItem
-                            && targetSubPart.part.customRecipe != null && !targetSubPart.part.customRecipe.equals(part.customRecipe)) {
+                            && targetSubPart.part.customRecipe != FabricatingRecipe.EMPTY && !targetSubPart.part.customRecipe.equals(part.customRecipe)) {
                         targetSubPart.part.customRecipe = part.customRecipe;
                         return InteractionResultHolder.consume(stack);
                     }

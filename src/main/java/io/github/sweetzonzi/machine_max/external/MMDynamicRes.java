@@ -63,6 +63,7 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, String> TOOLTIPS = new ConcurrentHashMap<>(); //蓝图或装配体物品对应的描述信息
     public static ConcurrentMap<ResourceLocation, AnimatableParams> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
     public static HashMap<ResourceLocation, LinkedHashSet<RecipeHolder<FabricatingRecipe>>> PART_RECIPES = new HashMap<>(); // 零件配方
+    public static HashMap<ResourceLocation, RecipeHolder<FabricatingRecipe>> ALL_RECIPES = new HashMap<>(); // 所有配方
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
     public static List<String> errorFiles = new ArrayList<>(); // 读取过程中出现错误的文件
@@ -190,6 +191,7 @@ public class MMDynamicRes {
         protected Set<FabricatingRecipe> prepare(ResourceManager manager, ProfilerFiller profiler) {
             MMDynamicRes.reload();//异步重新读取资源
             MMDynamicRes.PART_RECIPES.clear();
+            MMDynamicRes.ALL_RECIPES.clear();
             return null;
         }
 
@@ -200,6 +202,7 @@ public class MMDynamicRes {
                 RecipeManager recipeManager = serverResources.getRecipeManager();
                 var fabricatingRecipes = recipeManager.getAllRecipesFor(MMResources.getFABRICATION_RECIPE_TYPE().get());
                 for (RecipeHolder<FabricatingRecipe> recipeHolder : fabricatingRecipes) {
+                    MMDynamicRes.ALL_RECIPES.put(recipeHolder.id(), recipeHolder);
                     FabricatingRecipe recipe = recipeHolder.value();
                     ItemStack stack = recipe.getResultItem(serverResources.getRegistryLookup());
                     if (stack.has(MMDataComponents.getPART_TYPE())) {
