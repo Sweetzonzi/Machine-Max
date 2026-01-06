@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
 import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem
+import io.github.sweetzonzi.machine_max.common.item.prop.PadItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
 import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
@@ -46,6 +47,13 @@ object MMItems {
     val FABRICATOR_BLOCK_ITEM = MachineMax.REGISTER.item{
         id="fabricator_block"
         factory = { BlockItem(MMBlocks.FABRICATOR_BLOCK.get(), Item.Properties()) }
+    }
+
+    //PAD
+    @JvmStatic
+    val PAD_ITEM = MachineMax.REGISTER.item{
+        id="pad"
+        factory = { PadItem() }
     }
 
     //载具蓝图物品原型

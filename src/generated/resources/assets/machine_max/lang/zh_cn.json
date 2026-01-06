@@ -102,6 +102,7 @@
   "message.machine_max.blueprint_saved": "蓝图已保存至%1$s",
   "message.machine_max.leaving_vehicle": "长按[%1$s]键%2$s/0.50秒以离开载具",
   "message.machine_max.watch_interact_box_info": "[%1$s]",
+  "toast.machine_max.research_complete": "研发完成！",
   "tooltip.machine_max.crowbar.detach_connector": "互动以断开%1$s和%2$s的连接",
   "tooltip.machine_max.crowbar.safe_disassembly": "互动以安全拆除%1$s",
   "tooltip.machine_max.crowbar.unsafe_disassembly": "互动以强行拆除%1$s (可能损坏部件)",

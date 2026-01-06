@@ -27,7 +27,8 @@ import java.util.List;
 @Getter
 public class FabricatingRecipe implements Recipe<FabricatingInput> {
     public static final ResourceLocation EMPTY = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
-    private final int researchPointCost;
+    private final int researchCost;
+    private final int upgradeCost;
     private final List<IngredientCountPair> researchIngredientPairs;
     private final List<IngredientCountPair> ingredientPairs;
     private final List<Ingredient> ingredientList = new ArrayList<>(); // 列表形式的原料，方便分步推进合成
@@ -37,7 +38,8 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
 
     public static final MapCodec<FabricatingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
-                    Codec.INT.optionalFieldOf("rp_cost", 0).forGetter(FabricatingRecipe::getResearchPointCost),
+                    Codec.INT.optionalFieldOf("research_cost", 1).forGetter(FabricatingRecipe::getResearchCost),
+                    Codec.INT.optionalFieldOf("upgrade_cost", 1).forGetter(FabricatingRecipe::getResearchCost),
                     IngredientCountPair.CODEC.listOf().optionalFieldOf("research_ingredients", List.of()).forGetter(FabricatingRecipe::getResearchIngredientPairs),
                     IngredientCountPair.CODEC.listOf().fieldOf("ingredients").forGetter(FabricatingRecipe::getIngredientPairs),
                     ItemStack.CODEC.fieldOf("result").forGetter(FabricatingRecipe::getResult),
@@ -51,6 +53,7 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
         public @NotNull FabricatingRecipe decode(@NotNull RegistryFriendlyByteBuf buffer) {
             // 读取研究点要求
             int researchPointCost = buffer.readVarInt();
+            int upgradePointCost = buffer.readVarInt();
             // 读取研究原料列表
             int researchIngredientCount = buffer.readVarInt();
             List<IngredientCountPair> researchIngredients = new ArrayList<>(researchIngredientCount);
@@ -72,13 +75,15 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
             // 读取处理时间
             int processingTime = buffer.readVarInt();
             String descriptionId = buffer.readUtf();
-            return new FabricatingRecipe(researchPointCost, researchIngredients, ingredients, result, processingTime, descriptionId);
+            return new FabricatingRecipe(researchPointCost, upgradePointCost, researchIngredients, ingredients, result, processingTime, descriptionId);
         }
 
         @Override
         public void encode(@NotNull RegistryFriendlyByteBuf buffer, FabricatingRecipe recipe) {
             // 写入研究点数
-            buffer.writeVarInt(recipe.getResearchPointCost());
+            buffer.writeVarInt(recipe.getResearchCost());
+            // 写入升级点数
+            buffer.writeVarInt(recipe.getUpgradeCost());
             // 写入研究原料列表
             List<IngredientCountPair> researchIngredients = recipe.getResearchIngredientPairs();
             buffer.writeVarInt(researchIngredients.size());
@@ -105,7 +110,8 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
     };
 
     public FabricatingRecipe(
-            int researchPointCost,
+            int researchCost,
+            int upgradeCost,
             List<IngredientCountPair> researchIngredientPairs,
             List<IngredientCountPair> ingredientPairs,
             ItemStack result,
@@ -115,12 +121,15 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
         if (result.getCount() <= 0 || result.getCount() > 99) {
             throw new IllegalArgumentException("Output count must be between 1 and 99, got: " + result.getCount());
         }
-        if (researchPointCost < 0)
-            throw new IllegalArgumentException("Research point cost must be non-negative, got: " + researchPointCost);
+        if (researchCost < 0)
+            throw new IllegalArgumentException("Research point cost must be non-negative, got: " + researchCost);
+        if (upgradeCost < 0)
+            throw new IllegalArgumentException("Upgrade point cost must be non-negative, got: " + upgradeCost);
         if (processingTime <= 0)
             throw new IllegalArgumentException("Processing time must be positive, got: " + processingTime);
 
-        this.researchPointCost = researchPointCost;
+        this.researchCost = researchCost;
+        this.upgradeCost = upgradeCost;
         this.researchIngredientPairs = researchIngredientPairs;
         this.ingredientPairs = ingredientPairs;
         this.result = result;
@@ -137,7 +146,7 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
      * 检查指定物品容器是否包含配方所需的所有原料或研究原料（考虑数量）
      */
     public boolean hasRequiredIngredients(Container container, boolean research) {
-        return IngredientCountPair.hasRequiredIngredients(container, ingredientPairs);
+        return IngredientCountPair.hasRequiredIngredients(container, research ? researchIngredientPairs : ingredientPairs);
     }
 
     /**

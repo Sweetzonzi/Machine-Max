@@ -16,7 +16,6 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -27,7 +26,6 @@ import org.lwjgl.glfw.GLFW;
 import java.awt.*;
 
 public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("machine_max", "textures/gui/fabricator.png");
 
     private EditBox searchBox;
     private RecipeListWidget recipeListWidget;

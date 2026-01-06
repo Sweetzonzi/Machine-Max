@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.network;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.network.handler.research.*;
 import io.github.sweetzonzi.machine_max.network.payload.*;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.*;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCancelPayload;
@@ -22,6 +23,7 @@ public class MMPayloadRegistry {
     public static void register(final RegisterPayloadHandlersEvent event) {
         final PayloadRegistrar input = event.registrar("input:1.0.0");
         final PayloadRegistrar sync = event.registrar("sync:1.0.0");
+        final PayloadRegistrar research = event.registrar("research:1.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.0.0");
         //注册网络包及其处理
         input.playBidirectional(//移动输入
@@ -126,30 +128,62 @@ public class MMPayloadRegistry {
                 ConnectorSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ConnectorSyncPayload::handler)
         );
-        sync.playToClient(//玩家蓝图的自由研发点同步
+
+        research.playToClient(//玩家蓝图的自由研发点同步
                 FreeRpSyncPayload.TYPE,
                 FreeRpSyncPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(FreeRpSyncPayload::handler)
+                new MainThreadPayloadHandler<>(FreeRpSyncHandler::handler)
         );
-        sync.playToClient(//玩家蓝图的研发进度同步
+        research.playToServer(//玩家应用自由研发点
+                ResearchApplyFreeRpPayload.TYPE,
+                ResearchApplyFreeRpPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchApplyFreeRpHandler::handler)
+        );
+        research.playToClient(//玩家推进蓝图研发进度
                 ResearchPushPayload.TYPE,
                 ResearchPushPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchPushPayload::handler)
+                new MainThreadPayloadHandler<>(ResearchPushHandler::handler)
         );
-        sync.playToClient(//玩家蓝图的研发选择同步
+        research.playBidirectional(//玩家改变蓝图研发目标
                 ResearchSetPayload.TYPE,
                 ResearchSetPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchSetPayload::handler)
+                new DirectionalPayloadHandler<>(
+                        ResearchSetClientHandler::clientHandler,
+                        ResearchSetServerHandler::serverHandler
+                )
         );
-        sync.playToClient(//玩家蓝图的研发选择同步
+        research.playToServer(//玩家获取研发产物
+                ResearchClaimPayload.TYPE,
+                ResearchClaimPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchClaimHandler::handler)
+        );
+        research.playToServer(//玩家消耗研发点重新获取已研发蓝图
+                ResearchReclaimPayload.TYPE,
+                ResearchReclaimPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchReclaimHandler::handler)
+        );
+        research.playBidirectional(//玩家取消蓝图研发
                 ResearchCancelPayload.TYPE,
                 ResearchCancelPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchCancelPayload::handler)
+                new DirectionalPayloadHandler<>(
+                        ResearchCancelHandler::clientHandler,
+                        ResearchCancelHandler::serverHandler
+                )
         );
-        sync.playToClient(//通知客户端蓝图研发完成
+        research.playToClient(//通知客户端蓝图研发完成
                 ResearchCompletePayload.TYPE,
                 ResearchCompletePayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchCompletePayload::handler)
+                new MainThreadPayloadHandler<>(ResearchCompleteHandler::handler)
+        );
+        research.playToClient(//同步玩家蓝图研发产物
+                ResearchProductSyncPayload.TYPE,
+                ResearchProductSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchProductSyncHandler::handler)
+        );
+        research.playToClient(//同步玩家研发数据
+                ResearchAttachmentSyncPayload.TYPE,
+                ResearchAttachmentSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchAttachmentSyncHandler::handler)
         );
         misc.playToServer(//通过GUI配置载具属性
                 VehicleConfigPayload.TYPE,

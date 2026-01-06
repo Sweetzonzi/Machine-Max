@@ -1,5 +1,7 @@
 { 
-  "type": "machine_max:fabricating", 
+  "type": "machine_max:fabricating",
+  "research_cost": 5900,
+  "upgrade_cost": 590,
   "ingredients": [ 
     {
       "ingredient": {

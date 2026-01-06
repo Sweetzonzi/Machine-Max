@@ -145,21 +145,19 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
         }
     }
 
-    /**
-     * 根据物品Component中的部件类型修改物品显示的名称
-     *
-     * @param stack 物品堆
-     * @return 翻译键
-     */
-    @Override
-    public @NotNull Component getName(@NotNull ItemStack stack) {
-        try {
-            ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
-            return Component.translatable(type.toLanguageKey()).append(Component.translatable("item.machine_max.fabricating_blueprint"));
-        } catch (Exception e) {
-            return super.getName(stack);
-        }
+@Override
+public @NotNull Component getName(@NotNull ItemStack stack) {
+    try {
+        ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
+        int researchLevel = stack.getOrDefault(MMDataComponents.getRESEARCH_LEVEL(), 0);
+        return Component.translatable(type.toLanguageKey())
+                .append(Component.translatable("item.machine_max.fabricating_blueprint"))
+                .append(buildVersion(researchLevel));
+    } catch (Exception e) {
+        return super.getName(stack);
     }
+}
+
 
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
@@ -195,5 +193,16 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
     @Override
     public Color getColor(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
         return COLOR;
+    }
+
+    /**
+     * 根据研发等级生成版本号文本：
+     * 研发等级 5  -> V1.05
+     * 研发等级 200 -> V2.00
+     */
+    public static Component buildVersion(int researchLevel) {
+        int majorVersion = 1 + researchLevel / 100;
+        int subVersion = researchLevel - (majorVersion - 1) * 100;
+        return Component.literal(String.format(" V%d.%02d", majorVersion, subVersion));
     }
 }

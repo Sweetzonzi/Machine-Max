@@ -55,6 +55,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.part.invalid_connector_type", "部件%1$的连接点%2$s的类型%3$s非法，必须为\"simple\"或\"advanced\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "部件%1$s中的内部接口%2$s与%3$s的类型不匹配，至多只能有一个接口的类型为\"Special\"");
         //提示信息
+        this.add("toast.machine_max.research_complete", "研发完成！");
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
         this.add("message.machine_max.watch_interact_box_info", "[%1$s]");
         this.add("error.machine_max.use_part_item", "尝试放置%1$s时出现错误：%2$s");

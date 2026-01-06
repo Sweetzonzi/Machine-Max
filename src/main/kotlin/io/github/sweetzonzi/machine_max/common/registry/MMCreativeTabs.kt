@@ -24,6 +24,7 @@ object MMCreativeTabs {
                 .icon { ItemStack(MMItems.CROWBAR_ITEM) }
                 .displayItems { _, output ->
                     output.accept(MMItems.FABRICATOR_BLOCK_ITEM.get())
+                    output.accept(MMItems.PAD_ITEM.get())
                     output.accept(MMItems.CROWBAR_ITEM.get())
                     output.accept(MMItems.WELDING_TORCH_ITEM.get())
                     output.accept(MMItems.SPRAY_CAN_ITEM.get())
@@ -107,7 +108,7 @@ object MMCreativeTabs {
             externalParts.forEach { event.accept(it) }
         } else if (event.tab == MACHINE_MAX_ASSEMBLY_TAB.get()) {
             MachineMax.LOGGER.info("Putting assemblies into creative tab...")
-            val externalAssemblies = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
+            val externalAssemblies = ArrayList<ItemStack>(1)//将所有外部包预装配体加入创造物品栏
             MMDynamicRes.TEMPLATES.forEach { (loc, _) ->
                 val itemStack = ItemStack(MMItems.ASSEMBLY_ITEM)
                 itemStack.set(MMDataComponents.ASSEMBLY_PATH, loc)
@@ -116,7 +117,7 @@ object MMCreativeTabs {
             externalAssemblies.forEach { event.accept(it) }
         }  else if (event.tab == MACHINE_MAX_VEHICLE_BLUEPRINT_TAB.get()) {
             MachineMax.LOGGER.info("Putting blueprints into creative tab...")
-            val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
+            val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包载具蓝图加入创造物品栏
             MMDynamicRes.TEMPLATES.forEach { (loc, _) ->
                 val itemStack = ItemStack(MMItems.VEHICLE_BLUEPRINT)
                 itemStack.set(MMDataComponents.VEHICLE_BLUEPRINT_PATH, loc)
@@ -125,10 +126,11 @@ object MMCreativeTabs {
             externalBlueprints.forEach { event.accept(it) }
         } else if (event.tab == MACHINE_MAX_FABRICATING_BLUEPRINT_TAB.get()) {
             MachineMax.LOGGER.info("Putting fabricating blueprints into creative tab...")
-            val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
+            val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包部件蓝图加入创造物品栏
             MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
                 val itemStack = ItemStack(MMItems.FABRICATING_BLUEPRINT)
                 itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
+                itemStack.set(MMDataComponents.RESEARCH_LEVEL, 0)
                 itemStack.set(MMDataComponents.PART_TYPE, loc)
                 externalBlueprints.add(itemStack)
             }

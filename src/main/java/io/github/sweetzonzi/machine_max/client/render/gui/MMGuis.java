@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.CustomHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.InteractHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.AssemblyHud3D;
+import io.github.sweetzonzi.machine_max.client.render.gui.screen.BlueprintResearchScreen;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScreen;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.ItemStorageSubsystemScreen;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.VehicleNamingScreen;
@@ -36,6 +37,7 @@ public class MMGuis {
     @SubscribeEvent
     private static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(FABRICATING_MENU.get(), FabricatingScreen::new);
+        event.register(BLUEPRINT_RESEARCH_MENU.get(), BlueprintResearchScreen::new);
         event.register(VEHICLE_NAMING_MENU.get(), VehicleNamingScreen::new);
         event.register(ITEM_STORAGE_SUBSYSTEM_MENU.get(), ItemStorageSubsystemScreen::new);
     }

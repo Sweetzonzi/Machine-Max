@@ -22,7 +22,6 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
     public boolean disableVanillaActions;
     public LivingEntity passenger;
     public boolean occupied;
-    private int hintTicks = 0;
     public SeatSubsystem(ISubsystemHost owner, String name, SeatSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
@@ -51,15 +50,6 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             } else if (part.entity == null) {
                 removePassenger();
             } else {
-                if(passenger instanceof Player player && hintTicks > 0) {
-                    player.displayClientMessage(
-                            Component.translatable("message.machine_max.leaving_vehicle",
-                                    KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
-                                    0.0
-                            ), true
-                    );
-                    hintTicks--;
-                }
                 passenger.resetFallDistance();//防止摔死
             }
         } else {
@@ -92,7 +82,6 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
             getOwner().getSubPart().getPart().vehicle.activate();
             getOwner().getSubPart().getPart().vehicle.recalculateCameraDistance();
-            hintTicks = 2;
         }
     }
 
@@ -110,7 +99,6 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             sendSignalToAllTargets(channel, 0);
         }
         resetSignalOutputs();
-        hintTicks = 0;
     }
 
     @Override

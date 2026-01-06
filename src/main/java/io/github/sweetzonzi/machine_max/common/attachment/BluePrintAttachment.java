@@ -14,14 +14,20 @@ import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
 import lombok.Getter;
-import lombok.Setter;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
@@ -29,9 +35,11 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
@@ -48,8 +56,7 @@ public class BluePrintAttachment {
     private final Map<ResourceLocation, Float> researchedRecipes; // 所有研发过的配方及其研究层数
     private final Map<ResourceLocation, LinkedHashSet<RecipeHolder<FabricatingRecipe>>> availableRecipes = new HashMap<>();
     @Getter
-    @Setter
-    private ItemStack product;
+    private final Map<ResourceLocation, ItemStack> products; // 所有待领取的蓝图物品
     @Getter
     private boolean dirty = true;
     private int inventoryHash = Integer.MIN_VALUE;
@@ -72,27 +79,82 @@ public class BluePrintAttachment {
 
     public static final Codec<Map<ResourceLocation, Float>> RESEARCHED_RECIPES_CODEC = Codec.unboundedMap(ResourceLocation.CODEC, Codec.FLOAT);
 
+    public static final Codec<Map<ResourceLocation, ItemStack>> PRODUCTS_CODEC = Codec.unboundedMap(ResourceLocation.CODEC, ItemStack.CODEC);
+
     public static final Codec<BluePrintAttachment> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.INT.optionalFieldOf("research_point", 0).forGetter(BluePrintAttachment::getFreeResearchPoint),
                     ResourceLocation.CODEC.optionalFieldOf("researching_recipe", FabricatingRecipe.EMPTY).forGetter(BluePrintAttachment::getResearchingRecipe),
-                    RESEARCHED_RECIPES_CODEC.optionalFieldOf("researched_recipes", new HashMap<>()).forGetter(BluePrintAttachment::getResearchedRecipes),
-                    ItemStack.CODEC.optionalFieldOf("product", ItemStack.EMPTY).forGetter(BluePrintAttachment::getProduct)
+                    RESEARCHED_RECIPES_CODEC.fieldOf("researched_recipes").forGetter(BluePrintAttachment::getResearchedRecipes),
+                    PRODUCTS_CODEC.fieldOf("products").forGetter(BluePrintAttachment::getProducts)
             ).apply(instance, BluePrintAttachment::new)
     );
 
-    public BluePrintAttachment(int freeResearchPoint, ResourceLocation researchingRecipe, Map<ResourceLocation, Float> researchedRecipes, ItemStack product) {
+    public static final StreamCodec<FriendlyByteBuf, Map<ResourceLocation, Float>> RESEARCHED_RECIPES_STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public @NotNull Map<ResourceLocation, Float> decode(FriendlyByteBuf buffer) {
+            int size = buffer.readInt();
+            Map<ResourceLocation, Float> products = new LinkedHashMap<>(size);
+
+            for (int i = 0; i < size; i++) {
+                ResourceLocation key = ResourceLocation.STREAM_CODEC.decode(buffer);
+                Float progress = ByteBufCodecs.FLOAT.decode(buffer);
+                products.put(key, progress);
+            }
+            return products;
+        }
+
+        @Override
+        public void encode(FriendlyByteBuf buffer, Map<ResourceLocation, Float> products) {
+            buffer.writeInt(products.size());
+            products.forEach((key, value) -> {
+                ResourceLocation.STREAM_CODEC.encode(buffer, key);
+                ByteBufCodecs.FLOAT.encode(buffer, value);
+            });
+        }
+    };
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, Map<ResourceLocation, ItemStack>> PRODUCTS_STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public @NotNull Map<ResourceLocation, ItemStack> decode(RegistryFriendlyByteBuf buffer) {
+            int size = buffer.readInt();
+            Map<ResourceLocation, ItemStack> products = new LinkedHashMap<>(size);
+
+            for (int i = 0; i < size; i++) {
+                ResourceLocation key = ResourceLocation.STREAM_CODEC.decode(buffer);
+                ItemStack value = ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer);
+                products.put(key, value);
+            }
+            return products;
+        }
+
+        @Override
+        public void encode(RegistryFriendlyByteBuf buffer, Map<ResourceLocation, ItemStack> products) {
+            buffer.writeInt(products.size());
+            products.forEach((key, value) -> {
+                ResourceLocation.STREAM_CODEC.encode(buffer, key);
+                ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, value);
+            });
+        }
+    };
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, BluePrintAttachment> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, BluePrintAttachment::getFreeResearchPoint,
+            ResourceLocation.STREAM_CODEC, BluePrintAttachment::getResearchingRecipe,
+            RESEARCHED_RECIPES_STREAM_CODEC, BluePrintAttachment::getResearchedRecipes,
+            PRODUCTS_STREAM_CODEC, BluePrintAttachment::getProducts,
+            BluePrintAttachment::new
+    );
+
+    public BluePrintAttachment(int freeResearchPoint, ResourceLocation researchingRecipe, Map<ResourceLocation, Float> researchedRecipes, Map<ResourceLocation, ItemStack> products) {
         this.freeResearchPoint = freeResearchPoint;
         this.researchingRecipe = researchingRecipe;
-        this.researchedRecipes = researchedRecipes;
-        this.product = product;
+        this.researchedRecipes = new HashMap<>(researchedRecipes);
+        this.products = new HashMap<>(products);
     }
 
     public BluePrintAttachment(int freeResearchPoint) {
-        this.freeResearchPoint = freeResearchPoint;
-        this.researchingRecipe = FabricatingRecipe.EMPTY;
-        this.researchedRecipes = new HashMap<>();
-        this.product = ItemStack.EMPTY;
+        this(freeResearchPoint, FabricatingRecipe.EMPTY, new HashMap<>(), new HashMap<>());
     }
 
     /**
@@ -103,7 +165,7 @@ public class BluePrintAttachment {
      */
     public boolean canReclaim(ResourceLocation recipe) {
         int level = getResearchLevel(recipe);
-        if (level >= 1) {
+        if (level >= 1 && getProducts().getOrDefault(recipe, ItemStack.EMPTY) == ItemStack.EMPTY) {
             RecipeHolder<FabricatingRecipe> recipeHolder = getAllResearchable().get(recipe);
             if (recipeHolder != null) {
                 int requiredResearchPoint = getReclaimRpCost(recipe);
@@ -114,20 +176,45 @@ public class BluePrintAttachment {
 
 
     /**
-     * 重新获取某个已经研发过的蓝图
+     * 消耗自由研发点重新获取某个已经研发过的蓝图
      *
      * @param player 玩家
      * @param recipe 配方ID
-     * @return 蓝图物品
      */
-    public ItemStack reclaim(Player player, ResourceLocation recipe) {
+    public void reclaim(Player player, ResourceLocation recipe) {
         if (canReclaim(recipe)) {
             int rpCost = getReclaimRpCost(recipe);
             setFreeResearchPoint(player, freeResearchPoint - rpCost);
             ItemStack stack = new ItemStack(MMItems.getFABRICATING_BLUEPRINT());
             stack.set(MMDataComponents.getRECIPE_TYPE(), recipe);
-            return stack;
-        } else return ItemStack.EMPTY;
+            stack.set(MMDataComponents.getRESEARCH_LEVEL(), getResearchLevel(recipe) - 1);
+            getProducts().put(recipe, stack);
+            this.markDirty(player);
+            if (player instanceof ServerPlayer serverPlayer)
+                PacketDistributor.sendToPlayer(serverPlayer, new ResearchProductSyncPayload(getProducts()));
+        }
+    }
+
+    /**
+     * 获取指定配方的蓝图物品，需要先完成研发或消耗自由研发点重新绘制蓝图物品
+     *
+     * @param player 玩家
+     * @param recipe 配方ID
+     */
+    public void claim(Player player, ResourceLocation recipe) {
+        ItemStack product = getProducts().getOrDefault(recipe, ItemStack.EMPTY);
+        if (product != ItemStack.EMPTY) {
+            boolean success = player.getInventory().add(product); // 首先尝试放入背包
+            Entity itemEntity = product.getEntityRepresentation();
+            if (!success && itemEntity != null) { // 未成功放入背包则掉落为物品
+                itemEntity.setPos(player.getPosition(1));
+                player.level().addFreshEntity(itemEntity);
+            }
+            getProducts().remove(recipe); // 清空暂存
+            this.markDirty(player);
+            if (player instanceof ServerPlayer serverPlayer)
+                PacketDistributor.sendToPlayer(serverPlayer, new ResearchProductSyncPayload(getProducts()));
+        }
     }
 
     /**
@@ -143,9 +230,9 @@ public class BluePrintAttachment {
             RecipeHolder<FabricatingRecipe> recipeHolder = getResearching();
             // 当前配方已研发进度
             float currentResearchProgress = researchedRecipes.getOrDefault(researchingRecipe, 0f);
-            if (recipeHolder != null && currentResearchProgress > 0f) { // 仅提交材料并开始了的研究可推进研究进度
+            if (recipeHolder != null && currentResearchProgress >= 0f) { // 仅提交材料并开始了的研究可推进研究进度
                 FabricatingRecipe recipe = recipeHolder.value();
-                int requiredResearchPoint = recipe.getResearchPointCost();
+                int requiredResearchPoint = recipe.getResearchCost();
                 // 当前研发等级
                 int currentResearchLevel = getResearchLevel(researchingRecipe);
                 // 当前等级研发进度
@@ -159,16 +246,17 @@ public class BluePrintAttachment {
                         PacketDistributor.sendToPlayer(serverPlayer, new ResearchPushPayload(researchingRecipe, researchedRecipes.get(researchingRecipe)));
                     }
                 } else { // 溢出部分作为自由研发点
-                    if (product.isEmpty()) {
+                    if (products.getOrDefault(researchingRecipe, ItemStack.EMPTY).isEmpty()) {
                         researchedRecipes.put(researchingRecipe, currentResearchLevel + 1f);
                         freeRp = rpToAdd - (requiredResearchPoint - currentLevelResearchPoint);
                         // 暂存蓝图物品
                         ItemStack stack = new ItemStack(MMItems.getFABRICATING_BLUEPRINT());
                         stack.set(MMDataComponents.getRECIPE_TYPE(), researchingRecipe); // 设置配方ID
-                        this.product = stack; // 保存蓝图物品
-                        markDirty(); // 标记可用配方列表需要更新
+                        stack.set(MMDataComponents.getRESEARCH_LEVEL(), currentResearchLevel); // 设置研发等级
+                        this.products.put(researchingRecipe, stack); // 保存蓝图物品
+                        markDirty(player); // 标记可用配方列表需要更新
                         if (player instanceof ServerPlayer serverPlayer) { // 发包同步
-                            PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchingRecipe, currentResearchLevel, stack));
+                            PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchingRecipe, currentResearchLevel + 1, stack));
                         }
                         researchingRecipe = FabricatingRecipe.EMPTY; // 研发完成，清空目标
                     } else freeRp = rpToAdd; // 蓝图物品已满，研发进度直接转化为自由研发点
@@ -186,11 +274,11 @@ public class BluePrintAttachment {
             if (!hasStartedResearching(researchingRecipe))
                 throw new IllegalStateException("Cannot research recipe before starting researching it");
             RecipeHolder<FabricatingRecipe> recipeHolder = getResearching();
-            if (recipeHolder != null) {
+            if (recipeHolder != null && canStartResearching(player, researchingRecipe)) {
                 FabricatingRecipe recipe = recipeHolder.value();
-                int requiredResearchPoint = recipe.getResearchPointCost();
+                int requiredResearchPoint = recipe.getResearchCost();
                 // 当前配方已研发进度
-                float currentResearchProgress = researchedRecipes.computeIfAbsent(researchingRecipe, k -> Float.MIN_VALUE);
+                float currentResearchProgress = researchedRecipes.computeIfAbsent(researchingRecipe, k -> 0f);
                 // 当前研发等级
                 int currentResearchLevel = getResearchLevel(researchingRecipe);
                 // 当前等级研发进度
@@ -201,9 +289,17 @@ public class BluePrintAttachment {
                     researchedRecipes.put(researchingRecipe, currentLevelResearchProgress + (freeResearchPoint / (float) requiredResearchPoint));
                     setFreeResearchPoint(player, 0);
                 } else { // 溢出部分作为自由研发点
-                    markDirty(); // 标记可用配方列表需要更新
                     researchedRecipes.put(researchingRecipe, currentResearchLevel + 1f);
                     setFreeResearchPoint(player, freeResearchPoint - (requiredResearchPoint - currentLevelResearchPoint));
+                    // 暂存蓝图物品
+                    ItemStack stack = new ItemStack(MMItems.getFABRICATING_BLUEPRINT());
+                    stack.set(MMDataComponents.getRECIPE_TYPE(), researchingRecipe); // 设置配方ID
+                    stack.set(MMDataComponents.getRESEARCH_LEVEL(), getResearchLevel(researchingRecipe) - 1); // 设置研发等级
+                    markDirty(player); // 标记可用配方列表需要更新
+                    this.products.put(researchingRecipe, stack); // 保存蓝图物品
+                    if (player instanceof ServerPlayer serverPlayer) { // 发包同步
+                        PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchingRecipe, currentResearchLevel, stack));
+                    }
                     researchingRecipe = FabricatingRecipe.EMPTY; // 研发完成，清空目标
                 }
             } else clearResearching(player); // 清除非法研究目标
@@ -218,7 +314,7 @@ public class BluePrintAttachment {
         RecipeHolder<FabricatingRecipe> recipeHolder = getAllResearchable().get(recipe);
         if (recipeHolder != null) {
             int researchLevel = getResearchLevel(recipe);
-            return recipeHolder.value().getResearchPointCost();
+            return recipeHolder.value().getResearchCost();
         } else return 0;
     }
 
@@ -234,6 +330,7 @@ public class BluePrintAttachment {
 
     public void setFreeResearchPoint(Player player, int freeResearchPoint) {
         this.freeResearchPoint = freeResearchPoint;
+        this.markDirty(player);
         if (player instanceof ServerPlayer serverPlayer) {
             PacketDistributor.sendToPlayer(serverPlayer, new FreeRpSyncPayload(freeResearchPoint));
         }
@@ -248,6 +345,7 @@ public class BluePrintAttachment {
      */
     public boolean canStartResearching(Player player, ResourceLocation recipe) {
         boolean result = false;
+        if (hasStartedResearching(recipe)) return true; // 已开始研发则直接返回
         var allRecipes = getAllResearchable();
         RecipeHolder<FabricatingRecipe> recipeHolder = allRecipes.get(recipe);
         if (recipeHolder != null) {
@@ -289,6 +387,7 @@ public class BluePrintAttachment {
 
     public void clearResearching(Player player) {
         this.researchingRecipe = FabricatingRecipe.EMPTY;
+        this.markDirty(player);
         if (player instanceof ServerPlayer serverPlayer)
             PacketDistributor.sendToPlayer(serverPlayer, new ResearchCancelPayload());
     }
@@ -322,7 +421,7 @@ public class BluePrintAttachment {
     public int calculateRpToAdd(int basicRp) {
         if (researchingRecipe != FabricatingRecipe.EMPTY) {
             // 当前配方已研发进度
-            float currentResearchProgress = researchedRecipes.computeIfAbsent(researchingRecipe, k -> Float.MIN_VALUE);
+            float currentResearchProgress = researchedRecipes.getOrDefault(researchingRecipe, 0f);
             // 当前研发等级
             int currentResearchLevel = (int) Math.floor(currentResearchProgress);
             return basicRp;
@@ -373,8 +472,9 @@ public class BluePrintAttachment {
     /**
      * 标记可用配方列表需要更新
      */
-    public void markDirty() {
+    public void markDirty(Player player) {
         dirty = true;
+        player.setData(MMAttachments.getBLUEPRINT(), this);
     }
 
     /**
@@ -431,12 +531,14 @@ public class BluePrintAttachment {
             checkAndRecord(inventory.items.get(i), player);
         }
         // 检查专用存储中的配方 TODO: 蓝图库检查
-        checkAndRecord(product, player);
+        for (ItemStack product : research.products.values())
+            checkAndRecord(product, player);
     }
 
     /**
      * 检查是否为部件蓝图，并将其记录于可用配方列表中
-     * @param stack 物品
+     *
+     * @param stack  物品
      * @param player 玩家，用于查询注册表
      */
     private void checkAndRecord(ItemStack stack, Player player) {
@@ -464,10 +566,17 @@ public class BluePrintAttachment {
     }
 
     @SubscribeEvent
+    public static void onEntityJoin(EntityJoinLevelEvent event) {
+        if (!event.getLevel().isClientSide() && event.getEntity() instanceof ServerPlayer player) {
+            PacketDistributor.sendToPlayer(player, new ResearchAttachmentSyncPayload(player.getData(MMAttachments.getBLUEPRINT())));
+        }
+    }
+
+    @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (event.getEntity() instanceof Player player) {
-            var research = player.getData(MMAttachments.getBLUEPRINT());
             if (player.tickCount % 100 == 0) { // 定时更新可用配方列表
+                var research = player.getData(MMAttachments.getBLUEPRINT());
                 if (research.hashInventory(player) != research.inventoryHash) {
                     research.rebuildAvailableRecipes(player);
                 }
@@ -483,22 +592,22 @@ public class BluePrintAttachment {
 
     @SubscribeEvent
     public static void onContainerChanged(PlayerContainerEvent.Close event) {
-        event.getEntity().getData(MMAttachments.getBLUEPRINT()).markDirty();
+        event.getEntity().getData(MMAttachments.getBLUEPRINT()).markDirty(event.getEntity());
     }
 
     @SubscribeEvent
     public static void onCrafted(PlayerEvent.ItemCraftedEvent event) {
-        event.getEntity().getData(MMAttachments.getBLUEPRINT()).markDirty();
+        event.getEntity().getData(MMAttachments.getBLUEPRINT()).markDirty(event.getEntity());
     }
 
     @SubscribeEvent
     public static void onItemPickup(ItemEntityPickupEvent.Post event) {
-        event.getPlayer().getData(MMAttachments.getBLUEPRINT()).markDirty();
+        event.getPlayer().getData(MMAttachments.getBLUEPRINT()).markDirty(event.getPlayer());
     }
 
     @SubscribeEvent
     public static void onItemToss(ItemTossEvent event) {
-        event.getPlayer().getData(MMAttachments.getBLUEPRINT()).markDirty();
+        event.getPlayer().getData(MMAttachments.getBLUEPRINT()).markDirty(event.getPlayer());
     }
 
 

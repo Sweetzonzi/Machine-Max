@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.menu.BlueprintResearchMenu;
 import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
 import io.github.sweetzonzi.machine_max.common.menu.VehicleNamingMenu;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.menu.ItemStorageSubsystemMenu;
@@ -24,6 +25,13 @@ public class MMMenus {
             "vehicle_naming_menu",
             ()-> IMenuTypeExtension.create(VehicleNamingMenu::new)
     );
+
+    /**
+     * 蓝图研发菜单
+     */
+    public static final Supplier<MenuType<BlueprintResearchMenu>> BLUEPRINT_RESEARCH_MENU = MENU_TYPES.register(
+            "blueprint_research",
+            () -> IMenuTypeExtension.create(BlueprintResearchMenu::new));
 
     public static final Supplier<MenuType<ItemStorageSubsystemMenu>> ITEM_STORAGE_SUBSYSTEM_MENU = MENU_TYPES.register(
             "item_storage_subsystem_menu",
