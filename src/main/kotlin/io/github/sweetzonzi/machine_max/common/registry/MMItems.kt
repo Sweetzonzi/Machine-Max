@@ -43,18 +43,25 @@ object MMItems {
     }
 
     //制造台
+//    @JvmStatic
+//    val FABRICATOR_BLOCK_ITEM = MachineMax.REGISTER.item{
+//        id="fabricator"
+//        factory = { BlockItem(MMBlocks.FABRICATOR_BLOCK.get(), Item.Properties()) }
+//    }
+
+    //研究台
     @JvmStatic
-    val FABRICATOR_BLOCK_ITEM = MachineMax.REGISTER.item{
-        id="fabricator_block"
-        factory = { BlockItem(MMBlocks.FABRICATOR_BLOCK.get(), Item.Properties()) }
+    val RESEARCH_TABLE_BLOCK_ITEM = MachineMax.REGISTER.item{
+        id="research_table"
+        factory = { BlockItem(MMBlocks.RESEARCH_TABLE_BLOCK.get(), Item.Properties()) }
     }
 
     //PAD
-    @JvmStatic
-    val PAD_ITEM = MachineMax.REGISTER.item{
-        id="pad"
-        factory = { PadItem() }
-    }
+//    @JvmStatic
+//    val PAD_ITEM = MachineMax.REGISTER.item{
+//        id="pad"
+//        factory = { PadItem() }
+//    }
 
     //载具蓝图物品原型
     @JvmStatic
@@ -163,7 +170,8 @@ object MMItems {
         )
         event.registerItem(
             CustomModelBlockEntityExtension(),
-            FABRICATOR_BLOCK_ITEM
+//            FABRICATOR_BLOCK_ITEM,
+            RESEARCH_TABLE_BLOCK_ITEM
         )
     }
 

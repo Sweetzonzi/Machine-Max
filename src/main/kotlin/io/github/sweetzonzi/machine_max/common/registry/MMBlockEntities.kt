@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity
+import io.github.sweetzonzi.machine_max.common.block.research_table.ResearchTableBlockEntity
 import io.github.sweetzonzi.machine_max.common.block.road.RoadBaseBlockEntity
 
 object MMBlockEntities {
@@ -21,6 +22,14 @@ object MMBlockEntities {
         factory = ::FabricatorBlockEntity
         validBlocks {
             +MMBlocks.FABRICATOR_BLOCK.get()
+        }
+    }
+    @JvmStatic
+    val RESEARCH_TABLE_BLOCK_ENTITY = MachineMax.REGISTER.blockEntityType{
+        id = "research_table"
+        factory = ::ResearchTableBlockEntity
+        validBlocks {
+            +MMBlocks.RESEARCH_TABLE_BLOCK.get()
         }
     }
 }

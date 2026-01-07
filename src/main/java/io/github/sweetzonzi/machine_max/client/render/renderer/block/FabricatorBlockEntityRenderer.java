@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.client.render.renderer;
+package io.github.sweetzonzi.machine_max.client.render.renderer.block;
 
 import cn.solarmoon.spark_core.animation.renderer.GeoBlockEntityRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
