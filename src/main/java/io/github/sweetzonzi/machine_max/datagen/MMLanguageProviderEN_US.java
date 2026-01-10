@@ -134,5 +134,12 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("hud.key.machine_max.cycle_recipe", "[%1$s] Cycle Recipe (%2$s Available)");
         this.add("hud.key.machine_max.tear_down", "[%1$s] Remove part");
         this.add("hud.key.machine_max.detach", "[%1$s+%2$s] Detach connector");
+        // Research Point Hud
+        this.add("hud.hint.machine_max.rp_add_reason.exp", "Gain EXP");
+        this.add("hud.hint.machine_max.rp_add_reason.repair", "Repair");
+        this.add("hud.hint.machine_max.rp_add_reason.assembly", "Assembly");
+        this.add("hud.hint.machine_max.rp_add_reason.part_damage", "Damage Part");
+        this.add("hud.hint.machine_max.rp_add_reason.part_destroy", "Destroy Part");
+        this.add("hud.hint.machine_max.rp_add_reason.unknown", "Unknown");
     }
 }

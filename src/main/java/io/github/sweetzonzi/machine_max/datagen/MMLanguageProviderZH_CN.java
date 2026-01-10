@@ -10,18 +10,18 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
-        //按键类别
+        // 按键类别
         this.add("key.category.machine_max.general", "Machine Max:通用");
         this.add("key.category.machine_max.ground", "Machine Max:地面载具");
         this.add("key.category.machine_max.ship", "Machine Max:舰艇");
         this.add("key.category.machine_max.plane", "Machine Max:飞行器");
         this.add("key.category.machine_max.mech", "Machine Max:机甲");
         this.add("key.category.machine_max.assembly", "Machine Max:组装");
-        //按键名称-通用
+        // 按键名称-通用
         this.add("key.machine_max.general.free_cam", "自由摄像");
         this.add("key.machine_max.general.interact", "交互");
         this.add("key.machine_max.general.leave_vehicle", "离开载具");
-        //按键名称-地面载具
+        // 按键名称-地面载具
         this.add("key.machine_max.ground.forward", "前进");
         this.add("key.machine_max.ground.backward", "后退");
         this.add("key.machine_max.ground.leftward", "左转");
@@ -31,13 +31,13 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.machine_max.ground.down_shift", "降档");
         this.add("key.machine_max.ground.hand_brake", "手刹 (按住)");
         this.add("key.machine_max.ground.toggle_hand_brake", "手刹 (切换)");
-        //按键名称-组装
+        // 按键名称-组装
         this.add("key.machine_max.assembly.add_attach_angle", "旋转部件(+)");
         this.add("key.machine_max.assembly.sub_attach_angle", "旋转部件(-)");
         this.add("key.machine_max.assembly.cycle_connector", "循环部件连接口");
         this.add("key.machine_max.assembly.cycle_variant", "循环部件变体");
         this.add("key.machine_max.assembly.cycle_recipe", "循环切换配方");
-        //内容包异常处理
+        // 内容包异常处理
         this.add("error.machine_max.load", "加载外部包文件: %1$s 时出错，原因: ");
         this.add("error.machine_max.invalid_resource_location", "文件资源路径非法，仅允许小写英文字母、数字、下划线和连字符");
         this.add("error.machine_max.subpart.zero_mass", "零件质量必须大于零");
@@ -49,12 +49,12 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.seat_subsystem.no_view", "座椅子系统必须允许乘客使用第一人称视角或第三人称视角之一");
         this.add("error.machine_max.item_storage_subsystem.invalid_row_num", "储物子系统储物空间行数必须大于1之间");
         this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "储物子系统储物空间列数必须大于1之间");
-        //组装异常处理
+        // 组装异常处理
         this.add("error.machine_max.part.model_not_found", "未找到模型文件: %1$s");
         this.add("error.machine_max.part.connector_locator_not_found", "部件%1$的模型中未找到的连接点%2$s的定位器%3$s");
         this.add("error.machine_max.part.invalid_connector_type", "部件%1$的连接点%2$s的类型%3$s非法，必须为\"simple\"或\"advanced\"");
         this.add("error.machine_max.part.invalid_internal_connector_connection", "部件%1$s中的内部接口%2$s与%3$s的类型不匹配，至多只能有一个接口的类型为\"Special\"");
-        //提示信息
+        // 提示信息
         this.add("toast.machine_max.research_complete", "研发完成！");
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
         this.add("message.machine_max.watch_interact_box_info", "[%1$s]");
@@ -71,7 +71,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("message.machine_max.blueprint_error", "保存蓝图失败:%1$s");
         this.add("message.machine_max.blueprint_pass", "未选中任何载具，取消保存蓝图");
         this.add("message.machine_max.blueprint.place_failed", "空间不足，无法部署载具");
-        //物品
+        // 物品
         this.add("block.machine_max.fabricator", "制造器(WIP)");
         this.add("block.machine_max.research_table", "研究台");
         this.add("itemGroup.machine_max.main", "MachineMax: 工具与材料");
@@ -89,7 +89,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "初级电子元件");
         this.add("item.machine_max.power_component_1", "初级能源组件");
         this.add("item.machine_max.energetic_component_1", "初级含能材料");
-        //菜单
+        // 菜单
         this.add("gui.machine_max.confirm", "确认");
         this.add("gui.machine_max.cancel", "取消");
         this.add("gui.machine_max.enter_vehicle_name", "设置载具名称");
@@ -121,7 +121,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.fabricator.output_count", "产出数量: %s");
         this.add("gui.machine_max.fabricator.recipe_description", "配方描述:");
         this.add("gui.machine_max.fabricator.item_description", "物品描述:");
-        //Hud
+        // 组装HUD
         this.add("hud.warn.machine_max.subpart_destroying", "❌ 零件已损毁，销毁倒计时: %1$s秒");
         this.add("hud.warn.machine_max.subsystem_malfunction", "❌ %1$s瘫痪");
         this.add("hud.hint.machine_max.subsystem_durability", "⚠ %1$s耐久度未满: %2$s/%3$s");
@@ -133,5 +133,12 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("hud.key.machine_max.cycle_recipe", "[%1$s] 切换配方(%2$s可用)");
         this.add("hud.key.machine_max.tear_down", "[%1$s] 拆除部件");
         this.add("hud.key.machine_max.detach", "[%1$s+%2$s] 断开连接点");
+        // 研究点显示HUD
+        this.add("hud.hint.machine_max.rp_add_reason.exp", "获得经验");
+        this.add("hud.hint.machine_max.rp_add_reason.repair", "维修部件");
+        this.add("hud.hint.machine_max.rp_add_reason.assembly", "组装部件");
+        this.add("hud.hint.machine_max.rp_add_reason.part_damage", "伤害部件");
+        this.add("hud.hint.machine_max.rp_add_reason.part_destroy", "摧毁部件");
+        this.add("hud.hint.machine_max.rp_add_reason.unknown", "未知");
     }
 }

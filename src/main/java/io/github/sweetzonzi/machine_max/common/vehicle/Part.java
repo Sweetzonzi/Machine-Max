@@ -313,8 +313,8 @@ public class Part {
             //创建部件内子系统
             createSubsystems(subPart, subPartAttr.subsystems);//创建子系统，赋予部件实际功能
             //创建命中判定区属性并匹配对应子系统(内部实现)
-            for (HitBoxAttr hitBoxAttr : subPart.attr.hitBoxes.values()) {
-                subPart.hitBoxes.put(hitBoxAttr.hitBoxName(), new HitBox(subPart, hitBoxAttr));
+            for (Map.Entry<String, HitBoxAttr> entry : subPart.attr.hitBoxes.entrySet()) {
+                subPart.hitBoxes.put(entry.getKey(), new HitBox(subPart, entry.getValue()));
             }
         }
         //TODO: 连接内部连接器

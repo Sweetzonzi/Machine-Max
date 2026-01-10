@@ -139,7 +139,7 @@ public class SubPartAttr {
 
             for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {
-                    String hitBoxName = hitBoxEntry.getValue().hitBoxName();
+                    String hitBoxName = hitBoxEntry.getKey();
                     OBone bone = bones.get(hitBoxEntry.getKey());
 
                     switch (hitBoxEntry.getValue().shapeType()) {

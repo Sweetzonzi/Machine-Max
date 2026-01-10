@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.attachment;
 
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -13,6 +14,9 @@ import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
+import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
+import io.netty.buffer.ByteBuf;
+import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -28,20 +32,20 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
+import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.graalvm.nativebridge.In;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.*;
 
 //TODO:
 // 加点，可自定义维修与组装速度加成，耐久度加成，根据加点数决定蓝图版本号和claim所需自由研发点
@@ -50,6 +54,9 @@ import java.util.Map;
 public class BluePrintAttachment {
     @Getter
     private int freeResearchPoint;
+    @Getter(value = AccessLevel.PRIVATE)
+    private int pendingResearchPoint;
+    private final List<Pair<RpAddReason, Integer>> rpChangeRecords = new ArrayList<>();
     @Getter
     private ResourceLocation researchingRecipe;
     @Getter
@@ -84,11 +91,45 @@ public class BluePrintAttachment {
     public static final Codec<BluePrintAttachment> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.INT.optionalFieldOf("research_point", 0).forGetter(BluePrintAttachment::getFreeResearchPoint),
+                    Codec.INT.optionalFieldOf("pending_research_point", 0).forGetter(BluePrintAttachment::getPendingResearchPoint),
                     ResourceLocation.CODEC.optionalFieldOf("researching_recipe", FabricatingRecipe.EMPTY).forGetter(BluePrintAttachment::getResearchingRecipe),
                     RESEARCHED_RECIPES_CODEC.fieldOf("researched_recipes").forGetter(BluePrintAttachment::getResearchedRecipes),
                     PRODUCTS_CODEC.fieldOf("products").forGetter(BluePrintAttachment::getProducts)
             ).apply(instance, BluePrintAttachment::new)
     );
+
+    public static final StreamCodec<FriendlyByteBuf, Pair<RpAddReason, Integer>> RP_CHANGE_STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public @NotNull Pair<RpAddReason, Integer> decode(FriendlyByteBuf buffer) {
+            return new Pair<>(RpAddReason.STREAM_CODEC.decode(buffer), buffer.readInt());
+        }
+
+        @Override
+        public void encode(FriendlyByteBuf buffer, Pair<RpAddReason, Integer> pair) {
+            RpAddReason.STREAM_CODEC.encode(buffer, pair.getFirst());
+            buffer.writeInt(pair.getSecond());
+        }
+    };
+
+    public static final StreamCodec<FriendlyByteBuf, List<Pair<RpAddReason, Integer>>> RP_CHANGE_LIST_STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public @NotNull List<Pair<RpAddReason, Integer>> decode(FriendlyByteBuf buffer) {
+            int size = buffer.readInt();
+            List<Pair<RpAddReason, Integer>> pairs = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                pairs.add(RP_CHANGE_STREAM_CODEC.decode(buffer));
+            }
+            return pairs;
+        }
+
+        @Override
+        public void encode(FriendlyByteBuf buffer, List<Pair<RpAddReason, Integer>> pairs) {
+            buffer.writeInt(pairs.size());
+            for (Pair<RpAddReason, Integer> pair : pairs) {
+                RP_CHANGE_STREAM_CODEC.encode(buffer, pair);
+            }
+        }
+    };
 
     public static final StreamCodec<FriendlyByteBuf, Map<ResourceLocation, Float>> RESEARCHED_RECIPES_STREAM_CODEC = new StreamCodec<>() {
         @Override
@@ -140,21 +181,23 @@ public class BluePrintAttachment {
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BluePrintAttachment> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, BluePrintAttachment::getFreeResearchPoint,
+            ByteBufCodecs.INT, BluePrintAttachment::getPendingResearchPoint,
             ResourceLocation.STREAM_CODEC, BluePrintAttachment::getResearchingRecipe,
             RESEARCHED_RECIPES_STREAM_CODEC, BluePrintAttachment::getResearchedRecipes,
             PRODUCTS_STREAM_CODEC, BluePrintAttachment::getProducts,
             BluePrintAttachment::new
     );
 
-    public BluePrintAttachment(int freeResearchPoint, ResourceLocation researchingRecipe, Map<ResourceLocation, Float> researchedRecipes, Map<ResourceLocation, ItemStack> products) {
+    public BluePrintAttachment(int freeResearchPoint, int pendingResearchPoint, ResourceLocation researchingRecipe, Map<ResourceLocation, Float> researchedRecipes, Map<ResourceLocation, ItemStack> products) {
         this.freeResearchPoint = freeResearchPoint;
+        this.pendingResearchPoint = pendingResearchPoint;
         this.researchingRecipe = researchingRecipe;
         this.researchedRecipes = new HashMap<>(researchedRecipes);
         this.products = new HashMap<>(products);
     }
 
     public BluePrintAttachment(int freeResearchPoint) {
-        this(freeResearchPoint, FabricatingRecipe.EMPTY, new HashMap<>(), new HashMap<>());
+        this(freeResearchPoint, 0, FabricatingRecipe.EMPTY, new HashMap<>(), new HashMap<>());
     }
 
     /**
@@ -222,7 +265,7 @@ public class BluePrintAttachment {
      *
      * @param basicRp 基础研发点数，受到研究的配方的已研究等级影响
      */
-    public void research(Player player, int basicRp) {
+    private void research(Player player, int basicRp) {
         int freeRp = 0;
         if (researchingRecipe != FabricatingRecipe.EMPTY) {
             if (!hasStartedResearching(researchingRecipe))
@@ -243,7 +286,8 @@ public class BluePrintAttachment {
                 if (currentLevelResearchPoint + rpToAdd < requiredResearchPoint) { // 未达到下一级研发点数则全部用于研发
                     researchedRecipes.put(researchingRecipe, currentLevelResearchProgress + (rpToAdd / (float) requiredResearchPoint));
                     if (player instanceof ServerPlayer serverPlayer) { // 发包同步
-                        PacketDistributor.sendToPlayer(serverPlayer, new ResearchPushPayload(researchingRecipe, researchedRecipes.get(researchingRecipe)));
+                        PacketDistributor.sendToPlayer(serverPlayer, new ResearchPushPayload(researchingRecipe, researchedRecipes.get(researchingRecipe), new ArrayList<>(rpChangeRecords)));
+                        rpChangeRecords.clear();
                     }
                 } else { // 溢出部分作为自由研发点
                     if (products.getOrDefault(researchingRecipe, ItemStack.EMPTY).isEmpty()) {
@@ -256,7 +300,8 @@ public class BluePrintAttachment {
                         this.products.put(researchingRecipe, stack); // 保存蓝图物品
                         markDirty(player); // 标记可用配方列表需要更新
                         if (player instanceof ServerPlayer serverPlayer) { // 发包同步
-                            PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchingRecipe, currentResearchLevel + 1, stack));
+                            PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchingRecipe, currentResearchLevel + 1, stack, new ArrayList<>(rpChangeRecords)));
+                            rpChangeRecords.clear();
                         }
                         researchingRecipe = FabricatingRecipe.EMPTY; // 研发完成，清空目标
                     } else freeRp = rpToAdd; // 蓝图物品已满，研发进度直接转化为自由研发点
@@ -266,7 +311,7 @@ public class BluePrintAttachment {
             freeRp = basicRp;
         }
         // 将溢出的研发点作为自由研发点储存
-        setFreeResearchPoint(player, freeRp);
+        setFreeResearchPoint(player, getFreeResearchPoint() + freeRp);
     }
 
     public void applyFreeRp(Player player) {
@@ -298,12 +343,23 @@ public class BluePrintAttachment {
                     markDirty(player); // 标记可用配方列表需要更新
                     this.products.put(researchingRecipe, stack); // 保存蓝图物品
                     if (player instanceof ServerPlayer serverPlayer) { // 发包同步
-                        PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchingRecipe, currentResearchLevel, stack));
+                        PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchingRecipe, currentResearchLevel + 1, stack, new ArrayList<>(rpChangeRecords)));
+                        rpChangeRecords.clear();
                     }
                     researchingRecipe = FabricatingRecipe.EMPTY; // 研发完成，清空目标
                 }
             } else clearResearching(player); // 清除非法研究目标
         }
+    }
+
+    public void addRp(int rp, RpAddReason reason) {
+        this.pendingResearchPoint += rp;
+        this.rpChangeRecords.add(Pair.of(reason, rp));
+    }
+
+    public static void giveRp(Player player, int rp, RpAddReason reason) {
+        var research = player.getData(MMAttachments.getBLUEPRINT());
+        research.addRp(rp, reason);
     }
 
     public int getResearchLevel(ResourceLocation recipe) {
@@ -332,7 +388,8 @@ public class BluePrintAttachment {
         this.freeResearchPoint = freeResearchPoint;
         this.markDirty(player);
         if (player instanceof ServerPlayer serverPlayer) {
-            PacketDistributor.sendToPlayer(serverPlayer, new FreeRpSyncPayload(freeResearchPoint));
+            PacketDistributor.sendToPlayer(serverPlayer, new FreeRpSyncPayload(freeResearchPoint, new ArrayList<>(this.rpChangeRecords)));
+            this.rpChangeRecords.clear();
         }
     }
 
@@ -575,6 +632,13 @@ public class BluePrintAttachment {
     @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (event.getEntity() instanceof Player player) {
+            if (player.tickCount % 5 == 0) {
+                var research = player.getData(MMAttachments.getBLUEPRINT());
+                if (research.getPendingResearchPoint() > 0) {
+                    research.research(player, research.getPendingResearchPoint());
+                    research.pendingResearchPoint = 0;
+                }
+            }
             if (player.tickCount % 100 == 0) { // 定时更新可用配方列表
                 var research = player.getData(MMAttachments.getBLUEPRINT());
                 if (research.hashInventory(player) != research.inventoryHash) {
@@ -587,7 +651,7 @@ public class BluePrintAttachment {
     @SubscribeEvent
     public static void onXpChange(PlayerXpEvent.XpChange event) {
         // 此事件仅在服务端被触发
-        event.getEntity().getData(MMAttachments.getBLUEPRINT()).research(event.getEntity(), event.getAmount() * 10);
+        BluePrintAttachment.giveRp(event.getEntity(), event.getAmount() * 10, RpAddReason.EXP);
     }
 
     @SubscribeEvent

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.network.handler.research;
 
+import io.github.sweetzonzi.machine_max.client.network.ClientResearchHandler;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchPushPayload;
 import net.minecraft.world.entity.player.Player;
@@ -9,6 +10,7 @@ public class ResearchPushHandler {
     public static void handler(final ResearchPushPayload payload, final IPayloadContext context) {
         Player player = context.player();
         context.enqueueWork(() -> {
+            ClientResearchHandler.handlePush(payload);
             var research = player.getData(MMAttachments.getBLUEPRINT());
             research.setResearching(context.player(), payload.recipe());
             if (payload.finalProgress() > 0f)

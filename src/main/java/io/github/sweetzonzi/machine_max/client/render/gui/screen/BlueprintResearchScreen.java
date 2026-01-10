@@ -10,6 +10,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
@@ -31,7 +32,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
     private List<ResearchState> states;
 
     public BlueprintResearchScreen(BlueprintResearchMenu menu,
-                                   net.minecraft.world.entity.player.Inventory inventory,
+                                   Inventory inventory,
                                    Component title) {
         super(menu, inventory, title);
     }
@@ -168,7 +169,8 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
         // 使用纯色背景区分区域
         int bgColor = new Color(25, 25, 25, 128).getRGB();
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, bgColor);
-
+        // 显示自由研发点
+        graphics.drawString(font, "Free Rp: " + menu.getResearch().getFreeResearchPoint(), leftPos + 8, topPos - 4, Color.WHITE.getRGB());
         // 绘制区域分隔线
         int lineColor = new Color(25, 25, 25, 128).getRGB();
         graphics.fill(leftPos + 100, topPos + 5, leftPos + 102, topPos + imageHeight - 5, lineColor); // 左分隔

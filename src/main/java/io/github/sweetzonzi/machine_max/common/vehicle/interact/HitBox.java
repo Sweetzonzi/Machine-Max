@@ -8,14 +8,12 @@ import net.minecraft.world.damagesource.DamageSource;
 
 @Getter
 public class HitBox {
-    public final String name;
     public final SubPart subPart;
     public final HitBoxAttr attr;
     public final AbstractSubsystem subsystem;
 
     public HitBox(SubPart subPart, HitBoxAttr attr) {
         this.subPart = subPart;
-        this.name = attr.hitBoxName();
         this.attr = attr;
         this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem(), null);
     }

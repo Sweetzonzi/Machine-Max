@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.attachment.BluePrintAttachment;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
@@ -12,6 +13,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -69,11 +71,15 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                         var research = player.getData(MMAttachments.getBLUEPRINT());
                         float assembleStep = 5 * (1 + research.calculateAssemblyBuff(part, player));
                         float repairStep = 5 * (1 + research.calculateRepairBuff(part, player));
-                        part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
-                        subPart.repair(
+                        boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
+                        boolean repaired = subPart.repair(
                                 repairStep * SUBPART_REPAIR_PER_TICK,
                                 repairStep * SUBSYSTEM_REPAIR_PER_TICK,
                                 repairStep * CONNECTOR_REPAIR_PER_TICK);
+                        if (assembled && remainingUseDuration % 10 == 0)
+                            BluePrintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                        if (repaired && remainingUseDuration % 10 == 0)
+                            BluePrintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
                     } else { // 潜行时拆解部件为原材料
                         if (part.getAssemblingProgress() > 0) {
                             part.disassemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);

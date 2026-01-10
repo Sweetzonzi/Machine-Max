@@ -5,11 +5,6 @@
   "description": "Defines the physical properties, armor values, and damage modification system of part collision boxes.",
   "type": "object",
   "properties": {
-    "name": {
-      "type": "string",
-      "default": "part",
-      "description": "Hit box name, for subsystems to look up."
-    },
     "type": {
       "type": "string",
       "enum": ["box", "sphere", "cylinder"],

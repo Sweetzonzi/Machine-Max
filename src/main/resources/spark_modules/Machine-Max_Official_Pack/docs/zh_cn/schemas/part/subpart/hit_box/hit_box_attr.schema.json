@@ -5,11 +5,6 @@
   "description": "定义部件碰撞箱的物理属性、护甲值和伤害修正系统。",
   "type": "object",
   "properties": {
-    "name": {
-      "type": "string",
-      "default": "part",
-      "description": "碰撞箱名称，供子系统等查找。"
-    },
     "type": {
       "type": "string",
       "enum": ["box", "sphere", "cylinder"],
