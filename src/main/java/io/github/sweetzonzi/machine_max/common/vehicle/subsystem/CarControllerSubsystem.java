@@ -127,14 +127,14 @@ public class CarControllerSubsystem extends AbstractSubsystem {
      * @see CarControllerSubsystem#onSignalUpdated(String signalKey, ISignalSender sender)
      */
     private void handShake() {
-        for (String signalKey : attr.engineControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalKey, EmptySignal.INSTANCE, false);
+        for (String signalChannel : attr.engineControlOutputTargets.keySet()) {
+            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
         }
-        for (String signalKey : attr.wheelControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalKey, EmptySignal.INSTANCE, false);
+        for (String signalChannel : attr.wheelControlOutputTargets.keySet()) {
+            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
         }
-        for (String signalKey : attr.gearboxControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalKey, EmptySignal.INSTANCE, false);
+        for (String signalChannel : attr.gearboxControlOutputTargets.keySet()) {
+            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
         }
     }
 

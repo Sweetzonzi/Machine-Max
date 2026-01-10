@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.signal;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubsystemController;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 
@@ -87,9 +88,7 @@ public interface ISignalSender {
      */
     default void sendSignalToAllTargets(String signalChannel, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
         if (getTargets().containsKey(signalChannel))
-            getTargets().get(signalChannel).forEach((receiverName, signalReceiver) -> {
-                sendSignalToTarget(signalChannel, receiverName, signalValue, requiresImmediateCallback, callbackReturnsSignalValue);
-            });
+            getTargets().get(signalChannel).forEach((receiverName, signalReceiver) -> sendSignalToTarget(signalChannel, receiverName, signalValue, requiresImmediateCallback, callbackReturnsSignalValue));
     }
 
     /**
@@ -129,16 +128,29 @@ public interface ISignalSender {
             ISignalReceiver signalReceiver = getTargets().get(signalChannel).get(targetName);
             if (signalReceiver != null) {
                 signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
-                signalReceiver.onSignalUpdated(signalChannel, this);
-                if (signalReceiver instanceof SubsystemController vehicle){
+                if (signalReceiver instanceof SubsystemController vehicle) {
                     vehicle.signalStorage.put(signalChannel, signalValue);
                 } else if (signalReceiver instanceof SubPart subPart) {
                     subPart.signalStorage.put(signalChannel, signalValue);
                 }
-                if (requiresImmediateCallback && this instanceof ISignalReceiver && signalReceiver instanceof ISignalSender callbackSender) {
-                    if (callbackReturnsSignalValue)
-                        callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalValue);
-                    else callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalChannel);
+                signalReceiver.onSignalUpdated(signalChannel, this);
+                if (requiresImmediateCallback && this instanceof ISignalReceiver) {
+                    if (signalReceiver instanceof SignalPort port
+                            && port.getOwner().getAttachedConnector() instanceof AbstractConnector connector
+                            && connector.getSignalPort() instanceof SignalPort otherPort) { // 连接点信号端口特殊处理
+                        for (ISignalReceiver target : otherPort.getTargets().get(signalChannel).values()) {
+                            if (target instanceof ISignalSender callbackSender) {
+                                if (callbackReturnsSignalValue)
+                                    callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalValue);
+                                else
+                                    callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalChannel);
+                            }
+                        }
+                    } else if (signalReceiver instanceof ISignalSender callbackSender) {
+                        if (callbackReturnsSignalValue)
+                            callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalValue);
+                        else callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalChannel);
+                    }
                 }
             }
         }

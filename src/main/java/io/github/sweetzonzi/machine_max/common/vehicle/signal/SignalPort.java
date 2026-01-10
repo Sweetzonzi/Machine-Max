@@ -19,7 +19,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     public final AbstractConnector owner;
     public final Map<String, List<String>> targetNames;//接收哪些信号
     public final Map<String, String> signalTranslation;//信号频道转译映射（原始频道->转译后频道）
-    public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//将信号发给哪些目标
+    public final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();//频道名->接收方名->接收方
     public ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();//仅应被查询
 
     /**
@@ -118,7 +118,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     public void onConnectorDetach() {
         if (owner instanceof AbstractConnector ownerConnector
                 && ownerConnector.attachedConnector != null) {
-            for (Map.Entry<String, Map<String, ISignalReceiver>> entry : targets.entrySet()) {
+            for (Map.Entry<String, Map<String, ISignalReceiver>> entry : getTargets().entrySet()) {
                 for (ISignalReceiver receiver : entry.getValue().values()) {
                     // 从输出目标的信号输入中移除本端口的信号输出
                     receiver.getSignalInputChannels().remove(entry.getKey());
