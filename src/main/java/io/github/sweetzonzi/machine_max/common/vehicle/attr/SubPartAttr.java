@@ -16,6 +16,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -251,7 +252,7 @@ public class SubPartAttr {
                 shape.correctAxes(massCenter);
             }
             if (shape.countChildren() <= 0)
-                throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
+                throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
             return shape;
         });
     }
