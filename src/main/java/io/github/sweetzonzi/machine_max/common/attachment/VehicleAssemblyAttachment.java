@@ -208,6 +208,7 @@ public class VehicleAssemblyAttachment {
                             && subPart.part.getAssemblingProgress() <= 0))) {
                 var blueprints = player.getData(MMAttachments.getBLUEPRINT());
                 var availableRecipes = blueprints.getAvailablePartRecipeFor(player, subPart.part.getType().getRegistryKey());
+                if (availableRecipes == null) return;
                 Iterator<RecipeHolder<FabricatingRecipe>> recipeIterator = availableRecipes.iterator();
                 // 使用下一个配方
                 if (subPart.part.getCustomRecipe() != FabricatingRecipe.EMPTY) {
