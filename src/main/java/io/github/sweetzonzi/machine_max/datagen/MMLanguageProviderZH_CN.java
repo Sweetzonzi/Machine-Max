@@ -135,10 +135,13 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("hud.key.machine_max.detach", "[%1$s+%2$s] 断开连接点");
         // 研究点显示HUD
         this.add("hud.hint.machine_max.rp_add_reason.exp", "获得经验");
-        this.add("hud.hint.machine_max.rp_add_reason.repair", "维修部件");
-        this.add("hud.hint.machine_max.rp_add_reason.assembly", "组装部件");
+        this.add("hud.hint.machine_max.rp_add_reason.repair", "维修");
+        this.add("hud.hint.machine_max.rp_add_reason.assembly", "组装");
+        this.add("hud.hint.machine_max.rp_add_reason.hit", "命中");
         this.add("hud.hint.machine_max.rp_add_reason.part_damage", "伤害部件");
         this.add("hud.hint.machine_max.rp_add_reason.part_destroy", "摧毁部件");
+        this.add("hud.hint.machine_max.rp_add_reason.subsystem_damage", "伤害子系统");
+        this.add("hud.hint.machine_max.rp_add_reason.subsystem_destroy", "瘫痪子系统");
         this.add("hud.hint.machine_max.rp_add_reason.unknown", "未知");
     }
 }

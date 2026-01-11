@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
@@ -67,6 +68,8 @@ public class BluePrintAttachment {
     @Getter
     private boolean dirty = true;
     private int inventoryHash = Integer.MIN_VALUE;
+    private static final int HIT_RP_COOLDOWN = 5;
+    private int hitRpCooldown = 0;
     /**
      * 每级研究等级的组装速度加成
      */
@@ -632,15 +635,15 @@ public class BluePrintAttachment {
     @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
         if (event.getEntity() instanceof Player player) {
+            var research = player.getData(MMAttachments.getBLUEPRINT());
+            if (research.hitRpCooldown > 0) research.hitRpCooldown--;
             if (player.tickCount % 5 == 0) {
-                var research = player.getData(MMAttachments.getBLUEPRINT());
                 if (research.getPendingResearchPoint() > 0) {
                     research.research(player, research.getPendingResearchPoint());
                     research.pendingResearchPoint = 0;
                 }
             }
             if (player.tickCount % 100 == 0) { // 定时更新可用配方列表
-                var research = player.getData(MMAttachments.getBLUEPRINT());
                 if (research.hashInventory(player) != research.inventoryHash) {
                     research.rebuildAvailableRecipes(player);
                 }
@@ -652,6 +655,25 @@ public class BluePrintAttachment {
     public static void onXpChange(PlayerXpEvent.XpChange event) {
         // 此事件仅在服务端被触发
         BluePrintAttachment.giveRp(event.getEntity(), event.getAmount() * 10, RpAddReason.EXP);
+    }
+
+    @SubscribeEvent
+    public static void onSubPartHit(SubPartDamageEvent.Pre event) {
+        if (event.getSource().getEntity() instanceof ServerPlayer player) {
+            var research = player.getData(MMAttachments.getBLUEPRINT());
+            if (research.hitRpCooldown <= 0) {
+                research.addRp(1, RpAddReason.HIT);
+                research.hitRpCooldown = BluePrintAttachment.HIT_RP_COOLDOWN;
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onSubPartDamage(SubPartDamageEvent.Post event) {
+        if (event.getSource().getEntity() instanceof ServerPlayer player) {
+            var research = player.getData(MMAttachments.getBLUEPRINT());
+            research.addRp((int) event.getDamageAmount(), RpAddReason.PART_DAMAGE);
+        }
     }
 
     @SubscribeEvent

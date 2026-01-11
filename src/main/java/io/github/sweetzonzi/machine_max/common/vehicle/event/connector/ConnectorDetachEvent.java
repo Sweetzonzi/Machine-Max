@@ -17,7 +17,7 @@ abstract public class ConnectorDetachEvent extends ConnectorEvent implements ICa
         this.simpleConnector = simpleConnector;
     }
 
-    public static class Pre extends ConnectorDetachEvent implements ICancellableEvent{
+    public static class Pre extends ConnectorDetachEvent implements ICancellableEvent {
         public Pre(@NotNull AbstractConnector advancedConnector, @NotNull SimpleConnector simpleConnector) {
             super(advancedConnector, simpleConnector);
         }

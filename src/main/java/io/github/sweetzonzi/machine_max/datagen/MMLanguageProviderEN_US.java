@@ -138,8 +138,11 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("hud.hint.machine_max.rp_add_reason.exp", "Gain EXP");
         this.add("hud.hint.machine_max.rp_add_reason.repair", "Repair");
         this.add("hud.hint.machine_max.rp_add_reason.assembly", "Assembly");
+        this.add("hud.hint.machine_max.rp_add_reason.hit", "Hit");
         this.add("hud.hint.machine_max.rp_add_reason.part_damage", "Damage Part");
         this.add("hud.hint.machine_max.rp_add_reason.part_destroy", "Destroy Part");
+        this.add("hud.hint.machine_max.rp_add_reason.subsystem_damage", "Damage Subsystem");
+        this.add("hud.hint.machine_max.rp_add_reason.subsystem_destroy", "Destroy Subsystem");
         this.add("hud.hint.machine_max.rp_add_reason.unknown", "Unknown");
     }
 }

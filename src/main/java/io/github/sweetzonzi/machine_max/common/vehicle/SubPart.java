@@ -37,6 +37,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
+import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBoxes;
@@ -77,6 +78,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -211,7 +213,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     public void onContactProcessed(PhysicsCollisionObject o1, @NotNull PhysicsCollisionObject o2, ManifoldPoint point1, ManifoldPoint point2, long manifoldPointId) {
-        //TODO:拆分为多个简单方法以方便子类修改并提升可读性
         PhysicsRigidBody other = (PhysicsRigidBody) o2;
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         Vector3f normal = new Vector3f();
@@ -540,7 +541,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
                             SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.AMBIENT, 1f, 1f);
                 }
-                livingEntity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.1 / entityMass)).add(0, 0.1f, 0)));
+                if (!livingEntity.hasImpulse)
+                    livingEntity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.1 / entityMass)).add(0, 0.1f, 0)));
                 return null;
             });
         }
@@ -786,70 +788,75 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                           Vector3f worldContactSpeed,
                           Vector3f worldContactPoint,
                           HitBox hitBox) {
-        Vec3 sourcePos = source.getSourcePosition();
-        if (sourcePos == null)
-            sourcePos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(body).getTransform().getTranslation());
-        Vec3 finalSourcePos = sourcePos;
-        float armor = hitBox.getRHA(this);
-        float armorPenetration;
-        //击退处理与特殊逻辑
-        if (projectileSource == null) {//原版伤害处理
-            //冲击效果
-            if (!level.isClientSide()) {
-                float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 250f);//伤害转化为动量，使用log函数以使冲量与部件耐久匹配
-                if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
-                    knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
+        SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, source, damage);
+        if (!NeoForge.EVENT_BUS.post(event).isCanceled()) {
+            source = event.getSource();
+            damage = event.getDamageAmount();
+            Vec3 sourcePos = source.getSourcePosition();
+            if (sourcePos == null)
+                sourcePos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(body).getTransform().getTranslation());
+            Vec3 finalSourcePos = sourcePos;
+            float armor = hitBox.getRHA(this);
+            float armorPenetration;
+            //击退处理与特殊逻辑
+            if (projectileSource == null) {//原版伤害处理
+                //冲击效果
+                if (!level.isClientSide()) {
+                    float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 250f);//伤害转化为动量，使用log函数以使冲量与部件耐久匹配
+                    if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
+                        knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
+                    }
+                    if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION))
+                        knockBack *= 15.0f;
+                    float finalKnockBack = knockBack;
+                    level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
+                        part.vehicle.activate();
+                        this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(this.body.getPhysicsLocation(null)));
+                        return null;
+                    });
                 }
-                if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION))
-                    knockBack *= 15.0f;
-                float finalKnockBack = knockBack;
-                level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
-                    part.vehicle.activate();
-                    this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(this.body.getPhysicsLocation(null)));
-                    return null;
-                });
-            }
-            //换算穿深
-            armorPenetration = hitBox.modifyPiercing(source, damage);
-        } else {//甲弹对抗处理
-            //获取穿深
-            try {
-                armorPenetration = hitBox.modifyPiercing(source, damage);// TODO: 研究一下Key是怎么用的,换成来自投射物的穿深数据
+                //换算穿深
+                armorPenetration = hitBox.modifyPiercing(source, damage);
+            } else {//甲弹对抗处理
+                //获取穿深
+                try {
+                    armorPenetration = hitBox.modifyPiercing(source, damage);// TODO: 研究一下Key是怎么用的,换成来自投射物的穿深数据
 //                armorPenetration = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
-            } catch (Exception e) {
-                armorPenetration = damage / 2f;
-                MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", this.part.name);
+                } catch (Exception e) {
+                    armorPenetration = damage / 2f;
+                    MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", this.part.name);
+                }
             }
-        }
-        //计算冲击对连接点结构完整性的伤害
-        float impactDamage = hitBox.modifyImpact(source, damage);
-        //分配冲击至连接点
-        distributeDamageImpactToConnectors(impactDamage, worldContactPoint);
-        //甲弹对抗相关处理
-        if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
-        //击穿判定
-        if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
-            float subPartDamage = hitBox.modifyDamage(source, damage);
-            if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
-                subPartDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
-            //对部件造成伤害
-            PartDamageData data = new PartDamageData(source, projectileSource, normal, worldContactSpeed, worldContactPoint, hitBox);
-            if (!level.isClientSide()) accumulateDamage(subPartDamage, data);
-            else {
+            //计算冲击对连接点结构完整性的伤害
+            float impactDamage = hitBox.modifyImpact(source, damage);
+            //分配冲击至连接点
+            distributeDamageImpactToConnectors(impactDamage, worldContactPoint);
+            //甲弹对抗相关处理
+            if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
+            //击穿判定
+            if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
+                float subPartDamage = hitBox.modifyDamage(source, damage);
+                if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
+                    subPartDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
+                //对部件造成伤害
+                PartDamageData data = new PartDamageData(source, projectileSource, normal, worldContactSpeed, worldContactPoint, hitBox);
+                if (!level.isClientSide()) accumulateDamage(subPartDamage, data);
+                else {
+                    level.submitImmediateTask(PPhase.ALL, () -> {
+                        //TODO:播放击穿音效特效
+                        return null;
+                    });
+                }
+            } else if (level.isClientSide()) {
+                float finalDamage = damage;
                 level.submitImmediateTask(PPhase.ALL, () -> {
-                    //TODO:播放击穿音效特效
-                    return null;
-                });
-            }
-        } else if (level.isClientSide()) {
-            level.submitImmediateTask(PPhase.ALL, () -> {
-                //播放命中未击穿音效
-                SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"), 64f);
-                SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
-                        (float) ((2 - Math.min(7f, damage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
-                        0.1f + 0.4f * Math.min(7f, damage) / 7f);
-                //添加粒子
-                var pos = SparkMathKt.toVec3(worldContactPoint);
+                    //播放命中未击穿音效
+                    SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"), 64f);
+                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
+                            (float) ((2 - Math.min(7f, finalDamage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
+                            0.1f + 0.4f * Math.min(7f, finalDamage) / 7f);
+                    //添加粒子
+                    var pos = SparkMathKt.toVec3(worldContactPoint);
 //                for (int i = 0; i < 3; i++) {
 //                    var dir = normal.mult(0.3f).add(new Vector3f(
 //                            (float) (Math.random() - 0.5f),
@@ -857,10 +864,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 //                            (float) (Math.random() - 0.5f)).mult(0.1f));
 //                    level.addParticle(ParticleTypes.FIREWORK, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
 //                }
-                return null;
-            });
+                    return null;
+                });
+            }
+            return true; //返回true表示命中，且伤害已被处理
         }
-        return true; //返回true表示命中，且伤害已被处理
+        return false; //返回false表示伤害已被取消
     }
 
     /**
@@ -897,9 +906,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      * <p>维修零件和子系统并加固连接点</p>
      * <p>Repairs the sub-part and subsystems and strengthen the connectors</p>
      *
-     * @param amount          零件维修量 (>0) sub-part repair amount (>0)
-     * @param subSystemAmount 子系统维修量 (>0) subsystem repair amount (>0)
-     * @param connectorAmount 连接点结构完整性加固量 (>0) connector integrity strengthen amount (>0)
+     * @param amount          零件维修量 (>0) sub-part repair damageAmount (>0)
+     * @param subSystemAmount 子系统维修量 (>0) subsystem repair damageAmount (>0)
+     * @param connectorAmount 连接点结构完整性加固量 (>0) connector integrity strengthen damageAmount (>0)
      * @return 是否成功修理
      */
     public boolean repair(float amount, float subSystemAmount, float connectorAmount) {
@@ -951,6 +960,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 Pair<Float, PartDamageData> pair = accumulatedDamage.poll();
                 float damage = pair.getFirst();
                 PartDamageData data = pair.getSecond();
+                // 广播事件
+                NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Post(this, data.source(), damage));
                 //对子系统造成伤害
                 if (data.hitBox().getSubsystem() != null)
                     data.hitBox().getSubsystem().onHurt(damage, data);

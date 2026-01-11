@@ -12,8 +12,11 @@ public enum RpAddReason {
     EXP(0), // 获得经验
     REPAIR(1), // 维修部件
     ASSEMBLY(2), // 组装部件
-    PART_DAMAGE(3), // 伤害部件
-    PART_DESTROY(4), // 摧毁部件
+    HIT(3), // 命中部件
+    PART_DAMAGE(4), // 伤害部件
+    PART_DESTROY(5), // 摧毁部件
+    SUBSYSTEM_DAMAGE(6), // 伤害子系统
+    SUBSYSTEM_DESTROY(7), // 瘫痪子系统
 
     UNKNOWN(-1); // 未知
 
@@ -40,8 +43,11 @@ public enum RpAddReason {
             case EXP -> Component.translatable("hud.hint.machine_max.rp_add_reason.exp");
             case REPAIR -> Component.translatable("hud.hint.machine_max.rp_add_reason.repair");
             case ASSEMBLY -> Component.translatable("hud.hint.machine_max.rp_add_reason.assembly");
+            case HIT -> Component.translatable("hud.hint.machine_max.rp_add_reason.hit");
             case PART_DAMAGE -> Component.translatable("hud.hint.machine_max.rp_add_reason.part_damage");
             case PART_DESTROY -> Component.translatable("hud.hint.machine_max.rp_add_reason.part_destroy");
+            case SUBSYSTEM_DAMAGE -> Component.translatable("hud.hint.machine_max.rp_add_reason.subsystem_damage");
+            case SUBSYSTEM_DESTROY -> Component.translatable("hud.hint.machine_max.rp_add_reason.subsystem_destroy");
             default -> Component.translatable("hud.hint.machine_max.rp_add_reason.unknown");
         };
     }
