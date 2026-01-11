@@ -1,0 +1,31 @@
+{
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 14
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:dried_kelp"
+      },
+      "count": 20
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:leather"
+      },
+      "count": 12
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 2,
+    "components": {
+      "machine_max:part_type": "machine_max:dayun_wheel"
+    }
+  },
+  "time": 75
+}

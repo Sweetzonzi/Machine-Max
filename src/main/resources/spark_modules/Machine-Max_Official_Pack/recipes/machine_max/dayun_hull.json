@@ -1,0 +1,43 @@
+{
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:structural_component_1"
+      },
+      "count": 10
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass_pane"
+      },
+      "count": 8
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 10
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:power_component_1"
+      },
+      "count": 5
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 5
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 1,
+    "components": {
+      "machine_max:part_type": "machine_max:dayun_hull"
+    }
+  },
+  "time": 400
+}

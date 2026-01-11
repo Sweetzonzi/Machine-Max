@@ -142,20 +142,19 @@ public class SubPartAttr {
                 if (bones.get(hitBoxEntry.getKey()) != null) {
                     String hitBoxName = hitBoxEntry.getKey();
                     OBone bone = bones.get(hitBoxEntry.getKey());
-
+                    Matrix4f pose = new Matrix4f();
+                    bone.applyTransformWithParents(pose, bones.get(startBone));
                     switch (hitBoxEntry.getValue().shapeType()) {
                         case "box":
                             for (OCube cube : bone.getCubes()) {
                                 org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
                                 BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
-                                org.joml.Vector3f rotation = cube.getRotation().toVector3f();
-                                Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                                 // 存储所有状态的子形状对应关系
                                 hitBoxNames.put(boxShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         boxShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
-                                        SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)),
+                                        SparkMathKt.toBQuaternion(cube.getTransformedRotation(pose)).toRotationMatrix());
                             }
                             break;
                         case "sphere":
@@ -164,20 +163,18 @@ public class SubPartAttr {
                                 hitBoxNames.put(ballShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         ballShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())));
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)));
                             }
                             break;
                         case "cylinder":
                             for (OCube cube : bone.getCubes()) {
                                 Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
-                                org.joml.Vector3f rotation = cube.getRotation().toVector3f();
-                                Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                                 CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size, 0);
                                 hitBoxNames.put(cylinderShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         cylinderShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
-                                        SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)),
+                                        SparkMathKt.toBQuaternion(cube.getTransformedRotation(pose)).toRotationMatrix());
                             }
                             break;
                         case "cone":
@@ -187,21 +184,17 @@ public class SubPartAttr {
                             for (OCube cube : bone.getCubes()) {
                                 //TODO: 检查尺寸方向是否正确
                                 Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
-                                org.joml.Vector3f rotation = cube.getRotation().toVector3f();
-                                Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                                 CapsuleCollisionShape cylinderShape = new CapsuleCollisionShape(size.x, size.y, 0);
                                 hitBoxNames.put(cylinderShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         cylinderShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
-                                        SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)),
+                                        SparkMathKt.toBQuaternion(cube.getTransformedRotation(pose)).toRotationMatrix());
                             }
                             break;
                         case "wheel":
                             for (OCube cube : bone.getCubes()) {
                                 Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
-                                org.joml.Vector3f rotation = cube.getRotation().toVector3f();
-                                Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                                 SphereCollisionShape round = new SphereCollisionShape(size.x * 0.2f);
                                 size = new Vector3f(size.x * 0.8f, size.y - size.x * 0.2f, size.z);
                                 CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size, 0);
@@ -209,8 +202,8 @@ public class SubPartAttr {
                                 hitBoxNames.put(collisionShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         collisionShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
-                                        SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)),
+                                        SparkMathKt.toBQuaternion(cube.getTransformedRotation(pose)).toRotationMatrix());
                             }
                             break;
                         default:
@@ -277,17 +270,17 @@ public class SubPartAttr {
                 if (bones.get(boneName) != null) {
                     String interactBoxName = interactBoxEntry.getKey();
                     OBone bone = bones.get(boneName);
+                    Matrix4f pose = new Matrix4f();
+                    bone.applyTransformWithParents(pose, bones.get(startBone));
                     for (OCube cube : bone.getCubes()) {
                         org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
                         BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
-                        org.joml.Vector3f rotation = cube.getRotation().toVector3f();
-                        Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
                         // 存储所有状态的子形状对应关系
                         interactBoxNames.put(boxShape.nativeId(), interactBoxName);
                         shape.addChildShape(
                                 boxShape,
-                                PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
-                                SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
+                                PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)),
+                                SparkMathKt.toBQuaternion(cube.getTransformedRotation(pose)).toRotationMatrix());
                     }
                 } else {
                     MachineMax.LOGGER.error("未找到对应的交互形状骨骼{}。", interactBoxEntry.getValue().getBoneName());

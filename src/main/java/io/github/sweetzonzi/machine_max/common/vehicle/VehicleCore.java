@@ -455,6 +455,7 @@ public class VehicleCore {
                                     advancedConnector = connector2;
                                 } else continue;//二者中存在AttachPointConnector时才可尝试连接
                                 //检查连接是否合理(连接点位置姿态差异)
+                                //TODO:同样检查法线是否对齐
                                 float posError = MMMath.relPointWorldPos(simpleConnector.offsetFromMassCenter.getTranslation(), simpleConnector.subPart.body).subtract(
                                         MMMath.relPointWorldPos(advancedConnector.offsetFromMassCenter.getTranslation(), advancedConnector.subPart.body)
                                 ).length();//计算连接点位置差异

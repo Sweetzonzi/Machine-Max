@@ -94,7 +94,7 @@
   "key.machine_max.assembly.cycle_recipe": "循环切换配方",
   "key.machine_max.assembly.cycle_variant": "循环部件变体",
   "key.machine_max.assembly.sub_attach_angle": "旋转部件(-)",
-  "key.machine_max.general.free_cam": "自由摄像",
+  "key.machine_max.general.free_cam": "自由视角",
   "key.machine_max.general.interact": "交互",
   "key.machine_max.general.leave_vehicle": "离开载具",
   "key.machine_max.ground.backward": "后退",

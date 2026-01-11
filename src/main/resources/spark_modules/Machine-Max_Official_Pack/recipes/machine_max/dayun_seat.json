@@ -1,0 +1,31 @@
+{
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:black_wool"
+      },
+      "count": 1
+    },
+    {
+      "ingredient":{
+        "item": "minecraft:dried_kelp"
+      },
+      "count": 2
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 1,
+    "components": {
+      "machine_max:part_type": "machine_max:dayun_seat"
+    }
+  },
+  "time": 50
+}

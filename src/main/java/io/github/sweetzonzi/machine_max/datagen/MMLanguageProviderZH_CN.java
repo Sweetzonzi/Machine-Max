@@ -18,7 +18,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.category.machine_max.mech", "Machine Max:机甲");
         this.add("key.category.machine_max.assembly", "Machine Max:组装");
         // 按键名称-通用
-        this.add("key.machine_max.general.free_cam", "自由摄像");
+        this.add("key.machine_max.general.free_cam", "自由视角");
         this.add("key.machine_max.general.interact", "交互");
         this.add("key.machine_max.general.leave_vehicle", "离开载具");
         // 按键名称-地面载具

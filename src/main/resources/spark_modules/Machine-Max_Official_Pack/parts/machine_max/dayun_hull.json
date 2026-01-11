@@ -5,6 +5,7 @@
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "models": "machine_max:dayun_chetou.geo",
+    "icon": "machine_max:textures/icon/dayun_chetou_icon.png",
     "textures": [ //贴图路径列表
       "machine_max:textures/part/dayun.png",
       "machine_max:textures/part/dayun2.png",
@@ -16,7 +17,7 @@
     "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
     "tags": [], //(可选, 默认[])部件标签列表
     "sub_parts": { //零件(子部件)列表
-      "dayun_chetou": { //零件(子部件)名称
+      "dayun_hull": { //零件(子部件)名称
         "durability": 1000.0, //(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
         "mass": 1000.0, //零件质量(kg)
         "block_collision": "ground", //(可选)地形碰撞模式:true(默认, 与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)

@@ -5,6 +5,7 @@
   "vehicle_damage_rate_destroyed": 0.1, //(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": { //部件变体列表, 可有多个变体名和模型路径的键值对
     "models": "machine_max:dayun_dipan.geo", //模型路径
+    "icon": "machine_max:textures/icon/dayun_dipan_icon.png",
     "textures": [ //贴图路径列表
       "machine_max:textures/part/dayun.png",
       "machine_max:textures/part/dayun2.png",
@@ -13,10 +14,10 @@
       "machine_max:textures/part/dayun5.png",
       "machine_max:textures/part/dayun6.png"
     ],
-    "animations": "machine_max:ae86", //(可选, 留空则不播放动画)动画路径
+    "animations": "machine_max:dayun", //(可选, 留空则不播放动画)动画路径
     "tags": [], //(可选, 默认[])部件标签列表
     "sub_parts": { //零件(子部件)列表, 这是部件运动的最小单元, 部件的每个可动部分都应当是一个零件(子部件)
-      "ae86_chassis": { //零件(子部件)名称
+      "dayun_chassis": { //零件(子部件)名称
         "durability": 1550.0,
         "mass": 1500.0, //零件质量(kg)
         "block_collision": "ground", //(可选)地形碰撞模式:true(默认, 与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
@@ -164,8 +165,8 @@
                 "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
                 "equilibrium": -0.15, //(可选, 默认0)弹簧阻尼关节的平衡位置, 当关节处于此位置时, 关节受到的刚度力(力矩)等于0
-                "stiffness": 45000, //刚度系数(N/m)
-                "damping": 1000 //阻尼系数(N/(m/s))
+                "stiffness": 50000, //刚度系数(N/m)
+                "damping": 2500 //阻尼系数(N/(m/s))
               },
               "xr": { //控制的轴, x、y、z分别对应x、y、z轴的平动, xr、yr、zr分别对应x、y、z轴的旋转
                 "lower_limit": 1.0, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
@@ -182,7 +183,7 @@
                 "upper_limit": 15.0,
                 "equilibrium": 1.0,
                 "stiffness": 50000,
-                "damping": 1000
+                "damping": 3500
               }
             }
           },
@@ -201,8 +202,8 @@
                 "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
                 "equilibrium": -0.15,
-                "stiffness": 40000,
-                "damping": 1000
+                "stiffness": 200000,
+                "damping": 3500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -212,8 +213,8 @@
                 "lower_limit": 1.0,
                 "upper_limit": 15.0,
                 "equilibrium": 1.0,
-                "stiffness": 50000,
-                "damping": 1000
+                "stiffness": 200000,
+                "damping": 3500
               }
             }
           },
@@ -232,8 +233,8 @@
                 "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
                 "equilibrium": -0.15,
-                "stiffness": 40000,
-                "damping": 1000
+                "stiffness": 200000,
+                "damping": 3500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -243,8 +244,8 @@
                 "lower_limit": 1.0,
                 "upper_limit": 15.0,
                 "equilibrium": 1.0,
-                "stiffness": 50000,
-                "damping": 1000
+                "stiffness": 200000,
+                "damping": 3500
               }
             }
           },
@@ -263,8 +264,8 @@
                 "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
                 "equilibrium": -0.15,
-                "stiffness": 45000,
-                "damping": 1000
+                "stiffness": 50000,
+                "damping": 2500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -281,7 +282,7 @@
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
                 "stiffness": 50000,
-                "damping": 1000
+                "damping": 3500
               }
             }
           },
@@ -300,8 +301,8 @@
                 "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
                 "equilibrium": -0.15,
-                "stiffness": 40000,
-                "damping": 1000
+                "stiffness": 200000,
+                "damping": 3500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -311,8 +312,8 @@
                 "lower_limit": -15.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 50000,
-                "damping": 1000
+                "stiffness": 200000,
+                "damping": 3500
               }
             }
           },
@@ -331,8 +332,8 @@
                 "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
                 "equilibrium": -0.15,
-                "stiffness": 40000,
-                "damping": 1000
+                "stiffness": 200000,
+                "damping": 3500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -342,8 +343,8 @@
                 "lower_limit": -15.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 50000,
-                "damping": 1000
+                "stiffness": 200000,
+                "damping": 3500
               }
             }
           },
@@ -380,7 +381,25 @@
             "required_tags": [], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
-            "signal_targets": {}
+            "signal_targets": {},
+            "joint_attrs": {
+              "xr": {
+                "lower_limit": -15.0,
+                "upper_limit": 15.0,
+                "damping": 500
+              },
+              "yr": {
+                "lower_limit": -85.0,
+                "upper_limit": 85.0,
+                "damping": 500
+              },
+              "zr": {
+                "lower_limit": -5.0,
+                "upper_limit": 5.0,
+                "stiffness": 10000,
+                "damping": 1000
+              }
+            }
           }
         },
         "hydro_priority": 0, //(可选, 默认0)空气阻力计算优先级, 值越大优先级越高, 优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化

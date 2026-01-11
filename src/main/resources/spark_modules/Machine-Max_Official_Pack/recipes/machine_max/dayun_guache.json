@@ -1,0 +1,37 @@
+{
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": { // 原料的类型
+        "item": "minecraft:copper_ingot"
+      },
+      "count": 24
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 56
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 12
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 4
+    }
+  ],
+  "result": { // 产物，仅控制打印机该配方的产出，不影响部件组装
+    "id": "machine_max:part",
+    "count": 1, // 产物的数量，不应大于产物的可堆叠数量
+    "components": {
+      "machine_max:part_type": "machine_max:dayun_guache"
+    }
+  },
+  "time": 600
+}

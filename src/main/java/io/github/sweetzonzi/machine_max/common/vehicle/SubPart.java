@@ -419,7 +419,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                         onHurt(source, partDamage,
                                 null, normal, vel, worldContactPoint, hitBox);
                     return;
-                } else {//否则以三分之一的能量计算伤害，冲量交给物理引擎处理
+                } else { //否则以三分之一的能量计算伤害，冲量交给物理引擎处理
                     // 与一个物体发生碰撞时会创建3个(4个?)碰撞点，因此在单点处理计算时只取部分能量用于计算伤害
                     //TODO:对方块累积伤害
                     //对部件造成伤害
@@ -445,7 +445,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                         contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
                         }
                     }
-                    if (contactVel.length() > 2.5f) {
+                    if (contactVel.length() > 4f && !climbableBlocks.contains(blockPos)) {
                         // 漂移烟雾与音效
                         if (Math.random() < Math.max(1f, 0.05f * contactVel.length()))
                             level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
@@ -523,7 +523,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float partDamage = (float) (0.2 * contactEnergy * miu / (250 * partMass));
             DamageSource source = level.damageSources().flyIntoWall();
             if (hitBox.modifyDamage(source, partDamage) > 1)
-                onHurt(level.damageSources().flyIntoWall(), partDamage,
+                onHurt(level.damageSources().source(DamageTypes.FLY_INTO_WALL, livingEntity), partDamage,
                         null, normal, vel, worldContactPoint, hitBox);
             //部件减速
             getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_entity_impulse", PPhase.PRE, () -> {
@@ -532,17 +532,16 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             });
             //实体击退与伤害
             other.setLinearVelocity(other.getLinearVelocity(null).add(impulseVec.mult((float) (1f / entityMass))));
-            level.submitDeduplicatedTask(livingEntity.getStringUUID() + "_entity_collision_damage", PPhase.PRE, () -> {
+            level.submitImmediateTask(PPhase.PRE, () -> {
                 float damage = (float) (contactEnergy * miu / (250 * entityMass));
                 if (damage > 1) {
                     if (!level.isClientSide) {
-                        livingEntity.hurt(level.damageSources().flyIntoWall(), damage);
+                        livingEntity.hurt(level.damageSources().source(DamageTypes.FLY_INTO_WALL, this.getEntity()), damage);
                     }
                     level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
                             SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.AMBIENT, 1f, 1f);
                 }
-                if (!livingEntity.hasImpulse)
-                    livingEntity.push(SparkMathKt.toVec3(impulseVec.mult((float) (0.1 / entityMass)).add(0, 0.1f, 0)));
+                livingEntity.setDeltaMovement(SparkMathKt.toVec3(impulseVec.mult((float) (0.05 / entityMass)).add(0, 0.1f, 0)));
                 return null;
             });
         }

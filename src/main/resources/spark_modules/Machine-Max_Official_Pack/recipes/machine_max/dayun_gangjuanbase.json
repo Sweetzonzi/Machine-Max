@@ -1,0 +1,25 @@
+{
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "c:planks"
+      },
+      "count": 12
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:leather"
+      },
+      "count": 12
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 1,
+    "components": {
+      "machine_max:part_type": "machine_max:dayun_gangjuanbase"
+    }
+  },
+  "time": 600
+}

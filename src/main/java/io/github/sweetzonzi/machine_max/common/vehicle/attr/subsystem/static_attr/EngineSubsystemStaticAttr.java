@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
     public final float maxPower;
     public final float maxTorque;
     public final float idleRpm;
@@ -75,10 +75,14 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
         this.inertia = inertia;
         this.dampingFactors = dampingFactors;
         this.throttleInputKeys = throttleInputKeys;
-        createWorkingStates();
+        createSounds(true);
     }
 
-    private void createWorkingStates() {
+    public boolean shouldCreateSounds() {
+        return true;
+    }
+
+    public void createSounds(boolean isClient) {
         workingStates.clear();
         // 确定转速区间数量，按照 1.5 倍递增
         int rpmCount = getRpmStateIndex(getRedLineRpm() * 2);
