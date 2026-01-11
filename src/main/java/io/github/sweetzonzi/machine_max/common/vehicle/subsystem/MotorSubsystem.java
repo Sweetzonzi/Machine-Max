@@ -38,7 +38,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         super(owner, name, attr);
         this.attr = attr;
         coupleTorquePD = new PDController(
-                2.5 * attr.getStaticAttribute().getInertia(), //kp
+                1.5 * attr.getStaticAttribute().getInertia(), //kp
                 0.5 * attr.getStaticAttribute().getInertia(), //kd
                 1 / 60f //step
         );

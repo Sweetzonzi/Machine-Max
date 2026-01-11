@@ -49,7 +49,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
         double minThrottle = 1.005 * calculateDampingTorque(IDLE_SPEED) / calculateMaxTorque(IDLE_SPEED);
         MIN_IDLE_THROTTLE = Math.min(minThrottle, 1f);
         coupleTorquePD = new PDController(
-                2.5 * attr.getStaticAttribute().getInertia(), //kp
+                1.5 * attr.getStaticAttribute().getInertia(), //kp
                 0.5 * attr.getStaticAttribute().getInertia(), //kd
                 1 / 60f //step
         );
@@ -118,6 +118,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             ); // 使用耦合扭矩补偿转速差，考虑饱和模拟打滑
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
             if (!getSubPart().level.isClientSide()) { //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
+                MachineMax.LOGGER.debug("couple torque: {}, speed diff: {}.", coupleTorque, speedDiff);
                 rotSpeed += (netTorque - coupleTorque) / attr.staticAttribute.inertia / 60f;
                 rotSpeed = Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 2);
                 rotSpeed = 0.95 * Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.05 * feedback; // 额外修正

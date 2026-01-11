@@ -495,7 +495,7 @@ public class BluePrintAttachment {
     public float calculateAssemblyBuff(Part part, Player player) {
         float modifier = 0f;
         // 研发等级加成
-        float researchProgress = getResearchedRecipes().get(part.getCustomRecipe());
+        float researchProgress = getResearchedRecipes().getOrDefault(part.getCustomRecipe(), 0f);
         modifier += (float) (Math.floor(researchProgress) * ASSEMBLY_BUFF_PER_LEVEL);
         // 蓝图加成
         RecipeHolder<FabricatingRecipe> recipe = getAllResearchable().get(part.getCustomRecipe());
@@ -515,7 +515,7 @@ public class BluePrintAttachment {
     public float calculateRepairBuff(Part part, Player player) {
         float modifier = 0f;
         // 研发等级加成
-        float researchProgress = getResearchedRecipes().get(part.getCustomRecipe());
+        float researchProgress = getResearchedRecipes().getOrDefault(part.getCustomRecipe(), 0f);
         modifier += (float) (Math.floor(researchProgress) * REPAIR_BUFF_PER_LEVEL);
         // 蓝图加成
         RecipeHolder<FabricatingRecipe> recipe = getAllResearchable().get(part.getCustomRecipe());
