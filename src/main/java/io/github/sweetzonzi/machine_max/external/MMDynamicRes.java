@@ -146,17 +146,17 @@ public class MMDynamicRes {
 //            }
 //        }
         //TODO:从.minecraft/spark_modules中读取各个包的各个模块的内容，包可以是文件夹也可以是zip压缩包
-        for (Path root : listPaths(SPARK_MODULE, path -> Files.isDirectory(path) || isZipFile(path))) {
-            String packName = root.getFileName().toString();
-
-            if (Files.isDirectory(root)) {
-                // 处理文件夹资源包
-                packUp(packName, Exist(root.resolve("font")));
-            } else if (isZipFile(root)) {
-                // 处理ZIP压缩包
-                packUpZip(packName, root);
-            }
-        }
+//        for (Path root : listPaths(SPARK_MODULE, path -> Files.isDirectory(path) || isZipFile(path))) {
+//            String packName = root.getFileName().toString();
+//
+//            if (Files.isDirectory(root)) {
+//                // 处理文件夹资源包
+//                packUp(packName, Exist(root.resolve("font")));
+//            } else if (isZipFile(root)) {
+//                // 处理ZIP压缩包
+//                packUpZip(packName, root);
+//            }
+//        }
     }
 
     /**

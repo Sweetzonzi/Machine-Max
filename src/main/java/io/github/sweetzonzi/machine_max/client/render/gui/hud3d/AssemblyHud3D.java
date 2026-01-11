@@ -344,12 +344,14 @@ public class AssemblyHud3D implements IHud3DElement {
                 if (subPart != null) {
                     if (ctx.player.isCreative() || (part.getAssemblingProgress() <= 0 && part.getMaterialProgress() <= 0)) {
                         var availableRecipes = ctx.player.getData(MMAttachments.getBLUEPRINT()).getAvailablePartRecipeFor(ctx.player, subPart.part.type.getRegistryKey());
-                        startY += TEXT_LINE_HEIGHT + 2;
-                        ctx.drawText(Component.translatable("hud.key.machine_max.cycle_recipe",
-                                        KeyBinding.assemblyCycleRecipeKey.getKey().getDisplayName(),
-                                        availableRecipes.size()),
-                                startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(availableRecipes.size() > 1 ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
-                        );
+                        if (availableRecipes != null && availableRecipes.size() > 1) {
+                            startY += TEXT_LINE_HEIGHT + 2;
+                            ctx.drawText(Component.translatable("hud.key.machine_max.cycle_recipe",
+                                            KeyBinding.assemblyCycleRecipeKey.getKey().getDisplayName(),
+                                            availableRecipes.size()),
+                                    startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(availableRecipes.size() > 1 ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                            );
+                        }
                     }
                 }
             } else if (ctx.mc.player.getMainHandItem().getItem() instanceof CrowbarItem) {

@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.attachment;
 
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
@@ -42,6 +43,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -368,11 +370,20 @@ public class VehicleAssemblyAttachment {
             this.quaternion = new Quaternionf();
         } else {
             OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel("default")));
+            OBone startBone = null;
+            if (getConnectorName() != null) {
+                String startBoneName = getVariant().getSubParts().get(getConnectorName().getFirst()).getStartBone();
+                startBone = model.getBone(startBoneName);
+            }
             var locators = model.getLocators();
             OLocator partConnectorLocator = locators.get(getConnector().locatorName());
             Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
-            this.offset = partConnectorLocator.getOffset().toVector3f();
-            this.quaternion = new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x);
+            Matrix4f pose = new Matrix4f();
+            partConnectorLocator.getBone().applyTransformWithParents(pose, startBone);
+            pose.translate(partConnectorLocator.getOffset().toVector3f())
+                    .rotate(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x));
+            this.offset = pose.getTranslation(new Vector3f());
+            this.quaternion = pose.getNormalizedRotation(new Quaternionf());
         }
     }
 }

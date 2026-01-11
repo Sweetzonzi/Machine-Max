@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
@@ -42,6 +43,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
 import java.util.*;
@@ -233,14 +235,21 @@ public class Part {
             SubPartAttr subPartAttr,
             LinkedHashMap<String, OLocator> locators
     ) {
+        OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel("default")));
+        OBone startBone = model.getBone(subPartAttr.getStartBone());
         for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartAttr.connectors.entrySet()) {
             String connectorName = connectorEntry.getKey();
             ConnectorAttr connectorAttr = connectorEntry.getValue();
             if (locators.get(connectorAttr.locatorName()) instanceof OLocator locator) {//若找到了对应的零件连接点Locator
                 org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-                Transform posRot = new Transform(//连接点的位置与姿态
-                        PhysicsHelperKt.toBVector3f(locator.getOffset()).subtract(subPart.massCenterTransform.getTranslation()),
-                        SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x)).mult(subPart.massCenterTransform.getRotation().inverse())
+                Matrix4f pose = new Matrix4f();
+                locator.getBone().applyTransformWithParents(pose, startBone);
+                pose.translate(locator.getOffset().toVector3f())
+                        .rotate(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x));
+                pose.mul(SparkMathKt.toMatrix4f(subPart.massCenterTransform.toTransformMatrix()));
+                Transform posRot = new Transform( //连接点的位置与姿态
+                        PhysicsHelperKt.toBVector3f(pose.getTranslation(new org.joml.Vector3f())),
+                        SparkMathKt.toBQuaternion(pose.getNormalizedRotation(new Quaternionf()))
                 );
                 AbstractConnector connector;
                 if (connectorAttr.isSimpleConnector()) {
