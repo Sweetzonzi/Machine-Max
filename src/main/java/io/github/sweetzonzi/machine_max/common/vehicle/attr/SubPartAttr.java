@@ -164,7 +164,7 @@ public class SubPartAttr {
                                 hitBoxNames.put(ballShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         ballShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())));
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())));
                             }
                             break;
                         case "cylinder":
@@ -176,7 +176,7 @@ public class SubPartAttr {
                                 hitBoxNames.put(cylinderShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         cylinderShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
                                         SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
                             }
                             break;
@@ -193,7 +193,7 @@ public class SubPartAttr {
                                 hitBoxNames.put(cylinderShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         cylinderShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
                                         SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
                             }
                             break;
@@ -209,7 +209,7 @@ public class SubPartAttr {
                                 hitBoxNames.put(collisionShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         collisionShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f()).sub(bone.getPivot().toVector3f())),
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(new Matrix4f())),
                                         SparkMathKt.toBQuaternion(quaternion).toRotationMatrix());
                             }
                             break;
