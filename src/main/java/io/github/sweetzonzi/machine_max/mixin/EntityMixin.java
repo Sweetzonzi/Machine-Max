@@ -5,15 +5,20 @@ import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
+import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.collision.PhysicsSweepTestResult;
 import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.math.Transform;
+import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.decoration.BlockAttachedEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -25,6 +30,8 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.annotation.Nullable;
@@ -36,25 +43,53 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
     @Shadow
     public abstract Level level();
 
+    @Shadow
+    private boolean onGround;
+    @Shadow
+    public boolean verticalCollision;
+    @Shadow
+    public boolean verticalCollisionBelow;
+
+    @Shadow
+    protected abstract void checkSupportingBlock(boolean onGround, @Nullable Vec3 movement);
+
+    @Shadow
+    public abstract void resetFallDistance();
+
+    @Shadow
+    public abstract void setDeltaMovement(Vec3 deltaMovement);
+
     @Unique
     private AbstractControllableSubsystem machine_Max$controllingSubSystem;
     @Unique
     private CapsuleCollisionShape machine_Max$collideTestShape = null;
     @Unique
-    private Transform machine_Max$sweepTestStart = new Transform();
+    private final Transform machine_Max$sweepTestStart = new Transform();
     @Unique
-    private Transform machine_Max$sweepTestEnd = new Transform();
+    private final Transform machine_Max$sweepTestEnd = new Transform();
     @Unique
     private final Vec3 AXIS_YP = new Vec3(0, 1, 0);
+    @Unique
+    private boolean machine_Max$groundedByPhysicsBody = false;
+    @Unique
+    private Vec3 machine_Max$physicsGroundNormal = null;
+
     /**
-     * <p>额外处理原版碰撞检测逻辑，使实体能够与物理体发生碰撞</p>
-     * <p>Handle the original collision detection logic, allowing entities to collide with physical bodies.</p>
+     * 在调用 maybeBackOffFromEdge 之前修改 pos 变量
      */
-    @Inject(method = "collide", at = @At("RETURN"), cancellable = true)
-    private void onCollide(Vec3 vec, CallbackInfoReturnable<Vec3> cir) {
+    @ModifyArg(
+            method = "move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/Entity;maybeBackOffFromEdge(Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/entity/MoverType;)Lnet/minecraft/world/phys/Vec3;"
+            ),
+            index = 0
+    )
+    private Vec3 modifyMovePosBeforeEdgeBackoff(Vec3 originalPos, MoverType moverType) {
         // 获取原版碰撞结果
-        Vec3 originalVec = cir.getReturnValue();
-        if (originalVec.lengthSqr() < 1e-4f) return; // 无运动时直接返回
+        if (originalPos.lengthSqr() < 1e-6f) {
+            return originalPos; // 无运动时直接返回
+        }
         Entity entity = (Entity) (Object) this;
         AABB aabb = entity.getBoundingBox();
         // 跳过非必要的检测对象
@@ -62,7 +97,9 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
                 || entity instanceof MMPartEntity
                 || (aabb.maxX - aabb.minX) * (aabb.maxY - aabb.minY) * (aabb.maxZ - aabb.minZ) < 0.001
                 || (entity instanceof Player player && !player.isAffectedByFluids()) // 飞行模式无碰撞
-                || ((IEntityMixin) entity).machine_Max$getControllingSubsystem() != null) return;
+                || ((IEntityMixin) entity).machine_Max$getControllingSubsystem() != null) {
+            return originalPos;
+        }
         // 调用物理引擎进行碰撞检测
         if (machine_Max$collideTestShape == null) {
             double x = (aabb.maxX - aabb.minX) / 2;
@@ -72,12 +109,13 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             machine_Max$collideTestShape = new CapsuleCollisionShape(radius, height > 0 ? height : 0.01f);
         }
         List<PhysicsSweepTestResult> results = new ArrayList<>();
-        Vec3 delta = new Vec3(originalVec.x, originalVec.y, originalVec.z);
+        Vec3 delta = new Vec3(originalPos.x, originalPos.y, originalPos.z);
         Vec3 center = aabb.getCenter();
-        if (delta.length() < 0.5f) delta = delta.normalize().scale(0.5f);
-        if (delta.length() < 0.498f) {
-            //TODO:有时扫掠测试会报错，检查原因 会是因为delta某些情况下等于0吗？
-            return; // 无运动时直接返回，也许能修复此问题
+        double len = delta.length();
+        if (len > 1e-6 && len < 0.5)
+            delta = delta.normalize();
+        else if (len < 1e-6) { // 无运动直接返回
+            return originalPos;
         }
         machine_Max$sweepTestStart.setTranslation(PhysicsHelperKt.toBVector3f(center));
         machine_Max$sweepTestEnd.setTranslation(PhysicsHelperKt.toBVector3f(center.add(delta)));
@@ -85,10 +123,13 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
                 machine_Max$collideTestShape,
                 machine_Max$sweepTestStart,
                 machine_Max$sweepTestEnd, results, 0.05f);
-        if (results.isEmpty()) return;// 无碰撞结果时直接返回
+        if (results.isEmpty()) {
+            return originalPos;// 无碰撞结果时直接返回
+        }
         Vec3 normal = new Vec3(0, 1, 0);
         Vec3 movement = new Vec3(0, 0, 0);
         float hitFraction = Float.MAX_VALUE;
+        HitBox hitBox = null;
         for (PhysicsSweepTestResult result : results) {
             PhysicsCollisionObject pco = result.getCollisionObject();
             int group = pco.getCollisionGroup();
@@ -96,48 +137,108 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
                 if (PhysicsBodyExtensionKt.getOwner(pco) instanceof SubPart subPart) {
                     if (subPart.part.getAssemblingProgress() <= 0) continue; // 未组装时不检测碰撞
                     if (result.getHitFraction() < hitFraction) {
-                        normal = SparkMathKt.toVec3(result.getHitNormalLocal(null).normalize());
+                        normal = SparkMathKt.toVec3(result.getHitNormalLocal(null)).normalize();
                         hitFraction = result.getHitFraction();
                         movement = SparkMathKt.toVec3(MMMath.worldPointWorldVel(PhysicsHelperKt.toBVector3f(center), subPart.body));
+                        hitBox = subPart.getHitBox(result.triangleIndex());
                     }
                 }
             }
         }
-        if (hitFraction > 1) return;// 无碰撞结果时直接返回
-        if (originalVec.dot(normal) > 0) return;// 运动方向与法线方向相同时不会碰撞，直接返回
+        if (hitBox == null || hitFraction > 500 || originalPos.dot(normal) > 0) {
+            return originalPos;// 运动方向与法线方向相同时或未检测到匹配的碰撞体时直接返回
+        }
+        if (machine_Max$sweepTestStart.getTranslation().subtract(machine_Max$sweepTestEnd.getTranslation()).lengthSquared() * hitFraction * hitFraction * 0.8 > originalPos.lengthSqr())
+            return originalPos; // 扫掠命中但不足移动长度时直接返回，避免浮空
         // 计算原始向量在法线方向的投影
         Vec3 finalVec;
-        double dotProduct = originalVec.dot(normal);
+        double dotProduct = originalPos.dot(normal);
         Vec3 normalComponent = normal.scale(dotProduct);
         // 减去法线方向投影，得到垂直法线方向的向量
-        finalVec = originalVec.subtract(normalComponent);
+        finalVec = originalPos.subtract(normalComponent);
         // 计算与水平方向的夹角
-        double angle = Math.acos(Math.clamp(normal.normalize().dot(AXIS_YP), -1, 1));
-//        if (entity instanceof Player)
-//            MachineMax.LOGGER.debug("angle: {}, normal: {}, originalVec: {} ,finalVec: {}", angle * 180 / Math.PI, normal, originalVec, finalVec);
-        if (angle * 180 / Math.PI < 45.0) { // 爬坡角度小于45°时
-            if (originalVec.horizontalDistanceSqr() > 0.0001f)
-                //水平方向有运动时，取原始向量的长度，方便爬坡
-                finalVec = finalVec.normalize().scale(originalVec.length());
-            else
+        double angle = Math.acos(Math.clamp(normal.normalize().dot(AXIS_YP), -1, 1)) * 180 / Math.PI;
+        if (angle < 45.0) { // 爬坡角度小于45°时
+            this.machine_Max$groundedByPhysicsBody = true;
+            this.machine_Max$physicsGroundNormal = normal;
+            if (originalPos.horizontalDistanceSqr() > 1e-6f) {
+                //水平方向有运动时，令水平方向速度保持原输入
+                double originalLen = originalPos.horizontalDistance();
+                double finalLen = finalVec.horizontalDistance();
+                finalVec = finalVec.scale(originalLen / finalLen);
+            } else {
                 //水平方向无运动时，保持静止
                 finalVec = new Vec3(0, 0, 0);
+            }
         }
         // 叠加刚体的运动
         movement = movement.scale(0.05);//速度转为单tick移动量
-        finalVec = finalVec.add(movement.x, movement.y > 0 ? movement.y : 0, movement.z);
-        // 若存在方块碰撞导致的向量变化，则返回合并后的向量
-        if (!originalVec.equals(vec)) {
-            double x = finalVec.x * originalVec.x < 0 ? 0 :
-                    finalVec.x > 0 ? Math.min(finalVec.x, originalVec.x) : Math.max(finalVec.x, originalVec.x);
-            double y = finalVec.y * originalVec.y < 0 ? 0 :
-                    finalVec.y > 0 ? Math.min(finalVec.y, originalVec.y) : Math.max(finalVec.y, originalVec.y);
-            double z = finalVec.z * originalVec.z < 0 ? 0 :
-                    finalVec.z > 0 ? Math.min(finalVec.z, originalVec.z) : Math.max(finalVec.z, originalVec.z);
-            finalVec = new Vec3(x, y, z);
-        }
-        cir.setReturnValue(finalVec);
+        Vec3 deltaWithPart = finalVec.subtract(movement);
+//        finalVec = finalVec.subtract(deltaWithPart.scale(machine_Max$groundedByPhysicsBody ? 0.2 : 0.1)); // 摩擦使得双方接近同速
+        MachineMax.LOGGER.debug("angle:{}", angle);
+        entity.setDeltaMovement(finalVec); // 修改速度，否则速度会无限积累
+        return finalVec;
     }
+
+
+    /**
+     * <p>补充 setOnGroundWithMovement 的地面语义判定，使物理刚体斜面能够被识别为“地面”</p>
+     * <p>Supplement ground semantics for physics bodies, allowing entities to be considered on-ground
+     * when standing on physics-driven surfaces.</p>
+     */
+    @Inject(
+            method = "setOnGroundWithMovement",
+            at = @At("HEAD"),
+            cancellable = true
+    )
+    private void machine_Max$setOnGroundWithMovementByPhysics(
+            boolean onGround,
+            Vec3 movement,
+            CallbackInfo ci
+    ) {
+        Entity entity = (Entity) (Object) this;
+
+        // === 原版已经判定为地面时，完全交由原逻辑处理 ===
+        if (onGround) {
+            return;
+        }
+
+        // 跳过非必要的检测对象
+        if (entity instanceof BlockAttachedEntity
+                || entity instanceof MMPartEntity
+                || (entity instanceof Player player && !player.isAffectedByFluids()) // 飞行模式无碰撞
+                || ((IEntityMixin) entity).machine_Max$getControllingSubsystem() != null) {
+            return;
+        }
+
+        // === 本 tick 未记录物理刚体地面接触，直接回退原版 ===
+        if (!this.machine_Max$groundedByPhysicsBody || this.machine_Max$physicsGroundNormal == null) {
+            return;
+        }
+
+        /*
+         * - 即使几何解算中未产生 verticalCollisionBelow
+         * - 只要 collide 阶段确认是“可站立斜面”
+         * - 即补充 onGround = true
+         */
+        this.onGround = true;
+        this.verticalCollision = true;
+        this.verticalCollisionBelow = true;
+
+        // 调用原版支撑方块检测逻辑
+        this.checkSupportingBlock(true, movement);
+
+        // 接触物理地面时，视为安全着地，重置跌落距离
+        this.resetFallDistance();
+
+        // === 本 tick 状态用完即清 ===
+        this.machine_Max$groundedByPhysicsBody = false;
+        this.machine_Max$physicsGroundNormal = null;
+
+        // 阻止原版逻辑再次覆盖 onGround
+        ci.cancel();
+    }
+
 
     @Nullable
     @Override
