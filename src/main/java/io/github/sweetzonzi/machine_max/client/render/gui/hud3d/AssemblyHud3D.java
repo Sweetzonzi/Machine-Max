@@ -290,9 +290,10 @@ public class AssemblyHud3D implements IHud3DElement {
         }
         ctx.poseStack.popPose();
 
+        startY += PROJECTION_HEIGHT + 5;
+
         if (!materials.isEmpty()) {
             // 材料列表
-            startY += PROJECTION_HEIGHT + 5;
             for (MaterialStatus m : materials) {
                 drawMaterialRow(ctx, startX, startY, m);
                 startY += MATERIAL_LINE_HEIGHT;
