@@ -126,57 +126,78 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         if (results.isEmpty()) {
             return originalPos;// 无碰撞结果时直接返回
         }
-        Vec3 normal = new Vec3(0, 1, 0);
-        Vec3 movement = new Vec3(0, 0, 0);
-        float hitFraction = Float.MAX_VALUE;
-        HitBox hitBox = null;
+        // === 多刚体顺序约束处理 ===
+        Vec3 finalVec = originalPos;
+        Vec3 groundNormal = null;
+        double minGroundAngle = 90.0;
+        Vec3 movement = Vec3.ZERO;
+
+        // 按 hitFraction 从近到远排序，保证约束稳定
+        results.sort((a, b) -> Float.compare(a.getHitFraction(), b.getHitFraction()));
+
         for (PhysicsSweepTestResult result : results) {
             PhysicsCollisionObject pco = result.getCollisionObject();
             int group = pco.getCollisionGroup();
-            if (group == CollisionGroups.PHYSICS_BODY) {
-                if (PhysicsBodyExtensionKt.getOwner(pco) instanceof SubPart subPart) {
-                    if (subPart.part.getAssemblingProgress() <= 0) continue; // 未组装时不检测碰撞
-                    if (result.getHitFraction() < hitFraction) {
-                        normal = SparkMathKt.toVec3(result.getHitNormalLocal(null)).normalize();
-                        hitFraction = result.getHitFraction();
-                        movement = SparkMathKt.toVec3(MMMath.worldPointWorldVel(PhysicsHelperKt.toBVector3f(center), subPart.body));
-                        hitBox = subPart.getHitBox(result.triangleIndex());
-                    }
-                }
+            if (group != CollisionGroups.PHYSICS_BODY) continue;
+
+            if (!(PhysicsBodyExtensionKt.getOwner(pco) instanceof SubPart subPart)) continue;
+            if (subPart.part.getAssemblingProgress() <= 0) continue; // 未组装时不检测碰撞
+
+            Vec3 normal = SparkMathKt.toVec3(result.getHitNormalLocal(null)).normalize();
+
+            // 当前运动方向未朝向该碰撞面，忽略
+            double dot = finalVec.dot(normal);
+            if (dot > 0) continue;
+
+            // === 顺序投影：移除法线方向分量 ===
+            Vec3 normalComponent = normal.scale(dot);
+            finalVec = finalVec.subtract(normalComponent);
+
+            // === 记录最接近“地面”的法线用于 grounded 判定 ===
+            double angle = Math.acos(
+                    Math.clamp(normal.dot(AXIS_YP), -1, 1)
+            ) * 180 / Math.PI;
+
+            if (angle < minGroundAngle) {
+                minGroundAngle = angle;
+                groundNormal = normal;
             }
+
+            // === 记录最近一次接触刚体的运动，用于速度叠加 ===
+            movement = SparkMathKt.toVec3(
+                    MMMath.worldPointWorldVel(
+                            PhysicsHelperKt.toBVector3f(center),
+                            subPart.body
+                    )
+            );
         }
-        if (hitBox == null || hitFraction > 500 || originalPos.dot(normal) > 0) {
-            return originalPos;// 运动方向与法线方向相同时或未检测到匹配的碰撞体时直接返回
+
+        // === 无有效约束，直接返回原始运动 ===
+        if (finalVec == originalPos) {
+            return originalPos;
         }
-        if (machine_Max$sweepTestStart.getTranslation().subtract(machine_Max$sweepTestEnd.getTranslation()).lengthSquared() * hitFraction * hitFraction * 0.8 > originalPos.lengthSqr())
-            return originalPos; // 扫掠命中但不足移动长度时直接返回，避免浮空
-        // 计算原始向量在法线方向的投影
-        Vec3 finalVec;
-        double dotProduct = originalPos.dot(normal);
-        Vec3 normalComponent = normal.scale(dotProduct);
-        // 减去法线方向投影，得到垂直法线方向的向量
-        finalVec = originalPos.subtract(normalComponent);
-        // 计算与水平方向的夹角
-        double angle = Math.acos(Math.clamp(normal.normalize().dot(AXIS_YP), -1, 1)) * 180 / Math.PI;
-        if (angle < 45.0) { // 爬坡角度小于45°时
+
+        // === 爬坡 / 地面判定 ===
+        if (groundNormal != null && minGroundAngle < 45.0) {
             this.machine_Max$groundedByPhysicsBody = true;
-            this.machine_Max$physicsGroundNormal = normal;
+            this.machine_Max$physicsGroundNormal = groundNormal;
+
             if (originalPos.horizontalDistanceSqr() > 1e-6f) {
-                //水平方向有运动时，令水平方向速度保持原输入
                 double originalLen = originalPos.horizontalDistance();
                 double finalLen = finalVec.horizontalDistance();
-                finalVec = finalVec.scale(originalLen / finalLen);
+                if (finalLen > 1e-6f) {
+                    finalVec = finalVec.scale(originalLen / finalLen);
+                }
             } else {
-                //水平方向无运动时，保持静止
-                finalVec = new Vec3(0, 0, 0);
+                finalVec = Vec3.ZERO;
             }
         }
-        // 叠加刚体的运动
-        movement = movement.scale(0.05);//速度转为单tick移动量
+
+        // === 叠加刚体运动（使用最近约束的刚体） ===
+        movement = movement.scale(0.05); // 速度转为单 tick 位移
         Vec3 deltaWithPart = finalVec.subtract(movement);
-//        finalVec = finalVec.subtract(deltaWithPart.scale(machine_Max$groundedByPhysicsBody ? 0.2 : 0.1)); // 摩擦使得双方接近同速
-        MachineMax.LOGGER.debug("angle:{}", angle);
-        entity.setDeltaMovement(finalVec); // 修改速度，否则速度会无限积累
+        finalVec = finalVec.subtract(deltaWithPart.scale(machine_Max$groundedByPhysicsBody ? 0.1 : 0.05)); // 摩擦使得双方接近同速
+        entity.setDeltaMovement(finalVec); // 防止速度无限积累
         return finalVec;
     }
 
