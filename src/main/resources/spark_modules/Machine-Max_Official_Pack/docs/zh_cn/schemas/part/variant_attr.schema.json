@@ -87,7 +87,7 @@
       "description": "子部件（零件）定义，键为子部件名称，值是子部件的详细配置。这是部件运动的最小单元，部件的每个可动部分都应当是一个子部件"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["models", "sub_parts"],
   "examples": [
     {

@@ -52,7 +52,7 @@
       "description": "Part variant list, supports single variant (default) or multiple variant configurations. Each variant can have different appearance and characteristics"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["variants"],
   "examples": [
     {

@@ -52,7 +52,7 @@
       "description": "部件变体列表，支持单一变体（默认）或多个变体配置。每个变体可以有不同的外观和特性"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["variants"],
   "examples": [
     {

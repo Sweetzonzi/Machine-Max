@@ -137,7 +137,8 @@ public interface ISignalSender {
                 if (requiresImmediateCallback && this instanceof ISignalReceiver) {
                     if (signalReceiver instanceof SignalPort port
                             && port.getOwner().getAttachedConnector() instanceof AbstractConnector connector
-                            && connector.getSignalPort() instanceof SignalPort otherPort) { // 连接点信号端口特殊处理
+                            && connector.getSignalPort() instanceof SignalPort otherPort
+                            && otherPort.getTargets().containsKey(signalChannel)) { // 连接点信号端口特殊处理
                         for (ISignalReceiver target : otherPort.getTargets().get(signalChannel).values()) {
                             if (target instanceof ISignalSender callbackSender) {
                                 if (callbackReturnsSignalValue)

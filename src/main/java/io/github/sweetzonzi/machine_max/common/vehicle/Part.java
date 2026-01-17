@@ -271,7 +271,7 @@ public class Part {
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
-                throw new NullPointerException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey(), connectorName, connectorAttr.locatorName()).getString());
+                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey(), connectorName, connectorAttr.locatorName()).getString());
         }
     }
 

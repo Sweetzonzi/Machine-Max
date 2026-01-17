@@ -240,7 +240,7 @@ public class VehicleAssemblyAttachment {
             Part part
     ) {
         ConnectorAttr connector = getConnector();
-        if (level.isClientSide() || connector == null || partType == null || variantName == null) {
+        if (level.isClientSide() || partType == null || variantName == null) {
             return InteractionResultHolder.pass(stack);
         } else {
             try {
@@ -273,7 +273,7 @@ public class VehicleAssemblyAttachment {
                     }
                 }
                 // 若有可用的连接点，则尝试将零件连接至接口
-                if (targetConnector != null && connectorName != null) {
+                if (connector != null && targetConnector != null && connectorName != null) {
                     if (targetConnector.conditionCheck(partType, variantName)) {//检查变体条件
                         if ((targetConnector instanceof SimpleConnector || connector.isSimpleConnector())) {//检查接口条件
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标连接点所属的载具
@@ -307,6 +307,7 @@ public class VehicleAssemblyAttachment {
                 }
                 return InteractionResultHolder.consume(stack);
             } catch (Exception e) {
+                MachineMax.LOGGER.error("An error occurred while assembling the part:", e);
                 return InteractionResultHolder.fail(stack);
             }
         }

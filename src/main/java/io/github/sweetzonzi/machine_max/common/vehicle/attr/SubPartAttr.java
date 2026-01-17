@@ -129,7 +129,7 @@ public class SubPartAttr {
             Map<String, OBone> bones = filterBones(
                     OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
                     startBone, endBones);
-            if (bones.isEmpty()) throw new IllegalArgumentException("error.machine_max.subpart.empty_collision_shape");
+            if (bones.isEmpty()) throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
             // 获取定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
@@ -177,9 +177,9 @@ public class SubPartAttr {
                                         SparkMathKt.toBQuaternion(cube.getTransformedRotation(pose)).toRotationMatrix());
                             }
                             break;
-                        case "cone":
-                            // TODO: 创建锥形碰撞体积
-                            break;
+//                        case "cone":
+//                            // TODO: 创建锥形碰撞体积
+//                        break;
                         case "capsule":
                             for (OCube cube : bone.getCubes()) {
                                 //TODO: 检查尺寸方向是否正确
@@ -207,13 +207,17 @@ public class SubPartAttr {
                             }
                             break;
                         default:
-                            MachineMax.LOGGER.error("发现不支持的碰撞形状类型{}。", hitBoxEntry.getValue());
+                            String error = hitBoxEntry.getKey() + "被指定为不支持的碰撞形状 " + hitBoxEntry.getValue();
+                            error += "应为box, capsule, cylinder, wheel之一";
+                            throw new IllegalArgumentException(error);
                     }
                 } else {
-                    MachineMax.LOGGER.error("未找到对应的碰撞形状骨骼{}。", hitBoxEntry.getKey());
+                    String error = "未找到碰撞形状骨骼 " + hitBoxEntry.getKey();
+                    throw new IllegalArgumentException(error);
                 }
             }
-
+            if (shape.countChildren() <= 0)
+                throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
             // 调整零件质心
             Transform massCenter = null;
             OLocator locator = locators.get("MassCenter");
@@ -244,8 +248,6 @@ public class SubPartAttr {
                 }
                 shape.correctAxes(massCenter);
             }
-            if (shape.countChildren() <= 0)
-                throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
             return shape;
         });
     }

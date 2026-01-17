@@ -87,7 +87,7 @@
       "description": "Sub-part (component) definition, key is sub-part name, value is detailed configuration of the sub-part. This is the smallest unit of part movement, each movable part of the part should be a sub-part"
     }
   },
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": ["models", "sub_parts"],
   "examples": [
     {
