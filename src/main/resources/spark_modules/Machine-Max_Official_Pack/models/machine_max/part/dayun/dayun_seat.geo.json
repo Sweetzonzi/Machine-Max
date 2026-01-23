@@ -83,7 +83,7 @@
 						}
 					],
 					"locators": {
-						"seatlocator": [0, 0.75, 0]
+						"seat_locator": [0, 0.75, 0]
 					}
 				},
 				{
@@ -118,7 +118,7 @@
 						}
 					],
 					"locators": {
-						"seatpoint": [0, 4, -1]
+						"seat_point": [0, 4, -1]
 					}
 				}
 			]

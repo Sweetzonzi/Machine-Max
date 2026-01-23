@@ -28,7 +28,7 @@ public class SeatSubsystemAttr extends AbstractSubsystemAttr {
             ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.optionalFieldOf("seat_point_locator", "").forGetter(SeatSubsystemAttr::getLocator),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("move_outputs", Map.of()).forGetter(SeatSubsystemAttr::getMoveSignalTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("view_outputs", Map.of()).forGetter(SeatSubsystemAttr::getViewSignalTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("aim_outputs", Map.of()).forGetter(SeatSubsystemAttr::getViewSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("regular_outputs", Map.of()).forGetter(SeatSubsystemAttr::getRegularSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("passenger_num_outputs", Map.of()).forGetter(SeatSubsystemAttr::getPassengerNumSignalTargets)
     ).apply(instance, SeatSubsystemAttr::new));

@@ -155,13 +155,15 @@ public class Part {
                     String connectorName = connectorData.getKey();
                     CompoundTag connectorTagData = connectorData.getValue();
                     AbstractConnector connector = subPart.connectors.get(connectorName);
-                    connector.loadData(connectorTagData);
+                    if (connector != null)
+                        connector.loadData(connectorTagData);
                 }
                 for (Map.Entry<String, CompoundTag> subsystemData : entry.getValue().subsystemData.entrySet()) {
                     String subSystemName = subsystemData.getKey();
                     CompoundTag subsystemTagData = subsystemData.getValue();
                     AbstractSubsystem subsystem = subPart.subsystems.get(subSystemName);
-                    subsystem.loadData(subsystemTagData);
+                    if (subsystem != null)
+                        subsystem.loadData(subsystemTagData);
                 }
             }
         }

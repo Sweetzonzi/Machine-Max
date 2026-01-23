@@ -23,7 +23,7 @@
       "default": {},
       "description": "移动控制信号输出频道及目标。"
     },
-    "view_outputs": {
+    "aim_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": {},
       "description": "视角控制信号输出频道及目标。"

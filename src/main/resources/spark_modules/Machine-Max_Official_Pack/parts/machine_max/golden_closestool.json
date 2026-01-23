@@ -12,7 +12,7 @@
     "animations": "machine_max:empty", 
     "tags": [],
     "sub_parts": {
-      "golden_closestool": {
+      "sub_part.machine_max.main": {
         "durability": 4000.0,
         "mass": 350.0,
         "block_collision": "ground",
@@ -24,35 +24,35 @@
           }
         },
         "interact_boxes": {
-          "interact.golden.seat": {
+          "interact.machine_max.golden.seat": {
             "bone": "interact",
             "signal_targets": {
-              "interact": ["seat"] 
+              "interact": ["subsystem.machinemax.seat"]
             },
             "interact_mode": "accurate" 
           }
         },
         "subsystems": {
-          "seat": {
+          "subsystem.machinemax.seat": {
             "type": "machine_max:seat", 
             "model": "machine_max:golden_closestool", 
-            "seat_point_locator": "sitpoint", 
+            "seat_point_locator": "sit_point",
             "move_outputs": {
-              "move_control": ["chassis_connection"] 
+              "move_control": ["connector.machine_max.chassis_connection"]
             },
             "regular_outputs": {
-              "regular_control": ["vehicle", "chassis_connection"] 
+              "regular_control": ["vehicle", "connector.machine_max.chassis_connection"]
             },
-            "view_outputs": {
-              "view_control": ["chassis_connection"] 
+            "aim_outputs": {
+              "aim_control": ["connector.machine_max.chassis_connection"]
             },
             "passenger_num_outputs": {
-              "passenger_num": ["interact.golden.seat", "chassis_connection"]
+              "occupied": ["interact.machine_max.golden.seat", "connector.machine_max.chassis_connection"]
             }
           }
         },
         "connectors": {
-          "chassis_connection": {
+          "connector.machinemax.chassis_connection": {
             "locator": "golden_closestool_connect",
             "type": "Simple",
             "direction": "yn",
@@ -62,11 +62,16 @@
             "required_tags": [],
             "acceptable_tags": [],
             "forbidden_tags": [],
+            "signal_translations": {
+              "left_front_door_interact": "interact",
+              "right_front_door_interact": "interact",
+              "left_back_door_interact": "interact",
+              "right_back_door_interact": "interact",
+              "left_door_interact": "interact",
+              "right_door_interact": "interact"
+            },
             "signal_targets": {
-              "left_front_door_interact": ["seat"],
-              "right_front_door_interact": ["seat"],
-              "left_back_door_interact": ["seat"],
-              "right_back_door_interact": ["seat"]
+              "interact": ["subsystem.machinemax.seat"]
             }
           }
         },

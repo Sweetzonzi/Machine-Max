@@ -1,284 +1,284 @@
 {
   "max": [
-    1.291656494140625,
-    2.349698638916017,
-    2.4093261718750085
+    2.434191894531182,
+    2.3156349182128935,
+    1.3422790527343693
   ],
   "hp": 20.0,
   "parts": {
-    "6c622125-6760-47f5-96bc-abf1f8a5c1a4": {
+    "d4ea307d-4449-4c4a-a66a-65fa90bf7be4": {
       "custom_recipe": "machine_max:mini_ev_wheel",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
-        "mini_ev_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "chassis_connection": {
-              "integrity": 20.0
-            }
-          },
-          "id": 5,
-          "durability": 20.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              -9.484252,
-              -59.11442,
-              -117.25615
-            ],
-            "rotation": [
-              0.0012708242,
-              -3.4359936E-4,
-              0.009572378,
-              0.9999533
-            ],
-            "linear_vel": [
-              -0.002181705,
-              0.009453058,
-              -0.012406575
-            ],
-            "angular_vel": [
-              0.11105254,
-              0.0017451046,
-              0.021812692
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:mini_ev_wheel",
-      "name": "miniEV车轮",
-      "uuid": "6c622125-6760-47f5-96bc-abf1f8a5c1a4",
-      "variant": "right"
-    },
-    "23454986-3b25-4f59-9efe-18a2e67ae283": {
-      "custom_recipe": "machine_max:mini_ev_wheel",
-      "material_assembling_progress": 2147483647,
-      "sub_parts": {
-        "mini_ev_wheel": {
-          "connector_data": {
-            "chassis_connection": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 40.0
             }
           },
-          "id": 7,
+          "id": 59,
           "durability": 120.0,
           "pos_rot_vel_vel": {
             "position": [
-              -11.616359,
-              -59.11456,
-              -117.25762
+              689.6608,
+              -59.593266,
+              239.7289
             ],
             "rotation": [
-              -5.607973E-4,
-              -3.3356342E-4,
-              -0.008772154,
-              0.9999613
+              -0.3569073,
+              0.6120139,
+              0.33834547,
+              0.61933726
             ],
             "linear_vel": [
-              -0.0021878092,
-              0.14210564,
-              -0.0087744035
+              1.7928644E-5,
+              -4.2513013E-5,
+              -4.7593006E-5
             ],
             "angular_vel": [
-              0.111061975,
-              0.0017470368,
-              0.007912166
+              1.6931572E-6,
+              4.3196516E-5,
+              2.6035077E-11
             ]
           }
         }
       },
       "registry_key": "machine_max:mini_ev_wheel",
       "name": "miniEV车轮",
-      "uuid": "23454986-3b25-4f59-9efe-18a2e67ae283",
+      "uuid": "d4ea307d-4449-4c4a-a66a-65fa90bf7be4",
       "variant": "left"
     },
-    "e864cb72-8b18-4999-825a-3d1fe4cbd478": {
+    "58684240-1cc5-4432-b7fd-5c411648786e": {
       "custom_recipe": "machine_max:mini_ev_wheel",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
-        "mini_ev_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "chassis_connection": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 20.0
             }
           },
-          "id": 9,
+          "id": 55,
           "durability": 20.0,
           "pos_rot_vel_vel": {
             "position": [
-              -9.486251,
-              -59.115902,
-              -114.38116
+              686.8331,
+              -59.593315,
+              237.53447
             ],
             "rotation": [
-              0.33062065,
-              0.0028422412,
-              0.009143733,
-              0.94371516
+              0.38597798,
+              0.5950408,
+              -0.3674874,
+              0.60158163
             ],
             "linear_vel": [
-              0.002987679,
-              -0.05240733,
-              -0.012310428
+              -4.2111824E-5,
+              -3.0696392E-5,
+              1.1443179E-4
             ],
             "angular_vel": [
-              0.11105226,
-              0.0015161543,
-              0.021854535
+              -4.62329E-6,
+              6.911712E-5,
+              -1.2660983E-11
             ]
           }
         }
       },
       "registry_key": "machine_max:mini_ev_wheel",
       "name": "miniEV车轮",
-      "uuid": "e864cb72-8b18-4999-825a-3d1fe4cbd478",
+      "uuid": "58684240-1cc5-4432-b7fd-5c411648786e",
       "variant": "right"
     },
-    "364a4e7e-50e0-4911-8ce4-3ec5d413bf58": {
+    "be28265b-3115-4bd3-b511-69096341c50e": {
       "custom_recipe": "machine_max:mini_ev_wheel",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
-        "mini_ev_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "chassis_connection": {
-              "integrity": 40.0
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
             }
           },
-          "id": 13,
-          "durability": 120.0,
+          "id": 63,
+          "durability": 20.0,
           "pos_rot_vel_vel": {
             "position": [
-              -11.61836,
-              -59.115036,
-              -114.38263
+              689.70746,
+              -59.5931,
+              237.5973
             ],
             "rotation": [
-              -0.07258132,
-              3.0058378E-4,
-              -0.00877586,
-              0.9973238
+              0.57135665,
+              0.42976847,
+              -0.55173945,
+              0.42945802
             ],
             "linear_vel": [
-              0.0029629972,
-              0.02320987,
-              -0.008584468
+              -4.815767E-5,
+              4.7937036E-5,
+              -2.3666205E-4
             ],
             "angular_vel": [
-              -2.465599,
-              0.04892946,
-              0.0068414584
+              -4.4697067E-6,
+              1.2910292E-4,
+              -1.01762376E-10
             ]
           }
         }
       },
       "registry_key": "machine_max:mini_ev_wheel",
       "name": "miniEV车轮",
-      "uuid": "364a4e7e-50e0-4911-8ce4-3ec5d413bf58",
+      "uuid": "be28265b-3115-4bd3-b511-69096341c50e",
+      "variant": "right"
+    },
+    "d92886e5-7c28-459b-b70d-c6f3252e914c": {
+      "custom_recipe": "machine_max:mini_ev_wheel",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 40.0
+            }
+          },
+          "id": 57,
+          "durability": 120.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              686.7865,
+              -59.593487,
+              239.66606
+            ],
+            "rotation": [
+              0.40556315,
+              0.56874776,
+              -0.4068901,
+              0.58862966
+            ],
+            "linear_vel": [
+              2.9205572E-5,
+              -5.991757E-5,
+              3.0040933E-4
+            ],
+            "angular_vel": [
+              1.2861667E-6,
+              1.3279535E-4,
+              1.9880625E-12
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:mini_ev_wheel",
+      "name": "miniEV车轮",
+      "uuid": "d92886e5-7c28-459b-b70d-c6f3252e914c",
       "variant": "left"
     },
-    "0b238ae1-4a1c-44ad-a69f-b9856b1f1e8e": {
+    "2afb9577-1e5f-42cd-85b2-01a796fcf4b0": {
       "custom_recipe": "machine_max:mini_ev_hull",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
-        "mini_ev_hull": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "right_front_wheel": {
-              "integrity": 20.0
-            },
-            "right_back_wheel": {
-              "integrity": 20.0
-            },
-            "backleft": {
+            "connector.machine_max.left_front_wheel": {
               "integrity": 290.0
             },
-            "left_back_wheel": {
+            "connector.machine_max.right_front_wheel": {
               "integrity": 20.0
             },
-            "backright": {
+            "connector.machine_max.right_back_wheel": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.back_right": {
               "integrity": 290.0
             },
-            "left_front_wheel": {
+            "connector.machine_max.left_back_wheel": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.back_left": {
               "integrity": 290.0
             }
           },
           "subsystem_data": {
-            "motor": {
-              "durability": 145.0
-            },
-            "transmission": {
-              "durability": 290.0
-            },
-            "right_front_wheel_driver": {
-              "durability": 100.0
-            },
-            "left_back_seat": {
-              "durability": 20.0
-            },
-            "car_controller": {
-              "durability": 100.0
-            },
-            "left_front_wheel_driver": {
-              "durability": 100.0
-            },
-            "title.machine_max.subsystem.mini_ev.glove_box": {
+            "subsystem.machine_max.glove_box": {
               "Items": [],
               "durability": 50.0
             },
-            "driver_seat": {
-              "durability": 20.0
-            },
-            "right_back_wheel_driver": {
+            "subsystem.machine_max.left_front_wheel_driver": {
               "durability": 100.0
             },
-            "copilot_seat": {
+            "subsystem.machine_max.right_back_seat": {
               "durability": 20.0
             },
-            "right_back_seat": {
+            "subsystem.machine_max.left_back_seat": {
               "durability": 20.0
             },
-            "left_back_wheel_driver": {
+            "subsystem.machine_max.motor": {
+              "durability": 145.0
+            },
+            "subsystem.machine_max.right_back_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.car_controller": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.right_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.driver_seat": {
+              "durability": 20.0
+            },
+            "subsystem.machine_max.copilot_seat": {
+              "durability": 20.0
+            },
+            "subsystem.machine_max.transmission": {
+              "durability": 290.0
+            },
+            "subsystem.machine_max.left_back_wheel_driver": {
               "durability": 100.0
             }
           },
-          "id": 3,
+          "id": 53,
           "durability": 290.0,
           "pos_rot_vel_vel": {
             "position": [
-              -10.551255,
-              -58.732426,
-              -116.06438
+              688.0003,
+              -59.265396,
+              238.62622
             ],
             "rotation": [
-              4.723811E-4,
-              -3.4699365E-4,
-              3.1347E-4,
-              0.99999976
+              -0.0017476938,
+              0.69933635,
+              0.0015397016,
+              0.714789
             ],
             "linear_vel": [
-              -0.0074724373,
-              0.008699268,
-              0.018979767
+              -8.6206564E-4,
+              1.0162592E-5,
+              -9.879139E-6
             ],
             "angular_vel": [
-              0.11104764,
-              0.0017473038,
-              0.029988408
+              1.3916829E-5,
+              7.191566E-5,
+              1.3656607E-5
             ]
           }
         }
       },
       "registry_key": "machine_max:mini_ev_hull",
       "name": "miniEV车壳",
-      "uuid": "0b238ae1-4a1c-44ad-a69f-b9856b1f1e8e",
+      "uuid": "2afb9577-1e5f-42cd-85b2-01a796fcf4b0",
       "variant": "default"
     }
   },
   "connections": [
     {
-      "partUuidS": "6c622125-6760-47f5-96bc-abf1f8a5c1a4",
-      "subPartNameS": "mini_ev_wheel",
-      "simplePointConnectorName": "chassis_connection",
+      "partUuidS": "58684240-1cc5-4432-b7fd-5c411648786e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
-          -0.0,
+          0.0,
           0.0,
           0.0
         ],
@@ -289,9 +289,9 @@
           1.0
         ]
       },
-      "partUuidA": "0b238ae1-4a1c-44ad-a69f-b9856b1f1e8e",
-      "subPartNameA": "mini_ev_hull",
-      "advConnectorName": "right_front_wheel",
+      "partUuidA": "2afb9577-1e5f-42cd-85b2-01a796fcf4b0",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_wheel",
       "posRotA": {
         "position": [
           1.0660563,
@@ -307,12 +307,12 @@
       }
     },
     {
-      "partUuidS": "23454986-3b25-4f59-9efe-18a2e67ae283",
-      "subPartNameS": "mini_ev_wheel",
-      "simplePointConnectorName": "chassis_connection",
+      "partUuidS": "d92886e5-7c28-459b-b70d-c6f3252e914c",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
-          -0.0,
+          0.0,
           0.0,
           0.0
         ],
@@ -323,9 +323,9 @@
           1.0
         ]
       },
-      "partUuidA": "0b238ae1-4a1c-44ad-a69f-b9856b1f1e8e",
-      "subPartNameA": "mini_ev_hull",
-      "advConnectorName": "left_front_wheel",
+      "partUuidA": "2afb9577-1e5f-42cd-85b2-01a796fcf4b0",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_wheel",
       "posRotA": {
         "position": [
           -1.0660563,
@@ -341,12 +341,12 @@
       }
     },
     {
-      "partUuidS": "e864cb72-8b18-4999-825a-3d1fe4cbd478",
-      "subPartNameS": "mini_ev_wheel",
-      "simplePointConnectorName": "chassis_connection",
+      "partUuidS": "d4ea307d-4449-4c4a-a66a-65fa90bf7be4",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
-          -0.0,
+          0.0,
           0.0,
           0.0
         ],
@@ -357,12 +357,12 @@
           1.0
         ]
       },
-      "partUuidA": "0b238ae1-4a1c-44ad-a69f-b9856b1f1e8e",
-      "subPartNameA": "mini_ev_hull",
-      "advConnectorName": "right_back_wheel",
+      "partUuidA": "2afb9577-1e5f-42cd-85b2-01a796fcf4b0",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_wheel",
       "posRotA": {
         "position": [
-          1.0660563,
+          -1.0660563,
           -0.26828125,
           1.682775
         ],
@@ -375,12 +375,12 @@
       }
     },
     {
-      "partUuidS": "364a4e7e-50e0-4911-8ce4-3ec5d413bf58",
-      "subPartNameS": "mini_ev_wheel",
-      "simplePointConnectorName": "chassis_connection",
+      "partUuidS": "be28265b-3115-4bd3-b511-69096341c50e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
-          -0.0,
+          0.0,
           0.0,
           0.0
         ],
@@ -391,12 +391,12 @@
           1.0
         ]
       },
-      "partUuidA": "0b238ae1-4a1c-44ad-a69f-b9856b1f1e8e",
-      "subPartNameA": "mini_ev_hull",
-      "advConnectorName": "left_back_wheel",
+      "partUuidA": "2afb9577-1e5f-42cd-85b2-01a796fcf4b0",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_wheel",
       "posRotA": {
         "position": [
-          -1.0660563,
+          1.0660563,
           -0.26828125,
           1.682775
         ],
@@ -410,15 +410,15 @@
     }
   ],
   "vehicle_name": "mini_ev",
-  "uuid": "0b238ae1-4a1c-44ad-a69f-b9856b1f1e8e",
+  "uuid": "2afb9577-1e5f-42cd-85b2-01a796fcf4b0",
   "pos": [
-    -10.551295280456543,
-    -59.03846893310547,
-    -115.86838684082032
+    688.1976440429688,
+    -59.527713012695315,
+    238.6305908203125
   ],
   "min": [
-    -1.2930450439453125,
-    -0.7076553344726548,
-    -2.2371887207031165
+    -2.274548339843818,
+    -0.680748748779294,
+    -1.3393310546875057
   ]
 }

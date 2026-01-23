@@ -232,14 +232,14 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     @Override
     public Component getDisplayName() {
         if (subPart != null)
-            return Component.translatable(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, subPart.name).toLanguageKey());
+            return Component.literal(subPart.part.name);
         return super.getDisplayName();
     }
 
     @Override
     public @NotNull Component getName() {
         if (subPart != null)
-            return Component.translatable(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, subPart.name).toLanguageKey());
+            return Component.literal(subPart.part.name);
         return super.getName();
     }
 

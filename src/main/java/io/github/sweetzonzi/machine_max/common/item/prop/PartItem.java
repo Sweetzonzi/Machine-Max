@@ -105,7 +105,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                         && Objects.equals(variantName, targetSubPart.part.variantName)
                         && targetSubPart.part.getAssemblingProgress() == 0
                         && targetSubPart.part.getMaterialProgress() == 0) {
-                    message.append("右键以直接完成" + targetSubPart.part.name + "的组装进度");
+                    message.append("右键以直接完成" + Component.translatable(targetSubPart.part.name).getString() + "的组装进度");
                     if (VisualEffectHelper.partToPlace != null) {
                         VisualEffectHelper.partToPlace.setTransform(
                                 new Transform(
@@ -117,9 +117,11 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                 } else if (targetConnector != null && connectorAttr != null) {
                     if (targetConnector.conditionCheck(partType, variantName)) {
                         if ((targetConnector instanceof SimpleConnector || connectorAttr.isSimpleConnector())) {
-                            message.append("目标接口:" + targetConnector.name + "部件接口:" + cache.getConnectorName());
+                            message.append("目标接口:" + Component.translatable(targetConnector.name).getString() + "部件接口:"
+                                    + Component.translatable(cache.getConnectorName().getFirst()).getString() + " "
+                                    + Component.translatable(cache.getConnectorName().getSecond()).getString());
                             if (!variantName.equals("default") && partType.variants.size() > 1)
-                                message.append(" 部件变体类型:" + variantName);
+                                message.append(" 部件变体类型:" + Component.translatable(variantName).getString());
                             if (VisualEffectHelper.partToPlace != null) {
                                 VisualEffectHelper.partToPlace.setTransform(
                                         targetConnector.mergeTransform(targetConnector.calculateExtraTransform(
@@ -132,7 +134,8 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                             }
                         } else message.append("无法连接两个高级连接点");
                     } else {
-                        message = Component.empty().append(" 连接点" + targetConnector.name + "不接受部件" + partType.getRegistryKey() + "的" + variantName + "变体");
+                        message = Component.empty().append(" 连接点" + Component.translatable(targetConnector.name).getString()
+                               + "不接受部件" + partType.getRegistryKey() + "的" + Component.translatable(variantName).getString() + "变体");
                     }
                 } else {
                     message.append("未选中可用的部件接口，右键将直接放置零件");

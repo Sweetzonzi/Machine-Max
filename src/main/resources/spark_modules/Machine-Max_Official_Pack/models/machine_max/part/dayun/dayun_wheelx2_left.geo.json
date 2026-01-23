@@ -15,7 +15,7 @@
 					"name": "Root",
 					"pivot": [-20, -11.8, -22],
 					"locators": {
-						"wheellocator": [-7.25, -0.05, 0]
+						"locator": [-7.25, -0.05, 0]
 					}
 				},
 				{

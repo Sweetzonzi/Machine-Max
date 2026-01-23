@@ -23,7 +23,7 @@
       "default": {},
       "description": "Movement control signal output channel and targets."
     },
-    "view_outputs": {
+    "aim_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": {},
       "description": "View control signal output channel and targets."

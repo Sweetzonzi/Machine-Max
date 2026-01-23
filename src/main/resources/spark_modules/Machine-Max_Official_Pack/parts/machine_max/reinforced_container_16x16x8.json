@@ -12,7 +12,7 @@
     "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
     "tags": ["reinforced", "storage"],//(可选)部件标签列表
     "sub_parts": {//零件(子部件)列表
-      "box": {//零件(子部件)名称
+      "sub_part.machine_max.main": {//零件(子部件)名称
         "durability": 150.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
         "mass": 30.0,//零件质量(kg)
         "block_collision": "true",//(可选, 默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
@@ -94,19 +94,19 @@
           "interact.machine_max.reinforced_container_16x16x8": {//键:交互判定区名称
             "bone": "Interact",//骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "trunk_interact": ["title.machine_max.subsystem.reinforced_container_16x16x8"] //将交互信号转发给与车体连接的连接点
+              "trunk_interact": ["subsystem.machine_max.reinforced_container_16x16x8"] //将交互信号转发给与车体连接的连接点
             },
             "interact_mode": "accurate" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
           }
         },
         "subsystems": {//(可选)子系统配置
-          "title.machine_max.subsystem.reinforced_container_16x16x8": {
+          "subsystem.machine_max.reinforced_container_16x16x8": {
             "type": "machine_max:item_storage",//子系统类型
             "model": "machine_max:container_16x16x8"//子系统型号, 需要与子系统类型相匹配
           }
         },
         "connectors": {//子部件用于与其他零件连接的连接点列表
-          "up": {//接口名称
+          "connector.machine_max.up": {//连接点名称
             "locator": "up",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "type": "Simple", //连接点类型, 支持Simple和Advanced
             "direction": "yp",
@@ -114,7 +114,7 @@
             "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
             "impact_multiplier": 0.8 //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
           },
-          "down": {//接口名称
+          "connector.machine_max.down": {//连接点名称
             "locator": "down",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "type": "Simple", //连接点类型, 支持Simple和Advanced
             "direction": "yn"

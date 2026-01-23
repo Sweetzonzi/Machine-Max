@@ -151,6 +151,10 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
     private boolean isTrueSignal(Object signal) {
         if (signal instanceof Float) {
             return ((Float) signal) != 0f;
+        } else if (signal instanceof Integer) {
+            return ((Integer) signal) != 0;
+        } else if (signal instanceof Double) {
+            return ((Double) signal) != 0.0;
         } else if (signal instanceof Boolean) {
             return (Boolean) signal;
         } else if (signal instanceof EmptySignal) {

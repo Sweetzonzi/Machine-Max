@@ -96,6 +96,10 @@ public class VariantAttr {
                 throw new IllegalArgumentException(Component.translatable("error.machine_max.part.model_not_found", modelPath.toString()).getString());
             }
         }
+        // 构建并缓存部件碰撞体积
+        for (SubPartAttr subPartAttr : subParts.values()) {
+            subPartAttr.getCollisionShape(this, "default");
+        }
     }
 
     /**

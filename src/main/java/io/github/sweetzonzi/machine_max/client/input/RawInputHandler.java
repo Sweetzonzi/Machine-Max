@@ -45,12 +45,18 @@ public class RawInputHandler {
     static byte[] moveInputConflicts = new byte[6];//相应轴向上的输入冲突
     public static boolean freeCam = false;//自由视角是否激活
 
-//    static int trans_x_input = 0;
-//    static int trans_y_input = 0;
-//    static int trans_z_input = 0;
-//    static int rot_x_input = 0;
-//    static int rot_y_input = 0;
-//    static int rot_z_input = 0;
+    static int trans_x_input = 0;
+    static int trans_y_input = 0;
+    static int trans_z_input = 0;
+    static int rot_x_input = 0;
+    static int rot_y_input = 0;
+    static int rot_z_input = 0;
+    static int trans_x_conflict = 0;
+    static int trans_y_conflict = 0;
+    static int trans_z_conflict = 0;
+    static int rot_x_conflict = 0;
+    static int rot_y_conflict = 0;
+    static int rot_z_conflict = 0;
 
 
     /**
@@ -69,23 +75,28 @@ public class RawInputHandler {
             UUID partUuid = part.uuid;
             String subPartName = subPart.name;
             String subSystemName = seat.name;
-            int trans_x_input = 0;
-            int trans_y_input = 0;
-            int trans_z_input = 0;
-            int rot_x_input = 0;
-            int rot_y_input = 0;
-            int rot_z_input = 0;
-
+            trans_x_input = 0;
+            trans_y_input = 0;
+            trans_z_input = 0;
+            rot_x_input = 0;
+            rot_y_input = 0;
+            rot_z_input = 0;
             MMJoystickHandler.refreshState();
 
             switch (part.vehicle.mode) {
                 case GROUND -> {
                     if (new KeyHooks.EVENT(KeyBinding.groundForwardKey).isHover()) trans_z_input += 100;
-                    if (new KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover()) trans_z_input -= 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover()) {
+                        trans_z_conflict = trans_z_input > 0 ? 1 : 0;
+                        trans_z_input -= 100;
+                    }
                     trans_z_input += Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
                     trans_z_input -= Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
                     if (new KeyHooks.EVENT(KeyBinding.groundLeftwardKey).isHover()) rot_y_input += 100;
-                    if (new KeyHooks.EVENT(KeyBinding.groundRightwardKey).isHover()) rot_y_input -= 100;
+                    if (new KeyHooks.EVENT(KeyBinding.groundRightwardKey).isHover()) {
+                        rot_y_conflict = rot_y_input > 0 ? 1 : 0;
+                        rot_y_input -= 100;
+                    }
                     rot_y_input -= Math.round(MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
                 }
                 case SHIP -> {
@@ -106,13 +117,13 @@ public class RawInputHandler {
                     (byte) (Math.clamp(rot_x_input, -100, 100)),
                     (byte) (Math.clamp(rot_y_input, -100, 100)),
                     (byte) (Math.clamp(rot_z_input, -100, 100))};
-            moveInputConflicts = new byte[]{ //TODO:待删除 conflicts
-                    (byte) 0,
-                    (byte) 0,
-                    (byte) 0,
-                    (byte) 0,
-                    (byte) 0,
-                    (byte) 0};
+            moveInputConflicts = new byte[]{
+                    (byte) trans_x_conflict,
+                    (byte) trans_y_conflict,
+                    (byte) trans_z_conflict,
+                    (byte) rot_x_conflict,
+                    (byte) rot_y_conflict,
+                    (byte) rot_z_conflict};
             if (vehicleUuid != null && partUuid != null && subSystemName != null && moveInputs != moveInputCache)
                 PacketDistributor.sendToServer(new MovementInputPayload(
                         vehicleUuid, partUuid, subPartName, subSystemName, moveInputs, moveInputConflicts));

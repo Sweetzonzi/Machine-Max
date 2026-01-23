@@ -1,0 +1,423 @@
+{
+  "$schema": "../../../docs/zh_cn/schemas/part_definition_schema.json",
+  "vehicle_durability_rate": 1.0,//(可选, 默认0.8)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
+  "vehicle_damage_rate": 1.0,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
+  "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
+  "variants": {//部件变体列表, 可有多个变体名和模型路径的键值对
+    "icon": "machine_max:textures/icon/ae86_chassis_all_terrain_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
+    "models": "machine_max:ae86_chassis_all_terrain.geo",//模型路径
+    "textures": [ //贴图路径列表
+      "machine_max:textures/part/ae86/ae86_all_terrain_1.png",
+      "machine_max:textures/part/ae86/ae86_all_terrain_2.png"
+    ],
+    "animations": "machine_max:ae86", //(可选, 留空则不播放动画)动画路径
+    "tags": ["chassis"],//(可选)部件标签列表
+    "sub_parts": {//零件(子部件)列表, 这是部件运动的最小单元, 部件的每个可动部分都应当是一个零件(子部件)
+      "sub_part.machine_max.main": {//零件(子部件)名称
+        "durability": 550.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
+        "mass": 1200.0,//零件质量(kg)
+        "block_collision": "ground",//(可选)地形碰撞模式:true(默认, 与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
+        "collision_height": 2.5,//(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
+        "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
+          "mmCollision_Box_Chassis": {//值:碰撞形状属性
+            "name": "chassis",//(可选, 默认"part")碰撞箱名称, 供子系统等查找
+            "type": "box",//碰撞形状类型, 支持box、sphere、cylinder
+            "block_damage_factor": 1.5,//(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
+            "angle_effect": true,//(可选, 默认true)等效护甲厚度是否受入射角度影响, 若为false, 则计算厚度时不考虑入射角度
+            "impact_modifiers": [], // (可选, 默认为空列表, 造成多少伤害就对连接点施加多少冲击) 冲击修正器, 将受到的伤害按照一定规则转换为冲击数值施加到各连接点
+            "penetration_modifiers": [ // (可选, 默认在传入的伤害不包含穿深时, 以伤害的0.5倍作为穿深) 穿深修正器, 根据受到的伤害调整其穿深。若伤害不带穿深数据, 则传入伤害值, 否则传入穿深
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.5, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将伤害的0.5倍作为穿深
+                "condition": { // 修改器生效条件, 若不满足则不生效, 不影响传入的数值
+                  "type": "not", // 条件类型, 支持always、damage_type、damage_tag、entity_type、entity_tag、not、and、or
+                  "condition": { // not条件需要一个condition字段, 里面可以填入其他条件, 会将其结果反转
+                    "type": "damage_tag", // 判断伤害是否含有指定标签
+                    "tag": "machine_max:has_pen_depth" // 标签名
+                  }
+                }
+              }
+            ],
+            "damage_modifiers": [// (可选, 默认忽视5以下的撞击伤害, 大幅减弱史莱姆等每帧造成的伤害) 伤害修正器, 将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据, 则传入伤害值, 否则传入伤害数据
+              {
+                "operation": "add", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": -5.0, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减5点（不小于0）
+                "condition": {
+                  "type": "damage_type", // 判断伤害是否为某个类型
+                  "id": "minecraft:fly_into_wall" // 伤害类型注册名
+                }
+              },
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.05, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将浆果丛造成的削减至5%, 防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:sweet_berry_bush"
+                }
+              },
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.05, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将史莱姆造成的削减至5%, 防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:slime"
+                }
+              },
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.05, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将岩浆怪造成的削减至10%, 防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:magma_cube"
+                }
+              },
+              {
+                "operation": "add", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": -1.0, // 全局减伤, 将所有伤害削减1点（不小于0）
+                "condition": {
+                  "type": "always" // 此条件永远判定通过, 用于全局减伤
+                }
+              },
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.8, // 全局减伤, 将所有伤害削减20%
+                "condition": {
+                  "type": "always" // 此条件永远判定通过, 用于全局减伤
+                }
+              }
+            ],
+            "un_penetrate_damage_factor": 0.0,//(可选, 默认0.0)攻击未能完全击穿护甲时的伤害系数, 公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor, 此项为0.0时未击穿则无伤害
+            "rha": 10 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
+          },
+          "mmCollision_Box_Engine": {//值:碰撞形状属性
+            "name": "engine",//(可选, 默认"part")碰撞箱名称, 供子系统等查找
+            "type": "box",//碰撞形状类型, 支持box、sphere、cylinder
+            "subsystem": "connector.machine_max.engine",
+            "block_damage_factor": 0.95,//(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
+            "angle_effect": true,//(可选, 默认true)等效护甲厚度是否受入射角度影响, 若为false, 则计算厚度时不考虑入射角度
+            "impact_modifiers": [], // (可选, 默认为空列表, 造成多少伤害就对连接点施加多少冲击) 冲击修正器, 将受到的伤害按照一定规则转换为冲击数值施加到各连接点
+            "penetration_modifiers": [ // (可选, 默认在传入的伤害不包含穿深时, 以伤害的0.5倍作为穿深) 穿深修正器, 根据受到的伤害调整其穿深。若伤害不带穿深数据, 则传入伤害值, 否则传入穿深
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.5, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将伤害的0.5倍作为穿深
+                "condition": { // 修改器生效条件, 若不满足则不生效, 不影响传入的数值
+                  "type": "not", // 条件类型, 支持always、damage_type、damage_tag、entity_type、entity_tag、not、and、or
+                  "condition": { // not条件需要一个condition字段, 里面可以填入其他条件, 会将其结果反转
+                    "type": "damage_tag", // 判断伤害是否含有指定标签
+                    "tag": "machine_max:has_pen_depth" // 标签名
+                  }
+                }
+              }
+            ],
+            "damage_modifiers": [// (可选, 默认忽视5以下的撞击伤害, 大幅减弱史莱姆等每帧造成的伤害) 伤害修正器, 将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据, 则传入伤害值, 否则传入伤害数据
+              {
+                "operation": "add", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": -5.0, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减5点（不小于0）
+                "condition": {
+                  "type": "damage_type", // 判断伤害是否为某个类型
+                  "id": "minecraft:fly_into_wall" // 伤害类型注册名
+                }
+              },
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.05, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将浆果丛造成的削减至5%, 防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:sweet_berry_bush"
+                }
+              },
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.05, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将史莱姆造成的削减至5%, 防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:slime"
+                }
+              },
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.05, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将岩浆怪造成的削减至10%, 防止帧伤快速摧毁载具
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:magma_cube"
+                }
+              },
+              {
+                "operation": "add", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": -1.0, // 全局减伤, 将所有伤害削减1点（不小于0）
+                "condition": {
+                  "type": "always" // 此条件永远判定通过, 用于全局减伤
+                }
+              },
+              {
+                "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
+                "value": 0.75, // 全局减伤, 将所有伤害削减25%
+                "condition": {
+                  "type": "always" // 此条件永远判定通过, 用于全局减伤
+                }
+              }
+            ],
+            "un_penetrate_damage_factor": 0.0,//(可选, 默认0.0)攻击未能完全击穿护甲时的伤害系数, 公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor, 此项为0.0时未击穿则无伤害
+            "rha": 3 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.car_controller": {
+            "type": "machine_max:car_controller", //子系统类型
+            "model": "machine_max:ae86at_car_controller", //子系统型号, 需要与子系统类型相匹配
+            "engine_outputs": {
+              "engine_control": ["subsystem.machine_max.engine"]
+            },
+            "wheel_outputs": {
+              "wheel_control": [
+                "subsystem.machine_max.left_front_wheel_driver",
+                "subsystem.machine_max.right_front_wheel_driver",
+                "subsystem.machine_max.left_back_wheel_driver",
+                "subsystem.machine_max.right_back_wheel_driver"
+              ]
+            },
+            "gearbox_outputs": {
+              "gearbox_control": ["subsystem.machine_max.gearbox"]
+            },
+            "speed_outputs": { //(可选, 默认将移动速度(m/s)发至部件和载具的vehicle_speed频道)移动速度信号输出频道及目标
+              "vehicle_speed": ["part", "vehicle"]
+            },
+            "throttle_outputs": { //(可选, 默认将油门[0,1]发至部件和载具的throttle频道)油门信号输出频道及目标
+              "throttle": ["part", "vehicle"]
+            },
+            "brake_outputs": { //(可选, 默认将制动程度[0,1]发至部件和载具的brake频道)制动信号输出频道及目标
+              "brake": ["part", "vehicle"]
+            },
+            "steering_outputs": { //(可选, 默认将转向程度[-1,1]发至部件和载具的steering频道)转向角度信号输出频道及目标
+              "steering": ["part", "vehicle"]
+            },
+            "handbrake_outputs": { //(可选, 默认将手刹程度[0,1]发至部件和载具的handbrake频道)手刹器开关信号输出频道及目标
+              "handbrake": ["part", "vehicle"]
+            }
+          },
+          "subsystem.machine_max.engine": {
+            "type": "machine_max:engine", //子系统类型
+            "model": "machine_max:ae86at_engine", //子系统型号, 需要与子系统类型相匹配
+            "power_output": "subsystem.machine_max.gearbox", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
+            "speed_outputs": { //(可选, 默认将引擎转速(rad/s)发至部件和载具的engine_speed频道)引擎转速信号输出频道及目标
+              "engine_speed": ["part", "vehicle"]
+            }
+          },
+          "subsystem.machine_max.gearbox": {
+            "type": "machine_max:gearbox", //子系统类型
+            "model": "machine_max:ae86at_gearbox", //子系统型号, 需要与子系统类型相匹配
+            "power_output": "subsystem.machine_max.transmission", //功率输出目标, 子系统或部件连接点名
+            "gear_outputs": { //(可选, 默认将当前挡位名称发至部件和载具的gear频道)挡位名称输出频道及目标
+              "gear": ["part", "vehicle"]
+            }
+          },
+          "subsystem.machine_max.transmission": {//针对越野需求改装过的传动系统, 四轮驱动
+            "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
+            "model": "machine_max:ae86at_transmission", //子系统型号, 需要与子系统类型相匹配
+            "power_outputs": { //动力输出目标及减速比
+              "subsystem.machine_max.left_front_wheel_driver": 1.0,
+              "subsystem.machine_max.right_front_wheel_driver": 1.0,
+              "subsystem.machine_max.left_back_wheel_driver": 1.0,
+              "subsystem.machine_max.right_back_wheel_driver": 1.0
+            }
+          },
+          "subsystem.machine_max.left_front_wheel_driver": {
+            "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
+            "model": "machine_max:ae86at_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+            "connector": "connector.machine_max.left_front_wheel" //控制的连接点名称
+          },
+          "subsystem.machine_max.right_front_wheel_driver": {
+            "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
+            "model": "machine_max:ae86at_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+            "connector": "connector.machine_max.right_front_wheel"
+          },
+          "subsystem.machine_max.left_back_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "model": "machine_max:ae86at_back_wheel_driver",
+            "connector": "connector.machine_max.left_back_wheel"
+          },
+          "subsystem.machine_max.right_back_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "model": "machine_max:ae86at_back_wheel_driver",
+            "connector": "connector.machine_max.right_back_wheel"
+          }
+        },
+        "connectors": {//子部件用于与其他零件连接的连接点列表
+          "connector.machine_max.left_front_wheel": {//连接点名称
+            "locator": "LeftFrontWheel",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+            "type": "Advanced",//连接点类型, 支持Simple和Advanced
+            "direction": "xn",
+            "integrity": 40.0,//(可选, 默认20.0)部件基础结构完整度, 部件可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
+            "impact_multiplier": 0.8, //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
+            "required_tags": ["variant:left"],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
+            "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+            "forbidden_tags": ["chassis", "hull"],//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+            "joint_attrs": {//关节属性, 目前仅在关节类型为Advanced时生效
+              "y": {
+                "lower_limit": -0.5,//关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
+                "upper_limit": 1.0,//关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
+                "stiffness": 28000,//刚度系数(N/m)
+                "damping": 1500 //阻尼系数(N/(m/s))
+              },
+              "xr": {//控制的轴, x、y、z分别对应x、y、z轴的平动, xr、yr、zr分别对应x、y、z轴的旋转
+                "lower_limit": 1.0, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
+                "upper_limit": -1.0 //当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
+              },
+              "yr": {
+                "lower_limit": -45.0,
+                "upper_limit": 45.0,
+                "stiffness": 4000,
+                "damping": 20
+              },
+              "zr": {
+                "lower_limit": 1.0,
+                "upper_limit": 15.0,
+                "equilibrium": 1.0,
+                "stiffness": 50000,
+                "damping": 1000
+              }
+            }
+          },
+          "connector.machine_max.left_back_wheel": {
+            "locator": "LeftBackWheel",
+            "type": "Advanced",
+            "direction": "xn",
+            "required_tags": ["variant:left"],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
+            "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+            "forbidden_tags": ["chassis", "hull"],//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -0.5,
+                "upper_limit": 1.0,
+                "stiffness": 28000,
+                "damping": 1500
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "zr": {
+                "lower_limit": 1.0,
+                "upper_limit": 15.0,
+                "equilibrium": 1.0,
+                "stiffness": 50000,
+                "damping": 1000
+              }
+            }
+          },
+          "connector.machine_max.right_front_wheel": {
+            "locator": "RightFrontWheel",
+            "type": "Advanced",
+            "direction": "xp",
+            "required_tags": ["variant:right"],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
+            "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+            "forbidden_tags": ["chassis", "hull"],//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -0.5,
+                "upper_limit": 1.0,
+                "stiffness": 28000,
+                "damping": 1500
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "yr": {
+                "lower_limit": -45.0,
+                "upper_limit": 45.0,
+                "stiffness": 4000,
+                "damping": 20
+              },
+              "zr": {
+                "lower_limit": -15.0,
+                "upper_limit": -1.0,
+                "equilibrium": -1.0,
+                "stiffness": 50000,
+                "damping": 1000
+              }
+            }
+          },
+          "connector.machine_max.right_back_wheel": {
+            "locator": "RightBackWheel",
+            "type": "Advanced",
+            "direction": "xp",
+            "required_tags": ["variant:right"],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
+            "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+            "forbidden_tags": ["chassis", "hull"],//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -0.5,
+                "upper_limit": 1.0,
+                "stiffness": 28000,
+                "damping": 1500
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "zr": {
+                "lower_limit": -15.0,
+                "upper_limit": -1.0,
+                "equilibrium": -1.0,
+                "stiffness": 50000,
+                "damping": 1000
+              }
+            }
+          },
+          "connector.machine_max.hull": {
+            "locator": "Hull",
+            "type": "Advanced",
+            "direction": "yp",
+            "required_tags": ["hull"],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
+            "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+            "forbidden_tags": [],//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+            "signal_targets": {//向各个座椅传输来自车门的互动信号
+              "left_front_door_interact": ["connector.machine_max.copilot_seat"],
+              "right_front_door_interact": ["connector.machine_max.driver_seat"],
+              "left_back_door_interact": ["connector.machine_max.back_seat"],
+              "right_back_door_interact": ["connector.machine_max.back_seat"]
+            }
+          },
+          "connector.machine_max.driver_seat": {
+            "locator": "DriverSeat",
+            "type": "Advanced",
+            "direction": "yp",
+            "required_tags": [],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
+            "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+            "forbidden_tags": [],//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+            "signal_targets": {
+              "move_control": [
+                "subsystem.machine_max.car_controller" //向控制器传输标准移动输入信号, 如转向、加速、刹车等
+              ],
+              "regular_control": ["subsystem.machine_max.car_controller"]//向车辆控制器传输一般按键输入信号, 如换挡、离合器控制等
+            }
+          },
+          "connector.machine_max.copilot_seat": {
+            "locator": "CopilotSeat",
+            "type": "Advanced",
+            "direction": "yp",
+            "required_tags": [],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
+            "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+            "forbidden_tags": []//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+          },
+          "connector.machine_max.back_seat": {
+            "locator": "BackSeat",
+            "type": "Advanced",
+            "direction": "yp",
+            "required_tags": [],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
+            "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+            "forbidden_tags": []//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+          }
+        },
+        "hydro_priority": 0, //(可选, 默认0)空气阻力计算优先级, 值越大优先级越高, 优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化
+        "hydrodynamics": { //(可选, 默认单点质心位置计算流体动力)流体动力计算定位点列表, 键值对的键名为空字符串时表示以质心位置计算
+          "AeroDynamicCenter": {//流体动力计算点定位器名, 空字符串代表质心
+            "effective_range": [5.0, 5.0, 5.0]//(可选, 默认[1,1,1])三个方向上的有效计算范围, 单位为m, 当在对应轴运动方向上的此距离内检测到遮挡时将会降低部件的实际空气阻力系数, 以模拟如车壳遮挡整流带来的减阻效果
+          }
+        }
+      }
+    }
+  }
+}

@@ -16,7 +16,7 @@
 					"pivot": [0, -11.8, 0],
 					"rotation": [0, 180, 0],
 					"locators": {
-						"wheellocator": [-7.25, -0.05, 0]
+						"locator": [-7.25, -0.05, 0]
 					}
 				},
 				{

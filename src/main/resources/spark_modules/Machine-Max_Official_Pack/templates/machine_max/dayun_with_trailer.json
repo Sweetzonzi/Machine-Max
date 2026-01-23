@@ -1,1280 +1,865 @@
 {
   "max": [
-    10.556434631347656,
-    4.267462562112243,
-    2.066786822150675
+    10.563767377068018,
+    4.1029052734375,
+    2.5267630184397945
   ],
   "hp": 20.0,
   "parts": {
-    "b6edc810-7d37-4508-8a71-c6b4902c6e30": {
-      "custom_recipe": "machine_max:dayun_seat",
-      "material_assembling_progress": 7,
-      "sub_parts": {
-        "dayun_seat": {
-          "connector_data": {
-            "seat_locator": {
-              "integrity": 150.0
-            }
-          },
-          "subsystem_data": {
-            "seat": {
-              "durability": 20.0
-            }
-          },
-          "id": 69,
-          "durability": 150.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              103.15631,
-              -57.668163,
-              -964.27106
-            ],
-            "rotation": [
-              0.0016586664,
-              -0.70202494,
-              -0.0031129045,
-              0.71214366
-            ],
-            "linear_vel": [
-              -7.547596E-4,
-              -2.4402142E-4,
-              -0.0033705286
-            ],
-            "angular_vel": [
-              2.1744962E-4,
-              8.667585E-4,
-              -2.7361144E-5
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:dayun_seat",
-      "name": "machine_max.dayun_seat",
-      "uuid": "b6edc810-7d37-4508-8a71-c6b4902c6e30",
-      "variant": "default"
-    },
-    "b4bd7d0f-4a34-4d50-b128-dcdba372b67c": {
+    "f8232ba5-10e5-4e70-a26d-ae429a3f269c": {
       "custom_recipe": "machine_max:dayun_wheelx2",
-      "material_assembling_progress": 78,
+      "material_assembling_progress": 2147483647,
       "sub_parts": {
-        "dayun_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "wheellocator": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 700.0
             }
           },
-          "id": 70,
+          "id": 37,
           "durability": 700.0,
           "pos_rot_vel_vel": {
             "position": [
-              84.14181,
-              -59.278965,
-              -961.81726
+              411.25845,
+              -59.280502,
+              254.86256
             ],
             "rotation": [
-              0.27419057,
-              -0.64396805,
-              0.27625278,
-              0.6586419
+              0.72375363,
+              0.03602078,
+              0.68833274,
+              -0.032883044
             ],
             "linear_vel": [
-              2.7481874E-5,
-              -3.5774708E-4,
-              6.8211457E-4
+              0.0011057146,
+              -1.3568997E-4,
+              -9.515323E-5
             ],
             "angular_vel": [
-              -6.472692E-8,
-              -1.9085457E-4,
-              2.3283064E-10
+              -4.6733097E-9,
+              5.618293E-4,
+              -8.731149E-9
             ]
           }
         }
       },
       "registry_key": "machine_max:dayun_wheelx2",
       "name": "machine_max.dayun_wheelx2",
-      "uuid": "b4bd7d0f-4a34-4d50-b128-dcdba372b67c",
-      "variant": "right"
-    },
-    "1ea30432-4c74-4ff5-b7b1-7719cc542b09": {
-      "custom_recipe": "machine_max:dayun_wheelx2",
-      "material_assembling_progress": 78,
-      "sub_parts": {
-        "dayun_wheel": {
-          "connector_data": {
-            "wheellocator": {
-              "integrity": 700.0
-            }
-          },
-          "id": 71,
-          "durability": 700.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              96.97465,
-              -59.277237,
-              -964.5842
-            ],
-            "rotation": [
-              0.17175533,
-              -0.6853023,
-              0.15240934,
-              0.6911095
-            ],
-            "linear_vel": [
-              8.635386E-4,
-              -1.7859042E-4,
-              0.0032292176
-            ],
-            "angular_vel": [
-              -0.0065139085,
-              -4.2658823E-5,
-              0.007992238
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:dayun_wheelx2",
-      "name": "machine_max.dayun_wheelx2",
-      "uuid": "1ea30432-4c74-4ff5-b7b1-7719cc542b09",
+      "uuid": "f8232ba5-10e5-4e70-a26d-ae429a3f269c",
       "variant": "left"
     },
-    "4f14e702-cea1-4c0f-82d5-791a9180b3a9": {
+    "ce35516f-389d-48b0-a3f7-cb2b28a898d9": {
       "custom_recipe": "machine_max:dayun_wheelx2",
-      "material_assembling_progress": 78,
+      "material_assembling_progress": 2147483647,
       "sub_parts": {
-        "dayun_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "wheellocator": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 700.0
             }
           },
-          "id": 72,
+          "id": 47,
           "durability": 700.0,
           "pos_rot_vel_vel": {
             "position": [
-              85.82831,
-              -59.279457,
-              -961.8475
+              409.51157,
+              -59.281746,
+              257.48416
             ],
             "rotation": [
-              0.41230828,
-              -0.56740415,
-              0.41117302,
-              0.5822295
+              0.7245077,
+              0.0027409955,
+              0.6892572,
+              0.0023631188
             ],
             "linear_vel": [
-              -6.1107613E-4,
-              -3.3587217E-4,
-              -4.2975263E-4
+              0.0022011164,
+              2.4916232E-4,
+              0.0016435289
             ],
             "angular_vel": [
-              0.0026043884,
-              -2.2268697E-4,
-              -5.2386895E-10
+              -0.0044152043,
+              -2.7394257E-5,
+              -0.017025482
             ]
           }
         }
       },
       "registry_key": "machine_max:dayun_wheelx2",
       "name": "machine_max.dayun_wheelx2",
-      "uuid": "4f14e702-cea1-4c0f-82d5-791a9180b3a9",
+      "uuid": "ce35516f-389d-48b0-a3f7-cb2b28a898d9",
       "variant": "right"
     },
-    "033429c9-e601-4b28-a532-9cc2b9fa6ef2": {
+    "a5e8bd8b-6462-4e28-bf5c-08a2eaf38ee7": {
       "custom_recipe": "machine_max:dayun_wheelx2",
       "material_assembling_progress": 78,
       "sub_parts": {
-        "dayun_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "wheellocator": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 700.0
             }
           },
-          "id": 73,
+          "id": 15,
           "durability": 700.0,
           "pos_rot_vel_vel": {
             "position": [
-              98.66363,
-              -59.27742,
-              -964.60834
+              422.33078,
+              -59.276253,
+              256.84076
             ],
             "rotation": [
-              -0.009044857,
-              -0.7015517,
-              -0.026549548,
-              0.7120664
+              -0.42090526,
+              -0.56927943,
+              -0.39480925,
+              0.58556414
             ],
             "linear_vel": [
-              0.0016939614,
-              -0.0019967258,
-              -0.0026762015
+              0.003166728,
+              3.552437E-5,
+              -6.158529E-4
             ],
             "angular_vel": [
-              9.313226E-10,
-              1.3849651E-4,
-              -0.0041892664
+              0.0017135679,
+              2.8020522E-4,
+              5.209775E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:dayun_wheelx2",
       "name": "machine_max.dayun_wheelx2",
-      "uuid": "033429c9-e601-4b28-a532-9cc2b9fa6ef2",
-      "variant": "left"
-    },
-    "eed90146-5db0-444d-a7f7-5bd938d36a5b": {
-      "custom_recipe": "machine_max:dayun_chassis",
-      "material_assembling_progress": 72,
-      "sub_parts": {
-        "dayun_chassis": {
-          "connector_data": {
-            "wheellocatorleft": {
-              "integrity": 1500.0
-            },
-            "jsslocator": {
-              "integrity": 1500.0
-            },
-            "wheellocatorbackright2": {
-              "integrity": 1500.0
-            },
-            "wheellocatorbackright1": {
-              "integrity": 1500.0
-            },
-            "wheellocatorbackleft1": {
-              "integrity": 1500.0
-            },
-            "wheellocatorbackleft2": {
-              "integrity": 1500.0
-            },
-            "wheellocatorright": {
-              "integrity": 1500.0
-            },
-            "pingbanchelocator": {
-              "integrity": 1500.0
-            }
-          },
-          "subsystem_data": {
-            "transmission": {
-              "durability": 800.0
-            },
-            "wheellocatorleft": {
-              "durability": 700.0
-            },
-            "wheellocatorbackright2": {
-              "durability": 700.0
-            },
-            "wheellocatorbackright1": {
-              "durability": 700.0
-            },
-            "wheellocatorbackleft1": {
-              "durability": 700.0
-            },
-            "gearbox": {
-              "durability": 620.0
-            },
-            "wheellocatorbackleft2": {
-              "durability": 700.0
-            },
-            "wheellocatorright": {
-              "durability": 700.0
-            }
-          },
-          "id": 74,
-          "durability": 1550.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              100.057274,
-              -58.855305,
-              -963.3596
-            ],
-            "rotation": [
-              0.00165084,
-              -0.702024,
-              -0.0031049668,
-              0.7121446
-            ],
-            "linear_vel": [
-              3.8241694E-4,
-              -5.4872036E-4,
-              -0.0017686614
-            ],
-            "angular_vel": [
-              7.504809E-4,
-              6.681974E-4,
-              7.6066994E-5
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:dayun_chassis",
-      "name": "machine_max.dayun_chassis",
-      "uuid": "eed90146-5db0-444d-a7f7-5bd938d36a5b",
-      "variant": "default"
-    },
-    "d44c6ec7-23ad-4730-acf1-362a9f090c39": {
-      "custom_recipe": "machine_max:dayun_wheelx2",
-      "material_assembling_progress": 78,
-      "sub_parts": {
-        "dayun_wheel": {
-          "connector_data": {
-            "wheellocator": {
-              "integrity": 700.0
-            }
-          },
-          "id": 75,
-          "durability": 700.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              97.01503,
-              -59.28307,
-              -962.0533
-            ],
-            "rotation": [
-              -0.37690696,
-              -0.6002052,
-              -0.36413738,
-              0.604234
-            ],
-            "linear_vel": [
-              0.0015480997,
-              2.014637E-4,
-              -1.4099898E-4
-            ],
-            "angular_vel": [
-              0.0016311295,
-              5.574684E-4,
-              5.6374166E-4
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:dayun_wheelx2",
-      "name": "machine_max.dayun_wheelx2",
-      "uuid": "d44c6ec7-23ad-4730-acf1-362a9f090c39",
+      "uuid": "a5e8bd8b-6462-4e28-bf5c-08a2eaf38ee7",
       "variant": "right"
     },
-    "5dcac91c-b865-4e57-ad33-9f30c797eb52": {
+    "1de530cf-1b91-483f-b8f4-757a653b6a01": {
       "custom_recipe": "machine_max:dayun_wheelx2",
-      "material_assembling_progress": 78,
+      "material_assembling_progress": 2147483647,
       "sub_parts": {
-        "dayun_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "wheellocator": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 700.0
             }
           },
-          "id": 76,
+          "id": 39,
           "durability": 700.0,
           "pos_rot_vel_vel": {
             "position": [
-              85.97018,
-              -59.279526,
-              -964.38165
+              407.63898,
+              -59.281357,
+              257.5775
             ],
             "rotation": [
-              0.523712,
-              -0.47040042,
-              0.51935786,
-              0.48447567
+              0.72450477,
+              0.007931709,
+              0.689217,
+              -0.0031705804
             ],
             "linear_vel": [
-              -7.531425E-5,
-              -1.6540289E-5,
-              8.5786293E-4
+              8.574545E-4,
+              3.748834E-4,
+              1.6129902E-4
             ],
             "angular_vel": [
-              -1.7330167E-6,
-              6.38043E-4,
-              9.837095E-9
+              -7.348128E-4,
+              -1.43881E-4,
+              -2.7939677E-9
             ]
           }
         }
       },
       "registry_key": "machine_max:dayun_wheelx2",
       "name": "machine_max.dayun_wheelx2",
-      "uuid": "5dcac91c-b865-4e57-ad33-9f30c797eb52",
-      "variant": "left"
-    },
-    "fe5dbe06-d0d7-4c72-a07b-2b401fcece73": {
-      "custom_recipe": "machine_max:dayun_wheelx2",
-      "material_assembling_progress": 78,
-      "sub_parts": {
-        "dayun_wheel": {
-          "connector_data": {
-            "wheellocator": {
-              "integrity": 700.0
-            }
-          },
-          "id": 77,
-          "durability": 700.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              84.09603,
-              -59.279274,
-              -964.348
-            ],
-            "rotation": [
-              0.63032544,
-              -0.32164755,
-              0.62254184,
-              0.33417705
-            ],
-            "linear_vel": [
-              2.5791733E-4,
-              -4.348159E-5,
-              0.0016167242
-            ],
-            "angular_vel": [
-              -9.6159056E-8,
-              1.9255641E-4,
-              0.0018124427
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:dayun_wheelx2",
-      "name": "machine_max.dayun_wheelx2",
-      "uuid": "fe5dbe06-d0d7-4c72-a07b-2b401fcece73",
-      "variant": "left"
-    },
-    "d75e8c85-e72f-4ec2-98a6-50ed2bdef997": {
-      "custom_recipe": "machine_max:dayun_guache",
-      "material_assembling_progress": 96,
-      "sub_parts": {
-        "guache": {
-          "connector_data": {
-            "dipanlocator": {
-              "integrity": 3000.0
-            },
-            "gangjuanbaselocator3": {
-              "integrity": 3000.0
-            },
-            "gangjuanbaselocator2": {
-              "integrity": 3000.0
-            },
-            "gangjuanbaselocator5": {
-              "integrity": 3000.0
-            },
-            "wheelleft1": {
-              "integrity": 1500.0
-            },
-            "gangjuanbaselocator4": {
-              "integrity": 3000.0
-            },
-            "wheelleft3": {
-              "integrity": 1500.0
-            },
-            "wheelleft2": {
-              "integrity": 1500.0
-            },
-            "wheelright2": {
-              "integrity": 1500.0
-            },
-            "wheelright1": {
-              "integrity": 1500.0
-            },
-            "gangjuanbaselocator": {
-              "integrity": 3000.0
-            },
-            "wheelright3": {
-              "integrity": 1500.0
-            }
-          },
-          "id": 78,
-          "durability": 3000.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              90.55965,
-              -58.39893,
-              -963.1923
-            ],
-            "rotation": [
-              0.0016597728,
-              -0.70072895,
-              -0.0031050488,
-              0.7134189
-            ],
-            "linear_vel": [
-              1.6786624E-4,
-              -7.9505146E-4,
-              0.0012602435
-            ],
-            "angular_vel": [
-              4.9178954E-4,
-              7.130351E-5,
-              1.7635502E-5
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:dayun_guache",
-      "name": "machine_max.dayun_guache",
-      "uuid": "d75e8c85-e72f-4ec2-98a6-50ed2bdef997",
-      "variant": "default"
-    },
-    "54a8201b-41ba-45e6-83d3-af2c1963264f": {
-      "custom_recipe": "machine_max:dayun_wheelx2",
-      "material_assembling_progress": 78,
-      "sub_parts": {
-        "dayun_wheel": {
-          "connector_data": {
-            "wheellocator": {
-              "integrity": 700.0
-            }
-          },
-          "id": 79,
-          "durability": 700.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              98.70193,
-              -59.283512,
-              -962.07715
-            ],
-            "rotation": [
-              -0.2896395,
-              -0.64490473,
-              -0.2773645,
-              0.65059656
-            ],
-            "linear_vel": [
-              0.0014597599,
-              0.0057213455,
-              -0.0055440175
-            ],
-            "angular_vel": [
-              -0.0018492823,
-              0.002036689,
-              0.014761531
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:dayun_wheelx2",
-      "name": "machine_max.dayun_wheelx2",
-      "uuid": "54a8201b-41ba-45e6-83d3-af2c1963264f",
+      "uuid": "1de530cf-1b91-483f-b8f4-757a653b6a01",
       "variant": "right"
     },
-    "8716d637-16a4-48a6-9694-2e31a9089c39": {
+    "ea922467-47cf-47fe-a8cb-4cdafc36b043": {
       "custom_recipe": "machine_max:dayun_wheelx2",
       "material_assembling_progress": 78,
       "sub_parts": {
-        "dayun_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "wheellocator": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 700.0
             }
           },
-          "id": 80,
+          "id": 18,
           "durability": 700.0,
           "pos_rot_vel_vel": {
             "position": [
-              82.267136,
-              -59.278538,
-              -961.7836
+              422.22495,
+              -59.276142,
+              254.31186
             ],
             "rotation": [
-              0.2660986,
-              -0.6473195,
-              0.26831016,
-              0.66195065
+              0.6271563,
+              -0.3524211,
+              0.59687907,
+              0.35526004
             ],
             "linear_vel": [
-              2.8557843E-6,
-              -5.006343E-4,
-              5.055995E-4
+              0.001191807,
+              -8.4991753E-4,
+              -1.7345324E-4
             ],
             "angular_vel": [
-              6.636287E-4,
-              -1.01306854E-4,
-              2.8279601E-11
+              0.0023229118,
+              7.03561E-4,
+              -4.4717814E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:dayun_wheelx2",
       "name": "machine_max.dayun_wheelx2",
-      "uuid": "8716d637-16a4-48a6-9694-2e31a9089c39",
-      "variant": "right"
+      "uuid": "ea922467-47cf-47fe-a8cb-4cdafc36b043",
+      "variant": "left"
     },
-    "94b46496-9691-4823-8150-f6b4205e39c8": {
-      "custom_recipe": "machine_max:dayun_wheel",
-      "material_assembling_progress": 46,
+    "1b3ee31e-48b7-4aea-9bed-a28bf498de89": {
+      "custom_recipe": "machine_max:dayun_wheelx2",
+      "material_assembling_progress": 78,
       "sub_parts": {
-        "dayun_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "locator": {
-              "integrity": 400.0
+            "connector.machine_max.chassis_connection": {
+              "integrity": 700.0
             }
           },
-          "id": 81,
-          "durability": 400.0,
+          "id": 19,
+          "durability": 700.0,
           "pos_rot_vel_vel": {
             "position": [
-              102.87382,
-              -59.2804,
-              -964.7934
+              423.91513,
+              -59.282463,
+              254.24448
             ],
             "rotation": [
-              0.5425882,
-              -0.46776175,
-              0.52351874,
-              0.46122137
+              -0.099493034,
+              -0.68454725,
+              -0.10890107,
+              0.71388847
             ],
             "linear_vel": [
-              -8.694058E-4,
-              3.5981834E-4,
-              -9.920746E-4
+              0.0024057557,
+              7.480383E-5,
+              -0.0027559274
             ],
             "angular_vel": [
-              -0.0064005814,
-              9.5615536E-4,
-              0.0024059229
+              0.0061319424,
+              3.7269655E-4,
+              4.1907362E-4
             ]
           }
         }
       },
-      "registry_key": "machine_max:dayun_wheel",
-      "name": "machine_max.dayun_wheel",
-      "uuid": "94b46496-9691-4823-8150-f6b4205e39c8",
+      "registry_key": "machine_max:dayun_wheelx2",
+      "name": "machine_max.dayun_wheelx2",
+      "uuid": "1b3ee31e-48b7-4aea-9bed-a28bf498de89",
       "variant": "left"
     },
-    "fcb9fb00-655a-4a71-a067-507138ec9434": {
-      "custom_recipe": "machine_max:dayun_hull",
-      "material_assembling_progress": 70,
+    "98651e5e-9d68-49e9-86b8-9f6c783680cc": {
+      "custom_recipe": "machine_max:dayun_wheelx2",
+      "material_assembling_progress": 2147483647,
       "sub_parts": {
-        "dayun_hull": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "right_seat": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 700.0
+            }
+          },
+          "id": 43,
+          "durability": 700.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              409.3855,
+              -59.280388,
+              254.95598
+            ],
+            "rotation": [
+              0.7245072,
+              0.005944826,
+              0.6892405,
+              -0.0012392419
+            ],
+            "linear_vel": [
+              0.0016108662,
+              4.2153895E-4,
+              -5.527473E-4
+            ],
+            "angular_vel": [
+              2.789949E-4,
+              -1.9784198E-4,
+              -0.0021465553
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:dayun_wheelx2",
+      "name": "machine_max.dayun_wheelx2",
+      "uuid": "98651e5e-9d68-49e9-86b8-9f6c783680cc",
+      "variant": "left"
+    },
+    "8474f7af-c98b-4f12-bef1-26bdab27e7bb": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_seat": {
               "integrity": 1000.0
             },
-            "front": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 1000.0
             },
-            "left_seat": {
+            "connector.machine_max.right_seat": {
               "integrity": 1000.0
             },
-            "dipan_locator": {
+            "connector.machine_max.front": {
               "integrity": 1000.0
             }
           },
           "subsystem_data": {
-            "car_controller": {
+            "subsystem.machine_max.engine": {
               "durability": 700.0
             },
-            "engine": {
+            "subsystem.machine_max.car_controller": {
               "durability": 700.0
             }
           },
-          "id": 82,
+          "id": 20,
           "durability": 1000.0,
           "pos_rot_vel_vel": {
             "position": [
-              103.01154,
-              -58.17375,
-              -963.39734
+              428.31992,
+              -58.29455,
+              255.33751
             ],
             "rotation": [
-              0.0016567521,
-              -0.70202506,
-              -0.003110949,
-              0.71214354
+              -0.010365851,
+              -0.6928947,
+              -0.010309767,
+              0.7208906
             ],
             "linear_vel": [
-              -8.881587E-6,
-              -4.416257E-4,
-              -0.0033520497
+              0.00196703,
+              0.002315089,
+              -0.0015326757
             ],
             "angular_vel": [
-              3.4034625E-4,
-              8.199499E-4,
-              4.740661E-6
+              -1.07211235E-4,
+              3.3078383E-4,
+              0.0010047322
             ]
           }
         }
       },
       "registry_key": "machine_max:dayun_hull",
       "name": "machine_max.dayun_hull",
-      "uuid": "fcb9fb00-655a-4a71-a067-507138ec9434",
+      "uuid": "8474f7af-c98b-4f12-bef1-26bdab27e7bb",
       "variant": "default"
     },
-    "05d4c258-3450-44e2-8183-e80fd65566e8": {
+    "0b581b3f-a16d-429e-9eaa-3816f83ea2f7": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_wheel": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.left_back_wheel_1": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.left_back_wheel_2": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.right_back_wheel_1": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.right_front_wheel": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.hull_connection": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.right_back_wheel_2": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.trailer": {
+              "integrity": 1500.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.left_front_wheel_driver": {
+              "durability": 700.0
+            },
+            "subsystem.machine_max.gearbox": {
+              "durability": 620.0
+            },
+            "subsystem.machine_max.right_front_wheel_driver": {
+              "durability": 700.0
+            },
+            "subsystem.machine_max.right_back_wheel_2_driver": {
+              "durability": 700.0
+            },
+            "subsystem.machine_max.transmission": {
+              "durability": 800.0
+            },
+            "subsystem.machine_max.left_back_wheel_1_driver": {
+              "durability": 700.0
+            },
+            "subsystem.machine_max.left_back_wheel_2_driver": {
+              "durability": 700.0
+            },
+            "subsystem.machine_max.right_back_wheel_1_driver": {
+              "durability": 700.0
+            }
+          },
+          "id": 21,
+          "durability": 1550.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              425.35028,
+              -58.895428,
+              255.45485
+            ],
+            "rotation": [
+              -0.010368296,
+              -0.6928958,
+              -0.010308664,
+              0.72088945
+            ],
+            "linear_vel": [
+              0.0026421936,
+              -6.418228E-4,
+              -6.514931E-4
+            ],
+            "angular_vel": [
+              -1.6379403E-4,
+              2.9249792E-4,
+              0.0010280043
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:dayun_chassis",
+      "name": "machine_max.dayun_chassis",
+      "uuid": "0b581b3f-a16d-429e-9eaa-3816f83ea2f7",
+      "variant": "default"
+    },
+    "7ef58744-dec5-46d4-b475-d60c31ec2bb9": {
       "custom_recipe": "machine_max:dayun_seat",
       "material_assembling_progress": 7,
       "sub_parts": {
-        "dayun_seat": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "seat_locator": {
+            "connector.machine_max.hull_connection": {
               "integrity": 150.0
             }
           },
           "subsystem_data": {
-            "seat": {
+            "subsystem.machinemax.seat": {
               "durability": 20.0
             }
           },
-          "id": 83,
+          "id": 23,
           "durability": 150.0,
           "pos_rot_vel_vel": {
             "position": [
-              103.181786,
-              -57.680206,
-              -962.49005
+              428.45596,
+              -57.798897,
+              254.45668
             ],
             "rotation": [
-              0.0016586952,
-              -0.70202494,
-              -0.0031128621,
-              0.71214366
+              -0.0103644,
+              -0.69289404,
+              -0.010310334,
+              0.72089124
             ],
             "linear_vel": [
-              7.03328E-4,
-              -6.1671436E-4,
-              -0.0033943686
+              0.0011420927,
+              0.0023954362,
+              -0.0017297992
             ],
             "angular_vel": [
-              2.1869072E-4,
-              8.674611E-4,
-              -1.9190149E-5
+              -8.45373E-5,
+              3.5722204E-4,
+              9.863578E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:dayun_seat",
       "name": "machine_max.dayun_seat",
-      "uuid": "05d4c258-3450-44e2-8183-e80fd65566e8",
+      "uuid": "7ef58744-dec5-46d4-b475-d60c31ec2bb9",
       "variant": "default"
     },
-    "510bb2ef-868c-4d2e-99c8-cccf00332d90": {
+    "142c1859-dd93-4128-8d34-682a3c207a1e": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right_1": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.right_4": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.right_5": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.right_2": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.right_3": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.left_5": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.left_wheel_1": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.mid_1": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.left_2": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.left_wheel_2": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.right_wheel_1": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.left_1": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.chassis_connection": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.left_wheel_3": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.left_4": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.left_3": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.mid_5": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.mid_4": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.right_wheel_2": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.mid_3": {
+              "integrity": 3000.0
+            },
+            "connector.machine_max.right_wheel_3": {
+              "integrity": 1500.0
+            },
+            "connector.machine_max.mid_2": {
+              "integrity": 3000.0
+            }
+          },
+          "id": 35,
+          "durability": 3000.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              415.8799,
+              -58.39616,
+              255.90852
+            ],
+            "rotation": [
+              0.0029938621,
+              -0.689261,
+              -0.0043258956,
+              0.724494
+            ],
+            "linear_vel": [
+              0.0017292921,
+              -0.001125887,
+              -4.936138E-4
+            ],
+            "angular_vel": [
+              -7.1057986E-4,
+              -3.693302E-5,
+              -1.12718495E-4
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:dayun_trailer",
+      "name": "machine_max.dayun_trailer",
+      "uuid": "142c1859-dd93-4128-8d34-682a3c207a1e",
+      "variant": "default"
+    },
+    "24204b9e-b62a-458d-bc40-3f2e8be0ab17": {
       "custom_recipe": "machine_max:dayun_wheelx2",
       "material_assembling_progress": 78,
       "sub_parts": {
-        "dayun_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "wheellocator": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 700.0
             }
           },
-          "id": 84,
+          "id": 16,
           "durability": 700.0,
           "pos_rot_vel_vel": {
             "position": [
-              82.22103,
-              -59.278797,
-              -964.3144
+              424.0117,
+              -59.283535,
+              256.77472
             ],
             "rotation": [
-              0.5912904,
-              -0.385904,
-              0.58489823,
-              0.39918393
+              0.6224853,
+              -0.33864206,
+              0.60439664,
+              0.36405814
             ],
             "linear_vel": [
-              -1.7864571E-4,
-              -3.9622188E-5,
-              0.001450991
+              0.0063574547,
+              -3.9234757E-4,
+              0.0029707379
             ],
             "angular_vel": [
-              -4.656613E-10,
-              6.349387E-4,
-              0.0015502226
+              -0.0065556057,
+              6.8082486E-4,
+              8.2009286E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:dayun_wheelx2",
       "name": "machine_max.dayun_wheelx2",
-      "uuid": "510bb2ef-868c-4d2e-99c8-cccf00332d90",
-      "variant": "left"
+      "uuid": "24204b9e-b62a-458d-bc40-3f2e8be0ab17",
+      "variant": "right"
     },
-    "c3ef845a-3f47-4cf3-9992-8da903abe283": {
+    "4eaa477b-53b9-4ad6-90dd-d9657811ec33": {
       "custom_recipe": "machine_max:dayun_wheel",
       "material_assembling_progress": 46,
       "sub_parts": {
-        "dayun_wheel": {
+        "sub_part.machine_max.main": {
           "connector_data": {
-            "locator": {
+            "connector.machine_max.chassis_connection": {
               "integrity": 400.0
             }
           },
-          "id": 85,
+          "id": 17,
           "durability": 400.0,
           "pos_rot_vel_vel": {
             "position": [
-              102.926315,
-              -59.28482,
-              -962.0129
+              428.1096,
+              -59.284473,
+              253.9538
             ],
             "rotation": [
-              0.54628634,
-              0.4565667,
-              0.5332726,
-              -0.4568788
+              0.65762377,
+              -0.29547712,
+              0.62703264,
+              0.29504964
             ],
             "linear_vel": [
-              0.0021463102,
-              -9.419024E-5,
-              -0.007382103
+              0.0017907994,
+              -2.5501847E-4,
+              9.436486E-4
             ],
             "angular_vel": [
-              0.0128531,
-              8.596075E-4,
-              0.0041187415
+              -0.0101646315,
+              9.3333935E-4,
+              -0.011988416
             ]
           }
         }
       },
       "registry_key": "machine_max:dayun_wheel",
       "name": "machine_max.dayun_wheel",
-      "uuid": "c3ef845a-3f47-4cf3-9992-8da903abe283",
+      "uuid": "4eaa477b-53b9-4ad6-90dd-d9657811ec33",
+      "variant": "left"
+    },
+    "491e9227-801d-4111-8b65-b63c506dd140": {
+      "custom_recipe": "machine_max:dayun_wheelx2",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 700.0
+            }
+          },
+          "id": 41,
+          "durability": 700.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              407.51276,
+              -59.279976,
+              255.04936
+            ],
+            "rotation": [
+              0.7244847,
+              -1.8931541E-4,
+              0.68927103,
+              0.005232237
+            ],
+            "linear_vel": [
+              0.001981666,
+              1.8638372E-4,
+              -1.6408996E-4
+            ],
+            "angular_vel": [
+              2.2483617E-4,
+              -2.8322326E-4,
+              -2.3283064E-9
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:dayun_wheelx2",
+      "name": "machine_max.dayun_wheelx2",
+      "uuid": "491e9227-801d-4111-8b65-b63c506dd140",
+      "variant": "left"
+    },
+    "531d348b-3ca8-4200-bd58-669a86375e95": {
+      "custom_recipe": "machine_max:dayun_wheelx2",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 700.0
+            }
+          },
+          "id": 45,
+          "durability": 700.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              411.19696,
+              -59.282104,
+              257.40012
+            ],
+            "rotation": [
+              0.72450995,
+              0.0036162797,
+              0.6892534,
+              0.001443095
+            ],
+            "linear_vel": [
+              0.0018914462,
+              4.8303604E-4,
+              -6.427225E-4
+            ],
+            "angular_vel": [
+              1.2340024E-8,
+              1.752401E-5,
+              -6.476017E-4
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:dayun_wheelx2",
+      "name": "machine_max.dayun_wheelx2",
+      "uuid": "531d348b-3ca8-4200-bd58-669a86375e95",
+      "variant": "right"
+    },
+    "04586d59-9428-49e6-aacd-96d1b1e279e8": {
+      "custom_recipe": "machine_max:dayun_seat",
+      "material_assembling_progress": 7,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.hull_connection": {
+              "integrity": 150.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machinemax.seat": {
+              "durability": 20.0
+            }
+          },
+          "id": 22,
+          "durability": 150.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              428.52646,
+              -57.799786,
+              256.2365
+            ],
+            "rotation": [
+              -0.010364162,
+              -0.6928941,
+              -0.010310131,
+              0.7208912
+            ],
+            "linear_vel": [
+              0.0017985466,
+              0.0025886744,
+              -0.0017527859
+            ],
+            "angular_vel": [
+              -8.400991E-5,
+              3.5854074E-4,
+              9.982693E-4
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:dayun_seat",
+      "name": "machine_max.dayun_seat",
+      "uuid": "04586d59-9428-49e6-aacd-96d1b1e279e8",
+      "variant": "default"
+    },
+    "cb5cbdd6-1f78-45e6-9e37-0a033e5eac9d": {
+      "custom_recipe": "machine_max:dayun_wheel",
+      "material_assembling_progress": 46,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 400.0
+            }
+          },
+          "id": 24,
+          "durability": 400.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              428.2305,
+              -59.28403,
+              256.73212
+            ],
+            "rotation": [
+              -0.4031119,
+              -0.5812094,
+              -0.377026,
+              0.59795296
+            ],
+            "linear_vel": [
+              0.0039413087,
+              3.8941205E-4,
+              -9.3646767E-4
+            ],
+            "angular_vel": [
+              -3.080219E-4,
+              1.270154E-4,
+              2.2351742E-8
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:dayun_wheel",
+      "name": "machine_max.dayun_wheel",
+      "uuid": "cb5cbdd6-1f78-45e6-9e37-0a033e5eac9d",
       "variant": "right"
     }
   },
   "connections": [
     {
-      "partUuidS": "d75e8c85-e72f-4ec2-98a6-50ed2bdef997",
-      "subPartNameS": "guache",
-      "simplePointConnectorName": "dipanlocator",
-      "posRotS": {
-        "position": [
-          0.0,
-          0.1875,
-          -7.8125
-        ],
-        "rotation": [
-          0.0,
-          4.371139E-8,
-          0.0,
-          -1.0
-        ]
-      },
-      "partUuidA": "eed90146-5db0-444d-a7f7-5bd938d36a5b",
-      "subPartNameA": "dayun_chassis",
-      "advConnectorName": "pingbanchelocator",
-      "posRotA": {
-        "position": [
-          0.0,
-          0.625,
-          1.6875
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "1ea30432-4c74-4ff5-b7b1-7719cc542b09",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          0.453125,
-          -0.003125,
-          0.0
-        ],
-        "rotation": [
-          -1.0,
-          0.0,
-          0.0,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "eed90146-5db0-444d-a7f7-5bd938d36a5b",
-      "subPartNameA": "dayun_chassis",
-      "advConnectorName": "wheellocatorbackleft2",
-      "posRotA": {
-        "position": [
-          -0.8125,
-          -0.328125,
-          3.0625
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "033429c9-e601-4b28-a532-9cc2b9fa6ef2",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          0.453125,
-          -0.003125,
-          0.0
-        ],
-        "rotation": [
-          -1.0,
-          0.0,
-          0.0,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "eed90146-5db0-444d-a7f7-5bd938d36a5b",
-      "subPartNameA": "dayun_chassis",
-      "advConnectorName": "wheellocatorbackleft1",
-      "posRotA": {
-        "position": [
-          -0.8125,
-          -0.328125,
-          1.375
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "54a8201b-41ba-45e6-83d3-af2c1963264f",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          -0.453125,
-          -0.003125,
-          -3.9613447E-8
-        ],
-        "rotation": [
-          -1.0,
-          1.9106855E-15,
-          4.371139E-8,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "eed90146-5db0-444d-a7f7-5bd938d36a5b",
-      "subPartNameA": "dayun_chassis",
-      "advConnectorName": "wheellocatorbackright1",
-      "posRotA": {
-        "position": [
-          0.8125,
-          -0.328125,
-          1.375
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "d44c6ec7-23ad-4730-acf1-362a9f090c39",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          -0.453125,
-          -0.003125,
-          -3.9613447E-8
-        ],
-        "rotation": [
-          -1.0,
-          1.9106855E-15,
-          4.371139E-8,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "eed90146-5db0-444d-a7f7-5bd938d36a5b",
-      "subPartNameA": "dayun_chassis",
-      "advConnectorName": "wheellocatorbackright2",
-      "posRotA": {
-        "position": [
-          0.8125,
-          -0.328125,
-          3.0625
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "4f14e702-cea1-4c0f-82d5-791a9180b3a9",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          -0.453125,
-          -0.003125,
-          -3.9613447E-8
-        ],
-        "rotation": [
-          -1.0,
-          1.9106855E-15,
-          4.371139E-8,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "d75e8c85-e72f-4ec2-98a6-50ed2bdef997",
-      "subPartNameA": "guache",
-      "advConnectorName": "wheelright1",
-      "posRotA": {
-        "position": [
-          0.8125,
-          -0.75,
-          4.75
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "b4bd7d0f-4a34-4d50-b128-dcdba372b67c",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          -0.453125,
-          -0.003125,
-          -3.9613447E-8
-        ],
-        "rotation": [
-          -1.0,
-          1.9106855E-15,
-          4.371139E-8,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "d75e8c85-e72f-4ec2-98a6-50ed2bdef997",
-      "subPartNameA": "guache",
-      "advConnectorName": "wheelright2",
-      "posRotA": {
-        "position": [
-          0.8125,
-          -0.75,
-          6.4375
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "8716d637-16a4-48a6-9694-2e31a9089c39",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          -0.453125,
-          -0.003125,
-          -3.9613447E-8
-        ],
-        "rotation": [
-          -1.0,
-          1.9106855E-15,
-          4.371139E-8,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "d75e8c85-e72f-4ec2-98a6-50ed2bdef997",
-      "subPartNameA": "guache",
-      "advConnectorName": "wheelright3",
-      "posRotA": {
-        "position": [
-          0.8125,
-          -0.75,
-          8.3125
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "510bb2ef-868c-4d2e-99c8-cccf00332d90",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          0.453125,
-          -0.003125,
-          0.0
-        ],
-        "rotation": [
-          -1.0,
-          0.0,
-          0.0,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "d75e8c85-e72f-4ec2-98a6-50ed2bdef997",
-      "subPartNameA": "guache",
-      "advConnectorName": "wheelleft3",
-      "posRotA": {
-        "position": [
-          -0.8125,
-          -0.75,
-          8.3125
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "fe5dbe06-d0d7-4c72-a07b-2b401fcece73",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          0.453125,
-          -0.003125,
-          0.0
-        ],
-        "rotation": [
-          -1.0,
-          0.0,
-          0.0,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "d75e8c85-e72f-4ec2-98a6-50ed2bdef997",
-      "subPartNameA": "guache",
-      "advConnectorName": "wheelleft2",
-      "posRotA": {
-        "position": [
-          -0.8125,
-          -0.75,
-          6.4375
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "5dcac91c-b865-4e57-ad33-9f30c797eb52",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "wheellocator",
-      "posRotS": {
-        "position": [
-          0.453125,
-          -0.003125,
-          0.0
-        ],
-        "rotation": [
-          -1.0,
-          0.0,
-          0.0,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "d75e8c85-e72f-4ec2-98a6-50ed2bdef997",
-      "subPartNameA": "guache",
-      "advConnectorName": "wheelleft1",
-      "posRotA": {
-        "position": [
-          -0.8125,
-          -0.75,
-          4.5625
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "94b46496-9691-4823-8150-f6b4205e39c8",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "locator",
-      "posRotS": {
-        "position": [
-          0.203125,
-          -0.003125,
-          0.021875
-        ],
-        "rotation": [
-          -1.0,
-          0.0,
-          0.0,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "eed90146-5db0-444d-a7f7-5bd938d36a5b",
-      "subPartNameA": "dayun_chassis",
-      "advConnectorName": "wheellocatorleft",
-      "posRotA": {
-        "position": [
-          -1.1875,
-          -0.328125,
-          -2.84375
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "c3ef845a-3f47-4cf3-9992-8da903abe283",
-      "subPartNameS": "dayun_wheel",
-      "simplePointConnectorName": "locator",
-      "posRotS": {
-        "position": [
-          -0.203125,
-          -0.003125,
-          -0.021875018
-        ],
-        "rotation": [
-          -1.0,
-          1.9106855E-15,
-          4.371139E-8,
-          -4.371139E-8
-        ]
-      },
-      "partUuidA": "eed90146-5db0-444d-a7f7-5bd938d36a5b",
-      "subPartNameA": "dayun_chassis",
-      "advConnectorName": "wheellocatorright",
-      "posRotA": {
-        "position": [
-          1.1875,
-          -0.328125,
-          -2.84375
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "fcb9fb00-655a-4a71-a067-507138ec9434",
-      "subPartNameS": "dayun_hull",
-      "simplePointConnectorName": "dipan_locator",
+      "partUuidS": "8474f7af-c98b-4f12-bef1-26bdab27e7bb",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.0,
@@ -1288,9 +873,9 @@
           1.0
         ]
       },
-      "partUuidA": "eed90146-5db0-444d-a7f7-5bd938d36a5b",
-      "subPartNameA": "dayun_chassis",
-      "advConnectorName": "jsslocator",
+      "partUuidA": "0b581b3f-a16d-429e-9eaa-3816f83ea2f7",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_connection",
       "posRotA": {
         "position": [
           0.0,
@@ -1306,9 +891,213 @@
       }
     },
     {
-      "partUuidS": "b6edc810-7d37-4508-8a71-c6b4902c6e30",
-      "subPartNameS": "dayun_seat",
-      "simplePointConnectorName": "seat_locator",
+      "partUuidS": "4eaa477b-53b9-4ad6-90dd-d9657811ec33",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.203125,
+          -0.003125,
+          0.021875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "0b581b3f-a16d-429e-9eaa-3816f83ea2f7",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_wheel",
+      "posRotA": {
+        "position": [
+          -1.1875,
+          -0.328125,
+          -2.84375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "cb5cbdd6-1f78-45e6-9e37-0a033e5eac9d",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.203125,
+          -0.003125,
+          -0.021875018
+        ],
+        "rotation": [
+          0.0,
+          -4.371139E-8,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "0b581b3f-a16d-429e-9eaa-3816f83ea2f7",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_wheel",
+      "posRotA": {
+        "position": [
+          1.1875,
+          -0.328125,
+          -2.84375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "1b3ee31e-48b7-4aea-9bed-a28bf498de89",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.453125,
+          -0.003125,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "0b581b3f-a16d-429e-9eaa-3816f83ea2f7",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_wheel_1",
+      "posRotA": {
+        "position": [
+          -0.8125,
+          -0.328125,
+          1.375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "ea922467-47cf-47fe-a8cb-4cdafc36b043",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.453125,
+          -0.003125,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "0b581b3f-a16d-429e-9eaa-3816f83ea2f7",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_wheel_2",
+      "posRotA": {
+        "position": [
+          -0.8125,
+          -0.328125,
+          3.0625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "24204b9e-b62a-458d-bc40-3f2e8be0ab17",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.453125,
+          -0.003125,
+          -3.9613447E-8
+        ],
+        "rotation": [
+          0.0,
+          -4.371139E-8,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "0b581b3f-a16d-429e-9eaa-3816f83ea2f7",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_wheel_1",
+      "posRotA": {
+        "position": [
+          0.8125,
+          -0.328125,
+          1.375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "a5e8bd8b-6462-4e28-bf5c-08a2eaf38ee7",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.453125,
+          -0.003125,
+          -3.9613447E-8
+        ],
+        "rotation": [
+          0.0,
+          -4.371139E-8,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "0b581b3f-a16d-429e-9eaa-3816f83ea2f7",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_wheel_2",
+      "posRotA": {
+        "position": [
+          0.8125,
+          -0.328125,
+          3.0625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "7ef58744-dec5-46d4-b475-d60c31ec2bb9",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.hull_connection",
       "posRotS": {
         "position": [
           0.0,
@@ -1322,9 +1111,9 @@
           1.0
         ]
       },
-      "partUuidA": "fcb9fb00-655a-4a71-a067-507138ec9434",
-      "subPartNameA": "dayun_hull",
-      "advConnectorName": "left_seat",
+      "partUuidA": "8474f7af-c98b-4f12-bef1-26bdab27e7bb",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_seat",
       "posRotA": {
         "position": [
           -0.875,
@@ -1340,9 +1129,9 @@
       }
     },
     {
-      "partUuidS": "05d4c258-3450-44e2-8183-e80fd65566e8",
-      "subPartNameS": "dayun_seat",
-      "simplePointConnectorName": "seat_locator",
+      "partUuidS": "04586d59-9428-49e6-aacd-96d1b1e279e8",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.hull_connection",
       "posRotS": {
         "position": [
           0.0,
@@ -1356,9 +1145,9 @@
           1.0
         ]
       },
-      "partUuidA": "fcb9fb00-655a-4a71-a067-507138ec9434",
-      "subPartNameA": "dayun_hull",
-      "advConnectorName": "right_seat",
+      "partUuidA": "8474f7af-c98b-4f12-bef1-26bdab27e7bb",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_seat",
       "posRotA": {
         "position": [
           0.90625,
@@ -1372,18 +1161,256 @@
           1.0
         ]
       }
+    },
+    {
+      "partUuidS": "142c1859-dd93-4128-8d34-682a3c207a1e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.1875,
+          -7.8125
+        ],
+        "rotation": [
+          0.0,
+          4.371139E-8,
+          0.0,
+          -1.0
+        ]
+      },
+      "partUuidA": "0b581b3f-a16d-429e-9eaa-3816f83ea2f7",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.trailer",
+      "posRotA": {
+        "position": [
+          0.0,
+          0.625,
+          1.6875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "f8232ba5-10e5-4e70-a26d-ae429a3f269c",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.453125,
+          -0.003125,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          -4.371139E-8
+        ]
+      },
+      "partUuidA": "142c1859-dd93-4128-8d34-682a3c207a1e",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_wheel_1",
+      "posRotA": {
+        "position": [
+          -0.8125,
+          -0.75,
+          4.5625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "1de530cf-1b91-483f-b8f4-757a653b6a01",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.453125,
+          -0.003125,
+          -3.9613447E-8
+        ],
+        "rotation": [
+          -1.0,
+          1.9106855E-15,
+          4.371139E-8,
+          -4.371139E-8
+        ]
+      },
+      "partUuidA": "142c1859-dd93-4128-8d34-682a3c207a1e",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_wheel_3",
+      "posRotA": {
+        "position": [
+          0.8125,
+          -0.75,
+          8.3125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "491e9227-801d-4111-8b65-b63c506dd140",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.453125,
+          -0.003125,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          -4.371139E-8
+        ]
+      },
+      "partUuidA": "142c1859-dd93-4128-8d34-682a3c207a1e",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_wheel_3",
+      "posRotA": {
+        "position": [
+          -0.8125,
+          -0.75,
+          8.3125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "98651e5e-9d68-49e9-86b8-9f6c783680cc",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.453125,
+          -0.003125,
+          0.0
+        ],
+        "rotation": [
+          -1.0,
+          0.0,
+          0.0,
+          -4.371139E-8
+        ]
+      },
+      "partUuidA": "142c1859-dd93-4128-8d34-682a3c207a1e",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_wheel_2",
+      "posRotA": {
+        "position": [
+          -0.8125,
+          -0.75,
+          6.4375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "531d348b-3ca8-4200-bd58-669a86375e95",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.453125,
+          -0.003125,
+          -3.9613447E-8
+        ],
+        "rotation": [
+          -1.0,
+          1.9106855E-15,
+          4.371139E-8,
+          -4.371139E-8
+        ]
+      },
+      "partUuidA": "142c1859-dd93-4128-8d34-682a3c207a1e",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_wheel_1",
+      "posRotA": {
+        "position": [
+          0.8125,
+          -0.75,
+          4.75
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "ce35516f-389d-48b0-a3f7-cb2b28a898d9",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.453125,
+          -0.003125,
+          -3.9613447E-8
+        ],
+        "rotation": [
+          -1.0,
+          1.9106855E-15,
+          4.371139E-8,
+          -4.371139E-8
+        ]
+      },
+      "partUuidA": "142c1859-dd93-4128-8d34-682a3c207a1e",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_wheel_2",
+      "posRotA": {
+        "position": [
+          0.8125,
+          -0.75,
+          6.4375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
     }
   ],
   "vehicle_name": "dayun_with_trailer",
-  "uuid": "9bc8d47a-e92c-496e-9f7f-088cc9a60c1b",
+  "uuid": "b4a662d9-edac-449f-a235-e535961c76ce",
   "pos": [
-    94.2145004272461,
-    -58.9492634043974,
-    -963.2548971737132
+    419.5212240780101,
+    -58.973968505859375,
+    255.74002164952896
   ],
   "min": [
-    -14.538825988769531,
-    -1.4119617237764288,
-    -1.921189252068075
+    -14.570540484260107,
+    -1.385528564453125,
+    -2.2261056339039555
   ]
 }

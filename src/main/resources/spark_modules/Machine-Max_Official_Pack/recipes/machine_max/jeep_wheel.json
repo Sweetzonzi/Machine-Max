@@ -1,0 +1,31 @@
+{
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 10
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:dried_kelp"
+      },
+      "count": 10
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:leather"
+      },
+      "count": 8
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 2,
+    "components": {
+      "machine_max:part_type": "machine_max:jeep_wheel"
+    }
+  },
+  "time": 75
+}

@@ -489,7 +489,7 @@
 						}
 					],
 					"locators": {
-						"frontarmor": {
+						"front_armor": {
 							"offset": [0, 7.75, 8],
 							"rotation": [10, 0, 0]
 						}

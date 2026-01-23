@@ -52,8 +52,6 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             } else {
                 passenger.resetFallDistance();//防止摔死
             }
-        } else {
-            resetSignalOutputs();
         }
     }
 
@@ -76,7 +74,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             }
             occupied = true;
             for (String channel : attr.passengerNumSignalTargets.keySet()) {
-                sendSignalToAllTargets(channel, 1);
+                sendSignalToAllTargets(channel, 1f);
             }
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
@@ -96,7 +94,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
         }
         occupied = false;
         for (String channel : attr.passengerNumSignalTargets.keySet()) {
-            sendSignalToAllTargets(channel, 0);
+            sendSignalToAllTargets(channel, 0f);
         }
         resetSignalOutputs();
     }
