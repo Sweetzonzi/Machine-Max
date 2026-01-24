@@ -9,6 +9,7 @@ import kotlin.jvm.JvmField;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import org.graalvm.polyglot.HostAccess;
+import org.jetbrains.annotations.Nullable;
 
 public class VehicleBinding{
     private final AnimInstance anim;
@@ -28,6 +29,7 @@ public class VehicleBinding{
     public final Double max_durability;
 
     @HostAccess.Export
+    @Nullable
     public Object get(String key) {
         var holder = getAnimatable().getAnimatable();
         if (holder instanceof LivingEntity) {
@@ -40,6 +42,7 @@ public class VehicleBinding{
         else return null;
     }
 
+    @Nullable
     private static Double getDurability(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
@@ -50,6 +53,7 @@ public class VehicleBinding{
         else return 0.0;
     }
 
+    @Nullable
     private static Double getMaxDurability(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {

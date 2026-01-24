@@ -11,10 +11,13 @@ import net.neoforged.fml.common.EventBusSubscriber;
 public class MMMolangs {
     @SubscribeEvent
     private static void registerMolangBinding(OnMolangValueBindingEvent event) {
-        event.getBindings().putMember("spt", new SubPartBinding(event.getAnimatable()));
-        event.getBindings().putMember("subpart", new SubPartBinding(event.getAnimatable()));
-        event.getBindings().putMember("veh", new VehicleBinding(event.getAnimatable()));
-        event.getBindings().putMember("vehicle", new VehicleBinding(event.getAnimatable()));
+        var anim = event.getAnimatable();
+        var subPart = new SubPartBinding(anim);
+        var vehicle = new VehicleBinding(anim);
+        event.getBindings().putMember("spt", subPart);
+        event.getBindings().putMember("subpart", subPart);
+        event.getBindings().putMember("veh", vehicle);
+        event.getBindings().putMember("vehicle", vehicle);
     }
 
 }

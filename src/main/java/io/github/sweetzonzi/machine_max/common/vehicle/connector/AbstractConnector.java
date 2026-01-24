@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.connector;
 
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -461,6 +462,30 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         Transform result = subPart.body.getTransform(null);
         MyMath.combine(this.offsetFromMassCenter, result, result);
         return MyMath.combine(transform, result, result);
+    }
+
+    /**
+     * <p>获取当前帧关节的偏移，若当前连接点未被连接到另一连接点，则返回零向量</p>
+     * <p>Get the frame offset of the joint, if the connector is not connected to another connector, return the zeros</p>
+     *
+     * @return 当前帧关节的偏移 (meter)
+     */
+    public Vector3f getPivotOffset() {
+        if (attachedConnector != null && joint != null) {
+            return joint.getPivotOffset(null);
+        } else return Vector3f.ZERO;
+    }
+
+    /**
+     * <p>获取当前帧关节的旋转，若当前连接点未被连接到另一连接点，则返回零向量</p>
+     * <p>Get the frame rotation of the joint, if the connector is not connected to another connector, return the zeros</p>
+     *
+     * @return 当前帧关节的旋转 (deg, ZYX order)
+     */
+    public Vector3f getPivotRotation() {
+        if (attachedConnector != null && joint != null) {
+            return joint.getAngles(null).mult((float) (180f / Math.PI));
+        } else return Vector3f.ZERO;
     }
 
     /**
