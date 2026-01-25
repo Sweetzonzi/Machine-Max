@@ -25,9 +25,11 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr imple
     public final float maxTorqueRpm;
     public final float redLineRpm;
     public final float redLineRpmTorqueRatio;
-    public final double inertia;//发动机系统转动惯量(kg·m²)
-    public final List<Double> dampingFactors;//发动机各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
-    public final List<String> throttleInputKeys;//优先级从高至低
+    public final double inertia; //发动机系统转动惯量(kg·m²)
+    public final boolean fourStroke; //是否是四冲程，false则为二冲程
+    public final int cylinderCount; // 气缸数
+    public final List<Double> dampingFactors; //发动机各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
+    public final List<String> throttleInputKeys; //优先级从高至低
 
     public static final Codec<Map<String, List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
 
@@ -41,6 +43,8 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr imple
             Codec.FLOAT.optionalFieldOf("red_line_rpm", 7500f).forGetter(EngineSubsystemStaticAttr::getRedLineRpm),
             Codec.FLOAT.optionalFieldOf("red_line_torque_ratio", 0.9f).forGetter(EngineSubsystemStaticAttr::getRedLineRpmTorqueRatio),
             Codec.DOUBLE.optionalFieldOf("inertia", 10.0).forGetter(EngineSubsystemStaticAttr::getInertia),
+            Codec.BOOL.optionalFieldOf("four_stroke", true).forGetter(EngineSubsystemStaticAttr::isFourStroke),
+            Codec.INT.optionalFieldOf("cylinder", 4).forGetter(EngineSubsystemStaticAttr::getCylinderCount),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(20.0, 0.1, 0.00005)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys)
     ).apply(instance, EngineSubsystemStaticAttr::new));
@@ -62,6 +66,8 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr imple
             float redLineRpm,
             float redLineRpmTorqueRatio,
             double inertia,
+            boolean fourStroke,
+            int cylinderCount,
             List<Double> dampingFactors,
             List<String> throttleInputKeys) {
         super(basicDurability);
@@ -73,6 +79,8 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr imple
         this.redLineRpm = redLineRpm;
         this.redLineRpmTorqueRatio = redLineRpmTorqueRatio;
         this.inertia = inertia;
+        this.fourStroke = fourStroke;
+        this.cylinderCount = cylinderCount;
         this.dampingFactors = dampingFactors;
         this.throttleInputKeys = throttleInputKeys;
         createSounds(true);
@@ -95,7 +103,19 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr imple
                 float rpm = getIdleRpm() * (float) Math.pow(RPM_INCREASE_RATIO, i);
                 float load = 0.25f * j;
                 PistonEngineSoundSynthesizer synthesizer = new PistonEngineSoundSynthesizer();
-                synthesizer.setEngineParams(new PistonEngineSoundSynthesizer.EngineParams());//TODO: 根据静态属性修改引擎参数，进而影响音效
+                List<Double> firingAngles = new ArrayList<>(cylinderCount);
+                List<Double> exhaustLengths = new ArrayList<>(cylinderCount);
+                for (int k = 0; k < cylinderCount; k++) {
+                    firingAngles.add((fourStroke ? 720.0 : 360.0) / cylinderCount * k);
+                    exhaustLengths.add(0.6); // 固定排气歧管长度0.6m
+                }
+                var param = new PistonEngineSoundSynthesizer.EngineParams(
+                        cylinderCount, fourStroke,
+                        500.0,
+                        redLineRpm, idleRpm,
+                        firingAngles, exhaustLengths
+                );
+                synthesizer.setEngineParams(param);
                 ResourceLocation sound = createStateSound(synthesizer, rpm, load);
                 loadWorkingStates.add(new WorkingState(rpm, load, sound));
             }

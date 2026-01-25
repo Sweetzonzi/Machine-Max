@@ -68,6 +68,17 @@
       "default": 10.0,
       "description": "Engine system moment of inertia, in kilogram-square meters (kg·m²)."
     },
+    "four_stroke": {
+      "type": "boolean",
+      "default": true,
+      "description": "Is it a four-stroke, false then two-stroke, affecting engine sound effect."
+    },
+    "cylinder": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 4,
+      "description": "Cylinder count, affecting engine sound effect."
+    },
     "damping_factors": {
       "type": "array",
       "items": { "type": "number" },

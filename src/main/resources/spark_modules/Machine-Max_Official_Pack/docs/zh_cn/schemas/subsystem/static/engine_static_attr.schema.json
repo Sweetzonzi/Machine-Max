@@ -68,6 +68,17 @@
       "default": 10.0,
       "description": "发动机系统转动惯量，单位千克·平方米(kg·m²)。"
     },
+    "four_stroke": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否为四冲程，false则为二冲程，影响发动机音效。"
+    },
+    "cylinder": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 4,
+      "description": "气缸数，影响发动机音效。"
+    },
     "damping_factors": {
       "type": "array",
       "items": { "type": "number" },

@@ -1,4 +1,5 @@
 {
+  "$schema": "../../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:wheel_driver",
   "basic_durability": 400, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪
   "roll": {//(可选)轮胎滚动相关属性, 默认最大驱动力矩10000N*m, 最大刹车力矩3500N*m, 最大手刹车力矩0N*m, 最大转速3140rad/s, 不反馈转速值到任何频道的任何目标
