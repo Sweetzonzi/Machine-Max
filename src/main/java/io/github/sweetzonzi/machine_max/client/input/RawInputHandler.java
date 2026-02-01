@@ -202,14 +202,14 @@ public class RawInputHandler {
                     .OnKeyHover((tick -> {
                         if (tick <= 10.0) {
                             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), (int) tick));
-                            if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() != null)
+                            if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() != null) {
                                 client.player.displayClientMessage(
                                         Component.translatable("message.machine_max.leaving_vehicle",
                                                 KeyBinding.generalLeaveVehicleKey.getTranslatedKeyMessage(),
                                                 String.format("%.2f", Math.clamp(0.05 * tick, 0.0, 0.5))
                                         ), true
                                 );
-
+                            }
                         }
                     }))
                     .OnKeyUp((() -> {

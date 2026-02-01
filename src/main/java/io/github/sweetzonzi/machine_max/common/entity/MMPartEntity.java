@@ -14,10 +14,7 @@ import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
-import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.vehicle.*;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -32,6 +29,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.entity.vehicle.VehicleEntity;
@@ -70,16 +68,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         this.blocksBuilding = false;
     }
 
-    @Override
-    protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
-        super.defineSynchedData(builder);
-    }
-
-    @Override
-    protected @NotNull Item getDropItem() {
-        return ItemStack.EMPTY.getItem();
-    }
-
     public MMPartEntity(Level level, SubPart subPart) {
         super(MMEntities.getPART_ENTITY().get(), level);
         this.setNoGravity(true);
@@ -88,6 +76,16 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         this.partUUID = subPart.part.uuid;
         this.vehicleUUID = subPart.part.vehicle.uuid;
         this.setPos(SparkMathKt.toVec3(subPart.body.getPhysicsLocation(null)));
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
+        super.defineSynchedData(builder);
+    }
+
+    @Override
+    protected @NotNull Item getDropItem() {
+        return ItemStack.EMPTY.getItem();
     }
 
     @Override

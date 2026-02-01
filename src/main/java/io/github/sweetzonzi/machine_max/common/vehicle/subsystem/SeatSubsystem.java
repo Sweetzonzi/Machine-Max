@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
+import io.github.sweetzonzi.machine_max.common.vehicle.CollisionManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.SeatSubsystemAttr;
@@ -87,8 +88,10 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
         if (passenger != null) {
             if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() == this) {
                 ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(null);
-                // TODO: 似乎未成功施加速度，检查原因
-                passenger.addDeltaMovement(SparkMathKt.toVec3(getSubPart().getLinearVelocity().add(0,1,0).mult(0.05f)));
+                passenger.stopRiding();
+                // 玩家运动受客户端控制，需要在客户端修改deltamovement
+                if ((passenger.level().isClientSide() && passenger instanceof Player) || (!(passenger instanceof Player) && !passenger.level().isClientSide()))
+                    CollisionManager.addImpulse(passenger, SparkMathKt.toVec3(getSubPart().getLinearVelocity().add(0,1,0).mult(0.05f)));
             }
             passenger = null;
         }

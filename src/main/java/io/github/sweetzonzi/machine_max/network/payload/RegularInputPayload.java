@@ -66,7 +66,6 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     //处于骑乘状态，且长按互动键1秒，则尝试脱离载具
                     if (((IEntityMixin) player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seatSubSystem) {
                         seatSubSystem.removePassenger();
-                        player.stopRiding();//保险措施，确保停止骑乘
                     } else player.stopRiding();//一般载具实体的处理方式
                 }
                 break;
