@@ -66,12 +66,13 @@ public class AssemblyHud3D implements IHud3DElement {
     /* ================== 颜色定义 ================== */
 
     private static final int HUD_BG = new Color(32, 32, 32, 128).getRGB();
-    //    private static final int HUD_THEME = 0xFFFF6600;
-    private static final int HUD_THEME = new Color(150, 200, 255, 200).getRGB();
+    private static final int HUD_THEME = new Color(255, 100, 0, 255).getRGB();
+//    private static final int HUD_THEME = new Color(150, 200, 255, 200).getRGB();
     private static final int BAR_BG = new Color(64, 64, 64, 32).getRGB();
     private static final int ROW_BG_DARK = 0x66222222;
     private static final int ROW_BG_LIGHT = 0x555A5A5A;
-    private static final int ROW_BG_ACTIVE = new Color(150, 200, 255, 155).getRGB();
+//    private static final int ROW_BG_ACTIVE = new Color(150, 200, 255, 155).getRGB();
+    private static final int ROW_BG_ACTIVE = new Color(255, 100, 0, 155).getRGB();
     private static final int ROW_BG_LACK = new Color(150, 32, 32, 128).getRGB();
 
     private static final int TEXT_MAIN = new Color(255, 255, 255, 255).getRGB();
