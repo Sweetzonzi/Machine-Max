@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -18,12 +19,13 @@ import java.util.List;
 
 public class MaterialRequirementsWidget extends AbstractWidget {
     private final Minecraft minecraft;
+    private boolean researchMaterial;
     private FabricatingRecipe currentRecipe;
     private final List<MaterialEntry> materialEntries = new ArrayList<>();
 
     // 布局配置
     private static final int ENTRY_HEIGHT = 30;
-    private static final int ENTRY_WIDTH = 60;
+    private static final int ENTRY_WIDTH = 70;
     private static final int HORIZONTAL_PADDING = 2;
     private static final int VERTICAL_PADDING = 2;
 
@@ -32,9 +34,10 @@ public class MaterialRequirementsWidget extends AbstractWidget {
     private static final long SCROLL_INTERVAL = 40; // 滚动间隔（毫秒）
     private int scrollOffset = 0;
 
-    public MaterialRequirementsWidget(int x, int y, int width, int height) {
+    public MaterialRequirementsWidget(int x, int y, int width, int height, boolean researchMaterial) {
         super(x, y, width, height, Component.empty());
         this.minecraft = Minecraft.getInstance();
+        this.researchMaterial = researchMaterial;
     }
 
     public void setRecipe(FabricatingRecipe recipe) {
@@ -51,7 +54,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
         Player player = minecraft.player;
         boolean isCreative = player.isCreative();
 
-        for (IngredientCountPair ingredientPair : currentRecipe.getIngredientPairs()) {
+        for (IngredientCountPair ingredientPair : this.researchMaterial ? currentRecipe.getResearchIngredientPairs() : currentRecipe.getIngredientPairs()) {
             ItemStack[] matchingItems = ingredientPair.ingredient().getItems();
             if (matchingItems.length == 0) continue;
 
@@ -100,8 +103,17 @@ public class MaterialRequirementsWidget extends AbstractWidget {
                     getY() + height / 2 - 4,
                     0xAAAAAA, false);
             return;
+        } else if ((currentRecipe.getIngredientPairs().isEmpty() && !researchMaterial)
+        || currentRecipe.getResearchIngredientPairs().isEmpty() && researchMaterial) {
+            // 居中显示提示文本
+            String text = "无材料需求";
+            int textWidth = minecraft.font.width(text);
+            graphics.drawString(minecraft.font, text,
+                    getX() + (width - textWidth) / 2,
+                    getY() + height / 2 - 4,
+                    0xAAAAAA, false);
+            return;
         }
-
         // 更新滚动文本
         updateScrollingText();
 
@@ -180,7 +192,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
         }
 
         int nameColor = entry.hasEnough ? 0xFFFFFF : 0xFF5555;
-        graphics.drawString(minecraft.font, displayName, textAreaX-1, y + 6, nameColor, false);
+        graphics.drawString(minecraft.font, displayName, textAreaX - 1, y + 6, nameColor, false);
 
         // 渲染数量信息（第二行，小字号）
         String countText = formatCountText(entry.requiredCount, entry.playerCount, entry.isCreative);
@@ -225,7 +237,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
     private void renderMaterialTooltip(GuiGraphics graphics, MaterialEntry entry, int mouseX, int mouseY) {
         // 渲染tooltip
         ItemStack stack = entry.displayStack;
-//        graphics.renderTooltip(minecraft.font, Screen.getTooltipFromItem(this.minecraft, stack), stack.getTooltipImage(), mouseX, mouseY);
+        graphics.renderTooltip(minecraft.font, Screen.getTooltipFromItem(this.minecraft, stack), stack.getTooltipImage(), mouseX, mouseY);
     }
 
     private String formatCountText(int required, int playerCount, boolean isCreative) {

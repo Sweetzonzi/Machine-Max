@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.attachment.BluePrintAttachment;
+import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
@@ -77,9 +77,9 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                 repairStep * SUBSYSTEM_REPAIR_PER_TICK,
                                 repairStep * CONNECTOR_REPAIR_PER_TICK);
                         if (assembled && remainingUseDuration % 10 == 0)
-                            BluePrintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                            BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
                         if (repaired && remainingUseDuration % 10 == 0)
-                            BluePrintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
+                            BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
                     } else { // 潜行时拆解部件为原材料
                         if (part.getAssemblingProgress() > 0) {
                             part.disassemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);

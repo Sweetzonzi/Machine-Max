@@ -1,12 +1,11 @@
 package io.github.sweetzonzi.machine_max.client.render.toast;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.toasts.Toast;
 import net.minecraft.client.gui.components.toasts.ToastComponent;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,7 +49,7 @@ public class BlueprintResearchToast implements Toast {
                 title,
                 30,
                 7,
-                0xFFFFFF,
+                0xFFFF66,
                 false
         );
         guiGraphics.drawString(
@@ -65,6 +64,11 @@ public class BlueprintResearchToast implements Toast {
         return timeSinceLastVisible - firstDrawTime >= 5000
                 ? Visibility.HIDE
                 : Visibility.SHOW;
+    }
+
+    @Override
+    public int width() {
+        return Minecraft.getInstance().font.width(subtitle) + 40;
     }
 }
 

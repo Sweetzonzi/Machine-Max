@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
-import io.github.sweetzonzi.machine_max.common.attachment.BluePrintAttachment
+import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
@@ -32,9 +32,9 @@ object MMAttachments {
     @JvmStatic
     val BLUEPRINT = MachineMax.REGISTER.attachment {
         id = "blueprint"
-        factory = { _ -> BluePrintAttachment(0) }
+        factory = { _ -> BlueprintAttachment(0) }
         copyOnDeath = true
-        serializer = BluePrintAttachment.CODEC
+        serializer = BlueprintAttachment.CODEC
     }
 
     //世界的载具列表，用于保存、加载和管理世界中的载具

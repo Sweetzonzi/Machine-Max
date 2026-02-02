@@ -1,5 +1,15 @@
 { // 你也可以在这个目录下放置其他类型的配方，如工作台，熔炉或其他mod内容，但更推荐使用数据包
   "type": "machine_max:fabricating", // 代表此配方用于打印机制造和手工部件组装，当配方名和某个部件的注册名匹配时，将自动成为它的手动组装配方
+  "research_cost": 100, // 首次研发的研发点消耗
+  "upgrade_cost": 50, // 升级蓝图等级的研发点消耗
+  "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
+    {
+      "ingredient": {
+        "item": "machine_max:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
   "ingredients": [ // 配方的原料列表，代表接收的原料类型和数量，可存在重复的内容。手工组装时按顺序依次消耗
     {
       "ingredient": { // 原料的类型

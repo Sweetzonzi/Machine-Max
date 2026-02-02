@@ -16,12 +16,10 @@ import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDama
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
-import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
@@ -33,16 +31,13 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
-import net.neoforged.neoforge.event.entity.living.LivingExperienceDropEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerXpEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.graalvm.nativebridge.In;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -52,7 +47,7 @@ import java.util.*;
 // 加点，可自定义维修与组装速度加成，耐久度加成，根据加点数决定蓝图版本号和claim所需自由研发点
 // 随身蓝图库，类似于末影箱，检查条件时同样检查这里
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
-public class BluePrintAttachment {
+public class BlueprintAttachment {
     @Getter
     private int freeResearchPoint;
     @Getter(value = AccessLevel.PRIVATE)
@@ -91,14 +86,14 @@ public class BluePrintAttachment {
 
     public static final Codec<Map<ResourceLocation, ItemStack>> PRODUCTS_CODEC = Codec.unboundedMap(ResourceLocation.CODEC, ItemStack.CODEC);
 
-    public static final Codec<BluePrintAttachment> CODEC = RecordCodecBuilder.create(instance ->
+    public static final Codec<BlueprintAttachment> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
-                    Codec.INT.optionalFieldOf("research_point", 0).forGetter(BluePrintAttachment::getFreeResearchPoint),
-                    Codec.INT.optionalFieldOf("pending_research_point", 0).forGetter(BluePrintAttachment::getPendingResearchPoint),
-                    ResourceLocation.CODEC.optionalFieldOf("researching_recipe", FabricatingRecipe.EMPTY).forGetter(BluePrintAttachment::getResearchingRecipe),
-                    RESEARCHED_RECIPES_CODEC.fieldOf("researched_recipes").forGetter(BluePrintAttachment::getResearchedRecipes),
-                    PRODUCTS_CODEC.fieldOf("products").forGetter(BluePrintAttachment::getProducts)
-            ).apply(instance, BluePrintAttachment::new)
+                    Codec.INT.optionalFieldOf("research_point", 0).forGetter(BlueprintAttachment::getFreeResearchPoint),
+                    Codec.INT.optionalFieldOf("pending_research_point", 0).forGetter(BlueprintAttachment::getPendingResearchPoint),
+                    ResourceLocation.CODEC.optionalFieldOf("researching_recipe", FabricatingRecipe.EMPTY).forGetter(BlueprintAttachment::getResearchingRecipe),
+                    RESEARCHED_RECIPES_CODEC.fieldOf("researched_recipes").forGetter(BlueprintAttachment::getResearchedRecipes),
+                    PRODUCTS_CODEC.fieldOf("products").forGetter(BlueprintAttachment::getProducts)
+            ).apply(instance, BlueprintAttachment::new)
     );
 
     public static final StreamCodec<FriendlyByteBuf, Pair<RpAddReason, Integer>> RP_CHANGE_STREAM_CODEC = new StreamCodec<>() {
@@ -182,16 +177,16 @@ public class BluePrintAttachment {
         }
     };
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, BluePrintAttachment> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.INT, BluePrintAttachment::getFreeResearchPoint,
-            ByteBufCodecs.INT, BluePrintAttachment::getPendingResearchPoint,
-            ResourceLocation.STREAM_CODEC, BluePrintAttachment::getResearchingRecipe,
-            RESEARCHED_RECIPES_STREAM_CODEC, BluePrintAttachment::getResearchedRecipes,
-            PRODUCTS_STREAM_CODEC, BluePrintAttachment::getProducts,
-            BluePrintAttachment::new
+    public static final StreamCodec<RegistryFriendlyByteBuf, BlueprintAttachment> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT, BlueprintAttachment::getFreeResearchPoint,
+            ByteBufCodecs.INT, BlueprintAttachment::getPendingResearchPoint,
+            ResourceLocation.STREAM_CODEC, BlueprintAttachment::getResearchingRecipe,
+            RESEARCHED_RECIPES_STREAM_CODEC, BlueprintAttachment::getResearchedRecipes,
+            PRODUCTS_STREAM_CODEC, BlueprintAttachment::getProducts,
+            BlueprintAttachment::new
     );
 
-    public BluePrintAttachment(int freeResearchPoint, int pendingResearchPoint, ResourceLocation researchingRecipe, Map<ResourceLocation, Float> researchedRecipes, Map<ResourceLocation, ItemStack> products) {
+    public BlueprintAttachment(int freeResearchPoint, int pendingResearchPoint, ResourceLocation researchingRecipe, Map<ResourceLocation, Float> researchedRecipes, Map<ResourceLocation, ItemStack> products) {
         this.freeResearchPoint = freeResearchPoint;
         this.pendingResearchPoint = pendingResearchPoint;
         this.researchingRecipe = researchingRecipe;
@@ -199,7 +194,7 @@ public class BluePrintAttachment {
         this.products = new HashMap<>(products);
     }
 
-    public BluePrintAttachment(int freeResearchPoint) {
+    public BlueprintAttachment(int freeResearchPoint) {
         this(freeResearchPoint, 0, FabricatingRecipe.EMPTY, new HashMap<>(), new HashMap<>());
     }
 
@@ -278,9 +273,10 @@ public class BluePrintAttachment {
             float currentResearchProgress = researchedRecipes.getOrDefault(researchingRecipe, 0f);
             if (recipeHolder != null && currentResearchProgress >= 0f) { // 仅提交材料并开始了的研究可推进研究进度
                 FabricatingRecipe recipe = recipeHolder.value();
-                int requiredResearchPoint = recipe.getResearchCost();
                 // 当前研发等级
                 int currentResearchLevel = getResearchLevel(researchingRecipe);
+                // 需求研发点数
+                int requiredResearchPoint = getRpCost(recipeHolder.id());
                 // 当前等级研发进度
                 float currentLevelResearchProgress = currentResearchProgress - currentResearchLevel;
                 // 计算当前轮次已有的研发点数
@@ -324,11 +320,12 @@ public class BluePrintAttachment {
             RecipeHolder<FabricatingRecipe> recipeHolder = getResearching();
             if (recipeHolder != null && canStartResearching(player, researchingRecipe)) {
                 FabricatingRecipe recipe = recipeHolder.value();
-                int requiredResearchPoint = recipe.getResearchCost();
                 // 当前配方已研发进度
                 float currentResearchProgress = researchedRecipes.computeIfAbsent(researchingRecipe, k -> 0f);
                 // 当前研发等级
                 int currentResearchLevel = getResearchLevel(researchingRecipe);
+                // 需求研发点数
+                int requiredResearchPoint = getRpCost(recipeHolder.id());
                 // 当前等级研发进度
                 float currentLevelResearchProgress = currentResearchProgress - currentResearchLevel;
                 // 计算当前轮次已有的研发点数
@@ -373,7 +370,7 @@ public class BluePrintAttachment {
         RecipeHolder<FabricatingRecipe> recipeHolder = getAllResearchable().get(recipe);
         if (recipeHolder != null) {
             int researchLevel = getResearchLevel(recipe);
-            return recipeHolder.value().getResearchCost();
+            return researchLevel == 0 ? recipeHolder.value().getResearchCost() : recipeHolder.value().getUpgradeCost();
         } else return 0;
     }
 
@@ -384,7 +381,12 @@ public class BluePrintAttachment {
      * @return 研发点消耗
      */
     public int getReclaimRpCost(ResourceLocation recipe) {
-        return (int) (getRpCost(recipe) * 0.5f); // 暂定50%研发消耗
+        RecipeHolder<FabricatingRecipe> recipeHolder = getAllResearchable().get(recipe);
+        if (recipeHolder != null) {
+            int level = getResearchLevel(recipe);
+            if (level == 0) return recipeHolder.value().getResearchCost();
+            return (int) (recipeHolder.value().getResearchCost() + recipeHolder.value().getUpgradeCost() * (level - 1) * 0.5f);
+        } else return 0;
     }
 
     public void setFreeResearchPoint(Player player, int freeResearchPoint) {
@@ -654,7 +656,7 @@ public class BluePrintAttachment {
     @SubscribeEvent
     public static void onXpChange(PlayerXpEvent.XpChange event) {
         // 此事件仅在服务端被触发
-        BluePrintAttachment.giveRp(event.getEntity(), event.getAmount() * 10, RpAddReason.EXP);
+        BlueprintAttachment.giveRp(event.getEntity(), event.getAmount() * 10, RpAddReason.EXP);
     }
 
     @SubscribeEvent
@@ -663,7 +665,7 @@ public class BluePrintAttachment {
             var research = player.getData(MMAttachments.getBLUEPRINT());
             if (research.hitRpCooldown <= 0) {
                 research.addRp(1, RpAddReason.HIT);
-                research.hitRpCooldown = BluePrintAttachment.HIT_RP_COOLDOWN;
+                research.hitRpCooldown = BlueprintAttachment.HIT_RP_COOLDOWN;
             }
         }
     }

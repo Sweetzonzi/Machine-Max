@@ -111,7 +111,8 @@ public class FabricatingScreen extends AbstractContainerScreen<FabricatingMenu> 
                 leftPos + 105,
                 topPos + 116,
                 190,
-                80
+                80,
+                false
         );
         this.addRenderableWidget(materialWidget);
 

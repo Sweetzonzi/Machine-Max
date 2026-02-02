@@ -1,11 +1,10 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
+import io.github.sweetzonzi.machine_max.client.render.gui.renderable.MaterialRequirementsWidget;
 import io.github.sweetzonzi.machine_max.client.render.gui.renderable.ResearchRecipeListWidget;
-import io.github.sweetzonzi.machine_max.common.attachment.BluePrintAttachment;
+import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.menu.BlueprintResearchMenu;
-import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCancelPayload;
-import io.github.sweetzonzi.machine_max.network.payload.research.ResearchClaimPayload;
-import io.github.sweetzonzi.machine_max.network.payload.research.ResearchSetPayload;
+import io.github.sweetzonzi.machine_max.network.payload.research.*;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -25,6 +24,7 @@ import java.util.List;
 public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintResearchMenu> {
     private EditBox searchBox;
     private ResearchRecipeListWidget recipeList;
+    private MaterialRequirementsWidget materialWidget;
     /**
      * 当前选中的科研条目（用于右侧详情）
      */
@@ -35,11 +35,17 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                                    Inventory inventory,
                                    Component title) {
         super(menu, inventory, title);
+        this.imageWidth = 400;
+        this.imageHeight = 220;
     }
 
     @Override
     protected void init() {
         super.init();
+
+        this.leftPos = (this.width - this.imageWidth) / 2;
+        this.topPos = (this.height - this.imageHeight) / 2 + 5;
+
         // 搜索框：位于配方列表正上方
         searchBox = new EditBox(
                 font,
@@ -61,17 +67,25 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                 leftPos + 8,
                 topPos + 18,
                 160,
-                140
+                195
         );
         recipeList.setCallbacks(new ResearchRecipeListWidget.Callbacks() {
             @Override
             public void onSelect(ResearchState state) {
                 selected = state;
+                if (materialWidget != null) {
+                    materialWidget.setRecipe(state.recipe().value());
+                }
             }
 
             @Override
             public void onStart(ResearchState state) {
                 PacketDistributor.sendToServer(new ResearchSetPayload(state.recipe().id()));
+            }
+
+            @Override
+            public void onApplyFreeRp(ResearchState state) {
+                PacketDistributor.sendToServer(new ResearchApplyFreeRpPayload(state.recipe().id()));
             }
 
             @Override
@@ -86,12 +100,21 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
 
             @Override
             public void onReclaim(ResearchState state) {
-                PacketDistributor.sendToServer(new ResearchClaimPayload(state.recipe().id()));
+                PacketDistributor.sendToServer(new ResearchReclaimPayload(state.recipe().id()));
             }
         });
         rebuildEntries();
-
         addRenderableWidget(recipeList);
+
+        // 材料需求显示
+        this.materialWidget = new MaterialRequirementsWidget(
+                leftPos + 175,
+                topPos + 130,
+                215,
+                80,
+                true
+        );
+        this.addRenderableWidget(materialWidget);
     }
 
     @Override
@@ -100,7 +123,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
     }
 
     private void rebuildEntries() {
-        BluePrintAttachment research = menu.getResearch();
+        BlueprintAttachment research = menu.getResearch();
         String filter = searchBox != null
                 ? searchBox.getValue().toLowerCase()
                 : "";
@@ -123,22 +146,25 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                             .getOrDefault(holder.id(), 0f);
                     float progress = totalProgress - level;
                     boolean hasProduct = research.getProducts().getOrDefault(holder.id(), ItemStack.EMPTY) != ItemStack.EMPTY;
-                    boolean researching = holder.id() .equals(research.getResearchingRecipe());
+                    boolean researching = holder.id().equals(research.getResearchingRecipe());
                     boolean canResearch = research.canStartResearching(minecraft.player, holder.id());
                     boolean unlocked = level >= 1;
                     boolean canReclaim = research.canReclaim(holder.id());
 
                     return new ResearchState(
                             holder,
+                            research.hasStartedResearching(holder.id()),
                             level,
                             progress,
-                            (int) (progress * holder.value().getResearchCost()),
-                            holder.value().getResearchCost(),
+                            (int) (progress * research.getRpCost(holder.id())),
+                            research.getFreeResearchPoint(),
+                            research.getRpCost(holder.id()),
                             hasProduct,
                             researching,
                             canResearch,
                             unlocked,
-                            canReclaim
+                            canReclaim,
+                            research.getReclaimRpCost(holder.id())
                     );
                 })
                 .toList();
@@ -167,17 +193,17 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
     @Override
     protected void renderBg(@NotNull GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         // 使用纯色背景区分区域
-        int bgColor = new Color(25, 25, 25, 128).getRGB();
+        int bgColor = new Color(25, 25, 25, 64).getRGB();
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, bgColor);
-        // 显示自由研发点
-        graphics.drawString(font, "Free Rp: " + menu.getResearch().getFreeResearchPoint(), leftPos + 8, topPos - 4, Color.WHITE.getRGB());
         // 绘制区域分隔线
         int lineColor = new Color(25, 25, 25, 128).getRGB();
-        graphics.fill(leftPos + 100, topPos + 5, leftPos + 102, topPos + imageHeight - 5, lineColor); // 左分隔
-        graphics.fill(leftPos + imageWidth - 100, topPos + 5, leftPos + imageWidth - 102, topPos + imageHeight - 5, lineColor); // 右分隔
-
+        graphics.fill(leftPos + 170, topPos + 5, leftPos + 172, topPos + imageHeight - 5, lineColor); // 左分隔
+        graphics.fill(leftPos + imageWidth - 100, topPos + 5, leftPos + imageWidth - 102, topPos + 124, lineColor); // 右分隔
         // 绘制水平分隔线
-        graphics.fill(leftPos + 100, topPos + 110, leftPos + imageWidth - 100, topPos + 112, lineColor); // 材料区域上方
-        graphics.fill(leftPos + 100, topPos + 200, leftPos + imageWidth - 100, topPos + 202, lineColor); // 状态区域上方
+        graphics.fill(leftPos + 170, topPos + 124, leftPos + imageWidth - 5, topPos + 126, lineColor); // 材料区域上方
+
+        // 显示自由研发点
+        graphics.drawString(font, "Free Rp: " + menu.getResearch().getFreeResearchPoint(), leftPos + 8, topPos - 4, Color.WHITE.getRGB());
+
     }
 }

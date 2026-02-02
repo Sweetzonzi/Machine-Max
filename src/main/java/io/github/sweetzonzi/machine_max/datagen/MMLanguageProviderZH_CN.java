@@ -121,6 +121,30 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.fabricator.output_count", "产出数量: %s");
         this.add("gui.machine_max.fabricator.recipe_description", "配方描述:");
         this.add("gui.machine_max.fabricator.item_description", "物品描述:");
+        // 研发菜单
+        this.add("gui.machine_max.research.recipe.on_hold_1", "⏸ 暂停研究");
+        this.add("gui.machine_max.research.recipe.on_hold_2", "获得的研发点将全部转化为自由研发点");
+        this.add("gui.machine_max.research.recipe.start_1", "▶ 开始研究");
+        this.add("gui.machine_max.research.recipe.start_2", "获得经验、组装、维修或伤害载具部件以获取研发点");
+        this.add("gui.machine_max.research.recipe.continue", "▶ 继续研究");
+        this.add("gui.machine_max.research.recipe.cant_apply_free_rp_1", "⚠ 无法加速研究");
+        this.add("gui.machine_max.research.recipe.cant_apply_free_rp_2", "研究项目未开始");
+        this.add("gui.machine_max.research.recipe.no_apply_free_rp_1", "⚠ 无法加速研究");
+        this.add("gui.machine_max.research.recipe.no_apply_free_rp_2", "无可用自由研发点");
+        this.add("gui.machine_max.research.recipe.apply_free_rp_complete_1", "⏭ 立即完成研究");
+        this.add("gui.machine_max.research.recipe.apply_free_rp_complete_2", "自由研发点消耗: %1$s");
+        this.add("gui.machine_max.research.recipe.apply_free_rp_1", "⏭ 加速研究");
+        this.add("gui.machine_max.research.recipe.apply_free_rp_2", "预计进度: %1$s/%2$s");
+        this.add("gui.machine_max.research.recipe.insufficient_material_1", "⚠ 无法开始研究");
+        this.add("gui.machine_max.research.recipe.insufficient_material_2", "材料不足");
+        this.add("gui.machine_max.research.recipe.claim_1", "↓ 获取研究成果");
+        this.add("gui.machine_max.research.recipe.claim_2", "成果将在关闭菜单后进入物品栏");
+        this.add("gui.machine_max.research.recipe.reclaim_1", "↓ 重新获取研究成果");
+        this.add("gui.machine_max.research.recipe.reclaim_2", "自由研发点消耗: %1$s");
+        this.add("gui.machine_max.research.recipe.insufficient_free_rp_1", "⚠ 无法重新获取研究成果");
+        this.add("gui.machine_max.research.recipe.insufficient_free_rp_2", "需要自由研发点: %1$s");
+        this.add("gui.machine_max.research.recipe.research_unfinished_1", "⚠ 无法获取成果");
+        this.add("gui.machine_max.research.recipe.research_unfinished_2", "研发未完成");
         // 组装HUD
         this.add("hud.warn.machine_max.subpart_destroying", "❌ 零件已损毁，销毁倒计时: %1$s秒");
         this.add("hud.warn.machine_max.subsystem_malfunction", "❌ %1$s瘫痪");

@@ -1,11 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.menu;
 
-import io.github.sweetzonzi.machine_max.common.attachment.BluePrintAttachment;
+import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMMenus;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -15,13 +14,13 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 蓝图研发 Menu
  * 仅用于承载玩家的科研状态，不包含任何物品槽位。
- * 所有数据直接来自 {@link BluePrintAttachment}。
+ * 所有数据直接来自 {@link BlueprintAttachment}。
  */
 @Getter
 public class BlueprintResearchMenu extends AbstractContainerMenu {
 
     private final Player player;
-    private final BluePrintAttachment research;
+    private final BlueprintAttachment research;
 
     /**
      * 客户端构造函数

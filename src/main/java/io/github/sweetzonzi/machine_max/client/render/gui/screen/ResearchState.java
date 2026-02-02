@@ -10,14 +10,17 @@ import net.minecraft.world.item.crafting.RecipeHolder;
  */
 public record ResearchState(
         RecipeHolder<FabricatingRecipe> recipe,
+        boolean started,
         int researchLevel,
         float levelProgress,     // 0.0 ~ 1.0
         int currentRp,
+        int currentFreeRp,
         int requiredRp,
         boolean hasProduct,
         boolean researching,
         boolean canResearch,
         boolean unlocked,
-        boolean canReclaim
+        boolean canReclaim,
+        int reclaimRp
 ) {
 }

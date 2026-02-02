@@ -4,7 +4,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
+import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import lombok.Getter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -40,7 +42,9 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
             instance.group(
                     Codec.INT.optionalFieldOf("research_cost", 1).forGetter(FabricatingRecipe::getResearchCost),
                     Codec.INT.optionalFieldOf("upgrade_cost", 1).forGetter(FabricatingRecipe::getResearchCost),
-                    IngredientCountPair.CODEC.listOf().optionalFieldOf("research_ingredients", List.of()).forGetter(FabricatingRecipe::getResearchIngredientPairs),
+                    IngredientCountPair.CODEC.listOf().optionalFieldOf("research_ingredients", List.of(
+                            new IngredientCountPair(Ingredient.of(MMTags.EMPTY_BLUEPRINT), 1)
+                    )).forGetter(FabricatingRecipe::getResearchIngredientPairs),
                     IngredientCountPair.CODEC.listOf().fieldOf("ingredients").forGetter(FabricatingRecipe::getIngredientPairs),
                     ItemStack.CODEC.fieldOf("result").forGetter(FabricatingRecipe::getResult),
                     Codec.INT.optionalFieldOf("time", 100).forGetter(FabricatingRecipe::getProcessingTime),

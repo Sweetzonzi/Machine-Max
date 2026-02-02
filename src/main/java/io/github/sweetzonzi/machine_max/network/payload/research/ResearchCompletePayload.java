@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.network.payload.research;
 
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.attachment.BluePrintAttachment;
+import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -25,7 +25,7 @@ public record ResearchCompletePayload(
             ResourceLocation.STREAM_CODEC, ResearchCompletePayload::recipe,
             ByteBufCodecs.INT, ResearchCompletePayload::level,
             ItemStack.STREAM_CODEC, ResearchCompletePayload::product,
-            BluePrintAttachment.RP_CHANGE_LIST_STREAM_CODEC, ResearchCompletePayload::rpChanges,
+            BlueprintAttachment.RP_CHANGE_LIST_STREAM_CODEC, ResearchCompletePayload::rpChanges,
             ResearchCompletePayload::new
     );
 

@@ -8,6 +8,12 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public class ResearchApplyFreeRpHandler {
     public static void handler(final ResearchApplyFreeRpPayload payload, final IPayloadContext context) {
         Player player = context.player();
-        context.enqueueWork(() -> player.getData(MMAttachments.getBLUEPRINT()).applyFreeRp(player));
+        context.enqueueWork(() -> {
+            var research = player.getData(MMAttachments.getBLUEPRINT());
+            if (research.hasStartedResearching(payload.recipe())) {
+                research.setResearching(player, payload.recipe());
+                research.applyFreeRp(player);
+            }
+        });
     }
 }
