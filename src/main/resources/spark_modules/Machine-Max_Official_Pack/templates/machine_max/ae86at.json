@@ -1,14 +1,14 @@
 {
   "max": [
-    3.3374430338542425,
-    1.9223857455783389,
-    2.273768107096373
+    3.3377007378471717,
+    1.8919970194498674,
+    2.272311740451414
   ],
   "hp": 20.0,
   "parts": {
     "f9536d25-1aee-4632-b6b3-b2e27f837bd4": {
       "custom_recipe": "machine_max:ae86_wheel_all_terrain",
-      "material_assembling_progress": 2147483647,
+      "material_assembling_progress": 18,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -16,29 +16,29 @@
               "integrity": 20.0
             }
           },
-          "id": 25,
+          "id": 75,
           "durability": 180.0,
           "pos_rot_vel_vel": {
             "position": [
-              685.7791,
-              -59.186565,
-              236.81995
+              2082.819,
+              -59.18561,
+              669.9264
             ],
             "rotation": [
-              0.5362913,
-              0.4694272,
-              -0.52461976,
-              0.46562207
+              0.5359517,
+              0.47106272,
+              -0.522826,
+              0.46637818
             ],
             "linear_vel": [
-              6.9089816E-5,
-              -4.4465065E-5,
-              1.9033336E-4
+              -0.0013207607,
+              6.915629E-5,
+              1.6270531E-4
             ],
             "angular_vel": [
-              -4.0085986E-4,
-              -3.622446E-5,
-              1.3096724E-10
+              2.085123E-6,
+              -7.427453E-4,
+              7.980949E-12
             ]
           }
         }
@@ -50,7 +50,7 @@
     },
     "11176e80-faa4-4b2a-9c0a-0459853fedef": {
       "custom_recipe": "machine_max:ae86_wheel_all_terrain",
-      "material_assembling_progress": 2147483647,
+      "material_assembling_progress": 18,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -58,29 +58,29 @@
               "integrity": 40.0
             }
           },
-          "id": 17,
+          "id": 76,
           "durability": 180.0,
           "pos_rot_vel_vel": {
             "position": [
-              685.7479,
-              -59.18322,
-              240.31978
+              2082.7856,
+              -59.185703,
+              673.4262
             ],
             "rotation": [
-              -0.51939315,
-              -0.46988326,
-              0.5241455,
-              -0.4844708
+              -0.51825345,
+              -0.47239882,
+              0.52154875,
+              -0.48604488
             ],
             "linear_vel": [
-              8.720206E-5,
-              -2.8714538E-4,
-              -3.7217516E-4
+              -0.0022139314,
+              -0.002299875,
+              -3.5685676E-4
             ],
             "angular_vel": [
-              -1.4295054E-10,
-              -1.6295235E-5,
-              3.199538E-7
+              -0.0014790075,
+              -2.5661223E-4,
+              0.0024411017
             ]
           }
         }
@@ -92,7 +92,7 @@
     },
     "ff60601b-9637-40aa-b114-bae2fc846722": {
       "custom_recipe": "machine_max:ae86_wheel_all_terrain",
-      "material_assembling_progress": 2147483647,
+      "material_assembling_progress": 18,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -100,29 +100,29 @@
               "integrity": 20.0
             }
           },
-          "id": 23,
+          "id": 77,
           "durability": 180.0,
           "pos_rot_vel_vel": {
             "position": [
-              690.40393,
-              -59.18614,
-              236.86124
+              2087.4438,
+              -59.185173,
+              669.9707
             ],
             "rotation": [
-              0.024179837,
-              0.70384645,
-              -0.013569598,
-              0.70981085
+              0.02561973,
+              0.7036147,
+              -0.0132026225,
+              0.70999694
             ],
             "linear_vel": [
-              4.13213E-4,
-              -4.850328E-5,
-              3.2606928E-4
+              8.6025975E-5,
+              1.6316772E-5,
+              5.9733813E-4
             ],
             "angular_vel": [
-              -9.607519E-4,
-              4.2033938E-4,
-              -1.4748134E-9
+              -4.037264E-7,
+              -1.4586374E-4,
+              4.617007E-10
             ]
           }
         }
@@ -134,7 +134,7 @@
     },
     "5155aa4b-22fc-4bcd-879c-36f86d20bfa5": {
       "custom_recipe": "machine_max:ae86_back_seat",
-      "material_assembling_progress": 2147483647,
+      "material_assembling_progress": 12,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -150,29 +150,29 @@
               "durability": 20.0
             }
           },
-          "id": 27,
+          "id": 78,
           "durability": 100.0,
           "pos_rot_vel_vel": {
             "position": [
-              689.0715,
-              -58.079796,
-              238.59673
+              2086.11,
+              -58.080154,
+              671.7079
             ],
             "rotation": [
-              -0.0022609425,
-              0.7039494,
-              5.8024697E-4,
-              0.7102463
+              -0.0015021298,
+              0.7037105,
+              0.0014813807,
+              0.71048373
             ],
             "linear_vel": [
-              3.5413282E-4,
-              -5.9366226E-5,
-              -4.5112986E-4
+              -0.0022324063,
+              8.071959E-5,
+              0.0015711833
             ],
             "angular_vel": [
-              -1.4639342E-4,
-              -4.9198658E-5,
-              -1.2587692E-4
+              8.572993E-5,
+              -3.341234E-4,
+              -1.3258502E-4
             ]
           }
         }
@@ -182,7 +182,7 @@
       "uuid": "5155aa4b-22fc-4bcd-879c-36f86d20bfa5",
       "variant": "default"
     },
-    "05de1633-7117-4340-9679-0a0c0ced1fbc": {
+    "c93e2ecf-a44a-4ce3-a54c-acbf749d7033": {
       "custom_recipe": "machine_max:ae86_hull",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
@@ -210,41 +210,41 @@
               "durability": 100.0
             }
           },
-          "id": 33,
+          "id": 93,
           "durability": 400.0,
           "pos_rot_vel_vel": {
             "position": [
-              687.88403,
-              -58.08458,
-              238.58615
+              2084.9229,
+              -58.11641,
+              671.69653
             ],
             "rotation": [
-              -0.0022608626,
-              0.7039489,
-              5.801959E-4,
-              0.7102468
+              -0.00150476,
+              0.7037091,
+              0.0014787291,
+              0.7104851
             ],
             "linear_vel": [
-              3.4992874E-4,
-              9.061396E-5,
-              -7.3437847E-4
+              -0.002193916,
+              1.9232929E-4,
+              0.001046851
             ],
             "angular_vel": [
-              -1.3166093E-4,
-              -4.297908E-5,
-              -1.2807551E-4
+              7.083311E-5,
+              -3.2528513E-4,
+              -1.1983985E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:ae86_hull",
       "name": "AE86车壳",
-      "uuid": "05de1633-7117-4340-9679-0a0c0ced1fbc",
+      "uuid": "c93e2ecf-a44a-4ce3-a54c-acbf749d7033",
       "variant": "default"
     },
     "488ad93c-a647-44df-aecf-ecace4c026b5": {
       "custom_recipe": "machine_max:ae86_chassis_all_terrain",
-      "material_assembling_progress": 2147483647,
+      "material_assembling_progress": 24,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -299,29 +299,29 @@
               "durability": 400.0
             }
           },
-          "id": 15,
+          "id": 80,
           "durability": 550.0,
           "pos_rot_vel_vel": {
             "position": [
-              687.88904,
-              -59.334568,
-              238.58914
+              2084.9277,
+              -59.33515,
+              671.6966
             ],
             "rotation": [
-              -0.0022603688,
-              0.7039498,
-              5.810622E-4,
-              0.7102459
+              -0.0014981942,
+              0.7037103,
+              0.001485272,
+              0.7104839
             ],
             "linear_vel": [
-              2.182053E-4,
-              9.521842E-5,
-              -2.710488E-4
+              4.990054E-4,
+              2.4093688E-4,
+              0.0011383266
             ],
             "angular_vel": [
-              -1.7641767E-4,
-              -5.0711795E-5,
-              -1.2207699E-4
+              8.207394E-5,
+              -3.216157E-4,
+              -1.465502E-4
             ]
           }
         }
@@ -333,7 +333,7 @@
     },
     "7315616e-3771-443a-a96d-578c283b6553": {
       "custom_recipe": "machine_max:ae86_seat",
-      "material_assembling_progress": 2147483647,
+      "material_assembling_progress": 7,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -346,29 +346,29 @@
               "durability": 20.0
             }
           },
-          "id": 29,
+          "id": 81,
           "durability": 75.0,
           "pos_rot_vel_vel": {
             "position": [
-              688.13855,
-              -57.9599,
-              238.0256
+              2085.1775,
+              -57.95911,
+              671.1365
             ],
             "rotation": [
-              -0.0022609364,
-              0.7039494,
-              5.802591E-4,
-              0.7102463
+              -0.0015020834,
+              0.7037105,
+              0.0014814268,
+              0.71048373
             ],
             "linear_vel": [
-              4.07635E-4,
-              -3.4615397E-5,
-              -5.306852E-4
+              -0.0020262368,
+              2.2792816E-4,
+              0.0012612502
             ],
             "angular_vel": [
-              -1.4601194E-4,
-              -4.9177354E-5,
-              -1.2602337E-4
+              8.9828754E-5,
+              -3.3503093E-4,
+              -1.328985E-4
             ]
           }
         }
@@ -380,7 +380,7 @@
     },
     "0a9332a9-c2d4-41ba-bbec-91f949bbadb2": {
       "custom_recipe": "machine_max:ae86_wheel_all_terrain",
-      "material_assembling_progress": 2147483647,
+      "material_assembling_progress": 18,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -388,29 +388,29 @@
               "integrity": 40.0
             }
           },
-          "id": 19,
+          "id": 82,
           "durability": 180.0,
           "pos_rot_vel_vel": {
             "position": [
-              690.37274,
-              -59.18375,
-              240.3608
+              2087.4104,
+              -59.185158,
+              673.47046
             ],
             "rotation": [
-              0.13480149,
-              0.68842834,
-              -0.14687714,
-              0.69736797
+              0.13631627,
+              0.6881845,
+              -0.14689414,
+              0.6973106
             ],
             "linear_vel": [
-              9.836023E-4,
-              -5.5778027E-4,
-              -5.4121844E-4
+              -0.0017540071,
+              -1.2047589E-4,
+              7.619738E-4
             ],
             "angular_vel": [
-              1.5371601E-6,
-              1.5135625E-4,
-              -2.9101752E-6
+              1.1611375E-4,
+              3.5178344E-4,
+              -9.851799E-4
             ]
           }
         }
@@ -422,7 +422,7 @@
     },
     "929b0652-7897-406c-bc53-afe9e995aaf6": {
       "custom_recipe": "machine_max:ae86_seat",
-      "material_assembling_progress": 2147483647,
+      "material_assembling_progress": 7,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -435,29 +435,29 @@
               "durability": 20.0
             }
           },
-          "id": 31,
+          "id": 83,
           "durability": 75.0,
           "pos_rot_vel_vel": {
             "position": [
-              688.1284,
-              -57.95725,
-              239.15056
+              2085.1667,
+              -57.959103,
+              672.2614
             ],
             "rotation": [
-              -0.0022610247,
-              0.7039491,
-              5.800734E-4,
-              0.7102466
+              -0.0015021033,
+              0.7037106,
+              0.0014814006,
+              0.7104836
             ],
             "linear_vel": [
-              0.0010577678,
-              1.6400218E-4,
-              -5.564886E-4
+              -0.0023990895,
+              1.4191866E-4,
+              0.0012475618
             ],
             "angular_vel": [
-              -1.5330773E-4,
-              -4.540637E-5,
-              -1.2522055E-4
+              8.477774E-5,
+              -3.360344E-4,
+              -1.3240651E-4
             ]
           }
         }
@@ -708,13 +708,13 @@
       }
     },
     {
-      "partUuidS": "05de1633-7117-4340-9679-0a0c0ced1fbc",
+      "partUuidS": "c93e2ecf-a44a-4ce3-a54c-acbf749d7033",
       "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
           0.0,
-          0.25,
+          0.28125,
           0.375
         ],
         "rotation": [
@@ -743,15 +743,15 @@
     }
   ],
   "vehicle_name": "ae86at",
-  "uuid": "488ad93c-a647-44df-aecf-ecace4c026b5",
+  "uuid": "a6f92485-d1cf-4e82-9e4c-282476790371",
   "pos": [
-    688.157246907552,
-    -58.68397479587131,
-    238.58998616536456
+    2085.195990668403,
+    -58.68795267740885,
+    671.6991848415798
   ],
   "min": [
-    -3.3387044270832575,
-    -1.626392788357208,
-    -2.266911824544252
+    -3.3339301215278283,
+    -1.6238911946614607,
+    -2.272060818142336
   ]
 }

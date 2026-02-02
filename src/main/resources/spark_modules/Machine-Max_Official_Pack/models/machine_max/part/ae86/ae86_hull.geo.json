@@ -2269,7 +2269,7 @@
 					"parent": "Hull",
 					"pivot": [0, 4, 6],
 					"locators": {
-						"AttachPoint": [0, 4, 6],
+						"AttachPoint": [0, 4.5, 6],
 						"MassCenter": [0, 0, 0],
 						"UpperEngine": {
 							"offset": [0, 7.75, -30],

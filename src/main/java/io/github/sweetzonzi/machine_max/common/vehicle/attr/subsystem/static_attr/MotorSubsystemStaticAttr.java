@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
     public final String particleLocator;
     public final float maxPower;
     public final float maxTorque;
@@ -62,10 +62,10 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
         this.dampingFactors = dampingFactors;
         this.generatorEfficiency = generatorEfficiency;
         this.throttleInputKeys = throttleInputKeys;
-        createWorkingStates();
     }
 
-    private void createWorkingStates() {
+    @Override
+    public void createSounds() {
         workingStates.clear();
         //确定转速区间数量
         int rpmCount = getRpmStateIndex(redLineRPM);
@@ -147,4 +147,8 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
         return SubsystemTypes.MOTOR;
     }
 
+    @Override
+    public boolean shouldCreateSounds() {
+        return true;
+    }
 }

@@ -3,5 +3,5 @@ package io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_at
 public interface ICustomSoundSubsystemAttr {
     boolean shouldCreateSounds();
 
-    void createSounds(boolean isClient);
+    void createSounds();
 }

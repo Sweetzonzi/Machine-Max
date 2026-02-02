@@ -83,14 +83,13 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr imple
         this.cylinderCount = cylinderCount;
         this.dampingFactors = dampingFactors;
         this.throttleInputKeys = throttleInputKeys;
-        createSounds(true);
     }
 
     public boolean shouldCreateSounds() {
         return true;
     }
 
-    public void createSounds(boolean isClient) {
+    public void createSounds() {
         workingStates.clear();
         // 确定转速区间数量，按照 1.5 倍递增
         int rpmCount = getRpmStateIndex(getRedLineRpm() * 2);

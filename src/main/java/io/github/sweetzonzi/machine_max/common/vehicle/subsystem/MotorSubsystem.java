@@ -42,6 +42,8 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
                 0.5 * attr.getStaticAttribute().getInertia(), //kd
                 1 / 60f //step
         );
+        if (attr.getStaticAttribute().workingStates.isEmpty() && getLevel().isClientSide())
+            attr.getStaticAttribute().createSounds();
     }
 
     @Override
