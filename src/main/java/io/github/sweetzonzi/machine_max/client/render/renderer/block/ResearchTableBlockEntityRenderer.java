@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.registry.client.SparkShaders;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity;
 import io.github.sweetzonzi.machine_max.common.block.research_table.ResearchTableBlockEntity;
 import net.minecraft.client.Minecraft;
@@ -40,7 +41,6 @@ public class ResearchTableBlockEntityRenderer extends GeoBlockEntityRenderer<Res
     public void render(ResearchTableBlockEntity blockEntity, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay) {
-        // 先渲染基础模型
         if (blockEntity.hasLevel()) {
             super.render(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         } else {
