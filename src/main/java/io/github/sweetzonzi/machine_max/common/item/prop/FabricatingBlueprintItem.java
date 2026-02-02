@@ -123,10 +123,10 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                         message = Component.empty().append(" 连接点" + Component.translatable(targetConnector.name).getString() + "不接受部件" + partType.getRegistryKey() + "的" + Component.translatable(variant).getString() + "变体");
                     }
                 } else {
-                    message.append("未选中可用的部件接口，右键将直接放置部件");
+                    message.append("未选中可用的部件接口，右键将直接放置零件");
                     if (VisualEffectHelper.partToPlace != null) {
                         LivingEntity livingEntity = (LivingEntity) entity;
-                        Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(cache.getAttachRotation() + entity.getYRot()));
+                        Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(cache.getAttachRotation() - entity.getYRot()));
                         VisualEffectHelper.partToPlace.setTransform(
                                 new Transform(
                                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
