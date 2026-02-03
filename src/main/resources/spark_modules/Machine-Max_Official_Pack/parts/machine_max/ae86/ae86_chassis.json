@@ -5,18 +5,16 @@
   "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {//部件变体列表, 可有多个变体名和模型路径的键值对
     "icon": "machine_max:textures/icon/ae86_chassis_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-    "models": "machine_max:ae86_chassis.geo",//模型路径
-    "textures": [//贴图路径列表
-      "machine_max:textures/part/ae86/ae86_1.png",
-      "machine_max:textures/part/ae86/ae86_2.png",
-      "machine_max:textures/part/ae86/ae86_3.png",
-      "machine_max:textures/part/ae86/ae86_4.png",
-      "machine_max:textures/part/ae86/ae86_5.png",
-      "machine_max:textures/part/ae86/ae86_6.png",
-      "machine_max:textures/part/ae86/ae86_7.png",
-      "machine_max:textures/part/ae86/ae86_8.png",
-      "machine_max:textures/part/ae86/ae86_9.png"
-    ],
+    "model": "machine_max:ae86_chassis.geo",//模型路径
+    "textures": { //贴图路径列表
+      "print.machine_max.white": "machine_max:textures/part/ae86/ae86_1.png",
+      "print.machine_max.yellow": "machine_max:textures/part/ae86/ae86_4.png",
+      "print.machine_max.purple": "machine_max:textures/part/ae86/ae86_5.png",
+      "print.machine_max.green": "machine_max:textures/part/ae86/ae86_6.png",
+      "print.machine_max.pink": "machine_max:textures/part/ae86/ae86_7.png",
+      "print.machine_max.black": "machine_max:textures/part/ae86/ae86_8.png",
+      "print.machine_max.gray": "machine_max:textures/part/ae86/ae86_9.png"
+    },
     "animations": "machine_max:ae86", //(可选, 留空则不播放动画)动画路径
     "tags": ["chassis"],//(可选, 默认[])部件标签列表
     "sub_parts": {//零件(子部件)列表, 这是部件运动的最小单元, 部件的每个可动部分都应当是一个零件(子部件)
@@ -180,7 +178,7 @@
         "subsystems": {
           "subsystem.machine_max.car_controller": {
             "type": "machine_max:car_controller", //子系统类型
-            "model": "machine_max:ae86_car_controller", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:ae86_car_controller", //子系统型号, 需要与子系统类型相匹配
             "engine_outputs": {
               "engine_control": ["subsystem.machine_max.engine"]
             },
@@ -212,7 +210,7 @@
           },
           "subsystem.machine_max.engine": {
             "type": "machine_max:engine", //子系统类型
-            "model": "machine_max:ae86_engine", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:ae86_engine", //子系统型号, 需要与子系统类型相匹配
             "power_output": "subsystem.machine_max.gearbox", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
             "speed_outputs": { //转速信号输出目标及信号名称, 同上, 但可以有多个
               "engine_speed": ["part", "vehicle"]
@@ -220,7 +218,7 @@
           },
           "subsystem.machine_max.gearbox": {
             "type": "machine_max:gearbox", //变速箱子系统, 改变收到的功率信号的扭矩和转速
-            "model": "machine_max:ae86_gearbox", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:ae86_gearbox", //子系统型号, 需要与子系统类型相匹配
             "power_output": "subsystem.machine_max.transmission", //功率输出目标, 子系统或部件连接点名
             "gear_outputs": { //(可选, 默认将当前挡位名称发至部件和载具的gear频道)挡位名称输出频道及目标
               "gear": ["part", "vehicle"]
@@ -228,7 +226,7 @@
           },
           "subsystem.machine_max.transmission": {
             "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
-            "model": "machine_max:ae86_transmission", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:ae86_transmission", //子系统型号, 需要与子系统类型相匹配
             "power_outputs": { //动力输出目标及减速比
               "subsystem.machine_max.left_back_wheel_driver": 1.0,
               "subsystem.machine_max.right_back_wheel_driver": 1.0
@@ -236,22 +234,22 @@
           },
           "subsystem.machine_max.left_front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
-            "model": "machine_max:ae86_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:ae86_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
             "connector": "connector.machine_max.left_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.right_front_wheel_driver": {
             "type": "machine_max:wheel_driver",
-            "model": "machine_max:ae86_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:ae86_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
             "connector": "connector.machine_max.right_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.left_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
-            "model": "machine_max:ae86_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:ae86_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
             "connector": "connector.machine_max.left_back_wheel"
           },
           "subsystem.machine_max.right_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
-            "model": "machine_max:ae86_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:ae86_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
             "connector": "connector.machine_max.right_back_wheel"
           }
         },

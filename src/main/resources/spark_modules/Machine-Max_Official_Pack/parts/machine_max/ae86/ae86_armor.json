@@ -4,14 +4,10 @@
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
-    "models": {
-      "default": "machine_max:ae86_armor.geo"
-    },
+    "model": "machine_max:ae86_armor.geo",
     "icon": "machine_max:textures/icon/ae86_armor_icon.png",
     "textures": {
-      "default": [
-        "machine_max:textures/part/ae86/ae86_armor.png"
-      ]
+      "default": "machine_max:textures/part/ae86/ae86_armor.png"
     },
     "sub_parts": {
       "sub_part.machine_max.main": {

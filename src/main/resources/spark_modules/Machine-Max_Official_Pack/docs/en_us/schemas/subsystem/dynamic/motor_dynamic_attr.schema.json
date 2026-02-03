@@ -9,7 +9,7 @@
       "const": "machine_max:motor",
       "description": "Subsystem type, must be 'machine_max:motor'."
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
@@ -23,11 +23,11 @@
       "description": "Motor speed signal output channel and targets. Optional, by default sends motor speed (rad/s) to the motor_speed channel of parts and vehicles."
     }
   },
-  "required": ["type", "model", "power_output"],
+  "required": ["type", "definition", "power_output"],
   "examples": [
     {
       "type": "machine_max:motor",
-      "model": "machine_max:electric_motor",
+      "definition": "machine_max:electric_motor",
       "power_output": "transmission",
       "speed_outputs": { "motor_speed": ["part", "vehicle"] }
     }

@@ -29,6 +29,7 @@ public class VehicleNamingMenu extends AbstractContainerMenu {
 
     public VehicleNamingMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
         this(containerId, playerInventory, playerInventory.getItem(extraData.readInt()));
+        vehicleName = extraData.readUtf();
     }
 
     public VehicleNamingMenu(int containerId, Inventory playerInventory, ItemStack blueprintStack) {

@@ -34,7 +34,7 @@ public class VehicleData {
     public final List<ConnectionData> connections;
 
     public static final Codec<VehicleData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.fieldOf("vehicle_name").forGetter(VehicleData::getName),
+            Codec.STRING.optionalFieldOf("name", "Vehicle").forGetter(VehicleData::getName),
             Codec.STRING.fieldOf("uuid").forGetter(VehicleData::getUuid),
             Vec3.CODEC.fieldOf("pos").forGetter(VehicleData::getPos),
             Vec3.CODEC.optionalFieldOf("min", Vec3.ZERO).forGetter(VehicleData::getMin),

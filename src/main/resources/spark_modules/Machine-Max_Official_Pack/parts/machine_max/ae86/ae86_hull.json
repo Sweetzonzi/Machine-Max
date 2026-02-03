@@ -5,18 +5,18 @@
   "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {
     "icon": "machine_max:textures/icon/ae86_hull_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-    "models": "machine_max:ae86_hull.geo",//模型路径
-    "textures": [ //贴图路径列表
-      "machine_max:textures/part/ae86/ae86_1.png",
-      "machine_max:textures/part/ae86/ae86_2.png",
-      "machine_max:textures/part/ae86/ae86_3.png",
-      "machine_max:textures/part/ae86/ae86_4.png",
-      "machine_max:textures/part/ae86/ae86_5.png",
-      "machine_max:textures/part/ae86/ae86_6.png",
-      "machine_max:textures/part/ae86/ae86_7.png",
-      "machine_max:textures/part/ae86/ae86_8.png",
-      "machine_max:textures/part/ae86/ae86_9.png"
-    ],
+    "model": "machine_max:ae86_hull.geo",//模型路径
+    "textures": { //贴图路径列表
+      "print.machine_max.ae86.1": "machine_max:textures/part/ae86/ae86_1.png",
+      "print.machine_max.ae86.2": "machine_max:textures/part/ae86/ae86_2.png",
+      "print.machine_max.ae86.3": "machine_max:textures/part/ae86/ae86_3.png",
+      "print.machine_max.ae86.4": "machine_max:textures/part/ae86/ae86_4.png",
+      "print.machine_max.ae86.5": "machine_max:textures/part/ae86/ae86_5.png",
+      "print.machine_max.ae86.6": "machine_max:textures/part/ae86/ae86_6.png",
+      "print.machine_max.ae86.7": "machine_max:textures/part/ae86/ae86_7.png",
+      "print.machine_max.ae86.8": "machine_max:textures/part/ae86/ae86_8.png",
+      "print.machine_max.ae86.9": "machine_max:textures/part/ae86/ae86_9.png"
+    },
     "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
     "tags": ["hull"],//(可选, 默认[])部件标签列表
     "sub_parts": {//零件(子部件)列表
@@ -137,7 +137,7 @@
         "subsystems": {//(可选)子系统配置
           "subsystem.machine_max.trunk": {
             "type": "machine_max:item_storage",
-            "model": "machine_max:default_trunk" //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:default_trunk" //子系统型号, 需要与子系统类型相匹配
           }
         },
         "connectors": {//子部件用于与其他零件连接的连接点列表

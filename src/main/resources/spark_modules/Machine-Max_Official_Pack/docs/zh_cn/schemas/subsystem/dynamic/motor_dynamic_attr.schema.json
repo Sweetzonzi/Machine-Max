@@ -9,7 +9,7 @@
       "const": "machine_max:motor",
       "description": "子系统类型，必须为'machine_max:motor'。"
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     },
@@ -23,11 +23,11 @@
       "description": "电机转速信号输出频道及目标。可选，默认将电机转速(rad/s)发至部件和载具的motor_speed频道。"
     }
   },
-  "required": ["type", "model", "power_output"],
+  "required": ["type", "definition", "power_output"],
   "examples": [
     {
       "type": "machine_max:motor",
-      "model": "machine_max:electric_motor",
+      "definition": "machine_max:electric_motor",
       "power_output": "transmission",
       "speed_outputs": { "motor_speed": ["part", "vehicle"] }
     }

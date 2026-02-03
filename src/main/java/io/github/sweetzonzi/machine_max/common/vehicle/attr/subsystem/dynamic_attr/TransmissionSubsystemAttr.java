@@ -26,7 +26,7 @@ public class TransmissionSubsystemAttr extends AbstractSubsystemAttr {
     );
 
     public static final MapCodec<TransmissionSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             POWER_OUTPUTS_CODEC.fieldOf("power_outputs").forGetter(TransmissionSubsystemAttr::getPowerOutputs)
     ).apply(instance, TransmissionSubsystemAttr::new));
 

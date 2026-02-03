@@ -27,7 +27,7 @@ public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, List<String>> handbrakeOutputTargets;
 
     public static final MapCodec<CarControllerSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             SIGNAL_TARGETS_CODEC.fieldOf("engine_outputs").forGetter(CarControllerSubsystemAttr::getEngineControlOutputTargets),
             SIGNAL_TARGETS_CODEC.fieldOf("wheel_outputs").forGetter(CarControllerSubsystemAttr::getWheelControlOutputTargets),
             SIGNAL_TARGETS_CODEC.fieldOf("gearbox_outputs").forGetter(CarControllerSubsystemAttr::getGearboxControlOutputTargets),

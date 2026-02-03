@@ -22,7 +22,7 @@ public class SubPartData {
     public final int id;// 零件的ID
     public final float durability;// 零件的耐久度
     public final PosRotVelVel posRotVelVel;// 零件的位置、朝向、速度、角速度
-    public final int textureIndex;// 零件的纹理索引
+    public final String textureName;// 零件的纹理索引
     public final Map<String, CompoundTag> connectorData;// 连接点结构完整性
     public final Map<String, CompoundTag> subsystemData;// 零件的子系统数据
 
@@ -32,7 +32,7 @@ public class SubPartData {
             Codec.INT.fieldOf("id").forGetter(SubPartData::getId),
             Codec.FLOAT.optionalFieldOf("durability", Float.MAX_VALUE).forGetter(SubPartData::getDurability),
             PosRotVelVel.CODEC.fieldOf("pos_rot_vel_vel").forGetter(SubPartData::getPosRotVelVel),
-            Codec.INT.optionalFieldOf("texture_index", 0).forGetter(SubPartData::getTextureIndex),
+            Codec.STRING.optionalFieldOf("texture_name", "default").forGetter(SubPartData::getTextureName),
             DATA_CODEC.optionalFieldOf("connector_data", Map.of()).forGetter(SubPartData::getConnectorData),
             DATA_CODEC.optionalFieldOf("subsystem_data", Map.of()).forGetter(SubPartData::getSubsystemData)
     ).apply(instance, SubPartData::new));
@@ -45,7 +45,7 @@ public class SubPartData {
             int id = buffer.readInt();
             float durability = buffer.readFloat();
             PosRotVelVel posRotVelVel = PosRotVelVel.STREAM_CODEC.decode(buffer);
-            int textureIndex = buffer.readInt();
+            String textureName = buffer.readUtf();
 
             // 解码 connectorData
             int connectorSize = buffer.readVarInt();
@@ -65,7 +65,7 @@ public class SubPartData {
                 subsystemData.put(key, value);
             }
 
-            return new SubPartData(id, durability, posRotVelVel, textureIndex, connectorData, subsystemData);
+            return new SubPartData(id, durability, posRotVelVel, textureName, connectorData, subsystemData);
         }
 
         @Override
@@ -73,7 +73,7 @@ public class SubPartData {
             buffer.writeInt(value.id);
             buffer.writeFloat(value.durability);
             PosRotVelVel.STREAM_CODEC.encode(buffer, value.posRotVelVel);
-            buffer.writeInt(value.textureIndex);
+            buffer.writeUtf(value.textureName);
 
             // 编码 connectorData
             Map<String, CompoundTag> connectorIntegrity = value.connectorData;
@@ -121,16 +121,16 @@ public class SubPartData {
      * @param id                 零件的ID
      * @param durability         零件的耐久度
      * @param posRotVelVel       零件的位置、朝向、速度、角速度
-     * @param textureIndex       零件的纹理索引
+     * @param textureName       零件的纹理索引
      * @param connectorData      零件的连接点数据
      * @param subsystemData      零件的子系统数据
      */
-    public SubPartData(int id, float durability, PosRotVelVel posRotVelVel, int textureIndex,
+    public SubPartData(int id, float durability, PosRotVelVel posRotVelVel, String textureName,
                       Map<String, CompoundTag> connectorData, Map<String, CompoundTag> subsystemData) {
         this.id = id;
         this.durability = durability;
         this.posRotVelVel = posRotVelVel;
-        this.textureIndex = textureIndex;
+        this.textureName = textureName;
         this.connectorData = connectorData;
         this.subsystemData = subsystemData;
     }
@@ -155,7 +155,7 @@ public class SubPartData {
         this.id = subPart.getId();
         this.durability = subPart.getDurabilityRaw();
         this.posRotVelVel = new PosRotVelVel(position, rotation, linearVel, angularVel);
-        this.textureIndex = subPart.getTextureIndex();
+        this.textureName = subPart.getTextureName();
         this.connectorData = connectorData;
         this.subsystemData = subPartSubsystemData;
     }

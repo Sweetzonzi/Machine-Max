@@ -5,14 +5,14 @@
   "vehicle_damage_rate_destroyed": 0.1, //(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": { //部件变体列表, 可有多个变体名和模型路径的键值对
     "icon": "machine_max:textures/icon/mini_ev_hull_icon.png", //(可选, 留空会使用紫黑格子)部件图标路径
-    "models": "machine_max:mini_ev_hull.geo",
-    "textures": [ //贴图路径列表
-      "machine_max:textures/part/mini_ev/mini_ev_ae86.png",
-      "machine_max:textures/part/mini_ev/mini_ev_black.png",
-      "machine_max:textures/part/mini_ev/mini_ev_brown.png",
-      "machine_max:textures/part/mini_ev/mini_ev_pink.png",
-      "machine_max:textures/part/mini_ev/mini_ev_white.png"
-    ],
+    "model": "machine_max:mini_ev_hull.geo",
+    "textures": { //贴图路径列表
+      "print.machine_max.white": "machine_max:textures/part/mini_ev/mini_ev_ae86.png",
+      "print.machine_max.black": "machine_max:textures/part/mini_ev/mini_ev_black.png",
+      "print.machine_max.brown": "machine_max:textures/part/mini_ev/mini_ev_brown.png",
+      "print.machine_max.pink": "machine_max:textures/part/mini_ev/mini_ev_pink.png",
+      "print.machine_max.mini_ev.white": "machine_max:textures/part/mini_ev/mini_ev_white.png"
+    },
     "animations": "machine_max:empty",
     "tags": ["hull"],//(可选, 默认[])部件标签列表
     "sub_parts": {//零件(子部件)列表
@@ -204,7 +204,7 @@
         "subsystems": {
           "subsystem.machine_max.driver_seat": {
             "type": "machine_max:seat", //子系统类型
-            "model": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
             "seat_point_locator": "LeftFrontSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "move_outputs": { //(可选,默认为空)子系统移动控制输出列表
               "move_control": ["subsystem.machine_max.car_controller"] //将控制信号转发给车辆控制系统
@@ -221,7 +221,7 @@
           },
           "subsystem.machine_max.copilot_seat": {
             "type": "machine_max:seat", //子系统类型
-            "model": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
             "seat_point_locator": "RightFrontSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.right_front_door"]
@@ -229,7 +229,7 @@
           },
           "subsystem.machine_max.left_back_seat": {
             "type": "machine_max:seat", //子系统类型
-            "model": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
             "seat_point_locator": "LeftBackSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.left_back_door"]
@@ -237,7 +237,7 @@
           },
           "subsystem.machine_max.right_back_seat": {
             "type": "machine_max:seat", //子系统类型
-            "model": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
             "seat_point_locator": "RightBackSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.right_back_door"]
@@ -245,7 +245,7 @@
           },
           "subsystem.machine_max.car_controller": {
             "type": "machine_max:car_controller", //子系统类型
-            "model": "machine_max:mini_ev_car_controller",//子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:mini_ev_car_controller",//子系统型号, 需要与子系统类型相匹配
             "engine_outputs": {
               "motor_control": ["subsystem.machine_max.motor"]
             },
@@ -276,7 +276,7 @@
           },
           "subsystem.machine_max.motor": {
             "type": "machine_max:motor", //电动机子系统, 低速下恒扭矩, 高速下恒功率
-            "model": "machine_max:mini_ev_motor",//子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:mini_ev_motor",//子系统型号, 需要与子系统类型相匹配
             "power_output": "subsystem.machine_max.transmission", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
             "speed_outputs": { //(可选, 默认将引擎转速(rad/s)发至部件和载具的engine_speed频道)引擎转速信号输出频道及目标
               "engine_speed": ["part", "vehicle"]
@@ -284,7 +284,7 @@
           },
           "subsystem.machine_max.transmission": {
             "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
-            "model": "machine_max:mini_ev_transmission", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:mini_ev_transmission", //子系统型号, 需要与子系统类型相匹配
             "power_outputs": { //动力输出目标及减速比
               "subsystem.machine_max.left_back_wheel_driver": 8,
               "subsystem.machine_max.right_back_wheel_driver": 8
@@ -292,26 +292,26 @@
           },
           "subsystem.machine_max.glove_box": {
             "type": "machine_max:item_storage", //储物子系统, 互动可打开存储容器
-            "model": "machine_max:glove_box" //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:glove_box" //子系统型号, 需要与子系统类型相匹配
           },
           "subsystem.machine_max.left_front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
-            "model": "machine_max:mini_ev_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:mini_ev_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
             "connector": "connector.machine_max.left_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.right_front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
-            "model": "machine_max:mini_ev_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:mini_ev_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
             "connector": "connector.machine_max.right_front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.left_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
-            "model": "machine_max:mini_ev_back_wheel_driver",
+            "definition": "machine_max:mini_ev_back_wheel_driver",
             "connector": "connector.machine_max.left_back_wheel"
           },
           "subsystem.machine_max.right_back_wheel_driver": {
             "type": "machine_max:wheel_driver",
-            "model": "machine_max:mini_ev_back_wheel_driver",
+            "definition": "machine_max:mini_ev_back_wheel_driver",
             "connector": "connector.machine_max.right_back_wheel"
           }
         },

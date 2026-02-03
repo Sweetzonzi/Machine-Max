@@ -24,7 +24,7 @@ public class EngineSubsystemAttr extends AbstractSubsystemAttr {
     public static final Codec<Map<String, List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
 
     public static final MapCodec<EngineSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.fieldOf("power_output").forGetter(EngineSubsystemAttr::getPowerOutputTarget),
             RPM_OUTPUT_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of()).forGetter(EngineSubsystemAttr::getRpmOutputTargets)
     ).apply(instance, EngineSubsystemAttr::new));

@@ -4,15 +4,9 @@
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
-    "models": {
-      "default": "machine_max:container_16x16x32.geo"
-    },
+    "model": "machine_max:container_16x16x32.geo",
     "icon": "machine_max:textures/icon/container_16x16x32_icon.png",
-    "textures": {
-      "default": [
-        "machine_max:textures/part/container_16x16x32.png"
-      ]
-    },
+    "textures": "machine_max:textures/part/container_16x16x32.png",
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 600.0,
@@ -83,7 +77,7 @@
         "subsystems": {
           "subsystem.machine_max.container_16x16x32": {
             "type": "machine_max:item_storage",
-            "model": "machine_max:container_16x16x32"
+            "definition": "machine_max:container_16x16x32"
           }
         },
         "connectors": {

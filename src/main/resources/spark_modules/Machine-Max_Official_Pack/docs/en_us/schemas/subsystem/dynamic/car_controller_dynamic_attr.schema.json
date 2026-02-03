@@ -9,7 +9,7 @@
       "const": "machine_max:car_controller",
       "description": "Subsystem type, must be 'machine_max:car_controller'."
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
@@ -51,11 +51,11 @@
       "description": "Handbrake switch signal output channel and targets. Optional, by default sends handbrake level [0,1] to the handbrake channel of parts and vehicles."
     }
   },
-  "required": ["type", "model", "engine_outputs", "wheel_outputs", "gearbox_outputs"],
+  "required": ["type", "definition", "engine_outputs", "wheel_outputs", "gearbox_outputs"],
   "examples": [
     {
       "type": "machine_max:car_controller",
-      "model": "machine_max:ae86at_car_controller",
+      "definition": "machine_max:ae86at_car_controller",
       "engine_outputs": { "engine_control": ["engine"] },
       "wheel_outputs": {
         "wheel_control": [

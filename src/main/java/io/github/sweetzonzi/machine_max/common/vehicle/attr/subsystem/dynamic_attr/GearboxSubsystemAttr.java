@@ -31,7 +31,7 @@ public class GearboxSubsystemAttr extends AbstractSubsystemAttr {
     }
 
     public static final MapCodec<GearboxSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.fieldOf("power_output").forGetter(GearboxSubsystemAttr::getPowerOutputTarget),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("gear_outputs", Map.of("gear", List.of("part", "vehicle"))).forGetter(GearboxSubsystemAttr::getGearOutputTargets)
     ).apply(instance, GearboxSubsystemAttr::new));

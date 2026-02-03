@@ -17,66 +17,35 @@
       "default": [],
       "description": "List of part tags, used for connection point matching and functional classification"
     },
-    "models": {
-      "oneOf": [
-        {
-          "$ref": "../base/resource_location.schema.json",
-          "description": "Single model path, using default state (\"default\")"
-        },
-        {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "../base/resource_location.schema.json"
-          },
-          "minProperties": 1,
-          "description": "Mapping from state to model path, key is state name (such as \"default\", \"broken\", \"open\", etc.)"
-        }
-      ],
-      "description": "Model path configuration, supports single model (default state) or multi-state mapping. Must have at least one model"
+    "model": {
+      "$ref": "../base/resource_location.schema.json",
+      "description": "Model path configuration, 无视内层文件夹架构，例如machine_max:ae86_chassis.geo会在所有内容包的models/machine_max/part的所有子目录中中寻找ae86_chassis.geo.json"
     },
     "textures": {
       "oneOf": [
         {
-          "type": "array",
-          "items": {
-            "$ref": "../base/resource_location.schema.json"
-          },
-          "minItems": 0,
-          "description": "Single texture list, using default state (\"default\")"
+          "$ref": "../base/resource_location.schema.json",
+          "default": "minecraft:missingno",
+          "description": "单一纹理，例如\"machine_max:textures/part/ae86/ae86_armor.png\"会将内容包相应路径的图像作为部件的\"default\"纹理"
         },
         {
           "type": "object",
           "additionalProperties": {
-            "type": "array",
-            "items": {
-              "$ref": "../base/resource_location.schema.json"
-            },
-            "minItems": 0
+            "$ref": "../base/resource_location.schema.json"
           },
-          "default": {},
-          "description": "Mapping from state to texture list, key is state name, value is array of texture paths"
+          "default": {
+            "default": "minecraft:missingno"
+          },
+          "description": "名称到纹理列表的映射，键为纹理名称，值为纹理路径。例如：\"textures\": {\n            \"example_2\": \"machine_max:textures/part/texture_2.png\"\n          }则会将相应路径的图像作为部件的\"example_2\"纹理。"
         }
       ],
       "default": {},
-      "description": "Texture path configuration, supports single texture list or multi-state mapping"
+      "description": "纹理路径配置。"
     },
     "animations": {
-      "oneOf": [
-        {
-          "$ref": "../base/resource_location.schema.json",
-          "description": "Single animation path, using default state (\"default\")"
-        },
-        {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "../base/resource_location.schema.json"
-          },
-          "default": {},
-          "description": "Mapping from state to animation path, key is state name, value is animation path"
-        }
-      ],
+      "$ref": "../base/resource_location.schema.json",
       "default": {},
-      "description": "Animation path configuration, supports single animation or multi-state mapping. Leave empty to not play animation"
+      "description": "动画路径，无视内层文件夹架构，例如machine_max:ae86会在所有内容包的animations/machine_max/part/ae86中的所有动画json作为模型的可用动画"
     },
     "sub_parts": {
       "type": "object",

@@ -20,7 +20,7 @@ public class TurretDriverSubsystemAttr extends AbstractSubsystemAttr {
     public final MotorAttr yawAxis;
 
     public static final MapCodec<TurretDriverSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.fieldOf("locator").forGetter(TurretDriverSubsystemAttr::getControlledConnector),
             MotorAttr.CODEC.fieldOf("roll").forGetter(TurretDriverSubsystemAttr::getPitchAxis),
             MotorAttr.CODEC.fieldOf("steering").forGetter(TurretDriverSubsystemAttr::getYawAxis)

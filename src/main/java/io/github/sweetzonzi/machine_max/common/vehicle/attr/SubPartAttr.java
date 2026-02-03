@@ -121,9 +121,10 @@ public class SubPartAttr {
     /**
      * 获取子部件在指定状态的碰撞体积
      */
-    public CompoundCollisionShape getCollisionShape(VariantAttr attr, String state) {
+    public CompoundCollisionShape getCollisionShape(VariantAttr attr) {
+        String state = "default";
         return hitBoxShape.computeIfAbsent(state, s -> {
-            ResourceLocation modelLocation = attr.getModel(state);
+            ResourceLocation modelLocation = attr.getModel();
             var shape = new CompoundCollisionShape(1);
             // 加载模型骨骼
             Map<String, OBone> bones = filterBones(
@@ -257,7 +258,7 @@ public class SubPartAttr {
      */
     public CompoundCollisionShape getInteractBoxShape(VariantAttr attr, String state) {
         return interactBoxShape.computeIfAbsent(state, s -> {
-            ResourceLocation modelLocation = attr.getModel(state);
+            ResourceLocation modelLocation = attr.getModel();
             var shape = new CompoundCollisionShape(1);
             // 加载模型骨骼
             Map<String, OBone> bones = filterBones(
@@ -318,12 +319,11 @@ public class SubPartAttr {
      * 获取零件所需渲染的骨骼列表
      *
      * @param variant 变体属性，存储模型路径
-     * @param state 状态名称
      * @return 骨骼列表
      */
-    public Map<String, OBone> getBonesToRender(VariantAttr variant, String state) {
-        return getBones().computeIfAbsent(state, v -> {
-            ResourceLocation modelLocation = variant.getModel(state);
+    public Map<String, OBone> getBonesToRender(VariantAttr variant) {
+        return getBones().computeIfAbsent("default", v -> {
+            ResourceLocation modelLocation = variant.getModel();
             // 加载模型骨骼
             return filterBones(
                     OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),

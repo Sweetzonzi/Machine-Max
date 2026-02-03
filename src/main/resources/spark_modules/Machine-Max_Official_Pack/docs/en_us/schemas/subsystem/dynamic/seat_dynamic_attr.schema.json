@@ -9,7 +9,7 @@
       "const": "machine_max:seat",
       "description": "Subsystem type, must be 'machine_max:seat'."
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
@@ -39,11 +39,11 @@
       "description": "Passenger count signal output channel and targets."
     }
   },
-  "required": ["type", "model"],
+  "required": ["type", "definition"],
   "examples": [
     {
       "type": "machine_max:seat",
-      "model": "machine_max:driver_seat",
+      "definition": "machine_max:driver_seat",
       "seat_point_locator": "DriverSeat",
       "move_outputs": {
         "move_control": [

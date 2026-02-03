@@ -4,16 +4,16 @@
   "vehicle_damage_rate": 1.0,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
-    "models": "machine_max:dayun_hull.geo",
+    "model": "machine_max:dayun_hull.geo",
     "icon": "machine_max:textures/icon/dayun_hull_icon.png",
-    "textures": [ //贴图路径列表
-      "machine_max:textures/part/dayun/dayun.png",
-      "machine_max:textures/part/dayun/dayun2.png",
-      "machine_max:textures/part/dayun/dayun3.png",
-      "machine_max:textures/part/dayun/dayun4.png",
-      "machine_max:textures/part/dayun/dayun5.png",
-      "machine_max:textures/part/dayun/dayun6.png"
-    ],
+    "textures": { //贴图路径列表
+      "print.machine_max.dayun.1": "machine_max:textures/part/dayun/dayun.png",
+      "print.machine_max.dayun.2": "machine_max:textures/part/dayun/dayun2.png",
+      "print.machine_max.dayun.3": "machine_max:textures/part/dayun/dayun3.png",
+      "print.machine_max.dayun.4": "machine_max:textures/part/dayun/dayun4.png",
+      "print.machine_max.dayun.5": "machine_max:textures/part/dayun/dayun5.png",
+      "print.machine_max.dayun.6": "machine_max:textures/part/dayun/dayun6.png"
+    },
     "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
     "tags": ["hull"], //(可选, 默认[])部件标签列表
     "sub_parts": { //零件(子部件)列表
@@ -166,7 +166,7 @@
         "subsystems": {
           "subsystem.machine_max.car_controller": {
             "type": "machine_max:car_controller", //子系统类型
-            "model": "machine_max:dayun_car_controller", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:dayun_car_controller", //子系统型号, 需要与子系统类型相匹配
             "engine_outputs": {
               "engine_control": [
                 "subsystem.machine_max.engine"
@@ -210,7 +210,7 @@
           },
           "subsystem.machine_max.engine": {
             "type": "machine_max:engine", //子系统类型
-            "model": "machine_max:dayun_engine", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:dayun_engine", //子系统型号, 需要与子系统类型相匹配
             "power_output": "connector.machine_max.chassis_connection", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
             "speed_outputs": { //转速信号输出目标及信号名称, 同上, 但可以有多个
               "engine_speed": [

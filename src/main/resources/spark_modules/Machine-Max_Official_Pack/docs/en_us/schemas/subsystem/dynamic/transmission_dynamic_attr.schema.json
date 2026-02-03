@@ -9,7 +9,7 @@
       "const": "machine_max:transmission",
       "description": "Subsystem type, must be 'machine_max:transmission'."
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
@@ -18,11 +18,11 @@
       "description": "Power output targets and reduction ratios."
     }
   },
-  "required": ["type", "model", "power_outputs"],
+  "required": ["type", "definition", "power_outputs"],
   "examples": [
     {
       "type": "machine_max:transmission",
-      "model": "machine_max:ae86at_transmission",
+      "definition": "machine_max:ae86at_transmission",
       "power_outputs": {
         "left_front_wheel_driver": 1.0,
         "right_front_wheel_driver": 1.0,

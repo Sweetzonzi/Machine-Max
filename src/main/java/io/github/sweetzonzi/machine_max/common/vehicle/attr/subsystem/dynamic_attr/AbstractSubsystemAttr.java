@@ -50,9 +50,9 @@ abstract public class AbstractSubsystemAttr {
         if (staticAttr == null)
             staticAttr = MMDynamicRes.SERVER_STATIC_SUBSYSTEM_ATTRS.get(getModelName());
         if (staticAttr == null)
-            throw new NullPointerException("Subsystem model " + getModelName() + "(" + getType() + ") not found");
+            throw new NullPointerException("Subsystem definition " + getModelName() + "(" + getType() + ") not found");
         if (staticAttr.getType() != getType())
-            throw new ClassCastException("Subsystem model " + getModelName() + " type mismatches with subsystem type " + getType());
+            throw new ClassCastException("Subsystem definition " + getModelName() + " type mismatches with subsystem type " + getType());
         else return staticAttr;
     }
 

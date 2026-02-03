@@ -9,7 +9,7 @@
       "const": "machine_max:engine",
       "description": "Subsystem type, must be 'machine_max:engine'."
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
@@ -23,11 +23,11 @@
       "description": "Engine speed signal output channel and targets. Optional, by default sends engine speed (rad/s) to the engine_speed channel of parts and vehicles."
     }
   },
-  "required": ["type", "model", "power_output"],
+  "required": ["type", "definition", "power_output"],
   "examples": [
     {
       "type": "machine_max:engine",
-      "model": "machine_max:ae86at_engine",
+      "definition": "machine_max:ae86at_engine",
       "power_output": "gearbox",
       "speed_outputs": { "engine_speed": ["part", "vehicle"] }
     }

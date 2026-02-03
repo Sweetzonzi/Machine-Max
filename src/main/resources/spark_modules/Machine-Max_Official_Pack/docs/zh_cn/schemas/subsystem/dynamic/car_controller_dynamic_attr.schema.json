@@ -9,7 +9,7 @@
       "const": "machine_max:car_controller",
       "description": "子系统类型，必须为'machine_max:car_controller'。"
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     },
@@ -51,11 +51,11 @@
       "description": "手刹器开关信号输出频道及目标。可选，默认将手刹程度[0,1]发至部件和载具的handbrake频道。"
     }
   },
-  "required": ["type", "model", "engine_outputs", "wheel_outputs", "gearbox_outputs"],
+  "required": ["type", "definition", "engine_outputs", "wheel_outputs", "gearbox_outputs"],
   "examples": [
     {
       "type": "machine_max:car_controller",
-      "model": "machine_max:ae86at_car_controller",
+      "definition": "machine_max:ae86at_car_controller",
       "engine_outputs": { "engine_control": ["engine"] },
       "wheel_outputs": {
         "wheel_control": [

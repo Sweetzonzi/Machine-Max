@@ -9,7 +9,7 @@
       "const": "machine_max:gearbox",
       "description": "子系统类型，必须为'machine_max:gearbox'。"
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     },
@@ -23,11 +23,11 @@
       "description": "挡位名称输出频道及目标。可选，默认将当前挡位名称发至部件和载具的gear频道。"
     }
   },
-  "required": ["type", "model", "power_output"],
+  "required": ["type", "definition", "power_output"],
   "examples": [
     {
       "type": "machine_max:gearbox",
-      "model": "machine_max:ae86at_gearbox",
+      "definition": "machine_max:ae86at_gearbox",
       "power_output": "transmission",
       "gear_outputs": { "gear": ["part", "vehicle"] }
     }

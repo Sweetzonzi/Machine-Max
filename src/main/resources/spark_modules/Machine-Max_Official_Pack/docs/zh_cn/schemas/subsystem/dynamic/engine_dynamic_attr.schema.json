@@ -9,7 +9,7 @@
       "const": "machine_max:engine",
       "description": "子系统类型，必须为'machine_max:engine'。"
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     },
@@ -23,11 +23,11 @@
       "description": "引擎转速信号输出频道及目标。可选，默认将引擎转速(rad/s)发至部件和载具的engine_speed频道。"
     }
   },
-  "required": ["type", "model", "power_output"],
+  "required": ["type", "definition", "power_output"],
   "examples": [
     {
       "type": "machine_max:engine",
-      "model": "machine_max:ae86at_engine",
+      "definition": "machine_max:ae86at_engine",
       "power_output": "gearbox",
       "speed_outputs": { "engine_speed": ["part", "vehicle"] }
     }

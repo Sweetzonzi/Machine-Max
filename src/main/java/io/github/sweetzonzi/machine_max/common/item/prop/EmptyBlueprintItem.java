@@ -32,6 +32,7 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem, MenuPr
     public static final ModelIndex MODEL = new ModelIndex(
             "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"));
     public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png");
+
     public EmptyBlueprintItem() {
         super(new Properties());
     }
@@ -44,7 +45,10 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem, MenuPr
             if (subPart != null && subPart.part.vehicle != null) {
                 // 打开命名GUI
                 ItemStack stack = player.getItemInHand(usedHand);
-                player.openMenu(this, buf -> buf.writeInt(player.getInventory().selected));
+                player.openMenu(this, buf -> {
+                    buf.writeInt(player.getInventory().selected);
+                    buf.writeUtf(subPart.part.vehicle.name);
+                });
                 return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
             } else {
                 player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_pass"));

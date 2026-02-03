@@ -6,10 +6,8 @@
   "variants": {//部件变体列表, 支持单值或多键值对
     "left": {//变体名称
       "icon": "machine_max:textures/icon/ae86_wheel_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-      "models": "machine_max:ae86_wheel_left.geo", //模型路径
-      "textures": [ //贴图路径列表
-        "machine_max:textures/part/ae86/ae86_1.png"
-      ],
+      "model": "machine_max:ae86_wheel_left.geo", //模型路径
+      "textures": "machine_max:textures/part/ae86/ae86_1.png",
       "tags": ["wheel", "left"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
@@ -85,10 +83,8 @@
     },
     "right": {//变体名称
       "icon": "machine_max:textures/icon/ae86_wheel_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-      "models": "machine_max:ae86_wheel_right.geo", //模型路径
-      "textures": [ //贴图路径列表
-        "machine_max:textures/part/ae86/ae86_1.png"
-      ],
+      "model": "machine_max:ae86_wheel_right.geo", //模型路径
+      "textures": "machine_max:textures/part/ae86/ae86_1.png",
       "tags": ["wheel", "right"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称

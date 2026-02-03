@@ -5,11 +5,8 @@
   "vehicle_damage_rate_destroyed": 0.0,//(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {
     "icon": "machine_max:textures/icon/ae86_back_seat_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-    "models": "machine_max:ae86_back_seat.geo",//模型路径
-    "textures": [ //贴图路径列表
-      "machine_max:textures/part/ae86/ae86_all_terrain_1.png",
-      "machine_max:textures/part/ae86/ae86_all_terrain_2.png"
-    ],
+    "model": "machine_max:ae86_back_seat.geo",//模型路径
+    "textures": "machine_max:textures/part/ae86/ae86_all_terrain_1.png",
     "animations": "machine_max:empty",//(可选, 留空则不播放动画)动画路径
     "tags": [],//(可选, 默认[])部件标签列表
     "sub_parts": {//零件(子部件)列表
@@ -43,7 +40,7 @@
         "subsystems": {//(可选)子系统配置
           "subsystem.machine_max.left_seat": {
             "type": "machine_max:seat",
-            "model": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
             "seat_point_locator": "LeftSeatPoint",//乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "passenger_num_outputs": {
               "left_occupied": ["interact.machine_max.left_seat", "connector.machine_max.chassis_connection"]
@@ -51,7 +48,7 @@
           },
           "subsystem.machine_max.right_seat": {
             "type": "machine_max:seat",
-            "model": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
             "seat_point_locator": "RightSeatPoint",//乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "passenger_num_outputs": {
               "right_occupied": ["interact.machine_max.right_seat", "connector.machine_max.chassis_connection"]

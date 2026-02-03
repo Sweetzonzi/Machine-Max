@@ -93,7 +93,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     //模型、动画与渲染
     public final ModelController modelController;
     public final AnimController animController;
-    public int textureIndex;//当前使用的纹理的索引(用于切换纹理)
+    public String textureName;//当前使用的纹理的索引(用于切换纹理)
     @Nullable
     public MMPartEntity entity;//用于渲染模型以及和原版内容进行交互的的实体对象
     //游戏机制
@@ -115,14 +115,16 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public HashSet<BlockPos> climbableBlocks = new HashSet<>();
 
     public SubPart(String name, Part part, SubPartAttr attr) {
-        super(part.level, attr.getCollisionShape(part.variant, "default"), attr.mass);
+        super(part.level, attr.getCollisionShape(part.variant), attr.mass);
         this.part = part;
         this.name = name;
         this.attr = attr;
+        Map.Entry<String, ResourceLocation> texture = part.variant.getTextures().entrySet().iterator().next();
+        this.textureName = texture.getKey();
         this.modelController = new ModelController(this);
         this.animController = new AnimController(this);
-        this.getModelController().setModel(new ModelIndex("part", part.variant.getModel("default")));
-        this.getModelController().setTextureLocation(part.variant.getTextures("default").get(textureIndex % part.variant.getTextures("default").size()));
+        this.getModelController().setModel(new ModelIndex("part", part.variant.getModel()));
+        this.getModelController().setTextureLocation(part.variant.getTexture(textureName));
         if (!attr.interactBoxes.isEmpty()) {
             this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape(part.variant, "default"));
         } else this.interactBoxes = null;
@@ -192,19 +194,19 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     /**
-     * 按给定的纹理索引切换部件纹理
+     * 按给定的纹理名切换部件纹理
      * 可用于为拥有多个纹理的部件选择外观
      *
-     * @param index 纹理索引
+     * @param name 纹理名
      */
-    public void switchTexture(int index) {
-        if (part.variant.getTextures("default").size() == 1) return;
-        this.textureIndex = index % part.variant.getTextures("default").size();
-        this.getModelController().setTextureLocation(part.variant.getTextures("default").get(textureIndex));
+    public void switchTexture(String name) {
+        if (part.variant.getTextures().size() == 1) return;
+        this.textureName = name;
+        this.getModelController().setTextureLocation(part.variant.getTexture(name));
         //同步客户端
         if (!getLevel().isClientSide() && part.vehicle != null)
             PacketDistributor.sendToPlayersInDimension((ServerLevel) getLevel(),
-                    new PartPaintPayload(part.vehicle.uuid, part.uuid, name, this.textureIndex));
+                    new PartPaintPayload(part.vehicle.uuid, part.uuid, this.name, this.textureName));
     }
 
     public void refreshPartEntity() {
@@ -593,11 +595,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 entity.boundingBox.set(box);
                 entity.bodyCenter.set(center);
             }
-            var animSet = OAnimationSet.getORIGINS().get(new ModelIndex("part", part.variant.getAnimation("default")));
+            var animSet = OAnimationSet.getORIGINS().get(new ModelIndex("part", part.variant.getAnimations()));
             if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
                 for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
                     String name = entry.getKey();
-                    var animInstance = new AnimInstance(this, new AnimIndex(new ModelIndex("part", part.variant.getAnimation("default")), name));
+                    var animInstance = new AnimInstance(this, new AnimIndex(new ModelIndex("part", part.variant.getAnimations()), name));
                     animInstance.enter();
                 }
             }
@@ -1147,11 +1149,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @NotNull
     @Override
     public ModelIndex getDefaultModelIndex() {
-        return new ModelIndex("part", part.variant.getModel("default"));
+        return new ModelIndex("part", part.variant.getModel());
     }
 
     public Map<String, OBone> getBonesToRender() {
-        return attr.getBonesToRender(part.variant, part.variantName);
+        return attr.getBonesToRender(part.variant);
     }
 
     @Override

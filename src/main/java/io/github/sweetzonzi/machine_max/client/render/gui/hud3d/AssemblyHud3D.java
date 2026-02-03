@@ -413,7 +413,7 @@ public class AssemblyHud3D implements IHud3DElement {
         ModelController modelController = subPart.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         // 渲染所有块
-        var bonesToRender = subPart.attr.getBonesToRender(subPart.part.variant, "default");
+        var bonesToRender = subPart.attr.getBonesToRender(subPart.part.variant);
         for (OBone bone : bonesToRender.values()) {
             ModelRenderHelperKt.render(
                     bone,

@@ -23,7 +23,7 @@ public class ScriptableSubsystemAttr extends AbstractSubsystemAttr {
     }
 
     public static final MapCodec<ScriptableSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.optionalFieldOf("script", "").forGetter(ScriptableSubsystemAttr::getScript)
     ).apply(instance, ScriptableSubsystemAttr::new));
 

@@ -125,7 +125,7 @@
   "examples": [
     {
       "type": "machine_max:car_controller",
-      "model": "machine_max:ae86at_car_controller",
+      "definition": "machine_max:ae86at_car_controller",
       "engine_outputs": {
         "engine_control": [
           "engine"
@@ -142,7 +142,7 @@
     },
     {
       "type": "machine_max:engine",
-      "model": "machine_max:ae86at_engine",
+      "definition": "machine_max:ae86at_engine",
       "power_output": "gearbox"
     }
   ]

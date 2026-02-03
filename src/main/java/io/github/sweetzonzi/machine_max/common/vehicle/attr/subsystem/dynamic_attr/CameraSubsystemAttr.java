@@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 public class CameraSubsystemAttr extends AbstractSubsystemAttr {
     public final CameraSubsystemStaticAttr staticAttribute;
     public static final MapCodec<CameraSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName)
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName)
     ).apply(instance, CameraSubsystemAttr::new));
 
     protected CameraSubsystemAttr(ResourceLocation modelName) {

@@ -6,11 +6,11 @@
   "variants": {//部件变体列表, 支持单值或多键值对
     "left": {//变体名称
       "icon": "machine_max:textures/icon/ae86_wheel_all_terrain_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-      "models": "machine_max:ae86_wheel_all_terrain_left.geo", //模型路径
-      "textures": [ //贴图路径列表
-        "machine_max:textures/part/ae86/ae86_all_terrain_1.png",
-        "machine_max:textures/part/ae86/ae86_all_terrain_2.png"
-      ],
+      "model": "machine_max:ae86_wheel_all_terrain_left.geo", //模型路径
+      "textures": { //贴图路径列表
+        "print.machine_max.red": "machine_max:textures/part/ae86/ae86_all_terrain_1.png",
+        "print.machine_max.gray": "machine_max:textures/part/ae86/ae86_all_terrain_2.png"
+      },
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
       "tags": ["wheel", "all_terrain", "left"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
@@ -87,18 +87,12 @@
     },
     "right": {//变体名称
       "icon": "machine_max:textures/icon/ae86_wheel_all_terrain_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-      "models": {//(必须)状态差分模型映射, 支持单值或多状态映射, 暂时只支持default状态
-        "default": "machine_max:ae86_wheel_all_terrain_right.geo"//状态名称 -> 模型路径
+      "model": "machine_max:ae86_wheel_all_terrain_right.geo", //部件模型路径
+      "textures": { //贴图路径列表
+          "print.machine_max.red": "machine_max:textures/part/ae86/ae86_all_terrain_1.png",
+          "print.machine_max.gray": "machine_max:textures/part/ae86/ae86_all_terrain_2.png"
       },
-      "textures": {//(必须)状态差分贴图映射, 支持单值或多状态映射
-        "default": [//状态名称 -> 贴图路径列表
-          "machine_max:textures/part/ae86/ae86_all_terrain_1.png",
-          "machine_max:textures/part/ae86/ae86_all_terrain_2.png"
-        ]
-      },
-      "animations": {//(可选)状态差分动画映射, 支持单值或多状态映射
-        "default": "machine_max:empty"//状态名称 -> 动画路径
-      },
+      "animations": "machine_max:empty",
       "tags": ["wheel", "all_terrain", "right"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称

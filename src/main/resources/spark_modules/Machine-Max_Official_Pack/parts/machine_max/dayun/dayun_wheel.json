@@ -5,16 +5,9 @@
   "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {//部件变体列表, 支持单值或多键值对
     "left": {//变体名称
-      "models": "machine_max:dayun_wheel_left.geo", //模型路径
+      "model": "machine_max:dayun_wheel_left.geo", //模型路径
       "icon": "machine_max:textures/icon/dayun_wheel_icon.png",
-      "textures": [ //贴图路径列表
-        "machine_max:textures/part/dayun/dayun.png",
-        "machine_max:textures/part/dayun/dayun2.png",
-        "machine_max:textures/part/dayun/dayun3.png",
-        "machine_max:textures/part/dayun/dayun4.png",
-        "machine_max:textures/part/dayun/dayun5.png",
-        "machine_max:textures/part/dayun/dayun6.png"
-      ],
+      "textures": "machine_max:textures/part/dayun/dayun.png",
       "tags": ["wheel", "left"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
@@ -89,15 +82,8 @@
       }
     },
     "right": {//变体名称
-      "models": "machine_max:dayun_wheel_right.geo", //模型路径
-      "textures": [ //贴图路径列表
-        "machine_max:textures/part/dayun/dayun.png",
-        "machine_max:textures/part/dayun/dayun2.png",
-        "machine_max:textures/part/dayun/dayun3.png",
-        "machine_max:textures/part/dayun/dayun4.png",
-        "machine_max:textures/part/dayun/dayun5.png",
-        "machine_max:textures/part/dayun/dayun6.png"
-      ],
+      "model": "machine_max:dayun_wheel_right.geo", //模型路径
+      "textures": "machine_max:textures/part/dayun/dayun.png",
       "tags": ["wheel", "right"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称

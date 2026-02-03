@@ -196,8 +196,8 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                     "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
             animatable.getModelController().setTextureLocation(partType.getDefaultIcon());
         } else {
-            animatable.getModelController().setModel(new ModelIndex("part", partType.getVariant(variant).getModel("default")));
-            animatable.getModelController().setTextureLocation(partType.getVariant(variant).getTextures("default").getFirst());
+            animatable.getModelController().setModel(new ModelIndex("part", partType.getVariant(variant).getModel()));
+            animatable.getModelController().setTextureLocation(partType.getVariant(variant).getTextureList().getFirst());
         }
         if (customModels != null) {
             customModels.put(context, animatable);

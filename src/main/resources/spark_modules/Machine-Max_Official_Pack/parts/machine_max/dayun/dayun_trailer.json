@@ -4,16 +4,14 @@
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
-    "models": "machine_max:dayun_trailer.geo",
+    "model": "machine_max:dayun_trailer.geo",
     "icon": "machine_max:textures/icon/dayun_trailer_icon.png",
-    "textures": [
-      "machine_max:textures/part/dayun/dayun.png",
-      "machine_max:textures/part/dayun/dayun2.png",
-      "machine_max:textures/part/dayun/dayun3.png",
-      "machine_max:textures/part/dayun/dayun4.png",
-      "machine_max:textures/part/dayun/dayun5.png",
-      "machine_max:textures/part/dayun/dayun6.png"
-    ],
+    "textures": { //贴图路径列表
+      "print.machine_max.dayun.1": "machine_max:textures/part/dayun/dayun.png",
+      "print.machine_max.dayun.2": "machine_max:textures/part/dayun/dayun2.png",
+      "print.machine_max.dayun.4": "machine_max:textures/part/dayun/dayun4.png",
+      "print.machine_max.dayun.6": "machine_max:textures/part/dayun/dayun6.png"
+    },
     "tags": ["chassis"],
     "sub_parts": {
       "sub_part.machine_max.main": {

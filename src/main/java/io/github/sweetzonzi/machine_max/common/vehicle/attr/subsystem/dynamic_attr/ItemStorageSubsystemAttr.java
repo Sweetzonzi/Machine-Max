@@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 public class ItemStorageSubsystemAttr extends AbstractSubsystemAttr {
     public final ItemStorageSubsystemStaticAttr staticAttribute;
     public static final MapCodec<ItemStorageSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName)
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName)
     ).apply(instance, ItemStorageSubsystemAttr::new));
 
     public ItemStorageSubsystemAttr(

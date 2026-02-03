@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Objects;
 
 public class SprayCanItem extends Item implements ICustomModelItem {
@@ -40,7 +41,13 @@ public class SprayCanItem extends Item implements ICustomModelItem {
             SubPart part = eyesight.getSubPart();
             if (part != null) {//改变瞄准的部件的涂装
                 //TODO:粒子效果
-                part.switchTexture(part.textureIndex + 1);
+                Iterator<String> iterator = part.part.variant.getTextures().keySet().iterator();
+                String textureName = iterator.next();
+                while (iterator.hasNext() && !textureName.equals(part.textureName))
+                    textureName = iterator.next();
+                if (iterator.hasNext()) textureName = iterator.next();
+                else textureName = part.part.variant.getTextures().keySet().stream().toList().getFirst();
+                part.switchTexture(textureName);
                 SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.painted"), 32f);
                 SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
                 return InteractionResultHolder.success(player.getItemInHand(usedHand));

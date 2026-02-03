@@ -370,7 +370,7 @@ public class VehicleAssemblyAttachment {
             this.offset = new Vector3f();
             this.quaternion = new Quaternionf();
         } else {
-            OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel("default")));
+            OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel()));
             OBone startBone = null;
             if (getConnectorName() != null) {
                 String startBoneName = getVariant().getSubParts().get(getConnectorName().getFirst()).getStartBone();

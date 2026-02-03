@@ -129,6 +129,7 @@ public class Part {
             if (data.subParts.containsKey(subPartName)) {
                 SubPartData subPartData = data.subParts.get(subPartName);
                 if (level.isClientSide()) subPart.setId(subPartData.id);//仅客户端接收应用服务端发送的id
+                subPart.switchTexture(subPartData.getTextureName());
                 PosRotVelVel posRotVelVel = subPartData.posRotVelVel;
                 subPart.setPosition(posRotVelVel.position());
                 subPart.setRotation(SparkMathKt.toBQuaternion(posRotVelVel.rotation()));
@@ -237,7 +238,7 @@ public class Part {
             SubPartAttr subPartAttr,
             LinkedHashMap<String, OLocator> locators
     ) {
-        OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel("default")));
+        OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel()));
         OBone startBone = model.getBone(subPartAttr.getStartBone());
         for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartAttr.connectors.entrySet()) {
             String connectorName = connectorEntry.getKey();

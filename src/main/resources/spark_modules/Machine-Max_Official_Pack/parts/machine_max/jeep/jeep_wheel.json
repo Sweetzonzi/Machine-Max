@@ -6,11 +6,11 @@
   "variants": {
     "left": {
       "icon": "machine_max:textures/icon/jeep_wheel.png",
-      "models": "machine_max:jeep_wheel_left.geo",
-      "textures": [
-        "machine_max:textures/part/jeep/jeep1.png",
-        "machine_max:textures/part/jeep/jeep2.png"
-      ],
+      "model": "machine_max:jeep_wheel_left.geo",
+      "textures": {
+        "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",
+        "print.machine_max.white": "machine_max:textures/part/jeep/jeep2.png"
+      },
       "tags": [
         "wheel",
         "left"
@@ -93,11 +93,11 @@
     },
     "right": {
       "icon": "machine_max:textures/icon/jeep_wheel.png",
-      "models": "machine_max:jeep_wheel_right.geo",
-      "textures": [
-        "machine_max:textures/part/jeep/jeep1.png",
-        "machine_max:textures/part/jeep/jeep2.png"
-      ],
+      "model": "machine_max:jeep_wheel_right.geo",
+      "textures": {
+        "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",
+        "print.machine_max.white": "machine_max:textures/part/jeep/jeep2.png"
+      },
       "tags": [
         "wheel",
         "right"

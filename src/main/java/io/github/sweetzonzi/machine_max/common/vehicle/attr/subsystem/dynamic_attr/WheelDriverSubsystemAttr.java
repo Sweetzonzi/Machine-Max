@@ -22,7 +22,7 @@ public class WheelDriverSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<String, List<String>> steeringAngleOutputs;
 
     public static final MapCodec<WheelDriverSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.fieldOf("connector").forGetter(WheelDriverSubsystemAttr::getControlledConnector),
             AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("roll_speed_outputs", Map.of()).forGetter(WheelDriverSubsystemAttr::getRollingSpeedOutputs),
             AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("steering_angle_outputs", Map.of()).forGetter(WheelDriverSubsystemAttr::getSteeringAngleOutputs)

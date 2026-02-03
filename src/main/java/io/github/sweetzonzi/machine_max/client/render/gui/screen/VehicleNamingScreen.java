@@ -42,7 +42,7 @@ public class VehicleNamingScreen extends AbstractContainerScreen<VehicleNamingMe
         // 名称输入框
         this.nameEditBox = new EditBox(this.font, x + 20, y + 30, 136, 20, Component.empty());
         this.nameEditBox.setMaxLength(50);
-        this.nameEditBox.setValue("MyVehicle");
+        this.nameEditBox.setValue(menu.getVehicleName());
         this.nameEditBox.setResponder(this::onNameChanged);
         this.addRenderableWidget(this.nameEditBox);
         this.setInitialFocus(this.nameEditBox);

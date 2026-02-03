@@ -18,7 +18,7 @@ public record PartPaintPayload(
         UUID vehicleUUID,
         UUID partUUID,
         String name,
-        int textureIndex
+        String textureName
 ) implements CustomPacketPayload {
     public static final Type<PartPaintPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_paint_payload")
@@ -29,8 +29,8 @@ public record PartPaintPayload(
             UUID vehicleUUID = buffer.readUUID();
             UUID partUUID = buffer.readUUID();
             String name = buffer.readUtf();
-            int textureIndex = buffer.readInt();
-            return new PartPaintPayload(vehicleUUID, partUUID, name, textureIndex);
+            String textureName = buffer.readUtf();
+            return new PartPaintPayload(vehicleUUID, partUUID, name, textureName);
         }
 
         @Override
@@ -38,7 +38,7 @@ public record PartPaintPayload(
             buffer.writeUUID(value.vehicleUUID);
             buffer.writeUUID(value.partUUID);
             buffer.writeUtf(value.name);
-            buffer.writeInt(value.textureIndex);
+            buffer.writeUtf(value.textureName);
         }
     };
 
@@ -48,15 +48,17 @@ public record PartPaintPayload(
     }
 
     public static void handle(PartPaintPayload payload, IPayloadContext context) {
-        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
-        if (vehicle != null) {
-            Part part = vehicle.partMap.get(payload.partUUID);
-            if (part != null) {
-                SubPart subPart = part.subParts.get(payload.name);
-                if (subPart != null) {
-                    subPart.switchTexture(payload.textureIndex);
-                } else MachineMax.LOGGER.error("{}中未找到子部件{}，无法切换涂装。", part, payload.name);
-            } else MachineMax.LOGGER.error("{}中未找到部件{}，无法切换涂装。", vehicle, payload.partUUID);
-        } else MachineMax.LOGGER.error("未找到载具{}，无法切换涂装。", payload.partUUID);
+        context.enqueueWork(()-> {
+            VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
+            if (vehicle != null) {
+                Part part = vehicle.partMap.get(payload.partUUID);
+                if (part != null) {
+                    SubPart subPart = part.subParts.get(payload.name);
+                    if (subPart != null) {
+                        subPart.switchTexture(payload.textureName);
+                    } else MachineMax.LOGGER.error("{}中未找到子部件{}，无法切换涂装。", part, payload.name);
+                } else MachineMax.LOGGER.error("{}中未找到部件{}，无法切换涂装。", vehicle, payload.partUUID);
+            } else MachineMax.LOGGER.error("未找到载具{}，无法切换涂装。", payload.partUUID);
+        });
     }
 }

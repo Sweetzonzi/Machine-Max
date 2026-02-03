@@ -6,10 +6,8 @@
   "variants": {//部件变体列表, 支持单值或多键值对
     "left": {//变体名称
       "icon": "machine_max:textures/icon/mini_ev_wheel_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-      "models": "machine_max:mini_ev_wheel_left.geo", //模型路径
-      "textures": [ //贴图路径列表
-        "machine_max:textures/part/mini_ev/mini_ev_ae86.png"
-      ],
+      "model": "machine_max:mini_ev_wheel_left.geo", //模型路径
+      "textures": "machine_max:textures/part/mini_ev/mini_ev_ae86.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
       "tags": ["wheel", "mini", "left"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
@@ -86,10 +84,8 @@
     },
     "right": {//变体名称
       "icon": "machine_max:textures/icon/mini_ev_wheel_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
-      "models": "machine_max:mini_ev_wheel_right.geo", //模型路径
-      "textures": [ //贴图路径列表
-        "machine_max:textures/part/mini_ev/mini_ev_ae86.png"
-      ],
+      "model": "machine_max:mini_ev_wheel_right.geo", //模型路径
+      "textures": "machine_max:textures/part/mini_ev/mini_ev_ae86.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
       "tags": ["wheel", "mini", "right"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表

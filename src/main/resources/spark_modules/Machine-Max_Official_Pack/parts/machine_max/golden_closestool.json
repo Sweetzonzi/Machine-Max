@@ -5,10 +5,8 @@
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "icon": "machine_max:textures/icon/golden_closestool_icon.png",
-    "models": "machine_max:golden_closestool.geo", 
-    "textures": [ 
-      "machine_max:textures/part/golden_closestool.png"
-    ],
+    "model": "machine_max:golden_closestool.geo",
+    "textures": "machine_max:textures/part/golden_closestool.png",
     "animations": "machine_max:empty", 
     "tags": [],
     "sub_parts": {
@@ -35,7 +33,7 @@
         "subsystems": {
           "subsystem.machinemax.seat": {
             "type": "machine_max:seat", 
-            "model": "machine_max:golden_closestool", 
+            "definition": "machine_max:golden_closestool",
             "seat_point_locator": "sit_point",
             "move_outputs": {
               "move_control": ["connector.machine_max.chassis_connection"]

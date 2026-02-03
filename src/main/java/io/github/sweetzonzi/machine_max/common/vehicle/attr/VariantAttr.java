@@ -18,51 +18,21 @@ import java.util.*;
 public class VariantAttr {
     public final ResourceLocation icon; //图标路径
     public final List<String> tags; //部件标签
-    public final Map<String, ResourceLocation> models; // 状态 -> 模型路径
-    public final Map<String, List<ResourceLocation>> textures; // 状态 -> 纹理
-    public final Map<String, ResourceLocation> animations; // 状态 -> 动画
+    @Getter
+    public final ResourceLocation model; // 模型路径
+    public final Map<String, ResourceLocation> textures; // 纹理名 -> 纹理
+    public final ResourceLocation animations; // 状态 -> 动画
     public final Map<String, SubPartAttr> subParts; //子部件名称-子部件属性
-    // 编解码器 - 支持单值或映射
-    public static final Codec<Map<String, ResourceLocation>> MODELS_CODEC = Codec.either(
+
+    public static final ResourceLocation EMPTY_TEXTURE = ResourceLocation.withDefaultNamespace("missingno");
+    public static final ResourceLocation EMPTY_ANIM = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
+
+    public static final Codec<Map<String, ResourceLocation>> TEXTURES_CODEC = Codec.either(
             ResourceLocation.CODEC,
             Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC)
     ).xmap(
             either -> either.map(
-                    model -> Map.of("default", model),
-                    map -> map
-            ),
-            map -> {
-                if (map.size() == 1 && map.containsKey("default")) {
-                    return Either.left(map.get("default"));
-                } else {
-                    return Either.right(map);
-                }
-            }
-    );
-
-    public static final Codec<Map<String, List<ResourceLocation>>> TEXTURES_CODEC = Codec.either(
-            ResourceLocation.CODEC.listOf(),
-            Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC.listOf())
-    ).xmap(
-            either -> either.map(
-                    textures -> Map.of("default", textures),
-                    map -> map
-            ),
-            map -> {
-                if (map.size() == 1 && map.containsKey("default")) {
-                    return Either.left(map.get("default"));
-                } else {
-                    return Either.right(map);
-                }
-            }
-    );
-
-    public static final Codec<Map<String, ResourceLocation>> ANIMATIONS_CODEC = Codec.either(
-            ResourceLocation.CODEC,
-            Codec.unboundedMap(Codec.STRING, ResourceLocation.CODEC)
-    ).xmap(
-            either -> either.map(
-                    anim -> Map.of("default", anim),
+                    texture -> Map.of("default", texture),
                     map -> map
             ),
             map -> {
@@ -75,53 +45,46 @@ public class VariantAttr {
     );
 
     public static final Codec<VariantAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.optionalFieldOf("icon", ResourceLocation.withDefaultNamespace("missingno")).forGetter(VariantAttr::getIcon),
+            ResourceLocation.CODEC.optionalFieldOf("icon", EMPTY_TEXTURE).forGetter(VariantAttr::getIcon),
             Codec.STRING.listOf().optionalFieldOf("tags", List.of()).forGetter(VariantAttr::getTags),
-            MODELS_CODEC.fieldOf("models").forGetter(VariantAttr::getModels),
-            TEXTURES_CODEC.optionalFieldOf("textures", Map.of()).forGetter(VariantAttr::getTextures),
-            ANIMATIONS_CODEC.optionalFieldOf("animations", Map.of()).forGetter(VariantAttr::getAnimations),
+            ResourceLocation.CODEC.fieldOf("model").forGetter(VariantAttr::getModel),
+            TEXTURES_CODEC.optionalFieldOf("textures", Map.of("default", EMPTY_TEXTURE)).forGetter(VariantAttr::getTextures),
+            ResourceLocation.CODEC.optionalFieldOf("animations", EMPTY_ANIM).forGetter(VariantAttr::getAnimations),
             SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(VariantAttr::getSubParts)
     ).apply(instance, VariantAttr::new));
 
-    public VariantAttr(ResourceLocation icon, List<String> tags, Map<String, ResourceLocation> models, Map<String, List<ResourceLocation>> textures, Map<String, ResourceLocation> animations, Map<String, SubPartAttr> subParts) {
+    public VariantAttr(ResourceLocation icon, List<String> tags, ResourceLocation model, Map<String, ResourceLocation> textures, ResourceLocation animations, Map<String, SubPartAttr> subParts) {
         this.icon = icon;
         this.tags = tags;
-        this.models = models;
+        this.model = model;
         this.textures = textures;
         this.animations = animations;
         this.subParts = subParts;
-        for (ResourceLocation modelPath : models.values()) {
-            OModel oModel = OModel.getOrEmpty(new ModelIndex("part", modelPath));
-            if (oModel.equals(OModel.Companion.getEMPTY())){
-                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.model_not_found", modelPath.toString()).getString());
-            }
+        OModel oModel = OModel.getOrEmpty(new ModelIndex("part", model));
+        if (oModel.equals(OModel.Companion.getEMPTY())){
+            throw new IllegalArgumentException(Component.translatable("error.machine_max.part.model_not_found", model.toString()).getString());
+        }
+        if (getTextures().isEmpty()) {
+            throw new IllegalArgumentException(Component.translatable("error.machine_max.part.missing_textures").getString());
         }
         // 构建并缓存部件碰撞体积
         for (SubPartAttr subPartAttr : subParts.values()) {
-            subPartAttr.getCollisionShape(this, "default");
+            subPartAttr.getCollisionShape(this);
         }
     }
 
     /**
-     * 获取指定状态的模型
+     * 获取可用纹理列表
      */
-    public ResourceLocation getModel(String state) {
-        return models.getOrDefault(state, models.get("default"));
+    public List<ResourceLocation> getTextureList() {
+        return textures.values().stream().toList();
     }
 
     /**
-     * 获取指定状态的纹理
+     * 获取指定名称的纹理
      */
-    public List<ResourceLocation> getTextures(String state) {
-        return textures.getOrDefault(state, textures.getOrDefault("default", List.of()));
-    }
-
-    /**
-     * 获取指定状态的动画
-     */
-    public ResourceLocation getAnimation(String state) {
-        return animations.getOrDefault(state, animations.getOrDefault("default",
-                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty")));
+    public ResourceLocation getTexture(String name) {
+        return textures.getOrDefault(name, EMPTY_TEXTURE);
     }
 
     @Nullable

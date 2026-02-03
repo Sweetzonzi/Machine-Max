@@ -23,7 +23,7 @@ public class JointDriverSubsystemAttr extends AbstractSubsystemAttr {
     public final Map<Axis, MotorAttr> axisParams;
 
     public static final MapCodec<JointDriverSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AbstractSubsystemAttr::getModelName),
+            ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.fieldOf("locator").forGetter(JointDriverSubsystemAttr::getControlledConnector),
             Codec.STRING.fieldOf("rotation_order").forGetter(JointDriverSubsystemAttr::getRotationOrder),
             MotorAttr.MAP_CODEC.fieldOf("axes").forGetter(JointDriverSubsystemAttr::getAxisParams)

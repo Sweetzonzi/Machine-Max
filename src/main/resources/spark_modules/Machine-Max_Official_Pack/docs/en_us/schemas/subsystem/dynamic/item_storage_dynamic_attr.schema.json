@@ -9,16 +9,16 @@
       "const": "machine_max:item_storage",
       "description": "Subsystem type, must be 'machine_max:item_storage'."
     },
-    "model": {
+    "definition": {
       "type": "string",
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     }
   },
-  "required": ["type", "model"],
+  "required": ["type", "definition"],
   "examples": [
     {
       "type": "machine_max:item_storage",
-      "model": "machine_max:default_trunk"
+      "definition": "machine_max:default_trunk"
     }
   ]
 }
