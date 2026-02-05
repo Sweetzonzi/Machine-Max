@@ -5,17 +5,29 @@
   "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
     {
       "ingredient": {
-        "item": "machine_max:empty_blueprint"
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
       },
       "count": 1
     }
   ],
-  "ingredients": [ 
+  "ingredients": [
+    {
+      "ingredient": { // 原料的类型
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 4 // 原料的数量，制造或组装时会搜索整个背包的库存来消耗，因此可大于64。
+    },
     {
       "ingredient": {
-        "item": "minecraft:iron_ingot" 
+        "item": "machine_max:electronic_component_1"
       },
-      "count": 18
+      "count": 2
     },
     {
       "ingredient": {

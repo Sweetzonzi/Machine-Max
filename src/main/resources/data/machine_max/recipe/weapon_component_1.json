@@ -5,23 +5,20 @@
     "d": {
       "item": "minecraft:dispenser"
     },
-    "h": {
-      "item": "minecraft:hopper"
-    },
     "p": {
       "item": "minecraft:piston"
     },
-    "l": {
-      "item": "minecraft:lever"
+    "o": {
+      "item": "minecraft:observer"
     },
     "i": {
-      "tag": "c:ingots/iron"
+      "item": "machine_max:structural_component_1"
     }
   },
   "pattern": [
     "idi",
-    "php",
-    "ili"
+    "p p",
+    "ioi"
   ],
   "result": {
     "id": "machine_max:weapon_component_1",

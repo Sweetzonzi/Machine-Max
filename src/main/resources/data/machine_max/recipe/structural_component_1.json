@@ -2,11 +2,11 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "key": {
-    "d": {
-      "item": "minecraft:iron_trapdoor"
-    },
     "i": {
       "tag": "c:ingots/iron"
+    },
+    "c": {
+      "tag": "c:ingots/copper"
     },
     "b": {
       "item": "minecraft:iron_bars"
@@ -14,7 +14,7 @@
   },
   "pattern": [
     "bib",
-    "bdb",
+    "bcb",
     "bib"
   ],
   "result": {

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "i": {
+      "item": "minecraft:paper"
+    },
+    "b": {
+      "item": "minecraft:blue_dye"
+    }
+  },
+  "pattern": [
+    " i ",
+    "ibi",
+    " i "
+  ],
+  "result": {
+    "id": "machine_max:empty_blueprint",
+    "count": 4
+  }
+}

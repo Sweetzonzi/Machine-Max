@@ -11,7 +11,7 @@
     },
     {
       "ingredient": {
-        "item": "machine_max:empty_blueprint"
+        "tag": "c:empty_blueprint"
       },
       "count": 1
     }

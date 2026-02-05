@@ -8,6 +8,9 @@
     "p": {
       "item": "minecraft:amethyst_shard"
     },
+    "s": {
+      "item": "machine_max:structural_component_1"
+    },
     "c": {
       "tag": "c:ingots/copper"
     }
@@ -15,7 +18,7 @@
   "pattern": [
     "crc",
     "ppp",
-    "ppp"
+    "sps"
   ],
   "result": {
     "id": "machine_max:power_component_1",

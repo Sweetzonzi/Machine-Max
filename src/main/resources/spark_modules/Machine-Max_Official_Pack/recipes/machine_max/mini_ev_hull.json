@@ -5,23 +5,47 @@
   "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
     {
       "ingredient": {
-        "item": "machine_max:empty_blueprint"
+        "item": "minecraft:bucket"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
       },
       "count": 1
     }
   ],
-  "ingredients": [ 
+  "ingredients": [
     {
       "ingredient": {
-        "item": "minecraft:iron_ingot" 
+        "item": "machine_max:structural_component_1"
       },
-      "count": 14
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 3
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:power_component_1"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 2
     },
     {
       "ingredient": {
         "item": "minecraft:glass_pane"
       },
-      "count": 8
+      "count": 4
     }
   ],
   "result": { 

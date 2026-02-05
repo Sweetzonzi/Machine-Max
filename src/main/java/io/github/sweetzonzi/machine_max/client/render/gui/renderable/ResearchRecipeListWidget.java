@@ -221,7 +221,7 @@ public class ResearchRecipeListWidget extends AbstractScrollWidget {
         int btn1X = getX() + width - 3 * (BUTTON_WIDTH + 4);
         int btn2X = getX() + width - 2 * (BUTTON_WIDTH + 4);
         int btn3X = getX() + width - BUTTON_WIDTH - 4;
-        if (withinContentAreaPoint(mouseX, mouseY)) {
+        if (withinContentAreaPoint(mouseX, mouseY) && index >= 0 && index < states.size()) {
             ResearchState state = states.get(index);
             // 按钮 1
             if (mouseX >= btn1X && mouseX < btn1X + BUTTON_WIDTH) {

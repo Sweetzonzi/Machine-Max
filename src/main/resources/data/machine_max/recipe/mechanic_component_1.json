@@ -8,20 +8,23 @@
     "p": {
       "item": "minecraft:piston"
     },
-    "i": {
-      "tag": "c:ingots/iron"
+    "s": {
+      "item": "machine_max:structural_component_1"
     },
     "c": {
       "tag": "c:ingots/copper"
+    },
+    "o": {
+      "item": "minecraft:slime_ball"
     }
   },
   "pattern": [
-    "ccc",
+    "coc",
     "pep",
-    "iii"
+    "sss"
   ],
   "result": {
     "id": "machine_max:mechanic_component_1",
-    "count": 1
+    "count": 2
   }
 }

@@ -5,23 +5,17 @@
   "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
     {
       "ingredient": {
-        "item": "machine_max:empty_blueprint"
-      },
-      "count": 1
-    },
-    {
-      "ingredient": {
-        "item": "machine_max:empty_blueprint"
+        "tag": "c:empty_blueprint"
       },
       "count": 1
     }
   ],
-  "ingredients": [ 
+  "ingredients": [
     {
       "ingredient": {
-        "item": "minecraft:copper_ingot" 
+        "item": "machine_max:structural_component_1"
       },
-      "count": 12
+      "count": 3
     }
   ],
   "result": { 

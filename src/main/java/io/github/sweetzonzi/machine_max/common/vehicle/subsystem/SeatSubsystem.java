@@ -69,6 +69,8 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             if (((IEntityMixin) passenger).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
                 if (seat == this) return;
                 else seat.removePassenger();
+                if (seat.getSubPart().getEntity() == owner.getSubPart().getEntity() && getOwner().getLevel().isClientSide)
+                    passenger.startRiding(owner.getSubPart().entity, true);
             }
             if (!getOwner().getLevel().isClientSide) {
                 passenger.startRiding(owner.getSubPart().entity, true);

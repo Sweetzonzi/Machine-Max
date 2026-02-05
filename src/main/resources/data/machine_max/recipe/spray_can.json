@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "i": {
+      "item": "minecraft:iron_ingot"
+    },
+    "p": {
+      "item": "minecraft:hopper"
+    },
+    "c": {
+      "item": "minecraft:bucket"
+    }
+  },
+  "pattern": [
+    " ip",
+    "ici",
+    "iii"
+  ],
+  "result": {
+    "id": "machine_max:spray_can",
+    "count": 1
+  }
+}

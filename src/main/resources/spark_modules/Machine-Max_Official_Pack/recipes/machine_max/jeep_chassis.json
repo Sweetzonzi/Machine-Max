@@ -1,11 +1,17 @@
 { 
   "type": "machine_max:fabricating",
-  "research_cost": 100, // 首次研发的研发点消耗
-  "upgrade_cost": 50, // 升级蓝图等级的研发点消耗
+  "research_cost": 200, // 首次研发的研发点消耗
+  "upgrade_cost": 80, // 升级蓝图等级的研发点消耗
   "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
     {
+      "ingredient": { 
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 2 
+    },
+    {
       "ingredient": {
-        "item": "machine_max:empty_blueprint"
+        "tag": "c:empty_blueprint"
       },
       "count": 1
     }
@@ -13,21 +19,27 @@
   "ingredients": [
     {
       "ingredient": {
-        "item": "minecraft:structural_component_1"
+        "item": "machine_max:structural_component_1"
       },
-      "count": 7
+      "count": 6
     },
     {
-    "ingredient": {
-    "item": "machine_max:mechanic_component_1"
-    },
-    "count": 7
+      "ingredient": {
+        "item": "machine_max:power_component_1"
+      },
+      "count": 2
     },
     {
       "ingredient": {
         "item": "machine_max:electronic_component_1"
       },
-      "count": 4
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 2
     }
   ],
   "result": { // 产物，仅控制打印机该配方的产出，不影响部件组装

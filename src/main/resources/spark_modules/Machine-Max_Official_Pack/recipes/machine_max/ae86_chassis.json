@@ -4,8 +4,14 @@
   "upgrade_cost": 50, // 升级蓝图等级的研发点消耗
   "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
     {
+      "ingredient": { // 原料的类型
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 2 // 原料的数量，制造或组装时会搜索整个背包的库存来消耗，因此可大于64。
+    },
+    {
       "ingredient": {
-        "item": "machine_max:empty_blueprint"
+        "tag": "c:empty_blueprint"
       },
       "count": 1
     }
@@ -13,19 +19,25 @@
   "ingredients": [ // 配方的原料列表，代表接收的原料类型和数量，可存在重复的内容。手工组装时按顺序依次消耗
     {
       "ingredient": { // 原料的类型
-        "tag": "c:ingots/copper" // 标签，接收所有标签包含c:ingots/copper的原料，例如原版铜锭或其他mod添加的铜锭(虽然现版本已经统一了)
+        "item": "machine_max:structural_component_1" 
       },
-      "count": 1 // 原料的数量，制造或组装时会搜索整个背包的库存来消耗，因此可大于64。
+      "count": 8 // 原料的数量，制造或组装时会搜索整个背包的库存来消耗，因此可大于64。
     },
     {
       "ingredient": {
-        "item": "minecraft:iron_ingot" // 物品，仅接受物品id为minecraft:iron_ingot的原料，即铁锭
+        "item": "machine_max:power_component_1" 
       },
       "count": 2
     },
     {
       "ingredient": {
-        "tag": "c:ingots/gold"
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
       },
       "count": 1
     }

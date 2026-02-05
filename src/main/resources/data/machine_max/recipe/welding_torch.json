@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "i": {
+      "item": "minecraft:iron_ingot"
+    },
+    "p": {
+      "item": "machine_max:energetic_component_1"
+    }
+  },
+  "pattern": [
+    " ip",
+    "ii ",
+    "ii "
+  ],
+  "result": {
+    "id": "machine_max:welding_torch",
+    "count": 1
+  }
+}

@@ -49,17 +49,17 @@ import java.util.*;
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class BlueprintAttachment {
     @Getter
-    private int freeResearchPoint;
+    public int freeResearchPoint;
     @Getter(value = AccessLevel.PRIVATE)
     private int pendingResearchPoint;
     private final List<Pair<RpAddReason, Integer>> rpChangeRecords = new ArrayList<>();
     @Getter
-    private ResourceLocation researchingRecipe;
+    public ResourceLocation researchingRecipe;
     @Getter
-    private final Map<ResourceLocation, Float> researchedRecipes; // 所有研发过的配方及其研究层数
+    public final Map<ResourceLocation, Float> researchedRecipes; // 所有研发过的配方及其研究层数
     private final Map<ResourceLocation, LinkedHashSet<RecipeHolder<FabricatingRecipe>>> availableRecipes = new HashMap<>();
     @Getter
-    private final Map<ResourceLocation, ItemStack> products; // 所有待领取的蓝图物品
+    public final Map<ResourceLocation, ItemStack> products; // 所有待领取的蓝图物品
     @Getter
     private boolean dirty = true;
     private int inventoryHash = Integer.MIN_VALUE;

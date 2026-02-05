@@ -23,6 +23,9 @@ dependencies {
     // 本地lib
 //    additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
 
+    // Lombok 配置
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
 }
 
 repositories {
