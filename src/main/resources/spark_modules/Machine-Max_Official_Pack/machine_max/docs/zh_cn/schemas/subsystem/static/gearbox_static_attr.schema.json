@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/gearbox_static_attr.json",
+  "title": "变速箱子系统静态属性",
+  "description": "变速箱的静态属性，包括减速比、换挡时间等。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:gearbox",
+      "description": "子系统类型，必须为'machine_max:gearbox'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "final_ratio": {
+      "type": "number",
+      "default": 10.0,
+      "description": "最终减速比，用于整体缩放减速比。"
+    },
+    "ratios": {
+      "type": "array",
+      "items": { "type": "number" },
+      "default": [-3.5, 3.5, 2.5, 1.7, 1.4, 1.1],
+      "description": "减速比列表，升序排列。负数为倒挡，正数为前进挡。"
+    },
+    "switch_time": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0.3,
+      "description": "换挡时间，单位秒。"
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["gearbox_control"],
+      "description": "换挡控制信号键列表，指定选用的减速比。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:gearbox",
+      "basic_durability": 60.0,
+      "final_ratio": 12.0,
+      "ratios": [-4.0, 3.8, 2.8, 2.0, 1.5, 1.2, 0.9],
+      "switch_time": 0.4
+    }
+  ]
+}

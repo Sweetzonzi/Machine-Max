@@ -1,0 +1,565 @@
+{
+  "$schema": "../../../docs/zh_cn/schemas/part_definition_schema.json",
+  "vehicle_durability_rate": 1.0,
+  "vehicle_damage_rate": 1.0,
+  "vehicle_damage_rate_destroyed": 0.1,
+  "variants": {
+    "model": "machine_max:jeep_chassis.geo",
+    "icon": "machine_max:textures/icon/jeep_chassis.png",
+    "textures": {
+      "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",
+      "print.machine_max.white": "machine_max:textures/part/jeep/jeep2.png"
+    },
+    "tags": ["chassis"],
+    "sub_parts": {
+      "sub_part.machine_max.main": {
+        "durability": 550.0,
+        "mass": 500.0,
+        "block_collision": "ground",
+        "collision_height": 2.5,
+        "hit_boxes": {
+          "collision": {
+            "type": "box",
+            "block_damage_factor": 2.0,
+            "angle_effect": true,
+            "impact_modifiers": [],
+            "penetration_modifiers": [
+              {
+                "operation": "multiply",
+                "value": 0.5,
+                "condition": {
+                  "type": "not",
+                  "condition": {
+                    "type": "damage_tag",
+                    "tag": "machine_max:has_pen_depth"
+                  }
+                }
+              }
+            ],
+            "damage_modifiers": [
+              {
+                "operation": "add",
+                "value": -10.0,
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:fly_into_wall"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.00,
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:sweet_berry_bush"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.01,
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:slime"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.01,
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:magma_cube"
+                }
+              },
+              {
+                "operation": "add",
+                "value": -3.0,
+                "condition": {
+                  "type": "always"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.6,
+                "condition": {
+                  "type": "always"
+                }
+              }
+            ],
+            "un_penetrate_damage_factor": 0.01,
+            "rha": 5
+          },
+          "collision_engine": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.engine",
+            "block_damage_factor": 0.95,
+            "angle_effect": true,
+            "impact_modifiers": [],
+            "penetration_modifiers": [
+              {
+                "operation": "multiply",
+                "value": 0.5,
+                "condition": {
+                  "type": "not",
+                  "condition": {
+                    "type": "damage_tag",
+                    "tag": "machine_max:has_pen_depth"
+                  }
+                }
+              }
+            ],
+            "damage_modifiers": [
+              {
+                "operation": "add",
+                "value": -5.0,
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:fly_into_wall"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.05,
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:sweet_berry_bush"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.05,
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:slime"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.05,
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:magma_cube"
+                }
+              },
+              {
+                "operation": "add",
+                "value": -1.0,
+                "condition": {
+                  "type": "always"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.75,
+                "condition": {
+                  "type": "always"
+                }
+              }
+            ],
+            "un_penetrate_damage_factor": 0.1,
+            "rha": 2
+          },
+          "collision_transmission": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.transmission",
+            "block_damage_factor": 0.95,
+            "angle_effect": true,
+            "impact_modifiers": [],
+            "penetration_modifiers": [
+              {
+                "operation": "multiply",
+                "value": 0.5,
+                "condition": {
+                  "type": "not",
+                  "condition": {
+                    "type": "damage_tag",
+                    "tag": "machine_max:has_pen_depth"
+                  }
+                }
+              }
+            ],
+            "damage_modifiers": [
+              {
+                "operation": "add",
+                "value": -5.0,
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:fly_into_wall"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.05,
+                "condition": {
+                  "type": "damage_type",
+                  "id": "minecraft:sweet_berry_bush"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.05,
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:slime"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.05,
+                "condition": {
+                  "type": "entity_type",
+                  "id": "minecraft:magma_cube"
+                }
+              },
+              {
+                "operation": "add",
+                "value": -1.0,
+                "condition": {
+                  "type": "always"
+                }
+              },
+              {
+                "operation": "multiply",
+                "value": 0.75,
+                "condition": {
+                  "type": "always"
+                }
+              }
+            ],
+            "un_penetrate_damage_factor": 0.1,
+            "rha": 2
+          }
+        },
+        "interact_boxes": { //交互判定区列表
+          "interact.machine_max.left_seat": {
+            "bone": "interact_left_seat",
+            "signal_targets": {
+              "left_seat_interact": ["subsystem.machine_max.driver_seat"]
+            },
+            "interact_mode": "accurate"
+          },
+          "interact.machine_max.right_seat": {
+            "bone": "interact_right_seat",
+            "signal_targets": {
+              "right_seat_interact": ["subsystem.machine_max.copilot_seat"]
+            },
+            "interact_mode": "accurate"
+          },
+          "interact.machine_max.left_glove_box": {
+            "bone": "interact_left_glove_box",
+            "signal_targets": {
+              "left_glove_box_interact": ["subsystem.machine_max.left_glove_box"]
+            },
+            "interact_mode": "accurate"
+          },
+          "interact.machine_max.right_glove_box": {
+            "bone": "interact_right_glove_box",
+            "signal_targets": {
+              "right_glove_box_interact": ["subsystem.machine_max.right_glove_box"]
+            },
+            "interact_mode": "accurate"
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.driver_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_seat",
+            "seat_point_locator": "seat_point_left",
+            "move_outputs": {
+              "move_control": [
+                "subsystem.machine_max.car_controller"
+              ]
+            },
+            "regular_outputs": {
+              "regular_control": [
+                "subsystem.machine_max.car_controller"
+              ]
+            },
+            "aim_outputs": {
+              "aim_control": [
+                "subsystem.machine_max.car_controller"
+              ]
+            },
+            "passenger_num_outputs": {
+              "driver_occupied": ["interact.machine_max.left_seat", "connector.machine_max.hull_connection"]
+            }
+          },
+          "subsystem.machine_max.copilot_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_seat",
+            "seat_point_locator": "seat_point_right",
+            "passenger_num_outputs": {
+              "copilot_occupied": ["interact.machine_max.right_seat", "connector.machine_max.hull_connection"]
+            }
+          },
+          "subsystem.machine_max.car_controller": {
+            "type": "machine_max:car_controller",
+            "definition": "machine_max:jeep_car_controller",
+            "engine_outputs": {
+              "engine_control": [
+                "subsystem.machine_max.engine"
+              ]
+            },
+            "wheel_outputs": {
+              "wheel_control": [
+                "subsystem.machine_max.left_front_wheel_driver",
+                "subsystem.machine_max.right_front_wheel_driver",
+                "subsystem.machine_max.left_back_wheel_driver",
+                "subsystem.machine_max.right_back_wheel_driver"
+              ]
+            },
+            "gearbox_outputs": {
+              "gearbox_control": [
+                "subsystem.machine_max.gearbox"
+              ]
+            },
+            "speed_outputs": {
+              "vehicle_speed": [
+                "vehicle"
+              ]
+            },
+            "throttle_outputs": {
+              "throttle": [
+                "vehicle"
+              ]
+            },
+            "brake_outputs": {
+              "brake": [
+                "vehicle"
+              ]
+            },
+            "steering_outputs": {
+              "steering": [
+                "vehicle"
+              ]
+            },
+            "handbrake_outputs": {
+              "handbrake": [
+                "vehicle"
+              ]
+            }
+          },
+          "subsystem.machine_max.engine": {
+            "type": "machine_max:engine",
+            "definition": "machine_max:jeep_engine",
+            "power_output": "subsystem.machine_max.gearbox",
+            "speed_outputs": {
+              "engine_speed": [
+                "vehicle"
+              ]
+            }
+          },
+          "subsystem.machine_max.gearbox": {
+            "type": "machine_max:gearbox",
+            "definition": "machine_max:jeep_gearbox",
+            "power_output": "subsystem.machine_max.transmission",
+            "gear_outputs": {
+              "gear": [
+                "vehicle"
+              ]
+            }
+          },
+          "subsystem.machine_max.transmission": {
+            "type": "machine_max:transmission",
+            "definition": "machine_max:jeep_transmission",
+            "power_outputs": {
+              "subsystem.machine_max.left_front_wheel_driver": 1.0,
+              "subsystem.machine_max.right_front_wheel_driver": 1.0,
+              "subsystem.machine_max.left_back_wheel_driver": 1.0,
+              "subsystem.machine_max.right_back_wheel_driver": 1.0
+            }
+          },
+          "subsystem.machine_max.left_front_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:jeep_front_wheel_driver",
+            "connector": "connector.machine_max.left_front_wheel"
+          },
+          "subsystem.machine_max.right_front_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:jeep_front_wheel_driver",
+            "connector": "connector.machine_max.right_front_wheel"
+          },
+          "subsystem.machine_max.left_back_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:jeep_back_wheel_driver",
+            "connector": "connector.machine_max.left_back_wheel"
+          },
+          "subsystem.machine_max.right_back_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:jeep_back_wheel_driver",
+            "connector": "connector.machine_max.right_back_wheel"
+          },
+          "subsystem.machine_max.left_glove_box": {
+            "type": "machine_max:item_storage",
+            "definition": "machine_max:glove_box"
+          },
+          "subsystem.machine_max.right_glove_box": {
+            "type": "machine_max:item_storage",
+            "definition": "machine_max:glove_box"
+          }
+        },
+        "connectors": {
+          "connector.machine_max.left_front_wheel": {
+            "locator": "left_front_wheel",
+            "type": "Advanced",
+            "direction": "xn",
+            "integrity": 500.0,
+            "impact_reduction": 3.0,
+            "impact_multiplier": 0.8,
+            "required_tags": [
+              "variant:left"
+            ],
+            "acceptable_tags": [],
+            "forbidden_tags": ["chassis", "hull"],
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -0.5,
+                "upper_limit": 1.0,
+                "equilibrium": -0.15,
+                "stiffness": 45000,
+                "damping": 1000
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "yr": {
+                "lower_limit": -45.0,
+                "upper_limit": 45.0,
+                "stiffness": 4000,
+                "damping": 20
+              },
+              "zr": {
+                "lower_limit": 1.0,
+                "upper_limit": 15.0,
+                "equilibrium": 1.0,
+                "stiffness": 50000,
+                "damping": 1000
+              }
+            }
+          },
+          "connector.machine_max.left_back_wheel": {
+            "locator": "left_back_wheel",
+            "type": "Advanced",
+            "direction": "xn",
+            "integrity": 500.0,
+            "required_tags": [
+              "variant:left"
+            ],
+            "acceptable_tags": [],
+            "forbidden_tags": ["chassis", "hull"],
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -0.5,
+                "upper_limit": 1.0,
+                "equilibrium": -0.15,
+                "stiffness": 40000,
+                "damping": 1000
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "zr": {
+                "lower_limit": 1.0,
+                "upper_limit": 15.0,
+                "equilibrium": 1.0,
+                "stiffness": 50000,
+                "damping": 1000
+              }
+            }
+          },
+          "connector.machine_max.right_back_wheel": {
+            "locator": "right_back_wheel",
+            "type": "Advanced",
+            "direction": "xp",
+            "integrity": 1500.0,
+            "required_tags": [
+              "variant:right"
+            ],
+            "acceptable_tags": [],
+            "forbidden_tags": ["chassis", "hull"],
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -0.5,
+                "upper_limit": 1.0,
+                "equilibrium": -0.15,
+                "stiffness": 40000,
+                "damping": 1000
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "zr": {
+                "lower_limit": 1.0,
+                "upper_limit": 15.0,
+                "equilibrium": 1.0,
+                "stiffness": 50000,
+                "damping": 1000
+              }
+            }
+          },
+          "connector.machine_max.right_front_wheel": {
+            "locator": "right_front_wheel",
+            "type": "Advanced",
+            "direction": "xp",
+            "integrity": 500.0,
+            "required_tags": [
+              "variant:right"
+            ],
+            "acceptable_tags": [],
+            "forbidden_tags": ["chassis", "hull"],
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -0.5,
+                "upper_limit": 1.0,
+                "equilibrium": -0.15,
+                "stiffness": 45000,
+                "damping": 1000
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "yr": {
+                "lower_limit": -45.0,
+                "upper_limit": 45.0,
+                "stiffness": 4000,
+                "damping": 20
+              },
+              "zr": {
+                "lower_limit": -15.0,
+                "upper_limit": -1.0,
+                "equilibrium": -1.0,
+                "stiffness": 50000,
+                "damping": 1000
+              }
+            }
+          },
+          "connector.machine_max.hull_connection": {
+            "locator": "hull",
+            "type": "Advanced",
+            "required_tags": ["hull"],
+            "signal_targets": {
+              "left_door_interact": ["subsystem.machine_max.driver_seat"],
+              "right_door_interact": ["subsystem.machine_max.copilot_seat"]
+            }
+          },
+          "connector.machine_max.trunk": {
+            "locator": "trunk",
+            "type": "Simple"
+          }
+        },
+        "hydro_priority": 0,
+        "hydrodynamics": {
+          "AeroDynamicCenter": {
+            "effective_range": [
+              5.0,
+              5.0,
+              5.0
+            ]
+          }
+        }
+      }
+    }
+  }
+}

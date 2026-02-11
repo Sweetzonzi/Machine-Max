@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/connector/connector_attr.schema.json",
+  "title": "连接点属性",
+  "description": "定义部件连接点的属性，包括位置、类型、标签限制、关节属性、信号传输等。连接点用于部件之间的物理连接和信号传递。",
+  "type": "object",
+  "properties": {
+    "locator": {
+      "type": "string",
+      "description": "连接点对应的Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为连接点的位置和姿态。"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["Simple", "simple", "advanced", "Advanced"],
+      "description": "连接点类型。Simple：简单连接点；Advanced：高级连接点，支持复杂的关节属性。"
+    },
+    "direction": {
+      "$ref": "../../../base/axis.schema.json",
+      "description": "连接点的法线方向，用于确定连接点的连接方向。x+为右，y+为上，z+为后。"
+    },
+    "integrity": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "部件基础结构完整度，部件可承受不高于此数值的冲击力而不脱落，冲击力来自伤害或关节应力。"
+    },
+    "impact_reduction": {
+      "type": "number",
+      "minimum": 0,
+      "default": 2.0,
+      "description": "连接点的冲击减免值，在计算部件击落前应用，可将冲击削减至0以完全避免对结构完整性的影响。"
+    },
+    "impact_multiplier": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.5,
+      "description": "连接点的冲击吸收率，在计算部件击落前，应用冲击减免后应用，大于1将使连接点更容易断开。"
+    },
+    "required_tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "连接部件必须全部拥有的标签，留空以允许任意标签。例如：[\"variant:left\"]表示必须包含左变体标签。"
+    },
+    "acceptable_tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "连接部件必须至少拥有其中一个的标签，留空以允许任意标签。例如：[\"door\", \"hatch\"]表示必须包含门或舱口标签之一。"
+    },
+    "forbidden_tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "连接部件不可包含的标签，留空以允许任意标签。例如：[\"explosive\"]表示不能包含爆炸物标签。"
+    },
+    "joint_attrs": {
+      "type": "object",
+      "additionalProperties": { "$ref": "joint_attr.schema.json"},
+      "default": {},
+      "description": "关节属性，目前仅在关节类型为Advanced时生效。键为x、y、z、xr、yr、zr，分别代表x、y、z轴的平动和x、y、z轴的旋转。"
+    },
+    "signal_translations": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "default": {},
+      "description": "从对侧连接点接收到的信号频道转译规则，例如：{\"channel_a\": \"channel_c\"}表示将channel_a信号转译为channel_c。"
+    },
+    "signal_targets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "default": {},
+      "description": "连接点在本零件内的控制信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/vehicle）。例如：{\"move_control\": [\"car_controller\", \"engine\"]}。"
+    },
+    "collide_between_parts": {
+      "type": "boolean",
+      "default": false,
+      "description": "连接点是否允许部件间碰撞。通常设置为false以避免连接点之间的穿透问题。"
+    },
+    "connected_to": {
+      "type": "string",
+      "default": "",
+      "description": "连接点默认连接到的部件内连接点名称（不是骨骼名！）。留空表示不默认连接。例如：\"hull\"表示默认连接到名为hull的连接点。"
+    }
+  },
+  "required": ["locator", "type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "locator": "LeftFrontWheel",
+      "type": "Advanced",
+      "required_tags": ["variant:left"],
+      "joint_attrs": {
+        "y": {
+          "lower_limit": -0.5,
+          "upper_limit": 1.0,
+          "stiffness": 28000,
+          "damping": 1500
+        },
+        "yr": {
+          "lower_limit": -45.0,
+          "upper_limit": 45.0,
+          "stiffness": 4000,
+          "damping": 20
+        }
+      },
+      "description": "左前轮连接点，仅允许左变体，具有垂直缓冲和转向能力"
+    }
+  ]
+}

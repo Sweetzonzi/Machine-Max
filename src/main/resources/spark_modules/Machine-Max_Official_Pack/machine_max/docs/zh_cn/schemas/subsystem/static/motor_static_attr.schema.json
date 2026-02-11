@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/motor_static_attr.json",
+  "title": "电机子系统静态属性",
+  "description": "电机的静态属性，包括功率、扭矩、转速特性等。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:motor",
+      "description": "子系统类型，必须为'machine_max:motor'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "particle_locator": {
+      "type": "string",
+      "default": "",
+      "description": "粒子效果定位器名称，用于显示电机工作时的粒子效果。"
+    },
+    "max_power": {
+      "type": "number",
+      "minimum": 0,
+      "description": "最大功率，单位瓦特(W)。"
+    },
+    "max_torque": {
+      "type": "number",
+      "minimum": 0,
+      "default": 100.0,
+      "description": "最大扭矩，单位牛顿·米(N·m)。"
+    },
+    "red_line_rpm": {
+      "type": "number",
+      "minimum": 0,
+      "default": 10000.0,
+      "description": "红线转速，单位转/分钟(RPM)。"
+    },
+    "inertia": {
+      "type": "number",
+      "minimum": 0,
+      "default": 10.0,
+      "description": "电机系统转动惯量，单位千克·平方米(kg·m²)。"
+    },
+    "damping_factors": {
+      "type": "array",
+      "items": { "type": "number" },
+      "default": [10.0, 0.1, 0.00005],
+      "description": "电机系统各阶阻力系数，分别为常数项，一次项，二次项，…递增，单位N·m/(rad/s)^n。"
+    },
+    "generator_efficiency": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.85,
+      "description": "发电效率（0-1），当电机作为发电机时的效率。"
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["motor_control", "move_control"],
+      "description": "油门输入信号键列表，优先级从高到低。"
+    }
+  },
+  "required": ["type", "max_power"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:motor",
+      "basic_durability": 50.0,
+      "max_power": 50000.0,
+      "max_torque": 80.0,
+      "red_line_rpm": 12000.0,
+      "generator_efficiency": 0.9
+    }
+  ]
+}

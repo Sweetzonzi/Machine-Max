@@ -21,20 +21,16 @@ class ColorModule : SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
         pack: SparkPackage,
         isClientSide: Boolean, fromServer: Boolean
     ) {
-        if (FMLEnvironment.dist.isClient && fileName.endsWith(".json") && fromServer) {
-            val nameSpace: String = if (pathSegments.isNotEmpty()) {
-                pathSegments[0]
-            } else {
-                MachineMax.MOD_ID
-            }
-            val path = fileName.substringBeforeLast(".")
-            val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
+        if (isClientSide && fileName.endsWith(".json") && fromServer) {
+            val path = fileName.removeSuffix(".json")
+            val id = ResourceLocation.fromNamespaceAndPath(namespace, path)
             val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
             MMDynamicRes.COLORS[id] = json
         }

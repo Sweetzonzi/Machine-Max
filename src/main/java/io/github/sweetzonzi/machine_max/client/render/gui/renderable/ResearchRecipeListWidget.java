@@ -114,7 +114,7 @@ public class ResearchRecipeListWidget extends AbstractScrollWidget {
             g.renderItem(result, getX() + 4, yPos + 6);
 
             // === 名称 + 版本号 ===
-            Component name = Component.translatable(holder.id().toLanguageKey())
+            Component name = result.getHoverName().copy()
                     .append(FabricatingBlueprintItem.buildVersion(Math.max(0, state.researchLevel() - 1)));
             int nameColor = state.unlocked()
                     ? TEXT_NORMAL

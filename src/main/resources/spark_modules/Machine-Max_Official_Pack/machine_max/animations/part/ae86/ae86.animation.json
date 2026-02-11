@@ -1,0 +1,58 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.streetcar_gtr.new": {
+			"loop": true,
+			"bones": {
+				"Fire": {
+					"scale": 0
+				},
+				"rot2": {
+					"rotation": [0, 0, "vehicle.get('steering')*225"]
+				},
+				"throttle": {
+					"position": [0, 0, "-1.0*vehicle.get('throttle')"]
+				},
+				"brake": {
+					"position": [0, 0, "-1.0*vehicle.get('brake')"]
+				},
+				"axisRightFront": {
+					"rotation": [0, 0, "math.atan2(subpart.connector_offset('connector.machine_max.right_front_wheel', 1)*16,20)"]
+				},
+				"axisLeftFront": {
+					"rotation": [0, 0, "-math.atan2(subpart.connector_offset('connector.machine_max.left_front_wheel', 1)*16,20)"]
+				},
+				"axisRightBack": {
+					"rotation": [0, 0, "math.atan2(subpart.connector_offset('connector.machine_max.right_back_wheel', 1)*16,20)"]
+				},
+				"axisLeftBack": {
+					"rotation": [0, 0, "-math.atan2(subpart.connector_offset('connector.machine_max.left_back_wheel', 1)*16,20)"]
+				},
+				"rodLeftBack": {
+					"rotation": ["65.7725-math.atan2(20-subpart.connector_offset('connector.machine_max.left_back_wheel', 1)*16,9)", 0, 0]
+				},
+				"rodRightBack": {
+					"rotation": ["65.7725-math.atan2(20-subpart.connector_offset('connector.machine_max.right_back_wheel', 1)*16,9)", 0, 0]
+				},
+				"rodRightFront": {
+					"rotation": ["-65.7725+math.atan2(20-subpart.connector_offset('connector.machine_max.right_front_wheel', 1)*16,9)", 0, 0]
+				},
+				"rodLeftFront": {
+					"rotation": ["-65.7725+math.atan2(20-subpart.connector_offset('connector.machine_max.left_front_wheel', 1)*16,9)", 0, 0]
+				},
+				"rodLeftBackInner": {
+					"scale": [1, "math.sqrt(math.pow(20-subpart.connector_offset('connector.machine_max.left_back_wheel', 1)*16,2)+81)/22", 1]
+				},
+				"rodRightBackInner": {
+					"scale": [1, "math.sqrt(math.pow(20-subpart.connector_offset('connector.machine_max.right_back_wheel', 1)*16,2)+81)/22", 1]
+				},
+				"rodRightFrontInner": {
+					"scale": [1, "math.sqrt(math.pow(20-subpart.connector_offset('connector.machine_max.right_front_wheel', 1)*16,2)+81)/22", 1]
+				},
+				"rodLeftFrontInner": {
+					"scale": [1, "math.sqrt(math.pow(20-subpart.connector_offset('connector.machine_max.left_front_wheel', 1)*16,2)+81)/22", 1]
+				}
+			}
+		}
+	}
+}

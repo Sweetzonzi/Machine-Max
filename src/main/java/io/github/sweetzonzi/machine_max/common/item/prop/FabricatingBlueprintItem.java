@@ -17,6 +17,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import net.minecraft.network.chat.Component;
@@ -151,8 +152,9 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
 public @NotNull Component getName(@NotNull ItemStack stack) {
     try {
         ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
+        RecipeHolder<FabricatingRecipe> recipeHolder = MMDynamicRes.ALL_RECIPES.get(type);
         int researchLevel = stack.getOrDefault(MMDataComponents.getRESEARCH_LEVEL(), 0);
-        return Component.translatable(type.toLanguageKey())
+        return recipeHolder.value().getResult().getHoverName().copy()
                 .append(Component.translatable("item.machine_max.fabricating_blueprint"))
                 .append(buildVersion(researchLevel));
     } catch (Exception e) {

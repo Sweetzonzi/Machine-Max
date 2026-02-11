@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/base/resource_location.json",
+  "title": "Resource Location",
+  "description": "Minecraft resource location identifier, format is 'namespace:path'",
+  "type": "string",
+  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+  "examples": [
+    "minecraft:fly_into_wall",
+    "machine_max:has_pen_depth",
+    "machine_max:textures/icon/part_icon.png"
+  ],
+  "default": "machine_max:empty"
+}

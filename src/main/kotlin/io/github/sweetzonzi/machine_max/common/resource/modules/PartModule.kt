@@ -26,6 +26,7 @@ class PartModule : SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
@@ -33,13 +34,8 @@ class PartModule : SparkPackModule {
         isClientSide: Boolean, fromServer: Boolean
     ) {
         if (fileName.endsWith(".json") && fromServer) {
-            val nameSpace: String = if (pathSegments.isNotEmpty()) {
-                pathSegments[0]
-            } else {
-                MachineMax.MOD_ID
-            }
-            val path = fileName.substringBeforeLast(".")
-            val id = ResourceLocation.fromNamespaceAndPath(nameSpace, path)
+            val path = fileName.removeSuffix(".json")
+            val id = ResourceLocation.fromNamespaceAndPath(namespace, path)
             try{
                 val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
                 val partType = PartType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first

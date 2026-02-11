@@ -97,45 +97,50 @@ object MMCreativeTabs {
 
     @SubscribeEvent
     fun putPartsIntoCreativeTab(event: BuildCreativeModeTabContentsEvent) {
-        if (event.tab == MACHINE_MAX_PART_TAB.get()) {
-            MachineMax.LOGGER.info("Putting parts into creative tab...")
-            val externalParts = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
-            MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
-                val itemStack = ItemStack(MMItems.PART_ITEM)
-                itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
-                itemStack.set(MMDataComponents.PART_TYPE, loc)
-                externalParts.add(itemStack)
+        when (event.tab) {
+            MACHINE_MAX_PART_TAB.get() -> {
+                MachineMax.LOGGER.info("Putting parts into creative tab...")
+                val externalParts = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
+                MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
+                    val itemStack = ItemStack(MMItems.PART_ITEM)
+                    itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
+                    itemStack.set(MMDataComponents.PART_TYPE, loc)
+                    externalParts.add(itemStack)
+                }
+                externalParts.forEach { event.accept(it) }
             }
-            externalParts.forEach { event.accept(it) }
-        } else if (event.tab == MACHINE_MAX_ASSEMBLY_TAB.get()) {
-            MachineMax.LOGGER.info("Putting assemblies into creative tab...")
-            val externalAssemblies = ArrayList<ItemStack>(1)//将所有外部包预装配体加入创造物品栏
-            MMDynamicRes.TEMPLATES.forEach { (loc, _) ->
-                val itemStack = ItemStack(MMItems.ASSEMBLY_ITEM)
-                itemStack.set(MMDataComponents.ASSEMBLY_PATH, loc)
-                externalAssemblies.add(itemStack)
+            MACHINE_MAX_ASSEMBLY_TAB.get() -> {
+                MachineMax.LOGGER.info("Putting assemblies into creative tab...")
+                val externalAssemblies = ArrayList<ItemStack>(1)//将所有外部包预装配体加入创造物品栏
+                MMDynamicRes.TEMPLATES.forEach { (loc, _) ->
+                    val itemStack = ItemStack(MMItems.ASSEMBLY_ITEM)
+                    itemStack.set(MMDataComponents.ASSEMBLY_PATH, loc)
+                    externalAssemblies.add(itemStack)
+                }
+                externalAssemblies.forEach { event.accept(it) }
             }
-            externalAssemblies.forEach { event.accept(it) }
-        }  else if (event.tab == MACHINE_MAX_VEHICLE_BLUEPRINT_TAB.get()) {
-            MachineMax.LOGGER.info("Putting blueprints into creative tab...")
-            val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包载具蓝图加入创造物品栏
-            MMDynamicRes.TEMPLATES.forEach { (loc, _) ->
-                val itemStack = ItemStack(MMItems.VEHICLE_BLUEPRINT)
-                itemStack.set(MMDataComponents.VEHICLE_BLUEPRINT_PATH, loc)
-                externalBlueprints.add(itemStack)
+            MACHINE_MAX_VEHICLE_BLUEPRINT_TAB.get() -> {
+                MachineMax.LOGGER.info("Putting blueprints into creative tab...")
+                val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包载具蓝图加入创造物品栏
+                MMDynamicRes.TEMPLATES.forEach { (loc, _) ->
+                    val itemStack = ItemStack(MMItems.VEHICLE_BLUEPRINT)
+                    itemStack.set(MMDataComponents.VEHICLE_BLUEPRINT_PATH, loc)
+                    externalBlueprints.add(itemStack)
+                }
+                externalBlueprints.forEach { event.accept(it) }
             }
-            externalBlueprints.forEach { event.accept(it) }
-        } else if (event.tab == MACHINE_MAX_FABRICATING_BLUEPRINT_TAB.get()) {
-            MachineMax.LOGGER.info("Putting fabricating blueprints into creative tab...")
-            val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包部件蓝图加入创造物品栏
-            MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
-                val itemStack = ItemStack(MMItems.FABRICATING_BLUEPRINT)
-                itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
-                itemStack.set(MMDataComponents.RESEARCH_LEVEL, 0)
-                itemStack.set(MMDataComponents.PART_TYPE, loc)
-                externalBlueprints.add(itemStack)
+            MACHINE_MAX_FABRICATING_BLUEPRINT_TAB.get() -> {
+                MachineMax.LOGGER.info("Putting fabricating blueprints into creative tab...")
+                val externalBlueprints = ArrayList<ItemStack>(1)//将所有外部包部件蓝图加入创造物品栏
+                MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
+                    val itemStack = ItemStack(MMItems.FABRICATING_BLUEPRINT)
+                    itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
+                    itemStack.set(MMDataComponents.RESEARCH_LEVEL, 0)
+                    itemStack.set(MMDataComponents.PART_TYPE, loc)
+                    externalBlueprints.add(itemStack)
+                }
+                externalBlueprints.forEach { event.accept(it) }
             }
-            externalBlueprints.forEach { event.accept(it) }
         }
     }
 }

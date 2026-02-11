@@ -21,6 +21,7 @@ class TooltipModule : SparkPackModule {
     }
 
     override fun read(
+        namespace: String,
         pathSegments: List<String>,
         fileName: String,
         content: ByteArray,
@@ -28,13 +29,8 @@ class TooltipModule : SparkPackModule {
         isClientSide: Boolean, fromServer: Boolean
     ) {
         if (isClientSide && fromServer) {
-            val nameSpace: String = if (pathSegments.isNotEmpty()) {
-                pathSegments[0]
-            } else {
-                MachineMax.MOD_ID
-            }
             try{
-                val id = ResourceLocation.fromNamespaceAndPath(nameSpace, fileName)
+                val id = ResourceLocation.fromNamespaceAndPath(namespace, fileName)
                 val string = String(content, StandardCharsets.UTF_8)
                 MMDynamicRes.TOOLTIPS[id] = string
             } catch (e: Exception){

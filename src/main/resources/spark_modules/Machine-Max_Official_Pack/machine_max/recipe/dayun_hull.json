@@ -1,0 +1,53 @@
+{
+  "type": "machine_max:fabricating",
+  "research_cost": 400, // 首次研发的研发点消耗
+  "upgrade_cost": 150, // 升级蓝图等级的研发点消耗
+  "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
+    {
+      "ingredient": {
+        "item": "minecraft:gold_ingot"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 8
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass_pane"
+      },
+      "count": 12
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 1,
+    "components": {
+      "machine_max:part_type": "machine_max:dayun_hull"
+    }
+  },
+  "time": 400
+}

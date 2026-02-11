@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/car_controller_static_attr.json",
+  "title": "车辆控制器子系统静态属性",
+  "description": "车辆控制系统的静态属性，负责处理驾驶输入、转向控制等。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:car_controller",
+      "description": "子系统类型，必须为'machine_max:car_controller'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "steering_center": {
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0, 0, 0],
+      "description": "转向中心位置，相对于部件局部坐标系。"
+    },
+    "steering_radius": {
+      "type": "number",
+      "minimum": 0,
+      "default": 5.0,
+      "description": "转向半径，单位米，用于计算转向角度。"
+    },
+    "manual_gear_shift": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否启用手动换挡。若为false，则自动换挡。"
+    },
+    "auto_hand_brake": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否自动启用手刹。当车辆静止且无输入时自动应用手刹。"
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["move_control"],
+      "description": "控制输入信号键列表，优先级从高到低。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:car_controller",
+      "basic_durability": 50.0,
+      "steering_radius": 5.0,
+      "manual_gear_shift": true,
+      "control_inputs": ["move_control", "regular_control"]
+    }
+  ]
+}

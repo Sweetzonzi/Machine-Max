@@ -1,0 +1,182 @@
+{
+  "$schema": "../../../docs/zh_cn/schemas/part_definition_schema.json",
+  "vehicle_durability_rate": 1.0,
+  "vehicle_damage_rate": 0.5,
+  "vehicle_damage_rate_destroyed": 0.1,
+  "variants": {
+    "left": {
+      "icon": "machine_max:textures/icon/jeep_wheel.png",
+      "model": "machine_max:jeep_wheel_left.geo",
+      "textures": {
+        "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",
+        "print.machine_max.white": "machine_max:textures/part/jeep/jeep2.png"
+      },
+      "tags": [
+        "wheel",
+        "left"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "durability": 250.0,
+          "mass": 45.0,
+          "block_collision": "ground",
+          "collision_height": 1.5,
+          "climb_assist": true,
+          "hit_boxes": {
+            "CollisionShape": {
+              "type": "cylinder",
+              "friction": [
+                1.5,
+                2.0,
+                1.0
+              ],
+              "slip_adaptation": 0.5,
+              "rolling_friction": 0.05,
+              "restitution": 0.2,
+              "block_damage_factor": 0.05,
+              "damage_modifiers": [
+                {
+                  "operation": "multiply",
+                  "value": 0.1,
+                  "condition": {
+                    "type": "damage_type",
+                    "id": "minecraft:fly_into_wall"
+                  }
+                },
+                {
+                  "operation": "add",
+                  "value": -2.0,
+                  "condition": {
+                    "type": "damage_type",
+                    "id": "minecraft:fly_into_wall"
+                  }
+                },
+                {
+                  "operation": "multiply",
+                  "value": 0.05,
+                  "condition": {
+                    "type": "damage_type",
+                    "id": "minecraft:sweet_berry_bush"
+                  }
+                },
+                {
+                  "operation": "multiply",
+                  "value": 0.05,
+                  "condition": {
+                    "type": "entity_type",
+                    "id": "minecraft:slime"
+                  }
+                },
+                {
+                  "operation": "multiply",
+                  "value": 0.1,
+                  "condition": {
+                    "type": "entity_type",
+                    "id": "minecraft:magma_cube"
+                  }
+                }
+              ]
+            }
+          },
+          "connectors": {
+            "connector.machine_max.chassis_connection": {
+              "locator": "chassis_locator",
+              "type": "Simple",
+              "direction": "xp",
+              "integrity": 40.0,
+              "impact_reduction": 3.0,
+              "impact_multiplier": 0.8
+            }
+          }
+        }
+      }
+    },
+    "right": {
+      "icon": "machine_max:textures/icon/jeep_wheel.png",
+      "model": "machine_max:jeep_wheel_right.geo",
+      "textures": {
+        "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",
+        "print.machine_max.white": "machine_max:textures/part/jeep/jeep2.png"
+      },
+      "tags": [
+        "wheel",
+        "right"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "durability": 250.0,
+          "mass": 45.0,
+          "block_collision": "ground",
+          "collision_height": 1.5,
+          "climb_assist": true,
+          "hit_boxes": {
+            "CollisionShape": {
+              "type": "cylinder",
+              "friction": [
+                2.0,
+                2.25,
+                1.0
+              ],
+              "slip_adaptation": 0.5,
+              "rolling_friction": 0.05,
+              "restitution": 0.2,
+              "block_damage_factor": 0.05,
+              "damage_modifiers": [
+                {
+                  "operation": "multiply",
+                  "value": 0.1,
+                  "condition": {
+                    "type": "damage_type",
+                    "id": "minecraft:fly_into_wall"
+                  }
+                },
+                {
+                  "operation": "add",
+                  "value": -2.0,
+                  "condition": {
+                    "type": "damage_type",
+                    "id": "minecraft:fly_into_wall"
+                  }
+                },
+                {
+                  "operation": "multiply",
+                  "value": 0.05,
+                  "condition": {
+                    "type": "damage_type",
+                    "id": "minecraft:sweet_berry_bush"
+                  }
+                },
+                {
+                  "operation": "multiply",
+                  "value": 0.05,
+                  "condition": {
+                    "type": "entity_type",
+                    "id": "minecraft:slime"
+                  }
+                },
+                {
+                  "operation": "multiply",
+                  "value": 0.1,
+                  "condition": {
+                    "type": "entity_type",
+                    "id": "minecraft:magma_cube"
+                  }
+                }
+              ]
+            }
+          },
+          "connectors": {
+            "connector.machine_max.chassis_connection": {
+              "locator": "chassis_locator",
+              "type": "Simple",
+              "direction": "xn",
+              "integrity": 40.0,
+              "impact_reduction": 3.0, 
+              "impact_multiplier": 0.8
+            }
+          }
+        }
+      }
+    }
+  }
+}
