@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/gearbox_dynamic_attr.json",
+  "title": "Transmission Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the transmission, defining power output targets and gear signal output.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:gearbox",
+      "description": "Subsystem type, must be 'machine_max:gearbox'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "power_output": {
+      "type": "string",
+      "description": "Power output target, subsystem or part interface name."
+    },
+    "gear_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": { "gear": ["part", "vehicle"] },
+      "description": "Gear name output channel and targets. Optional, by default sends current gear name to the gear channel of parts and vehicles."
+    }
+  },
+  "required": ["type", "definition", "power_output"],
+  "examples": [
+    {
+      "type": "machine_max:gearbox",
+      "definition": "machine_max:ae86at_gearbox",
+      "power_output": "transmission",
+      "gear_outputs": { "gear": ["part", "vehicle"] }
+    }
+  ]
+}

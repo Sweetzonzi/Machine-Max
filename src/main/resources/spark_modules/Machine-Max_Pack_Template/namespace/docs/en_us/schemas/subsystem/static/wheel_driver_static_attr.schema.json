@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/wheel_driver_static_attr.json",
+  "title": "Wheel Driver Subsystem Static Attributes",
+  "description": "Static attributes of the wheel driver, including driving force and steering characteristics.",
+  "definitions": {
+    "StaticWheelRollingAxisAttr": {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+          "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+        },
+        "max_drive_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 10000.0,
+          "description": "Maximum driving force, in newtons (N)."
+        },
+        "basic_durability": {
+          "type": "number",
+          "minimum": 0,
+          "default": 20.0,
+          "description": "Subsystem basic durability, becomes paralyzed when reduced to 0, restores functionality when repaired to 30% durability."
+        },
+        "max_brake_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 3500.0,
+          "description": "Maximum braking force, in newtons (N)."
+        },
+        "max_hand_brake_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.0,
+          "description": "Maximum handbrake force, in newtons (N)."
+        },
+        "max_speed": {
+          "type": "number",
+          "minimum": 0,
+          "default": 3140.0,
+          "description": "Maximum rotational speed, in radians per second (rad/s)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "StaticWheelSteeringAxisAttr": {
+      "type": "object",
+      "properties": {
+        "max_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 5000.0,
+          "description": "Maximum steering force, in newtons (N)."
+        },
+        "max_speed": {
+          "type": "number",
+          "minimum": 0,
+          "default": 3.14,
+          "description": "Maximum steering speed, in radians per second (rad/s)."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:wheel_driver",
+      "description": "Subsystem type, must be 'machine_max:wheel_driver'."
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["wheel_control", "move_control"],
+      "description": "List of control input signal keys."
+    },
+    "roll": {
+      "$ref": "#/definitions/StaticWheelRollingAxisAttr",
+      "default": {
+        "max_drive_force": 10000.0,
+        "max_brake_force": 1500.0,
+        "max_hand_brake_force": 0.0,
+        "max_speed": 3140.0
+      },
+      "description": "Rolling axis attributes."
+    },
+    "steering": {
+      "$ref": "#/definitions/StaticWheelSteeringAxisAttr",
+      "default": {
+        "max_force": 4000.0,
+        "max_speed": 3.14
+      },
+      "description": "Steering axis attributes."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:wheel_driver",
+      "basic_durability": 40.0,
+      "control_inputs": ["wheel_control"],
+      "roll": {
+        "max_drive_force": 12000.0,
+        "max_brake_force": 4000.0,
+        "max_speed": 2800.0
+      },
+      "steering": {
+        "max_force": 3000.0,
+        "max_speed": 2.5
+      }
+    }
+  ]
+}
