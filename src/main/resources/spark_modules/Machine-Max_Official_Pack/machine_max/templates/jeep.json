@@ -1,14 +1,14 @@
 {
   "max": [
-    2.8496202741350487,
-    2.2043042864118263,
-    1.8569989885602638
+    2.8850228445870485,
+    2.123870849609375,
+    1.8559483119419582
   ],
   "hp": 20.0,
   "parts": {
     "1ad2f771-662d-4b1a-89f2-4a941dbe98cd": {
       "custom_recipe": "machine_max:jeep_wheel",
-      "material_assembling_progress": 28,
+      "material_assembling_progress": 7,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.yellow",
@@ -17,29 +17,29 @@
               "integrity": 40.0
             }
           },
-          "id": 69,
+          "id": 1,
           "durability": 250.0,
           "pos_rot_vel_vel": {
             "position": [
-              48.08115,
-              -59.31584,
-              -106.02932
+              -65.46233,
+              -59.315857,
+              -50.996944
             ],
             "rotation": [
-              -0.6984646,
-              -0.11418499,
-              0.70016336,
-              -0.09423584
+              -0.69577044,
+              -0.13209306,
+              0.6970144,
+              -0.11236479
             ],
             "linear_vel": [
-              0.007307603,
-              -0.0030486137,
-              -7.565453E-4
+              -0.013967973,
+              -4.891008E-4,
+              0.0018171389
             ],
             "angular_vel": [
-              -2.3283064E-8,
-              -0.0017799111,
-              0.0068768905
+              0.011094308,
+              0.0011168283,
+              0.021616042
             ]
           }
         }
@@ -49,7 +49,8 @@
       "uuid": "1ad2f771-662d-4b1a-89f2-4a941dbe98cd",
       "variant": "right"
     },
-    "86ee56f5-cbe4-40a1-826d-9a611b5034b9": {
+    "fc25bb13-7a76-41ac-a9c9-96985ab49439": {
+      "custom_recipe": "machine_max:jeep_hull",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -83,83 +84,41 @@
               "integrity": 20.0
             }
           },
-          "id": 70,
+          "id": 19,
           "durability": 550.0,
           "pos_rot_vel_vel": {
             "position": [
-              49.873966,
-              -59.052124,
-              -104.413185
+              -63.667786,
+              -58.4897,
+              -49.37606
             ],
             "rotation": [
-              0.00417425,
-              0.7094104,
-              0.0019995412,
-              0.70478046
+              0.0041826586,
+              0.70941406,
+              0.0020113713,
+              0.70477664
             ],
             "linear_vel": [
-              -0.002899231,
-              -5.95659E-4,
-              0.0026826465
+              -0.009055337,
+              2.592653E-4,
+              0.0039515556
             ],
             "angular_vel": [
-              -0.0011541296,
-              -0.0020178535,
-              -1.2624427E-4
+              -0.0017962956,
+              9.920899E-4,
+              -0.0019734944
             ]
           }
         }
       },
       "registry_key": "machine_max:jeep_hull",
-      "name": "machine_max.jeep_hull",
-      "uuid": "86ee56f5-cbe4-40a1-826d-9a611b5034b9",
+      "name": "吉普牧马人车壳",
+      "uuid": "fc25bb13-7a76-41ac-a9c9-96985ab49439",
       "variant": "default"
     },
-    "a43f450b-7fd8-48f3-a724-440577da09c2": {
-      "custom_recipe": "machine_max:jeep_wheel",
-      "material_assembling_progress": 28,
-      "sub_parts": {
-        "sub_part.machine_max.main": {
-          "texture_name": "print.machine_max.yellow",
-          "connector_data": {
-            "connector.machine_max.chassis_connection": {
-              "integrity": 40.0
-            }
-          },
-          "id": 71,
-          "durability": 250.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              53.0954,
-              -58.17135,
-              -104.42653
-            ],
-            "rotation": [
-              0.004365307,
-              0.003267349,
-              -0.0015398393,
-              0.99998397
-            ],
-            "linear_vel": [
-              -0.002759931,
-              -0.0010626614,
-              0.008254132
-            ],
-            "angular_vel": [
-              -0.0011674948,
-              -0.002376697,
-              -2.7540722E-4
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:jeep_wheel",
-      "name": "machine_max.jeep_wheel",
-      "uuid": "a43f450b-7fd8-48f3-a724-440577da09c2",
-      "variant": "right"
-    },
     "333335cf-6c85-461c-95ba-674b08a65336": {
-      "material_assembling_progress": 2147483647,
+      "custom_recipe": "machine_max:jeep_chassis",
+      "material_assembling_progress": 12,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.yellow",
@@ -223,29 +182,29 @@
               "durability": 500.0
             }
           },
-          "id": 72,
+          "id": 4,
           "durability": 550.0,
           "pos_rot_vel_vel": {
             "position": [
-              49.93608,
-              -59.177307,
-              -104.41478
+              -63.607403,
+              -59.177357,
+              -49.382526
             ],
             "rotation": [
-              0.004191108,
-              0.7094127,
-              0.0020174265,
-              0.70477796
+              0.00418564,
+              0.70941496,
+              0.0020206827,
+              0.7047757
             ],
             "linear_vel": [
-              -0.0024095713,
-              -5.4602325E-4,
-              0.002089089
+              -0.010408031,
+              9.101629E-5,
+              0.004838055
             ],
             "angular_vel": [
-              -7.446979E-4,
-              -0.0018942694,
-              3.8088067E-5
+              -0.0016416551,
+              0.0010290274,
+              -0.0018530707
             ]
           }
         }
@@ -257,7 +216,7 @@
     },
     "2d3531e8-30af-4e57-86fb-ec049393553b": {
       "custom_recipe": "machine_max:jeep_wheel",
-      "material_assembling_progress": 28,
+      "material_assembling_progress": 7,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.yellow",
@@ -266,29 +225,29 @@
               "integrity": 40.0
             }
           },
-          "id": 73,
+          "id": 5,
           "durability": 250.0,
           "pos_rot_vel_vel": {
             "position": [
-              51.819557,
-              -59.328377,
-              -103.06891
+              -61.72379,
+              -59.32835,
+              -48.036633
             ],
             "rotation": [
-              0.3968558,
-              0.58265847,
-              -0.4047304,
-              0.5824155
+              0.3924259,
+              0.5856842,
+              -0.40032297,
+              0.58542085
             ],
             "linear_vel": [
-              -0.0049901,
-              -7.3581934E-4,
-              0.004964434
+              -0.0051088585,
+              7.813275E-4,
+              0.00449681
             ],
             "angular_vel": [
-              0.0017270057,
-              -0.0024295838,
-              -2.5322846E-8
+              -0.005629464,
+              1.6562175E-4,
+              0.005981915
             ]
           }
         }
@@ -298,9 +257,9 @@
       "uuid": "2d3531e8-30af-4e57-86fb-ec049393553b",
       "variant": "left"
     },
-    "b566d612-2a32-4518-be27-26dac6c091a7": {
+    "1f0c02f6-c25c-4a6d-a491-e1f548d4177c": {
       "custom_recipe": "machine_max:jeep_wheel",
-      "material_assembling_progress": 28,
+      "material_assembling_progress": 2147483647,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.yellow",
@@ -309,29 +268,72 @@
               "integrity": 40.0
             }
           },
-          "id": 74,
+          "id": 21,
           "durability": 250.0,
           "pos_rot_vel_vel": {
             "position": [
-              51.79988,
-              -59.330032,
-              -106.053665
+              -60.698097,
+              -58.170624,
+              -49.392693
             ],
             "rotation": [
-              -0.6436113,
-              0.29413745,
-              0.64556956,
-              0.2872066
+              0.001541295,
+              0.99998385,
+              0.004379743,
+              -0.003275918
             ],
             "linear_vel": [
-              0.002340165,
-              9.985268E-5,
-              0.0019440355
+              -0.008441912,
+              -0.005681142,
+              3.9979862E-4
             ],
             "angular_vel": [
-              0.009298929,
-              -0.0044032475,
-              0.001353495
+              -0.0017989968,
+              9.375118E-4,
+              -0.0021483256
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:jeep_wheel",
+      "name": "吉普牧马人车轮",
+      "uuid": "1f0c02f6-c25c-4a6d-a491-e1f548d4177c",
+      "variant": "left"
+    },
+    "b566d612-2a32-4518-be27-26dac6c091a7": {
+      "custom_recipe": "machine_max:jeep_wheel",
+      "material_assembling_progress": 7,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "texture_name": "print.machine_max.yellow",
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 40.0
+            }
+          },
+          "id": 6,
+          "durability": 250.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -61.74327,
+              -59.329994,
+              -51.021465
+            ],
+            "rotation": [
+              -0.6458992,
+              0.28907514,
+              0.6477054,
+              0.28236064
+            ],
+            "linear_vel": [
+              -0.0067991973,
+              3.0317903E-4,
+              -0.0015461997
+            ],
+            "angular_vel": [
+              0.010371135,
+              -0.0058590383,
+              0.005301691
             ]
           }
         }
@@ -343,7 +345,7 @@
     },
     "ea8ed9c6-ffbb-44ed-91b7-d1bf2f70e1de": {
       "custom_recipe": "machine_max:jeep_wheel",
-      "material_assembling_progress": 28,
+      "material_assembling_progress": 7,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.yellow",
@@ -352,29 +354,29 @@
               "integrity": 40.0
             }
           },
-          "id": 75,
+          "id": 7,
           "durability": 250.0,
           "pos_rot_vel_vel": {
             "position": [
-              48.10092,
-              -59.328262,
-              -103.02896
+              -65.442566,
+              -59.328274,
+              -47.996685
             ],
             "rotation": [
-              -0.5787331,
-              0.41011348,
-              0.57888615,
-              0.40220106
+              -0.588891,
+              0.3951073,
+              0.58923054,
+              0.3871758
             ],
             "linear_vel": [
-              -0.004246022,
-              3.2381713E-4,
-              -0.0024516364
+              -0.011631352,
+              1.6267598E-4,
+              0.009910474
             ],
             "angular_vel": [
-              -2.7939677E-8,
-              -0.0018207206,
-              0.010376469
+              -0.008314733,
+              0.001955613,
+              0.061145507
             ]
           }
         }
@@ -455,40 +457,6 @@
       }
     },
     {
-      "partUuidS": "86ee56f5-cbe4-40a1-826d-9a611b5034b9",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.chassis_connection",
-      "posRotS": {
-        "position": [
-          0.0,
-          1.046875,
-          -1.625
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "333335cf-6c85-461c-95ba-674b08a65336",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.hull_connection",
-      "posRotA": {
-        "position": [
-          0.0,
-          1.171875,
-          -1.6875
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
       "partUuidS": "1ad2f771-662d-4b1a-89f2-4a941dbe98cd",
       "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.machine_max.chassis_connection",
@@ -557,29 +525,63 @@
       }
     },
     {
-      "partUuidS": "a43f450b-7fd8-48f3-a724-440577da09c2",
+      "partUuidS": "fc25bb13-7a76-41ac-a9c9-96985ab49439",
       "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
         "position": [
-          -0.5,
           0.0,
-          -3.278354E-8
+          0.484375,
+          -1.625
         ],
         "rotation": [
           0.0,
-          0.70710677,
           0.0,
-          0.7071069
+          0.0,
+          1.0
         ]
       },
-      "partUuidA": "86ee56f5-cbe4-40a1-826d-9a611b5034b9",
+      "partUuidA": "333335cf-6c85-461c-95ba-674b08a65336",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_connection",
+      "posRotA": {
+        "position": [
+          0.0,
+          1.171875,
+          -1.6875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "1f0c02f6-c25c-4a6d-a491-e1f548d4177c",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.25,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          -0.7071068,
+          0.0,
+          0.7071068
+        ]
+      },
+      "partUuidA": "fc25bb13-7a76-41ac-a9c9-96985ab49439",
       "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.machine_max.backup_wheel",
       "posRotA": {
         "position": [
           0.0,
-          0.890625,
+          0.328125,
           2.71875
         ],
         "rotation": [
@@ -592,15 +594,15 @@
     }
   ],
   "name": "jeep",
-  "uuid": "bc67b38d-7407-48d2-bf2e-7e2fec15fcb9",
+  "uuid": "96e86660-84fa-4dc4-9d82-dfe83b82bacd",
   "pos": [
-    50.38665444510323,
-    -59.10048730032784,
-    -104.49062020438058
+    -63.192380632672986,
+    -59.02001953125,
+    -49.457529885428286
   ],
   "min": [
-    -3.490479060581748,
-    -1.270514896937783,
-    -1.7051195417131737
+    -3.455080304827014,
+    -1.3512802124023438,
+    -1.705857413155698
   ]
 }

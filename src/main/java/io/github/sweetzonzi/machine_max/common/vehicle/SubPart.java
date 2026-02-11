@@ -33,6 +33,7 @@ import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
@@ -435,6 +436,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //通常粒子效果
             if (level.isClientSide()) {
                 float speed = vel.length();
+                Vector3f finalNormal = normal;
                 level.submitImmediateTask(PPhase.PRE, () -> {
                     if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
                         //飞溅草石
@@ -447,9 +449,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                         contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
                         }
                     }
-                    if (contactVel.length() > 4f && !climbableBlocks.contains(blockPos)) {
+                    if (contactVel.length() > 4f && !climbableBlocks.contains(blockPos) && finalNormal.y > 0.8f) {
                         // 漂移烟雾与音效
-                        if (Math.random() < Math.max(1f, 0.05f * contactVel.length()))
+                        if (Math.random() < Math.max(1f, 0.02f * contactVel.length()))
                             level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
                                     worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
                                     contactVel.x * (0.03f + 0.02f * (Math.random() - 0.5f)),
@@ -470,7 +472,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     @Override
     protected void onCollideWithRigid(PhysicsRigidBody other, Vector3f normal, Vector3f worldContactPoint, Vector3f
-            localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel, int hitBoxIndex, int otherHitBoxIndex,
+                                              localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel, int hitBoxIndex, int otherHitBoxIndex,
                                       float impactAngle, long manifoldPointId) {
         super.onCollideWithRigid(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
@@ -484,13 +486,26 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                         this.body, other, contactVel, normal, worldContactPoint, impactAngle, hitBox, otherHitBox, manifoldPointId
                 );
             }
-            //TODO:撞击伤害计算
+            //TODO:细化撞击伤害计算
+            //不处理速度过小的碰撞
+            if (contactVel.length() < 4f) {
+                return;
+            }
+            //部件伤害
+            float contactEnergy = (0.5f * this.body.getMass() + other.getMass()) * contactVel.mult(normal).lengthSquared();
+            float partDamage = (1f - this.body.getRestitution())
+                    * hitBox.getRHA(this) / (hitBox.getRHA(this) + otherHitBox.getRHA(otherSubPart))
+                    * contactEnergy / 1000f;
+            DamageSource source = level.damageSources().flyIntoWall();
+            if (hitBox.modifyDamage(source, partDamage) > 1)
+                onHurt(level.damageSources().source(MMDamageTypes.PART_COLLISION), partDamage,
+                        null, normal, contactVel, worldContactPoint, hitBox);
         }
     }
 
     @Override
     protected void onCollideWithEntity(PhysicsRigidBody other, Vector3f normal, Vector3f
-            worldContactPoint, Vector3f localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel,
+                                               worldContactPoint, Vector3f localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel,
                                        int hitBoxIndex, int otherHitBoxIndex, float impactAngle, long manifoldPointId) {
         super.onCollideWithEntity(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
@@ -801,8 +816,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float armorPenetration;
             //击退处理与特殊逻辑
             if (projectileSource == null) {//原版伤害处理
-                //冲击效果
-                if (!level.isClientSide()) {
+                //冲击效果 (部件间的冲击交由物理引擎处理)
+                if (!level.isClientSide() && !source.is(MMDamageTypes.PART_COLLISION)) {
                     float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 250f);//伤害转化为动量，使用log函数以使冲量与部件耐久匹配
                     if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
                         knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);

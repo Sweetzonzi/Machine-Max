@@ -1,0 +1,84 @@
+{ 
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:ae86_hull"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:ae86_chassis"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:ae86_wheel"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:ae86_wheel"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:ae86_wheel"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:ae86_wheel"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:ae86_seat"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:ae86_seat"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:ae86_back_seat"
+      },
+      "strict": false
+    }
+  ],
+  "result": { 
+    "id": "machine_max:assembly",
+    "count": 1, 
+    "components": { 
+      "machine_max:assembly_path": "machine_max:ae86"
+    }
+  }
+}

@@ -8,6 +8,14 @@
         "tag": "c:empty_blueprint"
       },
       "count": 1
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:container_16x16x8"
+      },
+      "strict": false
     }
   ],
   "ingredients": [

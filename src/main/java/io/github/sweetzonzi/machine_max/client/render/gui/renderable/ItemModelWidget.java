@@ -2,6 +2,8 @@ package io.github.sweetzonzi.machine_max.client.render.gui.renderable;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
@@ -15,6 +17,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
+import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
 
@@ -23,7 +26,7 @@ public class ItemModelWidget extends AbstractWidget {
     @Getter
     private ItemStack itemStack = ItemStack.EMPTY;
     @Setter
-    private float rotationSpeed = 1.0f; // 旋转速度
+    private float rotationSpeed = 0.3f; // 旋转速度
     @Getter
     private float currentRotation = 0.0f;
     @Setter
@@ -34,8 +37,10 @@ public class ItemModelWidget extends AbstractWidget {
 
     // 鼠标交互相关变量
     private boolean isDragging = false;
-    private float rotationX = -15.0f; // X轴旋转角度（上下视角）
+    private float rotationX = 0.0f; // X轴旋转角度（上下视角）
     private float rotationY = 0.0f;   // Y轴旋转角度（左右视角）
+    private int offsetX = 0; // 渲染平移的X坐标
+    private int offsetY = 0; // 渲染平移的Y坐标
 
     // 缩放限制
     private static final float MIN_SCALE = 10.0f;
@@ -57,9 +62,7 @@ public class ItemModelWidget extends AbstractWidget {
     public void setItemStack(ItemStack itemStack) {
         this.itemStack = itemStack;
         // 重置旋转到默认视角
-        this.currentRotation = 0.0f;
-        this.rotationX = -15.0f;
-        this.rotationY = 0.0f;
+        resetView();
     }
 
     @Override
@@ -90,7 +93,7 @@ public class ItemModelWidget extends AbstractWidget {
             }
 
             // 渲染3D物品模型
-            renderItemModel(graphics, itemStack, getX() + width / 2, getY() + height / 2, scale, currentRotation, rotationX, rotationY);
+            renderItemModel(graphics, itemStack, getX() + width / 2 + offsetX, getY() + height / 2 + offsetY, scale, currentRotation, rotationY, rotationX, 0);
 
             // 如果正在拖动，显示提示边框
             if (isDragging) {
@@ -103,7 +106,9 @@ public class ItemModelWidget extends AbstractWidget {
         }
     }
 
-    private void renderItemModel(GuiGraphics graphics, ItemStack stack, int x, int y, float scale, float rotationYaw, float rotationPitch, float rotationRoll) {
+    private void renderItemModel(GuiGraphics graphics, ItemStack stack, int x, int y, float scale,
+                                 float rotation,
+                                 float extraYaw, float extraPitch, float extraRoll) {
         PoseStack poseStack = graphics.pose();
         poseStack.pushPose();
 
@@ -111,10 +116,12 @@ public class ItemModelWidget extends AbstractWidget {
         poseStack.translate(x, y, 100.0F); // Z坐标确保在GUI上层
         poseStack.scale(scale, -scale, scale);
 
-        // 应用旋转：先绕Y轴（左右旋转），再绕X轴（上下旋转），最后绕Z轴（滚转）
-        poseStack.mulPose(new Quaternionf(new AxisAngle4f((float) Math.toRadians(rotationYaw), 0, 1, 0)));   // Y轴旋转
-        poseStack.mulPose(new Quaternionf(new AxisAngle4f((float) Math.toRadians(rotationPitch), 1, 0, 0))); // X轴旋转
-        poseStack.mulPose(new Quaternionf(new AxisAngle4f((float) Math.toRadians(rotationRoll), 0, 0, 1)));  // Z轴旋转
+        poseStack.mulPose(Axis.YP.rotationDegrees(rotation));   // Y轴旋转
+
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.ZP.rotationDegrees(extraRoll));   // Z轴旋转
+        poseStack.mulPose(Axis.YP.rotationDegrees(extraYaw));   // Y轴旋转
+        poseStack.mulPose(Axis.XP.rotationDegrees(extraPitch)); // X轴旋转
 
         // 设置渲染状态
         RenderSystem.enableBlend();
@@ -136,6 +143,7 @@ public class ItemModelWidget extends AbstractWidget {
         bufferSource.endBatch();
 
         poseStack.popPose();
+        poseStack.popPose();
     }
 
     @Override
@@ -147,7 +155,7 @@ public class ItemModelWidget extends AbstractWidget {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (this.active && this.visible && this.isMouseOver(mouseX, mouseY)) {
-            if (button == 0) { // 左键
+            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
                 this.isDragging = true;
                 return true;
             }
@@ -158,7 +166,7 @@ public class ItemModelWidget extends AbstractWidget {
     // 鼠标释放事件 - 停止拖动
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == 0) { // 左键
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
             this.isDragging = false;
         }
         return super.mouseReleased(mouseX, mouseY, button);
@@ -168,14 +176,16 @@ public class ItemModelWidget extends AbstractWidget {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         if (this.isDragging && this.active && this.visible) {
-            // 更新旋转角度
-            //TODO: 为什么未触发？
-            this.rotationY += (float) dragX * ROTATION_SENSITIVITY;
-            this.rotationX += (float) dragY * ROTATION_SENSITIVITY;
-//            MachineMax.LOGGER.debug("Rotation: (X:%.1f, Y:%.1f)", rotationX, rotationY);
-            // 限制X轴旋转角度（避免过度翻转）
-            this.rotationX = Math.max(-90.0f, Math.min(90.0f, this.rotationX));
-
+            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) { // 左键
+                // 更新旋转角度
+                this.rotationY += (float) dragX * ROTATION_SENSITIVITY;
+                this.rotationX += (float) dragY * ROTATION_SENSITIVITY;
+                // 限制X轴旋转角度（避免过度翻转）
+                this.rotationX = Math.max(-90.0f, Math.min(90.0f, this.rotationX));
+            } else if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) { // 右键
+                this.offsetX += (int) (1 * dragX);
+                this.offsetY += (int) (1 * dragY);
+            }
             return true;
         }
         return false;
@@ -208,8 +218,10 @@ public class ItemModelWidget extends AbstractWidget {
     // 重置视角到默认状态
     public void resetView() {
         this.currentRotation = 0.0f;
-        this.rotationX = -15.0f;
+        this.rotationX = 0.0f;
         this.rotationY = 0.0f;
+        this.offsetX = 0;
+        this.offsetY = 0;
         this.scale = 30.0f;
     }
 

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../docs/zh_cn/schemas/part_definition_schema.json",
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 1.0,
   "vehicle_damage_rate_destroyed": 0.1,

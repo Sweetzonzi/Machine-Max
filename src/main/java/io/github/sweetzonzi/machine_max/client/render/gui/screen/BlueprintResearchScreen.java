@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
+import io.github.sweetzonzi.machine_max.client.render.gui.renderable.ItemModelWidget;
 import io.github.sweetzonzi.machine_max.client.render.gui.renderable.MaterialRequirementsWidget;
 import io.github.sweetzonzi.machine_max.client.render.gui.renderable.ResearchRecipeListWidget;
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
@@ -23,8 +24,12 @@ import java.util.List;
  */
 public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintResearchMenu> {
     private EditBox searchBox;
+    private ItemModelWidget modelWidget;
     private ResearchRecipeListWidget recipeList;
     private MaterialRequirementsWidget materialWidget;
+
+    private static final int THEME = new Color(255, 100, 0, 128).getRGB();
+
     /**
      * 当前选中的科研条目（用于右侧详情）
      */
@@ -76,6 +81,9 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                 if (materialWidget != null) {
                     materialWidget.setRecipe(state.recipe().value());
                 }
+                if (modelWidget != null) {
+                    modelWidget.setItemStack(state.recipe().value().getResultItem(minecraft.level.registryAccess()));
+                }
             }
 
             @Override
@@ -109,17 +117,28 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
         // 材料需求显示
         this.materialWidget = new MaterialRequirementsWidget(
                 leftPos + 175,
-                topPos + 130,
-                215,
+                topPos + 133,
+                220,
                 80,
                 true
         );
         this.addRenderableWidget(materialWidget);
+
+        // 3D模型预览
+        this.modelWidget = new ItemModelWidget(
+                leftPos + this.imageWidth - 120 - 5,
+                topPos + 5,
+                120,
+                120
+        );
+        this.modelWidget.setScale(20.0f);
+        this.addRenderableWidget(modelWidget);
+
     }
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        return this.getFocused() != null && this.isDragging() && button == 0 && this.getFocused().mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return this.getFocused() != null && (button == 0 || button == 1) && this.getFocused().mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     private void rebuildEntries() {
@@ -188,22 +207,32 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
     public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         renderBlurredBackground(partialTick);
         this.renderBg(guiGraphics, partialTick, mouseX, mouseY);
+        // 物品详情
+        if (selected != null) {
+            guiGraphics.drawCenteredString(font, "///WIP///", leftPos + 220, topPos + 58, 0xAAAAAA);
+        } else {
+            guiGraphics.drawCenteredString(font, "///WIP///", leftPos + 220, topPos + 58, 0xAAAAAA);
+        }
     }
 
     @Override
     protected void renderBg(@NotNull GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         // 使用纯色背景区分区域
-        int bgColor = new Color(25, 25, 25, 64).getRGB();
-        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, bgColor);
+        int bgColor1 = new Color(25, 25, 25, 64).getRGB();
+        int bgColor2 = new Color(25, 25, 25, 128).getRGB();
+        graphics.fillGradient(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, bgColor1, bgColor2);
         // 绘制区域分隔线
         int lineColor = new Color(25, 25, 25, 128).getRGB();
         graphics.fill(leftPos + 170, topPos + 5, leftPos + 172, topPos + imageHeight - 5, lineColor); // 左分隔
-        graphics.fill(leftPos + imageWidth - 100, topPos + 5, leftPos + imageWidth - 102, topPos + 124, lineColor); // 右分隔
+        graphics.fill(leftPos + imageWidth - 130, topPos + 5, leftPos + imageWidth - 132, topPos + 128, lineColor); // 右分隔
         // 绘制水平分隔线
-        graphics.fill(leftPos + 170, topPos + 124, leftPos + imageWidth - 5, topPos + 126, lineColor); // 材料区域上方
-
+        graphics.fill(leftPos + 172, topPos + 128, leftPos + imageWidth - 5, topPos + 130, lineColor); // 材料区域上方
+        graphics.fill(leftPos, topPos, leftPos + 5, topPos + imageHeight, THEME);
         // 显示自由研发点
-        graphics.drawString(font, "Free Rp: " + menu.getResearch().getFreeResearchPoint(), leftPos + 8, topPos - 4, Color.WHITE.getRGB());
+        Component freeRpText = Component.translatable("gui.machine_max.research.free_rp")
+                .append(Component.literal(String.valueOf(getMenu().getResearch().getFreeResearchPoint())));
+        graphics.fill(0, 0, font.width(freeRpText.getString()) + 2, 10, bgColor1);
+        graphics.drawString(font, freeRpText, 1, 1, Color.WHITE.getRGB());
 
     }
 }
