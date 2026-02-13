@@ -1,0 +1,7 @@
+{
+  "values": [
+    "minecraft:fly_into_wall",
+    "minecraft:fall",
+    "machine_max:part_collision"
+  ]
+}

@@ -1,0 +1,79 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 256,
+				"texture_height": 256,
+				"visible_bounds_width": 9,
+				"visible_bounds_height": 4.5,
+				"visible_bounds_offset": [0, 1.75, 0]
+			},
+			"bones": [
+				{
+					"name": "BackBumper",
+					"pivot": [0, -0.29323, -0.96617],
+					"cubes": [
+						{
+							"origin": [-19.5, -4.97446, -6.10831],
+							"size": [39, 3, 7],
+							"pivot": [0, 6.02554, -27.10831],
+							"rotation": [10, 0, 0],
+							"uv": {
+								"north": {"uv": [141, 98], "uv_size": [39, 3]},
+								"east": {"uv": [226, 165], "uv_size": [7, 3]},
+								"south": {"uv": [160, 149], "uv_size": [39, 3]},
+								"west": {"uv": [216, 226], "uv_size": [7, 3]},
+								"up": {"uv": [31, 99], "uv_size": [39, 7]},
+								"down": {"uv": [101, 7], "uv_size": [39, -7]}
+							}
+						},
+						{
+							"origin": [-19, -2.9452, -4.62356],
+							"size": [38, 3, 5],
+							"uv": {
+								"north": {"uv": [75, 165], "uv_size": [38, 3]},
+								"east": {"uv": [74, 237], "uv_size": [5, 3]},
+								"south": {"uv": [166, 72], "uv_size": [38, 3]},
+								"west": {"uv": [104, 237], "uv_size": [5, 3]},
+								"up": {"uv": [130, 118], "uv_size": [38, 5]},
+								"down": {"uv": [0, 143], "uv_size": [38, -5]}
+							}
+						},
+						{
+							"origin": [-6, -5.97446, 0.39169],
+							"size": [12, 5, 1],
+							"pivot": [0, 6.02554, -26.60831],
+							"rotation": [10, 0, 0],
+							"uv": {
+								"north": {"uv": [181, 65], "uv_size": [12, 5]},
+								"east": {"uv": [122, 58], "uv_size": [1, 5]},
+								"south": {"uv": [182, 6], "uv_size": [12, 5]},
+								"west": {"uv": [124, 72], "uv_size": [1, 5]},
+								"up": {"uv": [161, 65], "uv_size": [12, 1]},
+								"down": {"uv": [178, 115], "uv_size": [12, -1]}
+							}
+						}
+					],
+					"locators": {
+						"back_bumper_hull_left": [16, -1.1952, -1.75],
+						"back_bumper_hull_right": [-16, -1.1952, -1.75]
+					}
+				},
+				{
+					"name": "Collision",
+					"parent": "BackBumper",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-19, -2.9452, -4.62356],
+							"size": [38, 6, 7],
+							"uv": {}
+						}
+					]
+				}
+			]
+		}
+	]
+}

@@ -34,6 +34,7 @@ import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
+import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
@@ -289,12 +290,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float blockRestitution = block.getRestitution();
             float blockSlip = block.getSlip();
             //等效质量计算，考虑连接部件的影响
-            double partMass = body.getMass();
-            for (AbstractConnector connector : this.connectors.values()) {
-                if (connector.hasPart())
-                    partMass += (0.3 * connector.attachedConnector.subPart.body.getMass());
-            }
-            partMass += 0.05 * (part.vehicle.totalMass - body.getMass());
+            float partMass = this.getEquivalentMass();
             //摩擦力修正
             float slip = (float) 1 - (blockSlip * (1 - hitBox.attr.slipAdaptation()));//潮湿与打滑带来的修正系数
             if (contactVel.length() > 1f && impactAngle > 60f && impactAngle < 120f) {//打滑时
@@ -311,10 +307,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     Vector3f frictionTorque = contactVel.normalize()
                             .mult((float) (1 - Math.exp(-0.05 * Math.abs(contactVel.lengthSquared()))))
                             .mult(ManifoldPoints.getCombinedFriction(manifoldPointId))
-                            .mult((float) (partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId)));
+                            .mult(partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId));
                     Vector3f frictionImpulse = new Vector3f(0, (float) (1 - Math.exp(-0.5 * Math.abs(contactVel.y))), 0)
                             .mult(ManifoldPoints.getCombinedFriction(manifoldPointId))
-                            .mult((float) (-partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId)));
+                            .mult(-partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId));
                     if (frictionTorque.lengthSquared() > 0.1f)
                         body.applyTorqueImpulse(worldContactPoint.subtract(body.getPhysicsLocation(null)).cross(frictionTorque));
                     if (frictionImpulse.lengthSquared() > 0.1f)
@@ -449,7 +445,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                         contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
                         }
                     }
-                    if (contactVel.length() > 4f && !climbableBlocks.contains(blockPos) && finalNormal.y > 0.8f) {
+                    if (contactVel.length() > 4f && !climbableBlocks.contains(blockPos) && finalNormal.y > 0.95f) {
                         // 漂移烟雾与音效
                         if (Math.random() < Math.max(1f, 0.02f * contactVel.length()))
                             level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
@@ -486,19 +482,22 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                         this.body, other, contactVel, normal, worldContactPoint, impactAngle, hitBox, otherHitBox, manifoldPointId
                 );
             }
-            //TODO:细化撞击伤害计算
             //不处理速度过小的碰撞
-            if (contactVel.length() < 4f) {
+            if (contactVel.length() < 2f) {
                 return;
             }
-            //部件伤害
-            float contactEnergy = (0.5f * this.body.getMass() + other.getMass()) * contactVel.mult(normal).lengthSquared();
-            float partDamage = (1f - this.body.getRestitution())
-                    * hitBox.getRHA(this) / (hitBox.getRHA(this) + otherHitBox.getRHA(otherSubPart))
-                    * contactEnergy / 1000f;
-            DamageSource source = level.damageSources().flyIntoWall();
-            if (hitBox.modifyDamage(source, partDamage) > 1)
-                onHurt(level.damageSources().source(MMDamageTypes.PART_COLLISION), partDamage,
+            // 计算碰撞法线方向上的相对速度
+            float contactNormalVel = contactVel.dot(normal);
+            // 基于双方材质属性重设碰撞恢复系数
+            float restitution = (float) Math.sqrt(body.getRestitution() * other.getRestitution());
+            ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
+            // 计算给对方施加的速度变化
+            float deltaVel = (1 + restitution) * contactNormalVel * this.getEquivalentMass() / (this.getEquivalentMass() + otherSubPart.getEquivalentMass());
+            //基于能量对对方部件造成伤害
+            float partDamage = 0.0005f * deltaVel * deltaVel * body.getMass();
+            DamageSource source = level.damageSources().source(MMDamageTypes.PART_COLLISION);
+            if (otherHitBox.modifyDamage(source, partDamage) > 1)
+                otherSubPart.onHurt(level.damageSources().source(MMDamageTypes.PART_COLLISION), partDamage,
                         null, normal, contactVel, worldContactPoint, hitBox);
         }
     }
@@ -815,7 +814,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float armor = hitBox.getRHA(this);
             float armorPenetration;
             //击退处理与特殊逻辑
-            if (projectileSource == null) {//原版伤害处理
+            if (!source.is(MMTags.HAS_PEN_DEPTH)) {//原版伤害处理
                 //冲击效果 (部件间的冲击交由物理引擎处理)
                 if (!level.isClientSide() && !source.is(MMDamageTypes.PART_COLLISION)) {
                     float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 250f);//伤害转化为动量，使用log函数以使冲量与部件耐久匹配
@@ -1017,6 +1016,16 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
+    public float getEquivalentMass() {
+        float partMass = body.getMass();
+        for (AbstractConnector connector : this.connectors.values()) {
+            if (connector.hasPart())
+                partMass += (0.3f * connector.attachedConnector.subPart.body.getMass());
+        }
+        partMass += 0.05f * (part.vehicle.totalMass - body.getMass());
+        return partMass;
+    }
+
     @NotNull
     public HitBox getHitBox(int contactPointIndex) {
         try {
@@ -1059,7 +1068,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Transform getLocatorWorldTransform(String locatorName) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            Transform localTransform = attr.getLocatorTransforms().get(part.variantName).get(locatorName);
+            Transform localTransform = attr.getLocatorTransforms().get(part.variantName).getOrDefault(locatorName, new Transform());
             return MyMath.combine(localTransform, body.getTransform(null), null);
         } catch (Exception e) {
             return body.getTransform(null);
@@ -1069,7 +1078,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Transform getLocatorLocalTransform(String locatorName) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            return attr.getLocatorTransforms().get(part.variantName).get(locatorName);
+            return attr.getLocatorTransforms().get(part.variantName).getOrDefault(locatorName, new Transform());
         } catch (Exception e) {
             return new Transform();
         }

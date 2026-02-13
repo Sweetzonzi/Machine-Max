@@ -27,12 +27,12 @@
     "DamageTagCondition": {
       "properties": {
         "type": { "const": "damage_tag" },
-        "tag": {
+        "id": {
           "$ref": "../../../../../base/resource_location.schema.json",
           "description": "伤害标签的资源地址，例如：'machine_max:has_pen_depth'。"
         }
       },
-      "required": ["type", "tag"],
+      "required": ["type", "id"],
       "additionalProperties": false,
       "description": "判断伤害是否含有指定标签。"
     },
@@ -51,12 +51,12 @@
     "EntityTagCondition": {
       "properties": {
         "type": { "const": "entity_tag" },
-        "tag": {
+        "id": {
           "$ref": "../../../../../base/resource_location.schema.json",
           "description": "实体标签的资源地址，例如：'minecraft:skeletons'。"
         }
       },
-      "required": ["type", "tag"],
+      "required": ["type", "id"],
       "additionalProperties": false,
       "description": "判断造成伤害的实体是否含有指定标签。"
     },

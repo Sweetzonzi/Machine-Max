@@ -32,7 +32,7 @@
                   "type": "not",
                   "condition": {
                     "type": "damage_tag",
-                    "tag": "machine_max:has_pen_depth"
+                    "id": "machine_max:has_pen_depth"
                   }
                 }
               }
@@ -42,8 +42,8 @@
                 "operation": "add",
                 "value": -10.0,
                 "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:fly_into_wall"
+                  "type": "damage_tag",
+                  "id": "machine_max:is_impact"
                 }
               },
               {
@@ -101,7 +101,7 @@
                   "type": "not",
                   "condition": {
                     "type": "damage_tag",
-                    "tag": "machine_max:has_pen_depth"
+                    "id": "machine_max:has_pen_depth"
                   }
                 }
               }
@@ -111,8 +111,8 @@
                 "operation": "add",
                 "value": -10.0,
                 "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:fly_into_wall"
+                  "type": "damage_tag",
+                  "id": "machine_max:is_impact"
                 }
               },
               {
@@ -170,7 +170,7 @@
                   "type": "not",
                   "condition": {
                     "type": "damage_tag",
-                    "tag": "machine_max:has_pen_depth"
+                    "id": "machine_max:has_pen_depth"
                   }
                 }
               }
@@ -180,8 +180,8 @@
                 "operation": "add",
                 "value": -10.0,
                 "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:fly_into_wall"
+                  "type": "damage_tag",
+                  "id": "machine_max:is_impact"
                 }
               },
               {
@@ -247,6 +247,7 @@
           "connector.machine_max.chassis_connection": {
             "locator": "chassis_locator",
             "type": "Simple",
+            "integrity": 100.0,
             "direction": "yn",
             "signal_targets": {
               "driver_occupied": ["interact.machine_max.left_front_door"],
@@ -289,12 +290,9 @@
         },
         "hydro_priority": 0,
         "hydrodynamics": {
-          "AeroDynamicCenter": {
-            "effective_range": [
-              5.0,
-              5.0,
-              5.0
-            ]
+          "": {
+            "front_drag": [0.1, 0.2],
+            "back_drag": [0.1, 0.4]
           }
         }
       }

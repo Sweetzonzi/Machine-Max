@@ -70,7 +70,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr implem
         //确定转速区间数量
         int rpmCount = getRpmStateIndex(redLineRPM);
         //外层循环：转速区间
-        for (int i = 1; i < rpmCount + 1; i++) {
+        for (int i = 1; i < rpmCount + 2; i++) {
             //内层循环：负载区间
             ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
             for (int j = 0; j < LOAD_STATE_COUNT; j++) {

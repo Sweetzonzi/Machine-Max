@@ -1,0 +1,145 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 256,
+				"texture_height": 256,
+				"visible_bounds_width": 9,
+				"visible_bounds_height": 4.5,
+				"visible_bounds_offset": [0, 1.75, 0]
+			},
+			"bones": [
+				{
+					"name": "RightFrontWheel",
+					"pivot": [0.75, 0, 0],
+					"cubes": [
+						{
+							"origin": [-5, -3, -3],
+							"size": [10, 6, 6],
+							"uv": {
+								"north": {"uv": [198, 176], "uv_size": [-10, 6]},
+								"east": {"uv": [57, 205], "uv_size": [-6, 6]},
+								"south": {"uv": [10, 189], "uv_size": [-10, 6]},
+								"west": {"uv": [87, 204], "uv_size": [-6, 6]},
+								"up": {"uv": [21, 189], "uv_size": [-10, 6]},
+								"down": {"uv": [199, 29], "uv_size": [-10, -6]}
+							}
+						},
+						{
+							"origin": [-3.75, -9.58579, -4.58579],
+							"size": [6, 3, 4.24264],
+							"pivot": [-2.75, -4.58579, 2.65685],
+							"rotation": [-45, 0, 0],
+							"uv": {
+								"north": {"uv": [120, 230], "uv_size": [-6, 3]},
+								"east": {"uv": [244, 138], "uv_size": [-4, 3]},
+								"south": {"uv": [236, 117], "uv_size": [-6, 3]},
+								"west": {"uv": [84, 240], "uv_size": [-4, 3]},
+								"up": {"uv": [99, 221], "uv_size": [-6, 4]},
+								"down": {"uv": [106, 225], "uv_size": [-6, -4]}
+							}
+						},
+						{
+							"origin": [-3.75, -3, -6],
+							"size": [6, 6, 3],
+							"inflate": 0.005,
+							"uv": {
+								"north": {"uv": [64, 205], "uv_size": [-6, 6]},
+								"east": {"uv": [137, 230], "uv_size": [-3, 6]},
+								"south": {"uv": [211, 127], "uv_size": [-6, 6]},
+								"west": {"uv": [233, 121], "uv_size": [-3, 6]},
+								"up": {"uv": [236, 128], "uv_size": [-6, 3]},
+								"down": {"uv": [144, 233], "uv_size": [-6, -3]}
+							}
+						},
+						{
+							"origin": [-3.75, -0.43503, -9.70711],
+							"size": [6, 4.24264, 3],
+							"pivot": [-2.75, -3.19239, -3.70711],
+							"rotation": [-45, 0, 0],
+							"uv": {
+								"north": {"uv": [224, 221], "uv_size": [-6, 4]},
+								"east": {"uv": [73, 240], "uv_size": [-3, 4]},
+								"south": {"uv": [228, 10], "uv_size": [-6, 4]},
+								"west": {"uv": [43, 240], "uv_size": [-3, 4]},
+								"up": {"uv": [184, 230], "uv_size": [-6, 3]},
+								"down": {"uv": [195, 233], "uv_size": [-6, -3]}
+							}
+						},
+						{
+							"origin": [-3.75, -6, -3],
+							"size": [6, 12, 6],
+							"inflate": 0.005,
+							"uv": {
+								"north": {"uv": [30, 168], "uv_size": [-6, 12]},
+								"east": {"uv": [177, 102], "uv_size": [-6, 12]},
+								"south": {"uv": [111, 169], "uv_size": [-6, 12]},
+								"west": {"uv": [104, 169], "uv_size": [-6, 12]},
+								"up": {"uv": [211, 134], "uv_size": [-6, 6]},
+								"down": {"uv": [172, 211], "uv_size": [-6, -6]}
+							}
+						},
+						{
+							"origin": [-3.75, -9.58579, 0.34315],
+							"size": [6, 3, 4.24264],
+							"pivot": [-2.75, -4.58579, -2.65685],
+							"rotation": [45, 0, 0],
+							"uv": {
+								"north": {"uv": [236, 197], "uv_size": [-6, 3]},
+								"east": {"uv": [55, 241], "uv_size": [-4, 3]},
+								"south": {"uv": [208, 230], "uv_size": [-6, 3]},
+								"west": {"uv": [244, 142], "uv_size": [-4, 3]},
+								"up": {"uv": [228, 87], "uv_size": [-6, 4]},
+								"down": {"uv": [127, 226], "uv_size": [-6, -4]}
+							}
+						},
+						{
+							"origin": [-3.75, -3, 3],
+							"size": [6, 6, 3],
+							"inflate": 0.005,
+							"uv": {
+								"north": {"uv": [195, 205], "uv_size": [-6, 6]},
+								"east": {"uv": [212, 230], "uv_size": [-3, 6]},
+								"south": {"uv": [71, 206], "uv_size": [-6, 6]},
+								"west": {"uv": [148, 230], "uv_size": [-3, 6]},
+								"up": {"uv": [219, 230], "uv_size": [-6, 3]},
+								"down": {"uv": [237, 59], "uv_size": [-6, -3]}
+							}
+						},
+						{
+							"origin": [-3.75, -0.43503, 6.70711],
+							"size": [6, 4.24264, 3],
+							"pivot": [-2.75, -3.19239, 3.70711],
+							"rotation": [45, 0, 0],
+							"uv": {
+								"north": {"uv": [228, 151], "uv_size": [-6, 4]},
+								"east": {"uv": [96, 241], "uv_size": [-3, 4]},
+								"south": {"uv": [191, 222], "uv_size": [-6, 4]},
+								"west": {"uv": [77, 241], "uv_size": [-3, 4]},
+								"up": {"uv": [237, 64], "uv_size": [-6, 3]},
+								"down": {"uv": [237, 110], "uv_size": [-6, -3]}
+							}
+						}
+					],
+					"locators": {
+						"chassis_connection": [0.75, 0, -0.00004]
+					}
+				},
+				{
+					"name": "Collision",
+					"parent": "RightFrontWheel",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-3.8, -6, -6],
+							"size": [6, 12, 12],
+							"uv": {}
+						}
+					]
+				}
+			]
+		}
+	]
+}

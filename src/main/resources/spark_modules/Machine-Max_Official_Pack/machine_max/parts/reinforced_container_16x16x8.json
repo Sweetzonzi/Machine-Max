@@ -33,7 +33,7 @@
                   "type": "not", // 条件类型, 支持always、damage_type、damage_tag、entity_type、entity_tag、not、and、or
                   "condition": { // not条件需要一个condition字段, 里面可以填入其他条件, 会将其结果反转
                     "type": "damage_tag", // 判断伤害是否含有指定标签
-                    "tag": "machine_max:has_pen_depth" // 标签名
+                    "id": "machine_max:has_pen_depth" // 标签名
                   }
                 }
               }
@@ -43,8 +43,8 @@
                 "operation": "add", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
                 "value": -5.0, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减5点（不小于0）
                 "condition": {
-                  "type": "damage_type", // 判断伤害是否为某个类型
-                  "id": "minecraft:fly_into_wall" // 伤害类型注册名
+                  "type": "damage_tag", // 判断伤害是否属于某个标签
+                    "id": "machine_max:is_impact" // 伤害标签注册名
                 }
               },
               {
@@ -108,7 +108,7 @@
             "locator": "up",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "type": "Simple", //连接点类型, 支持Simple和Advanced
             "direction": "yp",
-            "integrity": 40.0,//(可选, 默认20.0)部件基础结构完整度, 部件可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "integrity": 40.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
             "impact_multiplier": 0.8 //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
           },

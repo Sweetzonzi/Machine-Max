@@ -31,7 +31,7 @@
                   "type": "not",
                   "condition": {
                     "type": "damage_tag",
-                    "tag": "machine_max:has_pen_depth"
+                    "id": "machine_max:has_pen_depth"
                   }
                 }
               }
@@ -41,8 +41,8 @@
                 "operation": "add",
                 "value": -10.0,
                 "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:fly_into_wall"
+                  "type": "damage_tag",
+                  "id": "machine_max:is_impact"
                 }
               },
               {
@@ -101,7 +101,7 @@
                   "type": "not",
                   "condition": {
                     "type": "damage_tag",
-                    "tag": "machine_max:has_pen_depth"
+                    "id": "machine_max:has_pen_depth"
                   }
                 }
               }
@@ -111,8 +111,8 @@
                 "operation": "add",
                 "value": -5.0,
                 "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:fly_into_wall"
+                  "type": "damage_tag",
+                  "id": "machine_max:is_impact"
                 }
               },
               {
@@ -171,7 +171,7 @@
                   "type": "not",
                   "condition": {
                     "type": "damage_tag",
-                    "tag": "machine_max:has_pen_depth"
+                    "id": "machine_max:has_pen_depth"
                   }
                 }
               }
@@ -181,8 +181,8 @@
                 "operation": "add",
                 "value": -5.0,
                 "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:fly_into_wall"
+                  "type": "damage_tag",
+                  "id": "machine_max:is_impact"
                 }
               },
               {
@@ -401,7 +401,7 @@
             "locator": "left_front_wheel",
             "type": "Advanced",
             "direction": "xn",
-            "integrity": 500.0,
+            "integrity": 100.0,
             "impact_reduction": 3.0,
             "impact_multiplier": 0.8,
             "required_tags": [
@@ -440,7 +440,7 @@
             "locator": "left_back_wheel",
             "type": "Advanced",
             "direction": "xn",
-            "integrity": 500.0,
+            "integrity": 100.0,
             "required_tags": [
               "variant:left"
             ],
@@ -471,7 +471,7 @@
             "locator": "right_back_wheel",
             "type": "Advanced",
             "direction": "xp",
-            "integrity": 1500.0,
+            "integrity": 100.0,
             "required_tags": [
               "variant:right"
             ],
@@ -502,7 +502,7 @@
             "locator": "right_front_wheel",
             "type": "Advanced",
             "direction": "xp",
-            "integrity": 500.0,
+            "integrity": 100.0,
             "required_tags": [
               "variant:right"
             ],
@@ -538,6 +538,7 @@
           "connector.machine_max.hull_connection": {
             "locator": "hull",
             "type": "Advanced",
+            "integrity": 100.0,
             "required_tags": ["hull"],
             "signal_targets": {
               "left_door_interact": ["subsystem.machine_max.driver_seat"],
@@ -549,14 +550,11 @@
             "type": "Simple"
           }
         },
-        "hydro_priority": 0,
+        "hydro_priority": 1,
         "hydrodynamics": {
-          "AeroDynamicCenter": {
-            "effective_range": [
-              5.0,
-              5.0,
-              5.0
-            ]
+          "": {
+            "front_drag": [0.1, 0.2],
+            "back_drag": [0.1, 0.4]
           }
         }
       }

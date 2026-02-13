@@ -39,16 +39,16 @@
                   "operation": "multiply",
                   "value": 0.1,
                   "condition": {
-                    "type": "damage_type",
-                    "id": "minecraft:fly_into_wall"
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
                   }
                 },
                 {
                   "operation": "add",
                   "value": -2.0,
                   "condition": {
-                    "type": "damage_type",
-                    "id": "minecraft:fly_into_wall"
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
                   }
                 },
                 {
@@ -86,6 +86,16 @@
               "integrity": 40.0,
               "impact_reduction": 3.0,
               "impact_multiplier": 0.8
+            }
+          },
+          "hydrodynamics": {
+            "": {
+              "front_drag": [0.1, 0.35],
+              "back_drag": [0.1, 0.35],
+              "left_drag": [0.1, 0.35],
+              "right_drag": [0.1, 0.35],
+              "up_drag": [0.1, 0.35],
+              "down_drag": [0.1, 0.35]
             }
           }
         }
@@ -126,16 +136,16 @@
                   "operation": "multiply",
                   "value": 0.1,
                   "condition": {
-                    "type": "damage_type",
-                    "id": "minecraft:fly_into_wall"
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
                   }
                 },
                 {
                   "operation": "add",
                   "value": -2.0,
                   "condition": {
-                    "type": "damage_type",
-                    "id": "minecraft:fly_into_wall"
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
                   }
                 },
                 {
@@ -173,6 +183,16 @@
               "integrity": 40.0,
               "impact_reduction": 3.0, 
               "impact_multiplier": 0.8
+            }
+          },
+          "hydrodynamics": {
+            "": {
+              "front_drag": [0.1, 0.35],
+              "back_drag": [0.1, 0.35],
+              "left_drag": [0.1, 0.35],
+              "right_drag": [0.1, 0.35],
+              "up_drag": [0.1, 0.35],
+              "down_drag": [0.1, 0.35]
             }
           }
         }

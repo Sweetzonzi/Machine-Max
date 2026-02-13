@@ -378,13 +378,18 @@ public class VehicleAssemblyAttachment {
             }
             var locators = model.getLocators();
             OLocator partConnectorLocator = locators.get(getConnector().locatorName());
-            Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
-            Matrix4f pose = new Matrix4f();
-            partConnectorLocator.getBone().applyTransformWithParents(pose, startBone);
-            pose.translate(partConnectorLocator.getOffset().toVector3f())
-                    .rotate(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x));
-            this.offset = pose.getTranslation(new Vector3f());
-            this.quaternion = pose.getNormalizedRotation(new Quaternionf());
+            if (partConnectorLocator != null) {
+                Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
+                Matrix4f pose = new Matrix4f();
+                partConnectorLocator.getBone().applyTransformWithParents(pose, startBone);
+                pose.translate(partConnectorLocator.getOffset().toVector3f())
+                        .rotate(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x));
+                this.offset = pose.getTranslation(new Vector3f());
+                this.quaternion = pose.getNormalizedRotation(new Quaternionf());
+            } else {
+                this.offset = new Vector3f();
+                this.quaternion = new Quaternionf();
+            }
         }
     }
 }

@@ -1,0 +1,1119 @@
+{
+  "max": [
+    1.4756331010298283,
+    1.5857585560191794,
+    2.333002263849437
+  ],
+  "hp": 20.0,
+  "parts": {
+    "6d220007-0045-4c42-873c-51130a9083e4": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 1,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              53.44613,
+              -59.62484,
+              -137.6193
+            ],
+            "rotation": [
+              0.060086463,
+              0.49935275,
+              0.8642837,
+              -0.0070876437
+            ],
+            "linear_vel": [
+              -0.14289919,
+              0.007747218,
+              0.12294442
+            ],
+            "angular_vel": [
+              0.3100415,
+              -0.08543271,
+              0.3348334
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_wheel",
+      "name": "machine_max.wine_fox_wheel",
+      "uuid": "6d220007-0045-4c42-873c-51130a9083e4",
+      "variant": "right"
+    },
+    "4fe56806-879e-43cf-8201-e2ebae12abeb": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 2,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              55.149963,
+              -59.623623,
+              -140.38753
+            ],
+            "rotation": [
+              0.04043712,
+              0.53850967,
+              0.84071815,
+              -0.0395617
+            ],
+            "linear_vel": [
+              0.05101946,
+              -0.0062975585,
+              0.24063657
+            ],
+            "angular_vel": [
+              0.021139316,
+              -0.068064265,
+              -0.065691106
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_wheel",
+      "name": "machine_max.wine_fox_wheel",
+      "uuid": "4fe56806-879e-43cf-8201-e2ebae12abeb",
+      "variant": "left"
+    },
+    "d8235f79-0703-4803-8f52-f1e06cd58adf": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.lock": {
+              "integrity": 5.0
+            },
+            "connector.machine_max.axis": {
+              "integrity": 25.0
+            }
+          },
+          "id": 3,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              55.41804,
+              -59.02703,
+              -139.0033
+            ],
+            "rotation": [
+              -0.0011378599,
+              0.998462,
+              -7.198513E-4,
+              -0.055423032
+            ],
+            "linear_vel": [
+              -0.032807942,
+              -0.023647994,
+              0.27236527
+            ],
+            "angular_vel": [
+              0.025508866,
+              -0.06939854,
+              -0.026109075
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_door",
+      "name": "machine_max.wine_fox_door",
+      "uuid": "d8235f79-0703-4803-8f52-f1e06cd58adf",
+      "variant": "left"
+    },
+    "99a238b2-e8aa-48a0-860a-5ce024f3a241": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_wheel": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.hood_axis": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.trunk_door_axis": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.left_back_wheel": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.trunk_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.right_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.left_door_axis": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.back_bumper_right": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.hood_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.left_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.right_back_wheel": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.back_bumper_left": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.front_bumper_left": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.right_door_axis": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.front_bumper_right": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.right_front_wheel": {
+              "integrity": 30.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.glove_box": {
+              "Items": [],
+              "durability": 50.0
+            },
+            "subsystem.machine_max.left_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.trunk": {
+              "Items": [],
+              "durability": 100.0
+            },
+            "subsystem.machine_max.motor": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.right_back_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.car_controller": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.right_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.driver_seat": {
+              "durability": 20.0
+            },
+            "subsystem.machine_max.copilot_seat": {
+              "durability": 20.0
+            },
+            "subsystem.machine_max.transmission": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.left_back_wheel_driver": {
+              "durability": 100.0
+            }
+          },
+          "id": 5,
+          "durability": 120.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              54.296303,
+              -59.949543,
+              -139.02618
+            ],
+            "rotation": [
+              -0.0011390978,
+              0.9984614,
+              -7.2025607E-4,
+              -0.05543396
+            ],
+            "linear_vel": [
+              -0.055023428,
+              0.0062379986,
+              0.17164177
+            ],
+            "angular_vel": [
+              0.025384901,
+              -0.06904683,
+              -0.026050402
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_hull",
+      "name": "machine_max.wine_fox_hull",
+      "uuid": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "variant": "default"
+    },
+    "74e2030f-91e1-4d8d-ae1f-ff3f00a45be7": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right": {
+              "integrity": 15.0
+            },
+            "connector.machine_max.left": {
+              "integrity": 15.0
+            }
+          },
+          "id": 6,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              54.516087,
+              -59.63341,
+              -137.04672
+            ],
+            "rotation": [
+              -0.0011431735,
+              0.998462,
+              -7.345862E-4,
+              -0.05542311
+            ],
+            "linear_vel": [
+              -0.18348925,
+              -0.049697205,
+              0.19487189
+            ],
+            "angular_vel": [
+              0.02530592,
+              -0.0690697,
+              -0.026047371
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_bumper",
+      "name": "machine_max.wine_fox_bumper",
+      "uuid": "74e2030f-91e1-4d8d-ae1f-ff3f00a45be7",
+      "variant": "front"
+    },
+    "6c41f469-4593-4ba9-83e4-b4da0d7f424b": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.lock": {
+              "integrity": 5.0
+            },
+            "connector.machine_max.axis": {
+              "integrity": 25.0
+            }
+          },
+          "id": 23,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              54.10652,
+              -58.92079,
+              -140.71028
+            ],
+            "rotation": [
+              -0.0011376021,
+              0.9984622,
+              -7.222777E-4,
+              -0.055419616
+            ],
+            "linear_vel": [
+              0.08785362,
+              0.053897887,
+              0.18456306
+            ],
+            "angular_vel": [
+              0.025383454,
+              -0.06902592,
+              -0.026039295
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_trunk_door",
+      "name": "",
+      "uuid": "6c41f469-4593-4ba9-83e4-b4da0d7f424b",
+      "variant": "default"
+    },
+    "40b1a05d-6ec4-4bb8-974b-15d67336268e": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.lock": {
+              "integrity": 5.0
+            },
+            "connector.machine_max.axis": {
+              "integrity": 25.0
+            }
+          },
+          "id": 7,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              54.448524,
+              -58.8536,
+              -137.63786
+            ],
+            "rotation": [
+              -0.0011380808,
+              0.9984615,
+              -7.267497E-4,
+              -0.05543238
+            ],
+            "linear_vel": [
+              -0.12228368,
+              -0.0329805,
+              0.20992711
+            ],
+            "angular_vel": [
+              0.02562234,
+              -0.0688681,
+              -0.02595621
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_hood",
+      "name": "machine_max.wine_fox_hood",
+      "uuid": "40b1a05d-6ec4-4bb8-974b-15d67336268e",
+      "variant": "default"
+    },
+    "e96877db-2520-4291-9428-a19f06c7b254": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 8,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              55.43374,
+              -59.6237,
+              -137.84067
+            ],
+            "rotation": [
+              0.044612147,
+              0.4524767,
+              0.88998926,
+              -0.03454852
+            ],
+            "linear_vel": [
+              -0.126323,
+              -0.009713948,
+              0.2592425
+            ],
+            "angular_vel": [
+              0.5459037,
+              -0.057746194,
+              -0.10099244
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_wheel",
+      "name": "machine_max.wine_fox_wheel",
+      "uuid": "e96877db-2520-4291-9428-a19f06c7b254",
+      "variant": "left"
+    },
+    "9873672c-d3e8-4f49-98e9-861d1d28bd0d": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 9,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              53.162952,
+              -59.62335,
+              -140.1666
+            ],
+            "rotation": [
+              0.05637588,
+              0.07672356,
+              0.9954214,
+              0.008455985
+            ],
+            "linear_vel": [
+              0.03684281,
+              -0.010360673,
+              0.0977691
+            ],
+            "angular_vel": [
+              0.0722495,
+              -0.066413365,
+              0.14189246
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_wheel",
+      "name": "machine_max.wine_fox_wheel",
+      "uuid": "9873672c-d3e8-4f49-98e9-861d1d28bd0d",
+      "variant": "right"
+    },
+    "e7929aed-4882-4ad5-9518-20ced3cc667f": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right": {
+              "integrity": 15.0
+            },
+            "connector.machine_max.left": {
+              "integrity": 15.0
+            }
+          },
+          "id": 10,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              54.07573,
+              -59.518597,
+              -140.99895
+            ],
+            "rotation": [
+              -0.0011345934,
+              0.9984632,
+              -7.2050316E-4,
+              -0.055401687
+            ],
+            "linear_vel": [
+              0.09266302,
+              0.0620099,
+              0.1671768
+            ],
+            "angular_vel": [
+              0.025404137,
+              -0.06925245,
+              -0.026106514
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_bumper",
+      "name": "machine_max.wine_fox_bumper",
+      "uuid": "e7929aed-4882-4ad5-9518-20ced3cc667f",
+      "variant": "back"
+    },
+    "a99095c1-73c9-413f-93e2-c72909a4f333": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.lock": {
+              "integrity": 5.0
+            },
+            "connector.machine_max.axis": {
+              "integrity": 25.0
+            }
+          },
+          "id": 11,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              53.20306,
+              -59.031918,
+              -138.75659
+            ],
+            "rotation": [
+              -0.001136569,
+              0.998462,
+              -7.189276E-4,
+              -0.05542308
+            ],
+            "linear_vel": [
+              -0.049930274,
+              0.02785793,
+              0.119623415
+            ],
+            "angular_vel": [
+              0.025326937,
+              -0.06931469,
+              -0.026077922
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:wine_fox_door",
+      "name": "machine_max.wine_fox_door",
+      "uuid": "a99095c1-73c9-413f-93e2-c72909a4f333",
+      "variant": "right"
+    }
+  },
+  "connections": [
+    {
+      "partUuidS": "e96877db-2520-4291-9428-a19f06c7b254",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.046875,
+          0.0,
+          -2.5E-6
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_wheel",
+      "posRotA": {
+        "position": [
+          -0.953125,
+          0.375,
+          -1.3046
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "4fe56806-879e-43cf-8201-e2ebae12abeb",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.046875,
+          0.0,
+          -2.5E-6
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_wheel",
+      "posRotA": {
+        "position": [
+          -0.953125,
+          0.375,
+          1.2579
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "6d220007-0045-4c42-873c-51130a9083e4",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.046875,
+          0.0,
+          -2.5E-6
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_wheel",
+      "posRotA": {
+        "position": [
+          0.953125,
+          0.375,
+          -1.3046
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "9873672c-d3e8-4f49-98e9-861d1d28bd0d",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.046875,
+          0.0,
+          -2.5E-6
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_wheel",
+      "posRotA": {
+        "position": [
+          0.953125,
+          0.375,
+          1.2579
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "a99095c1-73c9-413f-93e2-c72909a4f333",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          -0.06746688,
+          0.20516,
+          -0.53125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_door_axis",
+      "posRotA": {
+        "position": [
+          1.046875,
+          1.125,
+          -0.6796
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_door_lock",
+      "posRotS": {
+        "position": [
+          1.046875,
+          1.125,
+          0.3829
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "a99095c1-73c9-413f-93e2-c72909a4f333",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.lock",
+      "posRotA": {
+        "position": [
+          -0.06746688,
+          0.20516,
+          0.53125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "d8235f79-0703-4803-8f52-f1e06cd58adf",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          0.06746688,
+          0.20516,
+          -0.53125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_door_axis",
+      "posRotA": {
+        "position": [
+          -1.046875,
+          1.125,
+          -0.6796
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_door_lock",
+      "posRotS": {
+        "position": [
+          -1.046875,
+          1.125,
+          0.3829
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "d8235f79-0703-4803-8f52-f1e06cd58adf",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.lock",
+      "posRotA": {
+        "position": [
+          0.06746688,
+          0.20516,
+          0.53125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "40b1a05d-6ec4-4bb8-974b-15d67336268e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.15625,
+          0.53125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hood_axis",
+      "posRotA": {
+        "position": [
+          0.0,
+          1.25,
+          -0.8671
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.hood_lock",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.9375,
+          -1.9296
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "40b1a05d-6ec4-4bb8-974b-15d67336268e",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.lock",
+      "posRotA": {
+        "position": [
+          0.0,
+          -0.15625,
+          -0.53125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "e7929aed-4882-4ad5-9518-20ced3cc667f",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left",
+      "posRotS": {
+        "position": [
+          -1.0,
+          -0.0747,
+          -0.109375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.back_bumper_left",
+      "posRotA": {
+        "position": [
+          -1.0,
+          0.359375,
+          1.875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "e7929aed-4882-4ad5-9518-20ced3cc667f",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right",
+      "posRotS": {
+        "position": [
+          1.0,
+          -0.0747,
+          -0.109375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.back_bumper_right",
+      "posRotA": {
+        "position": [
+          1.0,
+          0.359375,
+          1.875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "74e2030f-91e1-4d8d-ae1f-ff3f00a45be7",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left",
+      "posRotS": {
+        "position": [
+          -1.0,
+          0.046365,
+          0.0545975
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.front_bumper_left",
+      "posRotA": {
+        "position": [
+          -1.0,
+          0.359375,
+          -1.9375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "74e2030f-91e1-4d8d-ae1f-ff3f00a45be7",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right",
+      "posRotS": {
+        "position": [
+          1.0,
+          0.046365,
+          0.0545975
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.front_bumper_right",
+      "posRotA": {
+        "position": [
+          1.0,
+          0.359375,
+          -1.9375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "6c41f469-4593-4ba9-83e4-b4da0d7f424b",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.96858877,
+          -0.23209438
+        ],
+        "rotation": [
+          -0.1305262,
+          0.0,
+          0.0,
+          0.9914449
+        ]
+      },
+      "partUuidA": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.trunk_door_axis",
+      "posRotA": {
+        "position": [
+          0.0,
+          2.0,
+          1.461025
+        ],
+        "rotation": [
+          -0.1305262,
+          0.0,
+          0.0,
+          0.9914449
+        ]
+      }
+    },
+    {
+      "partUuidS": "99a238b2-e8aa-48a0-860a-5ce024f3a241",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.trunk_door_lock",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.921875,
+          1.836025
+        ],
+        "rotation": [
+          -0.1305262,
+          0.0,
+          0.0,
+          0.9914449
+        ]
+      },
+      "partUuidA": "6c41f469-4593-4ba9-83e4-b4da0d7f424b",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.lock",
+      "posRotA": {
+        "position": [
+          0.0,
+          -0.10953625,
+          0.14290562
+        ],
+        "rotation": [
+          -0.1305262,
+          0.0,
+          0.0,
+          0.9914449
+        ]
+      }
+    }
+  ],
+  "name": "wine_fox",
+  "uuid": "e509d788-7e82-42b8-a724-32f542610e5d",
+  "pos": [
+    54.29609541459517,
+    -59.40276371348988,
+    -139.0176336115057
+  ],
+  "min": [
+    -1.4617295698686092,
+    -0.80428279529918,
+    -2.304784601384938
+  ]
+}

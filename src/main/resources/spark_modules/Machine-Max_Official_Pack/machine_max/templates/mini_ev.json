@@ -1,14 +1,14 @@
 {
   "max": [
-    2.4320762634277315,
-    2.315713500976564,
-    1.338327026367196
+    2.431037139892581,
+    2.3158866882324247,
+    1.3363273620605511
   ],
   "hp": 20.0,
   "parts": {
     "d4ea307d-4449-4c4a-a66a-65fa90bf7be4": {
       "custom_recipe": "machine_max:mini_ev_wheel",
-      "material_assembling_progress": 12,
+      "material_assembling_progress": 7,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -16,29 +16,29 @@
               "integrity": 40.0
             }
           },
-          "id": 3,
+          "id": 11,
           "durability": 120.0,
           "pos_rot_vel_vel": {
             "position": [
-              46.659275,
-              -59.593273,
-              -104.63961
+              -26.044746,
+              -59.59326,
+              -39.310642
             ],
             "rotation": [
-              -0.35817385,
-              0.61153,
-              0.34043595,
-              0.6179368
+              -0.35965872,
+              0.61101055,
+              0.34198618,
+              0.61673105
             ],
             "linear_vel": [
-              -6.361688E-5,
-              -5.2616E-5,
-              2.3014931E-4
+              1.9533258E-5,
+              -5.070865E-5,
+              9.556663E-5
             ],
             "angular_vel": [
-              -9.921315E-8,
-              3.226992E-6,
-              -4.9835944E-11
+              2.8854877E-6,
+              -4.651111E-6,
+              -3.0658726E-11
             ]
           }
         }
@@ -50,37 +50,37 @@
     },
     "58684240-1cc5-4432-b7fd-5c411648786e": {
       "custom_recipe": "machine_max:mini_ev_wheel",
-      "material_assembling_progress": 12,
+      "material_assembling_progress": 7,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
+              "integrity": 40.0
             }
           },
-          "id": 4,
-          "durability": 20.0,
+          "id": 12,
+          "durability": 120.0,
           "pos_rot_vel_vel": {
             "position": [
-              43.82786,
-              -59.593338,
-              -106.82932
+              -28.877985,
+              -59.59332,
+              -41.49798
             ],
             "rotation": [
-              0.38751465,
-              0.59443265,
-              -0.36959064,
-              0.5999041
+              0.3885925,
+              0.59385103,
+              -0.371093,
+              0.5988546
             ],
             "linear_vel": [
-              2.3615381E-5,
-              -5.017221E-5,
-              9.504653E-5
+              1.9431747E-5,
+              2.1010637E-5,
+              5.2907406E-5
             ],
             "angular_vel": [
-              1.1752737E-6,
-              1.3982094E-6,
-              -8.836467E-12
+              -1.8067458E-7,
+              -6.385711E-6,
+              -4.766314E-11
             ]
           }
         }
@@ -92,37 +92,37 @@
     },
     "be28265b-3115-4bd3-b511-69096341c50e": {
       "custom_recipe": "machine_max:mini_ev_wheel",
-      "material_assembling_progress": 12,
+      "material_assembling_progress": 7,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
             "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
+              "integrity": 40.0
             }
           },
-          "id": 5,
-          "durability": 20.0,
+          "id": 13,
+          "durability": 120.0,
           "pos_rot_vel_vel": {
             "position": [
-              46.702312,
-              -59.59314,
-              -106.77126
+              -26.003492,
+              -59.5931,
+              -41.442356
             ],
             "rotation": [
-              0.56969947,
-              0.4316199,
-              -0.55104697,
-              0.4306901
+              0.56843716,
+              0.43315992,
+              -0.550219,
+              0.43186885
             ],
             "linear_vel": [
-              -2.0148704E-5,
-              5.5730343E-5,
-              -3.9247298E-5
+              1.8241357E-5,
+              1.1342764E-4,
+              9.868921E-5
             ],
             "angular_vel": [
-              3.1389646E-9,
-              -3.0728768E-7,
-              4.669383E-12
+              4.9014284E-7,
+              -4.3353857E-6,
+              3.502415E-12
             ]
           }
         }
@@ -134,7 +134,7 @@
     },
     "d92886e5-7c28-459b-b70d-c6f3252e914c": {
       "custom_recipe": "machine_max:mini_ev_wheel",
-      "material_assembling_progress": 12,
+      "material_assembling_progress": 7,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -142,29 +142,29 @@
               "integrity": 40.0
             }
           },
-          "id": 6,
+          "id": 14,
           "durability": 120.0,
           "pos_rot_vel_vel": {
             "position": [
-              43.784824,
-              -59.59349,
-              -104.69765
+              -28.919226,
+              -59.5935,
+              -39.36627
             ],
             "rotation": [
-              0.40625533,
-              0.5685468,
-              -0.4081918,
-              0.5874441
+              0.407678,
+              0.5677651,
+              -0.40978745,
+              0.58610207
             ],
             "linear_vel": [
-              7.253954E-6,
-              -5.891919E-5,
-              1.9820937E-4
+              3.561196E-6,
+              7.465482E-5,
+              4.8120783E-5
             ],
             "angular_vel": [
-              -3.9623455E-7,
-              2.306676E-6,
-              -1.6860634E-11
+              -3.1301986E-6,
+              -5.386399E-6,
+              2.2486624E-11
             ]
           }
         }
@@ -176,7 +176,7 @@
     },
     "2afb9577-1e5f-42cd-85b2-01a796fcf4b0": {
       "custom_recipe": "machine_max:mini_ev_hull",
-      "material_assembling_progress": 22,
+      "material_assembling_progress": 14,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "texture_name": "print.machine_max.white",
@@ -239,29 +239,29 @@
               "durability": 100.0
             }
           },
-          "id": 7,
+          "id": 15,
           "durability": 290.0,
           "pos_rot_vel_vel": {
             "position": [
-              44.99679,
-              -59.26543,
-              -105.7395
+              -27.708153,
+              -59.265423,
+              -40.409164
             ],
             "rotation": [
-              -0.0017482431,
-              0.699931,
-              0.0015871034,
-              0.7142065
+              -0.0017808934,
+              0.7002314,
+              0.0015839484,
+              0.713912
             ],
             "linear_vel": [
-              3.388517E-5,
-              -1.694262E-5,
-              1.0706152E-4
+              1.1982629E-5,
+              -6.3329935E-6,
+              8.1979124E-5
             ],
             "angular_vel": [
-              -2.8305744E-6,
-              2.1847698E-6,
-              -4.5786583E-6
+              -1.6807602E-6,
+              -1.1365956E-5,
+              2.2439536E-8
             ]
           }
         }
@@ -411,15 +411,15 @@
     }
   ],
   "name": "mini_ev",
-  "uuid": "447cc7fd-126b-45ad-9596-1dc7f7944173",
+  "uuid": "3aa654a0-c349-4aa1-9370-ea5b130502c9",
   "pos": [
-    45.19421310424805,
-    -59.527734375,
-    -105.73546752929688
+    -27.51072044372559,
+    -59.52772064208985,
+    -40.40528182983399
   ],
   "min": [
-    -2.2726432800292997,
-    -0.6798385620117173,
-    -1.3355163574218665
+    -2.271691131591794,
+    -0.6791198730468722,
+    -1.3337699890136676
   ]
 }

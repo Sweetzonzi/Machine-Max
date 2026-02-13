@@ -27,8 +27,8 @@
                 "operation": "add",
                 "value": -10.0,
                 "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:fly_into_wall"
+                  "type": "damage_tag",
+                  "id": "machine_max:is_impact"
                 }
               },
               {

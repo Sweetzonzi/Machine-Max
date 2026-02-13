@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import lombok.Getter;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -32,7 +33,7 @@ public final class DamageModifier {
     ));
 
     public static final DamageModifier DEFAULT_DAMAGE_MODIFIERS = new DamageModifier(List.of(
-            new ModifierEntry(Operation.ADD, -5f, new Condition.DamageTypeCondition(DamageTypes.FLY_INTO_WALL.location())),
+            new ModifierEntry(Operation.ADD, -5f, new Condition.DamageTagCondition(MMTags.IS_IMPACT.location())),
             new ModifierEntry(Operation.MULTIPLY, 0.05f, new Condition.DamageTypeCondition(DamageTypes.SWEET_BERRY_BUSH.location())),
             new ModifierEntry(Operation.MULTIPLY, 0.05f, new Condition.EntityTypeCondition(ResourceLocation.withDefaultNamespace("slime"))),
             new ModifierEntry(Operation.MULTIPLY, 0.1f, new Condition.EntityTypeCondition(ResourceLocation.withDefaultNamespace("magma_cube")))
@@ -256,7 +257,7 @@ public final class DamageModifier {
                             .xmap(DamageTypeCondition::new, DamageTypeCondition::id),
 
                     Type.DAMAGE_TAG, ResourceLocation.CODEC
-                            .fieldOf("tag")
+                            .fieldOf("id")
                             .xmap(DamageTagCondition::new, DamageTagCondition::tag),
 
                     Type.ENTITY_TYPE, ResourceLocation.CODEC
@@ -264,7 +265,7 @@ public final class DamageModifier {
                             .xmap(EntityTypeCondition::new, EntityTypeCondition::id),
 
                     Type.ENTITY_TAG, ResourceLocation.CODEC
-                            .fieldOf("tag")
+                            .fieldOf("id")
                             .xmap(EntityTagCondition::new, EntityTagCondition::tag),
 
                     Type.AND, Codec.list(Condition.CODEC)

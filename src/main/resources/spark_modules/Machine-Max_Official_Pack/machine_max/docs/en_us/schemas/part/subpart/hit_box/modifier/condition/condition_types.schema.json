@@ -27,12 +27,12 @@
     "DamageTagCondition": {
       "properties": {
         "type": { "const": "damage_tag" },
-        "tag": {
+        "id": {
           "$ref": "../../../../../base/resource_location.schema.json",
           "description": "Resource location of damage tag, for example: 'machine_max:has_pen_depth'."
         }
       },
-      "required": ["type", "tag"],
+      "required": ["type", "id"],
       "additionalProperties": false,
       "description": "Check if damage has specified tag."
     },
@@ -51,12 +51,12 @@
     "EntityTagCondition": {
       "properties": {
         "type": { "const": "entity_tag" },
-        "tag": {
+        "id": {
           "$ref": "../../../../../base/resource_location.schema.json",
           "description": "Resource location of entity tag, for example: 'minecraft:skeletons'."
         }
       },
-      "required": ["type", "tag"],
+      "required": ["type", "id"],
       "additionalProperties": false,
       "description": "Check if the entity causing damage has specified tag."
     },
