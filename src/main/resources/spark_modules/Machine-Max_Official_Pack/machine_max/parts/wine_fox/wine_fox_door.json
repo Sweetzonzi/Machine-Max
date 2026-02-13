@@ -63,6 +63,13 @@
               "direction": "yn",
               "integrity": 5.0 //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             }
+          },
+          "projected_area": [0.19, 1.04, 0.29],
+          "hydrodynamics": {
+            "": {
+              "front_drag": [0.1, 0.1],
+              "back_drag": [0.1, 0.1]
+            }
           }
         }
       }
@@ -125,6 +132,13 @@
               "type": "Simple", //连接点类型, 支持Simple和Advanced
               "direction": "yn",
               "integrity": 5.0 //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            }
+          },
+          "projected_area": [0.19, 1.04, 0.29],
+          "hydrodynamics": {
+            "": {
+              "front_drag": [0.1, 0.1],
+              "back_drag": [0.1, 0.1]
             }
           }
         }

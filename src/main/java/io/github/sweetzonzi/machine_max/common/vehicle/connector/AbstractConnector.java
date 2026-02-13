@@ -275,8 +275,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         //设置关节属性，默认全自由度锁死，且相连零件之间无碰撞
         joint.setCollisionBetweenLinkedBodies(collideBetweenParts);
         if (!collideBetweenParts) { // 若两零件被设置为不与相邻零件碰撞，则脱落后保持这种关系
-            joint.getBodyA().addToIgnoreList(joint.getBodyB());
-            joint.getBodyB().addToIgnoreList(joint.getBodyA());
+//            joint.getBodyA().addToIgnoreList(joint.getBodyB());
+//            joint.getBodyB().addToIgnoreList(joint.getBodyA());
         }
         joint.set(MotorParam.LowerLimit, 3, 0);
         joint.set(MotorParam.LowerLimit, 4, 0);

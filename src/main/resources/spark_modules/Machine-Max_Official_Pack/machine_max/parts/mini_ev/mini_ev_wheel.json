@@ -79,6 +79,7 @@
               "impact_multiplier": 0.8 //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
             }
           },
+          "projected_area": [0.66, 0.21, 0.21],
           "hydrodynamics": {
             "": {
               "front_drag": [0.0, 0.35],
@@ -167,6 +168,7 @@
               "impact_multiplier": 0.8
             }
           },
+          "projected_area": [0.66, 0.21, 0.21],
           "hydrodynamics": {
             "": {
               "front_drag": [0.0, 0.35],

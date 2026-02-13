@@ -93,6 +93,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
                 rotSpeed = 0.99 * rotSpeed;//额外修正
                 setRotSpeed((float) rotSpeed);
             }
+            this.coupleTorquePD.resetError();
             sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         } else if (speedFeedback instanceof Float feedback) {
@@ -105,11 +106,11 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
             ); // 使用耦合扭矩补偿转速差，考虑饱和模拟打滑
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
             if (!getSubPart().level.isClientSide()) { //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
-                rotSpeed += (netTorque - coupleTorque) / attr.staticAttribute.inertia / 60f;
+                rotSpeed += (netTorque + coupleTorque) / attr.staticAttribute.inertia / 60f;
                 rotSpeed = Math.clamp(rotSpeed,
                         -1.1 * attr.staticAttribute.redLineRPM * Math.PI / 30,
                         1.1 * attr.staticAttribute.redLineRPM * Math.PI / 30);
-                rotSpeed = 0.99 * rotSpeed + 0.01 * feedback; //额外修正
+                rotSpeed = 0.95 * rotSpeed + 0.05 * feedback; //额外修正
                 setRotSpeed((float) rotSpeed);
             }
             sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) ((netTorque + coupleTorque) * rotSpeed), (float) rotSpeed));//输出功率

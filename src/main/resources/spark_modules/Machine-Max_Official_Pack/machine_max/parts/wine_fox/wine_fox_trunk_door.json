@@ -62,6 +62,14 @@
             "direction": "yn",
             "integrity": 5.0 //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
           }
+        },
+        "projected_area": [0.23, 0.35, 2.34],
+        "hydrodynamics": {
+          "": {
+            "effective_range": [5, 2, 2],
+            "front_drag": [0.0, 0.3],
+            "back_drag": [0.0, 0.3]
+          }
         }
       }
     }

@@ -7,7 +7,7 @@
     "icon": "machine_max:textures/icon/kluo/kluo_hull_icon.png",
     "model": "machine_max:kluo_hull.geo",
     "textures": "machine_max:textures/part/kluo.png",
-    "animations": "machine_max:empty",
+    "animations": "machine_max:kluo",
     "tags": ["hull", "kluo"],
     "sub_parts": {
       "sub_part.machine_max.main": {
@@ -146,7 +146,7 @@
           "TrunkCollision": { //值:碰撞形状属性
             "id": "trunk",
             "type": "box", //碰撞形状类型, 支持box、sphere、cylinder
-            "subsystem": "connector.machine_max.trunk", //(可选, 默认"")子系统名称, 对此碰撞形状造成的伤害会等量地传导给此子系统, 若为空则不属于任何子系统
+            "subsystem": "subsystem.machine_max.trunk", //(可选, 默认"")子系统名称, 对此碰撞形状造成的伤害会等量地传导给此子系统, 若为空则不属于任何子系统
             "block_damage_factor": 0.95, //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
             "angle_effect": true, //(可选, 默认true)等效护甲厚度是否受入射角度影响, 若为false, 则计算厚度时不考虑入射角度
             "impact_modifiers": [], // (可选, 默认为空列表, 造成多少伤害就对连接点施加多少冲击) 冲击修正器, 将受到的伤害按照一定规则转换为冲击数值施加到各连接点

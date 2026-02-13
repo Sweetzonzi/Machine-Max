@@ -7,7 +7,7 @@
     "icon": "machine_max:textures/icon/wine_fox/wine_fox_hull_icon.png",
     "model": "machine_max:wine_fox_hull.geo",
     "textures": "machine_max:textures/part/wine_fox.png",
-    "animations": "machine_max:empty",
+    "animations": "machine_max:wine_fox",
     "tags": ["hull", "wine_fox"],
     "sub_parts": {
       "sub_part.machine_max.main": {
@@ -89,7 +89,7 @@
           "EngineCollision": { //值:碰撞形状属性
             "id": "engine",
             "type": "box", //碰撞形状类型, 支持box、sphere、cylinder
-            "subsystem": "subsystem.machine_max.motor", //(可选, 默认"")子系统名称, 对此碰撞形状造成的伤害会等量地传导给此子系统, 若为空则不属于任何子系统
+            "subsystem": "subsystem.machine_max.engine", //(可选, 默认"")子系统名称, 对此碰撞形状造成的伤害会等量地传导给此子系统, 若为空则不属于任何子系统
             "block_damage_factor": 0.95, //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
             "angle_effect": true, //(可选, 默认true)等效护甲厚度是否受入射角度影响, 若为false, 则计算厚度时不考虑入射角度
             "impact_modifiers": [], // (可选, 默认为空列表, 造成多少伤害就对连接点施加多少冲击) 冲击修正器, 将受到的伤害按照一定规则转换为冲击数值施加到各连接点
@@ -146,7 +146,7 @@
           "TrunkCollision": { //值:碰撞形状属性
             "id": "trunk",
             "type": "box", //碰撞形状类型, 支持box、sphere、cylinder
-            "subsystem": "connector.machine_max.trunk", //(可选, 默认"")子系统名称, 对此碰撞形状造成的伤害会等量地传导给此子系统, 若为空则不属于任何子系统
+            "subsystem": "subsystem.machine_max.trunk", //(可选, 默认"")子系统名称, 对此碰撞形状造成的伤害会等量地传导给此子系统, 若为空则不属于任何子系统
             "block_damage_factor": 0.95, //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
             "angle_effect": true, //(可选, 默认true)等效护甲厚度是否受入射角度影响, 若为false, 则计算厚度时不考虑入射角度
             "impact_modifiers": [], // (可选, 默认为空列表, 造成多少伤害就对连接点施加多少冲击) 冲击修正器, 将受到的伤害按照一定规则转换为冲击数值施加到各连接点
@@ -267,7 +267,7 @@
             "type": "machine_max:car_controller", //子系统类型
             "definition": "machine_max:wine_fox_car_controller",//子系统型号, 需要与子系统类型相匹配
             "engine_outputs": {
-              "motor_control": ["subsystem.machine_max.motor"]
+              "engine_control": ["subsystem.machine_max.engine"]
             },
             "wheel_outputs": {
               "wheel_control": [
@@ -277,7 +277,9 @@
                 "subsystem.machine_max.right_back_wheel_driver"
               ]
             },
-            "gearbox_outputs": {},
+            "gearbox_outputs": {
+              "gearbox_control": ["subsystem.machine_max.gearbox"]
+            },
             "speed_outputs": { //(可选, 默认将移动速度(m/s)发至部件和载具的vehicle_speed频道)移动速度信号输出频道及目标
               "vehicle_speed": ["part", "vehicle"]
             },
@@ -294,20 +296,28 @@
               "handbrake": ["part", "vehicle"]
             }
           },
-          "subsystem.machine_max.motor": {
-            "type": "machine_max:motor", //电动机子系统, 低速下恒扭矩, 高速下恒功率
-            "definition": "machine_max:wine_fox_motor",//子系统型号, 需要与子系统类型相匹配
-            "power_output": "subsystem.machine_max.transmission", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
+          "subsystem.machine_max.engine": {
+            "type": "machine_max:engine", //电动机子系统, 低速下恒扭矩, 高速下恒功率
+            "definition": "machine_max:wine_fox_engine",//子系统型号, 需要与子系统类型相匹配
+            "power_output": "subsystem.machine_max.gearbox", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
             "speed_outputs": { //(可选, 默认将引擎转速(rad/s)发至部件和载具的engine_speed频道)引擎转速信号输出频道及目标
               "engine_speed": ["part", "vehicle"]
+            }
+          },
+          "subsystem.machine_max.gearbox": {
+            "type": "machine_max:gearbox", //变速箱子系统, 改变收到的功率信号的扭矩和转速
+            "definition": "machine_max:wine_fox_gearbox", //子系统型号, 需要与子系统类型相匹配
+            "power_output": "subsystem.machine_max.transmission", //功率输出目标, 子系统或部件连接点名
+            "gear_outputs": { //(可选, 默认将当前挡位名称发至部件和载具的gear频道)挡位名称输出频道及目标
+              "gear": ["part", "vehicle"]
             }
           },
           "subsystem.machine_max.transmission": {
             "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
             "definition": "machine_max:wine_fox_transmission", //子系统型号, 需要与子系统类型相匹配
             "power_outputs": { //动力输出目标及减速比
-              "subsystem.machine_max.left_front_wheel_driver": 15,
-              "subsystem.machine_max.right_front_wheel_driver": 15
+              "subsystem.machine_max.left_front_wheel_driver": 1,
+              "subsystem.machine_max.right_front_wheel_driver": 1
             }
           },
           "subsystem.machine_max.glove_box": {
@@ -611,6 +621,14 @@
             "type": "Simple",
             "required_tags": ["hood"],
             "integrity": 10.0
+          }
+        },
+        "projected_area": [8.6, 13.9, 6.5],
+        "hydro_priority": 10,
+        "hydrodynamics": {
+          "": {
+            "front_drag": [0.0, 0.3],
+            "back_drag": [0.0, 0.5]
           }
         }
       }

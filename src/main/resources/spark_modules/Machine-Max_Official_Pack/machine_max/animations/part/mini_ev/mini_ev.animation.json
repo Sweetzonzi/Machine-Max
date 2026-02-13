@@ -1,0 +1,13 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"parallel0": {
+			"loop": true,
+			"bones": {
+				"SteeringWheel": {
+					"rotation": [0, 0, "vehicle.get('steering')*225"]
+				}
+			}
+		}
+	}
+}

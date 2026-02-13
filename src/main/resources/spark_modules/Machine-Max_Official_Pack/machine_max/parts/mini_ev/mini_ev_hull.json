@@ -13,7 +13,7 @@
       "print.machine_max.pink": "machine_max:textures/part/mini_ev/mini_ev_pink.png",
       "print.machine_max.mini_ev.white": "machine_max:textures/part/mini_ev/mini_ev_white.png"
     },
-    "animations": "machine_max:empty",
+    "animations": "machine_max:mini_ev",
     "tags": ["hull", "mini_ev"],//(可选, 默认[])部件标签列表
     "sub_parts": {//零件(子部件)列表
       "sub_part.machine_max.main": {//零件(子部件)名称
@@ -314,8 +314,8 @@
             "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
             "definition": "machine_max:mini_ev_transmission", //子系统型号, 需要与子系统类型相匹配
             "power_outputs": { //动力输出目标及减速比
-              "subsystem.machine_max.left_back_wheel_driver": 15,
-              "subsystem.machine_max.right_back_wheel_driver": 15
+              "subsystem.machine_max.left_back_wheel_driver": 12,
+              "subsystem.machine_max.right_back_wheel_driver": 12
             }
           },
           "subsystem.machine_max.glove_box": {
@@ -495,6 +495,7 @@
             "forbidden_tags": []
           }
         },
+        "projected_area": [8.57, 8.57, 5.94],
         "hydrodynamics": {
           "": {
             "front_drag": [0.1, 0.35],
