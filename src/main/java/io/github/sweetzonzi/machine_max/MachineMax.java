@@ -1,11 +1,14 @@
 package io.github.sweetzonzi.machine_max;
 
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
+import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.registry.*;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,5 +64,10 @@ public class MachineMax {
         MMSounds.register();//注册所有音效
         MMResources.register();//注册所有自定义配方类型
         MMPackModuleRegistries.register(bus);//注册所有SparkCore扩展包模块
+        // 注册客户端配置文件
+        container.registerConfig(
+                ModConfig.Type.CLIENT,
+                MMClientConfig.CLIENT_SPEC
+        );
     }
 }

@@ -59,7 +59,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
     @Override
     public void onInteract(LivingEntity entity) {
         super.onInteract(entity);
-        if (!occupied) {//如果此座椅已有乘客，则忽略信号
+        if (!occupied || !isActive()) {//如果此座椅已有乘客或未激活，则忽略信号
             setPassenger(entity);
         }
     }

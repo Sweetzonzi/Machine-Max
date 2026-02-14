@@ -12,5 +12,6 @@
       ],
       "url": "./src/main/resources/spark_modules/Machine-Max_Official_Pack/docs/zh_cn/schema/subsystem_definition_schema.json"
     }
-  ]
+  ],
+  "java.compile.nullAnalysis.mode": "automatic"
 }

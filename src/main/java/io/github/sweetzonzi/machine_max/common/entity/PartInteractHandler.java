@@ -31,7 +31,7 @@ public class PartInteractHandler {
             LivingEntityEyesightAttachment eyeSight;
             if (player.hasData(MMAttachments.getENTITY_EYESIGHT())) {
                 eyeSight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-                eyeSight.getTargets().clear();
+                eyeSight.getTargetBodies().clear();
                 player.removeData(MMAttachments.getENTITY_EYESIGHT());
             }
         }

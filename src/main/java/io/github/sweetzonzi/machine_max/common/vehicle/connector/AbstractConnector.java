@@ -38,6 +38,7 @@ import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SyncedDataHolder;
@@ -309,7 +310,12 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     if (jointAttr.stiffness() != null) {
                         float maxStiffness = 4 * m_eff / (1f / 60f / 60f);  // 稳定性条件: k_max = 4·m_eff/Δt²
                         if (jointAttr.stiffness() > maxStiffness)
-                            MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的刚度值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.stiffness(), maxStiffness);
+                            MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的刚度值过大:{}，已自动限制为{}！",
+                                    Component.translatable(this.getName()).getString(),
+                                    Component.translatable(this.subPart.part.name).getString(),
+                                    Component.translatable(attachedConnector.getName()).getString(),
+                                    Component.translatable(attachedConnector.subPart.part.name).getString(),
+                                    i, jointAttr.stiffness(), maxStiffness);
                         joint.set(MotorParam.Stiffness, i, Math.min(jointAttr.stiffness(), maxStiffness));
                         joint.enableSpring(i, true);
                     }
@@ -323,7 +329,12 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                         if (jointAttr.damping() > maxDamping) {
                             joint.set(MotorParam.MotorErp, i, 0.5f);
                             joint.set(MotorParam.StopErp, i, 0.2f);
-                            MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！", this.getName(), this.subPart.part.name, attachedConnector.getName(), attachedConnector.subPart.part.name, i, jointAttr.damping(), maxDamping);
+                            MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！",
+                                    Component.translatable(this.getName()).getString(),
+                                    Component.translatable(this.subPart.part.name).getString(),
+                                    Component.translatable(attachedConnector.getName()).getString(),
+                                    Component.translatable(attachedConnector.subPart.part.name).getString(),
+                                    i, jointAttr.damping(), maxDamping);
                         }
                         joint.set(MotorParam.Damping, i, Math.min(jointAttr.damping(), maxDamping));
                         joint.set(MotorParam.MotorCfm, i, 1e-4f);

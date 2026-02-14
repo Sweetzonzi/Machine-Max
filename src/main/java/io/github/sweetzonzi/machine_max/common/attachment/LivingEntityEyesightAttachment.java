@@ -50,14 +50,14 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     private Vector3f startPos;
     private Vector3f view;
     private Vector3f endPos;
-    private final ConcurrentMap<PhysicsRigidBody, PhysicsRayTestResult> targets = new ConcurrentHashMap<>(2);
-    private final List<PhysicsRigidBody> sortedTargets = new LinkedList<>();
+    private final ConcurrentMap<PhysicsRigidBody, PhysicsRayTestResult> targetBodies = new ConcurrentHashMap<>(2);
+    private final List<PhysicsRigidBody> sortedTargetBodies = new LinkedList<>();
+    private final HashMap<PhysicsRigidBody, PhysicsRayTestResult> targetBodyCache = new HashMap<>(2);
+    private final CopyOnWriteArraySet<PhysicsRigidBody> sortedTargetBodyCache = new CopyOnWriteArraySet<>();
+    private final CopyOnWriteArraySet<Object> sortedTargets = new CopyOnWriteArraySet<>();//刚体的持有者而非刚体本身
+    private final CopyOnWriteArraySet<Object> sortedTargetCache = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArraySet<InteractBox> fastInteractBoxes = new CopyOnWriteArraySet<>();
-    private final CopyOnWriteArraySet<InteractBox> accurateInteractBoxes = new CopyOnWriteArraySet<>();
     private final CopyOnWriteArraySet<InteractBox> fastInteractBoxCache = new CopyOnWriteArraySet<>();
-    private final CopyOnWriteArraySet<InteractBox> accurateInteractBoxCache = new CopyOnWriteArraySet<>();
-    private final HashMap<PhysicsRigidBody, PhysicsRayTestResult> targetsCache = new HashMap<>(2);
-    private final CopyOnWriteArraySet<PhysicsRigidBody> sortedTargetsCache = new CopyOnWriteArraySet<>();
     private double eyesightRange;
 
     public LivingEntityEyesightAttachment(LivingEntity entity) {
@@ -82,9 +82,9 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             eyesight.endPos = eyesight.startPos.add(eyesight.view);
             level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
                 eyesight.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
-                eyesight.targets.clear();//清空射线检测结果列表
+                eyesight.targetBodies.clear();//清空射线检测结果列表
+                eyesight.sortedTargetBodies.clear();//清空排序后的射线检测结果列表
                 eyesight.sortedTargets.clear();//清空排序后的射线检测结果列表
-                eyesight.accurateInteractBoxes.clear();//清空交互判定区列表
                 var rayTestResults = level.getPhysicsLevel().getWorld().rayTest(eyesight.startPos, eyesight.endPos);
                 rayTestResults.forEach(//获取射线命中物体
                         result -> {
@@ -92,23 +92,27 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                             if (object instanceof PhysicsRigidBody body
                                     && PhysicsBodyExtensionKt.getOwner(body) != null
                                     && PhysicsBodyExtensionKt.getOwner(body) != entity) {//如果射线命中物体是刚体
-                                eyesight.targets.put(body, result);//将射线命中物体和相应信息存入targets列表
-                                eyesight.sortedTargets.add(body);//将射线命中物体加入sortedTargets列表
+                                eyesight.targetBodies.put(body, result);//将射线命中物体和相应信息存入targets列表
+                                eyesight.sortedTargetBodies.add(body);//将射线命中物体加入sortedTargets列表
                                 if (PhysicsBodyExtensionKt.getOwner(body) instanceof InteractBoxes interactBoxes) {
                                     int interactBoxIndex = result.triangleIndex();
                                     InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
-                                    if (interactBox != null && interactBox.interactMode == InteractBox.InteractMode.ACCURATE)
-                                        eyesight.accurateInteractBoxes.add(interactBox);
+                                    if (interactBox != null
+                                            && interactBox.interactMode == InteractBox.InteractMode.ACCURATE
+                                            && interactBox.isEnabled())
+                                        eyesight.sortedTargets.add(interactBox);
+                                } else {
+                                    eyesight.sortedTargets.add(PhysicsBodyExtensionKt.getOwner(body));
                                 }
                             }
                         }
                 );
-                eyesight.accurateInteractBoxCache.clear();
-                eyesight.accurateInteractBoxCache.addAll(eyesight.accurateInteractBoxes);
-                eyesight.sortedTargetsCache.clear();
-                eyesight.sortedTargetsCache.addAll(eyesight.sortedTargets);
-                eyesight.targetsCache.clear();
-                eyesight.targetsCache.putAll(eyesight.targets);
+                eyesight.sortedTargetBodyCache.clear();
+                eyesight.sortedTargetBodyCache.addAll(eyesight.sortedTargetBodies);
+                eyesight.targetBodyCache.clear();
+                eyesight.targetBodyCache.putAll(eyesight.targetBodies);
+                eyesight.sortedTargetCache.clear();
+                eyesight.sortedTargetCache.addAll(eyesight.sortedTargets);
                 eyesight.fastInteractBoxes.clear();//清空交互判定区列表
                 level.getPhysicsLevel().getWorld().contactTest(eyesight.trigger, eyesight);
                 level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
@@ -149,9 +153,9 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
      * @return 线段命中的最近的尚未被占用的部件连接点
      */
     public AbstractConnector getEmptyConnector() {
-        if (!sortedTargetsCache.isEmpty()) {
-            for (PhysicsRigidBody body : sortedTargetsCache) {
-                if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart && targetsCache.get(body) instanceof PhysicsRayTestResult rayTestResult) {//如果射线命中物体是部件
+        if (!sortedTargetBodyCache.isEmpty()) {
+            for (PhysicsRigidBody body : sortedTargetBodyCache) {
+                if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart && targetBodyCache.get(body) instanceof PhysicsRayTestResult rayTestResult) {//如果射线命中物体是部件
                     rayTestResult.getHitFraction();//获取距离命中点最近的可用部件接口
                     Vector3f hitPoint = PhysicsHelperKt.toBVector3f(owner.position()
                             .add(0, owner.getEyeHeight(), 0)
@@ -182,9 +186,9 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
      * @return 线段命中的最近的已连接的部件连接点
      */
     public AbstractConnector getAttachedConnector() {
-        if (!sortedTargetsCache.isEmpty()) {
-            for (PhysicsRigidBody body : sortedTargetsCache) {
-                if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart && targetsCache.get(body) instanceof PhysicsRayTestResult rayTestResult) {//如果射线命中物体是部件
+        if (!sortedTargetBodyCache.isEmpty()) {
+            for (PhysicsRigidBody body : sortedTargetBodyCache) {
+                if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart && targetBodyCache.get(body) instanceof PhysicsRayTestResult rayTestResult) {//如果射线命中物体是部件
                     rayTestResult.getHitFraction();//获取距离命中点最近的可用部件接口
                     Vector3f hitPoint = PhysicsHelperKt.toBVector3f(owner.position()
                             .add(0, owner.getEyeHeight(), 0)
@@ -215,8 +219,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
      * @return 线段命中的最近的零件
      */
     public SubPart getSubPart() {
-        if (!sortedTargetsCache.isEmpty()) {
-            for (PhysicsRigidBody body : sortedTargetsCache) {
+        if (!sortedTargetBodyCache.isEmpty()) {
+            for (PhysicsRigidBody body : sortedTargetBodyCache) {
                 if (PhysicsBodyExtensionKt.getOwner(body) != null && PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart part) {
                     return part;
                 }
@@ -251,8 +255,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
      * @return 线段命中的最近的实体
      */
     public Entity getEntity() {
-        if (!sortedTargetsCache.isEmpty()) {
-            for (PhysicsRigidBody body : sortedTargetsCache) {
+        if (!sortedTargetBodyCache.isEmpty()) {
+            for (PhysicsRigidBody body : sortedTargetBodyCache) {
                 if (PhysicsBodyExtensionKt.getOwner(body) != null && PhysicsBodyExtensionKt.getOwner(body) instanceof Entity entity) {
                     return entity;
                 }
@@ -269,23 +273,20 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
     @Nullable
     public HitBox getHitBox() {
         HitBox result = null;
-        for (PhysicsRigidBody body : sortedTargetsCache) {
+        for (PhysicsRigidBody body : sortedTargetBodyCache) {
             if (PhysicsBodyExtensionKt.getOwner(body) != null && PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart) {
-                result = subPart.getHitBox(getTargetsCache().get(body).triangleIndex());
+                result = subPart.getHitBox(getTargetBodyCache().get(body).triangleIndex());
             }
         }
         return result;
     }
 
     public InteractBox getAccurateInteractBox() {
-        if (!sortedTargetsCache.isEmpty()) {
-            for (PhysicsRigidBody body : sortedTargetsCache) {
-                var owner = PhysicsBodyExtensionKt.getOwner(body);
-                if (owner instanceof InteractBoxes) {
-                    for (InteractBox interactBox : accurateInteractBoxCache) {
-                        if (interactBox.interactMode == InteractBox.InteractMode.ACCURATE && interactBox.isEnabled())
-                            return interactBox;
-                    }
+        if (!sortedTargetCache.isEmpty()) {
+            for (Object owner : sortedTargetCache) {
+                if (owner instanceof InteractBox interactBox
+                        && interactBox.interactMode == InteractBox.InteractMode.ACCURATE && interactBox.isEnabled()) {
+                    return interactBox;
                 } else if (owner instanceof AbstractConnector) {
                     continue;
                 } else return null;

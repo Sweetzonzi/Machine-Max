@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
@@ -75,28 +76,44 @@ public class RawInputHandler {
             UUID partUuid = part.uuid;
             String subPartName = subPart.name;
             String subSystemName = seat.name;
-            trans_x_input = 0;
-            trans_y_input = 0;
-            trans_z_input = 0;
-            rot_x_input = 0;
-            rot_y_input = 0;
-            rot_z_input = 0;
             MMJoystickHandler.refreshState();
 
             switch (part.vehicle.mode) {
                 case GROUND -> {
-                    if (new KeyHooks.EVENT(KeyBinding.groundForwardKey).isHover()) trans_z_input += 100;
-                    if (new KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover()) {
-                        trans_z_conflict = trans_z_input > 0 ? 1 : 0;
-                        trans_z_input -= 100;
+                    boolean forward = new KeyHooks.EVENT(KeyBinding.groundForwardKey).isHover();
+                    boolean backWard = new KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover();
+                    boolean leftward = new KeyHooks.EVENT(KeyBinding.groundLeftwardKey).isHover();
+                    boolean rightward = new KeyHooks.EVENT(KeyBinding.groundRightwardKey).isHover();
+                    // 前进后退
+                    if (forward || backWard) { // 有输入
+                        if (forward && backWard) trans_z_conflict = 1;
+                        else trans_z_conflict = 0;
+                        if (forward && !backWard) {
+                            if (trans_z_input < 0) trans_z_input = 0;
+                            trans_z_input += MMClientConfig.getGroundFullPowerStep();
+                        }
+                        if (backWard && !forward) {
+                            if (trans_z_input > 0) trans_z_input = 0;
+                            trans_z_input -= MMClientConfig.getGroundFullPowerStep();
+                        }
+                    } else { // 无输入逐渐归零
+                        if (trans_z_input > 0) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundFullPowerStep());
+                        if (trans_z_input < 0) trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundFullPowerStep());
                     }
+                    // 手柄直接取用输出值
                     trans_z_input += Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
                     trans_z_input -= Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
-                    if (new KeyHooks.EVENT(KeyBinding.groundLeftwardKey).isHover()) rot_y_input += 100;
-                    if (new KeyHooks.EVENT(KeyBinding.groundRightwardKey).isHover()) {
-                        rot_y_conflict = rot_y_input > 0 ? 1 : 0;
-                        rot_y_input -= 100;
+                    // 转向
+                    if (leftward || rightward) { // 有输入
+                        if (leftward) rot_y_input += MMClientConfig.getGroundFullSteeringStep();
+                        if (rightward) rot_y_input -= MMClientConfig.getGroundFullSteeringStep();
+                        if (leftward && rightward) rot_y_conflict = 1;
+                        else rot_y_conflict = 0;
+                    } else { // 无输入逐渐回正
+                        if (rot_y_input > 0) rot_y_input = Math.max(0, rot_y_input - MMClientConfig.getGroundFullSteeringStep());
+                        if (rot_y_input < 0) rot_y_input = Math.min(0, rot_y_input + MMClientConfig.getGroundFullSteeringStep());
                     }
+                    // 手柄直接取用输出值
                     rot_y_input -= Math.round(MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
                 }
                 case SHIP -> {
@@ -110,13 +127,21 @@ public class RawInputHandler {
                 }
             }
             moveInputCache = moveInputs;
+            // 限制输入范围
+            trans_x_input = Math.clamp(trans_x_input, -100, 100);
+            trans_y_input = Math.clamp(trans_y_input, -100, 100);
+            trans_z_input = Math.clamp(trans_z_input, -100, 100);
+            rot_x_input = Math.clamp(rot_x_input, -100, 100);
+            rot_y_input = Math.clamp(rot_y_input, -100, 100);
+            rot_z_input = Math.clamp(rot_z_input, -100, 100);
+            // 打包数据
             moveInputs = new byte[]{
-                    (byte) (Math.clamp(trans_x_input, -100, 100)),
-                    (byte) (Math.clamp(trans_y_input, -100, 100)),
-                    (byte) (Math.clamp(trans_z_input, -100, 100)),
-                    (byte) (Math.clamp(rot_x_input, -100, 100)),
-                    (byte) (Math.clamp(rot_y_input, -100, 100)),
-                    (byte) (Math.clamp(rot_z_input, -100, 100))};
+                    (byte) trans_x_input,
+                    (byte) trans_y_input,
+                    (byte) trans_z_input,
+                    (byte) rot_x_input,
+                    (byte) rot_y_input,
+                    (byte) rot_z_input};
             moveInputConflicts = new byte[]{
                     (byte) trans_x_conflict,
                     (byte) trans_y_conflict,
@@ -124,6 +149,7 @@ public class RawInputHandler {
                     (byte) rot_x_conflict,
                     (byte) rot_y_conflict,
                     (byte) rot_z_conflict};
+            // 仅在输入有变化时发送数据包
             if (vehicleUuid != null && partUuid != null && subSystemName != null && moveInputs != moveInputCache)
                 PacketDistributor.sendToServer(new MovementInputPayload(
                         vehicleUuid, partUuid, subPartName, subSystemName, moveInputs, moveInputConflicts));
@@ -193,13 +219,11 @@ public class RawInputHandler {
 
             //载具交互
             new KeyHooks.EVENT(KeyBinding.generalInteractKey)
-                    .OnKeyDown(() -> {
-                        client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract();
-                    });
+                    .OnKeyDown(() -> client.player.getData(MMAttachments.getENTITY_EYESIGHT().get()).clientInteract());
 
             //离开载具
             new KeyHooks.EVENT(KeyBinding.generalLeaveVehicleKey)
-                    .OnKeyHover((tick -> {
+                    .OnKeyHover(tick -> {
                         if (tick <= 10.0) {
                             PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.LEAVE_VEHICLE.getValue(), (int) tick));
                             if (client.player.getVehicle() != null || ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() != null) {
@@ -211,13 +235,11 @@ public class RawInputHandler {
                                 );
                             }
                         }
-                    }))
-                    .OnKeyUp((() -> {
+                    })
+                    .OnKeyUp(() -> {
                         if (Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
                             player.displayClientMessage(Component.empty(), true);
-                    }));
-
-
+                    });
 
         /*
           地面载具

@@ -99,21 +99,22 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
         } else if (speedFeedback instanceof Float feedback) {
             feedback = -feedback; // 修正方向
             double speedDiff = rotSpeed - feedback;
-            double coupleTorque = Math.clamp(
-                    this.isActive() ? this.coupleTorquePD.step(0, speedDiff) : 0,
+            double coupleTorque = Math.abs(speedDiff) < 5 ? Math.clamp(
+                    this.isActive() ? this.coupleTorquePD.step(0, Math.abs(speedDiff) < 10 ? speedDiff * speedDiff / 10 : speedDiff) : 0,
                     -0.25 * attr.getStaticAttribute().maxTorque,
                     0.25 * attr.getStaticAttribute().maxTorque
-            ); // 使用耦合扭矩补偿转速差，考虑饱和模拟打滑
+            ) : 0; // 使用耦合扭矩补偿转速差，考虑饱和模拟打滑
+            coupleTorque = 0;//TODO: 耦合扭矩会导致停车后车轮乱动，暂时关闭
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
             if (!getSubPart().level.isClientSide()) { //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
-                rotSpeed += (netTorque + coupleTorque) / attr.staticAttribute.inertia / 60f;
+                rotSpeed += (netTorque - coupleTorque) / attr.staticAttribute.inertia / 60f;
                 rotSpeed = Math.clamp(rotSpeed,
                         -1.1 * attr.staticAttribute.redLineRPM * Math.PI / 30,
                         1.1 * attr.staticAttribute.redLineRPM * Math.PI / 30);
                 rotSpeed = 0.95 * rotSpeed + 0.05 * feedback; //额外修正
                 setRotSpeed((float) rotSpeed);
             }
-            sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) ((netTorque + coupleTorque) * rotSpeed), (float) rotSpeed));//输出功率
+            sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) ((netTorque - coupleTorque) * rotSpeed), (float) rotSpeed));//输出功率
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
         } else {
             //没有转速反馈信号时，直接取用引擎转速
