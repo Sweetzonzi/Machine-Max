@@ -519,10 +519,9 @@ public class VehicleCore {
         for (Pair<AbstractConnector, SimpleConnector> connection : connections) {
             connection.getFirst().detach(false);
             this.activate();
-            //TODO: 检查单部件多连接时（kluo车门）找不到连接的问题
             boolean removed = partNet.removeEdge(connection);
-            if (!removed && connection.getSecond() instanceof SimpleConnector simpleConnector)
-                removed = partNet.removeEdge(Pair.of(connection.getSecond(), simpleConnector));
+            if (!removed && connection.getSecond() instanceof SimpleConnector)
+                removed = partNet.removeEdge(Pair.of(connection.getSecond(), (SimpleConnector) connection.getFirst()));
             if (removed && !level.isClientSide()) connectionsToRemove.add(new ConnectionData(connection));
             if (!removed) MachineMax.LOGGER.error("载具{}中未找到连接关系{}，无法移除", this.name, connection);
         }

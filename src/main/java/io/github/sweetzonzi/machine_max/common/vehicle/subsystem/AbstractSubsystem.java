@@ -62,9 +62,7 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         syncheddata$builder.define(DATA_DURABILITY_ID, attr.getBasicDurability());
         this.defineSynchedData(syncheddata$builder);
         this.synchedData = syncheddata$builder.build();
-        if (this instanceof ISignalSender signalSender) {
-            signalSender.resetSignalOutputs();
-        }
+        this.resetSignalOutputs();
     }
 
     public void onTick() {
