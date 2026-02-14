@@ -14,7 +14,8 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js
     compileOnly "org.mozilla:rhino:1.8.0"
-    implementation("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")
+//    implementation("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")
+    implementation files('libs/spark-core-graaljs-neoforge-1.21.1-1.0.0.jar')
 //    implementation("org.mozilla:rhino:1.8.0")
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")

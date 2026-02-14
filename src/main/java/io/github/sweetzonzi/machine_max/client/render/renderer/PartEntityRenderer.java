@@ -69,7 +69,6 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         poseStack.setIdentity();
         poseStack.mulPose(worldMatrix);
         poseStack.pushPose();
-        var normal = poseStack.last().normal();
         int overlay = OverlayTexture.NO_OVERLAY;
         // 受击闪烁效果
         if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);
