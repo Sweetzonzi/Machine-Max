@@ -477,6 +477,7 @@
           "connector.machine_max.back_left":{
           "locator": "BackLeft",
           "type": "Simple",
+            "direction": "xn",
           "integrity": 100.0,
           "impact_reduction": 3.0,
           "impact_multiplier": 0.8,
@@ -487,6 +488,7 @@
           "connector.machine_max.back_right":{
             "locator": "BackRight",
             "type": "Simple",
+            "direction": "xp",
             "integrity": 100.0,
             "impact_reduction": 3.0,
             "impact_multiplier": 0.8,

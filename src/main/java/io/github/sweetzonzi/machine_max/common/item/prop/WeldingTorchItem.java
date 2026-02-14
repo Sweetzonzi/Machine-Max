@@ -110,7 +110,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                             }
                         }
                     if (shouldPlayEffect) {
-                        var ray = eyesight.getTargetsCache().get(subPart.body);
+                        var ray = eyesight.getTargetBodyCache().get(subPart.body);
                         var hitPos = eyesight.getHitPoint(ray);
                         var normal = ray.getHitNormalLocal(null).mult(0.2f);
                         for (int i = 0; i < 5; i++) {

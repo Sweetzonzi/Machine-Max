@@ -14,9 +14,9 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js
     compileOnly "org.mozilla:rhino:1.8.0"
+//    implementation("org.mozilla:rhino:1.8.0")
 //    implementation("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")
     implementation files('libs/spark-core-graaljs-neoforge-1.21.1-1.0.0.jar')
-//    implementation("org.mozilla:rhino:1.8.0")
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
     // 其它mod
@@ -47,9 +47,6 @@ repositories {
         }
     }
     maven {
-        url = "https://maven.jaackson.me"
-    }
-    maven {
         name "KosmX's maven"
         url = 'https://maven.kosmx.dev/'
     }
@@ -61,13 +58,13 @@ repositories {
         name = 'tterrag maven'
         url = 'https://maven.tterrag.com/'
     }
-    maven {//曦月核心 物理库
-        url = "https://maven.pkg.github.com/SolarMoonQAQ/Spark-Core"
-        credentials {
-            username = System.getenv("GITMAVEN_USERNAME")
-            password = System.getenv("SolarMoonCore_TOKEN")
-        }
-    }
+//    maven {//曦月核心 物理库
+//        url = "https://maven.pkg.github.com/SolarMoonQAQ/Spark-Core"
+//        credentials {
+//            username = System.getenv("GITMAVEN_USERNAME")
+//            password = System.getenv("SolarMoonCore_TOKEN")
+//        }
+//    }
     maven {
         url = "https://api.modrinth.com/maven"
     }
