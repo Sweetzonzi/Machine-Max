@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.entity;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
@@ -21,7 +22,7 @@ public class PartHitHandler {
             IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
             var start = PhysicsHelperKt.toBVector3f(projectile.getPosition(1).subtract(projectile.getDeltaMovement().scale(1.5)).subtract(projectile.getDeltaMovement().normalize().scale(projectile.getBoundingBox().getSize())));
             var end = PhysicsHelperKt.toBVector3f(projectile.getPosition(1).add(projectile.getDeltaMovement().scale(1.5).add(projectile.getDeltaMovement().normalize().scale(projectile.getBoundingBox().getSize()))));
-            var results = projectile.level().getPhysicsLevel().getWorld().rayTest(start, end);
+            var results = SparkLevel.getPhysicsLevel(projectile.level()).getWorld().rayTest(start, end);
             for (PhysicsRayTestResult result : results) {//遍历射线检测结果
                 if (PhysicsBodyExtensionKt.getOwner(result.getCollisionObject()) instanceof SubPart candidatedSubPart) {
                     if (subPartEntity.subPart != null && candidatedSubPart == subPartEntity.subPart) {//若命中的是本零件

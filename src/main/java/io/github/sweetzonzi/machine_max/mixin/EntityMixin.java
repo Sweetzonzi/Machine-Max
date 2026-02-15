@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.mixin;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -119,7 +120,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         }
         machine_Max$sweepTestStart.setTranslation(PhysicsHelperKt.toBVector3f(center));
         machine_Max$sweepTestEnd.setTranslation(PhysicsHelperKt.toBVector3f(center.add(delta)));
-        entity.level().getPhysicsLevel().getWorld().sweepTest(
+        SparkLevel.getPhysicsLevel(entity.level()).getWorld().sweepTest(
                 machine_Max$collideTestShape,
                 machine_Max$sweepTestStart,
                 machine_Max$sweepTestEnd, results, 0.05f);

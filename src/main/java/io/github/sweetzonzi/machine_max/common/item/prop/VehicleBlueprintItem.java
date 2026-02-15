@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
@@ -84,20 +85,18 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                 com.jme3.math.Vector3f shape = new com.jme3.math.Vector3f((float) (max.x - min.x), (float) (max.y - min.y), (float) (max.z - min.z)).mult(0.5f);
                 PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(shape));
                 testGhost.setPhysicsLocation(transform.getTranslation());
-                PhysicsLevel physicsLevel = level.getPhysicsLevel();
+                PhysicsLevel physicsLevel = SparkLevel.getPhysicsLevel(level);
                 physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_blueprint", PPhase.PRE, () -> {
                     int contact = physicsLevel.getWorld().contactTest(testGhost, null);
                     if (contact == 0) {
-                        level.submitImmediateTask(PPhase.PRE, () -> {
+                        SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
                             VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), false);
                             vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
                             ObjectManager.addVehicle(vehicle);
-                            return null;
                         });
                     } else
-                        level.submitImmediateTask(PPhase.PRE, () -> {
+                        SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
                             player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
-                            return null;
                         });
                     return null;
                 });
@@ -139,7 +138,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                     PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(
                             boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
                     testGhost.setPhysicsLocation(transform.getTranslation());
-                    PhysicsLevel physicsLevel = level.getPhysicsLevel();
+                    PhysicsLevel physicsLevel = SparkLevel.getPhysicsLevel(level);
                     physicsLevel.submitImmediateTask(PPhase.PRE, () -> {
                         int contact = physicsLevel.getWorld().contactTest(testGhost, null);
                         if (contact > 0) boundingBox.setColor(Color.RED);

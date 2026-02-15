@@ -6,7 +6,7 @@
   "variants": {
     "icon": "machine_max:textures/icon/kluo/kluo_hull_icon.png",
     "model": "machine_max:kluo_hull.geo",
-    "textures": "machine_max:textures/part/kluo.png",
+    "textures": "machine_max:textures/part/kluo_hull.png",
     "animations": "machine_max:kluo",
     "tags": ["hull", "kluo"],
     "sub_parts": {

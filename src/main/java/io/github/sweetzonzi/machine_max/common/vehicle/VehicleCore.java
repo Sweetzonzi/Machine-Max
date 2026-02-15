@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.PPhase;
@@ -226,14 +227,14 @@ public class VehicleCore {
      * 激活载具所有零件的运动体
      */
     public void activate() {
-        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;
         });
     }
 
     public void setGravity(Vector3f gravity) {
-        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values())
                 part.subParts.values().forEach(subPart -> subPart.body.setGravity(gravity));
             return null;
@@ -241,7 +242,7 @@ public class VehicleCore {
     }
 
     public void setKinematic(boolean kinematic) {
-        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values())
                 part.subParts.values().forEach(subPart -> subPart.body.setKinematic(kinematic));
             return null;
@@ -520,8 +521,8 @@ public class VehicleCore {
             connection.getFirst().detach(false);
             this.activate();
             boolean removed = partNet.removeEdge(connection);
-            if (!removed && connection.getSecond() instanceof SimpleConnector)
-                removed = partNet.removeEdge(Pair.of(connection.getSecond(), (SimpleConnector) connection.getFirst()));
+            if (!removed && connection.getFirst() instanceof SimpleConnector simpleConnector)
+                removed = partNet.removeEdge(Pair.of(connection.getSecond(), simpleConnector));
             if (removed && !level.isClientSide()) connectionsToRemove.add(new ConnectionData(connection));
             if (!removed) MachineMax.LOGGER.error("载具{}中未找到连接关系{}，无法移除", this.name, connection);
         }
@@ -668,7 +669,7 @@ public class VehicleCore {
     public void setPos(Vec3 pos) {
         Vector3f delta = PhysicsHelperKt.toBVector3f(pos.subtract(this.position));
         if (!inLevel) moveRelatively(delta);
-        else level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+        else SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             moveRelatively(delta);
             return null;
         });

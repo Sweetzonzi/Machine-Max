@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.animation.anim.origin.OAnimationSet;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
@@ -392,10 +393,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     //被摧毁的方块掉落为物品的概率，方块吸收的碰撞能量恰好与耐久度相同时必定掉落，掉落率随能量增加而递减
                     double blockDropRate = Math.exp(1 - (hitBox.attr.blockDamageFactor() * blockEnergy / (250 * blockDurability)));
                     if (!level.isClientSide) {
-                        level.submitDeduplicatedTask(blockPos.toShortString(), PPhase.PRE, () -> {
-                            level.destroyBlock(blockPos, Math.random() < blockDropRate);
-                            return null;
-                        });
+                        SparkLevel.submitDeduplicatedTask(level, blockPos.toShortString(), PPhase.PRE, () -> level.destroyBlock(blockPos, Math.random() < blockDropRate));
                     }
                     //根据方块被破坏实际消耗的能量调整部件吸收的能量，但不全额作用为反冲量以提升操控流畅性
                     double actualPartEnergy = 0.2 * partEnergy * ((250 * blockDurability) / blockEnergy);
@@ -433,7 +431,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             if (level.isClientSide()) {
                 float speed = vel.length();
                 Vector3f finalNormal = normal;
-                level.submitImmediateTask(PPhase.PRE, () -> {
+                SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
                     if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
                         //飞溅草石
                         if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SAND) || blockState.is(BlockTags.SNOW)) {
@@ -453,14 +451,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                     contactVel.x * (0.03f + 0.02f * (Math.random() - 0.5f)),
                                     contactVel.y * (0.03f + 0.02f * (Math.random() - 0.5f)) + 0.01f,
                                     contactVel.z * (0.03f + 0.02f * (Math.random() - 0.5f)));
-                        level.submitDeduplicatedTask(part.uuid + "_" + name + "_slide_sound", PPhase.PRE, () -> {
+                        SparkLevel.submitDeduplicatedTask(level, part.uuid + "_" + name + "_slide_sound", PPhase.PRE, () -> {
                             level.playLocalSound(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
                                     blockState.getSoundType(part.level, blockPos, null).getStepSound(), SoundSource.BLOCKS,
                                     (float) (0.3f * (1f - Math.exp(-0.1 * (vel.length() - 2)))), 0.75f, false);
-                            return null;
                         });
                     }
-                    return null;
                 });
             }
         }
@@ -548,7 +544,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             });
             //实体击退与伤害
             other.setLinearVelocity(other.getLinearVelocity(null).add(impulseVec.mult((float) (1f / entityMass))));
-            level.submitImmediateTask(PPhase.PRE, () -> {
+            SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
                 float damage = (float) (contactEnergy * miu / (250 * entityMass));
                 if (damage > 1) {
                     if (!level.isClientSide) {
@@ -558,7 +554,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                             SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.AMBIENT, 1f, 1f);
                 }
                 livingEntity.setDeltaMovement(SparkMathKt.toVec3(impulseVec.mult((float) (0.05 / entityMass)).add(0, 0.1f, 0)));
-                return null;
             });
         }
     }
@@ -824,7 +819,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION))
                         knockBack *= 15.0f;
                     float finalKnockBack = knockBack;
-                    level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {//施加动量
+                    SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {//施加动量
                         part.vehicle.activate();
                         this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(this.body.getPhysicsLocation(null)));
                         return null;
@@ -857,14 +852,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 PartDamageData data = new PartDamageData(source, projectileSource, normal, worldContactSpeed, worldContactPoint, hitBox);
                 if (!level.isClientSide()) accumulateDamage(subPartDamage, data);
                 else {
-                    level.submitImmediateTask(PPhase.ALL, () -> {
+                    SparkLevel.submitImmediateTask(level, PPhase.ALL, () -> {
                         //TODO:播放击穿音效特效
-                        return null;
                     });
                 }
             } else if (level.isClientSide()) {
                 float finalDamage = damage;
-                level.submitImmediateTask(PPhase.ALL, () -> {
+                SparkLevel.submitImmediateTask(level, PPhase.ALL, () -> {
                     //播放命中未击穿音效
                     SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"), 64f);
                     SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
@@ -879,7 +873,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 //                            (float) (Math.random() - 0.5f)).mult(0.1f));
 //                    level.addParticle(ParticleTypes.FIREWORK, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
 //                }
-                    return null;
                 });
             }
             return true; //返回true表示命中，且伤害已被处理

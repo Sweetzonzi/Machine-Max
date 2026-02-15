@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.PPhase;
@@ -555,10 +556,10 @@ public class Part {
         progress = Math.clamp(progress, 0f, 1f);
         if (progress != this.assemblingProgress) {
             this.assemblingProgress = progress;
-            level.getPhysicsLevel().submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
+            SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
                 for (SubPart subPart : subParts.values()) {
                     subPart.body.setMass(subPart.attr.mass * (0.3f + 0.7f * this.assemblingProgress));
-                    subPart.body.setGravity(getLevel().getPhysicsLevel().getWorld().getGravity(null).mult(this.assemblingProgress));
+                    subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(this.assemblingProgress));
                 }
                 updateMass();
                 return null;
@@ -603,7 +604,7 @@ public class Part {
     public void setTransform(Transform transform) {
         if (vehicle == null || !vehicle.inLevel) {
             setTransformRaw(transform);
-        } else level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+        } else SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             setTransformRaw(transform);
             return null;
         });

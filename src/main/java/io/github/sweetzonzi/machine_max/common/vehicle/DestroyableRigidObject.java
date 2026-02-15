@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -134,6 +135,6 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
 
     @Override
     public @NotNull PhysicsLevel getPhysicsLevel() {
-        return getLevel().getPhysicsLevel();
+        return SparkLevel.getPhysicsLevel(level);
     }
 }
