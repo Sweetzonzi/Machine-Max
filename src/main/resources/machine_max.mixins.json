@@ -9,7 +9,8 @@
     "EntityMixin",
     "PlayerMixin",
     "ProjectileMixin",
-    "RepairItemRecipeMixin"
+    "RepairItemRecipeMixin",
+    "ServerEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

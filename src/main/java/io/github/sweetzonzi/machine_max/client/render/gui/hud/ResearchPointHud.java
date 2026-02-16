@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud;
 
 import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.network.ClientResearchHandler;
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.AnimatedFloat;
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.TimeSource;
@@ -10,7 +11,12 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.MutableComponent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.text.DecimalFormat;
@@ -18,12 +24,24 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
+@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class ResearchPointHud implements LayeredDraw.Layer {
     private static final int ITEM_HEIGHT = 11;
     private static final int WIDTH = 64;
 
-    private static final Map<RpAddReason, AnimatedFloat> RESEARCH_POINT_SHOWS = new HashMap<>();
+    /**
+     * 存储研究点获取原因对应的显示透明度动画对象
+     * 键为研究点增加原因，值为控制该原因显示透明度的AnimatedFloat对象
+     * 数值范围：0.0（完全透明）到1.0（完全不透明）
+     * 用于控制HUD元素的淡入淡出效果
+     */
+    public static final Map<RpAddReason, AnimatedFloat> RESEARCH_POINT_SHOWS = new HashMap<>();
+    /**
+     * 存储研究点获取原因对应的数值动画对象
+     * 键为研究点增加原因，值为控制该原因研究点数量的AnimatedFloat对象
+     * 数值表示当前显示的研究点增量值，会从0动画到目标值
+     * 用于在HUD上显示具体获得了多少研究点
+     */
     private static final Map<RpAddReason, AnimatedFloat> RESEARCH_POINTS = new HashMap<>();
     private static final AnimatedFloat HEIGHT = new AnimatedFloat(0);
     private static final DecimalFormat decimalFormat = new DecimalFormat("#0"); // 格式化为整数
@@ -90,5 +108,15 @@ public class ResearchPointHud implements LayeredDraw.Layer {
         if (HEIGHT.getTarget() != ITEM_HEIGHT * RESEARCH_POINTS.size())
             HEIGHT.animateTo(ITEM_HEIGHT * RESEARCH_POINTS.size(), 0.1f, currentTime);
         HEIGHT.update(currentTime);
+    }
+
+    @SubscribeEvent
+    public static void leave(PlayerEvent.PlayerLoggedOutEvent event) {
+        // 清理资源
+        if (Minecraft.getInstance().player != null && event.getEntity().getUUID().equals(Minecraft.getInstance().player.getUUID())) {
+            RESEARCH_POINTS.clear();
+            RESEARCH_POINT_SHOWS.clear();
+            HEIGHT.setImmediate(0);
+        }
     }
 }

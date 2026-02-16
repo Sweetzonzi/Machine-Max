@@ -20,7 +20,12 @@ import java.util.HashMap;
 import java.util.List;
 
 import static io.github.sweetzonzi.machine_max.external.js.hook.Hook.HOOK_SIGNAL_MAP;
-
+/**
+ * 来自<a href="https://www.mcmod.cn/class/18751.html">阿辰的直升机模组</a>
+ * <p>
+ * 支持高级按键事件，支持按键组合、按键长按、按键连续长按、游戏手柄按键、游戏手柄轴量等
+ * @author ArcherLee
+ * */
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
 @OnlyIn(Dist.CLIENT)
 public class KeyHooks {
