@@ -40,14 +40,10 @@ public record ClientRequestVehicleDataPayload(
         if (payload.dimension == context.player().level().dimension()) {
             context.enqueueWork(()->{
                 Set<VehicleData> dataToSend = context.player().level().getData(MMAttachments.getLEVEL_VEHICLES());
-                int packetNum = (dataToSend.size() + 4) / 5;//计算分包数量，5个载具为一包
+                int packetNum = dataToSend.size();//计算分包数量，5个载具为一包
                 Iterator<VehicleData> iterator = dataToSend.iterator();
                 for (int i = 0; i < packetNum; i++) {
-                    Set<VehicleData> packetData = new HashSet<>();
-                    for (int j = 0; j < 5 && iterator.hasNext(); j++) {
-                        packetData.add(iterator.next());
-                    }
-                    PacketDistributor.sendToPlayer((ServerPlayer) context.player(), new LevelVehicleDataPayload(payload.dimension, packetData, packetNum));
+                    PacketDistributor.sendToPlayer((ServerPlayer) context.player(), new LevelVehicleDataPayload(payload.dimension, iterator.next(), packetNum));
                 }
             });
         } else

@@ -21,11 +21,11 @@ public class MMClientConfig {
 
         GROUND_FULL_POWER_TIME = builder
                 .comment("Time (in seconds) to reach full throttle when holding key")
-                .defineInRange("full_power_time", 1.0, 0.05, 99999.0);
+                .defineInRange("full_power_time", 1.2, 0.05, 99999.0);
 
         GROUND_FULL_STEERING_TIME = builder
                 .comment("Time (in seconds) to reach full steering when holding key")
-                .defineInRange("full_steering_time", 0.25, 0.05, 99999.0);
+                .defineInRange("full_steering_time", 0.4, 0.05, 99999.0);
 
         builder.pop();
 

@@ -208,14 +208,10 @@ public class ObjectManager {
     public static void transmitVehicleData(PlayerEvent.PlayerLoggedInEvent event) {
         Level level = event.getEntity().level();
         Set<VehicleData> dataToSend = level.getData(MMAttachments.getLEVEL_VEHICLES());
-        int packetNum = (dataToSend.size() + 1) / 2;//计算分包数量，2个载具为一包
+        int packetNum = dataToSend.size();//计算分包数量，每个载具单独一包
         Iterator<VehicleData> iterator = dataToSend.iterator();
         for (int i = 0; i < packetNum; i++) {
-            Set<VehicleData> packetData = new HashSet<>();
-            for (int j = 0; j < 2 && iterator.hasNext(); j++) {
-                packetData.add(iterator.next());
-            }
-            PacketDistributor.sendToPlayer((ServerPlayer) event.getEntity(), new LevelVehicleDataPayload(level.dimension(), packetData, packetNum));
+            PacketDistributor.sendToPlayer((ServerPlayer) event.getEntity(), new LevelVehicleDataPayload(level.dimension(), iterator.next(), packetNum));
         }
         MachineMax.LOGGER.info("玩家{}登录进入维度{}，发送维度内现有载具数据包", event.getEntity().getName().getString(), level.dimension().location());
     }

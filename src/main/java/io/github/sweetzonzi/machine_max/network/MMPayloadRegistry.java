@@ -108,7 +108,7 @@ public class MMPayloadRegistry {
                 ClientRequestVehicleDataPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ClientRequestVehicleDataPayload::handle)
         );
-        sync.commonToClient(//向客户端发送维度载具数据
+        sync.playToClient(//向客户端发送维度载具数据
                 LevelVehicleDataPayload.TYPE,
                 LevelVehicleDataPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(LevelVehicleDataPayload::handle)

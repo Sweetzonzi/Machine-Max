@@ -101,8 +101,11 @@ public class RawInputHandler {
                         if (trans_z_input < 0) trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundFullPowerStep());
                     }
                     // 手柄直接取用输出值
-                    trans_z_input += Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
-                    trans_z_input -= Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
+                    if (MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) > 0
+                            || MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) > 0) {
+                        trans_z_input = Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
+                        trans_z_input -= Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
+                    }
                     // 转向
                     if (leftward || rightward) { // 有输入
                         if (leftward) rot_y_input += MMClientConfig.getGroundFullSteeringStep();
