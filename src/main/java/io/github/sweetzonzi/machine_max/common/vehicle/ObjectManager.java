@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.event.PhysicsLevelInitEvent;
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
@@ -272,7 +273,7 @@ public class ObjectManager {
     public static void loadVehicleData(PhysicsLevelInitEvent event) {
         Level level = event.getLevel().getMcLevel();
         PhysicsLevel physicsLevel = event.getLevel();
-        level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             physicsLevel.getWorld().useScr(true);//补偿弹性系数以改善小物体的碰撞精度
             physicsLevel.getWorld().getSolverInfo().setGlobalCfm(1e-5f);
             physicsLevel.getWorld().getSolverInfo().setNumIterations(25);

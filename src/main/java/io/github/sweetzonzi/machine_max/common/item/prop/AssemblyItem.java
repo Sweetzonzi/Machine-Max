@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
@@ -57,7 +58,6 @@ public class AssemblyItem extends Item implements ICustomModelItem {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if (!level.isClientSide()) {
-            //TODO:检查AABB尺寸位置是否正确，似乎有微妙偏移
             //TODO:检查与地形的碰撞
             ItemStack stack = player.getItemInHand(usedHand);
             try {
@@ -67,7 +67,7 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                 player.getEyePosition(),
                                 player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()).add(0, -(float) vehicleData.min.y, 0),
                         Quaternion.IDENTITY
                 );
                 Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
@@ -75,11 +75,11 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                 com.jme3.math.Vector3f shape = new com.jme3.math.Vector3f((float) (max.x - min.x), (float) (max.y - min.y), (float) (max.z - min.z)).mult(0.5f);
                 PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(shape));
                 testGhost.setPhysicsLocation(transform.getTranslation());
-                PhysicsLevel physicsLevel = level.getPhysicsLevel();
+                PhysicsLevel physicsLevel = SparkLevel.getPhysicsLevel(level);
                 physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_assembly", PPhase.PRE, () -> {
                     int contact = physicsLevel.getWorld().contactTest(testGhost, null);
                     if (contact == 0) {
-                        level.submitImmediateTask(PPhase.PRE, () -> {
+                        SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
                             VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), true);
                             var pos = transform.getTranslation();
                             vehicle.setPos(SparkMathKt.toVec3(pos));
@@ -88,12 +88,10 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                             stack.consume(1, player);
                             ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, Math.max((int) shape.length(), 30),
                                     shape.x / 1.5, shape.y / 1.5, shape.z / 1.5, 0.2f);
-                            return null;
                         });
                     } else
-                        level.submitImmediateTask(PPhase.PRE, () -> {
+                        SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
                             player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
-                            return null;
                         });
                     return null;
                 });
@@ -117,7 +115,7 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                                     PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                             entity.getEyePosition(),
                                             entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
+                                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()).add(0, -(float) vehicleData.min.y, 0),
                                     Quaternion.IDENTITY
                             ) : new Transform(
                             PhysicsHelperKt.toBVector3f(entity.position()),
@@ -135,21 +133,13 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                     PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(
                             boundingBox.getXExtent(), boundingBox.getYExtent(), boundingBox.getZExtent()));
                     testGhost.setPhysicsLocation(transform.getTranslation());
-                    PhysicsLevel physicsLevel = level.getPhysicsLevel();
+                    PhysicsLevel physicsLevel = SparkLevel.getPhysicsLevel(level);
                     physicsLevel.submitImmediateTask(PPhase.PRE, () -> {
                         int contact = physicsLevel.getWorld().contactTest(testGhost, null);
                         if (contact > 0) boundingBox.setColor(Color.RED);
                         else boundingBox.setColor(Color.GREEN);
                         return null;
                     });
-                } else if (entity instanceof LivingEntity livingEntity) {
-                    var leftItem = livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem();
-                    var rightItem = livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem();
-                    if (leftItem instanceof VehicleBlueprintItem
-                            || rightItem instanceof VehicleBlueprintItem
-                            || leftItem instanceof AssemblyItem
-                            || rightItem instanceof AssemblyItem) {
-                    } else VisualEffectHelper.boundingBox = null;
                 }
             } catch (NullPointerException ignored) {
             }

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.connector;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
@@ -199,12 +200,11 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                         //强冲击，立即击落部件
                         subPart.part.vehicle.detachConnector(this);
                         float finalImpact = (subPart.destroyed ? 0.5f * totalImpact : 0.1f * totalImpact);
-                        subPart.level.submitImmediateTask(PPhase.ALL, () -> {
+                        SparkLevel.submitImmediateTask(subPart.level, PPhase.ALL, () -> {
                             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"), 64f);
                             SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO,
                                     (float) ((2 - Math.min(getBasicIntegrity(), finalImpact) / getBasicIntegrity()) * (1f + 0.2f * (Math.random() - 0.5f))),
                                     0.2f + 0.8f * Math.min(getBasicIntegrity(), finalImpact) / getBasicIntegrity());
-                            return null;
                         });
                     }
                     //削减部件完整性

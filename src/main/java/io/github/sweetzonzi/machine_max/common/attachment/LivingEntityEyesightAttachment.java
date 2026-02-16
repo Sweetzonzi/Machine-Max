@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.attachment;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -80,12 +81,12 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
             eyesight.startPos = PhysicsHelperKt.toBVector3f(entity.getEyePosition());
             eyesight.view = PhysicsHelperKt.toBVector3f(entity.getForward().normalize().scale(eyesight.eyesightRange));
             eyesight.endPos = eyesight.startPos.add(eyesight.view);
-            level.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
                 eyesight.trigger.setPhysicsLocation(PhysicsHelperKt.toBVector3f(entity.getPosition(1f)));
                 eyesight.targetBodies.clear();//清空射线检测结果列表
                 eyesight.sortedTargetBodies.clear();//清空排序后的射线检测结果列表
                 eyesight.sortedTargets.clear();//清空排序后的射线检测结果列表
-                var rayTestResults = level.getPhysicsLevel().getWorld().rayTest(eyesight.startPos, eyesight.endPos);
+                var rayTestResults = SparkLevel.getPhysicsLevel(level).getWorld().rayTest(eyesight.startPos, eyesight.endPos);
                 rayTestResults.forEach(//获取射线命中物体
                         result -> {
                             PhysicsCollisionObject object = result.getCollisionObject();
@@ -114,8 +115,8 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                 eyesight.sortedTargetCache.clear();
                 eyesight.sortedTargetCache.addAll(eyesight.sortedTargets);
                 eyesight.fastInteractBoxes.clear();//清空交互判定区列表
-                level.getPhysicsLevel().getWorld().contactTest(eyesight.trigger, eyesight);
-                level.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
+                SparkLevel.getPhysicsLevel(level).getWorld().contactTest(eyesight.trigger, eyesight);
+                SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.POST, () -> {
                     eyesight.fastInteractBoxCache.clear();
                     eyesight.fastInteractBoxCache.addAll(eyesight.fastInteractBoxes);
                     return null;

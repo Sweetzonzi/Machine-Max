@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -79,7 +80,7 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                                 connector.accumulateImpact(finalDamage * scale * 2);
                             }
                         }
-                        level.getPhysicsLevel().submitDeduplicatedTask("disassembly_" + player.getStringUUID(), PPhase.PRE, () -> {
+                        SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("disassembly_" + player.getStringUUID(), PPhase.PRE, () -> {
                             if (subPart.entity != null) {
                                 subPart.entity.hurt(damageSource, finalDamage * scale * 2);
                             }

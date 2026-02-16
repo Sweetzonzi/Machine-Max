@@ -1,8 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.entity;
 
+import cn.solarmoon.spark_core.EntityPatch;
 import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
@@ -24,12 +26,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.vehicle.DismountHelper;
 import net.minecraft.world.entity.vehicle.VehicleEntity;
@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn {
+public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn, EntityPatch {
 
     public SubPart subPart;//实体所属的零件
     public UUID vehicleUUID;
@@ -149,7 +149,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             } else return false;
         } else if (source.getSourcePosition() != null && source.getDirectEntity() instanceof Entity entity) {
             //来自其他实体的伤害处理
-            PhysicsLevel level = level().getPhysicsLevel();
+            PhysicsLevel physicsLevel = getPhysicsLevel();
             Vector3f start;
             Vector3f end;
             if (entity instanceof LivingEntity livingEntity && livingEntity.isAlive() && !livingEntity.isRemoved()) {
@@ -186,7 +186,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                         return nearest.onHurt(source, amount, null, normal, normal.mult(-1), contactPoint, hitBox);
                     } else throw new IllegalStateException("No subpart found for explosion damage.");
                 } else {//一般伤害处理
-                    var results = level.getWorld().rayTest(start, end);
+                    var results = physicsLevel.getWorld().rayTest(start, end);
                     for (var result : results) {
                         PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
                         if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart someSubPart) {
@@ -351,7 +351,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     @NotNull
     @Override
     public PhysicsLevel getPhysicsLevel() {
-        return level().getPhysicsLevel();
+        return SparkLevel.getPhysicsLevel(level());
     }
 
     @Override
