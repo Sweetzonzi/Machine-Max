@@ -31,4 +31,12 @@ public class CollisionManager {
     public static void addImpulse(Entity entity, Vec3 vec) {
         impulse.merge(entity, vec, Vec3::add);
     }
+
+    public static void setImpulse(Entity entity, Vec3 vec) {
+        impulse.put(entity, vec);
+    }
+
+    public static Vec3 getImpulse(Entity entity) {
+        return impulse.getOrDefault(entity, Vec3.ZERO);
+    }
 }

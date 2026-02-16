@@ -14,6 +14,8 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.client.render.renderable.ModelAnimatable;
+import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem;
+import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
@@ -22,13 +24,17 @@ import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
 import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -46,6 +52,15 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
     public void tick() {
         player = Minecraft.getInstance().player;
         if (player == null) return;
+        // 清理无效的包围盒
+        Item rightItem = player.getMainHandItem().getItem();
+        Item leftItem = player.getOffhandItem().getItem();
+        if (rightItem instanceof VehicleBlueprintItem
+                || leftItem instanceof VehicleBlueprintItem
+                || rightItem instanceof AssemblyItem
+                || leftItem instanceof AssemblyItem) {
+        } else VisualEffectHelper.boundingBox = null;
+
         var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
         if (cache.getPartType() instanceof PartType) {
             VariantAttr variantAttr = cache.getVariant();

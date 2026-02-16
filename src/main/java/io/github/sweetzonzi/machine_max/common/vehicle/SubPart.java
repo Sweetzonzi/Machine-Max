@@ -134,7 +134,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         PhysicsBodyExtensionKt.setOwner(this.body, this);
         this.body.setSleepingThresholds(0.1f, 0.1f);
         this.body.setProtectGravity(true);
-        this.body.setGravity(getPhysicsLevel().getWorld().getGravity(null));
+//        this.body.setGravity(getPhysicsLevel().getWorld().getGravity(null));
         if (part.getLevel().isClientSide()) this.body.setKinematic(true);
         Vector3f inverseInertia = new Vector3f();
         this.body.getInverseInertiaLocal(inverseInertia);
@@ -514,7 +514,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 );
             }
             //不处理速度过小的碰撞
-            if (contactVel.subtract(PhysicsHelperKt.toBVector3f(livingEntity.getDeltaMovement().scale(20))).length() < 4f) {
+            if (contactVel.subtract(PhysicsHelperKt.toBVector3f(livingEntity.getDeltaMovement().scale(20))).length() < 2f) {
                 return;
             }
             float contactNormalSpeed = vel.dot(normal);//直接取接触点碰撞速度似乎不准确
@@ -588,6 +588,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @Override
     public void preTick() {
         super.preTick();
+        if (part.assemblingProgress >= 1f && tickCount == 10) {
+            body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null));
+        }
     }
 
     @Override

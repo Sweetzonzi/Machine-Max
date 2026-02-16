@@ -58,7 +58,6 @@ public class AssemblyItem extends Item implements ICustomModelItem {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         if (!level.isClientSide()) {
-            //TODO:检查AABB尺寸位置是否正确，似乎有微妙偏移
             //TODO:检查与地形的碰撞
             ItemStack stack = player.getItemInHand(usedHand);
             try {
@@ -68,7 +67,7 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                 player.getEyePosition(),
                                 player.getEyePosition().add(player.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
+                                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()).add(0, -(float) vehicleData.min.y, 0),
                         Quaternion.IDENTITY
                 );
                 Vec3 min = vehicleData.min.add(SparkMathKt.toVec3(transform.getTranslation()));
@@ -116,7 +115,7 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                                     PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                             entity.getEyePosition(),
                                             entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
-                                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
+                                            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()).add(0, -(float) vehicleData.min.y, 0),
                                     Quaternion.IDENTITY
                             ) : new Transform(
                             PhysicsHelperKt.toBVector3f(entity.position()),
@@ -141,14 +140,6 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                         else boundingBox.setColor(Color.GREEN);
                         return null;
                     });
-                } else if (entity instanceof LivingEntity livingEntity) {
-                    var leftItem = livingEntity.getItemInHand(InteractionHand.MAIN_HAND).getItem();
-                    var rightItem = livingEntity.getItemInHand(InteractionHand.OFF_HAND).getItem();
-                    if (leftItem instanceof VehicleBlueprintItem
-                            || rightItem instanceof VehicleBlueprintItem
-                            || leftItem instanceof AssemblyItem
-                            || rightItem instanceof AssemblyItem) {
-                    } else VisualEffectHelper.boundingBox = null;
                 }
             } catch (NullPointerException ignored) {
             }

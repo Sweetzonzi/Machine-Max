@@ -121,7 +121,7 @@ public class Part {
         this.customRecipe = data.customRecipe == FabricatingRecipe.EMPTY ? FabricatingRecipe.EMPTY : data.customRecipe;
         this.uuid = UUID.fromString(data.uuid);
         this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : Integer.MAX_VALUE);
-        this.assemblingProgress = readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f;
+        this.setAssemblingProgress(readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f);
         this.rootSubPart = createSubParts(type.getVariants().get(variantName).getSubParts());//重建子部件并指定根子部件
         //遍历零件，录入基本数据
         for (Map.Entry<String, SubPart> entry : subParts.entrySet()) {
@@ -556,10 +556,17 @@ public class Part {
         progress = Math.clamp(progress, 0f, 1f);
         if (progress != this.assemblingProgress) {
             this.assemblingProgress = progress;
+            float finalProgress = progress;
             SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
                 for (SubPart subPart : subParts.values()) {
                     subPart.body.setMass(subPart.attr.mass * (0.3f + 0.7f * this.assemblingProgress));
-                    subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(this.assemblingProgress));
+                    if (finalProgress == 0) {
+                        subPart.body.setGravity(Vector3f.ZERO);
+                    } else {
+                        if (subPart.body.getGravity(null).lengthSquared() == 0)
+                            subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null));
+                        subPart.body.activate();
+                    }
                 }
                 updateMass();
                 return null;
