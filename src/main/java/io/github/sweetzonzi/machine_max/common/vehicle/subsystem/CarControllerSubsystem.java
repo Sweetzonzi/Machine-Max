@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CarControllerSubsystemAttr;
@@ -321,7 +322,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     WheelDriverSubsystem wheel = entry.getKey();
                     if (wheel.connector.joint != null) {
                         float steeringInput = ackermannSteering(actualSteering, wheel.connector);
-                        sendCallbackToListener(channel, wheel, new WheelControlSignal(actualBrake, actualHandBrake, steeringInput));
+                        float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
+                        sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                     }
                 }
             } else {//前进方向输入信号为0 Forward input signal is 0
@@ -346,7 +348,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         WheelDriverSubsystem wheel = entry.getKey();
                         if (wheel.connector.joint != null) {
                             float steeringInput = ackermannSteering(actualSteering, wheel.connector);
-                            sendCallbackToListener(channel, wheel, new WheelControlSignal(actualBrake, actualHandBrake, steeringInput));
+                            float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
+                            sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                         }
                     }
                     for (GearboxSubsystem gearbox : gearboxes.keySet()) {
@@ -362,7 +365,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         WheelDriverSubsystem wheel = entry.getKey();
                         if (wheel.connector.joint != null) {
                             float steeringInput = ackermannSteering(actualSteering, wheel.connector);
-                            sendCallbackToListener(channel, wheel, new WheelControlSignal(actualBrake, actualHandBrake, steeringInput));
+                            float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
+                            sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                         }
                     }
                     for (GearboxSubsystem gearbox : gearboxes.keySet()) {//溜车时适度降档 Shift down moderately when rolling
@@ -491,5 +495,41 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         result.putAll(attr.getBrakeOutputTargets());
         result.putAll(attr.getHandbrakeOutputTargets());
         return result;
+    }
+
+    /**
+     * 计算考虑ABS的有效刹车力
+     *
+     * @param wheel    轮胎驱动子系统
+     * @param rawBrake 原始刹车力
+     * @return 经过ABS调整后的有效刹车力
+     */
+    private float calculateEffectiveBrake(WheelDriverSubsystem wheel, float rawBrake) {
+        float vehicleSpeed = Math.abs(this.speed);
+        if (!attr.staticAttribute.isAbsEnabled() || rawBrake <= 0 || vehicleSpeed < 0.5f) {
+            // 不使用ABS或刹车力为0或车速小于2m/s时，直接返回原始刹车力
+            return rawBrake;
+        }
+
+        // 获取轮胎角速度
+        float angularVelocity = -wheel.getRelativeAngularVel().get(0); // X轴角速度
+
+        // 计算轮胎线速度
+        float wheelLinearSpeed = angularVelocity * attr.staticAttribute.getAbsWheelRadius();
+
+        // 计算滑移率
+        float slipRatio = (speed - wheelLinearSpeed) / speed;
+
+        // ABS控制逻辑
+        float targetSlipRatio = attr.staticAttribute.getAbsTargetSlipRatio();
+        float effectiveBrake = rawBrake;
+
+        if (slipRatio > targetSlipRatio) {
+            // 滑移率过高，减少刹车力
+            float reductionFactor = Math.clamp(1.0f - (slipRatio - targetSlipRatio) / 0.15f, 0.1f, 1.0f);
+            effectiveBrake = rawBrake * reductionFactor;
+        }
+
+        return Math.max(0f, Math.min(1f, effectiveBrake));
     }
 }

@@ -145,13 +145,13 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
         else return EmptySignal.INSTANCE;//若为其他任何类型的信号则不对速度进行控制
     }
 
-    private Vector3f getRelativeAngle() {
+    public Vector3f getRelativeAngle() {
         Vector3f result = new Vector3f();
         connector.joint.getAngles(result);
         return result;
     }
 
-    private Vector3f getRelativeAngularVel() {
+    public Vector3f getRelativeAngularVel() {
         Vector3f result = new Vector3f();
         Vector3f angularVelA = connector.joint.getBodyA().getAngularVelocity(null);
         Vector3f angularVelB = connector.joint.getBodyB().getAngularVelocity(null);
