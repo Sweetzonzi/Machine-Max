@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.external;
 
 import com.google.gson.JsonElement;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
@@ -26,11 +25,8 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLPaths;
-import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -77,6 +73,8 @@ public class MMDynamicRes {
     public static final Path NAMESPACE = CONFIG_PATH.resolve(MOD_ID);//模组根文件夹
     public static final Path SPARK_MODULE = GAME_DIR.resolve("spark_modules");
     public static final Path PUBLIC_JS_LIBS = NAMESPACE.resolve("public_scripts");//js外部公共库目录
+
+    public static final Path TEMP = MMDynamicRes.NAMESPACE.resolve("temp");
 
     public static boolean overwrite = true;//覆写总开关，考虑以后做成用户自定义配置
 
@@ -182,6 +180,10 @@ public class MMDynamicRes {
 //        }
 
 //        MMInitialJS.register();//注册所有JS形式的初始化配置
+    }
+
+    public static String getLibrary(String path) {
+        return TEMP.resolve(path).toString().replace(GAME_DIR.toString(), "");
     }
 
     @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
@@ -434,6 +436,39 @@ public class MMDynamicRes {
         return str.contains(".") ? str.substring(0, str.lastIndexOf('.')) : str;
     }
 
+
+    /**
+     * 将类路径资源文件复制到指定文件系统路径
+     *
+     * @param resourcePath 资源路径 (e.g. "config/default.properties")
+     */
+    public static void tempResourceToFile(String resourcePath, String fileName) {
+        Path targetPath = TEMP.resolve(resourcePath);
+        resourcePath = "natives/" + resourcePath;
+        ClassLoader classLoader = MMDynamicRes.class.getClassLoader();
+        targetPath = targetPath.resolve(fileName);
+        // 构建完整的资源文件路径
+        String fullResourcePath = resourcePath.endsWith("/") ? resourcePath + fileName : resourcePath + "/" + fileName;
+        try (InputStream inputStream = classLoader.getResourceAsStream(fullResourcePath)) {
+            // 检查资源是否存在
+            if (inputStream == null) {
+                System.err.println("资源文件不存在，跳过: " + fullResourcePath);
+                return;
+            }
+            // 创建父目录（如果不存在）
+            Path parentDir = targetPath.getParent();
+            if (parentDir != null) {
+                Files.createDirectories(parentDir);
+            }
+            // 直接从输入流复制到目标文件
+            Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+            targetPath.toFile().deleteOnExit();
+
+        } catch (IOException e) {
+            System.err.println("临时资源文件创建失败: " + resourcePath + " -> " + targetPath);
+            e.printStackTrace();
+        }
+    }
 
     /**
      * 将类路径资源文件复制到指定文件系统路径

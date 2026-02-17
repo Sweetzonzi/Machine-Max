@@ -8,26 +8,38 @@ import com.github.kwhat.jnativehook.mouse.NativeMouseEvent;
 import com.github.kwhat.jnativehook.mouse.NativeMouseInputListener;
 import com.github.kwhat.jnativehook.mouse.NativeMouseWheelEvent;
 import com.github.kwhat.jnativehook.mouse.NativeMouseWheelListener;
+import com.jme3.system.JmeSystem;
+import com.jme3.system.Platform;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+
+/**
+ * 来自 <a href="https://github.com/Liruochen1207/jnativehook">ArcherLee 魔改版 jnativehook</a>,
+ * 支持了mc环境下查找dll文件
+ * <p>
+ * <a href="https://github.com/kwhat/jnativehook">jnativehook</a> 是一个基于C的原生输入库
+ * <p>
+ * 原作者: <a href="https://github.com/kwhat">kwhat</a>
+ */
 
 public class NativeKeyListener implements NativeMouseInputListener, NativeMouseWheelListener, com.github.kwhat.jnativehook.keyboard.NativeKeyListener {
 	public void nativeMouseClicked(NativeMouseEvent e) {
-		System.out.println("Mouse Clicked: " + e.getClickCount());
+//		System.out.println("Mouse Clicked: " + e.getClickCount());
 	}
 
 	public void nativeMousePressed(NativeMouseEvent e) {
-		System.out.println("Mouse Pressed: " + e.getButton());
+//		System.out.println("Mouse Pressed: " + e.getButton());
 	}
 
 	public void nativeMouseReleased(NativeMouseEvent e) {
-		System.out.println("Mouse Released: " + e.getButton());
+//		System.out.println("Mouse Released: " + e.getButton());
 	}
 
 	public void nativeMouseMoved(NativeMouseEvent e) {
-		System.out.println("Mouse Moved: " + e.getX() + ", " + e.getY());
+//		System.out.println("Mouse Moved: " + e.getX() + ", " + e.getY());
 	}
 
     public void nativeMouseWheelMoved(NativeMouseWheelEvent e) {
-        System.out.println("Mosue Wheel Moved: " + e.getWheelRotation());
+//        System.out.println("Mosue Wheel Moved: " + e.getWheelRotation());
     }
 
     public void nativeKeyPressed(NativeKeyEvent e) {
@@ -50,9 +62,34 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
         System.out.println("Key Typed: " + e.getKeyText(e.getKeyCode()));
     }
 
-    //todo 若运行报错，请查看ClientSetup中的备注
     public static void setUp() {
         try {
+            // 配置dll库在run路径下的相对子路径
+            Platform platform = JmeSystem.getPlatform();
+            switch (platform.getOs()) {
+                case Windows -> {
+                    MMDynamicRes.tempResourceToFile("jNativeLib/windows/arm", "JNativeHook.dll");
+                    MMDynamicRes.tempResourceToFile("jNativeLib/windows/x86", "JNativeHook.dll");
+                    MMDynamicRes.tempResourceToFile("jNativeLib/windows/x86_64","JNativeHook.dll");
+
+                }
+                case MacOS -> {
+                    MMDynamicRes.tempResourceToFile("jNativeLib/darwin/arm64", "libJNativeHook.dylib");
+                    MMDynamicRes.tempResourceToFile("jNativeLib/darwin/x86_64", "libJNativeHook.dylib");
+
+                }
+                case Android, Linux -> {
+                    MMDynamicRes.tempResourceToFile("jNativeLib/linux/arm", "libJNativeHook.so");
+                    MMDynamicRes.tempResourceToFile("jNativeLib/linux/arm64", "libJNativeHook.so");
+                    MMDynamicRes.tempResourceToFile("jNativeLib/linux/x86", "libJNativeHook.so");
+                    MMDynamicRes.tempResourceToFile("jNativeLib/linux/x86_64", "libJNativeHook.so");
+                }
+            }
+
+
+            System.setProperty("jnativehook.max_machine.path"
+                    , MMDynamicRes.getLibrary("jNativeLib"));
+
             GlobalScreen.registerNativeHook();
         }
         catch (NativeHookException ex) {
@@ -68,9 +105,5 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
         GlobalScreen.addNativeMouseMotionListener(example);
         GlobalScreen.addNativeMouseWheelListener(example);
         GlobalScreen.addNativeKeyListener(example);
-    }
-
-	public static void main(String[] args) {
-        setUp(); //java本地测试
     }
 }
