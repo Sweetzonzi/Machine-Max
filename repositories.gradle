@@ -19,6 +19,10 @@ dependencies {
     implementation files('libs/spark-core-graaljs-neoforge-1.21.1-1.0.0.jar')
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
+    // jni原生键盘鼠标监听器
+    implementation files('libs/jnativehook-2.2-MM.jar')
+    additionalRuntimeClasspath files('libs/jnativehook-2.2-MM.jar')
+//    jarJar(implementation("com.github.kwhat:jnativehook:2.2.2"))
     // 其它mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib
@@ -93,5 +97,6 @@ repositories {
     }
     flatDir {
         dir 'libs'
+        dir 'libs/jNativeLib'
     }
 }
