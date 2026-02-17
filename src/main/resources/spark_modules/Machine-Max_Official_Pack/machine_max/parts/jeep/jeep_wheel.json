@@ -34,6 +34,24 @@
               "rolling_friction": 0.05,
               "restitution": 0.2,
               "block_damage_factor": 0.05,
+              "impact_modifiers": [
+                {
+                  "operation": "multiply",
+                  "value": 0.1,
+                  "condition": {
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
+                  }
+                },
+                {
+                  "operation": "add",
+                  "value": -2.0,
+                  "condition": {
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
+                  }
+                }
+              ],
               "damage_modifiers": [
                 {
                   "operation": "multiply",
