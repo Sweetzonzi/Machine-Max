@@ -12,6 +12,11 @@ import com.jme3.system.JmeSystem;
 import com.jme3.system.Platform;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * 来自 <a href="https://github.com/Liruochen1207/jnativehook">ArcherLee 魔改版 jnativehook</a>,
  * 支持了mc环境下查找dll文件
@@ -22,6 +27,15 @@ import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
  */
 
 public class NativeKeyListener implements NativeMouseInputListener, NativeMouseWheelListener, com.github.kwhat.jnativehook.keyboard.NativeKeyListener {
+    public static final Map<String, Set<NativeInput>> nativeInputs = new HashMap<>();
+    public static NativeInput key;
+    static {
+        key = new NativeInput("A")
+                .chain(new NativeInput("Shift"))
+                .chain(new NativeInput("Ctrl")).setEvent(() -> {
+                    System.out.println("SCA");
+                }).register();
+    }
 	public void nativeMouseClicked(NativeMouseEvent e) {
 //		System.out.println("Mouse Clicked: " + e.getClickCount());
 	}
