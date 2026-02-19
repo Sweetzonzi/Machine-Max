@@ -3896,10 +3896,10 @@
 						"hull_back_bumper_right": [-16, -1.18716, 38.70092],
 						"hull_front_bumper_left": [16, -1.18716, -22.94108],
 						"hull_front_bumper_right": [-16, -1.18716, -22.94108],
-						"left_front_wheel": [14.92295, -1.94577, -12.69743],
-						"left_back_wheel": [14.92295, -1.94577, 28.28617],
-						"right_front_wheel": [-14.92295, -1.94577, -12.69743],
-						"right_back_wheel": [-14.92295, -1.94577, 28.28617],
+						"left_front_wheel": [16.92295, -1.94577, -12.69743],
+						"left_back_wheel": [16.92295, -1.94577, 28.28617],
+						"right_front_wheel": [-16.92295, -1.94577, -12.69743],
+						"right_back_wheel": [-16.92295, -1.94577, 28.28617],
 						"hull_trunk_door_axis": {
 							"offset": [-0.00001, 23.54403, 31.78477],
 							"rotation": [15, 0, 0]

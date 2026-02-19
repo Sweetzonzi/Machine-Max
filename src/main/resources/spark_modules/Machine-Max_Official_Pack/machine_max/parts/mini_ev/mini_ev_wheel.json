@@ -45,22 +45,6 @@
               ],
               "damage_modifiers": [
                 {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "always"
-                  }
-                },
-                {
-                  "operation": "add",
-                  "value": -2.0,
-                  "condition": {
-                    "type": "always"
-                  }
-                }
-              ],
-              "damage_modifiers": [
-                {
                   "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value
                   "value": 0.1, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减至0.1倍
                   "condition": {
@@ -148,6 +132,24 @@
               "rolling_friction": 0.05,
               "restitution": 0.2,
               "block_damage_factor": 0.05,
+              "impact_modifiers": [
+                {
+                  "operation": "multiply",
+                  "value": 0.1,
+                  "condition": {
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
+                  }
+                },
+                {
+                  "operation": "add",
+                  "value": -2.0,
+                  "condition": {
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
+                  }
+                }
+              ],
               "damage_modifiers": [
                 {
                   "operation": "multiply",

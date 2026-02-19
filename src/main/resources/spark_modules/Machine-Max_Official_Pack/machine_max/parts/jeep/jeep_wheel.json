@@ -141,14 +141,32 @@
             "CollisionShape": {
               "type": "cylinder",
               "friction": [
+                1.5,
                 2.0,
-                2.25,
                 1.0
               ],
               "slip_adaptation": 0.5,
               "rolling_friction": 0.05,
               "restitution": 0.2,
               "block_damage_factor": 0.05,
+              "impact_modifiers": [
+                {
+                  "operation": "multiply",
+                  "value": 0.1,
+                  "condition": {
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
+                  }
+                },
+                {
+                  "operation": "add",
+                  "value": -2.0,
+                  "condition": {
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
+                  }
+                }
+              ],
               "damage_modifiers": [
                 {
                   "operation": "multiply",

@@ -129,6 +129,24 @@
               "rolling_friction": 0.05,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力
               "restitution": 0.2,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
               "block_damage_factor": 0.05, //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
+              "impact_modifiers": [
+                {
+                  "operation": "multiply",
+                  "value": 0.1,
+                  "condition": {
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
+                  }
+                },
+                {
+                  "operation": "add",
+                  "value": -2.0,
+                  "condition": {
+                    "type": "damage_tag",
+                    "id": "machine_max:is_impact"
+                  }
+                }
+              ],
               "damage_modifiers": [
                 {
                   "operation": "multiply", // 运算符, 支持add和multiply, add则将value加到传入的数值上, multiply则乘以value

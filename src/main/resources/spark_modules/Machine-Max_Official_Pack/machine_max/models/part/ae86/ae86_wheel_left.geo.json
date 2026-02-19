@@ -1172,7 +1172,7 @@
 					],
 					"locators": {
 						"MassCenter": [0, 0, 0],
-						"AttachPoint": [0, 0, 0]
+						"AttachPoint": [1, 0, 0]
 					}
 				}
 			]

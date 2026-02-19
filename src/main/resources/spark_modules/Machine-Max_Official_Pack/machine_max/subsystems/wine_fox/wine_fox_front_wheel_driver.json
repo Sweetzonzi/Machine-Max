@@ -9,7 +9,7 @@
     "max_speed": 3140.0 //(可选, 默认3140)最大转速(rad/s)
   },
   "steering": {//(可选)轮胎转向相关属性, 默认最大转向力矩4000N*m, 最大转速3.14rad/s
-    "max_force": 4000, //(可选, 默认4000)最大转向力矩(N*m)
+    "max_force": 2000, //(可选, 默认2000)最大转向力矩(N*m)
     "max_speed": 3.14 //(可选, 默认3.14)最大转速(rad/s)
   },
   "control_inputs": ["wheel_control", "move_control"]//(可选, 默认["wheel_control", "move_control"])接收的控制信号的频道列表, 优先级递减

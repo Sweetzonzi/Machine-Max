@@ -16,7 +16,7 @@
 					"pivot": [0, -9, 1.5],
 					"locators": {
 						"chassis_locator": [0, 7.75, -26],
-						"backup_wheel": [0, 5.25, 43.5],
+						"backup_wheel": [0, 5.25, 45.5],
 						"top_right_1": [-8, 25, 1],
 						"top_right_2": [-8, 25, 17],
 						"top_right_3": [-8, 25, 33],

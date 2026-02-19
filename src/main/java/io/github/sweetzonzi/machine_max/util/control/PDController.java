@@ -82,9 +82,6 @@ public class PDController {
         // P项 + D项
         double output = this.P * error + this.D * errorSpeed;
 
-        // 乘以时间步长（如果需要离散化控制量）
-        output *= this.STEP;
-
         // 更新上一帧误差
         this.errorLastFrame = this.error;
 

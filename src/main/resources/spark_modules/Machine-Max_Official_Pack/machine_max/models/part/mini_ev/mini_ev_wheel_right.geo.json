@@ -20,7 +20,7 @@
 					"parent": "Root",
 					"pivot": [0, 0, 0],
 					"locators": {
-						"AttachPoint": [0, 0, 0]
+						"AttachPoint": [-1, 0, 0]
 					}
 				},
 				{

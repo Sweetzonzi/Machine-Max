@@ -26,10 +26,32 @@
       "description": "转向中心位置，相对于部件局部坐标系。"
     },
     "steering_radius": {
-      "type": "number",
-      "minimum": 0,
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "default": 5.0,
+          "description": "转向半径，单位米，用于计算转向角度。支持单值输入或速度-半径映射表。"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "速度-转向半径映射表，键为速度（km/h），值为对应的转向半径（米）。线性插值。",
+          "examples": [
+            {
+              "0": 3.0,
+              "30": 5.0,
+              "60": 8.0,
+              "100": 12.0
+            }
+          ]
+        }
+      ],
       "default": 5.0,
-      "description": "转向半径，单位米，用于计算转向角度。"
+      "description": "转向半径，单位米，用于计算转向角度。支持单值输入或速度-半径映射表。"
     },
     "manual_gear_shift": {
       "type": "boolean",

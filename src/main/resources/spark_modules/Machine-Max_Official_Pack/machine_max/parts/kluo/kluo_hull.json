@@ -363,7 +363,7 @@
               "yr": {
                 "lower_limit": -45.0,
                 "upper_limit": 45.0,
-                "stiffness": 4000,
+                "stiffness": 1000,
                 "damping": 20
               },
               "zr": {
@@ -371,7 +371,7 @@
                 "upper_limit": 15.0,
                 "equilibrium": 1.0,
                 "stiffness": 15000,
-                "damping": 195
+                "damping": 197
               }
             }
           },
@@ -389,7 +389,7 @@
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
                 "stiffness": 10000,
-                "damping": 195
+                "damping": 197
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -400,7 +400,7 @@
                 "upper_limit": 15.0,
                 "equilibrium": 1.0,
                 "stiffness": 15000,
-                "damping": 195
+                "damping": 197
               }
             }
           },
@@ -418,7 +418,7 @@
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
                 "stiffness": 10000,
-                "damping": 195
+                "damping": 197
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -427,7 +427,7 @@
               "yr": {
                 "lower_limit": -45.0,
                 "upper_limit": 45.0,
-                "stiffness": 4000,
+                "stiffness": 1000,
                 "damping": 20
               },
               "zr": {
@@ -435,7 +435,7 @@
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
                 "stiffness": 15000,
-                "damping": 195
+                "damping": 197
               }
             }
           },
@@ -453,7 +453,7 @@
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
                 "stiffness": 10000,
-                "damping": 195
+                "damping": 197
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -464,7 +464,7 @@
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
                 "stiffness": 15000,
-                "damping": 195
+                "damping": 197
               }
             }
           },

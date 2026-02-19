@@ -19,12 +19,12 @@ public class WheelDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr 
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("wheel_control", "move_control")).forGetter(WheelDriverSubsystemStaticAttr::getControlSignalKeys),
             StaticWheelRollingAxisAttr.CODEC.optionalFieldOf("roll", new StaticWheelRollingAxisAttr(
                     10000f,
-                    1500f,
+                    3500f,
                     0f,
                     3140f
             )).forGetter(WheelDriverSubsystemStaticAttr::getRollingAxis),
             StaticWheelSteeringAxisAttr.CODEC.optionalFieldOf("steering", new StaticWheelSteeringAxisAttr(
-                    4000f,
+                    2000f,
                     3.14f
             )).forGetter(WheelDriverSubsystemStaticAttr::getSteeringAxis)
     ).apply(instance, WheelDriverSubsystemStaticAttr::new
@@ -70,7 +70,7 @@ public class WheelDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr 
             float maxSpeed
     ) {
         public static final Codec<StaticWheelSteeringAxisAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.FLOAT.optionalFieldOf("max_force", 5000f).forGetter(StaticWheelSteeringAxisAttr::maxForce),
+                Codec.FLOAT.optionalFieldOf("max_force", 2000f).forGetter(StaticWheelSteeringAxisAttr::maxForce),
                 Codec.FLOAT.optionalFieldOf("max_speed", 3.14f).forGetter(StaticWheelSteeringAxisAttr::maxSpeed)
         ).apply(instance, StaticWheelSteeringAxisAttr::new));
     }

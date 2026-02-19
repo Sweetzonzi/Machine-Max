@@ -90,8 +90,6 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             String signalChannel = entry.getKey();
             List<String> targets = entry.getValue();
             var steering = actualSteering * 0.01f;
-            if (speed > 15f)
-                steering /= 1 + (speed - 15) / 15;//限制高速下的转弯半径确保安全 Limit the steering radius under high speed to ensure safety
             for (String targetName : targets)
                 sendSignalToTarget(signalChannel, targetName, steering);
         }
@@ -127,7 +125,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
      *
      * @see CarControllerSubsystem#onSignalUpdated(String signalKey, ISignalSender sender)
      */
-    private void handShake() {
+    protected void handShake() {
         for (String signalChannel : attr.engineControlOutputTargets.keySet()) {
             sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
         }
@@ -243,7 +241,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         }
     }
 
-    private void updateMoveInputs() {
+    protected void updateMoveInputs() {
         byte[] moveInput = null;
         byte[] moveInputConflict = null;
         boolean hasMoveInput = false;
@@ -268,7 +266,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         }
     }
 
-    private void distributeControlSignals() {
+    protected void distributeControlSignals() {
         if (this.moveInput != null && moveInputConflict != null) {//前进方向有输入信号 (可为0) Have forward input signal (can be 0)
             float avgEngineSpeed = 0f;
             byte[] moveInput = this.moveInput;
@@ -412,7 +410,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
      * @param direction          期望运动方向，正向 > 0，反向 < 0 Expected motion direction, forward > 0, reverse < 0
      * @return 换挡档位 Gear shift target
      */
-    private int autoGearShift(GearboxSubsystem gearbox, float engineSpeed, float upShiftThreshold, float downShiftThreshold, byte direction) {
+    protected int autoGearShift(GearboxSubsystem gearbox, float engineSpeed, float upShiftThreshold, float downShiftThreshold, byte direction) {
         int gear = gearbox.getCurrentGear();
         if (attr.staticAttribute.manualGearShift) return gear;//手动变速箱时不自动换挡 Manual gearbox shifting is not automatic
         int upGear = Math.min(gear + 1, gearbox.gearRatios.length - 1);
@@ -466,7 +464,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         return result;
     }
 
-    private float ackermannSteering(float steeringInput, AdvancedConnector wheelDrive) {
+    protected float ackermannSteering(float steeringInput, AdvancedConnector wheelDrive) {
         New6Dof joint = wheelDrive.joint;
         Vector3f pivot = new Vector3f();
         if (wheelDrive.subPart.body == joint.getBodyA()) joint.getPivotA(pivot);
@@ -474,9 +472,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         if (steeringInput == 0) {
             return 0;
         } else {
-            float steeringRadius = attr.staticAttribute.steeringRadius / steeringInput * 100f;//实际转向半径(米) Actual steering radius (m)
-            if (speed > 15f)
-                steeringRadius *= 1 + (speed - 15) / 15;//限制高速下的转弯半径确保安全 Limit the steering radius under high speed to ensure safety
+            // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
+            float steeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput * 100f;//实际转向半径(米) Actual steering radius (m)
             double deltaRadius = pivot.x - attr.staticAttribute.steeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
             double deltaForward = pivot.z - attr.staticAttribute.steeringCenter.z;
@@ -504,7 +501,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
      * @param rawBrake 原始刹车力
      * @return 经过ABS调整后的有效刹车力
      */
-    private float calculateEffectiveBrake(WheelDriverSubsystem wheel, float rawBrake) {
+    protected float calculateEffectiveBrake(WheelDriverSubsystem wheel, float rawBrake) {
         float vehicleSpeed = Math.abs(this.speed);
         if (!attr.staticAttribute.isAbsEnabled() || rawBrake <= 0 || vehicleSpeed < 0.5f) {
             // 不使用ABS或刹车力为0或车速小于2m/s时，直接返回原始刹车力

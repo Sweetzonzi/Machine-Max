@@ -229,6 +229,10 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         return SparkMathKt.toBQuaternion(getSyncedData().get(DATA_ROT_ID));
     }
 
+    public Quaternionf getQuaternionf() {
+        return getSyncedData().get(DATA_ROT_ID);
+    }
+
     public Vector3f getLinearVelocity() {
         return PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_VEL_ID));
     }
@@ -259,6 +263,60 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         MyQuaternion.rotateInverse(worldToLocal, result, result);//旋转世界坐标系向量到刚体自身坐标系
         return result;
     }
+
+    public Vector3f getFrontVector() {
+        return PhysicsHelperKt.toBVector3f(getQuaternionf().transform(new org.joml.Vector3f(0, 0, -1)));
+    }
+
+    public Vector3f getUpVector() {
+        return PhysicsHelperKt.toBVector3f(getQuaternionf().transform(new org.joml.Vector3f(0, 1, 0)));
+    }
+
+    public Vector3f getRightVector() {
+        return PhysicsHelperKt.toBVector3f(getQuaternionf().transform(new org.joml.Vector3f(1, 0, 0)));
+    }
+
+    /**
+     * <p>基于前向量计算pitch角（俯仰角）</p>
+     * <p>pitch角表示物体前后倾斜的角度，范围[-90°, 90°]</p>
+     * <p>基于前向量在y轴上的投影计算，避免旋转顺序问题</p>
+     *
+     * @return pitch角（弧度）
+     */
+    public float getPitch() {
+        Vector3f frontVector = getFrontVector();
+        // pitch = arcsin(前向量的y分量)
+        return (float) Math.asin(frontVector.y);
+    }
+
+    /**
+     * <p>基于前向量计算yaw角（偏航角）</p>
+     * <p>yaw角表示物体左右旋转的角度，范围[-180°, 180°]</p>
+     * <p>基于前向量在xz平面上的投影计算，避免旋转顺序问题</p>
+     *
+     * @return yaw角（弧度）
+     */
+    public float getYaw() {
+        Vector3f frontVector = getFrontVector();
+        // yaw = atan2(前向量的x分量, 前向量的z分量)
+        return (float) Math.atan2(frontVector.x, -frontVector.z);
+    }
+
+    /**
+     * <p>基于右向量和上向量计算roll角（滚转角）</p>
+     * <p>roll角表示物体绕前向轴旋转的角度，范围[-180°, 180°]</p>
+     * <p>基于右向量在世界坐标系上向量上的投影计算，避免旋转顺序问题</p>
+     *
+     * @return roll角（弧度）
+     */
+    public float getRoll() {
+        Vector3f rightVector = getRightVector();
+        // 计算右向量在世界坐标系上向量(0,1,0)上的投影
+        // roll = atan2(右向量的y分量, 右向量在xz平面上的长度)
+        float rightVectorLengthXZ = (float) Math.sqrt(rightVector.x * rightVector.x + rightVector.z * rightVector.z);
+        return (float) Math.atan2(rightVector.y, rightVectorLengthXZ);
+    }
+
 
     @NotNull
     public Matrix4f getWorldPositionMatrix(@NotNull Number number) {

@@ -3608,33 +3608,33 @@
 				{
 					"name": "RightFrontWheel",
 					"parent": "Chassis",
-					"pivot": [-14.49836, -3.64863, -16.21426],
+					"pivot": [-15.49836, -3.64863, -16.21426],
 					"locators": {
-						"right_front_wheel": [-14.49836, -3.64863, -16.21426]
+						"right_front_wheel": [-15.49836, -3.64863, -16.21426]
 					}
 				},
 				{
 					"name": "LeftFrontWheel",
 					"parent": "Chassis",
-					"pivot": [14.49836, -3.64862, -16.21426],
+					"pivot": [15.49836, -3.64862, -16.21426],
 					"locators": {
-						"left_front_wheel": [14.49836, -3.64863, -16.21426]
+						"left_front_wheel": [15.49836, -3.64863, -16.21426]
 					}
 				},
 				{
 					"name": "RightBackWheel",
 					"parent": "Chassis",
-					"pivot": [-14.49836, -3.64863, 22.88574],
+					"pivot": [-15.49836, -3.64863, 22.88574],
 					"locators": {
-						"right_back_wheel": [-14.49836, -3.64863, 22.88574]
+						"right_back_wheel": [-15.49836, -3.64863, 22.88574]
 					}
 				},
 				{
 					"name": "LeftBackWheel",
 					"parent": "Chassis",
-					"pivot": [14.49836, -3.64862, 22.88574],
+					"pivot": [15.49836, -3.64862, 22.88574],
 					"locators": {
-						"left_back_wheel": [14.49836, -3.64863, 22.88574]
+						"left_back_wheel": [15.49836, -3.64863, 22.88574]
 					}
 				},
 				{

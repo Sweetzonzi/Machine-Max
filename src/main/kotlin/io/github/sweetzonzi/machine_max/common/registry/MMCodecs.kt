@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_at
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.ItemStorageSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.JointDriverSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorbikeControllerSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.ScriptableSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.SeatSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.TransmissionSubsystemAttr
@@ -17,6 +18,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_att
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.GearboxSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.ItemStorageSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.JointDriverSubsystemStaticAttr
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorbikeControllerSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.ScriptableSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.SeatSubsystemStaticAttr
@@ -34,6 +36,7 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("engine")) { EngineSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("motor")) { MotorSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("car_controller")) { CarControllerSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("motorbike_controller")) { MotorbikeControllerSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("gearbox")) { GearboxSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("transmission")) { TransmissionSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("joint_driver")) { JointDriverSubsystemAttr.CODEC}
@@ -46,6 +49,7 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("engine")) { EngineSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("motor")) { MotorSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("car_controller")) { CarControllerSubsystemStaticAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("motorbike_controller")) { MotorbikeControllerSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("gearbox")) { GearboxSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("transmission")) { TransmissionSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("joint_driver")) { JointDriverSubsystemStaticAttr.CODEC}

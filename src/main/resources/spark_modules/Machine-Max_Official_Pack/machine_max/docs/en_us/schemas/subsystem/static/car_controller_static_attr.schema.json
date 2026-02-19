@@ -26,10 +26,32 @@
       "description": "Steering center position, relative to the part's local coordinate system."
     },
     "steering_radius": {
-      "type": "number",
-      "minimum": 0,
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "default": 5.0,
+          "description": "Steering radius, in meters, used to calculate steering angle. Supports single value input or speed-radius mapping table."
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "Speed-steering radius mapping table, where keys are speed (km/h) and values are corresponding steering radius (meters). Supports linear interpolation.",
+          "examples": [
+            {
+              "0": 3.0,
+              "30": 5.0,
+              "60": 8.0,
+              "100": 12.0
+            }
+          ]
+        }
+      ],
       "default": 5.0,
-      "description": "Steering radius, in meters, used to calculate steering angle."
+      "description": "Steering radius, in meters, used to calculate steering angle. Supports single value input or speed-radius mapping table."
     },
     "manual_gear_shift": {
       "type": "boolean",

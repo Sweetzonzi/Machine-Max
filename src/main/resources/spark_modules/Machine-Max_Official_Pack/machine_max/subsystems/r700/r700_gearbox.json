@@ -1,0 +1,7 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:gearbox",
+  "basic_durability": 50,
+  "final_ratio": 12.0,
+  "ratios": [-5.5, 5.5, 3.7, 2.5, 1.7]
+}

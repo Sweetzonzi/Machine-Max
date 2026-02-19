@@ -19,10 +19,10 @@
 						"hull_locator": [0, 30, -27.75],
 						"wheel_locator_left": [19, -0.25, -45.5],
 						"wheel_locator_right": [-19, -0.25, -45.5],
-						"wheel_locator_back_left_1": [13, -0.25, 22],
-						"wheel_locator_back_right_1": [-13, -0.25, 22],
-						"wheel_locator_back_right_2": [-13, -0.25, 49],
-						"wheel_locator_back_left_2": [13, -0.25, 49]
+						"wheel_locator_back_left_1": [21, -0.25, 22],
+						"wheel_locator_back_right_1": [-21, -0.25, 22],
+						"wheel_locator_back_right_2": [-21, -0.25, 49],
+						"wheel_locator_back_left_2": [21, -0.25, 49]
 					}
 				},
 				{
