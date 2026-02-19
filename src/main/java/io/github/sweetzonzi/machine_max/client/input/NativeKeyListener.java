@@ -39,27 +39,19 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
 	}
 
     public void nativeMouseWheelMoved(NativeMouseWheelEvent e) {
-//        System.out.println("Mosue Wheel Moved: " + e.getWheelRotation());
+//        System.out.println("Mouse Wheel Moved: " + e.getWheelRotation());
     }
 
     public void nativeKeyPressed(NativeKeyEvent e) {
-        System.out.println("Key Pressed: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
-
-        if (e.getKeyCode() == NativeKeyEvent.VC_ESCAPE) {
-            try {
-                GlobalScreen.unregisterNativeHook();
-            } catch (NativeHookException nativeHookException) {
-                nativeHookException.printStackTrace();
-            }
-        }
+//        System.out.println("Key Pressed: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
     }
 
     public void nativeKeyReleased(NativeKeyEvent e) {
-        System.out.println("Key Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
+//        System.out.println("Key Released: " + NativeKeyEvent.getKeyText(e.getKeyCode()));
     }
 
     public void nativeKeyTyped(NativeKeyEvent e) {
-        System.out.println("Key Typed: " + e.getKeyText(e.getKeyCode()));
+//        System.out.println("Key Typed: " + e.getKeyText(e.getKeyCode()));
     }
 
     public static void setUp() {
