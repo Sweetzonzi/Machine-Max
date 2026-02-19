@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
-import com.github.kwhat.jnativehook.mouse.NativeMouseEvent;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,8 +22,17 @@ public class NativeInput {
     @Getter
     private Runnable event;
 
+    @Getter
+    private Integer pressTimes = 1;
+
     public NativeInput(String keyName) {
+        NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new HashSet<>()).add(this);
         this.keyName = keyName;
+    }
+    public NativeInput(String keyName, Integer pressTimes) {
+        NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new HashSet<>()).add(this);
+        this.keyName = keyName;
+        this.pressTimes = pressTimes;
     }
 
     public NativeInput setEvent(Runnable event) {
@@ -98,28 +106,39 @@ public class NativeInput {
         collectNodes(node.next, visited);
     }
 
-    public NativeInput register() {
-        NativeKeyListener.nativeInputs.computeIfAbsent(getCombinedKeyName(), k -> new HashSet<>()).add(this);
-        return this;
-    }
 
     public NativeInput chain(NativeInput next) {
         NativeInput last = this;
         while (last.next != null) {
             last = last.next;
         }
+        if (next.keyName.equals(last.keyName)) {
+            last.pressTimes += next.pressTimes;
+            return last;
+        }
         last.setNext(next);
-        
-        // 更新combinedKeyName
+
+        // 更新combinedKey
+        NativeKeyListener.pressKeyInputs.getOrDefault(keyName, new HashSet<>()).removeIf(nativeInput -> nativeInput.equals(this));
+        NativeKeyListener.combineKeyInputs.getOrDefault(combinedKeyName, new HashSet<>()).removeIf(nativeInput -> nativeInput.equals(this));
         updateCombinedKeyName();
-        
-        return next;
+        NativeKeyListener.combineKeyInputs.computeIfAbsent(getCombinedKeyName(), k -> new HashSet<>()).add(this);
+        return this;
     }
 
     private void updateCombinedKeyName() {
         combinedKeyName = getAllConnectedNodes()
-                .map(NativeInput::getKeyName)
-                .filter(keyName -> keyName != null && !keyName.isEmpty())
+                .filter(node -> node.getKeyName() != null && !node.getKeyName().isEmpty())
+                .sorted((node1, node2) -> {
+                    String key1 = node1.getKeyName();
+                    String key2 = node2.getKeyName();
+                    int lengthCompare = Integer.compare(key2.length(), key1.length());
+                    if (lengthCompare != 0) {
+                        return lengthCompare;
+                    }
+                    return key1.compareTo(key2);
+                })
+                .map(node -> node.getKeyName() + ":" + node.getPressTimes())
                 .reduce((key1, key2) -> key1 + "-" + key2)
                 .orElse("");
     }
@@ -136,7 +155,7 @@ public class NativeInput {
         .chain(new NativeInput("Shift"))
         .chain(new NativeInput("Ctrl")).setEvent(() -> {
                     System.out.println("SCA");
-                }).register();
+                });
         System.out.println(a.getCombinedKeyName()); // Shift-Ctrl-A
     }
 
