@@ -443,7 +443,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                         contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
                         }
                     }
-                    if (contactVel.length() > 4f && !climbableBlocks.contains(blockPos) && finalNormal.y > 0.95f) {
+                    if (contactVel.length() > 4f && !climbableBlocks.contains(blockPos) && finalNormal.y > 0.95f && worldContactPoint.y - blockPos.getY() > -0.1f) {
                         // 漂移烟雾与音效
                         if (Math.random() < Math.max(1f, 0.02f * contactVel.length()))
                             level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,

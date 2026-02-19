@@ -1,29 +1,29 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/motorbike_controller_static_attr.json",
-  "title": "摩托车控制器子系统静态属性",
-  "description": "摩托车控制系统的静态属性，负责处理驾驶输入、转向控制等，包含摩托车特有的倾斜角度限制。",
+  "title": "Motorbike Controller Subsystem Static Attributes",
+  "description": "Static attributes of the motorbike control system, responsible for handling driving inputs, steering control, etc., including motorbike-specific tilt angle limitations.",
   "properties": {
     "$schema": {
       "type": "string",
-      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
-      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
     },
     "type": {
       "type": "string",
       "const": "machine_max:motorbike_controller",
-      "description": "子系统类型，必须为'machine_max:motorbike_controller'。"
+      "description": "Subsystem type, must be 'machine_max:motorbike_controller'."
     },
     "basic_durability": {
       "type": "number",
       "minimum": 0,
       "default": 20.0,
-      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+      "description": "Subsystem basic durability, becomes paralyzed when reduced to 0, restores functionality when repaired to 30% durability."
     },
     "steering_center": {
       "$ref": "../../base/vector_3d.schema.json",
       "default": [0, 0, 0],
-      "description": "转向中心位置，相对于部件局部坐标系。"
+      "description": "Steering center position, relative to the part's local coordinate system."
     },
     "steering_radius": {
       "oneOf": [
@@ -31,7 +31,7 @@
           "type": "number",
           "minimum": 0,
           "default": 5.0,
-          "description": "转向半径，单位米，用于计算转向角度。支持单值输入或速度-半径映射表。"
+          "description": "Steering radius, in meters, used to calculate steering angle. Supports single value input or speed-radius mapping table."
         },
         {
           "type": "object",
@@ -39,7 +39,7 @@
             "type": "number",
             "minimum": 0
           },
-          "description": "速度-转向半径映射表，键为速度(km/h)，值为对应的转向半径(米)。支持线性插值。",
+          "description": "Speed-steering radius mapping table, where keys are speed (km/h) and values are corresponding steering radius (meters). Supports linear interpolation.",
           "examples": [
             {
               "0": 3.0,
@@ -51,62 +51,62 @@
         }
       ],
       "default": 5.0,
-      "description": "转向半径，单位米，用于计算转向角度。支持单值输入或速度-半径映射表。"
+      "description": "Steering radius, in meters, used to calculate steering angle. Supports single value input or speed-radius mapping table."
     },
     "manual_gear_shift": {
       "type": "boolean",
       "default": false,
-      "description": "是否启用手动换挡。若为false，则自动换挡。"
+      "description": "Whether to enable manual gear shifting. If false, automatic shifting is used."
     },
     "auto_hand_brake": {
       "type": "boolean",
       "default": true,
-      "description": "是否自动启用手刹。当车辆静止且无输入时自动应用手刹。"
+      "description": "Whether to automatically apply handbrake. Automatically applies handbrake when vehicle is stationary and no input is given."
     },
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
       "default": ["move_control"],
-      "description": "控制输入信号键列表，优先级从高到低。"
+      "description": "List of control input signal keys, from highest to lowest priority."
     },
     "abs_enabled": {
       "type": "boolean",
       "default": true,
-      "description": "是否启用防抱死系统(ABS)。"
+      "description": "Whether to enable Anti-lock Braking System (ABS)."
     },
     "abs_target_slip_ratio": {
       "type": "number",
       "minimum": 0,
       "maximum": 1,
       "default": 0.15,
-      "description": "ABS目标滑移率，通常设置在0.1-0.2之间。滑移率过高时ABS会减少刹车力。"
+      "description": "ABS target slip ratio, typically set between 0.1-0.2. ABS reduces braking force when slip ratio is too high."
     },
     "abs_wheel_radius": {
       "type": "number",
       "minimum": 0.01,
       "default": 0.5,
-      "description": "轮胎半径，单位米，用于计算轮胎线速度和滑移率。"
+      "description": "Wheel radius in meters, used to calculate wheel linear speed and slip ratio."
     },
     "max_angle": {
       "type": "number",
       "minimum": 0,
       "maximum": 90,
       "default": 30.0,
-      "description": "倾斜角超过此角度视作失去平衡，不再修正姿态，单位为度。"
+      "description": "Tilt angle beyond which the motorbike is considered to have lost balance and will no longer apply correction forces, in degrees."
     },
     "parking_angle": {
       "type": "number",
       "minimum": -90,
       "maximum": 90,
       "default": 5.0,
-      "description": "摩托车静止停靠时的倾斜角度，可正可负，单位为度。正值表示向左倾斜，负值表示向右倾斜。"
+      "description": "Target tilt angle when the motorbike is parked, can be positive or negative, in degrees. Positive values indicate left tilt, negative values indicate right tilt."
     },
     "correction_force_multiplier": {
       "type": "number",
       "minimum": 0.1,
       "maximum": 10.0,
       "default": 1.0,
-      "description": "修正力倍率，用于整体缩放摩托车控制系统的平衡调节力。"
+      "description": "Correction force multiplier, used to scale the overall balance adjustment force of the motorbike control system."
     }
   },
   "required": ["type"],
@@ -126,13 +126,9 @@
       "type": "machine_max:motorbike_controller",
       "basic_durability": 35.0,
       "steering_radius": {
-        "0.0": 3.5,
-        "18.0": 4.167,
-        "36.0": 16.667,
-        "54.0": 37.5,
-        "72.0": 66.667,
-        "90.0": 104.167,
-        "108.0": 150
+        "0": 2.5,
+        "30": 4.0,
+        "60": 6.0
       },
       "manual_gear_shift": true,
       "abs_enabled": true,

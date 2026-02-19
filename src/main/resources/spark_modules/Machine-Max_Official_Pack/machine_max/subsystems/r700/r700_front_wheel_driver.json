@@ -9,7 +9,7 @@
     "max_speed": 3140.0
   },
   "steering": {
-    "max_force": 5,
+    "max_force": 500,
     "max_speed": 3.14
   },
   "control_inputs": ["wheel_control", "move_control"]//(可选, 默认["wheel_control", "move_control"])接收的控制信号的频道列表, 优先级递减

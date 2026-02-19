@@ -12,8 +12,9 @@ import java.util.TreeMap;
 
 @Getter
 public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsystemStaticAttr {
-    public final float maxAngle;
-    public final float parkingAngle;
+    public final float maxAngle; // 倾斜角超过此角度视作失去平衡，不再修正姿态
+    public final float parkingAngle; // 停车时的目标倾斜角度
+    public final float correctionForceMultiplier; // 修正力倍率，用于整体缩放摩托车控制系统的平衡调节力
 
     public static final MapCodec<MotorbikeControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
@@ -26,7 +27,8 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             Codec.FLOAT.optionalFieldOf("abs_target_slip_ratio", 0.15f).forGetter(MotorbikeControllerSubsystemStaticAttr::getAbsTargetSlipRatio),
             Codec.FLOAT.optionalFieldOf("abs_wheel_radius", 0.5f).forGetter(MotorbikeControllerSubsystemStaticAttr::getAbsWheelRadius),
             Codec.FLOAT.optionalFieldOf("max_angle", 30f).forGetter(MotorbikeControllerSubsystemStaticAttr::getMaxAngle),
-            Codec.FLOAT.optionalFieldOf("parking_angle", 5f).forGetter(MotorbikeControllerSubsystemStaticAttr::getParkingAngle)
+            Codec.FLOAT.optionalFieldOf("parking_angle", 5f).forGetter(MotorbikeControllerSubsystemStaticAttr::getParkingAngle),
+            Codec.FLOAT.optionalFieldOf("correction_force_multiplier", 1.0f).forGetter(MotorbikeControllerSubsystemStaticAttr::getCorrectionForceMultiplier)
     ).apply(instance, MotorbikeControllerSubsystemStaticAttr::new));
 
     public MotorbikeControllerSubsystemStaticAttr(
@@ -40,7 +42,8 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             float absTargetSlipRatio,
             float absWheelRadius,
             float maxAngle,
-            float parkingAngle) {
+            float parkingAngle,
+            float correctionForceMultiplier) {
         super(basicDurability,
                 steeringCenter,
                 steeringRadiusMap,
@@ -52,6 +55,7 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
                 absWheelRadius);
         this.maxAngle = maxAngle;
         this.parkingAngle = parkingAngle;
+        this.correctionForceMultiplier = correctionForceMultiplier;
     }
 
     @Override

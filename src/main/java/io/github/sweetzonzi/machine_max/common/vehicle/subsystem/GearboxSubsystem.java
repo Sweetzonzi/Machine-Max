@@ -98,7 +98,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
     }
 
     public void switchGear(int gear) {
-        if (getCurrentGear() == gear) return;//当前挡位与目标挡位相同，无需切换
+        if (getCurrentGear() == gear || getLevel().isClientSide()) return;//当前挡位与目标挡位相同，无需切换
         if (gear >= 0 && gear < gearRatios.length) {//目标挡位有效
             setCurrentGear(gear);//更新当前挡位
             if (clutched) this.remainingSwitchTime = attr.staticAttribute.switchTime;//若未踩离合，开始换挡时间倒计时

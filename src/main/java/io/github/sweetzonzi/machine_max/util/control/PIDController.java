@@ -84,7 +84,7 @@ public class PIDController {
     public double step(double target, double actual) {
         this.error = actual - target;//更新记录的误差
         this.errorSpeed = (this.error - this.errorLastFrame) / this.STEP;
-        this.errorAccumulated = Math.clamp(this.errorSpeed + this.error, this.errorAccuMin, this.errorAccuMax);
+        this.errorAccumulated = Math.clamp(this.errorAccumulated + this.error * this.STEP, this.errorAccuMin, this.errorAccuMax);
         //P
         double output = this.P * error;
         //I

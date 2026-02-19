@@ -53,7 +53,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             } else {
                 passenger.resetFallDistance();//防止摔死
             }
-        }
+        } else resetSignalOutputs();
     }
 
     @Override

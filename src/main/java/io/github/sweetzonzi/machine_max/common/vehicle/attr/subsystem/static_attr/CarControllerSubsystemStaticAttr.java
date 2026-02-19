@@ -100,20 +100,20 @@ public class CarControllerSubsystemStaticAttr extends AbstractSubsystemStaticAtt
         this.absWheelRadius = absWheelRadius;
     }
 
-    public float getSteeringRadiusAtSpeed(float currentSpeed) {
+    public float getSteeringRadiusAtSpeed(float currentMps) {
         if (steeringRadiusMap.isEmpty()) {
             return 5.0f;
         }
-        
-        Map.Entry<Float, Float> floor = steeringRadiusMap.floorEntry(currentSpeed);
-        Map.Entry<Float, Float> ceiling = steeringRadiusMap.ceilingEntry(currentSpeed);
+        float currentKmh = currentMps * 3.6f; // 转为 km/h
+        Map.Entry<Float, Float> floor = steeringRadiusMap.floorEntry(currentKmh);
+        Map.Entry<Float, Float> ceiling = steeringRadiusMap.ceilingEntry(currentKmh);
         
         if (floor == null && ceiling == null) return 5.0f;
         if (floor == null) return ceiling.getValue();
         if (ceiling == null) return floor.getValue();
         if (floor.getKey().equals(ceiling.getKey())) return floor.getValue();
         
-        float ratio = (currentSpeed - floor.getKey()) / (ceiling.getKey() - floor.getKey());
+        float ratio = (currentKmh - floor.getKey()) / (ceiling.getKey() - floor.getKey());
         return floor.getValue() + (ceiling.getValue() - floor.getValue()) * ratio;
     }
 
