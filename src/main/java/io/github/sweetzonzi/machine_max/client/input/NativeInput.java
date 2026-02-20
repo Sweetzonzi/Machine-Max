@@ -7,6 +7,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
+/**
+ * 全新的灵活绑定输入事件体，这次采用多线程进行代理运行，提高输入回报率
+ * 作者: <a href="https://github.com/Liruochen1207">ArcherLee</a>
+ */
 public class NativeInput {
     @Getter
     private NativeInput prev;
@@ -37,6 +41,11 @@ public class NativeInput {
 
     public NativeInput setEvent(Runnable event) {
         this.event = event;
+        return this;
+    }
+
+    public NativeInput setEventOnce(Runnable event) {
+        if (this.event == null) this.event = event;
         return this;
     }
 
@@ -120,25 +129,23 @@ public class NativeInput {
 
         // 更新combinedKey
         NativeKeyListener.pressKeyInputs.getOrDefault(keyName, new HashSet<>()).removeIf(nativeInput -> nativeInput.equals(this));
-        NativeKeyListener.combineKeyInputs.getOrDefault(combinedKeyName, new HashSet<>()).removeIf(nativeInput -> nativeInput.equals(this));
+        NativeKeyListener.combineKeyInputs.remove(this);
         updateCombinedKeyName();
-        NativeKeyListener.combineKeyInputs.computeIfAbsent(getCombinedKeyName(), k -> new HashSet<>()).add(this);
+        NativeKeyListener.combineKeyInputs.add(this);
         return this;
     }
 
     private void updateCombinedKeyName() {
         combinedKeyName = getAllConnectedNodes()
                 .filter(node -> node.getKeyName() != null && !node.getKeyName().isEmpty())
-                .sorted((node1, node2) -> {
-                    String key1 = node1.getKeyName();
-                    String key2 = node2.getKeyName();
+                .map(node -> node.keyName)
+                .sorted((key1, key2) -> {
                     int lengthCompare = Integer.compare(key2.length(), key1.length());
                     if (lengthCompare != 0) {
                         return lengthCompare;
                     }
                     return key1.compareTo(key2);
                 })
-                .map(node -> node.getKeyName() + ":" + node.getPressTimes())
                 .reduce((key1, key2) -> key1 + "-" + key2)
                 .orElse("");
     }
