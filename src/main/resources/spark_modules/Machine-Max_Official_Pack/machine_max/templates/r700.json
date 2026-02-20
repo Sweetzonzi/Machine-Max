@@ -1,0 +1,246 @@
+{
+  "max": [
+    1.6247914632161553,
+    1.2693112691243442,
+    0.7515589396158759
+  ],
+  "hp": 20.0,
+  "parts": {
+    "9306ff5e-172c-4946-bd7a-e20ef58775a4": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.front_wheel": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.back_wheel": {
+              "integrity": 30.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.glove_box": {
+              "Items": [],
+              "durability": 50.0
+            },
+            "subsystem.machine_max.motorbike_controller": {
+              "durability": 40.0
+            },
+            "subsystem.machine_max.trunk": {
+              "Items": [],
+              "durability": 100.0
+            },
+            "subsystem.machine_max.back_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.engine": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.gearbox": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.driver_seat": {
+              "durability": 20.0
+            },
+            "subsystem.machine_max.front_wheel_driver": {
+              "durability": 100.0
+            }
+          },
+          "id": 1,
+          "durability": 120.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              187.64726,
+              -59.211224,
+              -106.74198
+            ],
+            "rotation": [
+              -0.032748263,
+              -0.67538285,
+              0.039433382,
+              0.73568374
+            ],
+            "linear_vel": [
+              2.050722E-4,
+              5.5536628E-5,
+              0.0021256371
+            ],
+            "angular_vel": [
+              0.0027324818,
+              -1.9505322E-4,
+              -2.0805863E-4
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:r700_chassis",
+      "name": "探路者R700车架",
+      "uuid": "9306ff5e-172c-4946-bd7a-e20ef58775a4",
+      "variant": "default"
+    },
+    "06b6aa18-6bcb-48fa-ba35-c82ca752394b": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 3,
+          "durability": 25.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              186.803,
+              -59.56399,
+              -106.63351
+            ],
+            "rotation": [
+              -0.04695594,
+              -0.67601955,
+              0.026379116,
+              0.7349128
+            ],
+            "linear_vel": [
+              -1.0772786E-4,
+              1.1588633E-4,
+              9.867428E-4
+            ],
+            "angular_vel": [
+              0.002661553,
+              -1.5921476E-4,
+              2.7600612E-4
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:r700_wheel",
+      "name": "探路者R700车轮",
+      "uuid": "06b6aa18-6bcb-48fa-ba35-c82ca752394b",
+      "variant": "default"
+    },
+    "74564c2b-aeb8-406a-a0c1-43327573026d": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 5,
+          "durability": 25.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              188.65842,
+              -59.56392,
+              -106.79189
+            ],
+            "rotation": [
+              0.06789834,
+              -0.6636948,
+              0.13117401,
+              0.7332752
+            ],
+            "linear_vel": [
+              -2.3036065E-4,
+              1.2665987E-4,
+              0.0012400413
+            ],
+            "angular_vel": [
+              0.0029210625,
+              -1.7915296E-4,
+              -3.5266157E-10
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:r700_wheel",
+      "name": "探路者R700车轮",
+      "uuid": "74564c2b-aeb8-406a-a0c1-43327573026d",
+      "variant": "default"
+    }
+  },
+  "connections": [
+    {
+      "partUuidS": "06b6aa18-6bcb-48fa-ba35-c82ca752394b",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.0,
+          -2.5E-6
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9306ff5e-172c-4946-bd7a-e20ef58775a4",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.back_wheel",
+      "posRotA": {
+        "position": [
+          0.0,
+          -0.31526875,
+          0.85226876
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "74564c2b-aeb8-406a-a0c1-43327573026d",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.0,
+          -2.5E-6
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9306ff5e-172c-4946-bd7a-e20ef58775a4",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.front_wheel",
+      "posRotA": {
+        "position": [
+          0.0,
+          -0.31526875,
+          -0.99148124
+        ],
+        "rotation": [
+          0.19509032,
+          0.0,
+          0.0,
+          0.98078525
+        ]
+      }
+    }
+  ],
+  "name": "r700",
+  "uuid": "9306ff5e-172c-4946-bd7a-e20ef58775a4",
+  "pos": [
+    187.70289103190103,
+    -59.44637807210286,
+    -106.72246042887369
+  ],
+  "min": [
+    -1.5699717203775947,
+    -0.785322825113937,
+    -0.8020909627278741
+  ]
+}

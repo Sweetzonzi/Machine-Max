@@ -1,10 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
-import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorbikeControllerSubsystemAttr;

@@ -1,220 +1,13 @@
 {
   "max": [
-    2.1731425198641716,
-    1.4732749245383516,
-    1.2899948466907851
+    2.2224748784845545,
+    1.4701586636629997,
+    1.3678262883966639
   ],
   "hp": 20.0,
   "parts": {
-    "9914b0d6-1f2e-47a8-a944-d14eb0401b6b": {
-      "material_assembling_progress": 2147483647,
-      "sub_parts": {
-        "sub_part.machine_max.main": {
-          "connector_data": {
-            "connector.machine_max.lock": {
-              "integrity": 5.0
-            },
-            "connector.machine_max.axis": {
-              "integrity": 25.0
-            }
-          },
-          "id": 21,
-          "durability": 50.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              -35.4504,
-              -58.719738,
-              -22.021347
-            ],
-            "rotation": [
-              -0.0024503104,
-              -0.7103539,
-              -0.0023515415,
-              0.70383644
-            ],
-            "linear_vel": [
-              -4.886772E-4,
-              5.991757E-5,
-              7.3681114E-4
-            ],
-            "angular_vel": [
-              7.683517E-6,
-              4.4495863E-4,
-              6.116862E-5
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:kluo_door",
-      "name": "KLUO车门",
-      "uuid": "9914b0d6-1f2e-47a8-a944-d14eb0401b6b",
-      "variant": "left"
-    },
-    "178a710d-b352-4f52-be56-184d595decaa": {
-      "material_assembling_progress": 2147483647,
-      "sub_parts": {
-        "sub_part.machine_max.main": {
-          "connector_data": {
-            "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
-            }
-          },
-          "id": 9,
-          "durability": 80.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              -34.193935,
-              -59.623173,
-              -20.017372
-            ],
-            "rotation": [
-              -0.0014710354,
-              -0.7102317,
-              0.010980813,
-              0.7038807
-            ],
-            "linear_vel": [
-              3.2423332E-4,
-              1.7464161E-5,
-              -1.9186933E-5
-            ],
-            "angular_vel": [
-              8.6624595E-7,
-              4.3236007E-4,
-              -2.6024871E-9
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:kluo_wheel",
-      "name": "KLUO车轮",
-      "uuid": "178a710d-b352-4f52-be56-184d595decaa",
-      "variant": "right"
-    },
-    "9b3b2b65-cfde-4138-b06c-b7ccdd2e2e5c": {
-      "material_assembling_progress": 2147483647,
-      "sub_parts": {
-        "sub_part.machine_max.main": {
-          "connector_data": {
-            "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
-            }
-          },
-          "id": 5,
-          "durability": 80.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              -34.176697,
-              -59.623184,
-              -21.887848
-            ],
-            "rotation": [
-              -0.020978425,
-              -0.7096243,
-              -0.033223443,
-              0.70348376
-            ],
-            "linear_vel": [
-              -4.970575E-4,
-              -7.523596E-5,
-              1.9619375E-4
-            ],
-            "angular_vel": [
-              2.7865105E-6,
-              4.2334173E-4,
-              1.5576411E-9
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:kluo_wheel",
-      "name": "KLUO车轮",
-      "uuid": "9b3b2b65-cfde-4138-b06c-b7ccdd2e2e5c",
-      "variant": "left"
-    },
-    "d91231c0-1783-4187-bc06-6b61b55a2830": {
-      "material_assembling_progress": 2147483647,
-      "sub_parts": {
-        "sub_part.machine_max.main": {
-          "connector_data": {
-            "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
-            }
-          },
-          "id": 7,
-          "durability": 80.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              -36.738106,
-              -59.6229,
-              -21.91148
-            ],
-            "rotation": [
-              0.0032707113,
-              -0.71034604,
-              -0.00877526,
-              0.70379037
-            ],
-            "linear_vel": [
-              -4.534394E-4,
-              -4.3705106E-5,
-              0.0012373094
-            ],
-            "angular_vel": [
-              -6.370233E-7,
-              4.4036398E-4,
-              1.335964E-9
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:kluo_wheel",
-      "name": "KLUO车轮",
-      "uuid": "d91231c0-1783-4187-bc06-6b61b55a2830",
-      "variant": "left"
-    },
-    "8d26562f-aa54-4357-99ca-6bb6057fcedd": {
-      "material_assembling_progress": 2147483647,
-      "sub_parts": {
-        "sub_part.machine_max.main": {
-          "connector_data": {
-            "connector.machine_max.chassis_connection": {
-              "integrity": 20.0
-            }
-          },
-          "id": 11,
-          "durability": 80.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              -36.755356,
-              -59.622887,
-              -20.040981
-            ],
-            "rotation": [
-              -0.008422259,
-              -0.7103045,
-              0.0042054434,
-              0.7038316
-            ],
-            "linear_vel": [
-              3.3586152E-4,
-              -5.5730343E-5,
-              0.0012405249
-            ],
-            "angular_vel": [
-              -1.5229122E-7,
-              4.4333749E-4,
-              1.3354181E-9
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:kluo_wheel",
-      "name": "KLUO车轮",
-      "uuid": "8d26562f-aa54-4357-99ca-6bb6057fcedd",
-      "variant": "right"
-    },
-    "445110ca-716c-4e1d-befa-0deb7dd05a74": {
+    "779f33e5-af4d-423d-b69f-f0b5af3f4e41": {
+      "custom_recipe": "machine_max:kluo_bumper",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -226,39 +19,166 @@
               "integrity": 15.0
             }
           },
-          "id": 13,
+          "id": 65,
           "durability": 50.0,
           "pos_rot_vel_vel": {
             "position": [
-              -33.584538,
-              -59.55925,
-              -20.94708
+              -32.92123,
+              -59.615925,
+              -37.661087
             ],
             "rotation": [
-              -0.0024537214,
-              -0.7103554,
-              -0.0023485704,
-              0.703835
+              -0.004692277,
+              -0.7250593,
+              -0.0049499297,
+              0.68865275
             ],
             "linear_vel": [
-              3.7117745E-5,
-              -1.4454126E-6,
-              -8.347352E-5
+              0.0023452523,
+              4.0382147E-4,
+              0.004253834
             ],
             "angular_vel": [
-              2.620118E-5,
-              4.4463476E-4,
-              2.4683239E-5
+              -8.133687E-4,
+              -7.827983E-4,
+              6.107607E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:kluo_bumper",
-      "name": "KLUO车保险杠",
-      "uuid": "445110ca-716c-4e1d-befa-0deb7dd05a74",
+      "name": "K螺小车车保险杠",
+      "uuid": "779f33e5-af4d-423d-b69f-f0b5af3f4e41",
       "variant": "front"
     },
-    "5c1d864f-c1e9-4f4e-9f0d-384717584319": {
+    "90a211fb-4e35-4a12-b6fb-4191190d02ac": {
+      "custom_recipe": "machine_max:kluo_wheel",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 49,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -33.472916,
+              -59.621265,
+              -38.623272
+            ],
+            "rotation": [
+              -0.058967765,
+              -0.7213949,
+              -0.073763765,
+              0.68605477
+            ],
+            "linear_vel": [
+              0.0013726382,
+              -3.8269162E-4,
+              0.0026086688
+            ],
+            "angular_vel": [
+              1.0798313E-4,
+              -0.005432447,
+              -4.7488413E-10
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:kluo_wheel",
+      "name": "K螺小车车车轮",
+      "uuid": "90a211fb-4e35-4a12-b6fb-4191190d02ac",
+      "variant": "left"
+    },
+    "32049db6-009f-4808-a22c-46bc37408d26": {
+      "custom_recipe": "machine_max:kluo_wheel",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 53,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -36.127205,
+              -59.62098,
+              -36.892513
+            ],
+            "rotation": [
+              -0.0038260007,
+              -0.72497916,
+              0.008058259,
+              0.6887131
+            ],
+            "linear_vel": [
+              1.5947834E-4,
+              1.1704862E-4,
+              -2.4365471E-4
+            ],
+            "angular_vel": [
+              0.0015180511,
+              0.0024098102,
+              7.1664754E-9
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:kluo_wheel",
+      "name": "K螺小车车车轮",
+      "uuid": "32049db6-009f-4808-a22c-46bc37408d26",
+      "variant": "right"
+    },
+    "0b8da577-ab5f-4a14-9cb7-974f571ed8bd": {
+      "custom_recipe": "machine_max:kluo_wheel",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 55,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -36.03125,
+              -59.620983,
+              -38.75519
+            ],
+            "rotation": [
+              8.26762E-4,
+              -0.7250911,
+              -0.011052918,
+              0.68856376
+            ],
+            "linear_vel": [
+              9.5688365E-4,
+              -7.805228E-5,
+              9.1914646E-4
+            ],
+            "angular_vel": [
+              1.21607045E-4,
+              -0.0061222203,
+              -4.4905977E-9
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:kluo_wheel",
+      "name": "K螺小车车车轮",
+      "uuid": "0b8da577-ab5f-4a14-9cb7-974f571ed8bd",
+      "variant": "left"
+    },
+    "eb4db682-5350-4272-a9a8-e0a19aac5505": {
+      "custom_recipe": "machine_max:kluo_door",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -270,39 +190,172 @@
               "integrity": 25.0
             }
           },
-          "id": 17,
+          "id": 57,
           "durability": 50.0,
           "pos_rot_vel_vel": {
             "position": [
-              -37.173046,
-              -58.81218,
-              -20.980297
+              -34.73425,
+              -58.763382,
+              -38.812794
             ],
             "rotation": [
-              -0.0024508934,
-              -0.7103554,
-              -0.0023505683,
-              0.703835
+              -0.004692244,
+              -0.7250597,
+              -0.004950217,
+              0.6886523
             ],
             "linear_vel": [
-              -3.846902E-5,
-              -2.591312E-5,
-              0.0014739718
+              0.0026365735,
+              -0.0013647974,
+              0.0018341151
             ],
             "angular_vel": [
-              5.4305183E-6,
-              4.3623432E-4,
-              2.1409302E-5
+              -6.228497E-4,
+              -5.635052E-4,
+              5.9565186E-4
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:kluo_door",
+      "name": "K螺小车车车门",
+      "uuid": "eb4db682-5350-4272-a9a8-e0a19aac5505",
+      "variant": "left"
+    },
+    "63bb5088-b636-484a-9c24-880c4b2697c1": {
+      "custom_recipe": "machine_max:kluo_trunk_door",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.lock": {
+              "integrity": 5.0
+            },
+            "connector.machine_max.axis": {
+              "integrity": 25.0
+            }
+          },
+          "id": 63,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -36.499947,
+              -58.84428,
+              -37.845516
+            ],
+            "rotation": [
+              -0.0046922658,
+              -0.72505915,
+              -0.0049501033,
+              0.6886529
+            ],
+            "linear_vel": [
+              0.001997309,
+              -0.0016493797,
+              1.665263E-4
+            ],
+            "angular_vel": [
+              -8.0682174E-4,
+              -9.5985795E-4,
+              5.090496E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:kluo_trunk_door",
-      "name": "KLUO后备箱盖",
-      "uuid": "5c1d864f-c1e9-4f4e-9f0d-384717584319",
+      "name": "K螺小车车后备箱盖",
+      "uuid": "63bb5088-b636-484a-9c24-880c4b2697c1",
       "variant": "default"
     },
-    "7b854420-71ad-4a6c-8c8b-07d526174fb4": {
+    "5566f9a8-c378-49fa-934e-9bfda0d6aa91": {
+      "custom_recipe": "machine_max:kluo_wheel",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            }
+          },
+          "id": 51,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -33.5689,
+              -59.621265,
+              -36.76067
+            ],
+            "rotation": [
+              -0.026824018,
+              -0.7248223,
+              -0.016548527,
+              0.68821454
+            ],
+            "linear_vel": [
+              7.6206157E-4,
+              3.272295E-5,
+              6.255659E-5
+            ],
+            "angular_vel": [
+              0.0056576375,
+              0.0013269595,
+              -1.6298145E-8
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:kluo_wheel",
+      "name": "K螺小车车车轮",
+      "uuid": "5566f9a8-c378-49fa-934e-9bfda0d6aa91",
+      "variant": "right"
+    },
+    "27a69daf-28da-40f5-95c2-f28d912dce3e": {
+      "custom_recipe": "machine_max:kluo_bumper",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right": {
+              "integrity": 15.0
+            },
+            "connector.machine_max.left": {
+              "integrity": 15.0
+            }
+          },
+          "id": 61,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -36.814663,
+              -59.52872,
+              -37.861744
+            ],
+            "rotation": [
+              -0.00469258,
+              -0.72505915,
+              -0.004949715,
+              0.6886529
+            ],
+            "linear_vel": [
+              0.0025261005,
+              -0.0018942654,
+              3.789845E-4
+            ],
+            "angular_vel": [
+              -6.976726E-4,
+              -7.2650285E-4,
+              6.809804E-4
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:kluo_bumper",
+      "name": "K螺小车车保险杠",
+      "uuid": "27a69daf-28da-40f5-95c2-f28d912dce3e",
+      "variant": "back"
+    },
+    "9f760842-2017-4e73-8b15-c365286b8d04": {
+      "custom_recipe": "machine_max:kluo_hull",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -393,39 +446,40 @@
               "durability": 100.0
             }
           },
-          "id": 3,
+          "id": 45,
           "durability": 120.0,
           "pos_rot_vel_vel": {
             "position": [
-              -34.97773,
-              -59.452606,
-              -20.959946
+              -34.311867,
+              -59.499733,
+              -37.732754
             ],
             "rotation": [
-              -0.0024529188,
-              -0.7103556,
-              -0.0023485124,
-              0.70383483
+              -0.0046931026,
+              -0.7250581,
+              -0.0049488703,
+              0.68865395
             ],
             "linear_vel": [
-              2.287027E-5,
-              3.6984682E-5,
-              5.0685933E-4
+              0.0018697422,
+              -3.8293004E-4,
+              0.0024037366
             ],
             "angular_vel": [
-              7.480936E-6,
-              4.3834755E-4,
-              2.0775806E-5
+              -5.684884E-4,
+              -8.623834E-4,
+              4.7739036E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:kluo_hull",
-      "name": "KLUO车体",
-      "uuid": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
+      "name": "K螺小车车车体",
+      "uuid": "9f760842-2017-4e73-8b15-c365286b8d04",
       "variant": "default"
     },
-    "ac0a9493-0a88-4e21-b68d-2034001940a0": {
+    "d88dd3e9-93a0-40d8-b33d-cdf0b95b7558": {
+      "custom_recipe": "machine_max:kluo_hood",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -437,83 +491,40 @@
               "integrity": 25.0
             }
           },
-          "id": 23,
+          "id": 47,
           "durability": 50.0,
           "pos_rot_vel_vel": {
             "position": [
-              -33.90686,
-              -58.910954,
-              -20.950161
+              -33.2387,
+              -58.965435,
+              -37.67744
             ],
             "rotation": [
-              -0.0024509542,
-              -0.7103558,
-              -0.0023508838,
-              0.7038346
+              -0.004692089,
+              -0.7250593,
+              -0.0049495054,
+              0.68865275
             ],
             "linear_vel": [
-              -1.6648832E-5,
-              5.0216913E-6,
-              6.2625186E-5
+              0.0018354759,
+              2.4679303E-4,
+              0.0031070807
             ],
             "angular_vel": [
-              5.1877005E-6,
-              4.3486964E-4,
-              3.4481178E-5
+              -6.5063057E-4,
+              -9.044701E-4,
+              5.791248E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:kluo_hood",
-      "name": "KLUO引擎盖",
-      "uuid": "ac0a9493-0a88-4e21-b68d-2034001940a0",
+      "name": "K螺小车车引擎盖",
+      "uuid": "d88dd3e9-93a0-40d8-b33d-cdf0b95b7558",
       "variant": "default"
     },
-    "775d957a-6f26-4ef9-a73a-cceb8555bf0e": {
-      "material_assembling_progress": 2147483647,
-      "sub_parts": {
-        "sub_part.machine_max.main": {
-          "connector_data": {
-            "connector.machine_max.right": {
-              "integrity": 15.0
-            },
-            "connector.machine_max.left": {
-              "integrity": 15.0
-            }
-          },
-          "id": 15,
-          "durability": 50.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              -37.48347,
-              -59.498764,
-              -20.983044
-            ],
-            "rotation": [
-              -0.0024533775,
-              -0.7103557,
-              -0.0023489993,
-              0.7038347
-            ],
-            "linear_vel": [
-              -4.2504893E-5,
-              -1.6391277E-5,
-              0.0016284611
-            ],
-            "angular_vel": [
-              2.5662357E-6,
-              4.3021582E-4,
-              2.4276433E-5
-            ]
-          }
-        }
-      },
-      "registry_key": "machine_max:kluo_bumper",
-      "name": "KLUO车保险杠",
-      "uuid": "775d957a-6f26-4ef9-a73a-cceb8555bf0e",
-      "variant": "back"
-    },
-    "be1e65bd-f899-4ce4-ba51-7e9b72c39b71": {
+    "5eb36642-628d-44bc-9b2a-230984940482": {
+      "custom_recipe": "machine_max:kluo_door",
       "material_assembling_progress": 2147483647,
       "sub_parts": {
         "sub_part.machine_max.main": {
@@ -525,518 +536,42 @@
               "integrity": 25.0
             }
           },
-          "id": 19,
+          "id": 59,
           "durability": 50.0,
           "pos_rot_vel_vel": {
             "position": [
-              -35.46989,
-              -58.719376,
-              -19.907686
+              -34.84305,
+              -58.763412,
+              -36.701843
             ],
             "rotation": [
-              -0.0024499781,
-              -0.7103543,
-              -0.0023490824,
-              0.703836
+              -0.0046918457,
+              -0.72505957,
+              -0.004949385,
+              0.6886524
             ],
             "linear_vel": [
-              3.3965628E-4,
-              3.4555793E-5,
-              7.5483165E-4
+              8.9391624E-4,
+              1.3883412E-4,
+              0.0018580237
             ],
             "angular_vel": [
-              5.515052E-6,
-              4.2370462E-4,
-              2.6656917E-5
+              -7.470979E-4,
+              -7.1849E-4,
+              4.2599064E-4
             ]
           }
         }
       },
       "registry_key": "machine_max:kluo_door",
-      "name": "KLUO车门",
-      "uuid": "be1e65bd-f899-4ce4-ba51-7e9b72c39b71",
+      "name": "K螺小车车车门",
+      "uuid": "5eb36642-628d-44bc-9b2a-230984940482",
       "variant": "right"
     }
   },
   "connections": [
     {
-      "partUuidS": "9b3b2b65-cfde-4138-b06c-b7ccdd2e2e5c",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.chassis_connection",
-      "posRotS": {
-        "position": [
-          0.00260375,
-          1.25E-6,
-          -6.25E-7
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_front_wheel",
-      "posRotA": {
-        "position": [
-          -0.93268436,
-          -0.12161063,
-          -0.79358935
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "d91231c0-1783-4187-bc06-6b61b55a2830",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.chassis_connection",
-      "posRotS": {
-        "position": [
-          0.00260375,
-          1.25E-6,
-          -6.25E-7
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_back_wheel",
-      "posRotA": {
-        "position": [
-          -0.93268436,
-          -0.12161063,
-          1.7678856
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "178a710d-b352-4f52-be56-184d595decaa",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.chassis_connection",
-      "posRotS": {
-        "position": [
-          -0.00260375,
-          1.25E-6,
-          -6.25E-7
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_front_wheel",
-      "posRotA": {
-        "position": [
-          0.93268436,
-          -0.12161063,
-          -0.79358935
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "8d26562f-aa54-4357-99ca-6bb6057fcedd",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.chassis_connection",
-      "posRotS": {
-        "position": [
-          -0.00260375,
-          1.25E-6,
-          -6.25E-7
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_back_wheel",
-      "posRotA": {
-        "position": [
-          0.93268436,
-          -0.12161063,
-          1.7678856
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "445110ca-716c-4e1d-befa-0deb7dd05a74",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.right",
-      "posRotS": {
-        "position": [
-          1.0,
-          0.02298875,
-          -0.039875627
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.front_bumper_right",
-      "posRotA": {
-        "position": [
-          1.0,
-          -0.0741975,
-          -1.4338175
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "445110ca-716c-4e1d-befa-0deb7dd05a74",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.left",
-      "posRotS": {
-        "position": [
-          -1.0,
-          0.02298875,
-          -0.039875627
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.front_bumper_left",
-      "posRotA": {
-        "position": [
-          -1.0,
-          -0.0741975,
-          -1.4338175
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "775d957a-6f26-4ef9-a73a-cceb8555bf0e",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.right",
-      "posRotS": {
-        "position": [
-          1.0,
-          -0.01102875,
-          -0.08667375
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.back_bumper_right",
-      "posRotA": {
-        "position": [
-          1.0,
-          -0.0741975,
-          2.4188075
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "775d957a-6f26-4ef9-a73a-cceb8555bf0e",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.left",
-      "posRotS": {
-        "position": [
-          -1.0,
-          -0.01102875,
-          -0.08667375
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.back_bumper_left",
-      "posRotA": {
-        "position": [
-          -1.0,
-          -0.0741975,
-          2.4188075
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "5c1d864f-c1e9-4f4e-9f0d-384717584319",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.axis",
-      "posRotS": {
-        "position": [
-          6.25E-7,
-          0.8459956,
-          -0.213165
-        ],
-        "rotation": [
-          -0.1305262,
-          0.0,
-          0.0,
-          0.9914449
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.trunk_door_axis",
-      "posRotA": {
-        "position": [
-          6.25E-7,
-          1.4715018,
-          1.9865481
-        ],
-        "rotation": [
-          -0.1305262,
-          0.0,
-          0.0,
-          0.9914449
-        ]
-      }
-    },
-    {
-      "partUuidS": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.trunk_door_lock",
-      "posRotS": {
-        "position": [
-          6.25E-7,
-          0.48231438,
-          2.298923
-        ],
-        "rotation": [
-          -0.1305262,
-          0.0,
-          0.0,
-          0.9914449
-        ]
-      },
-      "partUuidA": "5c1d864f-c1e9-4f4e-9f0d-384717584319",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.lock",
-      "posRotA": {
-        "position": [
-          6.25E-7,
-          -0.14319187,
-          0.09921
-        ],
-        "rotation": [
-          -0.1305262,
-          0.0,
-          0.0,
-          0.9914449
-        ]
-      }
-    },
-    {
-      "partUuidS": "be1e65bd-f899-4ce4-ba51-7e9b72c39b71",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.axis",
-      "posRotS": {
-        "position": [
-          -0.03048,
-          0.023283126,
-          -0.65625
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.right_door_axis",
-      "posRotA": {
-        "position": [
-          1.0263969,
-          0.75303936,
-          -0.16883938
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.right_door_lock",
-      "posRotS": {
-        "position": [
-          1.0263969,
-          0.75303936,
-          0.9244731
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "be1e65bd-f899-4ce4-ba51-7e9b72c39b71",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.lock",
-      "posRotA": {
-        "position": [
-          -0.03048,
-          0.023283126,
-          0.4370625
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "9914b0d6-1f2e-47a8-a944-d14eb0401b6b",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.axis",
-      "posRotS": {
-        "position": [
-          0.03048,
-          0.023283126,
-          -0.65625
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.left_door_axis",
-      "posRotA": {
-        "position": [
-          -1.0263969,
-          0.75303936,
-          -0.16883938
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
-      "subPartNameS": "sub_part.machine_max.main",
-      "simplePointConnectorName": "connector.machine_max.left_door_lock",
-      "posRotS": {
-        "position": [
-          -1.0263969,
-          0.75303936,
-          0.9244731
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      },
-      "partUuidA": "9914b0d6-1f2e-47a8-a944-d14eb0401b6b",
-      "subPartNameA": "sub_part.machine_max.main",
-      "advConnectorName": "connector.machine_max.lock",
-      "posRotA": {
-        "position": [
-          0.03048,
-          0.023283126,
-          0.4370625
-        ],
-        "rotation": [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "partUuidS": "ac0a9493-0a88-4e21-b68d-2034001940a0",
+      "partUuidS": "d88dd3e9-93a0-40d8-b33d-cdf0b95b7558",
       "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.machine_max.axis",
       "posRotS": {
@@ -1052,7 +587,7 @@
           1.0
         ]
       },
-      "partUuidA": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
       "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.machine_max.hood_axis",
       "posRotA": {
@@ -1070,7 +605,7 @@
       }
     },
     {
-      "partUuidS": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
+      "partUuidS": "9f760842-2017-4e73-8b15-c365286b8d04",
       "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.machine_max.hood_lock",
       "posRotS": {
@@ -1086,7 +621,7 @@
           1.0
         ]
       },
-      "partUuidA": "ac0a9493-0a88-4e21-b68d-2034001940a0",
+      "partUuidA": "d88dd3e9-93a0-40d8-b33d-cdf0b95b7558",
       "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.machine_max.lock",
       "posRotA": {
@@ -1102,18 +637,494 @@
           1.0
         ]
       }
+    },
+    {
+      "partUuidS": "90a211fb-4e35-4a12-b6fb-4191190d02ac",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.125,
+          1.25E-6,
+          -6.25E-7
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_wheel",
+      "posRotA": {
+        "position": [
+          -1.0576844,
+          -0.12161063,
+          -0.79358935
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "5566f9a8-c378-49fa-934e-9bfda0d6aa91",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.125,
+          1.25E-6,
+          -6.25E-7
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_wheel",
+      "posRotA": {
+        "position": [
+          1.0576844,
+          -0.12161063,
+          -0.79358935
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "32049db6-009f-4808-a22c-46bc37408d26",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.125,
+          1.25E-6,
+          -6.25E-7
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_wheel",
+      "posRotA": {
+        "position": [
+          1.0576844,
+          -0.12161063,
+          1.7678856
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "0b8da577-ab5f-4a14-9cb7-974f571ed8bd",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.125,
+          1.25E-6,
+          -6.25E-7
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_wheel",
+      "posRotA": {
+        "position": [
+          -1.0576844,
+          -0.12161063,
+          1.7678856
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "eb4db682-5350-4272-a9a8-e0a19aac5505",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          0.03048,
+          0.023283126,
+          -0.65625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_door_axis",
+      "posRotA": {
+        "position": [
+          -1.0263969,
+          0.75303936,
+          -0.16883938
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_door_lock",
+      "posRotS": {
+        "position": [
+          -1.0263969,
+          0.75303936,
+          0.9244731
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "eb4db682-5350-4272-a9a8-e0a19aac5505",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.lock",
+      "posRotA": {
+        "position": [
+          0.03048,
+          0.023283126,
+          0.4370625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "5eb36642-628d-44bc-9b2a-230984940482",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          -0.03048,
+          0.023283126,
+          -0.65625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_door_axis",
+      "posRotA": {
+        "position": [
+          1.0263969,
+          0.75303936,
+          -0.16883938
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_door_lock",
+      "posRotS": {
+        "position": [
+          1.0263969,
+          0.75303936,
+          0.9244731
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "5eb36642-628d-44bc-9b2a-230984940482",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.lock",
+      "posRotA": {
+        "position": [
+          -0.03048,
+          0.023283126,
+          0.4370625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "27a69daf-28da-40f5-95c2-f28d912dce3e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right",
+      "posRotS": {
+        "position": [
+          1.0,
+          -0.01102875,
+          -0.08667375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.back_bumper_right",
+      "posRotA": {
+        "position": [
+          1.0,
+          -0.0741975,
+          2.4188075
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "27a69daf-28da-40f5-95c2-f28d912dce3e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left",
+      "posRotS": {
+        "position": [
+          -1.0,
+          -0.01102875,
+          -0.08667375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.back_bumper_left",
+      "posRotA": {
+        "position": [
+          -1.0,
+          -0.0741975,
+          2.4188075
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "63bb5088-b636-484a-9c24-880c4b2697c1",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          6.25E-7,
+          0.8459956,
+          -0.213165
+        ],
+        "rotation": [
+          -0.1305262,
+          0.0,
+          0.0,
+          0.9914449
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.trunk_door_axis",
+      "posRotA": {
+        "position": [
+          6.25E-7,
+          1.4715018,
+          1.9865481
+        ],
+        "rotation": [
+          -0.1305262,
+          0.0,
+          0.0,
+          0.9914449
+        ]
+      }
+    },
+    {
+      "partUuidS": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.trunk_door_lock",
+      "posRotS": {
+        "position": [
+          6.25E-7,
+          0.48231438,
+          2.298923
+        ],
+        "rotation": [
+          -0.1305262,
+          0.0,
+          0.0,
+          0.9914449
+        ]
+      },
+      "partUuidA": "63bb5088-b636-484a-9c24-880c4b2697c1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.lock",
+      "posRotA": {
+        "position": [
+          6.25E-7,
+          -0.14319187,
+          0.09921
+        ],
+        "rotation": [
+          -0.1305262,
+          0.0,
+          0.0,
+          0.9914449
+        ]
+      }
+    },
+    {
+      "partUuidS": "779f33e5-af4d-423d-b69f-f0b5af3f4e41",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right",
+      "posRotS": {
+        "position": [
+          1.0,
+          0.02298875,
+          -0.039875627
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.front_bumper_right",
+      "posRotA": {
+        "position": [
+          1.0,
+          -0.0741975,
+          -1.4338175
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "779f33e5-af4d-423d-b69f-f0b5af3f4e41",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left",
+      "posRotS": {
+        "position": [
+          -1.0,
+          0.02298875,
+          -0.039875627
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "9f760842-2017-4e73-8b15-c365286b8d04",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.front_bumper_left",
+      "posRotA": {
+        "position": [
+          -1.0,
+          -0.0741975,
+          -1.4338175
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
     }
   ],
   "name": "kluo",
-  "uuid": "7b854420-71ad-4a6c-8c8b-07d526174fb4",
+  "uuid": "9f760842-2017-4e73-8b15-c365286b8d04",
   "pos": [
-    -35.44637021151456,
-    -59.28772804953835,
-    -20.964282642711293
+    -34.77854329889471,
+    -59.31506070223722,
+    -37.75673467462713
   ],
   "min": [
-    -2.2265423861416878,
-    -0.7855332114479765,
-    -1.2901500355113633
+    -2.2767240350896643,
+    -0.7980755892666878,
+    -1.3176175897771643
   ]
 }

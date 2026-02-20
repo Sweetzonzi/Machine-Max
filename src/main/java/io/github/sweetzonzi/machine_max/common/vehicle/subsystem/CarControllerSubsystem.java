@@ -503,7 +503,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
      */
     protected float calculateEffectiveBrake(WheelDriverSubsystem wheel, float rawBrake) {
         float vehicleSpeed = Math.abs(this.speed);
-        if (!attr.staticAttribute.isAbsEnabled() || rawBrake <= 0 || vehicleSpeed < 0.5f) {
+        // 使用轮驱系统的ABS配置
+        if (!wheel.attr.staticAttribute.isAbsEnabled() || rawBrake <= 0 || vehicleSpeed < 0.5f) {
             // 不使用ABS或刹车力为0或车速小于2m/s时，直接返回原始刹车力
             return rawBrake;
         }
@@ -512,13 +513,13 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         float angularVelocity = -wheel.getRelativeAngularVel().get(0); // X轴角速度
 
         // 计算轮胎线速度
-        float wheelLinearSpeed = angularVelocity * attr.staticAttribute.getAbsWheelRadius();
+        float wheelLinearSpeed = angularVelocity * wheel.attr.staticAttribute.getAbsWheelRadius();
 
         // 计算滑移率
         float slipRatio = (speed - wheelLinearSpeed) / speed;
 
         // ABS控制逻辑
-        float targetSlipRatio = attr.staticAttribute.getAbsTargetSlipRatio();
+        float targetSlipRatio = wheel.attr.staticAttribute.getAbsTargetSlipRatio();
         float effectiveBrake = rawBrake;
 
         if (slipRatio > targetSlipRatio) {

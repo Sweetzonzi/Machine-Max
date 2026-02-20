@@ -19,9 +19,6 @@ public class CarControllerSubsystemStaticAttr extends AbstractSubsystemStaticAtt
     public final boolean manualGearShift;
     public final boolean autoHandBrake;
     public final List<String> controlInputKeys;
-    public final boolean absEnabled;
-    public final float absTargetSlipRatio;
-    public final float absWheelRadius;
 
     public static final Codec<TreeMap<Float, Float>> STEERING_RADIUS_CODEC =
             Codec.either(Codec.FLOAT, Codec.unboundedMap(Codec.STRING, Codec.FLOAT))
@@ -67,10 +64,7 @@ public class CarControllerSubsystemStaticAttr extends AbstractSubsystemStaticAtt
             STEERING_RADIUS_CODEC.optionalFieldOf("steering_radius", createDefaultSteeringRadiusMap()).forGetter(CarControllerSubsystemStaticAttr::getSteeringRadiusMap),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(CarControllerSubsystemStaticAttr::isManualGearShift),
             Codec.BOOL.optionalFieldOf("auto_hand_brake", true).forGetter(CarControllerSubsystemStaticAttr::isAutoHandBrake),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(CarControllerSubsystemStaticAttr::getControlInputKeys),
-            Codec.BOOL.optionalFieldOf("abs_enabled", true).forGetter(CarControllerSubsystemStaticAttr::isAbsEnabled),
-            Codec.FLOAT.optionalFieldOf("abs_target_slip_ratio", 0.15f).forGetter(CarControllerSubsystemStaticAttr::getAbsTargetSlipRatio),
-            Codec.FLOAT.optionalFieldOf("abs_wheel_radius", 0.5f).forGetter(CarControllerSubsystemStaticAttr::getAbsWheelRadius)
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(CarControllerSubsystemStaticAttr::getControlInputKeys)
     ).apply(instance, CarControllerSubsystemStaticAttr::new));
 
     public static TreeMap<Float, Float> createDefaultSteeringRadiusMap() {
@@ -85,19 +79,13 @@ public class CarControllerSubsystemStaticAttr extends AbstractSubsystemStaticAtt
             TreeMap<Float, Float> steeringRadiusMap,
             boolean manualGearShift,
             boolean autoHandBrake,
-            List<String> controlInputKeys,
-            boolean absEnabled,
-            float absTargetSlipRatio,
-            float absWheelRadius) {
+            List<String> controlInputKeys) {
         super(basicDurability);
         this.steeringCenter = steeringCenter;
         this.steeringRadiusMap = steeringRadiusMap;
         this.manualGearShift = manualGearShift;
         this.autoHandBrake = autoHandBrake;
         this.controlInputKeys = controlInputKeys;
-        this.absEnabled = absEnabled;
-        this.absTargetSlipRatio = absTargetSlipRatio;
-        this.absWheelRadius = absWheelRadius;
     }
 
     public float getSteeringRadiusAtSpeed(float currentMps) {

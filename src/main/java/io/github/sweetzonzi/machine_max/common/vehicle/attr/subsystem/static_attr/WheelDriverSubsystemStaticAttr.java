@@ -13,6 +13,9 @@ public class WheelDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr 
     public final List<String> controlSignalKeys;
     public final StaticWheelRollingAxisAttr rollingAxis;
     public final StaticWheelSteeringAxisAttr steeringAxis;
+    public final boolean absEnabled;
+    public final float absTargetSlipRatio;
+    public final float absWheelRadius;
 
     public static final MapCodec<WheelDriverSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
@@ -26,7 +29,10 @@ public class WheelDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr 
             StaticWheelSteeringAxisAttr.CODEC.optionalFieldOf("steering", new StaticWheelSteeringAxisAttr(
                     2000f,
                     3.14f
-            )).forGetter(WheelDriverSubsystemStaticAttr::getSteeringAxis)
+            )).forGetter(WheelDriverSubsystemStaticAttr::getSteeringAxis),
+            Codec.BOOL.optionalFieldOf("abs_enabled", false).forGetter(WheelDriverSubsystemStaticAttr::isAbsEnabled),
+            Codec.FLOAT.optionalFieldOf("abs_target_slip_ratio", 0.15f).forGetter(WheelDriverSubsystemStaticAttr::getAbsTargetSlipRatio),
+            Codec.FLOAT.optionalFieldOf("abs_wheel_radius", 0.3f).forGetter(WheelDriverSubsystemStaticAttr::getAbsWheelRadius)
     ).apply(instance, WheelDriverSubsystemStaticAttr::new
     ));
 
@@ -34,11 +40,17 @@ public class WheelDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr 
             float basicDurability,
             List<String> controlSignalKeys,
             StaticWheelRollingAxisAttr rollingAxis,
-            StaticWheelSteeringAxisAttr steeringAxis) {
+            StaticWheelSteeringAxisAttr steeringAxis,
+            boolean absEnabled,
+            float absTargetSlipRatio,
+            float absWheelRadius) {
         super(basicDurability);
         this.controlSignalKeys = controlSignalKeys;
         this.rollingAxis = rollingAxis;
         this.steeringAxis = steeringAxis;
+        this.absEnabled = absEnabled;
+        this.absTargetSlipRatio = absTargetSlipRatio;
+        this.absWheelRadius = absWheelRadius;
     }
 
     @Override

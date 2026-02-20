@@ -1,0 +1,41 @@
+{
+  "type": "machine_max:fabricating",
+  "research_cost": 80,
+  "upgrade_cost": 40,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 6
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 1
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 1,
+    "components": {
+      "machine_max:part_type": "machine_max:r700_chassis"
+    }
+  },
+  "time": 45
+}

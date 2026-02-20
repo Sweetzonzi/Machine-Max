@@ -18,6 +18,7 @@
   "client": [
     "CameraMixin",
     "ClientPacketListenerMixin",
+    "GameRendererMixin",
     "ItemRendererMixin",
     "LivingEntityRendererMixin",
     "MouseHandlerMixin"

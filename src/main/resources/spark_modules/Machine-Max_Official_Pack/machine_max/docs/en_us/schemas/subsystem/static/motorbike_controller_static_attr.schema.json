@@ -69,24 +69,6 @@
       "default": ["move_control"],
       "description": "List of control input signal keys, from highest to lowest priority."
     },
-    "abs_enabled": {
-      "type": "boolean",
-      "default": true,
-      "description": "Whether to enable Anti-lock Braking System (ABS)."
-    },
-    "abs_target_slip_ratio": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "default": 0.15,
-      "description": "ABS target slip ratio, typically set between 0.1-0.2. ABS reduces braking force when slip ratio is too high."
-    },
-    "abs_wheel_radius": {
-      "type": "number",
-      "minimum": 0.01,
-      "default": 0.5,
-      "description": "Wheel radius in meters, used to calculate wheel linear speed and slip ratio."
-    },
     "max_angle": {
       "type": "number",
       "minimum": 0,

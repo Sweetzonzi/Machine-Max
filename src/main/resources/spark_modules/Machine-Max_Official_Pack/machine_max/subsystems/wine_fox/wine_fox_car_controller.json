@@ -14,8 +14,5 @@
     "90.0": 62.5,
     "108.0": 90
   },
-  "abs_enabled": true, //(可选, 默认false)是否启用ABS
-  "abs_target_slip_ratio": 0.15, //(可选, 默认0.15)ABS目标滑率
-  "abs_wheel_radius": 0.375, //(可选, 默认0.3)ABS轮子半径(m)
   "control_inputs": ["move_control"] //(可选, 默认["move_control"])接受的控制信号频道, 优先级递减
 }

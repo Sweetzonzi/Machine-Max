@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.render.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.event.RenderLevelLastEvent;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.Hud3DContext;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.IHud3DElement;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -41,25 +42,23 @@ public class Hud3DRenderer {
 
 
     @SubscribeEvent
-    public static void onRenderHud(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
-            Minecraft mc = Minecraft.getInstance();
-            LocalPlayer player = mc.player;
-            if (player == null) {
-                return;
-            }
-            render(
-                    mc,
-                    event.getCamera(),
-                    event.getFrustum(),
-                    player,
-                    event.getPoseStack(),
-                    mc.renderBuffers().bufferSource(),
-                    event.getModelViewMatrix(),
-                    event.getProjectionMatrix(),
-                    event.getPartialTick().getGameTimeDeltaPartialTick(false)
-            );
+    public static void onRenderHud(RenderLevelLastEvent event) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player == null) {
+            return;
         }
+        render(
+                mc,
+                event.getCamera(),
+                event.getFrustum(),
+                player,
+                event.getPoseStack(),
+                mc.renderBuffers().bufferSource(),
+                event.getModelViewMatrix(),
+                event.getProjectionMatrix(),
+                event.getPartialTick().getGameTimeDeltaPartialTick(false)
+        );
     }
 
     /**
@@ -80,29 +79,24 @@ public class Hud3DRenderer {
             return;
         }
 
+//        if (mc.options.bobView().get()) {
+//            // 视角摇晃
+//            float f = player.walkDist - player.walkDistO;
+//            float f1 = -(player.walkDist + f * partialTicks);
+//            float f2 = Mth.lerp(partialTicks, player.oBob, player.bob);
+//            poseStack.translate(-0.8f * Mth.sin(f1 * (float) Math.PI) * f2 * 0.5F,
+//                    0.8f * Math.abs(Mth.cos(f1 * (float) Math.PI) * f2), -0.5F);
+//            poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.sin(f1 * (float) Math.PI) * f2 * 3.0F));
+//            poseStack.mulPose(Axis.XP.rotationDegrees(Math.abs(Mth.cos(f1 * (float) Math.PI - 0.2F) * f2) * 5.0F));
+//
+//            float f3 = Mth.lerp(partialTicks, player.xBobO, player.xBob);
+//            float f4 = Mth.lerp(partialTicks, player.yBobO, player.yBob);
+//            poseStack.mulPose(Axis.XP.rotationDegrees((player.getViewXRot(partialTicks) - f3) * 0.5F));
+//            if (((IEntityMixin) player).machine_Max$getControllingSubsystem() == null) // 避免乘坐载具时乱晃
+//                poseStack.mulPose(Axis.YP.rotationDegrees((player.getViewYRot(partialTicks) - f4) * 0.5F));
+//        }
         poseStack.pushPose();
-        // 保持处于画面中
-        poseStack.mulPose(camera.rotation());
-        poseStack.pushPose();
-        if (mc.options.bobView().get()) {
-            // 视角摇晃
-            float f = player.walkDist - player.walkDistO;
-            float f1 = -(player.walkDist + f * partialTicks);
-            float f2 = Mth.lerp(partialTicks, player.oBob, player.bob);
-            poseStack.translate(-0.8f * Mth.sin(f1 * (float) Math.PI) * f2 * 0.5F,
-                    0.8f * Math.abs(Mth.cos(f1 * (float) Math.PI) * f2), -0.5F);
-            poseStack.mulPose(Axis.ZP.rotationDegrees(Mth.sin(f1 * (float) Math.PI) * f2 * 3.0F));
-            poseStack.mulPose(Axis.XP.rotationDegrees(Math.abs(Mth.cos(f1 * (float) Math.PI - 0.2F) * f2) * 5.0F));
-
-            float f3 = Mth.lerp(partialTicks, player.xBobO, player.xBob);
-            float f4 = Mth.lerp(partialTicks, player.yBobO, player.yBob);
-            poseStack.mulPose(Axis.XP.rotationDegrees((player.getViewXRot(partialTicks) - f3) * 0.5F));
-            if (((IEntityMixin) player).machine_Max$getControllingSubsystem() == null) // 避免乘坐载具时乱晃
-                poseStack.mulPose(Axis.YP.rotationDegrees((player.getViewYRot(partialTicks) - f4) * 0.5F));
-        } else {
-            // 否则仅挪动视平面
-            poseStack.translate(0, 0, -0.5F);
-        }
+        poseStack.translate(0, 0, -0.5F);
         poseStack.pushPose();
         /*
          * 这里定义“HUD 锚点”
@@ -114,6 +108,7 @@ public class Hud3DRenderer {
         poseStack.scale(0.005F, 0.005F, 0.005F);
         poseStack.mulPose(Axis.YP.rotationDegrees(180));
         poseStack.mulPose(Axis.ZP.rotationDegrees(180));
+        Matrix4f hudAnchor = new Matrix4f(poseStack.last().pose());
         // 生成上下文对象
         Hud3DContext context = new Hud3DContext(
                 mc,
@@ -124,6 +119,7 @@ public class Hud3DRenderer {
                 buffer,
                 modelViewMatrix,
                 projectionMatrix,
+                hudAnchor,
                 partialTicks
         );
         // 遍历所有已注册的 3D HUD 元素
@@ -137,6 +133,7 @@ public class Hud3DRenderer {
         }
         poseStack.popPose();
         poseStack.popPose();
-        poseStack.popPose();
+        if (buffer instanceof MultiBufferSource.BufferSource source)
+            source.endBatch(); // 显式提交缓冲区，避免渲染内容被后续原版GUI/HUD污染
     }
 }

@@ -26,6 +26,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsyst
 import io.github.sweetzonzi.machine_max.util.Easing;
 import io.github.sweetzonzi.machine_max.util.ViewOrientationResolver;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Brightness;
@@ -222,7 +223,6 @@ public class AssemblyHud3D implements IHud3DElement {
         float zText = -0.02f;
 
         /* ---------- 背景绘制 ---------- */
-
         // 主背景
         ctx.fill(startX, startY, startX + animatedHudWidth.get(), startY + animatedHudHeight.get(), HUD_BG, zBg * 2);
         // 侧边装饰条
@@ -233,7 +233,7 @@ public class AssemblyHud3D implements IHud3DElement {
             ctx.drawScreenFacingLine(
                     new Vector3f(startX + 1, startY + 1, 0),
                     ctx.worldToLocal(subPart.getWorldPositionMatrix(ctx.partialTicks).getTranslation(new Vector3f())),
-                    0.01f,
+                    3f,
                     HUD_THEME,
                     MMRenderTypes.alwaysVisibleSolid()
             );
@@ -458,7 +458,7 @@ public class AssemblyHud3D implements IHud3DElement {
                 null
         ).getExtent(null).length() / 3 * 0.2f;
         halfSize = Math.max(0.01f, halfSize);
-        float halfWidth = halfSize * 0.03f;
+        float lineWidth = 2;
         float crossOffset = 0f;
         // 渲染连接点结构完整性
         for (Map.Entry<String, AbstractConnector> entry : subPart.getConnectors().entrySet()) {
@@ -478,32 +478,32 @@ public class AssemblyHud3D implements IHud3DElement {
                 int redShiftGreen = Easing.lerpColor(0xff008800, 0xff880000, 0.25f * integrityProgress);
                 int redShiftBlue = Easing.lerpColor(0xff000088, 0xff880000, 0.25f * integrityProgress);
                 ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
-                ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), halfWidth, 0xff880000, MMRenderTypes.additiveSolidAlwaysVisible());
-                ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), halfWidth, 0xff880000, MMRenderTypes.additiveSolidAlwaysVisible());
+                ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), lineWidth, 0xff880000, MMRenderTypes.additiveSolidAlwaysVisible());
+                ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), lineWidth, 0xff880000, MMRenderTypes.additiveSolidAlwaysVisible());
                 ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
-                ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), halfWidth, redShiftGreen, MMRenderTypes.additiveSolidAlwaysVisible());
-                ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), halfWidth, redShiftGreen, MMRenderTypes.additiveSolidAlwaysVisible());
+                ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), lineWidth, redShiftGreen, MMRenderTypes.additiveSolidAlwaysVisible());
+                ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), lineWidth, redShiftGreen, MMRenderTypes.additiveSolidAlwaysVisible());
                 ctx.poseStack.translate(nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset, nextRandomNegPos1() * crossOffset);
-                ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), halfWidth, redShiftBlue, MMRenderTypes.additiveSolidAlwaysVisible());
-                ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), halfWidth, redShiftBlue, MMRenderTypes.additiveSolidAlwaysVisible());
+                ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), lineWidth, redShiftBlue, MMRenderTypes.additiveSolidAlwaysVisible());
+                ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), lineWidth, redShiftBlue, MMRenderTypes.additiveSolidAlwaysVisible());
             } else {
-                ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), halfWidth, 0xffaaaaaa, MMRenderTypes.alwaysVisibleSolid());
-                ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), halfWidth, 0xffaaaaaa, MMRenderTypes.alwaysVisibleSolid());
+                ctx.drawScreenFacingLine(new Vector3f(UP).mul(-halfSize), new Vector3f(UP).mul(halfSize), lineWidth, 0xffaaaaaa, MMRenderTypes.alwaysVisibleSolid());
+                ctx.drawScreenFacingLine(new Vector3f(RIGHT).mul(-halfSize), new Vector3f(RIGHT).mul(halfSize), lineWidth, 0xffaaaaaa, MMRenderTypes.alwaysVisibleSolid());
             }
             ctx.poseStack.popPose();
             ctx.poseStack.popPose();
         }
         ctx.drawScreenFacingLine(
                 ZERO,
-                new Vector3f(halfSize * 5, 0, 0), halfWidth,
+                new Vector3f(halfSize * 5, 0, 0), lineWidth,
                 0xffff0000, MMRenderTypes.additiveSolidAlwaysVisible());
         ctx.drawScreenFacingLine(
                 ZERO,
-                new Vector3f(0, halfSize * 5, 0), halfWidth,
+                new Vector3f(0, halfSize * 5, 0), lineWidth,
                 0xff00ff00, MMRenderTypes.additiveSolidAlwaysVisible());
         ctx.drawScreenFacingLine(
                 ZERO,
-                new Vector3f(0, 0, halfSize * 5), halfWidth,
+                new Vector3f(0, 0, halfSize * 5), lineWidth,
                 0xff0000ff, MMRenderTypes.additiveSolidAlwaysVisible());
         ctx.poseStack.popPose();
         ctx.poseStack.popPose();
@@ -619,7 +619,6 @@ public class AssemblyHud3D implements IHud3DElement {
         ItemStack icon = m.pair.ingredient().getItems()[0];
         // 3D HUD 中绘制物品需传入 scale。16.0f 对应 GUI 中的 16x16 像素大小
         ctx.drawItem(icon, rowX + rowH / 2 + 1, y + rowH / 2, 16.0f);
-
         /* 文本信息 */
         int textColor = m.completed() ?
                 Easing.lerpColorFromTransparent(TEXT_MAIN, animatedHudWidth.get() / HUD_WIDTH) :
