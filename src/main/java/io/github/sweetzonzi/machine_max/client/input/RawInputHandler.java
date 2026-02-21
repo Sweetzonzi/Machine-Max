@@ -59,32 +59,6 @@ public class RawInputHandler {
     static int rot_y_conflict = 0;
     static int rot_z_conflict = 0;
 
-    static {
-        new NativeInput("C").setEvent(() -> {
-            System.out.println("全新按键系统");
-            PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
-        });
-
-
-        new NativeInput("A", 2)
-                .chain(new NativeInput("Ctrl")).setEvent(() -> {
-                    System.out.println("NativeInput Double Ctrl A");
-                });
-        new NativeInput("A")
-                .chain(new NativeInput("Ctrl")).setEvent(() -> {
-                    System.out.println("NativeInput Ctrl A");
-                });
-        new NativeInput("A")
-                .chain(new NativeInput("Shift"))
-                .chain(new NativeInput("Ctrl"))
-                .setEvent(() -> {
-                    System.out.println("NativeInput Ctrl+Shift+A");
-                });
-        new NativeInput("A").setEvent(() -> {
-            System.out.println("NativeInput A");
-        });
-    }
-
 
     /**
      * 在每个客户端tick事件后调用，处理按键逻辑。
@@ -326,10 +300,14 @@ public class RawInputHandler {
                     });
 
             //切换部件连接点
-//            new KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey) //C
-//                    .OnKeyDown(() -> {
-//                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
-//                    });
+            new KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey) //C
+                    .OnKeyDown(() -> {
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
+                    });
+
+//            Key_C.setEventOnce(() -> {
+//                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
+//            });
 
             //切换部件变体类型
             new KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
