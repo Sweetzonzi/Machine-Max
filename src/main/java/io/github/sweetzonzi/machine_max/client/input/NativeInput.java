@@ -129,9 +129,15 @@ public class NativeInput {
 
         // 更新combinedKey
         NativeKeyListener.pressKeyInputs.getOrDefault(keyName, new HashSet<>()).removeIf(nativeInput -> nativeInput.equals(this));
-        NativeKeyListener.combineKeyInputs.remove(this);
+        String oldCombinedKeyName = getCombinedKeyName();
+        if (oldCombinedKeyName != null && !oldCombinedKeyName.isEmpty()) {
+            NativeKeyListener.combineKeyInputsMap.getOrDefault(oldCombinedKeyName, new HashSet<>()).remove(this);
+        }
         updateCombinedKeyName();
-        NativeKeyListener.combineKeyInputs.add(this);
+        String newCombinedKeyName = getCombinedKeyName();
+        if (newCombinedKeyName != null && !newCombinedKeyName.isEmpty()) {
+            NativeKeyListener.combineKeyInputsMap.computeIfAbsent(newCombinedKeyName, k -> new HashSet<>()).add(this);
+        }
         return this;
     }
 
@@ -155,15 +161,6 @@ public class NativeInput {
             updateCombinedKeyName();
         }
         return combinedKeyName;
-    }
-
-    public static void main(String[] args) {
-        NativeInput a = new NativeInput("A")
-        .chain(new NativeInput("Shift"))
-        .chain(new NativeInput("Ctrl")).setEvent(() -> {
-                    System.out.println("SCA");
-                });
-        System.out.println(a.getCombinedKeyName()); // Shift-Ctrl-A
     }
 
 }

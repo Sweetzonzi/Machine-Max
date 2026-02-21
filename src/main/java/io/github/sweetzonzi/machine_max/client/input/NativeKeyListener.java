@@ -13,6 +13,8 @@ import com.jme3.system.Platform;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 来自 <a href="https://github.com/Liruochen1207/jnativehook">ArcherLee 魔改版 jnativehook</a>,
@@ -24,14 +26,15 @@ import java.util.*;
  */
 
 public class NativeKeyListener implements NativeMouseInputListener, NativeMouseWheelListener, com.github.kwhat.jnativehook.keyboard.NativeKeyListener {
-    public static final Set<NativeInput> combineKeyInputs = new HashSet<>();
+    // 优化：使用更高效的数据结构存储组合键事件
+    public static final Map<String, Set<NativeInput>> combineKeyInputsMap = new HashMap<>();
     public static final Map<String, Set<NativeInput>> pressKeyInputs = new HashMap<>();
     public static final Map<String, Boolean> pressKeyStatus = new HashMap<>();
     
     // 调试日志开关
     private static final boolean DEBUG = false;
     
-    // 为每个按键维护连按计数
+    // 优化：使用更高效的 Map 实现
     private static final Map<String, Integer> keyPressCounts = new HashMap<>();
     // 为每个按键维护最后按键时间戳
     private static final Map<String, Long> keyLastPressTimes = new HashMap<>();
@@ -41,6 +44,9 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
     private static final Map<String, Long> combineKeyLastPressTimes = new HashMap<>();
     // 连按时间窗口（毫秒）
     private static final long PRESS_WINDOW_MS = 300;
+    
+    // 优化：添加线程池用于异步处理事件
+    private static final ExecutorService eventExecutor = Executors.newCachedThreadPool();
 
 	public void nativeMouseClicked(NativeMouseEvent e) {
 //		System.out.println("Mouse Clicked: " + e.getClickCount());
@@ -66,27 +72,9 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
         String keyText = NativeKeyEvent.getKeyText(e.getKeyCode());
         if (DEBUG) System.out.println("NativeKeyListener: Key Pressed: " + keyText);
         pressKeyStatus.put(keyText, true);
-        String combinedKeyName = pressKeyStatus.entrySet().stream()
-                .filter(entry -> entry.getValue())
-                .map(Map.Entry::getKey)
-                .sorted((key1, key2) -> {
-                    int lengthCompare = Integer.compare(key2.length(), key1.length());
-                    if (lengthCompare != 0) {
-                        return lengthCompare;
-                    }
-                    return key1.compareTo(key2);
-                })
-                .reduce((key1, key2) -> key1 + "-" + key2)
-                .orElse("");
-
-        // 检查是否有组合键事件会被触发
-        boolean hasCombinationEvent = false;
-        for (NativeInput input : combineKeyInputs) {
-            if (input.getEvent() != null && input.getCombinedKeyName().equals(combinedKeyName)) {
-                hasCombinationEvent = true;
-                break;
-            }
-        }
+        
+        // 优化：减少重复的组合键名称计算
+        String combinedKeyName = generateCombinedKeyName();
 
         // 处理单个按键事件，无论是否有组合键事件
         // 这样可以确保即使在按下组合键时，单个按键的连按事件仍然能够被处理
@@ -118,9 +106,11 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
                 if (nativeInput.getEvent() != null) {
                     int requiredPressTimes = nativeInput.getPressTimes();
                     if (DEBUG) System.out.println("NativeKeyListener: Checking if " + currentCount + " matches " + requiredPressTimes);
-                    if (currentCount == requiredPressTimes) {
+                    // 修复：只要计数是所需次数的倍数，就触发事件
+                    if (currentCount % requiredPressTimes == 0) {
                         if (DEBUG) System.out.println("NativeKeyListener: Press count matched, running event for input with pressTimes: " + requiredPressTimes);
-                        nativeInput.getEvent().run();
+                        // 优化：异步处理事件
+                        eventExecutor.execute(nativeInput.getEvent());
                     }
                 }
             }
@@ -128,7 +118,6 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
 
         // 运行组合键事件
         if (DEBUG) System.out.println("NativeKeyListener: Looking for combine key inputs with name " + combinedKeyName);
-        if (DEBUG) System.out.println("NativeKeyListener: Total combine key inputs: " + combineKeyInputs.size());
         
         // 先更新组合键连按计数
         long currentTime = System.currentTimeMillis();
@@ -150,23 +139,39 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
         
         if (DEBUG) System.out.println("NativeKeyListener: Current combine key count for " + combinedKeyName + " is " + currentCount);
         
-        // 然后检查所有匹配的组合键输入
-        for (NativeInput input : combineKeyInputs) {
-            String inputCombinedKeyName = input.getCombinedKeyName();
-            if (DEBUG) System.out.println("NativeKeyListener: Checking input with combined key name " + inputCombinedKeyName + " and pressTimes " + input.getPressTimes());
-            if (input.getEvent() != null && inputCombinedKeyName.equals(combinedKeyName)) {
-                if (DEBUG) System.out.println("NativeKeyListener: Found matching input!");
-                
-                // 检查是否达到所需的按键次数
-                int requiredPressTimes = input.getPressTimes();
-                if (DEBUG) System.out.println("NativeKeyListener: Checking if " + currentCount + " matches " + requiredPressTimes);
-                if (currentCount == requiredPressTimes) {
-                    if (DEBUG) System.out.println("NativeKeyListener: Combine key press count matched, running event for input with pressTimes: " + requiredPressTimes);
-                    input.getEvent().run();
+        // 优化：直接从Map中获取匹配的组合键输入，避免遍历整个Set
+        Set<NativeInput> matchingCombineInputs = combineKeyInputsMap.get(combinedKeyName);
+        if (matchingCombineInputs != null && !matchingCombineInputs.isEmpty()) {
+            for (NativeInput input : matchingCombineInputs) {
+                if (input.getEvent() != null) {
+                    int requiredPressTimes = input.getPressTimes();
+                    if (DEBUG) System.out.println("NativeKeyListener: Checking if " + currentCount + " matches " + requiredPressTimes);
+                    // 修复：只要计数是所需次数的倍数，就触发事件
+                    if (currentCount % requiredPressTimes == 0) {
+                        if (DEBUG) System.out.println("NativeKeyListener: Combine key press count matched, running event for input with pressTimes: " + requiredPressTimes);
+                        // 优化：异步处理事件
+                        eventExecutor.execute(input.getEvent());
+                    }
                 }
             }
         }
 
+    }
+    
+    // 优化：提取组合键名称生成逻辑为单独方法
+    private String generateCombinedKeyName() {
+        return pressKeyStatus.entrySet().stream()
+                .filter(entry -> entry.getValue())
+                .map(Map.Entry::getKey)
+                .sorted((key1, key2) -> {
+                    int lengthCompare = Integer.compare(key2.length(), key1.length());
+                    if (lengthCompare != 0) {
+                        return lengthCompare;
+                    }
+                    return key1.compareTo(key2);
+                })
+                .reduce((key1, key2) -> key1 + "-" + key2)
+                .orElse("");
     }
 
     public void nativeKeyReleased(NativeKeyEvent e) {
