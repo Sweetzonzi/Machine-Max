@@ -8,6 +8,7 @@ import cn.solarmoon.spark_core.animation.renderer.GeoEntityRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.RenderTypeUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import net.minecraft.client.Minecraft;
@@ -66,9 +67,10 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         int blockLight = this.getBlockLightLevel(entity, blockpos);
         int skyLight = this.getSkyLightLevel(entity, blockpos);
         poseStack.pushPose();//开始渲染
-        poseStack.setIdentity();
-        poseStack.mulPose(worldMatrix);
+        var entityPos = entity.getPosition(partialTick);
+        poseStack.translate(-entityPos.x, -entityPos.y, -entityPos.z);
         poseStack.pushPose();
+        poseStack.mulPose(worldMatrix);
         int overlay = OverlayTexture.NO_OVERLAY;
         // 受击闪烁效果
         if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);
@@ -113,7 +115,6 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                                     light,
                                     overlay,
                                     color,
-                                    false,
                                     false
                             );
                         } else {
@@ -124,7 +125,6 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                                     light,
                                     overlay,
                                     color,
-                                    false,
                                     false
                             );
                         }
@@ -181,7 +181,6 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                                 light,
                                 overlay,
                                 color,
-                                false,
                                 false
                         );
                     } else {
@@ -192,7 +191,6 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                                 light,
                                 overlay,
                                 color,
-                                false,
                                 false
                         );
                     }

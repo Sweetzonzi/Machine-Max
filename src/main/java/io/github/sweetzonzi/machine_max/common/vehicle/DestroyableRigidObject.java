@@ -72,7 +72,7 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
 
     @Override
     public void addToLevel() {
-        getPhysicsLevel().submitImmediateTask(PPhase.ALL, () -> {
+        getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
             if (body.isInWorld()) return null;
             getPhysicsLevel().getWorld().addCollisionObject(body);
             return null;

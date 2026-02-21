@@ -536,9 +536,14 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     public void addToLevel() {
-        if (hasPart() && joint != null) subPart.getPhysicsLevel().submitImmediateTask(PPhase.POST, () -> {
-            if (joint.getPhysicsSpace() == null)
+        if (hasPart() && joint != null) subPart.getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+            if (joint.getPhysicsSpace() == null) {
+                if (!joint.getBodyA().isInWorld())
+                    subPart.getPhysicsLevel().getWorld().addCollisionObject(joint.getBodyA());
+                if (!joint.getBodyB().isInWorld())
+                    subPart.getPhysicsLevel().getWorld().addCollisionObject(joint.getBodyB());
                 subPart.getPhysicsLevel().getWorld().addJoint(joint);
+            }
             return null;
         });
     }

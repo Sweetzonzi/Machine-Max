@@ -425,7 +425,7 @@ public class AssemblyHud3D implements IHud3DElement {
                     OverlayTexture.NO_OVERLAY,
                     Easing.lerpColorFromTransparent(0x11ffffff, progress),
                     ctx.partialTicks,
-                    true
+                    false
             );
         }
         // 独立渲染子系统，并根据耐久度调整渲染颜色
@@ -446,7 +446,6 @@ public class AssemblyHud3D implements IHud3DElement {
                             Easing.lerpColorFromTransparent(
                                     getSubsystemColorByDurability(subsystem.getDurability(), subsystem.getMaxDurability()), progress),
                             ctx.partialTicks,
-                            true,
                             true
                     );
                 }
