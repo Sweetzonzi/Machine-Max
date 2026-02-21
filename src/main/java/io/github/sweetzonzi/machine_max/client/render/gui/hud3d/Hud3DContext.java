@@ -13,13 +13,25 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import org.joml.*;
-
+/**
+ * 空间约定：
+ * <p>
+ * Local Space
+ *   - IHud3DElement 使用的坐标空间
+ *   - +X 右，+Y 上，-Z 朝向视线前方
+ * <p>
+ * Render Space
+ *   - 已经应用 ModelViewMatrix（含 GameRenderer 预处理）
+ *   - 与 PoseStack.last().pose() 所在空间一致
+ */
 public class Hud3DContext {
 
     public final Minecraft mc;
@@ -38,7 +50,10 @@ public class Hud3DContext {
     public final Font font;
     public final ItemRenderer itemRenderer;
     public static final int FULL_BRIGHT = Brightness.FULL_BRIGHT.pack();
-
+    /** HUD Anchor 矩阵（当前 ModelView 空间 → HUD Local）*/
+    public final Matrix4f hudAnchorMatrix;
+    /** HUD Anchor 逆矩阵（HUD Local → 当前 ModelView 空间）*/
+    public final Matrix4f hudAnchorInverse;
     /**
      * 当前是否处于裁剪状态
      * 用于防止嵌套或遗漏 endClipRect
@@ -67,6 +82,7 @@ public class Hud3DContext {
             MultiBufferSource buffer,
             Matrix4f modelViewMatrix,
             Matrix4f projectionMatrix,
+            Matrix4f hudAnchorMatrix,
             float partialTicks
     ) {
         this.mc = mc;
@@ -77,6 +93,8 @@ public class Hud3DContext {
         this.buffer = buffer;
         this.modelViewMatrix = modelViewMatrix;
         this.projectionMatrix = projectionMatrix;
+        this.hudAnchorMatrix = hudAnchorMatrix;
+        this.hudAnchorInverse = new Matrix4f(hudAnchorMatrix).invert();
         this.mvpMatrix = new Matrix4f(projectionMatrix).mul(modelViewMatrix);
         this.partialTicks = partialTicks;
         this.font = mc.font;
@@ -128,8 +146,7 @@ public class Hud3DContext {
         float g = ((argb >> 8) & 0xFF) / 255f;
         float b = (argb & 0xFF) / 255f;
 
-        PoseStack.Pose pose = poseStack.last();
-        Matrix4f matrix = pose.pose();
+        Matrix4f matrix = poseStack.last().pose();
         VertexConsumer vc = buffer.getBuffer(renderType);
 
         vc.addVertex(matrix, x1, y2, z).setColor(r, g, b, a);
@@ -177,9 +194,9 @@ public class Hud3DContext {
     }
 
     /**
-     * 绘制四边形，顶点坐标为透视投影下的屏幕空间
+     * 绘制四边形，顶点坐标为当前poseStack下的局部HUD坐标空间
      */
-    private void drawQuad(
+    public void drawQuad(
             Vector3f v1, Vector3f v2,
             Vector3f v3, Vector3f v4,
             int argb,
@@ -190,7 +207,7 @@ public class Hud3DContext {
         float g = ((argb >> 8) & 255) / 255f;
         float b = (argb & 255) / 255f;
 
-        Matrix4f m = new Matrix4f().rotate(camera.rotation());
+        Matrix4f m = poseStack.last().pose();
         VertexConsumer vc = buffer.getBuffer(type);
 
         vc.addVertex(m, v1.x, v1.y, v1.z).setNormal(0, 0, 1).setColor(r, g, b, a);
@@ -224,18 +241,21 @@ public class Hud3DContext {
      * @param shadow 是否绘制阴影
      */
     public void drawText(Component text, float x, float y, int color, boolean shadow) {
+        poseStack.pushPose();
+        poseStack.translate(x, y, 0);
         font.drawInBatch(
                 text,
-                x,
-                y,
+                0,
+                0,
                 color,
                 shadow,
                 poseStack.last().pose(),
                 buffer,
-                Font.DisplayMode.NORMAL,
+                Font.DisplayMode.SEE_THROUGH,
                 0,
                 FULL_BRIGHT
         );
+        poseStack.popPose();
     }
 
     /**
@@ -273,21 +293,43 @@ public class Hud3DContext {
      */
     public void drawItem(ItemStack stack, float x, float y, float scale) {
         if (stack.isEmpty()) return;
+
         poseStack.pushPose();
         poseStack.translate(x, y, 0);
+        poseStack.mulPose(Axis.ZP.rotationDegrees(180));
         poseStack.scale(scale, scale, scale);
-        poseStack.mulPose(Axis.XP.rotationDegrees(180));
 
-        itemRenderer.renderStatic(
-                stack,
-                ItemDisplayContext.GUI,
-                FULL_BRIGHT,
-                OverlayTexture.NO_OVERLAY,
-                poseStack,
-                buffer,
-                Minecraft.getInstance().level,
-                0
-        );
+        ItemRenderer itemRenderer = mc.getItemRenderer();
+        BakedModel model = itemRenderer.getModel(stack, mc.level, mc.player, 0);
+
+        if (model.isCustomRenderer()) {
+            // —— BEWLR 路径 ——
+            itemRenderer.render(
+                    stack,
+                    ItemDisplayContext.FIXED,
+                    false,
+                    poseStack,
+                    buffer,
+                    FULL_BRIGHT,
+                    OverlayTexture.NO_OVERLAY,
+                    model
+            );
+        } else {
+            // —— 普通 BakedModel 路径 ——
+            poseStack.pushPose();
+            poseStack.translate(-0.5,-0.5,0);
+            VertexConsumer vc = buffer.getBuffer(RenderType.cutout());
+            itemRenderer.renderModelLists(
+                    model,
+                    stack,
+                    FULL_BRIGHT,
+                    OverlayTexture.NO_OVERLAY,
+                    poseStack,
+                    vc
+            );
+            poseStack.popPose();
+        }
+
         poseStack.popPose();
     }
 
@@ -358,42 +400,52 @@ public class Hud3DContext {
      * 绘制保持朝向屏幕的有宽线段，坐标为当前poseStack下的局部坐标
      */
     public void drawScreenFacingLine(
-            Vector3f from,
-            Vector3f to,
-            float screenWidth, // 屏幕空间宽度（NDC 单位）
-            int argb,
+            Vector3f localA,
+            Vector3f localB,
+            float thickness,
+            int color,
             RenderType renderType
     ) {
-        // 1. local -> view
-        Vector3f v0 = localToView(new Vector3f(from));
-        Vector3f v1 = localToView(new Vector3f(to));
+        // 1. Local → NDC
+        Vector3f ndcA = localToNdc(localA);
+        Vector3f ndcB = localToNdc(localB);
 
-        if (v0.z >= -0.01f && v1.z >= -0.01f) return;
+        // 完全被裁剪或在背面
+        if (ndcA.z > 1 && ndcB.z > 1) return;
 
-        // 2. view -> NDC（不含 projection matrix，手动做透视除法）
-        Vector2f s0 = new Vector2f(v0.x / -v0.z, v0.y / -v0.z);
-        Vector2f s1 = new Vector2f(v1.x / -v1.z, v1.y / -v1.z);
+        // 2. NDC → Screen
+        Vector2f screenA = ndcToScreen(ndcA);
+        Vector2f screenB = ndcToScreen(ndcB);
 
-        Vector2f dir = new Vector2f(s1).sub(s0);
+        // 3. 屏幕空间方向
+        Vector2f dir = new Vector2f(screenB).sub(screenA);
         if (dir.lengthSquared() < 1e-6f) return;
         dir.normalize();
 
-        // 屏幕空间法线
-        Vector2f perp = new Vector2f(-dir.y, dir.x);
+        // 4. 屏幕空间法线
+        Vector2f normal = new Vector2f(-dir.y, dir.x)
+                .mul(thickness * 0.5f);
 
-        Vector2f p0a = new Vector2f(s0).add(new Vector2f(perp).mul(screenWidth * 0.5f));
-        Vector2f p0b = new Vector2f(s0).sub(new Vector2f(perp).mul(screenWidth * 0.5f));
-        Vector2f p1a = new Vector2f(s1).add(new Vector2f(perp).mul(screenWidth * 0.5f));
-        Vector2f p1b = new Vector2f(s1).sub(new Vector2f(perp).mul(screenWidth * 0.5f));
+        // 5. 屏幕四边形
+        Vector2f s0 = new Vector2f(screenA).add(normal);
+        Vector2f s1 = new Vector2f(screenA).sub(normal);
+        Vector2f s2 = new Vector2f(screenB).sub(normal);
+        Vector2f s3 = new Vector2f(screenB).add(normal);
 
-        // 3. NDC -> view（反透视）
-        Vector3f q0a = new Vector3f(p0a.x * -v0.z, p0a.y * -v0.z, v0.z);
-        Vector3f q0b = new Vector3f(p0b.x * -v0.z, p0b.y * -v0.z, v0.z);
-        Vector3f q1a = new Vector3f(p1a.x * -v1.z, p1a.y * -v1.z, v1.z);
-        Vector3f q1b = new Vector3f(p1b.x * -v1.z, p1b.y * -v1.z, v1.z);
+        // 6. Screen → NDC（反向）
+        Vector3f n0 = screenToNdc(s0, ndcA.z);
+        Vector3f n1 = screenToNdc(s1, ndcA.z);
+        Vector3f n2 = screenToNdc(s2, ndcB.z);
+        Vector3f n3 = screenToNdc(s3, ndcB.z);
 
+        // 7. NDC → View（逆 projection）
+        Vector3f v0 = ndcToLocal(n0);
+        Vector3f v1 = ndcToLocal(n1);
+        Vector3f v2 = ndcToLocal(n2);
+        Vector3f v3 = ndcToLocal(n3);
 
-        drawQuad(q0a, q0b, q1b, q1a, argb, renderType);
+        // 8. 在当前 poseStack 下直接发顶点
+        drawQuad(v0, v1, v2, v3, color, renderType);
     }
 
 
@@ -444,13 +496,7 @@ public class Hud3DContext {
      * @return HUD 局部空间坐标（UI 单位）
      */
     public Vector3f worldToLocal(Vector3f worldPos) {
-        Matrix4f inverse = new Matrix4f()
-                .translate(camera.getPosition().toVector3f())
-                .mul(poseStack.last().pose())
-                .invert();
-
-        Vector4f vec4 = new Vector4f(worldPos, 1.0F).mul(inverse);
-        return new Vector3f(vec4.x, vec4.y, vec4.z);
+        return viewToLocal(worldToView(worldPos));
     }
 
     /**
@@ -460,105 +506,118 @@ public class Hud3DContext {
      * @return 世界坐标
      */
     public Vector3f localToWorld(Vector3f localPos) {
-        Matrix4f mat = new Matrix4f()
-                .translate(camera.getPosition().toVector3f())
-                .mul(poseStack.last().pose());
-
-        Vector4f vec4 = new Vector4f(localPos, 1.0F).mul(mat);
-        return new Vector3f(vec4.x, vec4.y, vec4.z);
+        return viewToWorld(localToView(localPos));
     }
 
     /**
-     * 相机视空间 → 世界坐标
+     * HUD空间 → 世界坐标
      */
-    public Vector3f viewToWorld(Vector3f viewPos) {
-        // view -> local 的旋转
-        camera.rotation().transform(viewPos);
-        viewPos.add(camera.getPosition().toVector3f());
-        return viewPos;
+    public Vector3f viewToWorld(Vector3f view) {
+        Vector4f v = new Vector4f(view, 1.0f);
+
+        // 1. HUD View → 相机朝向对齐空间
+        hudAnchorMatrix.transform(v);
+
+        // 2. 相机朝向对齐空间 → 世界方向
+        new Matrix4f(modelViewMatrix).invert().transform(v);
+
+        // 3. 加回相机位置
+        Vec3 camPos = camera.getPosition();
+        v.x += (float) camPos.x;
+        v.y += (float) camPos.y;
+        v.z += (float) camPos.z;
+
+        return new Vector3f(v.x, v.y, v.z);
     }
 
     /**
-     * 世界坐标 → 相机视空间
-     * （显式使用相机位置 + 旋转）
+     * 世界坐标 → HUD空间
      */
     public Vector3f worldToView(Vector3f world) {
-        Vector3f v = new Vector3f(world)
-                .sub(camera.getPosition().toVector3f());
-        camera.rotation().conjugate(new Quaternionf()).transform(v);
-        return v;
+        Vector4f v = new Vector4f(world, 1.0f);
+        // 1. 世界 → 相机原点空间（减去相机位置）
+        Vec3 camPos = camera.getPosition();
+        v.x -= (float) camPos.x;
+        v.y -= (float) camPos.y;
+        v.z -= (float) camPos.z;
+        // 2. 对齐相机朝向（旋转）
+        modelViewMatrix.transform(v);
+        // 3. 相机朝向空间 → HUD View
+        hudAnchorInverse.transform(v);
+        return new Vector3f(v.x, v.y, v.z);
     }
 
     /**
-     * HUD 局部坐标 → 相机视空间
-     * 使用 PoseStack + modelViewMatrix（不含平移）
+     * HUD 局部坐标 → HUD空间
      */
     public Vector3f localToView(Vector3f local) {
-        Vector4f v = new Vector4f(local, 1.0f)
-                .mul(poseStack.last().pose())
-                .mul(modelViewMatrix);
+        Vector4f v = new Vector4f(local, 1.0f);
+        poseStack.last().pose().transform(v);
+        hudAnchorInverse.transform(v);
         return new Vector3f(v.x, v.y, v.z);
     }
 
     /**
-     * 相机视空间 → HUD 局部坐标
+     * HUD空间 → HUD 局部坐标
      */
     public Vector3f viewToLocal(Vector3f view) {
-        Matrix4f inv = new Matrix4f(poseStack.last().pose())
-                .invert()
-                .mul(new Matrix4f(modelViewMatrix).invert());
-        Vector4f v = new Vector4f(view, 1.0f).mul(inv);
+        Vector4f v = new Vector4f(view, 1.0f);
+        hudAnchorMatrix.transform(v);
+        new Matrix4f(poseStack.last().pose()).invert().transform(v);
         return new Vector3f(v.x, v.y, v.z);
     }
 
-    /**
-     * 相机视空间 → Clip Space
-     */
-    public Vector4f viewToClip(Vector3f view) {
-        return new Vector4f(view, 1.0f).mul(projectionMatrix);
-    }
-
-    /**
-     * 相机视空间 → NDC
-     */
-    public Vector3f viewToNdc(Vector3f view) {
-        Vector4f clip = viewToClip(view);
-        return new Vector3f(
-                clip.x / clip.w,
-                clip.y / clip.w,
-                clip.z / clip.w
-        );
-    }
-
-    /**
-     * HUD 局部坐标 → NDC
-     */
     public Vector3f localToNdc(Vector3f local) {
-        return viewToNdc(localToView(local));
+        Vector4f v = new Vector4f(local, 1.0f);
+
+        // 1. Local → Camera View（已经是相机空间）
+        poseStack.last().pose().transform(v);
+
+        // 2. Camera View → Clip
+        projectionMatrix.transform(v);
+
+        // 3. Clip → NDC
+        if (v.w != 0.0f) {
+            v.div(v.w);
+        }
+
+        return new Vector3f(v.x, v.y, v.z);
     }
 
-    /**
-     * NDC → 相机视空间
-     *
-     * @param ndc   [-1,1]
-     */
-    public Vector3f ndcToView(Vector3f ndc) {
-        Matrix4f invProj = new Matrix4f(projectionMatrix).invert();
-
-        Vector4f clip = new Vector4f(ndc, 1.0f);
-        Vector4f view = clip.mul(invProj);
-
-        // 反齐次除法
-        view.div(view.w);
-
-        return new Vector3f(view.x, view.y, view.z);
-    }
-
-    /**
-     * NDC → HUD 局部坐标
-     */
     public Vector3f ndcToLocal(Vector3f ndc) {
-        return viewToLocal(ndcToView(ndc));
+        Vector4f v = new Vector4f(ndc, 1.0f);
+
+        // 1. NDC → Clip
+        //    逆透视除法：恢复到 clip space
+        //    这里约定 w = 1 即可（方向/平面反投影足够）
+        //    如果你有真实的 clip.w，可在此传入
+        //    否则保持 1 是 HUD 场景下的合理选择
+        //    （与 localToNdc 对称）
+        // v.w = 1.0f; // 已经是 1
+
+        // 2. Clip → Camera View
+        new Matrix4f(projectionMatrix).invert().transform(v);
+
+        if (v.w != 0.0f) {
+            v.div(v.w);
+        }
+
+        // 3. Camera View → Local
+        new Matrix4f(poseStack.last().pose()).invert().transform(v);
+
+        return new Vector3f(v.x, v.y, v.z);
+    }
+
+    public Vector2f ndcToScreen(Vector3f ndc) {
+        float x = (ndc.x * 0.5f + 0.5f) * mc.getWindow().getGuiScaledWidth();
+        float y = (1.0f - (ndc.y * 0.5f + 0.5f)) * mc.getWindow().getGuiScaledHeight();
+        return new Vector2f(x, y);
+    }
+
+    private Vector3f screenToNdc(Vector2f screen, float z) {
+        float x = (screen.x / mc.getWindow().getGuiScaledWidth()) * 2f - 1f;
+        float y = 1f - (screen.y / mc.getWindow().getGuiScaledHeight()) * 2f;
+        return new Vector3f(x, y, z);
     }
 
 

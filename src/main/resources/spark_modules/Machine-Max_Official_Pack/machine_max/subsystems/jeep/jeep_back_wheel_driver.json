@@ -12,5 +12,8 @@
     "max_force": 0.0,
     "max_speed": 0.0
   },
+  "abs_enabled": true, //(可选, 默认false)是否启用ABS
+  "abs_target_slip_ratio": 0.15, //(可选, 默认0.15)ABS目标滑移率
+  "abs_wheel_radius": 0.672, //(可选, 默认0.3)轮胎半径(m)
   "control_inputs": ["wheel_control", "move_control"] //(可选, 默认["wheel_control", "move_control"])接收的控制信号的频道列表, 优先级递减
 }

@@ -12,9 +12,6 @@
     "90.0": 78.125,
     "108.0": 112.5
   },
-  "abs_enabled": true,
-  "abs_target_slip_ratio": 0.15,
-  "abs_wheel_radius": 0.3,
   "control_inputs": ["move_control"],
   "max_angle": 55.0,
   "parking_angle": 5.0

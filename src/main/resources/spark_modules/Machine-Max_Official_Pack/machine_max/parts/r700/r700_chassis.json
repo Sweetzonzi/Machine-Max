@@ -142,6 +142,27 @@
             ],
             "un_penetrate_damage_factor": 0.5, //(可选, 默认0.0)攻击未能完全击穿护甲时的伤害系数, 公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor, 此项为0.0时未击穿则无伤害
             "rha": 1 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
+          },
+          "TrunkCollision": {
+            "id": "trunk",
+            "type": "box",
+            "subsystem": "subsystem.machine_max.trunk",
+            "damage_modifiers": [],
+            "rha": 1
+          },
+          "GloveBoxCollision": {
+            "id": "trunk",
+            "type": "box",
+            "subsystem": "subsystem.machine_max.glove_box",
+            "damage_modifiers": [],
+            "rha": 1
+          },
+          "FrontCaseCollision": {
+            "id": "trunk",
+            "type": "box",
+            "subsystem": "subsystem.machine_max.front_case",
+            "damage_modifiers": [],
+            "rha": 1
           }
         },
         "interact_boxes": { //交互判定区列表
@@ -151,6 +172,27 @@
               "seat_interact": ["subsystem.machine_max.driver_seat"] //将交互信号转发给驾驶座
             },
             "interact_mode": "fast" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+          },
+          "interact.machine_max.glove_box": {
+            "bone": "GloveBoxInteract",
+            "signal_targets": {
+              "interact": ["subsystem.machine_max.glove_box"]
+            },
+            "interact_mode": "accurate"
+          },
+          "interact.machine_max.trunk": {
+            "bone": "TrunkInteract",
+            "signal_targets": {
+              "interact": ["subsystem.machine_max.trunk"]
+            },
+            "interact_mode": "accurate"
+          },
+          "interact.machine_max.front_case": {
+            "bone": "FrontCaseInteract",
+            "signal_targets": {
+              "interact": ["subsystem.machine_max.front_case"]
+            },
+            "interact_mode": "accurate"
           }
         },
         "subsystems": {
@@ -207,9 +249,13 @@
             "type": "machine_max:item_storage", //储物子系统, 互动可打开存储容器
             "definition": "machine_max:glove_box" //子系统型号, 需要与子系统类型相匹配
           },
+          "subsystem.machine_max.front_case": {
+            "type": "machine_max:item_storage",
+            "definition": "machine_max:glove_box"
+          },
           "subsystem.machine_max.trunk": {
-            "type": "machine_max:item_storage", //储物子系统, 互动可打开存储容器
-            "definition": "machine_max:default_trunk" //子系统型号, 需要与子系统类型相匹配
+            "type": "machine_max:item_storage",
+            "definition": "machine_max:default_trunk"
           },
           "subsystem.machine_max.front_wheel_driver": {
             "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
@@ -217,9 +263,9 @@
             "connector": "connector.machine_max.front_wheel" //控制的连接点名称
           },
           "subsystem.machine_max.back_wheel_driver": {
-            "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
-            "definition": "machine_max:r700_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.back_wheel" //控制的连接点名称
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:r700_back_wheel_driver",
+            "connector": "connector.machine_max.back_wheel"
           }
         },
         "connectors": {
@@ -236,7 +282,7 @@
                 "lower_limit": -1.0, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.5, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
                 "equilibrium": -0.1, //(可选, 默认0)弹簧阻尼关节的平衡位置, 当关节处于此位置时, 关节受到的刚度力(力矩)等于0
-                "stiffness": 7000, //刚度系数(N/m)
+                "stiffness": 5000, //刚度系数(N/m)
                 "damping": 150 //阻尼系数(N/(m/s))
               },
               "xr": { //控制的轴, x、y、z分别对应x、y、z轴的平动, xr、yr、zr分别对应x、y、z轴的旋转
@@ -263,7 +309,7 @@
                 "lower_limit": -1.0,
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
-                "stiffness": 7000,
+                "stiffness": 5000,
                 "damping": 150
               },
               "xr": {

@@ -69,24 +69,6 @@
       "default": ["move_control"],
       "description": "控制输入信号键列表，优先级从高到低。"
     },
-    "abs_enabled": {
-      "type": "boolean",
-      "default": true,
-      "description": "是否启用防抱死系统(ABS)。"
-    },
-    "abs_target_slip_ratio": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "default": 0.15,
-      "description": "ABS目标滑移率，通常设置在0.1-0.2之间。滑移率过高时ABS会减少刹车力。"
-    },
-    "abs_wheel_radius": {
-      "type": "number",
-      "minimum": 0.01,
-      "default": 0.5,
-      "description": "轮胎半径，单位米，用于计算轮胎线速度和滑移率。"
-    },
     "max_angle": {
       "type": "number",
       "minimum": 0,

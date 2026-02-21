@@ -23,9 +23,6 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(MotorbikeControllerSubsystemStaticAttr::isManualGearShift),
             Codec.BOOL.optionalFieldOf("auto_hand_brake", true).forGetter(MotorbikeControllerSubsystemStaticAttr::isAutoHandBrake),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(MotorbikeControllerSubsystemStaticAttr::getControlInputKeys),
-            Codec.BOOL.optionalFieldOf("abs_enabled", true).forGetter(MotorbikeControllerSubsystemStaticAttr::isAbsEnabled),
-            Codec.FLOAT.optionalFieldOf("abs_target_slip_ratio", 0.15f).forGetter(MotorbikeControllerSubsystemStaticAttr::getAbsTargetSlipRatio),
-            Codec.FLOAT.optionalFieldOf("abs_wheel_radius", 0.5f).forGetter(MotorbikeControllerSubsystemStaticAttr::getAbsWheelRadius),
             Codec.FLOAT.optionalFieldOf("max_angle", 30f).forGetter(MotorbikeControllerSubsystemStaticAttr::getMaxAngle),
             Codec.FLOAT.optionalFieldOf("parking_angle", 5f).forGetter(MotorbikeControllerSubsystemStaticAttr::getParkingAngle),
             Codec.FLOAT.optionalFieldOf("correction_force_multiplier", 1.0f).forGetter(MotorbikeControllerSubsystemStaticAttr::getCorrectionForceMultiplier)
@@ -38,9 +35,6 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             boolean manualGearShift,
             boolean autoHandBrake,
             List<String> controlInputKeys,
-            boolean absEnabled,
-            float absTargetSlipRatio,
-            float absWheelRadius,
             float maxAngle,
             float parkingAngle,
             float correctionForceMultiplier) {
@@ -49,10 +43,7 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
                 steeringRadiusMap,
                 manualGearShift,
                 autoHandBrake,
-                controlInputKeys,
-                absEnabled,
-                absTargetSlipRatio,
-                absWheelRadius);
+                controlInputKeys);
         this.maxAngle = maxAngle;
         this.parkingAngle = parkingAngle;
         this.correctionForceMultiplier = correctionForceMultiplier;

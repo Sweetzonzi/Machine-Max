@@ -93,6 +93,24 @@
         "max_speed": 3.14
       },
       "description": "Steering axis attributes."
+    },
+    "abs_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to enable Anti-lock Braking System (ABS)."
+    },
+    "abs_target_slip_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.15,
+      "description": "ABS target slip ratio, typically set between 0.1-0.2. ABS reduces braking force when slip ratio is too high."
+    },
+    "abs_wheel_radius": {
+      "type": "number",
+      "minimum": 0.01,
+      "default": 0.3,
+      "description": "Wheel radius in meters, used to calculate wheel linear speed and slip ratio."
     }
   },
   "required": ["type"],
@@ -111,6 +129,23 @@
         "max_force": 3000.0,
         "max_speed": 2.5
       }
+    },
+    {
+      "type": "machine_max:wheel_driver",
+      "basic_durability": 35.0,
+      "control_inputs": ["wheel_control"],
+      "roll": {
+        "max_drive_force": 10000.0,
+        "max_brake_force": 3500.0,
+        "max_speed": 3000.0
+      },
+      "steering": {
+        "max_force": 2500.0,
+        "max_speed": 3.0
+      },
+      "abs_enabled": true,
+      "abs_target_slip_ratio": 0.15,
+      "abs_wheel_radius": 0.35
     }
   ]
 }
