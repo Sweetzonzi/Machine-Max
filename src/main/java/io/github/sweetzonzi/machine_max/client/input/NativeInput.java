@@ -2,7 +2,11 @@ package io.github.sweetzonzi.machine_max.client.input;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.checkerframework.checker.units.qual.A;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -28,13 +32,16 @@ public class NativeInput {
 
     @Getter
     private Integer pressTimes = 1;
+    
+    @Getter
+    private long holdTimeNanos = 0;
 
     public NativeInput(String keyName) {
-        NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new HashSet<>()).add(this);
+        NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new ArrayList<>()).add(this);
         this.keyName = keyName;
     }
     public NativeInput(String keyName, Integer pressTimes) {
-        NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new HashSet<>()).add(this);
+        NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new ArrayList<>()).add(this);
         this.keyName = keyName;
         this.pressTimes = pressTimes;
     }
@@ -128,15 +135,15 @@ public class NativeInput {
         last.setNext(next);
 
         // 更新combinedKey
-        NativeKeyListener.pressKeyInputs.getOrDefault(keyName, new HashSet<>()).removeIf(nativeInput -> nativeInput.equals(this));
+        NativeKeyListener.pressKeyInputs.getOrDefault(keyName, new ArrayList<>()).removeIf(nativeInput -> nativeInput.equals(this));
         String oldCombinedKeyName = getCombinedKeyName();
         if (oldCombinedKeyName != null && !oldCombinedKeyName.isEmpty()) {
-            NativeKeyListener.combineKeyInputsMap.getOrDefault(oldCombinedKeyName, new HashSet<>()).remove(this);
+            NativeKeyListener.combineKeyInputsMap.getOrDefault(oldCombinedKeyName, new ArrayList<>()).remove(this);
         }
         updateCombinedKeyName();
         String newCombinedKeyName = getCombinedKeyName();
         if (newCombinedKeyName != null && !newCombinedKeyName.isEmpty()) {
-            NativeKeyListener.combineKeyInputsMap.computeIfAbsent(newCombinedKeyName, k -> new HashSet<>()).add(this);
+            NativeKeyListener.combineKeyInputsMap.computeIfAbsent(newCombinedKeyName, k -> new ArrayList<>()).add(this);
         }
         return this;
     }
@@ -162,5 +169,14 @@ public class NativeInput {
         }
         return combinedKeyName;
     }
-
+    
+    public NativeInput hold(long amount, ChronoUnit unit) {
+        this.holdTimeNanos = Duration.of(amount, unit).toNanos();
+        return this;
+    }
+    
+    public NativeInput hold(Duration duration) {
+        this.holdTimeNanos = duration.toNanos();
+        return this;
+    }
 }
