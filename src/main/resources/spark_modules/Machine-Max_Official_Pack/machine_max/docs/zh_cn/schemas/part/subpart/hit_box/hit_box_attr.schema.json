@@ -12,8 +12,8 @@
     },
     "type": {
       "type": "string",
-      "enum": ["box", "sphere", "cylinder"],
-      "description": "碰撞形状类型，支持box、sphere、cylinder。"
+      "enum": ["box", "sphere", "cylinder", "capsule", "wheel"],
+      "description": "碰撞形状类型。各类型生效方式如下：\n- box：长方体碰撞形状，取方块位姿和半长生成。\n- sphere：球体碰撞形状，取方块y方向半长作为半径。\n- cylinder：圆柱体碰撞形状，取方块位姿和半长生成，圆柱轴向为z轴。\n- capsule：胶囊体碰撞形状，取方块位姿和半长生成，胶囊轴向为y轴。\n- wheel：特殊球体碰撞形状，取方块y方向半长作为半径，x方向尺寸作为宽度。碰撞时检测碰撞点的相对位置，若x值超出轮胎半宽则忽略此次碰撞。此类型碰撞体积仅参与地形碰撞，不参与伤害判定等其他机制处理。"
     },
     "subsystem": {
       "type": "string",

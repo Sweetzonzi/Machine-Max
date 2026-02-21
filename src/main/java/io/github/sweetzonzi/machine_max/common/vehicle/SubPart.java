@@ -26,9 +26,11 @@ import com.jme3.bullet.collision.AfMode;
 import com.jme3.bullet.collision.ManifoldPoints;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
+import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Matrix3f;
+import com.jme3.math.Matrix4f;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
@@ -249,13 +251,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             body.setSpinningFriction(hitBox.attr.spinningFriction());
         if (hitBox.attr.restitution() != body.getRestitution())
             body.setRestitution(hitBox.attr.restitution());
-        if (other.getCollisionGroup() == CollisionGroups.TERRAIN) {
+        if (other.getCollisionGroup() == CollisionGroups.TERRAIN && isEffectiveTerrainContact(hitBoxIndex, worldContactPoint)) {
             //与方块碰撞时
             this.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
-        } else if (other.getCollisionGroup() == CollisionGroups.PHYSICS_BODY) {
+        } else if (!isWheel(hitBoxIndex) && other.getCollisionGroup() == CollisionGroups.PHYSICS_BODY) {
             //与另一刚体碰撞时
             this.onCollideWithRigid(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
-        } else if (other.getCollisionGroup() == CollisionGroups.PAWN) {
+        } else if (!isWheel(hitBoxIndex) && other.getCollisionGroup() == CollisionGroups.PAWN) {
             //与实体碰撞时
             if (otherOwner instanceof Entity contactEntity && !(contactEntity instanceof CollisionObjectEntity)) {
                 onCollideWithEntity(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
@@ -1043,6 +1045,63 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             MachineMax.LOGGER.error("No hit box of sub-part {}-{} found for child shape id: {}", part.name, name, childShapeId);
             return hitBoxes.values().iterator().next();
         }
+    }
+
+    /**
+     * 查询子形状是否为轮胎碰撞形状
+     *
+     * @param contactPointIndex 子形状ID
+     * @return 是否为轮胎碰撞形状
+     */
+    public boolean isWheel(int contactPointIndex) {
+        try {
+            ChildCollisionShape[] children = this.collisionShape.listChildren();
+            if (children.length >= contactPointIndex)
+                return attr.getWheelWidths().containsKey(children[contactPointIndex].getShape().nativeId());
+            else throw new IndexOutOfBoundsException();
+        } catch (IndexOutOfBoundsException e) {
+            return false;
+        }
+    }
+
+    /**
+     * 查询子形状是否为轮胎碰撞形状
+     *
+     * @param childShapeId 子形状ID
+     * @return 是否为轮胎碰撞形状
+     */
+    public boolean isWheel(long childShapeId) {
+        return attr.getWheelWidths().containsKey(childShapeId);
+    }
+
+    /**
+     * 碰撞是否发生在轮胎碰撞体的有效范围内
+     *
+     * @param contactPointIndex
+     * @param worldContactPoint
+     * @return true则有效，false则无效
+     */
+    public boolean isEffectiveTerrainContact(int contactPointIndex, Vector3f worldContactPoint) {
+        ChildCollisionShape[] children = this.collisionShape.listChildren();
+        ChildCollisionShape wheel = children[contactPointIndex];
+        long shapeId = wheel.getShape().nativeId();
+        if (isWheel(shapeId) && wheel.getShape() instanceof SphereCollisionShape) {
+            float halfWidth = attr.getWheelWidths().get(shapeId);
+            // 子形状 -> 刚体
+            Transform wheelToBody = wheel.copyTransform(null);
+            // 刚体 -> 世界
+            Transform bodyToWorld = body.getTransform(null);
+            // 子形状 -> 世界
+            Transform wheelToWorld = MyMath.combine(wheelToBody, bodyToWorld, null);
+            // 世界 -> 子形状
+            Transform worldToWheel = wheelToWorld.invert();
+            // 世界接触点 -> 子形状局部坐标
+            var localContactPoint =
+                    SparkMathKt.toVector3f(worldContactPoint).mulPosition(SparkMathKt.toMatrix4f(worldToWheel.toTransformMatrix()));
+
+            // X 轴即轮胎宽度方向
+            return Math.abs(localContactPoint.x) <= halfWidth;
+        } else return true;
     }
 
     public Transform getLerpedLocatorWorldTransform(String locatorName, float partialTick) {

@@ -28,7 +28,7 @@
       "minItems": 2,
       "maxItems": 2,
       "default": [0.1, 1.0],
-      "description": "前向阻力系数列表，通常包含两个值：[低速系数, 高速系数]。"
+      "description": "前向阻力系数列表，通常包含两个值：[一阶系数, 二阶系数]。"
     },
     "back_drag": {
       "type": "array",

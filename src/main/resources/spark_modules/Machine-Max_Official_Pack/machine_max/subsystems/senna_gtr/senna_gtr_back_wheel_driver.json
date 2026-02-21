@@ -1,0 +1,16 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:wheel_driver",
+  "basic_durability": 100,
+  "roll": {
+    "max_drive_force": 5000.0,
+    "max_brake_force": 500.0,
+    "max_hand_brake_force": 400.0,
+    "max_speed": 3140.0
+  },
+  "steering": {
+    "max_force": 0.0,
+    "max_speed": 0.0
+  },
+  "abs_wheel_radius": 0.4531
+}

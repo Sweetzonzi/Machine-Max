@@ -1,0 +1,372 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "vehicle_durability_rate": 0.6,
+  "vehicle_damage_rate": 1.0,
+  "vehicle_damage_rate_destroyed": 0.1,
+  "variants": {
+    "icon": "machine_max:textures/icon/senna_gtr/senna_gtr_chassis_icon.png",
+    "model": "machine_max:senna_gtr_chassis.geo",
+    "textures": "machine_max:textures/part/senna_gtr.png",
+    "animations": "machine_max:senna_gtr",
+    "tags": ["chassis", "senna_gtr"],
+    "sub_parts": {
+      "sub_part.machine_max.main": {
+        "durability": 120.0,
+        "mass": 600.0,
+        "block_collision": "ground",
+        "collision_height": 1.5,
+        "hit_boxes": {
+          "Collision": {
+            "id": "part",
+            "type": "box",
+            "un_penetrate_damage_factor": 0.5,
+            "rha": 3
+          },
+          "EngineCollision": {
+            "id": "engine",
+            "type": "box",
+            "subsystem": "subsystem.machine_max.engine",
+            "un_penetrate_damage_factor": 0.5,
+            "rha": 1
+          }
+        },
+        "interact_boxes": {
+          "interact.machine_max.left_seat": { //键:交互判定区名称
+            "bone": "LeftSeatInteract", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "signal_targets": {
+              "left_seat_interact": ["subsystem.machine_max.driver_seat"] //将交互信号转发给驾驶座
+            },
+            "interact_mode": "accurate" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+          },
+          "interact.machine_max.right_seat": { //键:交互判定区名称
+            "bone": "RightSeatInteract", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "signal_targets": {
+              "left_seat_interact": ["subsystem.machine_max.copilot_seat"] //将交互信号转发给副驾驶座
+            },
+            "interact_mode": "accurate" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+          },
+          "interact.machine_max.left_seat_fast": { //键:交互判定区名称
+            "bone": "LeftSeatOnBoard", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "signal_targets": {
+              "right_seat_interact": ["subsystem.machine_max.driver_seat"]
+            },
+            "interact_mode": "fast" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+          },
+          "interact.machine_max.right_seat_fast": { //键:交互判定区名称
+            "bone": "RightSeatOnBoard", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "signal_targets": {
+              "right_seat_interact": ["subsystem.machine_max.copilot_seat"]
+            },
+            "interact_mode": "fast" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+          },
+          "interact.machine_max.glove_box": { //键:交互判定区名称
+            "bone": "GloveBoxInteract", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+            "signal_targets": {
+              "glove_box_interact": ["subsystem.machine_max.glove_box"] //将交互信号转发给储物子系统
+            },
+            "interact_mode": "accurate" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.driver_seat": {
+            "type": "machine_max:seat", //子系统类型
+            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "seat_point_locator": "left_seat", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
+            "move_outputs": { //(可选,默认为空)子系统移动控制输出列表
+              "move_control": ["subsystem.machine_max.car_controller"] //将控制信号转发给车辆控制系统
+            },
+            "regular_outputs": { //(可选,默认为空)子系统常规按键输出列表
+              "regular_control": ["subsystem.machine_max.car_controller"] //将控制信号转发给车辆控制系统
+            },
+            "aim_outputs": { //(可选,默认为空)子系统视角控制输出列表
+              "aim_control": ["subsystem.machine_max.car_controller"]
+            },
+            "passenger_num_outputs": {
+              "occupied": ["interact.machine_max.left_seat", "interact.machine_max.left_seat_fast"]
+            }
+          },
+          "subsystem.machine_max.copilot_seat": {
+            "type": "machine_max:seat", //子系统类型
+            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "seat_point_locator": "right_seat", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
+            "passenger_num_outputs": {
+              "occupied": ["interact.machine_max.right_seat", "interact.machine_max.right_seat_fast"]
+            }
+          },
+          "subsystem.machine_max.car_controller": {
+            "type": "machine_max:car_controller", //子系统类型
+            "definition": "machine_max:senna_gtr_car_controller",//子系统型号, 需要与子系统类型相匹配
+            "engine_outputs": {
+              "engine_control": ["subsystem.machine_max.engine"]
+            },
+            "wheel_outputs": {
+              "wheel_control": [
+                "subsystem.machine_max.left_front_wheel_driver",
+                "subsystem.machine_max.right_front_wheel_driver",
+                "subsystem.machine_max.left_back_wheel_driver",
+                "subsystem.machine_max.right_back_wheel_driver"
+              ]
+            },
+            "gearbox_outputs": {
+              "gearbox_control": ["subsystem.machine_max.gearbox"]
+            }
+          },
+          "subsystem.machine_max.engine": {
+            "type": "machine_max:engine",
+            "definition": "machine_max:senna_gtr_engine",
+            "power_output": "subsystem.machine_max.gearbox"
+          },
+          "subsystem.machine_max.gearbox": {
+            "type": "machine_max:gearbox",
+            "definition": "machine_max:senna_gtr_gearbox",
+            "power_output": "subsystem.machine_max.transmission"
+          },
+          "subsystem.machine_max.transmission": {
+            "type": "machine_max:transmission",
+            "definition": "machine_max:senna_gtr_transmission",
+            "power_outputs": { //动力输出目标及减速比
+              "subsystem.machine_max.left_back_wheel_driver": 1,
+              "subsystem.machine_max.right_back_wheel_driver": 1
+            }
+          },
+          "subsystem.machine_max.glove_box": {
+            "type": "machine_max:item_storage",
+            "definition": "machine_max:glove_box"
+          },
+          "subsystem.machine_max.left_front_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:senna_gtr_front_wheel_driver",
+            "connector": "connector.machine_max.left_front_wheel"
+          },
+          "subsystem.machine_max.right_front_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:senna_gtr_front_wheel_driver",
+            "connector": "connector.machine_max.right_front_wheel"
+          },
+          "subsystem.machine_max.left_back_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:senna_gtr_back_wheel_driver",
+            "connector": "connector.machine_max.left_back_wheel"
+          },
+          "subsystem.machine_max.right_back_wheel_driver": {
+            "type": "machine_max:wheel_driver",
+            "definition": "machine_max:senna_gtr_back_wheel_driver",
+            "connector": "connector.machine_max.right_back_wheel"
+          }
+        },
+        "connectors": {
+          "connector.machine_max.left_front_wheel": {
+            "locator": "left_front_wheel",
+            "type": "Advanced",
+            "direction": "xn",
+            "integrity": 50.0,
+            "required_tags": ["left", "front"],
+            "forbidden_tags": ["hull", "chassis"],
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -1.0,
+                "upper_limit": 1.5,
+                "equilibrium": -0.1,
+                "stiffness": 15000,
+                "damping": 350
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "yr": {
+                "lower_limit": -45.0,
+                "upper_limit": 45.0,
+                "stiffness": 1000,
+                "damping": 20
+              },
+              "zr": {
+                "lower_limit": 1.0,
+                "upper_limit": 15.0,
+                "equilibrium": 1.0,
+                "stiffness": 15000,
+                "damping": 250
+              }
+            }
+          },
+          "connector.machine_max.left_back_wheel": {
+            "locator": "left_back_wheel",
+            "type": "Advanced",
+            "direction": "xn",
+            "integrity": 60.0,
+            "required_tags": ["left", "back"],
+            "forbidden_tags": ["hull", "chassis"],
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -1.0,
+                "upper_limit": 1.5,
+                "equilibrium": -0.1,
+                "stiffness": 15000,
+                "damping": 350
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "zr": {
+                "lower_limit": 1.0,
+                "upper_limit": 15.0,
+                "equilibrium": 1.0,
+                "stiffness": 15000,
+                "damping": 250
+              }
+            }
+          },
+          "connector.machine_max.right_front_wheel": {
+            "locator": "right_front_wheel",
+            "type": "Advanced",
+            "direction": "xp",
+            "integrity": 60.0,
+            "required_tags": ["right", "front"],
+            "forbidden_tags": ["hull", "chassis"],
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -1.0,
+                "upper_limit": 1.5,
+                "equilibrium": -0.1,
+                "stiffness": 15000,
+                "damping": 350
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "yr": {
+                "lower_limit": -45.0,
+                "upper_limit": 45.0,
+                "stiffness": 1000,
+                "damping": 20
+              },
+              "zr": {
+                "lower_limit": -15.0,
+                "upper_limit": -1.0,
+                "equilibrium": -1.0,
+                "stiffness": 15000,
+                "damping": 250
+              }
+            }
+          },
+          "connector.machine_max.right_back_wheel": {
+            "locator": "right_back_wheel",
+            "type": "Advanced",
+            "direction": "xp",
+            "integrity": 60.0,
+            "required_tags": ["right", "back"],
+            "acceptable_tags": [],
+            "forbidden_tags": ["hull", "chassis"],
+            "joint_attrs": {
+              "y": {
+                "lower_limit": -1.0,
+                "upper_limit": 1.5,
+                "equilibrium": -0.1,
+                "stiffness": 15000,
+                "damping": 350
+              },
+              "xr": {
+                "lower_limit": 1.0,
+                "upper_limit": -1.0
+              },
+              "zr": {
+                "lower_limit": -15.0,
+                "upper_limit": -1.0,
+                "equilibrium": -1.0,
+                "stiffness": 15000,
+                "damping": 250
+              }
+            }
+          },
+          "connector.machine_max.front_bumper_left": {
+            "locator": "chassis_front_bumper_left",
+            "type": "Advanced",
+            "direction": "zn",
+            "required_tags": ["front", "bumper"],
+            "integrity": 30.0,
+            "joint_attrs": {
+              "zr": {
+                "lower_limit": -30.0,
+                "upper_limit": 30.0,
+                "equilibrium": 0.0,
+                "stiffness": 5000,
+                "damping": 100
+              }
+            }
+          },
+          "connector.machine_max.front_bumper_right": {
+            "locator": "chassis_front_bumper_right",
+            "type": "Advanced",
+            "direction": "zn",
+            "required_tags": ["front", "bumper"],
+            "integrity": 30.0,
+            "joint_attrs": {
+              "zr": {
+                "lower_limit": -30.0,
+                "upper_limit": 30.0,
+                "equilibrium": 0.0,
+                "stiffness": 5000,
+                "damping": 100
+              }
+            }
+          },
+          "connector.machine_max.back_bumper_left": {
+            "locator": "chassis_back_bumper_left",
+            "type": "Advanced",
+            "direction": "zp",
+            "required_tags": ["back", "bumper"],
+            "integrity": 30.0,
+            "joint_attrs": {
+              "zr": {
+                "lower_limit": -30.0,
+                "upper_limit": 30.0,
+                "equilibrium": 0.0,
+                "stiffness": 5000,
+                "damping": 100
+              }
+            }
+          },
+          "connector.machine_max.back_bumper_right": {
+            "locator": "chassis_back_bumper_right",
+            "type": "Advanced",
+            "direction": "zp",
+            "required_tags": ["back", "bumper"],
+            "integrity": 30.0,
+            "joint_attrs": {
+              "zr": {
+                "lower_limit": -30.0,
+                "upper_limit": 30.0,
+                "equilibrium": 0.0,
+                "stiffness": 5000,
+                "damping": 100
+              }
+            }
+          },
+          "connector.machine_max.hull_front": {
+            "locator": "chassis_hull_front",
+            "type": "Simple",
+            "required_tags": ["hull"],
+            "integrity": 50.0
+          },
+          "connector.machine_max.hull_back": {
+            "locator": "chassis_hull_back",
+            "type": "Simple",
+            "required_tags": ["hull"],
+            "integrity": 50.0
+          }
+        },
+        "projected_area": [4.8, 10.25, 2.46],
+        "hydro_priority": 10,
+        "hydrodynamics": {
+          "": {
+            "front_drag": [0.0, 0.0],
+            "back_drag": [0.0, 0.3],
+            "y_lift": [0.0, 0.4]
+          }
+        }
+      }
+    }
+  }
+}

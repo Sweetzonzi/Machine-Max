@@ -55,6 +55,7 @@ public class SubPartAttr {
     public final ConcurrentMap<String, CompoundCollisionShape> interactBoxShape = new ConcurrentHashMap<>();
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();
     public final ConcurrentMap<Long, String> hitBoxNames = new ConcurrentHashMap<>();
+    public final ConcurrentMap<Long, Float> wheelWidths = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, ConcurrentMap<String, Transform>> locatorTransforms = new ConcurrentHashMap<>();
 
     public enum BlockCollisionType {
@@ -160,7 +161,7 @@ public class SubPartAttr {
                             break;
                         case "sphere":
                             for (OCube cube : bone.getCubes()) {
-                                SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().x / 2));
+                                SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().y / 2));
                                 hitBoxNames.put(ballShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         ballShape,
@@ -195,16 +196,12 @@ public class SubPartAttr {
                             break;
                         case "wheel":
                             for (OCube cube : bone.getCubes()) {
-                                Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
-                                SphereCollisionShape round = new SphereCollisionShape(size.x * 0.2f);
-                                size = new Vector3f(size.x * 0.8f, size.y - size.x * 0.2f, size.z);
-                                CylinderCollisionShape cylinderShape = new CylinderCollisionShape(size, 0);
-                                MinkowskiSum collisionShape = new MinkowskiSum(round, cylinderShape);
-                                hitBoxNames.put(collisionShape.nativeId(), hitBoxName);
+                                SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().y / 2));
+                                hitBoxNames.put(ballShape.nativeId(), hitBoxName);
+                                wheelWidths.put(ballShape.nativeId(), (float) cube.getSize().x);
                                 shape.addChildShape(
-                                        collisionShape,
-                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)),
-                                        SparkMathKt.toBQuaternion(cube.getTransformedRotation(pose)).toRotationMatrix());
+                                        ballShape,
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)));
                             }
                             break;
                         default:

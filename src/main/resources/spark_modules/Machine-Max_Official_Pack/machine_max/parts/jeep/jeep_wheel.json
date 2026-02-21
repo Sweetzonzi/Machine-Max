@@ -24,7 +24,7 @@
           "climb_assist": true,
           "hit_boxes": {
             "CollisionShape": {
-              "type": "cylinder",
+              "type": "wheel",
               "friction": [
                 1.5,
                 2.0,
@@ -139,7 +139,7 @@
           "climb_assist": true,
           "hit_boxes": {
             "CollisionShape": {
-              "type": "cylinder",
+              "type": "wheel",
               "friction": [
                 1.5,
                 2.0,

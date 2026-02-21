@@ -92,9 +92,7 @@
     "hydrodynamics": {
       "type": "object",
       "default": {
-        "": {
-          "$ref": "hydrodynamic_attr.schema.json#/$defs/default"
-        }
+        "": {}
       },
       "description": "流体动力计算定位点列表，键值对的键名为定位器名称，空字符串表示以质心位置计算。用于精确计算空气阻力"
     }

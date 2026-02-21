@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://machine_max.io/schemas/subsystem/static/car_controller_static_attr.json",
-  "title": "车辆控制器子系统静态属性",
-  "description": "车辆控制系统的静态属性，负责处理驾驶输入、转向控制等。",
+  "$id": "https://machine_max.io/schemas/subsystem/static/motorbike_controller_static_attr.json",
+  "title": "摩托车控制器子系统静态属性",
+  "description": "摩托车控制系统的静态属性，负责处理驾驶输入、转向控制等，包含摩托车特有的倾斜角度限制。",
   "properties": {
     "$schema": {
       "type": "string",
@@ -11,8 +11,8 @@
     },
     "type": {
       "type": "string",
-      "const": "machine_max:car_controller",
-      "description": "子系统类型，必须为'machine_max:car_controller'。"
+      "const": "machine_max:motorbike_controller",
+      "description": "子系统类型，必须为'machine_max:motorbike_controller'。"
     },
     "basic_durability": {
       "type": "number",
@@ -39,7 +39,7 @@
             "type": "number",
             "minimum": 0
           },
-          "description": "速度-转向半径映射表，键为速度（km/h），值为对应的转向半径（米）。线性插值。",
+          "description": "速度-转向半径映射表，键为速度(km/h)，值为对应的转向半径(米)。支持线性插值。",
           "examples": [
             {
               "0": 3.0,
@@ -68,17 +68,61 @@
       "items": { "type": "string" },
       "default": ["move_control"],
       "description": "控制输入信号键列表，优先级从高到低。"
+    },
+    "max_angle": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 90,
+      "default": 30.0,
+      "description": "倾斜角超过此角度视作失去平衡，不再修正姿态，单位为度。"
+    },
+    "parking_angle": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": 5.0,
+      "description": "摩托车静止停靠时的倾斜角度，可正可负，单位为度。正值表示向左倾斜，负值表示向右倾斜。"
+    },
+    "correction_force_multiplier": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 1.0,
+      "description": "修正力倍率，用于整体缩放摩托车控制系统的平衡调节力。"
     }
   },
   "required": ["type"],
   "additionalProperties": false,
   "examples": [
     {
-      "type": "machine_max:car_controller",
-      "basic_durability": 50.0,
-      "steering_radius": 5.0,
+      "type": "machine_max:motorbike_controller",
+      "basic_durability": 40.0,
+      "steering_radius": 3.0,
+      "manual_gear_shift": false,
+      "control_inputs": ["move_control"],
+      "max_angle": 45.0,
+      "parking_angle": 5.0,
+      "correction_force_multiplier": 1.2
+    },
+    {
+      "type": "machine_max:motorbike_controller",
+      "basic_durability": 35.0,
+      "steering_radius": {
+        "0.0": 3.5,
+        "18.0": 4.167,
+        "36.0": 16.667,
+        "54.0": 37.5,
+        "72.0": 66.667,
+        "90.0": 104.167,
+        "108.0": 150
+      },
       "manual_gear_shift": true,
-      "control_inputs": ["move_control", "regular_control"]
+      "abs_enabled": true,
+      "abs_target_slip_ratio": 0.15,
+      "abs_wheel_radius": 0.3,
+      "max_angle": 35.0,
+      "parking_angle": -3.0,
+      "correction_force_multiplier": 0.8
     }
   ]
 }

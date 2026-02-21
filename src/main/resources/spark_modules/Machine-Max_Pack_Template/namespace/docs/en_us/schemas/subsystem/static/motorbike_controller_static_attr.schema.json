@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://machine_max.io/schemas/subsystem/static/car_controller_static_attr.json",
-  "title": "Vehicle Controller Subsystem Static Attributes",
-  "description": "Static attributes of the vehicle control system, responsible for handling driving inputs, steering control, etc.",
+  "$id": "https://machine_max.io/schemas/subsystem/static/motorbike_controller_static_attr.json",
+  "title": "Motorbike Controller Subsystem Static Attributes",
+  "description": "Static attributes of the motorbike control system, responsible for handling driving inputs, steering control, etc., including motorbike-specific tilt angle limitations.",
   "properties": {
     "$schema": {
       "type": "string",
@@ -11,8 +11,8 @@
     },
     "type": {
       "type": "string",
-      "const": "machine_max:car_controller",
-      "description": "Subsystem type, must be 'machine_max:car_controller'."
+      "const": "machine_max:motorbike_controller",
+      "description": "Subsystem type, must be 'machine_max:motorbike_controller'."
     },
     "basic_durability": {
       "type": "number",
@@ -68,17 +68,57 @@
       "items": { "type": "string" },
       "default": ["move_control"],
       "description": "List of control input signal keys, from highest to lowest priority."
+    },
+    "max_angle": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 90,
+      "default": 30.0,
+      "description": "Tilt angle beyond which the motorbike is considered to have lost balance and will no longer apply correction forces, in degrees."
+    },
+    "parking_angle": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": 5.0,
+      "description": "Target tilt angle when the motorbike is parked, can be positive or negative, in degrees. Positive values indicate left tilt, negative values indicate right tilt."
+    },
+    "correction_force_multiplier": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 1.0,
+      "description": "Correction force multiplier, used to scale the overall balance adjustment force of the motorbike control system."
     }
   },
   "required": ["type"],
   "additionalProperties": false,
   "examples": [
     {
-      "type": "machine_max:car_controller",
-      "basic_durability": 50.0,
-      "steering_radius": 5.0,
+      "type": "machine_max:motorbike_controller",
+      "basic_durability": 40.0,
+      "steering_radius": 3.0,
+      "manual_gear_shift": false,
+      "control_inputs": ["move_control"],
+      "max_angle": 45.0,
+      "parking_angle": 5.0,
+      "correction_force_multiplier": 1.2
+    },
+    {
+      "type": "machine_max:motorbike_controller",
+      "basic_durability": 35.0,
+      "steering_radius": {
+        "0": 2.5,
+        "30": 4.0,
+        "60": 6.0
+      },
       "manual_gear_shift": true,
-      "control_inputs": ["move_control", "regular_control"]
+      "abs_enabled": true,
+      "abs_target_slip_ratio": 0.15,
+      "abs_wheel_radius": 0.3,
+      "max_angle": 35.0,
+      "parking_angle": -3.0,
+      "correction_force_multiplier": 0.8
     }
   ]
 }
