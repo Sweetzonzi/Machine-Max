@@ -113,7 +113,24 @@
 								"up": {"uv": [195, 10], "uv_size": [22, 1]},
 								"down": {"uv": [223, 103], "uv_size": [22, -1]}
 							}
+						}
+					],
+					"locators": {
+						"trunk_door_hull_axis": {
+							"offset": [0, 15.49742, -3.71351],
+							"rotation": [15, 0, 0]
 						},
+						"trunk_door_hull_lock": {
+							"offset": [0, -1.75258, 2.28649],
+							"rotation": [15, 0, 0]
+						}
+					}
+				},
+				{
+					"name": "ysmGlow_TrunkLight",
+					"parent": "Trunk",
+					"pivot": [15.005, 4.2617, 2.61459],
+					"cubes": [
 						{
 							"origin": [13, -1.8734, 0.5944],
 							"size": [2, 3.98572, 3],
@@ -142,17 +159,7 @@
 								"down": {"uv": [109, 252], "uv_size": [2, -3]}
 							}
 						}
-					],
-					"locators": {
-						"trunk_door_hull_axis": {
-							"offset": [0, 15.49742, -3.71351],
-							"rotation": [15, 0, 0]
-						},
-						"trunk_door_hull_lock": {
-							"offset": [0, -1.75258, 2.28649],
-							"rotation": [15, 0, 0]
-						}
-					}
+					]
 				},
 				{
 					"name": "Collision",

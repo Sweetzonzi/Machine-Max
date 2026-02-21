@@ -20,6 +20,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix3f;
@@ -84,13 +85,18 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             if (entity.subPart.part.getAssemblingProgress() >= 1.0f) {
                 // 整体渲染
                 for (OBone bone : bones.values()) {
+                    boolean ysmGlow = bone.getName().toLowerCase().startsWith("ysmglow");
                     ModelRenderHelperKt.render(
                             bone,
                             modelInstance.getPose(),
                             new Matrix4f(poseStack.last().pose()),
-                            poseStack.last().normal(),
-                            bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
-                            light,
+                            poseStack.last().normal().rotate(Axis.YP.rotationDegrees(180)),
+                            ysmGlow
+                                    ? bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity)))
+                                    : bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                            ysmGlow
+                                    ? Brightness.FULL_BRIGHT.pack()
+                                    : light,
                             overlay,
                             color,
                             partialTick,
