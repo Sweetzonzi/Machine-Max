@@ -9,6 +9,20 @@ import java.util.Set;
 
 /**
  * 轴输入处理类，支持鼠标和手柄的轴输入
+ * <p>
+ * 该类用于处理各种轴类型的输入事件，包括鼠标移动、鼠标滚轮和游戏手柄轴输入。
+ * 支持设置触发阈值，只有超过阈值的输入才会触发事件。
+ * <p>
+ * 使用示例：
+ * <pre>
+ * // 创建鼠标 X 轴输入
+ * new NativeAxisInput(NativeAxisInput.AxisType.MOUSE, "X")
+ *         .setThreshold(1.0)
+ *         .setEvent(delta -> System.out.println("Mouse X axis moved " + delta));
+ * </pre>
+ * 
+ * @author ArcherLee
+ * @version 1.0.0
  */
 public class NativeAxisInput {
     public enum AxisType {
@@ -48,6 +62,7 @@ public class NativeAxisInput {
     }
     
     public NativeAxisInput(AxisType axisType, String axisName) {
+        axisName = axisName.toLowerCase();
         this.axisType = axisType;
         this.axisName = axisName;
         axisInputsMap.get(axisType).computeIfAbsent(axisName, k -> new HashSet<>()).add(this);
