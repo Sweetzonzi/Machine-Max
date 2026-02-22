@@ -96,7 +96,7 @@
           "$ref": "hydrodynamic_attr.schema.json#/$defs/default"
         }
       },
-      "description": "List of hydrodynamic calculation reference points, key-value pair key name is locator name, empty string means calculation based on center of mass position. Used for precise calculation of air resistance"
+      "description": "List of hydrodynamic calculation reference points, key-value pair key name is first searched as bone name, if a matching bone is found, all locators within that bone are used as aerodynamic calculation points; if no matching bone is found, it is searched as locator name. Empty string means calculation based on center of mass position."
     }
   },
   "required": ["hit_boxes"],

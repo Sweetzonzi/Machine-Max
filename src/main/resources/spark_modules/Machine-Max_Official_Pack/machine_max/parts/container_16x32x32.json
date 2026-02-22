@@ -1,11 +1,11 @@
 {
   "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/container_16x32x32_icon.png",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "model": "machine_max:container_16x32x32.geo",
-    "icon": "machine_max:textures/icon/container_16x32x32_icon.png",
     "textures": "machine_max:textures/part/container_16x32x32.png",
     "sub_parts": {
       "sub_part.machine_max.main": {

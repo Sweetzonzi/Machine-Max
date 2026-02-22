@@ -1,10 +1,10 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/wine_fox/wine_fox_hull_icon.png",
   "vehicle_durability_rate": 0.6,
   "vehicle_damage_rate": 1.0,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
-    "icon": "machine_max:textures/icon/wine_fox/wine_fox_hull_icon.png",
     "model": "machine_max:wine_fox_hull.geo",
     "textures": "machine_max:textures/part/wine_fox.png",
     "animations": "machine_max:wine_fox",

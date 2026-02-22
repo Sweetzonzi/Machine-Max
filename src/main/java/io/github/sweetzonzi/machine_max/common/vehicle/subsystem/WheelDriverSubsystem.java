@@ -94,7 +94,7 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
                 torque -= brakeTorque + handBrakeTorque;//施加刹车力矩 Apply braking torque
                 rollingMotor.set(MotorParam.MaxMotorForce, Math.abs(torque));
                 if (torque > 0) {//加速过程 Accelerating
-                    rollingMotor.set(MotorParam.TargetVelocity, Math.signum(speed) * MAX_SPEED);
+                    rollingMotor.set(MotorParam.TargetVelocity, Math.signum(speed) * Math.min(10 + Math.abs(speed), MAX_SPEED));
                 } else {//减速过程 Decelerating
                     rollingMotor.set(MotorParam.TargetVelocity, 0);
                 }

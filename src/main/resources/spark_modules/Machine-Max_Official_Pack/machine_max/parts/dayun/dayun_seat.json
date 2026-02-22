@@ -1,14 +1,14 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/dayun_seat_icon.png",
   "vehicle_durability_rate": 0.5, //(可选, 默认0.8)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
   "vehicle_damage_rate": 0.5, //(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
   "vehicle_damage_rate_destroyed": 0.1, //(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {
     "model": "machine_max:dayun_seat.geo", //模型路径
-    "icon": "machine_max:textures/icon/dayun_seat_icon.png",
     "textures": "machine_max:textures/part/dayun/dayun.png",
     "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
-    "tags": [], //(可选, 默认[])部件标签列表
+    "tags": ["dayun"], //(可选, 默认[])部件标签列表
     "sub_parts": { //零件(子部件)列表
       "sub_part.machine_max.main": { //零件(子部件)名称
         "durability": 150.0, //(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪

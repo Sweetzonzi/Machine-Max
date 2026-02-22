@@ -49,14 +49,15 @@ public class SubPartAttr {
     public final int hydroPriority;
     public final Map<String, HydrodynamicAttr> hydrodynamics;
 
-    // 运行时缓存 - 按状态缓存
-    public final Map<String, Map<String, OBone>> bones = new LinkedHashMap<>();
-    public final ConcurrentMap<String, CompoundCollisionShape> hitBoxShape = new ConcurrentHashMap<>();
-    public final ConcurrentMap<String, CompoundCollisionShape> interactBoxShape = new ConcurrentHashMap<>();
+    // 运行时缓存
+    private Map<String, OBone> bonesCache = null;
+    public CompoundCollisionShape hitBoxShape = null;
+    public CompoundCollisionShape interactBoxShape = null;
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();
     public final ConcurrentMap<Long, String> hitBoxNames = new ConcurrentHashMap<>();
-    public final ConcurrentMap<Long, Float> wheelWidths = new ConcurrentHashMap<>();
-    public final ConcurrentMap<String, ConcurrentMap<String, Transform>> locatorTransforms = new ConcurrentHashMap<>();
+    public final ConcurrentMap<Long, Float> wheelHalfWidths = new ConcurrentHashMap<>();
+    public final ConcurrentMap<Long, Boolean> isWheelSurface = new ConcurrentHashMap<>();
+    public final ConcurrentMap<String, Transform> locatorTransforms = new ConcurrentHashMap<>();
 
     public enum BlockCollisionType {
         TRUE, FALSE, GROUND
@@ -123,8 +124,7 @@ public class SubPartAttr {
      * 获取子部件在指定状态的碰撞体积
      */
     public CompoundCollisionShape getCollisionShape(VariantAttr attr) {
-        String state = "default";
-        return hitBoxShape.computeIfAbsent(state, s -> {
+        if (hitBoxShape == null){
             ResourceLocation modelLocation = attr.getModel();
             var shape = new CompoundCollisionShape(1);
             // 加载模型骨骼
@@ -132,13 +132,10 @@ public class SubPartAttr {
                     OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
                     startBone, endBones);
             if (bones.isEmpty()) throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
-            // 获取定位器
+            // 获取并储存定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
-            // 添加定位器
-            for (Map.Entry<String, OLocator> entry : locators.entrySet()) {
-                addLocator(state, entry.getKey(), locators);
-            }
+            addLocator(locators);
 
             for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {
@@ -161,7 +158,7 @@ public class SubPartAttr {
                             break;
                         case "sphere":
                             for (OCube cube : bone.getCubes()) {
-                                SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().y / 2));
+                                MultiSphere ballShape = new MultiSphere((float) (cube.getSize().y / 2));
                                 hitBoxNames.put(ballShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         ballShape,
@@ -196,12 +193,26 @@ public class SubPartAttr {
                             break;
                         case "wheel":
                             for (OCube cube : bone.getCubes()) {
-                                SphereCollisionShape ballShape = new SphereCollisionShape((float) (cube.getSize().y / 2));
+                                float radius = (float) (cube.getSize().y / 2);
+                                float halfWidth = (float) cube.getSize().x / 2;
+                                // 地形接触用的球体
+                                SphereCollisionShape ballShape = new SphereCollisionShape(radius);
                                 hitBoxNames.put(ballShape.nativeId(), hitBoxName);
-                                wheelWidths.put(ballShape.nativeId(), (float) cube.getSize().x);
+                                wheelHalfWidths.put(ballShape.nativeId(), halfWidth);
+                                isWheelSurface.put(ballShape.nativeId(), true);
                                 shape.addChildShape(
                                         ballShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)));
+                                // 一般判定用的圆柱体
+                                float cylinderRadius = 0.7f * radius;
+                                Vector3f cylinderSize = new Vector3f(halfWidth + 0.01f, cylinderRadius, cylinderRadius);
+                                CylinderCollisionShape cylinderShape = new CylinderCollisionShape(cylinderSize, 0);
+                                hitBoxNames.put(cylinderShape.nativeId(), hitBoxName);
+                                isWheelSurface.put(cylinderShape.nativeId(), false);
+                                shape.addChildShape(
+                                        cylinderShape,
+                                        PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)),
+                                        SparkMathKt.toBQuaternion(cube.getTransformedRotation(pose)).toRotationMatrix());
                             }
                             break;
                         default:
@@ -238,23 +249,24 @@ public class SubPartAttr {
             }
             if (massCenter != null) {
                 // 重新计算定位器相对质心的变换
-                for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.computeIfAbsent(state, v1 -> new ConcurrentHashMap<>()).entrySet()) {
+                for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.entrySet()) {
                     String locatorName = locatorTransform.getKey();
                     Transform transform = locatorTransform.getValue();
                     MyMath.combine(massCenter.invert(), transform, transform);
-                    locatorTransforms.get(state).put(locatorName, transform);
+                    locatorTransforms.put(locatorName, transform);
                 }
                 shape.correctAxes(massCenter);
             }
-            return shape;
-        });
+            hitBoxShape = shape;
+        }
+        return hitBoxShape;
     }
 
     /**
      * 获取子部件在指定状态的交互体积
      */
     public CompoundCollisionShape getInteractBoxShape(VariantAttr attr, String state) {
-        return interactBoxShape.computeIfAbsent(state, s -> {
+        if (interactBoxShape == null) {
             ResourceLocation modelLocation = attr.getModel();
             var shape = new CompoundCollisionShape(1);
             // 加载模型骨骼
@@ -308,8 +320,9 @@ public class SubPartAttr {
             }
             if (transform != null)
                 shape.correctAxes(transform);
-            return shape;
-        });
+            interactBoxShape = shape;
+        }
+        return interactBoxShape;
     }
 
     /**
@@ -319,13 +332,12 @@ public class SubPartAttr {
      * @return 骨骼列表
      */
     public Map<String, OBone> getBonesToRender(VariantAttr variant) {
-        return getBones().computeIfAbsent("default", v -> {
-            ResourceLocation modelLocation = variant.getModel();
-            // 加载模型骨骼
-            return filterBones(
-                    OModel.getORIGINS().get(new ModelIndex("part", modelLocation)).getBones(),
+        if (bonesCache == null) {
+            bonesCache = filterBones(
+                    OModel.getORIGINS().get(new ModelIndex("part", variant.getModel())).getBones(),
                     startBone, endBones);
-        });
+        }
+        return bonesCache;
     }
 
     /**
@@ -380,15 +392,17 @@ public class SubPartAttr {
         return blockCollision.toString().toLowerCase();
     }
 
-    private void addLocator(String state, String locatorName, Map<String, OLocator> locators) {
-        if (locatorName.isEmpty()) return;
-        OLocator locator = locators.get(locatorName);
-        org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-        Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
-        Transform transform = new Transform(
-                PhysicsHelperKt.toBVector3f(locator.getOffset()),
-                SparkMathKt.toBQuaternion(quaternion)
-        );
-        locatorTransforms.computeIfAbsent(state, v1 -> new ConcurrentHashMap<>()).put(locatorName, transform);
+    private void addLocator(Map<String, OLocator> locators) {
+        for (Map.Entry<String, OLocator> entry : locators.entrySet()) {
+            String locatorName = entry.getKey();
+            OLocator locator = entry.getValue();
+            org.joml.Vector3f rotation = locator.getRotation().toVector3f();
+            Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
+            Transform transform = new Transform(
+                    PhysicsHelperKt.toBVector3f(locator.getOffset()),
+                    SparkMathKt.toBQuaternion(quaternion)
+            );
+            locatorTransforms.put(locatorName, transform);
+        }
     }
 }

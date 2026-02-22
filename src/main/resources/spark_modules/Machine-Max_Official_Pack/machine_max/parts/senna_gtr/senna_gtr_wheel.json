@@ -1,11 +1,11 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/senna_gtr/senna_gtr_wheel_icon.png",
   "vehicle_durability_rate": 1.0,//(可选, 默认1.0)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
   "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
   "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.5)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {//部件变体列表, 支持单值或多键值对
     "left_front": {//变体名称
-      "icon": "machine_max:textures/icon/senna_gtr/senna_gtr_wheel_icon.png",
       "model": "machine_max:senna_gtr_wheel_left_front.geo",
       "textures": "machine_max:textures/part/senna_gtr.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
@@ -20,7 +20,7 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [1.4, 2.0, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
+              "friction": [1.8, 2.5, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
               "slip_adaptation": 0.5,//(可选, 默认0.5)滑动适应性系数(0~1), 该属性可削弱打滑时的摩擦系数降低效果, 提升抓地力
               "rolling_friction": 0.05,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力
               "restitution": 0.05,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
@@ -112,7 +112,6 @@
       }
     },
     "right_front": {//变体名称
-      "icon": "machine_max:textures/icon/senna_gtr/senna_gtr_wheel_icon.png",
       "model": "machine_max:senna_gtr_wheel_right_front.geo",
       "textures": "machine_max:textures/part/senna_gtr.png",
       "animations": "machine_max:empty",
@@ -127,7 +126,7 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [1.4, 2.0, 1.0],
+              "friction": [1.8, 2.5, 1.0],
               "slip_adaptation": 0.5,
               "rolling_friction": 0.05,
               "restitution": 0.05,
@@ -219,7 +218,6 @@
       }
     },
     "left_back": {//变体名称
-      "icon": "machine_max:textures/icon/senna_gtr/senna_gtr_wheel_icon.png",
       "model": "machine_max:senna_gtr_wheel_left_back.geo",
       "textures": "machine_max:textures/part/senna_gtr.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
@@ -234,11 +232,11 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [1.4, 2.0, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
-              "slip_adaptation": 0.5,//(可选, 默认0.5)滑动适应性系数(0~1), 该属性可削弱打滑时的摩擦系数降低效果, 提升抓地力
-              "rolling_friction": 0.05,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力
-              "restitution": 0.05,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
-              "block_damage_factor": 0.05, //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
+              "friction": [1.8, 2.5, 1.0],
+              "slip_adaptation": 0.5,
+              "rolling_friction": 0.05,
+              "restitution": 0.05,
+              "block_damage_factor": 0.05,
               "impact_modifiers": [
                 {
                   "operation": "multiply",
@@ -326,7 +324,6 @@
       }
     },
     "right_back": {//变体名称
-      "icon": "machine_max:textures/icon/senna_gtr/senna_gtr_wheel_icon.png",
       "model": "machine_max:senna_gtr_wheel_right_back.geo",
       "textures": "machine_max:textures/part/senna_gtr.png",
       "animations": "machine_max:empty",
@@ -341,7 +338,7 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [1.4, 2.0, 1.0],
+              "friction": [1.8, 2.5, 1.0],
               "slip_adaptation": 0.5,
               "rolling_friction": 0.05,
               "restitution": 0.05,

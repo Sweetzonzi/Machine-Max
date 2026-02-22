@@ -26,11 +26,11 @@ import com.jme3.bullet.collision.AfMode;
 import com.jme3.bullet.collision.ManifoldPoints;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
+import com.jme3.bullet.collision.shapes.MultiSphere;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Matrix3f;
-import com.jme3.math.Matrix4f;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
@@ -231,6 +231,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         point1.getPositionWorld(worldContactPoint);
         point1.getLocalPoint(localContactPoint);
         point2.getLocalPoint(otherLocalContactPoint);
+        if (!isEffectiveContact(hitBoxIndex, worldContactPoint, true)) {
+            ManifoldPoints.setAppliedImpulse(manifoldPointId, 0);
+            ManifoldPoints.setDistance1(manifoldPointId, 500);
+            return; // 忽略无效碰撞
+        }
         //获取世界坐标下的碰撞点法线，由另一物体指向自身
         point2.getNormalWorld(normal);
         //计算相对接触速度
@@ -251,13 +256,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             body.setSpinningFriction(hitBox.attr.spinningFriction());
         if (hitBox.attr.restitution() != body.getRestitution())
             body.setRestitution(hitBox.attr.restitution());
-        if (other.getCollisionGroup() == CollisionGroups.TERRAIN && isEffectiveTerrainContact(hitBoxIndex, worldContactPoint)) {
+        if (other.getCollisionGroup() == CollisionGroups.TERRAIN) {
             //与方块碰撞时
             this.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
-        } else if (!isWheel(hitBoxIndex) && other.getCollisionGroup() == CollisionGroups.PHYSICS_BODY) {
+        } else if (other.getCollisionGroup() == CollisionGroups.PHYSICS_BODY) {
             //与另一刚体碰撞时
             this.onCollideWithRigid(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
-        } else if (!isWheel(hitBoxIndex) && other.getCollisionGroup() == CollisionGroups.PAWN) {
+        } else if (other.getCollisionGroup() == CollisionGroups.PAWN) {
             //与实体碰撞时
             if (otherOwner instanceof Entity contactEntity && !(contactEntity instanceof CollisionObjectEntity)) {
                 onCollideWithEntity(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
@@ -272,6 +277,15 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof PhysicsChunkSection terrain) {
             other.shouldShowDebugBoxWhenNonColldeWith = true;
+            if (isWheel(hitBoxIndex) && !this.isWheelSurface(hitBoxIndex)) {
+                // 世界 -> 刚体
+                Transform worldToWheel = body.getTransform(null).invert();
+                var localNormal = SparkMathKt.toVector3f(normal).mulPosition(SparkMathKt.toMatrix4f(worldToWheel.toTransformMatrix()));
+                if (Math.abs(localNormal.x) > 0.95) { //
+                    ManifoldPoints.setDistance1(manifoldPointId, 500);
+                    return; // 忽略轮胎碰撞体积的非轮面也非轮侧碰撞
+                }
+            }
             //基本信息获取
             var hitBox = this.getHitBox(hitBoxIndex);
             var vel = this.getLinearVelocity();
@@ -629,78 +643,84 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         //仅在有速度时应用流体动力
         if (vel.length() > 0.1f) {
             for (Map.Entry<String, HydrodynamicAttr> entry : attr.hydrodynamics.entrySet()) {
-                String locatorName = entry.getKey();
+                String name = entry.getKey();
                 HydrodynamicAttr hydrodynamicAttr = entry.getValue();
-                Vector3f hydroCenter = getLocatorLocalPos(locatorName);
-                Vector3f localVel = MMMath.relPointLocalVel(hydroCenter, this.body);
-                Vector3f pos = getLocatorWorldPos(locatorName);
-                //遮挡关系处理
-                float xOcclusion = 1;//遮挡系数，1为无遮挡，应用全部流体动力；0为完全被遮挡，不应用流体动力
-                float yOcclusion = 1;
-                float zOcclusion = 1;
-                if (Math.abs(localVel.x) > 0.1f && hydrodynamicAttr.effectiveRange().x > 0) {
-                    Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(Math.signum(localVel.x), 0, 0), this.body).mult((float) hydrodynamicAttr.effectiveRange().x));
-                    if (!target.equals(pos)) {
-                        List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
-                        for (PhysicsRayTestResult ray : result) {
-                            var hit = ray.getCollisionObject();
-                            var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
-                            if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
-                            if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                                if (sp.attr.hydroPriority > attr.hydroPriority) {
-                                    float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
-                                    if (tempOcclusion < xOcclusion) xOcclusion = Math.max(0, tempOcclusion);
-                                    if (xOcclusion <= 0) break;
+                Set<String> locatorNames = HashSet.newHashSet(1);
+                if (getBonesToRender().containsKey(name)) { // 优先寻找骨骼内的全部定位器
+                    locatorNames.addAll(getBonesToRender().get(name).getLocators().keySet());
+                } else locatorNames.add(name); // 否则尝试寻找指定名称的定位器
+                for (String locatorName : locatorNames) {
+                    Vector3f hydroCenter = getLocatorLocalPos(locatorName);
+                    Vector3f localVel = MMMath.relPointLocalVel(hydroCenter, this.body);
+                    Vector3f pos = getLocatorWorldPos(locatorName);
+                    //遮挡关系处理
+                    float xOcclusion = 1;//遮挡系数，1为无遮挡，应用全部流体动力；0为完全被遮挡，不应用流体动力
+                    float yOcclusion = 1;
+                    float zOcclusion = 1;
+                    if (Math.abs(localVel.x) > 0.1f && hydrodynamicAttr.effectiveRange().x > 0) {
+                        Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(Math.signum(localVel.x), 0, 0), this.body).mult((float) hydrodynamicAttr.effectiveRange().x));
+                        if (!target.equals(pos)) {
+                            List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
+                            for (PhysicsRayTestResult ray : result) {
+                                var hit = ray.getCollisionObject();
+                                var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
+                                if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
+                                if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
+                                    if (sp.attr.hydroPriority > attr.hydroPriority) {
+                                        float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
+                                        if (tempOcclusion < xOcclusion) xOcclusion = Math.max(0, tempOcclusion);
+                                        if (xOcclusion <= 0) break;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if (Math.abs(localVel.y) > 0.1f && hydrodynamicAttr.effectiveRange().y > 0) {
-                    Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, Math.signum(localVel.y), 0), this.body).mult((float) hydrodynamicAttr.effectiveRange().y));
-                    if (!target.equals(pos)) {
-                        List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
-                        for (PhysicsRayTestResult ray : result) {
-                            var hit = ray.getCollisionObject();
-                            var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
-                            if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
-                            if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                                if (sp.attr.hydroPriority > attr.hydroPriority) {
-                                    float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
-                                    if (tempOcclusion < yOcclusion) yOcclusion = Math.max(0, tempOcclusion);
-                                    if (yOcclusion <= 0) break;
+                    if (Math.abs(localVel.y) > 0.1f && hydrodynamicAttr.effectiveRange().y > 0) {
+                        Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, Math.signum(localVel.y), 0), this.body).mult((float) hydrodynamicAttr.effectiveRange().y));
+                        if (!target.equals(pos)) {
+                            List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
+                            for (PhysicsRayTestResult ray : result) {
+                                var hit = ray.getCollisionObject();
+                                var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
+                                if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
+                                if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
+                                    if (sp.attr.hydroPriority > attr.hydroPriority) {
+                                        float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
+                                        if (tempOcclusion < yOcclusion) yOcclusion = Math.max(0, tempOcclusion);
+                                        if (yOcclusion <= 0) break;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if (Math.abs(localVel.z) > 0.1f && hydrodynamicAttr.effectiveRange().z > 0) {
-                    Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, 0, Math.signum(localVel.z)), this.body).mult((float) hydrodynamicAttr.effectiveRange().z));
-                    if (!target.equals(pos)) {
-                        List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
-                        for (PhysicsRayTestResult ray : result) {
-                            var hit = ray.getCollisionObject();
-                            var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
-                            if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
-                            if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                                if (sp.attr.hydroPriority > attr.hydroPriority) {
-                                    float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
-                                    if (tempOcclusion < zOcclusion) zOcclusion = Math.max(0, tempOcclusion);
-                                    if (zOcclusion <= 0) break;
+                    if (Math.abs(localVel.z) > 0.1f && hydrodynamicAttr.effectiveRange().z > 0) {
+                        Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, 0, Math.signum(localVel.z)), this.body).mult((float) hydrodynamicAttr.effectiveRange().z));
+                        if (!target.equals(pos)) {
+                            List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
+                            for (PhysicsRayTestResult ray : result) {
+                                var hit = ray.getCollisionObject();
+                                var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
+                                if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
+                                if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
+                                    if (sp.attr.hydroPriority > attr.hydroPriority) {
+                                        float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
+                                        if (tempOcclusion < zOcclusion) zOcclusion = Math.max(0, tempOcclusion);
+                                        if (zOcclusion <= 0) break;
+                                    }
                                 }
                             }
                         }
                     }
+                    //流体动力计算
+                    Vector3f localAeroForce = DynamicUtil.aeroDynamicForce(
+                            1.29f,//kg/m^3 流体密度
+                            this.projectedArea,
+                            hydrodynamicAttr,
+                            localVel).mult(xOcclusion, yOcclusion, zOcclusion).mult(1f);
+                    this.body.applyForce(//应用流体动力
+                            MMMath.localVectorToWorldVector(localAeroForce, this.body),
+                            MMMath.localVectorToWorldVector(hydroCenter, this.body));
                 }
-                //流体动力计算
-                Vector3f localAeroForce = DynamicUtil.aeroDynamicForce(
-                        1.29f,//kg/m^3 流体密度
-                        this.projectedArea,
-                        hydrodynamicAttr,
-                        localVel).mult(xOcclusion, yOcclusion, zOcclusion).mult(1f);
-                this.body.applyForce(//应用流体动力
-                        MMMath.localVectorToWorldVector(localAeroForce, this.body),
-                        MMMath.localVectorToWorldVector(hydroCenter, this.body));
             }
         }
         //攀爬辅助处理
@@ -1057,7 +1077,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         try {
             ChildCollisionShape[] children = this.collisionShape.listChildren();
             if (children.length >= contactPointIndex)
-                return attr.getWheelWidths().containsKey(children[contactPointIndex].getShape().nativeId());
+                return isWheel(children[contactPointIndex].getShape().nativeId());
             else throw new IndexOutOfBoundsException();
         } catch (IndexOutOfBoundsException e) {
             return false;
@@ -1071,36 +1091,72 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      * @return 是否为轮胎碰撞形状
      */
     public boolean isWheel(long childShapeId) {
-        return attr.getWheelWidths().containsKey(childShapeId);
+        return attr.getIsWheelSurface().containsKey(childShapeId);
+    }
+
+    /**
+     * 查询子形状是否为轮胎面
+     *
+     * @param contactPointIndex 子形状ID
+     * @return 是否为轮胎面
+     */
+    public boolean isWheelSurface(int contactPointIndex) {
+        try {
+            ChildCollisionShape[] children = this.collisionShape.listChildren();
+            if (children.length >= contactPointIndex)
+                return attr.getWheelHalfWidths().containsKey(children[contactPointIndex].getShape().nativeId());
+            else throw new IndexOutOfBoundsException();
+        } catch (IndexOutOfBoundsException e) {
+            return false;
+        }
+    }
+
+    /**
+     * 查询子形状是否为轮胎面
+     *
+     * @param childShapeId 子形状ID
+     * @return 是否为轮胎面
+     */
+    public boolean isWheelSurface(long childShapeId) {
+        return attr.getWheelHalfWidths().containsKey(childShapeId);
     }
 
     /**
      * 碰撞是否发生在轮胎碰撞体的有效范围内
      *
-     * @param contactPointIndex
-     * @param worldContactPoint
+     * @param contactPointIndex 接触点序号
+     * @param contactPoint      接触点
      * @return true则有效，false则无效
      */
-    public boolean isEffectiveTerrainContact(int contactPointIndex, Vector3f worldContactPoint) {
+    public boolean isEffectiveContact(int contactPointIndex, Vector3f contactPoint, boolean worldContact) {
         ChildCollisionShape[] children = this.collisionShape.listChildren();
-        ChildCollisionShape wheel = children[contactPointIndex];
-        long shapeId = wheel.getShape().nativeId();
-        if (isWheel(shapeId) && wheel.getShape() instanceof SphereCollisionShape) {
-            float halfWidth = attr.getWheelWidths().get(shapeId);
-            // 子形状 -> 刚体
-            Transform wheelToBody = wheel.copyTransform(null);
-            // 刚体 -> 世界
-            Transform bodyToWorld = body.getTransform(null);
-            // 子形状 -> 世界
-            Transform wheelToWorld = MyMath.combine(wheelToBody, bodyToWorld, null);
-            // 世界 -> 子形状
-            Transform worldToWheel = wheelToWorld.invert();
-            // 世界接触点 -> 子形状局部坐标
-            var localContactPoint =
-                    SparkMathKt.toVector3f(worldContactPoint).mulPosition(SparkMathKt.toMatrix4f(worldToWheel.toTransformMatrix()));
-
-            // X 轴即轮胎宽度方向
-            return Math.abs(localContactPoint.x) <= halfWidth;
+        ChildCollisionShape child = children[contactPointIndex];
+        long shapeId = child.getShape().nativeId();
+        if (isWheel(shapeId) && isWheelSurface(shapeId)) {
+            float halfWidth = attr.getWheelHalfWidths().getOrDefault(shapeId, 0f);
+            if (worldContact) {
+                // 子形状 -> 刚体
+                Transform wheelToBody = child.copyTransform(null);
+                // 刚体 -> 世界
+                Transform bodyToWorld = body.getTransform(null);
+                // 子形状 -> 世界
+                Transform wheelToWorld = MyMath.combine(wheelToBody, bodyToWorld, null);
+                // 世界 -> 子形状
+                Transform worldToWheel = wheelToWorld.invert();
+                // 世界接触点 -> 子形状局部坐标
+                var localContactPoint =
+                        SparkMathKt.toVector3f(contactPoint).mulPosition(SparkMathKt.toMatrix4f(worldToWheel.toTransformMatrix()));
+                // X 轴即轮胎宽度方向
+                return Math.abs(localContactPoint.x) <= halfWidth;
+            } else {
+                // 刚体 -> 局部
+                Transform bodyToWheel = child.copyTransform(null).invert();
+                // 刚体接触点 -> 子形状局部坐标
+                var localContactPoint =
+                        SparkMathKt.toVector3f(contactPoint).mulPosition(SparkMathKt.toMatrix4f(bodyToWheel.toTransformMatrix()));
+                // X 轴即轮胎宽度方向
+                return Math.abs(localContactPoint.x) <= halfWidth;
+            }
         } else return true;
     }
 
@@ -1111,7 +1167,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Transform getLerpedLocatorWorldTransform(String locatorName, Transform offset, float partialTick) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            Transform localTransform = MyMath.combine(offset, attr.getLocatorTransforms().get(part.variantName).get(locatorName), null);
+            Transform localTransform = MyMath.combine(offset, attr.getLocatorTransforms().get(locatorName), null);
             Transform pose = MyMath.combine(localTransform, PhysicsBodyExtensionKt.stateOf(body).getTransform(), null);
             Transform oldPose = MyMath.combine(localTransform, PhysicsBodyExtensionKt.stateOf(body).getLastTransform(), null);
             return SparkMathKt.lerp(oldPose, pose, partialTick);
@@ -1123,7 +1179,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Transform getLocatorWorldTransform(String locatorName) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            Transform localTransform = attr.getLocatorTransforms().get(part.variantName).getOrDefault(locatorName, new Transform());
+            Transform localTransform = attr.getLocatorTransforms().getOrDefault(locatorName, new Transform());
             return MyMath.combine(localTransform, body.getTransform(null), null);
         } catch (Exception e) {
             return body.getTransform(null);
@@ -1133,7 +1189,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Transform getLocatorLocalTransform(String locatorName) {
         try {
             if (locatorName.isEmpty()) throw new NullPointerException();
-            return attr.getLocatorTransforms().get(part.variantName).getOrDefault(locatorName, new Transform());
+            return attr.getLocatorTransforms().getOrDefault(locatorName, new Transform());
         } catch (Exception e) {
             return new Transform();
         }

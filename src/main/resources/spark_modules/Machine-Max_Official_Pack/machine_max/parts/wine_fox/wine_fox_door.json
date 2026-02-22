@@ -1,11 +1,11 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/wine_fox/wine_fox_door_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
   "vehicle_durability_rate": 1.0,//(可选, 默认1.0)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
   "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
   "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.5)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {//部件变体列表, 支持单值或多键值对
     "left": {//变体名称
-      "icon": "machine_max:textures/icon/wine_fox/wine_fox_door_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
       "model": "machine_max:wine_fox_door_left.geo", //模型路径
       "textures": "machine_max:textures/part/wine_fox.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
@@ -75,7 +75,6 @@
       }
     },
     "right": {//变体名称
-      "icon": "machine_max:textures/icon/wine_fox/wine_fox_door_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
       "model": "machine_max:wine_fox_door_right.geo", //模型路径
       "textures": "machine_max:textures/part/wine_fox.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径

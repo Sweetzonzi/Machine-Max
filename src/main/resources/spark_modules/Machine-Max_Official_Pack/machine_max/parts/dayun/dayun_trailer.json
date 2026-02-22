@@ -1,18 +1,18 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/dayun_trailer_icon.png",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "model": "machine_max:dayun_trailer.geo",
-    "icon": "machine_max:textures/icon/dayun_trailer_icon.png",
     "textures": { //贴图路径列表
       "print.machine_max.dayun.1": "machine_max:textures/part/dayun/dayun.png",
       "print.machine_max.dayun.2": "machine_max:textures/part/dayun/dayun2.png",
       "print.machine_max.dayun.4": "machine_max:textures/part/dayun/dayun4.png",
       "print.machine_max.dayun.6": "machine_max:textures/part/dayun/dayun6.png"
     },
-    "tags": ["chassis"],
+    "tags": ["dayun", "chassis"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 3000.0,

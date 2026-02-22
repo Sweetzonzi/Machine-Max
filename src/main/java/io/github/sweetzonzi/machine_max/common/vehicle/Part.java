@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
+import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.api.SparkLevel;
@@ -319,6 +320,7 @@ public class Part {
             subParts.put(name, subPart);//将零件放入部件的零件表
 
             subPart.body.setMass(subPartAttr.mass > 0 ? subPartAttr.mass : 20);//设置质量
+
             subPart.body.setCcdSweptSphereRadius(subPart.collisionShape.maxRadius());//设置CCD半径
             subPart.projectedArea = calculateProjectedArea(subPart);
             //创建零件连接点
@@ -326,8 +328,22 @@ public class Part {
             //创建部件内子系统
             createSubsystems(subPart, subPartAttr.subsystems);//创建子系统，赋予部件实际功能
             //创建命中判定区属性并匹配对应子系统(内部实现)
+            Vector3f wheelParam = null;
             for (Map.Entry<String, HitBoxAttr> entry : subPart.attr.hitBoxes.entrySet()) {
-                subPart.hitBoxes.put(entry.getKey(), new HitBox(subPart, entry.getValue()));
+                String boneName = entry.getKey();
+                HitBoxAttr hitBoxAttr = entry.getValue();
+                subPart.hitBoxes.put(boneName, new HitBox(subPart, hitBoxAttr));
+                if (hitBoxAttr.shapeType().equals("wheel") && bones.containsKey(boneName)) {
+                    wheelParam = PhysicsHelperKt.toBVector3f(bones.get(boneName).getCubes().getFirst().getSize().toVector3f());
+                }
+            }
+            if (wheelParam != null) { // 若此刚体包含轮胎类型的碰撞体积，则根据其数据修正转动惯量，确保行驶平稳
+                float mass = subPart.body.getMass();
+                float radius = wheelParam.y / 2;
+                float width = wheelParam.x;
+                float Ix = 0.5f * mass * radius * radius;
+                float Iyz = (1.0f / 12.0f) * mass * (3 * radius* radius + width * width);
+                subPart.body.setInverseInertiaLocal(new Vector3f(1.0f/Ix, 1.0f/Iyz, 1.0f/Iyz));
             }
         }
         //TODO: 连接内部连接器
@@ -559,7 +575,6 @@ public class Part {
             float finalProgress = progress;
             SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
                 for (SubPart subPart : subParts.values()) {
-                    subPart.body.setMass(subPart.attr.mass * (0.3f + 0.7f * this.assemblingProgress));
                     if (finalProgress == 0) {
                         subPart.body.setGravity(Vector3f.ZERO);
                     } else {

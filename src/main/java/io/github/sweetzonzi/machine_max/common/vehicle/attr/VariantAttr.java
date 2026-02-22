@@ -16,7 +16,6 @@ import java.util.*;
 
 @Getter
 public class VariantAttr {
-    public final ResourceLocation icon; //图标路径
     public final List<String> tags; //部件标签
     @Getter
     public final ResourceLocation model; // 模型路径
@@ -45,7 +44,6 @@ public class VariantAttr {
     );
 
     public static final Codec<VariantAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResourceLocation.CODEC.optionalFieldOf("icon", EMPTY_TEXTURE).forGetter(VariantAttr::getIcon),
             Codec.STRING.listOf().optionalFieldOf("tags", List.of()).forGetter(VariantAttr::getTags),
             ResourceLocation.CODEC.fieldOf("model").forGetter(VariantAttr::getModel),
             TEXTURES_CODEC.optionalFieldOf("textures", Map.of("default", EMPTY_TEXTURE)).forGetter(VariantAttr::getTextures),
@@ -53,8 +51,7 @@ public class VariantAttr {
             SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(VariantAttr::getSubParts)
     ).apply(instance, VariantAttr::new));
 
-    public VariantAttr(ResourceLocation icon, List<String> tags, ResourceLocation model, Map<String, ResourceLocation> textures, ResourceLocation animations, Map<String, SubPartAttr> subParts) {
-        this.icon = icon;
+    public VariantAttr(List<String> tags, ResourceLocation model, Map<String, ResourceLocation> textures, ResourceLocation animations, Map<String, SubPartAttr> subParts) {
         this.tags = tags;
         this.model = model;
         this.textures = textures;
