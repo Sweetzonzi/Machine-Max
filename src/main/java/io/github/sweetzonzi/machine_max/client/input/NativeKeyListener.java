@@ -15,6 +15,7 @@ import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,23 +30,23 @@ import java.util.concurrent.Executors;
 
 public class NativeKeyListener implements NativeMouseInputListener, NativeMouseWheelListener, com.github.kwhat.jnativehook.keyboard.NativeKeyListener {
     // 优化：使用更高效的数据结构存储组合键事件
-    public static final Map<String, List<NativeInput>> combineKeyInputsMap = new HashMap<>();
-    public static final Map<String, List<NativeInput>> pressKeyInputs = new HashMap<>();
-    public static final Map<String, Boolean> pressKeyStatus = new HashMap<>();
-    public static final Map<String, Boolean> combineKeyStatus = new HashMap<>();
+    public static final Map<String, List<NativeInput>> combineKeyInputsMap = new ConcurrentHashMap<>();
+    public static final Map<String, List<NativeInput>> pressKeyInputs = new ConcurrentHashMap<>();
+    public static final Map<String, Boolean> pressKeyStatus = new ConcurrentHashMap<>();
+    public static final Map<String, Boolean> combineKeyStatus = new ConcurrentHashMap<>();
 
     // 调试日志开关
     private static final boolean DEBUG = false;
     
     // 优化：使用更高效的 Map 实现
-    private static final Map<String, Integer> keyPressCounts = new HashMap<>();
+    private static final Map<String, Integer> keyPressCounts = new ConcurrentHashMap<>();
     // 为每个按键维护最后按键时间戳
-    private static final Map<String, Long> keyLastPressTimes = new HashMap<>();
-    private static final Map<String, Long> keyStartPressTimes = new HashMap<>();
+    private static final Map<String, Long> keyLastPressTimes = new ConcurrentHashMap<>();
+    private static final Map<String, Long> keyStartPressTimes = new ConcurrentHashMap<>();
     // 为每个组合键维护连按计数
-    private static final Map<String, Integer> combineKeyPressCounts = new HashMap<>();
+    private static final Map<String, Integer> combineKeyPressCounts = new ConcurrentHashMap<>();
     // 为每个组合键维护最后按键时间戳
-    private static final Map<String, Long> combineKeyLastPressTimes = new HashMap<>();
+    private static final Map<String, Long> combineKeyLastPressTimes = new ConcurrentHashMap<>();
     // 连按时间窗口（纳秒）
     private static final long PRESS_WINDOW_NS = 300_000_000;
     
@@ -58,7 +59,7 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
     private static int lastMouseY = 0;
     
     // 跟踪每个按键在当前按下期间已经触发的长按事件
-    private static final Map<String, Set<NativeInput>> holdEventTriggered = new HashMap<>();
+    private static final Map<String, Set<NativeInput>> holdEventTriggered = new ConcurrentHashMap<>();
 
     public static final String MOUSE_LEFT_BUTTON = "mouse1";
     public static final String MOUSE_RIGHT_BUTTON = "mouse2";
@@ -78,8 +79,8 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
                             keyStartPressTimes.remove(keyText);
                         }
                     }
-                    Thread.sleep(Duration.of(1, ChronoUnit.NANOS));
-                } catch (InterruptedException e) {
+                    Thread.sleep(Duration.of(10, ChronoUnit.NANOS));
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
@@ -91,13 +92,13 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
     }
 
 	public void nativeMousePressed(NativeMouseEvent e) {
-        String keyText = getMouseName(e.getButton());
+        String keyText = getMouseName(e.getButton()).toLowerCase();
         // 处理按键事件
         processKeyPress(keyText);
 	}
 
 	public void nativeMouseReleased(NativeMouseEvent e) {
-        String keyText = getMouseName(e.getButton());
+        String keyText = getMouseName(e.getButton()).toLowerCase();
         // 并入键盘按键事件逻辑
         pressKeyStatus.put(keyText, false);
         // 清除已触发的长按事件记录
@@ -119,26 +120,26 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
         lastMouseY = e.getY();
 
         // 处理鼠标 X 轴输入
-        processAxisInput(NativeAxisInput.AxisType.MOUSE, "X", deltaX);
+        processAxisInput(NativeAxisInput.AxisType.MOUSE, "x", deltaX);
 
         // 处理鼠标 Y 轴输入
-        processAxisInput(NativeAxisInput.AxisType.MOUSE, "Y", deltaY);
+        processAxisInput(NativeAxisInput.AxisType.MOUSE, "y", deltaY);
     }
 
     public void nativeMouseWheelMoved(NativeMouseWheelEvent e) {
-        String direction = "Unknown";
+        String direction = "unknown";
         if (e.getWheelDirection() == NativeMouseWheelEvent.WHEEL_VERTICAL_DIRECTION) {
-            direction = "V";
+            direction = "v";
         }
         if (e.getWheelDirection() == NativeMouseWheelEvent.WHEEL_HORIZONTAL_DIRECTION) {
-            direction  = "H";
+            direction  = "h";
         }
 
         processAxisInput(NativeAxisInput.AxisType.MOUSE_WHEEL, direction, e.getWheelRotation());
     }
 
     public void nativeKeyPressed(NativeKeyEvent e) {
-        String keyText = NativeKeyEvent.getKeyText(e.getKeyCode());
+        String keyText = NativeKeyEvent.getKeyText(e.getKeyCode()).toLowerCase();
         if (DEBUG) System.out.println("NativeKeyListener: Key Pressed: " + keyText);
         // 处理按键事件
         processKeyPress(keyText);
@@ -302,7 +303,7 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
     }
 
     public void nativeKeyReleased(NativeKeyEvent e) {
-        String keyText = NativeKeyEvent.getKeyText(e.getKeyCode());
+        String keyText = NativeKeyEvent.getKeyText(e.getKeyCode()).toLowerCase();
         if (DEBUG) System.out.println("NativeKeyListener: Key Released: " + keyText);
         pressKeyStatus.put(keyText, false);
         keyStartPressTimes.remove(keyText);
@@ -365,13 +366,13 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
 
     public static void main(String[] args) {
         try {
-            new NativeInput("A", 2)
-                    .chain(new NativeInput("Ctrl"))
+            new NativeInput("a", 2)
+                    .chain(new NativeInput("ctrl"))
                     .setEvent(() -> {
                         System.out.println("NativeInput Double Ctrl A");
                     });
             new NativeInput("A")
-                    .chain(new NativeInput("Ctrl")).setEvent(() -> {
+                    .chain(new NativeInput("ctrl")).setEvent(() -> {
                         System.out.println("NativeInput Ctrl A");
                     });
             new NativeInput("A")

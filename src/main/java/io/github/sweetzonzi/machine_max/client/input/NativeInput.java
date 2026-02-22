@@ -34,13 +34,15 @@ public class NativeInput {
     private Integer pressTimes = 1;
     
     @Getter
-    private long holdTimeNanos = 0;
+    private long holdTimeNanos = 1;
 
     public NativeInput(String keyName) {
+        keyName = keyName.toLowerCase();
         NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new ArrayList<>()).add(this);
         this.keyName = keyName;
     }
     public NativeInput(String keyName, Integer pressTimes) {
+        keyName = keyName.toLowerCase();
         NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new ArrayList<>()).add(this);
         this.keyName = keyName;
         this.pressTimes = pressTimes;

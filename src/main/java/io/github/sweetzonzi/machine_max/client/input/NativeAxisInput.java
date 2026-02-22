@@ -48,6 +48,7 @@ public class NativeAxisInput {
     }
     
     public NativeAxisInput(AxisType axisType, String axisName) {
+        axisName = axisName.toLowerCase();
         this.axisType = axisType;
         this.axisName = axisName;
         axisInputsMap.get(axisType).computeIfAbsent(axisName, k -> new HashSet<>()).add(this);
