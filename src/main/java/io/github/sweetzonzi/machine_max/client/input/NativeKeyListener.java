@@ -20,12 +20,30 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * 来自 <a href="https://github.com/Liruochen1207/jnativehook">ArcherLee 魔改版 jnativehook</a>,
- * 支持了mc环境下查找dll文件
+ * 核心输入监听器类，处理原生输入事件
  * <p>
- * <a href="https://github.com/kwhat/jnativehook">jnativehook</a> 是一个基于C的原生输入库
+ * 该类是输入处理系统的核心，实现了多个原生输入监听接口，用于捕获和处理键盘、鼠标事件。
+ * 支持异步事件处理，使用线程池提高响应速度。
+ * 处理按键状态管理、组合键检测、连按计数和长按事件。
  * <p>
- * 原作者: <a href="https://github.com/kwhat">kwhat</a>
+ * 技术特性：
+ * <ul>
+ *     <li>跨平台支持：Windows、MacOS、Linux、Android</li>
+ *     <li>异步事件处理：使用线程池提高响应速度</li>
+ *     <li>高性能：使用线程安全的数据结构和优化算法</li>
+ *     <li>详细的调试日志支持</li>
+ * </ul>
+ * <p>
+ * 使用前需要初始化：
+ * <pre>
+ * // 初始化输入系统
+ * NativeKeyListener.setUp();
+ * </pre>
+ * 
+ * @author ArcherLee
+ * @version 1.0.0
+ * @see NativeInput
+ * @see NativeAxisInput
  */
 
 public class NativeKeyListener implements NativeMouseInputListener, NativeMouseWheelListener, com.github.kwhat.jnativehook.keyboard.NativeKeyListener {

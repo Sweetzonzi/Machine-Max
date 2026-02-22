@@ -12,8 +12,29 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * 全新的灵活绑定输入事件体，这次采用多线程进行代理运行，提高输入回报率
- * 作者: <a href="https://github.com/Liruochen1207">ArcherLee</a>
+ * 按键输入处理类，支持单个按键、组合键、连按和长按
+ * <p>
+ * 该类用于处理键盘和鼠标按键的输入事件，支持通过链式调用设置事件回调、连按次数和长按时间。
+ * 支持组合键功能，可以通过 chain() 方法链接多个按键创建组合键。
+ * <p>
+ * 使用示例：
+ * <pre>
+ * // 创建单个按键事件
+ * new NativeInput("a").setEvent(() -> System.out.println("A pressed"));
+ * 
+ * // 创建组合键事件
+ * new NativeInput("a")
+ *         .chain(new NativeInput("ctrl"))
+ *         .setEvent(() -> System.out.println("Ctrl+A pressed"));
+ * 
+ * // 创建长按事件
+ * new NativeInput("a")
+ *         .hold(1, ChronoUnit.SECONDS)
+ *         .setEvent(() -> System.out.println("A held for 1 second"));
+ * </pre>
+ * 
+ * @author ArcherLee
+ * @version 1.0.0
  */
 public class NativeInput {
     @Getter
