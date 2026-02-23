@@ -8,9 +8,14 @@ import com.github.kwhat.jnativehook.mouse.NativeMouseEvent;
 import com.github.kwhat.jnativehook.mouse.NativeMouseInputListener;
 import com.github.kwhat.jnativehook.mouse.NativeMouseWheelEvent;
 import com.github.kwhat.jnativehook.mouse.NativeMouseWheelListener;
+import com.github.strikerx3.jxinput.*;
+import com.github.strikerx3.jxinput.enums.XInputAxis;
+import com.github.strikerx3.jxinput.enums.XInputButton;
+import com.github.strikerx3.jxinput.exceptions.XInputNotLoadedException;
 import com.jme3.system.JmeSystem;
 import com.jme3.system.Platform;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import net.minecraft.client.Minecraft;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -21,6 +26,15 @@ import java.util.concurrent.Executors;
 
 /**
  * 核心输入监听器类，处理原生输入事件
+ * <p>
+ * <a href="https://github.com/kwhat/jnativehook">jnativehook</a> 是一个基于C的原生输入库
+ * 作者: <a href="https://github.com/kwhat">kwhat</a>
+ * <p>
+ * <a href="https://github.com/Liruochen1207/jnativehook">ArcherLee 魔改版 jnativehook</a>,
+ * 支持了mc环境下查找dll文件
+ * <p>
+ * <a href="https://github.com/StrikerX3/JXInput">JXInput</a> 是一个XInput协议的java实现库，方便的控制xbox手柄的各项行为和数据读取
+ * 作者: <a href="https://github.com/StrikerX3">StrikerX3</a>
  * <p>
  * 该类是输入处理系统的核心，实现了多个原生输入监听接口，用于捕获和处理键盘、鼠标事件。
  * 支持异步事件处理，使用线程池提高响应速度。
@@ -52,6 +66,7 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
     public static final Map<String, List<NativeInput>> pressKeyInputs = new ConcurrentHashMap<>();
     public static final Map<String, Boolean> pressKeyStatus = new ConcurrentHashMap<>();
     public static final Map<String, Boolean> combineKeyStatus = new ConcurrentHashMap<>();
+    public static final Platform.Os PLATFORM = JmeSystem.getPlatform().getOs();
 
     // 调试日志开关
     private static final boolean DEBUG = false;
@@ -85,6 +100,10 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
     public static final String MOUSE_BACKWARD_BUTTON = "mouse4";
     public static final String MOUSE_FORWARD_BUTTON = "mouse5";
 
+    public static final int MAX_VIBRATION = 65535;
+
+    public static XInputDevice[] devices = {};
+
     static {
         new Thread(() -> {
             while (true) {
@@ -103,8 +122,66 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
                 }
             }
         }).start();
+
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Minecraft minecraft = Minecraft.getInstance();
+                    if (minecraft.screen != null && minecraft.screen.getMinecraft().isWindowActive()) { //恢复窗口时恢复震动
+                        // todo 手柄震动的演示，后期可能需要区分每个玩家的手柄：
+                        //   1.devices中是本地计算机所有连接的手柄，如果是支持多人同时在一台电脑上驾驶的情况需要区分
+                        //   2.不同的座位上，手柄的震动位置、震动大小可以按需指定、更新
+                        //   3.手柄一旦设置震动大小，不管有没有继续更新大小，触发左右扳机都会随按压深度增大振幅。
+                        //   4.手柄需要手动设置0振幅 来停止震动，若失去进程焦点也会自动停止
+                        //   5.也许未来需要手写 DLL文件，让手柄的静默震动和扳机按压震动解耦，方便外部包作者定义更细致的震动反馈：
+                        //     比如 直升机的操纵杆会改变静默震动的位置和大小，但与旋翼力矩相同方向的踏板扳机需要关闭震动反馈
+
+                        // 演示：把该计算机上所有连接的手柄全设置为20%振幅
+//                        for (XInputDevice device : devices) {
+//                            device.setVibration(0, Double.valueOf(MAX_VIBRATION * 0.2).intValue());
+//                        }
+                    }
+                    for (XInputDevice device : devices) {
+                        if (device.poll()) {
+                            // 获取增量
+                            XInputComponentsDelta delta = device.getDelta();
+
+                            XInputButtonsDelta buttons = delta.getButtons();
+                            XInputComponents components = device.getComponents();
+                            XInputAxes axes = components.getAxes();
+
+                            for (XInputButton button : XInputButton.values()) {
+                                String keyText = xInputButton(button).toLowerCase();
+                                if (buttons.isPressed(button)) {
+                                    processKeyPress(keyText);
+                                } else if (buttons.isReleased(button)) {
+                                    processKeyReleased(keyText);
+                                }
+                            }
+                            for (XInputAxis axis : XInputAxis.values()) {
+                                float axesData = axes.get(axis);
+                                processAxisInput(NativeAxisInput.AxisType.GAMEPAD, axis.name().toLowerCase(), axesData);
+                            }
+
+                        } else {
+                            // 控制器未连接；显示消息
+                        }
+                    }
+                    Thread.sleep(Duration.of(40, ChronoUnit.MILLIS));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }).start();
     }
 
+    public static String deltaAxis(XInputAxis axis) {
+        return "delta_" + axis.name();
+    }
+
+    public static String xInputButton(XInputButton button) {
+        return "xinput_" + button.name();
+    }
     private String getMouseName(int mouseButton) {
         return "mouse" + mouseButton;
     }
@@ -117,14 +194,7 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
 
 	public void nativeMouseReleased(NativeMouseEvent e) {
         String keyText = getMouseName(e.getButton()).toLowerCase();
-        // 并入键盘按键事件逻辑
-        pressKeyStatus.put(keyText, false);
-        // 清除已触发的长按事件记录
-        holdEventTriggered.remove(keyText);
-        keyStartPressTimes.remove(keyText);
-        combineKeyStatus.clear();
-        // 注意：不再需要在按键释放时重置连按计数，因为连按计数是基于时间窗口的
-        // 当两次按键间隔超过时间窗口时，会自动重置计数
+        processKeyReleased(keyText);
 	}
 
 	public void nativeMouseMoved(NativeMouseEvent e) {
@@ -288,7 +358,7 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
     // 优化：提取组合键名称生成逻辑为单独方法
     private static String generateCombinedKeyName() {
         return pressKeyStatus.entrySet().stream()
-                .filter(entry -> entry.getValue())
+                .filter(Map.Entry::getValue)
                 .map(Map.Entry::getKey)
                 .sorted((key1, key2) -> {
                     int lengthCompare = Integer.compare(key2.length(), key1.length());
@@ -302,18 +372,25 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
     }
 
     // 处理轴输入
-    private void processAxisInput(NativeAxisInput.AxisType axisType, String axisName, double delta) {
+    private static void processAxisInput(NativeAxisInput.AxisType axisType, String axisName, double delta) {
         Map<String, Set<NativeAxisInput>> axisMap = NativeAxisInput.axisInputsMap.get(axisType);
         if (axisMap != null) {
             Set<NativeAxisInput> axisInputs = axisMap.get(axisName);
             if (axisInputs != null && !axisInputs.isEmpty()) {
                 for (NativeAxisInput axisInput : axisInputs) {
-                    if (axisInput.getEvent() != null && axisInput.shouldTrigger(delta)) {
+                    if (axisInput.getEvent() != null) {
                         // 优化：异步处理事件并传入 delta 参数
                         final double finalDelta = delta;
-                        eventExecutor.execute(() -> axisInput.getEvent().event(finalDelta));
-                        // 更新轴输入的当前值
-                        axisInput.updateValue(axisInput.getLastValue() + delta);
+                        if (axisInput.isDelta()) {
+                            if (axisInput.getLastValue() != delta)
+                                eventExecutor.execute(() -> axisInput.getEvent().event(delta));
+                            axisInput.updateValue(delta);
+
+                        } else {
+                            eventExecutor.execute(() -> axisInput.getEvent().event(finalDelta));
+                            axisInput.updateValue(axisInput.getLastValue() + delta);
+                        }
+
                     }
                 }
             }
@@ -322,7 +399,10 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
 
     public void nativeKeyReleased(NativeKeyEvent e) {
         String keyText = NativeKeyEvent.getKeyText(e.getKeyCode()).toLowerCase();
-        if (DEBUG) System.out.println("NativeKeyListener: Key Released: " + keyText);
+        processKeyReleased(keyText);
+    }
+
+    private static void processKeyReleased(String keyText) {
         pressKeyStatus.put(keyText, false);
         keyStartPressTimes.remove(keyText);
         // 清除已触发的长按事件记录
@@ -337,16 +417,29 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
 //        System.out.println("Key Typed: " + e.getKeyText(e.getKeyCode()));
     }
 
+
+    private static void xinputInit() throws XInputNotLoadedException {
+        XInputLibraryVersion libVersion = XInputDevice.getLibraryVersion();
+        System.out.println("Try to get the XInput DLL..");
+        switch (libVersion) {
+            case NONE -> System.out.println("no XInput available");
+            case XINPUT_1_4 -> System.out.println("XInput 1.4 (Windows 8 and later)");
+            case XINPUT_1_3 -> System.out.println("XInput 1.3 (Windows XP SP1 and later)");
+            case XINPUT_9_1_0 -> System.out.println("XInput9 1.0 (Windows Vista only)");
+        }
+        devices = XInputDevice.getAllDevices();
+    }
+
     public static void setUp() {
         try {
             // 配置dll库在run路径下的相对子路径
-            Platform platform = JmeSystem.getPlatform();
-            switch (platform.getOs()) {
+            switch (PLATFORM) {
                 case Windows -> {
                     MMDynamicRes.tempResourceToFile("jNativeLib/windows/arm", "JNativeHook.dll");
                     MMDynamicRes.tempResourceToFile("jNativeLib/windows/x86", "JNativeHook.dll");
                     MMDynamicRes.tempResourceToFile("jNativeLib/windows/x86_64","JNativeHook.dll");
-
+                    // Get the XInput DLL version, which can be one of the following:
+                    xinputInit();
                 }
                 case MacOS -> {
                     MMDynamicRes.tempResourceToFile("jNativeLib/darwin/arm64", "libJNativeHook.dylib");
@@ -367,9 +460,12 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
 
             GlobalScreen.registerNativeHook();
         }
-        catch (NativeHookException ex) {
+        catch (NativeHookException ne) {
             System.err.println("There was a problem registering the native hook.");
-            System.err.println(ex.getMessage());
+            System.err.println(ne.getMessage());
+        } catch (XInputNotLoadedException xe) {
+            System.err.println("There was a problem registering the XInput library.");
+            System.err.println(xe.getMessage());
         }
 
         // Construct the example object.
@@ -382,8 +478,20 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
         GlobalScreen.addNativeKeyListener(listener);
     }
 
+    static boolean sh = false;
     public static void main(String[] args) {
         try {
+            // Get the XInput DLL version, which can be one of the following:
+            if (PLATFORM.equals(Platform.Os.Windows)) xinputInit();
+
+            new NativeInput(XInputButton.X)
+                    .setEvent(() -> System.out.println("Xbox x button"));
+
+            new NativeAxisInput(XInputAxis.RIGHT_TRIGGER)
+                    .setEvent(delta -> {
+                        System.out.println("Xbox right trigger " + delta);
+                    });
+
             new NativeInput("a", 2)
                     .chain(new NativeInput("ctrl"))
                     .setEvent(() -> {
@@ -437,9 +545,12 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
         catch (NativeHookException ex) {
         System.err.println("There was a problem registering the native hook.");
         System.err.println(ex.getMessage());
-    }
+        } catch (XInputNotLoadedException xe) {
+            System.err.println("There was a problem registering the XInput library.");
+            System.err.println(xe.getMessage());
+        }
 
-    // Construct the example object.
+        // Construct the example object.
     NativeKeyListener example = new NativeKeyListener();
 
     // Add the appropriate listeners.

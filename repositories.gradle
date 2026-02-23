@@ -22,6 +22,9 @@ dependencies {
     // jni原生键盘鼠标监听器
     implementation files('libs/jnativehook-2.2-MM.jar')
     additionalRuntimeClasspath files('libs/jnativehook-2.2-MM.jar')
+    // 适用于Xbox手柄的XInput协议的java实现库JXInput
+    implementation "com.github.StrikerX3:JXInput:v1.0.0"
+    additionalRuntimeClasspath "com.github.StrikerX3:JXInput:v1.0.0"
 //    jarJar(implementation("com.github.kwhat:jnativehook:2.2.2"))
     // 其它mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
@@ -69,6 +72,9 @@ repositories {
 //            password = System.getenv("SolarMoonCore_TOKEN")
 //        }
 //    }
+    maven {
+        url = "https://jitpack.io"
+    }
     maven {
         url = "https://api.modrinth.com/maven"
     }

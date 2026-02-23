@@ -1,6 +1,9 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
+import com.github.strikerx3.jxinput.enums.XInputAxis;
+import com.jme3.system.Platform;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,7 +38,7 @@ public class NativeAxisInput {
     public interface AxisEvent {
         void event(double delta);
     }
-    
+    //只允许getter
     @Getter
     private final AxisType axisType;
     
@@ -44,12 +47,17 @@ public class NativeAxisInput {
     
     @Getter
     private AxisEvent event;
-    
+
     @Getter
     private double threshold = 0.5;
     
     @Getter
     private double lastValue = 0;
+
+    //getter setter双向设置
+
+    @Getter
+    private boolean delta;
     
     // 存储所有轴输入
     public static final Map<AxisType, Map<String, Set<NativeAxisInput>>> axisInputsMap = new HashMap<>();
@@ -67,11 +75,20 @@ public class NativeAxisInput {
         this.axisName = axisName;
         axisInputsMap.get(axisType).computeIfAbsent(axisName, k -> new HashSet<>()).add(this);
     }
-    
+
+    public NativeAxisInput(XInputAxis axis) {
+        this.axisType = AxisType.GAMEPAD;
+        this.axisName = axis.name().toLowerCase();
+        this.delta = true;
+        if (!NativeKeyListener.PLATFORM.equals(Platform.Os.Windows)) return;
+        axisInputsMap.get(axisType).computeIfAbsent(axisName, k -> new HashSet<>()).add(this);
+    }
+
     public NativeAxisInput(AxisType axisType, String axisName, double threshold) {
         this(axisType, axisName);
         this.threshold = threshold;
     }
+
     
     public NativeAxisInput setEvent(AxisEvent event) {
         this.event = event;

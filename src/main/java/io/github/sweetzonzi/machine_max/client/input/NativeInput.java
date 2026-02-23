@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
+import com.github.strikerx3.jxinput.enums.XInputButton;
+import com.jme3.system.Platform;
 import lombok.Getter;
 import lombok.Setter;
 import org.checkerframework.checker.units.qual.A;
@@ -61,6 +63,12 @@ public class NativeInput {
         keyName = keyName.toLowerCase();
         NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new ArrayList<>()).add(this);
         this.keyName = keyName;
+    }
+
+    public NativeInput(XInputButton button) {
+        if (!NativeKeyListener.PLATFORM.equals(Platform.Os.Windows)) return;
+        keyName = NativeKeyListener.xInputButton(button).toLowerCase();
+        NativeKeyListener.pressKeyInputs.computeIfAbsent(keyName, k -> new ArrayList<>()).add(this);
     }
     public NativeInput(String keyName, Integer pressTimes) {
         keyName = keyName.toLowerCase();
