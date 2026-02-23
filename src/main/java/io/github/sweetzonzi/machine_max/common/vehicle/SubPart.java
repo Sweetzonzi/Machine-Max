@@ -108,7 +108,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final InteractBoxes interactBoxes;//交互判定
     public final HashMap<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
-    public final ConcurrentMap<String, SignalChannel> signalChannels = new ConcurrentHashMap<>();//部件内共享的信号
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
     //物理
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
@@ -717,6 +716,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     //流体动力计算
                     Vector3f localAeroForce = DynamicUtil.aeroDynamicForce(
                             1.29f,//kg/m^3 流体密度
+                            1.8e-5f,//Pa·s 空气动力粘度
                             this.projectedArea,
                             hydrodynamicAttr,
                             localVel).mult(xOcclusion, yOcclusion, zOcclusion).mult(1f);
@@ -1261,7 +1261,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     @Override
     public ConcurrentMap<String, SignalChannel> getSignalInputChannels() {
-        return signalChannels;
+        throw new UnsupportedOperationException("Sub-parts should use signalStorage instead of signalInputChannels");
     }
 
     @Override

@@ -91,10 +91,13 @@
     },
     "hydrodynamics": {
       "type": "object",
+      "additionalProperties": {
+        "$ref": "hydrodynamic_attr.schema.json"
+      },
       "default": {
         "": {}
       },
-      "description": "流体动力计算定位点列表，键值对的键名优先作为骨骼名称查找，若找到对应骨骼则使用该骨骼内的所有定位器作为气动计算点；若未找到对应骨骼，则作为定位器名称查找。空字符串表示以质心位置计算。"
+      "description": "流体动力计算定位点列表，键值对的键名优先作为骨骼名称查找，若找到对应骨骼则使用该骨骼内的所有定位器作为气动计算点；若未找到对应骨骼，则作为定位器名称查找。空字符串表示以质心位置计算。每个定位点的属性定义参考hydrodynamic_attr.schema.json。"
     }
   },
   "required": ["hit_boxes"],

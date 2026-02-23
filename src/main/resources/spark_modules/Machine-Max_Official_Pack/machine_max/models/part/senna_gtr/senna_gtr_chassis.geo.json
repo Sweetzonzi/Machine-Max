@@ -4195,6 +4195,36 @@
 							"uv": {}
 						}
 					]
+				},
+				{
+					"name": "HydroLocators",
+					"parent": "Root",
+					"pivot": [0, 0, 0]
+				},
+				{
+					"name": "FrontHydro",
+					"parent": "HydroLocators",
+					"pivot": [0, 0, 0],
+					"locators": {
+						"front_hydro": [0, 4, -40]
+					}
+				},
+				{
+					"name": "BackHydro",
+					"parent": "HydroLocators",
+					"pivot": [0, 0, 0],
+					"locators": {
+						"back_hydro": [0, 1, 33]
+					}
+				},
+				{
+					"name": "DownHydro",
+					"parent": "HydroLocators",
+					"pivot": [0, -2, 0],
+					"locators": {
+						"down_front_hydro": [0, -6, 29.5],
+						"donw_back_hydro": [0, -6, -29.5]
+					}
 				}
 			]
 		}

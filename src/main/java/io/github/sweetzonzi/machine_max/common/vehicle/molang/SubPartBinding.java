@@ -2,8 +2,10 @@ package io.github.sweetzonzi.machine_max.common.vehicle.molang;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimInstance;
+import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import kotlin.jvm.JvmField;
@@ -91,6 +93,97 @@ public class SubPartBinding {
                 return rotation.get(axis);
             } else return 0.0;
         } else return 0.0;
+    }
+
+    /**
+     * <p>检查当前零件是否拥有指定名称的子系统</p>
+     * <p>Check if the current part has a subsystem with the specified name</p>
+     *
+     * @param subsystemName 子系统名称 subsystem name
+     * @return 如果拥有该子系统则返回1.0，否则返回0.0 returns 1.0 if the subsystem exists, 0.0 otherwise
+     */
+    @HostAccess.Export
+    public double has_subsystem(String subsystemName) {
+        var holder = getAnimatable().getAnimatable();
+        if (holder instanceof SubPart subPart) {
+            return subPart.getSubsystems().containsKey(subsystemName) ? 1.0 : 0.0;
+        } else return 0.0;
+    }
+
+    /**
+     * <p>获取指定子系统的当前耐久度</p>
+     * <p>Get the current durability of the specified subsystem</p>
+     *
+     * @param subsystemName 子系统名称 subsystem name
+     * @return 子系统耐久度，如果子系统不存在则返回0.0 subsystem durability, returns 0.0 if subsystem doesn't exist
+     */
+    @HostAccess.Export
+    public double subsystem_durability(String subsystemName) {
+        var holder = getAnimatable().getAnimatable();
+        if (holder instanceof ISubsystemHost host) {
+            AbstractSubsystem subsystem = host.getSubsystems().get(subsystemName);
+            if (subsystem != null) {
+                return subsystem.getDurability();
+            }
+        }
+        return 0.0;
+    }
+
+    /**
+     * <p>获取指定子系统的最大耐久度</p>
+     * <p>Get the maximum durability of the specified subsystem</p>
+     *
+     * @param subsystemName 子系统名称 subsystem name
+     * @return 子系统最大耐久度，如果子系统不存在则返回0.0 subsystem max durability, returns 0.0 if subsystem doesn't exist
+     */
+    @HostAccess.Export
+    public double subsystem_max_durability(String subsystemName) {
+        var holder = getAnimatable().getAnimatable();
+        if (holder instanceof ISubsystemHost host) {
+            AbstractSubsystem subsystem = host.getSubsystems().get(subsystemName);
+            if (subsystem != null) {
+                return subsystem.getMaxDurability();
+            }
+        }
+        return 0.0;
+    }
+
+    /**
+     * <p>检查指定子系统是否处于激活状态</p>
+     * <p>Check if the specified subsystem is active</p>
+     *
+     * @param subsystemName 子系统名称 subsystem name
+     * @return 如果子系统激活则返回1.0，否则返回0.0 returns 1.0 if subsystem is active, 0.0 otherwise
+     */
+    @HostAccess.Export
+    public double subsystem_active(String subsystemName) {
+        var holder = getAnimatable().getAnimatable();
+        if (holder instanceof ISubsystemHost host) {
+            AbstractSubsystem subsystem = host.getSubsystems().get(subsystemName);
+            if (subsystem != null) {
+                return subsystem.isActive() ? 1.0 : 0.0;
+            }
+        }
+        return 0.0;
+    }
+
+    /**
+     * <p>检查指定子系统是否已被摧毁</p>
+     * <p>Check if the specified subsystem is destroyed</p>
+     *
+     * @param subsystemName 子系统名称 subsystem name
+     * @return 如果子系统被摧毁则返回1.0，否则返回0.0 returns 1.0 if subsystem is destroyed, 0.0 otherwise
+     */
+    @HostAccess.Export
+    public double subsystem_destroyed(String subsystemName) {
+        var holder = getAnimatable().getAnimatable();
+        if (holder instanceof ISubsystemHost host) {
+            AbstractSubsystem subsystem = host.getSubsystems().get(subsystemName);
+            if (subsystem != null) {
+                return subsystem.isDestroyed() ? 1.0 : 0.0;
+            }
+        }
+        return 0.0;
     }
 
     @Nullable
