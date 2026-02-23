@@ -3,5 +3,6 @@
   "type": "machine_max:gearbox",
   "basic_durability": 50,
   "final_ratio": 10.0,
-  "ratios": [-3.5, 3.5, 2.5, 1.8, 1.4, 1.0, 0.7]
+  "ratios": [-3.5, 3.5, 2.5, 1.8, 1.4, 1.0, 0.7, 0.5],
+  "switch_time": 0.04
 }

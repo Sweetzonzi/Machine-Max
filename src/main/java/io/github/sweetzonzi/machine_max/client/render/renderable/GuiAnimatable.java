@@ -137,8 +137,7 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,
                 new Color(params.color.getX(), params.color.getY(), params.color.getZ(), params.transparency).getRGB(),
-                partialTick,
-                true
+                partialTick
         );
         poseStack.popPose();
     }

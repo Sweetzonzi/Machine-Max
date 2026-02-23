@@ -1,11 +1,11 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/jeep_wheel.png",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.5,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "left": {
-      "icon": "machine_max:textures/icon/jeep_wheel.png",
       "model": "machine_max:jeep_wheel_left.geo",
       "textures": {
         "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",
@@ -120,7 +120,6 @@
       }
     },
     "right": {
-      "icon": "machine_max:textures/icon/jeep_wheel.png",
       "model": "machine_max:jeep_wheel_right.geo",
       "textures": {
         "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",

@@ -90,7 +90,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             bone,
                             modelInstance.getPose(),
                             new Matrix4f(poseStack.last().pose()),
-                            poseStack.last().normal().rotate(Axis.YP.rotationDegrees(180)),
+                            new Matrix3f(poseStack.last().normal()),
                             ysmGlow
                                     ? bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity)))
                                     : bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),

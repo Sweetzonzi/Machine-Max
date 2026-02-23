@@ -5,10 +5,6 @@
   "description": "Defines a variant of a vehicle part, including the variant's appearance, models, sub-parts, etc. Supports multi-state mapping.",
   "type": "object",
   "properties": {
-    "icon": {
-      "$ref": "../base/resource_location.schema.json",
-      "description": "Part icon path, used for UI display. If left empty, a purple-black default icon will be used as the icon"
-    },
     "tags": {
       "type": "array",
       "items": {
@@ -60,7 +56,6 @@
   "required": ["models", "sub_parts"],
   "examples": [
     {
-      "icon": "machine_max:textures/icon/ae86_chassis_all_terrain_icon.png",
       "models": "machine_max:ae86_chassis_all_terrain.geo",
       "textures": [
         "machine_max:textures/part/ae86_all_terrain_1.png",
@@ -83,7 +78,6 @@
       }
     },
     {
-      "icon": "machine_max:textures/icon/tank_turret_icon.png",
       "models": {
         "default": "machine_max:tank_turret_normal.geo",
         "broken": "machine_max:tank_turret_damaged.geo"

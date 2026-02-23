@@ -10,6 +10,11 @@
       "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
       "default": "../../docs/zh_cn/schemas/part_definition_schema.json"
     },
+    "icon": {
+      "$ref": "base/resource_location.schema.json",
+      "description": "部件图标路径，用于UI显示。若留空会使用紫黑缺省图标作为图标",
+      "default": "minecraft:missingno"
+    },
     "vehicle_durability_rate": {
       "type": "number",
       "minimum": 0,
@@ -57,12 +62,12 @@
   "examples": [
     {
       "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+      "icon": "machine_max:textures/icon/ae86_chassis_all_terrain_icon.png",
       "vehicle_durability_rate": 1.0,
       "vehicle_damage_rate": 1.0,
       "vehicle_damage_rate_destroyed": 0.1,
       "share_durability": true,
       "variants": {
-        "icon": "machine_max:textures/icon/ae86_chassis_all_terrain_icon.png",
         "models": "machine_max:ae86_chassis_all_terrain.geo",
         "textures": [
           "machine_max:textures/part/ae86_all_terrain_1.png",
@@ -87,10 +92,10 @@
     },
     {
       "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+      "icon": "machine_max:textures/icon/car_chassis_icon.png",
       "vehicle_durability_rate": 0.9,
       "variants": {
         "red": {
-          "icon": "machine_max:textures/icon/car_chassis_red.png",
           "models": "machine_max:car_chassis.geo",
           "textures": ["machine_max:textures/part/car_chassis_red.png"],
           "sub_parts": {
@@ -107,7 +112,6 @@
           }
         },
         "blue": {
-          "icon": "machine_max:textures/icon/car_chassis_blue.png",
           "models": "machine_max:car_chassis.geo",
           "textures": ["machine_max:textures/part/car_chassis_blue.png"],
           "sub_parts": {

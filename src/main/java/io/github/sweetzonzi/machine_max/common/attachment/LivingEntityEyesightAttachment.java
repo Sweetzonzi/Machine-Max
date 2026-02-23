@@ -87,27 +87,27 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                 eyesight.sortedTargetBodies.clear();//清空排序后的射线检测结果列表
                 eyesight.sortedTargets.clear();//清空排序后的射线检测结果列表
                 var rayTestResults = SparkLevel.getPhysicsLevel(level).getWorld().rayTest(eyesight.startPos, eyesight.endPos);
-                rayTestResults.forEach(//获取射线命中物体
-                        result -> {
-                            PhysicsCollisionObject object = result.getCollisionObject();
-                            if (object instanceof PhysicsRigidBody body
-                                    && PhysicsBodyExtensionKt.getOwner(body) != null
-                                    && PhysicsBodyExtensionKt.getOwner(body) != entity) {//如果射线命中物体是刚体
-                                eyesight.targetBodies.put(body, result);//将射线命中物体和相应信息存入targets列表
-                                eyesight.sortedTargetBodies.add(body);//将射线命中物体加入sortedTargets列表
-                                if (PhysicsBodyExtensionKt.getOwner(body) instanceof InteractBoxes interactBoxes) {
-                                    int interactBoxIndex = result.triangleIndex();
-                                    InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
-                                    if (interactBox != null
-                                            && interactBox.interactMode == InteractBox.InteractMode.ACCURATE
-                                            && interactBox.isEnabled())
-                                        eyesight.sortedTargets.add(interactBox);
-                                } else {
-                                    eyesight.sortedTargets.add(PhysicsBodyExtensionKt.getOwner(body));
-                                }
-                            }
+                for (PhysicsRayTestResult result : rayTestResults) {
+                    PhysicsCollisionObject object = result.getCollisionObject();
+                    if (object instanceof PhysicsRigidBody body
+                            && PhysicsBodyExtensionKt.getOwner(body) != null
+                            && PhysicsBodyExtensionKt.getOwner(body) != entity) {//如果射线命中物体是刚体
+                        if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart)
+                            if(subPart.isWheelSurface(result.triangleIndex())) continue; // 跳过轮子的球面部分
+                        eyesight.targetBodies.put(body, result);//将射线命中物体和相应信息存入targets列表
+                        eyesight.sortedTargetBodies.add(body);//将射线命中物体加入sortedTargets列表
+                        if (PhysicsBodyExtensionKt.getOwner(body) instanceof InteractBoxes interactBoxes) {
+                            int interactBoxIndex = result.triangleIndex();
+                            InteractBox interactBox = interactBoxes.getInteractBox(interactBoxIndex);
+                            if (interactBox != null
+                                    && interactBox.interactMode == InteractBox.InteractMode.ACCURATE
+                                    && interactBox.isEnabled())
+                                eyesight.sortedTargets.add(interactBox);
+                        } else {
+                            eyesight.sortedTargets.add(PhysicsBodyExtensionKt.getOwner(body));
                         }
-                );
+                    }
+                }
                 eyesight.sortedTargetBodyCache.clear();
                 eyesight.sortedTargetBodyCache.addAll(eyesight.sortedTargetBodies);
                 eyesight.targetBodyCache.clear();

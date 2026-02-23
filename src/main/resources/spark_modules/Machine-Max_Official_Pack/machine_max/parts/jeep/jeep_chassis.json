@@ -1,11 +1,11 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/jeep_chassis.png",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 1.0,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "model": "machine_max:jeep_chassis.geo",
-    "icon": "machine_max:textures/icon/jeep_chassis.png",
     "textures": {
       "print.machine_max.yellow": "machine_max:textures/part/jeep/jeep1.png",
       "print.machine_max.white": "machine_max:textures/part/jeep/jeep2.png"

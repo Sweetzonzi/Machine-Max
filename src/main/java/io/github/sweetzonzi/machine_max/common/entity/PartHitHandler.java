@@ -25,6 +25,7 @@ public class PartHitHandler {
             var results = SparkLevel.getPhysicsLevel(projectile.level()).getWorld().rayTest(start, end);
             for (PhysicsRayTestResult result : results) {//遍历射线检测结果
                 if (PhysicsBodyExtensionKt.getOwner(result.getCollisionObject()) instanceof SubPart candidatedSubPart) {
+                    if(candidatedSubPart.isWheel(result.triangleIndex()) && candidatedSubPart.isWheelSurface(result.triangleIndex())) continue; // 跳过轮子的球面部分
                     if (subPartEntity.subPart != null && candidatedSubPart == subPartEntity.subPart) {//若命中的是本零件
                         mixinProjectile.machine_Max$setHitPoint(start.add(end.subtract(start).mult(result.getHitFraction())));
                         mixinProjectile.machine_Max$setHitNormal(result.getHitNormalLocal(null));

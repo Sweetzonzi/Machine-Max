@@ -1,10 +1,10 @@
 {
   "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/golden_closestool_icon.png",
   "vehicle_durability_rate": 0.1,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
-    "icon": "machine_max:textures/icon/golden_closestool_icon.png",
     "model": "machine_max:golden_closestool.geo",
     "textures": "machine_max:textures/part/golden_closestool.png",
     "animations": "machine_max:empty", 

@@ -19,6 +19,7 @@ import java.util.Objects;
 @Getter
 public class PartType {
     // 属性
+    public final ResourceLocation icon; //图标路径
     public final float vehicleDurabilityRate;//载具耐久度贡献系数
     public final float vehicleDamageRate;//载具伤害传递系数
     public final float vehicleDamageRateDestroyed;//部件被摧毁时的伤害传递系数
@@ -45,6 +46,7 @@ public class PartType {
     );
 
     public static final Codec<PartType> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            ResourceLocation.CODEC.optionalFieldOf("icon", ResourceLocation.withDefaultNamespace("missingno")).forGetter(PartType::getIcon),
             Codec.FLOAT.optionalFieldOf("vehicle_durability_rate", 0.8f).forGetter(PartType::getVehicleDurabilityRate),
             Codec.FLOAT.optionalFieldOf("vehicle_damage_rate", 1.0f).forGetter(PartType::getVehicleDamageRate),
             Codec.FLOAT.optionalFieldOf("vehicle_damage_rate_destroyed", 0.1f).forGetter(PartType::getVehicleDamageRateDestroyed),
@@ -55,16 +57,18 @@ public class PartType {
     public static final StreamCodec<RegistryFriendlyByteBuf, PartType> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull PartType decode(RegistryFriendlyByteBuf buffer) {
+            ResourceLocation icon = buffer.readResourceLocation();
             float vehicleDurabilityRate = buffer.readFloat();
             float vehicleDamageRate = buffer.readFloat();
             float vehicleDamageRateDestroyed = buffer.readFloat();
             boolean shareDurability = buffer.readBoolean();
             Map<String, VariantAttr> variants = buffer.readJsonWithCodec(VARIANT_MAP_CODEC);
-            return new PartType(vehicleDurabilityRate, vehicleDamageRate, vehicleDamageRateDestroyed, shareDurability, variants);
+            return new PartType(icon, vehicleDurabilityRate, vehicleDamageRate, vehicleDamageRateDestroyed, shareDurability, variants);
         }
 
         @Override
         public void encode(RegistryFriendlyByteBuf buffer, PartType value) {
+            buffer.writeResourceLocation(value.icon);
             buffer.writeFloat(value.vehicleDurabilityRate);
             buffer.writeFloat(value.vehicleDamageRate);
             buffer.writeFloat(value.vehicleDamageRateDestroyed);
@@ -74,12 +78,14 @@ public class PartType {
     };
 
     public PartType(
+            ResourceLocation icon,
             float vehicleDurabilityRate,
             float vehicleDamageRate,
             float vehicleDamageRateDestroyed,
             boolean shareDurability,
             Map<String, VariantAttr> variants
     ) {
+        this.icon = icon;
         this.vehicleDurabilityRate = vehicleDurabilityRate;
         this.vehicleDamageRate = vehicleDamageRate;
         this.vehicleDamageRateDestroyed = vehicleDamageRateDestroyed;
@@ -114,8 +120,7 @@ public class PartType {
     }
 
     public ResourceLocation getDefaultIcon() {
-        var variant = getVariantIterator().next();
-        return variants.get(variant).getIcon();
+        return icon;
     }
 
     @NotNull
