@@ -181,13 +181,19 @@ public class VehicleAssemblyAttachment {
      * 循环选择所有变体直到找到合适的变体或到达迭代次数上限，随后再寻找可行的连接点，仅应在服务端被主动调用
      */
     public void cycleVariants() {
+        var eyesight = owner.getData(MMAttachments.getENTITY_EYESIGHT());
+        AbstractConnector targetConnector = eyesight.getEmptyConnector();//获取视线看着的部件连接点
         PartType partType = this.getPartType();
         if (partType == null) return;
         int i = partType.variants.size();//设置最大迭代次数
         while (i >= 0) {
             //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限
             this.getNextVariant();//获取下一个部件变体
-            this.cycleConnectors(); // 再找到最合适的连接点
+            String variantName = this.getVariantName();
+            if (targetConnector.conditionCheck(partType, variantName)) {
+                this.cycleConnectors(); // 再找到最合适的连接点
+                break;
+            }
             i--;
         }
     }

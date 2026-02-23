@@ -52,7 +52,7 @@ import java.util.*;
 public class AssemblyItem extends Item implements ICustomModelItem {
 
     public AssemblyItem() {
-        super(new Properties().stacksTo(1));
+        super(new Properties().stacksTo(1).fireResistant());
     }
 
     @Override

@@ -7,21 +7,21 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemT
 import lombok.Getter;
 
 @Getter
-public class ItemStorageSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class ItemStorageSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final int rows;
     public final int columns;
 
     public static final MapCodec<ItemStorageSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.INT.optionalFieldOf("rows", 3).forGetter(ItemStorageSubsystemStaticAttr::getRows),
             Codec.INT.optionalFieldOf("columns", 9).forGetter(ItemStorageSubsystemStaticAttr::getColumns)
     ).apply(instance, ItemStorageSubsystemStaticAttr::new));
 
     public ItemStorageSubsystemStaticAttr(
-            float basicDurability, 
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             int rows,
             int columns) {
-        super(basicDurability);
+        super(basicAttr);
         if (rows <= 0) throw new IllegalArgumentException("error.machine_max.item_storage_subsystem.invalid_row_num");
         if (columns <= 0) throw new IllegalArgumentException("error.machine_max.item_storage_subsystem.invalid_column_num");
         this.rows = rows;

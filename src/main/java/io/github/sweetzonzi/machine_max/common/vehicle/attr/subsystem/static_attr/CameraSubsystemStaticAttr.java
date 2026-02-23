@@ -7,13 +7,13 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemT
 import lombok.Getter;
 
 @Getter
-public class CameraSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public static final MapCodec<CameraSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability)
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr)
     ).apply(instance, CameraSubsystemStaticAttr::new));
 
-    protected CameraSubsystemStaticAttr(float basicDurability) {
-        super(basicDurability);
+    protected CameraSubsystemStaticAttr(BasicSubsystemStaticAttr.BasicAttr basicAttr) {
+        super(basicAttr);
     }
 
     @Override

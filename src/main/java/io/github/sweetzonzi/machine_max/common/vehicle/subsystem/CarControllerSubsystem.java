@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CarControllerSubsystemAttr;
@@ -26,6 +25,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     float avgEngineMinSpeed = 0f;
     float avgEngineMaxTorqueSpeed = 0f;
     int engineCount = 0;
+    int motorCount = 0;
 
     private final Map<EngineSubsystem, String> engines = new HashMap<>();//控制的发动机其接收控制的信号频道映射 Control engine and its receiving signal channel mapping
     private final Map<MotorSubsystem, String> motors = new HashMap<>();//控制的电动机其接收控制的信号频道映射 Control engine and its receiving signal channel mapping
@@ -187,6 +187,23 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     else {
                         motors.put(motor, controlChannel);
                         addCallbackTarget(controlChannel, motor);
+                        //计算引擎最大转速和最大扭矩转速的平均值 Calculate the average maximum speed and max torque speed of the motor
+                        avgEngineMinSpeed = 0;
+                        avgEngineMaxTorqueSpeed = 0;
+                        avgEngineMaxSpeed = 0;
+                        for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
+                            float maxTorqueMinRpm = (float) (entry.getKey().attr.staticAttribute.maxPower / entry.getKey().attr.staticAttribute.maxTorque * 30f / Math.PI);
+                            avgEngineMaxTorqueSpeed += 0.9f * maxTorqueMinRpm + 0.1f * entry.getKey().attr.staticAttribute.redLineRpm;
+                            avgEngineMaxSpeed += entry.getKey().attr.staticAttribute.redLineRpm;
+                        }
+                        motorCount = motors.size();
+                        if (motorCount > 0) {
+                            avgEngineMaxTorqueSpeed = (float) (avgEngineMaxTorqueSpeed * Math.PI / motorCount / 30f);
+                            avgEngineMaxSpeed = (float) (avgEngineMaxSpeed * Math.PI / motorCount / 30f);
+                        } else {
+                            avgEngineMaxTorqueSpeed = 0f;
+                            avgEngineMaxSpeed = 0f;
+                        }
                     }
                 } else if (sender instanceof GearboxSubsystem gearbox) {
                     if (gearbox.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle) {
@@ -268,21 +285,13 @@ public class CarControllerSubsystem extends AbstractSubsystem {
 
     protected void distributeControlSignals() {
         if (this.moveInput != null && moveInputConflict != null) {//前进方向有输入信号 (可为0) Have forward input signal (can be 0)
-            float avgEngineSpeed = 0f;
+            float avgEngineSpeed;
             byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
                 if (moveInput[2] * speed > 0 || (Math.abs(speed) <= 1f)) {//加速行驶 Accelerate
                     actualThrottle = actualThrottle * 0.9f + (Math.abs(moveInput[2])) * 0.1f;
                     actualBrake = actualBrake * 0.8f + 0 * 0.2f;
-                    for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
-                        sendCallbackToAllListeners(entry.getValue(), actualThrottle);
-                        avgEngineSpeed += (float) entry.getKey().getRotSpeed();
-                    }
-                    for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
-                        sendCallbackToAllListeners(entry.getValue(), (float) moveInput[2]);
-                        avgEngineSpeed += entry.getKey().getRotSpeed();
-                    }
-                    avgEngineSpeed /= engineCount;
+                    avgEngineSpeed = calculateAvgSpeed();
                     //起步时自动松离合和手刹 Auto release hand brake when starting
                     if (attr.staticAttribute.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                         handBrake = false;
@@ -290,7 +299,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     }
                     for (GearboxSubsystem gearbox : gearboxes.keySet()) {//加速时延迟升档 Delay shifting up when accelerating
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, 0.4f, 0.9f, moveInput[2]));
+                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, 0.4f, 0.75f, moveInput[2]));
                             //起步时自动松离合 Auto engage clutch when starting
                             if (Math.abs(speed) <= 1f) {
                                 gearbox.setClutched(true);
@@ -300,15 +309,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 } else if (moveInput[2] * speed < 0) {//减速行驶 Brake
                     actualThrottle = actualThrottle * 0.8f + 0 * 0.2f;
                     actualBrake = actualBrake * 0.9f + 1 * 0.1f;
-                    for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
-                        sendCallbackToAllListeners(entry.getValue(), actualThrottle);
-                        avgEngineSpeed += (float) entry.getKey().getRotSpeed();
-                    }
-                    for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
-                        sendCallbackToAllListeners(entry.getValue(), (float) moveInput[2]);
-                        avgEngineSpeed += entry.getKey().getRotSpeed();
-                    }
-                    avgEngineSpeed /= engineCount;
+                    avgEngineSpeed = calculateAvgSpeed();
                     for (GearboxSubsystem gearbox : gearboxes.keySet()) {//减速时积极降档 Shift down early when braking
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
                             gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, 0.4f, 1.0f, moveInput[2]));
@@ -326,15 +327,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 }
             } else {//前进方向输入信号为0 Forward input signal is 0
                 actualThrottle = actualThrottle * 0.9f + 0 * 0.1f;
-                for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
-                    sendCallbackToAllListeners(entry.getValue(), actualThrottle);
-                    avgEngineSpeed += (float) entry.getKey().getRotSpeed();
-                }
-                for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
-                    sendCallbackToAllListeners(entry.getValue(), 0f);
-                    avgEngineSpeed += entry.getKey().getRotSpeed();
-                }
-                avgEngineSpeed /= engineCount;
+                avgEngineSpeed = calculateAvgSpeed();
                 if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low
                     actualBrake = actualBrake * 0.9f + 1 * 0.1f;
                     if (attr.staticAttribute.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
@@ -395,6 +388,23 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 }
             }
         }
+    }
+
+    private float calculateAvgSpeed() {
+        float avgEngineSpeed = 0f;
+        for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
+            sendCallbackToAllListeners(entry.getValue(), actualThrottle);
+            avgEngineSpeed += (float) entry.getKey().getRotSpeed();
+        }
+        for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
+            sendCallbackToAllListeners(entry.getValue(), (float) moveInput[2]);
+            avgEngineSpeed += entry.getKey().getRotSpeed();
+        }
+        if (engineCount > 1)
+            avgEngineSpeed /= engineCount;
+        else if (motorCount > 1)
+            avgEngineSpeed /= motorCount;
+        return avgEngineSpeed;
     }
 
     /**

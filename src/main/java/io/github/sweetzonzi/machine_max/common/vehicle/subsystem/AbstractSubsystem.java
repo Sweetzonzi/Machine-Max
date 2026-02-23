@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
+import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalSender;
@@ -138,8 +139,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public void onActive() {
     }
 
-    public void onHurt(float amount, PartDamageData data) {
-        setDurability(Math.clamp(getDurability() - amount, 0, getMaxDurability()));
+    public void onHurt(SubPartDamageEvent.Pre event) {
+        setDurability(Math.clamp(getDurability() - event.getDamageAmount(), 0, getMaxDurability()));
     }
 
     public void onDestroyed() {

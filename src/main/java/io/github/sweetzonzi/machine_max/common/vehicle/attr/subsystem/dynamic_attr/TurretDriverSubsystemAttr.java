@@ -13,7 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 
 //TODO
 @Getter
-public class TurretDriverSubsystemAttr extends AbstractSubsystemAttr {
+public class TurretDriverSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final TurretDriverSubsystemStaticAttr staticAttribute;
     public String controlledConnector;
     public final MotorAttr pitchAxis;

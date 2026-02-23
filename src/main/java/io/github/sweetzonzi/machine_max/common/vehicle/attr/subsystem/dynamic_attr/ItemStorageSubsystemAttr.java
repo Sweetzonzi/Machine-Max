@@ -11,7 +11,7 @@ import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
 @Getter
-public class ItemStorageSubsystemAttr extends AbstractSubsystemAttr {
+public class ItemStorageSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final ItemStorageSubsystemStaticAttr staticAttribute;
     public static final MapCodec<ItemStorageSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName)

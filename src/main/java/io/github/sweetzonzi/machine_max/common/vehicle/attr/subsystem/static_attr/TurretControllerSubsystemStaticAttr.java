@@ -3,10 +3,10 @@ package io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_at
 import com.mojang.serialization.MapCodec;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes;
 
-public class TurretControllerSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class TurretControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     protected TurretControllerSubsystemStaticAttr(
-            float basicDurability) {
-        super(basicDurability);
+            BasicSubsystemStaticAttr.BasicAttr basicAttr) {
+        super(basicAttr);
     }
 
     @Override

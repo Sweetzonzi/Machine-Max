@@ -14,22 +14,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Getter
-public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
+public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
     public final String particleLocator;
     public final float maxPower;
     public final float maxTorque;
-    public final float redLineRPM;
+    public final float redLineRpm;
     public final double inertia;//电机系统转动惯量(kg·m²)
     public final List<Double> dampingFactors;//电机系统各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
     public final float generatorEfficiency; // 发电效率（0-1）
     public final List<String> throttleInputKeys;//优先级从高至低
 
     public static final MapCodec<MotorSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.STRING.optionalFieldOf("particle_locator", "").forGetter(MotorSubsystemStaticAttr::getParticleLocator),
             Codec.FLOAT.fieldOf("max_power").forGetter(MotorSubsystemStaticAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("max_torque", 100f).forGetter(MotorSubsystemStaticAttr::getMaxTorque),
-            Codec.FLOAT.optionalFieldOf("red_line_rpm", 10000f).forGetter(MotorSubsystemStaticAttr::getRedLineRPM),
+            Codec.FLOAT.optionalFieldOf("red_line_rpm", 10000f).forGetter(MotorSubsystemStaticAttr::getRedLineRpm),
             Codec.DOUBLE.optionalFieldOf("inertia", 10.0).forGetter(MotorSubsystemStaticAttr::getInertia),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(10.0, 0.1, 0.00005)).forGetter(MotorSubsystemStaticAttr::getDampingFactors),
             Codec.FLOAT.optionalFieldOf("generator_efficiency", 0.85f).forGetter(MotorSubsystemStaticAttr::getGeneratorEfficiency),
@@ -44,20 +44,20 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr implem
     public static final WorkingState EMPTY_WORKING_STATE = new WorkingState(0.0f, 0.0f, ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
 
     public MotorSubsystemStaticAttr(
-            float basicDurability,
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             String particleLocator,
             float maxPower,
             float maxTorque,
-            float redLineRPM,
+            float redLineRpm,
             double inertia,
             List<Double> dampingFactors,
             float generatorEfficiency,
             List<String> throttleInputKeys) {
-        super(basicDurability);
+        super(basicAttr);
         this.particleLocator = particleLocator;
         this.maxPower = maxPower;
         this.maxTorque = maxTorque;
-        this.redLineRPM = redLineRPM;
+        this.redLineRpm = redLineRpm;
         this.inertia = inertia;
         this.dampingFactors = dampingFactors;
         this.generatorEfficiency = generatorEfficiency;
@@ -68,9 +68,9 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr implem
     public void createSounds() {
         workingStates.clear();
         //确定转速区间数量
-        int rpmCount = getRpmStateIndex(redLineRPM);
+        int rpmCount = getRpmStateIndex(redLineRpm * 2);
         //外层循环：转速区间
-        for (int i = 1; i < rpmCount + 2; i++) {
+        for (int i = 1; i < rpmCount + 1; i++) {
             //内层循环：负载区间
             ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
             for (int j = 0; j < LOAD_STATE_COUNT; j++) {
@@ -90,7 +90,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr implem
                 "subsystem/motor/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(load));
 //        MachineMax.LOGGER.debug("Creating motor sound: {}", id);
         MotorSoundSynthesizer.synthesizeBrushlessMotor(3f, rpm, load,
-                new MotorSoundSynthesizer.MotorConfig(6, 8000, this.redLineRPM, 1200)).register(id);
+                new MotorSoundSynthesizer.MotorConfig(6, 8000, this.redLineRpm, 1200)).register(id);
         MachineMax.LOGGER.debug("Motor sound created: {}", id);
         return id;
     }
@@ -98,7 +98,7 @@ public class MotorSubsystemStaticAttr extends AbstractSubsystemStaticAttr implem
     public WorkingState getBestMatchWorkingState(double rpm, double load) {
         int rpmIndex = (int) Math.round(getRPMCoordinate(rpm));
         int loadIndex = (int) Math.round(getLoadCoordinate(load));
-        WorkingState result = null;
+        WorkingState result = MotorSubsystemStaticAttr.EMPTY_WORKING_STATE;
         if(rpmIndex >=0 && rpmIndex < workingStates.size()){
             if (loadIndex >= 0 && loadIndex < workingStates.get(rpmIndex).size()){
                 result = workingStates.get(rpmIndex).get(loadIndex);

@@ -17,7 +17,7 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
     public final float correctionForceMultiplier; // 修正力倍率，用于整体缩放摩托车控制系统的平衡调节力
 
     public static final MapCodec<MotorbikeControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Vec3.CODEC.optionalFieldOf("steering_center", Vec3.ZERO).forGetter(MotorbikeControllerSubsystemStaticAttr::getSteeringCenter),
             CarControllerSubsystemStaticAttr.STEERING_RADIUS_CODEC.optionalFieldOf("steering_radius", CarControllerSubsystemStaticAttr.createDefaultSteeringRadiusMap()).forGetter(MotorbikeControllerSubsystemStaticAttr::getSteeringRadiusMap),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(MotorbikeControllerSubsystemStaticAttr::isManualGearShift),
@@ -29,7 +29,7 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
     ).apply(instance, MotorbikeControllerSubsystemStaticAttr::new));
 
     public MotorbikeControllerSubsystemStaticAttr(
-            float basicDurability,
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             Vec3 steeringCenter,
             TreeMap<Float, Float> steeringRadiusMap,
             boolean manualGearShift,
@@ -38,7 +38,7 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             float maxAngle,
             float parkingAngle,
             float correctionForceMultiplier) {
-        super(basicDurability,
+        super(basicAttr,
                 steeringCenter,
                 steeringRadiusMap,
                 manualGearShift,

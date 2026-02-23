@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class EngineSubsystemAttr extends AbstractSubsystemAttr {
+public class EngineSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final EngineSubsystemStaticAttr staticAttribute;
     public final String powerOutputTarget;
     public final Map<String, List<String>> rpmOutputTargets;

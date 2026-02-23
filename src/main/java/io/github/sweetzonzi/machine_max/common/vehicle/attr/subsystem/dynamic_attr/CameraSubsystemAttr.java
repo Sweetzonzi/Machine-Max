@@ -11,7 +11,7 @@ import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
 @Getter
-public class CameraSubsystemAttr extends AbstractSubsystemAttr {
+public class CameraSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final CameraSubsystemStaticAttr staticAttribute;
     public static final MapCodec<CameraSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName)

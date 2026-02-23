@@ -1,0 +1,1038 @@
+{
+  "max": [
+    3.2707588889382038,
+    1.2112926136363669,
+    1.6308621493252886
+  ],
+  "hp": 20.0,
+  "parts": {
+    "ffda7363-d36e-43d5-b133-e6b926a4fe65": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right": {
+              "integrity": 15.0
+            },
+            "connector.machine_max.left": {
+              "integrity": 15.0
+            }
+          },
+          "id": 1,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              80.77611,
+              -59.82541,
+              -49.57332
+            ],
+            "rotation": [
+              -0.0028211523,
+              0.73850554,
+              0.0031459173,
+              0.6742342
+            ],
+            "linear_vel": [
+              2.6267572E-4,
+              -0.002984956,
+              1.09866574E-4
+            ],
+            "angular_vel": [
+              -3.2727505E-5,
+              -4.961326E-5,
+              0.0014459544
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_bumper",
+      "name": "machine_max.senna_gtr_bumper",
+      "uuid": "ffda7363-d36e-43d5-b133-e6b926a4fe65",
+      "variant": "front"
+    },
+    "0aeefb05-0001-4ce2-bb8e-5c6b8c3cb4b6": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 30.0
+            }
+          },
+          "id": 2,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              81.75352,
+              -59.58037,
+              -48.735847
+            ],
+            "rotation": [
+              -0.6741382,
+              0.031303212,
+              0.7377879,
+              0.015060173
+            ],
+            "linear_vel": [
+              -1.19443415E-4,
+              -7.966161E-5,
+              2.1596122E-4
+            ],
+            "angular_vel": [
+              9.897531E-6,
+              -5.765948E-5,
+              1.2096933E-11
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_wheel",
+      "name": "machine_max.senna_gtr_wheel",
+      "uuid": "0aeefb05-0001-4ce2-bb8e-5c6b8c3cb4b6",
+      "variant": "left_front"
+    },
+    "eeb80786-0ca4-458a-a9b5-925c51a137ba": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.lock": {
+              "integrity": 5.0
+            },
+            "connector.machine_max.axis": {
+              "integrity": 25.0
+            }
+          },
+          "id": 3,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              82.860695,
+              -59.1859,
+              -48.975563
+            ],
+            "rotation": [
+              -0.002820896,
+              0.7385058,
+              0.0031481665,
+              0.6742339
+            ],
+            "linear_vel": [
+              -7.4198353E-4,
+              2.5376678E-5,
+              2.266088E-4
+            ],
+            "angular_vel": [
+              -2.6231028E-6,
+              -5.1638133E-5,
+              0.0014467855
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_door",
+      "name": "machine_max.senna_gtr_door",
+      "uuid": "eeb80786-0ca4-458a-a9b5-925c51a137ba",
+      "variant": "left"
+    },
+    "9bf08c70-bf9d-41ec-8c65-665e6be72119": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 30.0
+            }
+          },
+          "id": 4,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              81.58593,
+              -59.58035,
+              -50.573704
+            ],
+            "rotation": [
+              -0.3517649,
+              0.6220508,
+              0.39816296,
+              0.57513523
+            ],
+            "linear_vel": [
+              4.504176E-5,
+              -1.0444224E-4,
+              1.1418246E-4
+            ],
+            "angular_vel": [
+              -1.0806814E-5,
+              -3.5333876E-5,
+              7.710589E-12
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_wheel",
+      "name": "machine_max.senna_gtr_wheel",
+      "uuid": "9bf08c70-bf9d-41ec-8c65-665e6be72119",
+      "variant": "right_front"
+    },
+    "27f8bc5f-057b-495f-b85b-77dbbd1e4512": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right": {
+              "integrity": 15.0
+            },
+            "connector.machine_max.left": {
+              "integrity": 15.0
+            }
+          },
+          "id": 5,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              85.58925,
+              -59.74602,
+              -50.012165
+            ],
+            "rotation": [
+              -0.0028210622,
+              0.7385057,
+              0.0031460195,
+              0.674234
+            ],
+            "linear_vel": [
+              1.6947568E-4,
+              0.003950447,
+              4.0258348E-4
+            ],
+            "angular_vel": [
+              5.7225705E-5,
+              -5.2040006E-5,
+              0.0014270807
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_bumper",
+      "name": "machine_max.senna_gtr_bumper",
+      "uuid": "27f8bc5f-057b-495f-b85b-77dbbd1e4512",
+      "variant": "back"
+    },
+    "cec04557-0c11-4a79-9406-dacadea5de75": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_door_axis": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.right_door_axis": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.chassis_front": {
+              "integrity": 50.0
+            }
+          },
+          "id": 6,
+          "durability": 120.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              81.242805,
+              -59.30827,
+              -49.615837
+            ],
+            "rotation": [
+              -0.0028205018,
+              0.73850566,
+              0.0031466645,
+              0.6742341
+            ],
+            "linear_vel": [
+              -4.686759E-4,
+              -0.0023385137,
+              1.228645E-4
+            ],
+            "angular_vel": [
+              -6.217795E-6,
+              -6.326956E-5,
+              0.0014419834
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_hull",
+      "name": "machine_max.senna_gtr_hull",
+      "uuid": "cec04557-0c11-4a79-9406-dacadea5de75",
+      "variant": "front"
+    },
+    "249c772a-5a09-4773-873a-a49db5a98363": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_back": {
+              "integrity": 50.0
+            },
+            "connector.machine_max.right_door_lock": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.left_door_lock": {
+              "integrity": 20.0
+            }
+          },
+          "id": 7,
+          "durability": 120.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              84.82692,
+              -59.58709,
+              -49.942646
+            ],
+            "rotation": [
+              -0.0028205188,
+              0.73850566,
+              0.0031464472,
+              0.6742341
+            ],
+            "linear_vel": [
+              -5.890824E-5,
+              0.0028365105,
+              3.3223192E-4
+            ],
+            "angular_vel": [
+              -7.7801815E-6,
+              -6.0301456E-5,
+              0.0014432216
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_hull",
+      "name": "machine_max.senna_gtr_hull",
+      "uuid": "249c772a-5a09-4773-873a-a49db5a98363",
+      "variant": "back"
+    },
+    "d9681bb8-d67b-4387-b90e-853f13d3ff7b": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.lock": {
+              "integrity": 5.0
+            },
+            "connector.machine_max.axis": {
+              "integrity": 25.0
+            }
+          },
+          "id": 8,
+          "durability": 50.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              82.67118,
+              -59.186176,
+              -50.533836
+            ],
+            "rotation": [
+              -0.0028213526,
+              0.73850673,
+              0.0031476757,
+              0.67423284
+            ],
+            "linear_vel": [
+              -5.655555E-4,
+              -3.015548E-4,
+              2.2329182E-4
+            ],
+            "angular_vel": [
+              -7.418281E-6,
+              -8.274373E-5,
+              0.0014391211
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_door",
+      "name": "machine_max.senna_gtr_door",
+      "uuid": "d9681bb8-d67b-4387-b90e-853f13d3ff7b",
+      "variant": "right"
+    },
+    "1bce9bc4-473e-46b5-9f2a-d9408012b6b1": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_wheel": {
+              "integrity": 50.0
+            },
+            "connector.machine_max.right_back_wheel": {
+              "integrity": 60.0
+            },
+            "connector.machine_max.back_bumper_left": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.left_back_wheel": {
+              "integrity": 60.0
+            },
+            "connector.machine_max.front_bumper_left": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.front_bumper_right": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.hull_front": {
+              "integrity": 50.0
+            },
+            "connector.machine_max.right_front_wheel": {
+              "integrity": 60.0
+            },
+            "connector.machine_max.back_bumper_right": {
+              "integrity": 30.0
+            },
+            "connector.machine_max.hull_back": {
+              "integrity": 50.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.glove_box": {
+              "Items": [],
+              "durability": 50.0
+            },
+            "subsystem.machine_max.left_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.right_back_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.engine": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.gearbox": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.car_controller": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.right_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.driver_seat": {
+              "durability": 20.0
+            },
+            "subsystem.machine_max.copilot_seat": {
+              "durability": 20.0
+            },
+            "subsystem.machine_max.transmission": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.left_back_wheel_driver": {
+              "durability": 100.0
+            }
+          },
+          "id": 9,
+          "durability": 120.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              83.340256,
+              -59.56025,
+              -49.80709
+            ],
+            "rotation": [
+              -0.0028210983,
+              0.73850536,
+              0.0031458118,
+              0.6742344
+            ],
+            "linear_vel": [
+              -1.09827764E-4,
+              7.342249E-4,
+              2.4294699E-4
+            ],
+            "angular_vel": [
+              9.369533E-6,
+              -5.7814854E-5,
+              0.0014401444
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_chassis",
+      "name": "machine_max.senna_gtr_chassis",
+      "uuid": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "variant": "default"
+    },
+    "a8fd4bd4-cd13-41b9-bf7b-eeddbac7ae63": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 30.0
+            }
+          },
+          "id": 10,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              85.17411,
+              -59.548645,
+              -48.983875
+            ],
+            "rotation": [
+              0.40431616,
+              0.5822366,
+              -0.4542129,
+              0.53964776
+            ],
+            "linear_vel": [
+              -3.288123E-4,
+              -5.234778E-5,
+              2.8072228E-4
+            ],
+            "angular_vel": [
+              9.437262E-6,
+              -1.0299143E-4,
+              -1.244815E-12
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_wheel",
+      "name": "machine_max.senna_gtr_wheel",
+      "uuid": "a8fd4bd4-cd13-41b9-bf7b-eeddbac7ae63",
+      "variant": "left_back"
+    },
+    "0f62558a-68f5-45c6-bc73-2457f029d07a": {
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 30.0
+            }
+          },
+          "id": 11,
+          "durability": 80.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              84.99498,
+              -59.548637,
+              -50.948368
+            ],
+            "rotation": [
+              -0.6705647,
+              -0.09083196,
+              0.73295575,
+              -0.06977353
+            ],
+            "linear_vel": [
+              -1.319083E-4,
+              4.5493245E-5,
+              3.0102066E-4
+            ],
+            "angular_vel": [
+              5.662708E-6,
+              -9.778651E-6,
+              1.0739486E-11
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:senna_gtr_wheel",
+      "name": "machine_max.senna_gtr_wheel",
+      "uuid": "0f62558a-68f5-45c6-bc73-2457f029d07a",
+      "variant": "right_back"
+    }
+  },
+  "connections": [
+    {
+      "partUuidS": "0aeefb05-0001-4ce2-bb8e-5c6b8c3cb4b6",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.058675,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_wheel",
+      "posRotA": {
+        "position": [
+          -0.86408126,
+          -0.034775,
+          -1.677575
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "a8fd4bd4-cd13-41b9-bf7b-eeddbac7ae63",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.06271875,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_wheel",
+      "posRotA": {
+        "position": [
+          -0.9236125,
+          -0.00703125,
+          1.7515625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "0f62558a-68f5-45c6-bc73-2457f029d07a",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.06271875,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_wheel",
+      "posRotA": {
+        "position": [
+          0.9236125,
+          -0.00703125,
+          1.7515625
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "9bf08c70-bf9d-41ec-8c65-665e6be72119",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          -0.058675,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_wheel",
+      "posRotA": {
+        "position": [
+          0.86408126,
+          -0.034775,
+          -1.677575
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "ffda7363-d36e-43d5-b133-e6b926a4fe65",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right",
+      "posRotS": {
+        "position": [
+          0.5,
+          -0.00661125,
+          0.20193376
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.front_bumper_right",
+      "posRotA": {
+        "position": [
+          0.5,
+          -0.25,
+          -2.375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "ffda7363-d36e-43d5-b133-e6b926a4fe65",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left",
+      "posRotS": {
+        "position": [
+          -0.5,
+          -0.00661125,
+          0.20193376
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.front_bumper_left",
+      "posRotA": {
+        "position": [
+          -0.5,
+          -0.25,
+          -2.375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "27f8bc5f-057b-495f-b85b-77dbbd1e4512",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right",
+      "posRotS": {
+        "position": [
+          0.5,
+          -0.045150626,
+          0.11833812
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.back_bumper_right",
+      "posRotA": {
+        "position": [
+          0.5,
+          -0.25,
+          2.375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "27f8bc5f-057b-495f-b85b-77dbbd1e4512",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left",
+      "posRotS": {
+        "position": [
+          -0.5,
+          -0.045150626,
+          0.11833812
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.back_bumper_left",
+      "posRotA": {
+        "position": [
+          -0.5,
+          -0.25,
+          2.375
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "cec04557-0c11-4a79-9406-dacadea5de75",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_front",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.23023437,
+          0.10395312
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_front",
+      "posRotA": {
+        "position": [
+          0.0,
+          0.5,
+          -2.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "249c772a-5a09-4773-873a-a49db5a98363",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_back",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.6957044,
+          0.38245186
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_back",
+      "posRotA": {
+        "position": [
+          0.0,
+          0.65625,
+          1.875
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "eeb80786-0ca4-458a-a9b5-925c51a137ba",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          -0.16255938,
+          0.114035,
+          -0.8749994
+        ],
+        "rotation": [
+          -0.26922667,
+          0.3706102,
+          0.0027342099,
+          0.88890815
+        ]
+      },
+      "partUuidA": "cec04557-0c11-4a79-9406-dacadea5de75",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_door_axis",
+      "posRotA": {
+        "position": [
+          -0.94708127,
+          0.22333437,
+          0.67904687
+        ],
+        "rotation": [
+          -0.26922667,
+          0.3706102,
+          0.0027342099,
+          0.88890815
+        ]
+      }
+    },
+    {
+      "partUuidS": "249c772a-5a09-4773-873a-a49db5a98363",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_door_lock",
+      "posRotS": {
+        "position": [
+          -0.94708127,
+          0.5325625,
+          -1.16745
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "eeb80786-0ca4-458a-a9b5-925c51a137ba",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.lock",
+      "posRotA": {
+        "position": [
+          -0.16255938,
+          0.114035,
+          0.8750006
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "d9681bb8-d67b-4387-b90e-853f13d3ff7b",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.axis",
+      "posRotS": {
+        "position": [
+          0.16255938,
+          0.114035,
+          -0.82776064
+        ],
+        "rotation": [
+          -0.26922667,
+          -0.3706102,
+          -0.0027342099,
+          0.88890815
+        ]
+      },
+      "partUuidA": "cec04557-0c11-4a79-9406-dacadea5de75",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_door_axis",
+      "posRotA": {
+        "position": [
+          0.94708127,
+          0.22333437,
+          0.67904687
+        ],
+        "rotation": [
+          -0.26922667,
+          -0.3706102,
+          -0.0027342099,
+          0.88890815
+        ]
+      }
+    },
+    {
+      "partUuidS": "249c772a-5a09-4773-873a-a49db5a98363",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_door_lock",
+      "posRotS": {
+        "position": [
+          0.94708127,
+          0.5325625,
+          -1.16745
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "d9681bb8-d67b-4387-b90e-853f13d3ff7b",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.lock",
+      "posRotA": {
+        "position": [
+          0.16255938,
+          0.114035,
+          0.92223936
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "name": "seena_gtr",
+  "uuid": "1bce9bc4-473e-46b5-9f2a-d9408012b6b1",
+  "pos": [
+    83.16506264426492,
+    -59.51427112926137,
+    -49.7911061373624
+  ],
+  "min": [
+    -3.225998618386015,
+    -0.6929775584827738,
+    -1.6757594021883833
+  ]
+}

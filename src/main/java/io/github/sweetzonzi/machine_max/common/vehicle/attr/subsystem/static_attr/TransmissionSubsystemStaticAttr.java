@@ -13,7 +13,7 @@ import java.util.Map;
  * 传动系统属性，将输入的动力按权重分流至各个输出端，再将各个输出端的运行速度反馈加权平均汇总至输入端。
  */
 @Getter
-public class TransmissionSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class TransmissionSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final diffLockMode diffLock;//是否启用差速锁，即强制限制输出端转速成固定比例，可选ture,false,auto,manual
     public final float diffLockSensitivity;//差速锁灵敏度
     public final float autoDiffLockThreshold;//自动差速锁阈值，当输出端反馈转速差距百分比超过该值且diff_lock为auto时，自动启用差速锁
@@ -27,7 +27,7 @@ public class TransmissionSubsystemStaticAttr extends AbstractSubsystemStaticAttr
     }
 
     public static final MapCodec<TransmissionSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.STRING.optionalFieldOf("diff_lock", "auto").forGetter(TransmissionSubsystemStaticAttr::getDiffLock),
             Codec.FLOAT.optionalFieldOf("diff_lock_sensitivity", 1f).forGetter(TransmissionSubsystemStaticAttr::getDiffLockSensitivity),
             Codec.FLOAT.optionalFieldOf("auto_diff_lock_threshold", 10f).forGetter(TransmissionSubsystemStaticAttr::getAutoDiffLockThreshold),
@@ -35,12 +35,12 @@ public class TransmissionSubsystemStaticAttr extends AbstractSubsystemStaticAttr
     ).apply(instance, TransmissionSubsystemStaticAttr::new));
 
     public TransmissionSubsystemStaticAttr(
-            float basicDurability,
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             String diffLock,
             float diffLockSensitivity,
             float autoDiffLockThreshold,
             List<String> manualDiffLockInputChannels) {
-        super(basicDurability);
+        super(basicAttr);
         this.diffLock = diffLockMode.valueOf(diffLock.toUpperCase());
         this.diffLockSensitivity = diffLockSensitivity;
         this.autoDiffLockThreshold = autoDiffLockThreshold;

@@ -11,13 +11,13 @@ import lombok.Getter;
 import java.util.Map;
 
 @Getter
-public class JointDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class JointDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final String controlledConnector;
     public final String rotationOrder;
     public final Map<Axis, MotorAttr> axisParams;
 
     public static final MapCodec<JointDriverSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.STRING.fieldOf("locator").forGetter(JointDriverSubsystemStaticAttr::getControlledConnector),
             Codec.STRING.fieldOf("rotation_order").forGetter(JointDriverSubsystemStaticAttr::getRotationOrder),
             MotorAttr.MAP_CODEC.fieldOf("axes").forGetter(JointDriverSubsystemStaticAttr::getAxisParams)
@@ -25,11 +25,11 @@ public class JointDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr 
     ));
 
     public JointDriverSubsystemStaticAttr(
-            float basicDurability, 
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             String controlledConnector,
             String rotationOrder,
             Map<Axis, MotorAttr> axisParams) {
-        super(basicDurability);
+        super(basicAttr);
         this.controlledConnector = controlledConnector;
         this.rotationOrder = rotationOrder;
         this.axisParams = axisParams;

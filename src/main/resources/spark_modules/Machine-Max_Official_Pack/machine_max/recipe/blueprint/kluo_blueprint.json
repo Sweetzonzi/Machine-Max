@@ -1,0 +1,60 @@
+{ 
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:kluo_hull"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:kluo_wheel"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:kluo_bumper"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:kluo_door"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:kluo_hood"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:kluo_trunk_door"
+      },
+      "strict": false
+    }
+  ],
+  "result": { 
+    "id": "machine_max:vehicle_blueprint",
+    "count": 1, 
+    "components": { 
+      "machine_max:vehicle_blueprint_path": "machine_max:kluo"
+    }
+  }
+}

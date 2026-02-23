@@ -26,8 +26,6 @@ import com.jme3.bullet.collision.AfMode;
 import com.jme3.bullet.collision.ManifoldPoints;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
-import com.jme3.bullet.collision.shapes.MultiSphere;
-import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Matrix3f;
@@ -428,9 +426,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     //对部件造成伤害
                     float partDamage = (float) (finalActualPartEnergy / 250);
                     DamageSource source = level.damageSources().flyIntoWall();
-                    if (hitBox.modifyDamage(source, partDamage) > 1)
-                        onHurt(source, partDamage,
-                                null, normal, vel, worldContactPoint, hitBox);
+                    if (hitBox.modifyDamage(source, partDamage) > 1) {
+                        PartDamageData data = new PartDamageData(source, null, normal, contactVel, worldContactPoint, hitBox);
+                        onHurt(data, partDamage);
+                    }
                     return;
                 } else { //否则以三分之一的能量计算伤害，冲量交给物理引擎处理
                     // 与一个物体发生碰撞时会创建3个(4个?)碰撞点，因此在单点处理计算时只取部分能量用于计算伤害
@@ -438,9 +437,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     //对部件造成伤害
                     float partDamage = (float) (0.2 * 0.33 * partEnergy / 250);
                     DamageSource source = level.damageSources().flyIntoWall();
-                    if (hitBox.modifyDamage(source, partDamage) > 1)
-                        onHurt(source, partDamage,
-                                null, normal, vel, worldContactPoint, hitBox);
+                    if (hitBox.modifyDamage(source, partDamage) > 1) {
+                        PartDamageData data = new PartDamageData(source, null, normal, contactVel, worldContactPoint, hitBox);
+                        onHurt(data, partDamage);
+                    }
                 }
             }
             //通常粒子效果
@@ -508,9 +508,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //基于能量对对方部件造成伤害
             float partDamage = 0.0005f * deltaVel * deltaVel * body.getMass();
             DamageSource source = level.damageSources().source(MMDamageTypes.PART_COLLISION);
-            if (otherHitBox.modifyDamage(source, partDamage) > 1)
-                otherSubPart.onHurt(level.damageSources().source(MMDamageTypes.PART_COLLISION), partDamage,
-                        null, normal, contactVel, worldContactPoint, hitBox);
+            if (otherHitBox.modifyDamage(source, partDamage) > 1) {
+                PartDamageData data = new PartDamageData(level.damageSources().source(MMDamageTypes.PART_COLLISION), null, normal, contactVel, worldContactPoint, hitBox);
+                otherSubPart.onHurt(data, partDamage);
+            }
         }
     }
 
@@ -550,9 +551,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //部件伤害
             float partDamage = (float) (0.2 * contactEnergy * miu / (250 * partMass));
             DamageSource source = level.damageSources().flyIntoWall();
-            if (hitBox.modifyDamage(source, partDamage) > 1)
-                onHurt(level.damageSources().source(DamageTypes.FLY_INTO_WALL, livingEntity), partDamage,
+            if (hitBox.modifyDamage(source, partDamage) > 1) {
+                PartDamageData data = new PartDamageData(level.damageSources().source(DamageTypes.FLY_INTO_WALL, livingEntity),
                         null, normal, vel, worldContactPoint, hitBox);
+                onHurt(data, partDamage);
+            }
             //部件减速
             getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_entity_impulse", PPhase.PRE, () -> {
                 body.applyImpulse(impulseVec.mult(-0.3f), worldContactPoint.subtract(body.getPhysicsLocation(null)));
@@ -666,7 +669,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                 var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
                                 if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
                                 if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                                    if (sp.attr.hydroPriority > attr.hydroPriority) {
+                                    if (sp.attr.hydroPriority >= attr.hydroPriority) {
                                         float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
                                         if (tempOcclusion < xOcclusion) xOcclusion = Math.max(0, tempOcclusion);
                                         if (xOcclusion <= 0) break;
@@ -684,7 +687,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                 var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
                                 if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
                                 if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                                    if (sp.attr.hydroPriority > attr.hydroPriority) {
+                                    if (sp.attr.hydroPriority >= attr.hydroPriority) {
                                         float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
                                         if (tempOcclusion < yOcclusion) yOcclusion = Math.max(0, tempOcclusion);
                                         if (yOcclusion <= 0) break;
@@ -702,7 +705,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                 var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
                                 if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
                                 if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                                    if (sp.attr.hydroPriority > attr.hydroPriority) {
+                                    if (sp.attr.hydroPriority >= attr.hydroPriority) {
                                         float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
                                         if (tempOcclusion < zOcclusion) zOcclusion = Math.max(0, tempOcclusion);
                                         if (zOcclusion <= 0) break;
@@ -807,26 +810,19 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     /**
      * 实际处理伤害
      *
-     * @param source
+     * @param data
      * @param damage
-     * @param projectileSource
-     * @param normal
-     * @param worldContactSpeed
-     * @param worldContactPoint
-     * @param hitBox
      * @return 伤害是否被正常处理
      */
-    public boolean onHurt(DamageSource source,
-                          float damage,
-                          IPhysicsProjectile projectileSource,
-                          Vector3f normal,
-                          Vector3f worldContactSpeed,
-                          Vector3f worldContactPoint,
-                          HitBox hitBox) {
-        SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, source, damage);
+    public boolean onHurt(PartDamageData data, float damage) {
+        SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, data, damage);
         if (!NeoForge.EVENT_BUS.post(event).isCanceled()) {
-            source = event.getSource();
+            DamageSource source = event.getData().source();
             damage = event.getDamageAmount();
+            HitBox hitBox = data.hitBox();
+            Vector3f normal = data.normal();
+            Vector3f worldContactPoint = data.worldContactPoint();
+            Vector3f worldContactSpeed = data.worldContactSpeed();
             Vec3 sourcePos = source.getSourcePosition();
             if (sourcePos == null)
                 sourcePos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(body).getTransform().getTranslation());
@@ -874,7 +870,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
                     subPartDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
                 //对部件造成伤害
-                PartDamageData data = new PartDamageData(source, projectileSource, normal, worldContactSpeed, worldContactPoint, hitBox);
                 if (!level.isClientSide()) accumulateDamage(subPartDamage, data);
                 else {
                     SparkLevel.submitImmediateTask(level, PPhase.ALL, () -> {
@@ -993,13 +988,17 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 Pair<Float, PartDamageData> pair = accumulatedDamage.poll();
                 float damage = pair.getFirst();
                 PartDamageData data = pair.getSecond();
-                // 广播事件
-                NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Post(this, data.source(), damage));
-                //对子系统造成伤害
-                if (data.hitBox().getSubsystem() != null)
-                    data.hitBox().getSubsystem().onHurt(damage, data);
-                totalDamage += damage;
-                soundPos = SparkMathKt.toVec3(data.worldContactPoint());
+                SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, data, damage);
+                //向子系统发送伤害事件，对子系统造成伤害
+                if (data.hitBox().getSubsystem() != null) {
+                    data.hitBox().getSubsystem().onHurt(event);
+                }
+                if (!event.isCanceled()) { // 若伤害未被子系统取消
+                    // 广播事件
+                    NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Post(this, data, damage));
+                    totalDamage += damage;
+                    soundPos = SparkMathKt.toVec3(data.worldContactPoint());
+                }
             }
             setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
             //TODO:对载具造成伤害

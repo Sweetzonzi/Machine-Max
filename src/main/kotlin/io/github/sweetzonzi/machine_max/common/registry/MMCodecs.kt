@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.BasicSubsystemDynamicAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CarControllerSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.EngineSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.GearboxSubsystemAttr
@@ -13,6 +14,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_at
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.TransmissionSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.TurretDriverSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.WheelDriverSubsystemAttr
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.BasicSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.CarControllerSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.EngineSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.GearboxSubsystemStaticAttr
@@ -31,6 +33,7 @@ import net.neoforged.neoforge.registries.RegisterEvent
 
 object MMCodecs {
     private fun reg(event: RegisterEvent) {
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("basic")) { BasicSubsystemDynamicAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("seat")) { SeatSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("item_storage")) { ItemStorageSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("engine")) { EngineSubsystemAttr.CODEC}
@@ -44,6 +47,7 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("turret_driver")) { TurretDriverSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("scriptable")) { ScriptableSubsystemAttr.CODEC}
 
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("basic")) { BasicSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("seat")) { SeatSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("item_storage")) { ItemStorageSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("engine")) { EngineSubsystemStaticAttr.CODEC}

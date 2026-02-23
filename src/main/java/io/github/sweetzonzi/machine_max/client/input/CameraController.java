@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
+import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -56,13 +57,20 @@ public class CameraController {
         var type = client.options.getCameraType();
         Entity entity = camera.getEntity();
         if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
+            Quaternionf seatRot = new Quaternionf();
+            seat.getSubPart().getWorldPositionMatrix(partialTick).getNormalizedRotation(seatRot);
             if (!type.isFirstPerson() && seat.attr.staticAttribute.views.focusOnCenter()) {
                 VehicleCore vehicle = seat.getOwner().getSubPart().getPart().getVehicle();
                 event.setCameraPos(vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick))
-                        .add(new Vec3(0,seat.attr.staticAttribute.views.thirdPersonHeight(),0)));
+                        .add(SparkMathKt.toVec3(MMMath.localVectorToWorldVector(
+                                PhysicsHelperKt.toBVector3f(seat.attr.staticAttribute.views.thirdPersonOffset()),
+                                SparkMathKt.toBQuaternion(seatRot)))));
             } else {
                 Transform transform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, new Transform().setTranslation(new Vector3f(0, 1.1f, 0)), partialTick);
-                event.setCameraPos(SparkMathKt.toVec3(transform.getTranslation()).add(new Vec3(0,seat.attr.staticAttribute.views.firstPersonHeight(),0)));
+                event.setCameraPos(SparkMathKt.toVec3(transform.getTranslation())
+                        .add(SparkMathKt.toVec3(MMMath.localVectorToWorldVector(
+                                PhysicsHelperKt.toBVector3f(seat.attr.staticAttribute.views.firstPersonOffset()),
+                                SparkMathKt.toBQuaternion(seatRot)))));
             }
         }
     }

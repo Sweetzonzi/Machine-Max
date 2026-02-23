@@ -9,7 +9,7 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class WheelDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final List<String> controlSignalKeys;
     public final StaticWheelRollingAxisAttr rollingAxis;
     public final StaticWheelSteeringAxisAttr steeringAxis;
@@ -18,7 +18,7 @@ public class WheelDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr 
     public final float absWheelRadius;
 
     public static final MapCodec<WheelDriverSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("wheel_control", "move_control")).forGetter(WheelDriverSubsystemStaticAttr::getControlSignalKeys),
             StaticWheelRollingAxisAttr.CODEC.optionalFieldOf("roll", new StaticWheelRollingAxisAttr(
                     10000f,
@@ -37,14 +37,14 @@ public class WheelDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr 
     ));
 
     public WheelDriverSubsystemStaticAttr(
-            float basicDurability,
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             List<String> controlSignalKeys,
             StaticWheelRollingAxisAttr rollingAxis,
             StaticWheelSteeringAxisAttr steeringAxis,
             boolean absEnabled,
             float absTargetSlipRatio,
             float absWheelRadius) {
-        super(basicDurability);
+        super(basicAttr);
         this.controlSignalKeys = controlSignalKeys;
         this.rollingAxis = rollingAxis;
         this.steeringAxis = steeringAxis;

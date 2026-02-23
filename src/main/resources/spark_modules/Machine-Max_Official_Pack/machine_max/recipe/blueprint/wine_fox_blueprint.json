@@ -1,0 +1,60 @@
+{ 
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:wine_fox_hull"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:wine_fox_wheel"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:wine_fox_bumper"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:wine_fox_hood"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:wine_fox_door"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:wine_fox_trunk_door"
+      },
+      "strict": false
+    }
+  ],
+  "result": { 
+    "id": "machine_max:vehicle_blueprint",
+    "count": 1, 
+    "components": { 
+      "machine_max:vehicle_blueprint_path": "machine_max:wine_fox"
+    }
+  }
+}

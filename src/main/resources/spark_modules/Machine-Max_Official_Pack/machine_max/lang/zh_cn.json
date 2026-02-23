@@ -8,6 +8,7 @@
   "machine_max.wine_fox": "酒狐小车车",
   "machine_max.kluo": "K螺小车车",
   "machine_max.r700": "探路者",
+  "machine_max.senna_gtr": "Senna GTR",
 
   "title.machine_max.blueprint.ae86": "丰田 COROLLA AE86",
   "title.machine_max.blueprint.ae86at": "丰田 COROLLA AE86(全地形改装)",
@@ -18,6 +19,7 @@
   "title.machine_max.blueprint.wine_fox": "酒狐小车车",
   "title.machine_max.blueprint.kluo": "K螺小车车",
   "title.machine_max.blueprint.r700": "探路者R700",
+  "title.machine_max.blueprint.senna_gtr": "迈凯伦Senna GTR",
 
   "description.machine_max.blueprint.ae86": "AE86是丰田出厂的一款小巧、轻量、经济效益取向的小车，在1983年以COROLLA四代的身份投入生产线。丰田在1978年推出的TERCEL，标志着由于汽车科技的进步，小型车由构造简单但成本较高且占空间的FR（前置引擎后轮驱动）转向较复杂但成本较低的FF（前置引擎前轮驱动）发展的开端。",
   "description.machine_max.blueprint.ae86at": "这辆AE86将传动系统改装为了四轮驱动，并换装了更强大的引擎、相适配的变速箱和全地形轮，越野能力得到大幅强化。",
@@ -27,6 +29,7 @@
   "description.machine_max.blueprint.wine_fox": "酒狐小车车是一款设计独特的小型城市代步车，外观时尚可爱，适合在城市中短途出行使用。",
   "description.machine_max.blueprint.kluo": "K螺小车车是一款复古风格的紧凑型油改电轿车，尽管续航有限，但加速能力和极速不容小觑。",
   "description.machine_max.blueprint.r700": "探路者R700是一款多功能越野车，专为探险和户外活动设计，具有良好的通过性和可靠性。",
+  "description.machine_max.blueprint.senna_gtr": "迈凯伦Senna GTR是一款极致的赛道化超级跑车，采用先进的空气动力学设计，包括大型尾翼、扩散器和前扰流板，能够在高速行驶时产生巨大的下压力，确保车辆的稳定性和操控性。其轻量化车身和强劲的动力系统使其成为赛道上的王者。",
 
   "notes.machine_max.blueprint.example": "示例载具蓝图",
 
@@ -37,6 +40,8 @@
   "author.machine_max.blueprint.wine_fox": "模型作者: Maks",
   "author.machine_max.blueprint.kluo": "模型作者: Maks 版权所有: K螺诺亚",
   "author.machine_max.blueprint.r700": "模型作者: 包子725",
+  "author.machine_max.blueprint.senna_gtr": "模型作者: Maks",
+
 
   "machine_max.ae86_chassis_all_terrain": "AE86全地形车架",
   "machine_max.ae86_wheel_all_terrain": "AE86全地形轮",
@@ -71,6 +76,11 @@
   "machine_max.kluo_trunk_door": "K螺小车车后备箱盖",
   "machine_max.r700_chassis": "探路者R700车架",
   "machine_max.r700_wheel": "探路者R700车轮",
+  "machine_max.senna_gtr_chassis": "Senna GTR车架",
+  "machine_max.senna_gtr_hull": "Senna GTR车壳",
+  "machine_max.senna_gtr_wheel": "Senna GTR车轮",
+  "machine_max.senna_gtr_bumper": "Senna GTR保险杠",
+  "machine_max.senna_gtr_door": "Senna GTR车门",
   "machine_max.container_16x16x8": "1/2SCU储物箱",
   "machine_max.reinforced_container_16x16x8": "1/2SCU强化储物箱",
   "machine_max.container_16x16x32": "2SCU储物箱",

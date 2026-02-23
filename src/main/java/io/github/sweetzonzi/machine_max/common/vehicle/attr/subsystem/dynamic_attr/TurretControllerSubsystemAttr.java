@@ -9,7 +9,7 @@ import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 //TODO
 @Getter
-public class TurretControllerSubsystemAttr extends AbstractSubsystemAttr{
+public class TurretControllerSubsystemAttr extends BasicSubsystemDynamicAttr{
     public final TurretControllerSubsystemStaticAttr staticAttribute;
 
     protected TurretControllerSubsystemAttr(

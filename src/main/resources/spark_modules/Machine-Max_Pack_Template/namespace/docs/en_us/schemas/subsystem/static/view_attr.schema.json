@@ -17,9 +17,9 @@
       "description": "List of HUD interface resources for first-person view."
     },
     "first_person_offset": {
-      "type": "number",
-      "default": 0.0,
-      "description": "Height offset for first-person view, in meters."
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0.0, 0.0, 0.0],
+      "description": "3D offset for first-person view, based on the attached part's pose, x+right, y+up, z+back, in meters."
     },
     "enable_third_person": {
       "type": "boolean",
@@ -33,9 +33,9 @@
       "description": "List of HUD interface resources for third-person view."
     },
     "third_person_offset": {
-      "type": "number",
-      "default": 0.75,
-      "description": "Height offset for third-person view, in meters."
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0.0, 0.75, 0.0],
+      "description": "3D offset for third-person view, based on the attached part's pose, x+right, y+up, z+back, in meters."
     },
     "follow_vehicle": {
       "type": "boolean",
@@ -59,7 +59,7 @@
     {
       "enable_first_person": true,
       "first_person_hud": ["machine_max:hud/driver"],
-      "first_person_offset": 0.3,
+      "first_person_offset": [0.0, 0.3, 0.0],
       "enable_third_person": true,
       "distance_scale": 1.2
     }

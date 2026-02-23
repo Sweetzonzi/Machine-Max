@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class WheelDriverSubsystemAttr extends AbstractSubsystemAttr {
+public class WheelDriverSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final WheelDriverSubsystemStaticAttr staticAttribute;
     public final String controlledConnector;
     public final Map<String, List<String>> rollingSpeedOutputs;

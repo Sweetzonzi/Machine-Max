@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class GearboxSubsystemAttr extends AbstractSubsystemAttr {
+public class GearboxSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final GearboxSubsystemStaticAttr staticAttribute;
     public final String powerOutputTarget;//动力输出端名
     public final Map<String, List<String>> gearOutputTargets;//输出反馈信号名，输出当前所处挡位供其他地方使用

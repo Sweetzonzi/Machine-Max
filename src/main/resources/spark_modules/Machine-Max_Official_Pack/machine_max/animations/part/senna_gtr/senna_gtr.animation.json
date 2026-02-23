@@ -1,0 +1,40 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"parallel0": {
+			"loop": true,
+			"bones": {
+				"Sc": {
+					"position": [0, 0, "-vehicle.get('brake')"]
+				},
+				"Ym": {
+					"position": [0, 0, "-vehicle.get('throttle')"]
+				},
+				"Fxpw": {
+					"rotation": [0, 0, "-(subpart.connector_rotation('connector.machine_max.left_front_wheel', 1) + subpart.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
+				},
+				"ZhiZhen": {
+					"rotation": [0, 0, "-225*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
+				},
+				"LeftBackScp": {
+					"position": [0, 0, "vehicle.get('brake')"]
+				},
+				"RightBackScp": {
+					"position": [0, 0, "vehicle.get('brake')"]
+				},
+				"RightFrontScp": {
+					"position": [0, 0, "-1.0*vehicle.get('brake')"]
+				},
+				"LeftFrontScp": {
+					"position": [0, 0, "-1.0*vehicle.get('brake')"]
+				},
+				"LeftFrontTyres": {
+					"rotation": [0, "subpart.connector_rotation('connector.machine_max.left_front_wheel', 1)", 0]
+				},
+				"RightFrontTyres": {
+					"rotation": [0, "subpart.connector_rotation('connector.machine_max.right_front_wheel', 1)", 0]
+				}
+			}
+		}
+	}
+}

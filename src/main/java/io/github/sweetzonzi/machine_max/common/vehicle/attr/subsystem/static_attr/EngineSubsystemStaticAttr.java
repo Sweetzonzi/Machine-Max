@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
+public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
     public final float maxPower;
     public final float maxTorque;
     public final float idleRpm;
@@ -34,7 +34,7 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr imple
     public static final Codec<Map<String, List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
 
     public static final MapCodec<EngineSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.FLOAT.fieldOf("max_power").forGetter(EngineSubsystemStaticAttr::getMaxPower),
             Codec.FLOAT.fieldOf("max_torque").forGetter(EngineSubsystemStaticAttr::getMaxTorqueRpm),
             Codec.FLOAT.optionalFieldOf("idle_rpm", 500f).forGetter(EngineSubsystemStaticAttr::getIdleRpm),
@@ -57,7 +57,7 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr imple
 
 
     public EngineSubsystemStaticAttr(
-            float basicDurability,
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             float maxPower,
             float maxTorque,
             float idleRpm,
@@ -70,7 +70,7 @@ public class EngineSubsystemStaticAttr extends AbstractSubsystemStaticAttr imple
             int cylinderCount,
             List<Double> dampingFactors,
             List<String> throttleInputKeys) {
-        super(basicDurability);
+        super(basicAttr);
         this.maxPower = maxPower;
         this.maxTorque = maxTorque;
         this.idleRpm = idleRpm;

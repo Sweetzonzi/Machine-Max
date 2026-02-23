@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class CarControllerSubsystemAttr extends AbstractSubsystemAttr {
+public class CarControllerSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final CarControllerSubsystemStaticAttr staticAttribute;
     public final Map<String, List<String>> engineControlOutputTargets;//信号频道和目标名称列表，下同 Signal channels and target hitBoxName list, etc.
     public final Map<String, List<String>> wheelControlOutputTargets;

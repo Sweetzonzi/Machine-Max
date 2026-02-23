@@ -17,6 +17,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
 import io.github.sweetzonzi.machine_max.common.vehicle.*;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -143,9 +144,10 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                 Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
                 Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
                 HitBox hitBox = mixinProjectile.machine_Max$getHitBox();
-                return hitSubPart.onHurt(source, amount, null, normal,
+                PartDamageData data = new PartDamageData(source, null, normal,
                         PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
                                 .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBox);
+                return hitSubPart.onHurt(data, amount);
             } else return false;
         } else if (source.getSourcePosition() != null && source.getDirectEntity() instanceof Entity entity) {
             //来自其他实体的伤害处理
@@ -183,19 +185,23 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                             if (subPart.hitBoxes.get(hitBoxName).getRHA(subPart) > maxThickness)
                                 hitBox = subPart.hitBoxes.get(hitBoxName);
                         }
-                        return nearest.onHurt(source, amount, null, normal, normal.mult(-1), contactPoint, hitBox);
+                        PartDamageData data = new PartDamageData(source, null, normal, normal.mult(-1), contactPoint, hitBox);
+                        return nearest.onHurt(data, amount);
                     } else throw new IllegalStateException("No subpart found for explosion damage.");
                 } else {//一般伤害处理
                     var results = physicsLevel.getWorld().rayTest(start, end);
                     for (var result : results) {
                         PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
                         if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart someSubPart) {
+                            // 跳过轮胎轮面
+                            if (someSubPart.isWheel(result.triangleIndex()) && someSubPart.isWheelSurface(result.triangleIndex())) continue;
                             //TODO: new一个新的source存储攻击来袭方向
                             Vector3f normal = result.getHitNormalLocal(null);
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
                             HitBox hitBox = someSubPart.getHitBox(result.triangleIndex());
                             //将伤害转发给部件进行操作
-                            return someSubPart.onHurt(source, amount, null, normal, end.subtract(start).normalize(), contactPoint, hitBox);
+                            PartDamageData data = new PartDamageData(source, null, normal, end.subtract(start).normalize(), contactPoint, hitBox);
+                            return someSubPart.onHurt(data, amount);
                         }
                     }
                 }
@@ -224,20 +230,21 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             if (subPart.hitBoxes.get(hitBoxName).getRHA(subPart) > maxThickness)
                 hitBox = subPart.hitBoxes.get(hitBoxName);
         }
-        return this.subPart.onHurt(source, amount, null, normal, Vector3f.ZERO, contactPoint, hitBox);
+        PartDamageData data = new PartDamageData(source, null, normal, Vector3f.ZERO, contactPoint, hitBox);
+        return this.subPart.onHurt(data, amount);
     }
 
     @Override
-    public Component getDisplayName() {
+    public @NotNull Component getDisplayName() {
         if (subPart != null)
-            return Component.literal(subPart.part.name);
+            return Component.translatable(subPart.part.name);
         return super.getDisplayName();
     }
 
     @Override
     public @NotNull Component getName() {
         if (subPart != null)
-            return Component.literal(subPart.part.name);
+            return Component.translatable(subPart.part.name);
         return super.getName();
     }
 

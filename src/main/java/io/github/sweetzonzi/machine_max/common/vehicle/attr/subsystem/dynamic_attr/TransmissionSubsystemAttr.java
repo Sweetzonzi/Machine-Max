@@ -17,7 +17,7 @@ import java.util.Map;
  * 传动系统属性，将输入的动力按权重分流至各个输出端，再将各个输出端的运行速度反馈加权平均汇总至输入端。
  */
 @Getter
-public class TransmissionSubsystemAttr extends AbstractSubsystemAttr {
+public class TransmissionSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final TransmissionSubsystemStaticAttr staticAttribute;
     public final Map<String, Float> powerOutputs;//功率输出目标，及输出功率减速比
     public static final Codec<Map<String, Float>> POWER_OUTPUTS_CODEC = Codec.unboundedMap(

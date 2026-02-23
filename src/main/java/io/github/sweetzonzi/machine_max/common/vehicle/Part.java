@@ -84,7 +84,7 @@ public class Part {
      */
     public Part(PartType partType, @Nullable String variantName, Level level) {
         if (variantName == null) variantName = "default";
-        this.name = Component.translatable(partType.getRegistryKey().toLanguageKey()).getString();
+        this.name = partType.getRegistryKey().toLanguageKey();
         this.type = partType;
         this.variantName = variantName;
         this.variant = partType.getVariants().get(variantName);

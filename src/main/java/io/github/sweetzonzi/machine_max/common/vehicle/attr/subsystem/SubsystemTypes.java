@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem;
 
 public enum SubsystemTypes {
+    BASIC, //基础子系统，无实际功能，但可用于扩展其他子系统，也可作为独立可破坏部分向零件传导伤害
     ITEM_STORAGE,//物品存储子系统，可存储物品，可指定容量
     ENGINE,//发动机子系统，可指定最大功率，转速等
     MOTOR,//电动机子系统，与发动机类似，可指定最大功率等

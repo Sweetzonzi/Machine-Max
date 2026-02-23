@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 @Getter
-public class SeatSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final boolean blockDamage; //是否无视命中情况转嫁乘客伤害到部件
     public final boolean renderPassenger;
     public final Vec3 passengerScale;
@@ -22,17 +22,17 @@ public class SeatSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     public final Set<String> viewInputs;
 
     public static final MapCodec<SeatSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.BOOL.optionalFieldOf("block_damage", false).forGetter(SeatSubsystemStaticAttr::isBlockDamage),
             Codec.BOOL.optionalFieldOf("render_passenger", true).forGetter(SeatSubsystemStaticAttr::isRenderPassenger),
             Vec3.CODEC.optionalFieldOf("passenger_scale", new Vec3(1, 1, 1)).forGetter(SeatSubsystemStaticAttr::getPassengerScale),
             ViewAttr.CODEC.optionalFieldOf("views", new ViewAttr(
                     true,
                     List.of(),
-                    0f,
+                    Vec3.ZERO,
                     true,
                     List.of(),
-                    0.75f,
+                    new Vec3(0, 0.75, 0),
                     true,
                     true,
                     1.1f
@@ -42,14 +42,14 @@ public class SeatSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
     ).apply(instance, SeatSubsystemStaticAttr::new));
 
     public SeatSubsystemStaticAttr(
-            float basicDurability,
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             boolean blockDamage,
             boolean renderPassenger,
             Vec3 passengerScale,
             ViewAttr views,
             List<String> viewInputs,
             boolean allowUseItems) {
-        super(basicDurability);
+        super(basicAttr);
         this.blockDamage = blockDamage;
         //合法性检查
         if (!views.enableFirstPerson() && !views.enableThirdPerson())
@@ -82,10 +82,10 @@ public class SeatSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
             //TODO:角度限制
             boolean enableFirstPerson,
             List<ResourceLocation> firstPersonHud,
-            float firstPersonHeight,
+            Vec3 firstPersonOffset,
             boolean enableThirdPerson,
             List<ResourceLocation> thirdPersonHud,
-            float thirdPersonHeight,
+            Vec3 thirdPersonOffset,
             boolean followVehicle,
             boolean focusOnCenter,
             float distanceScale
@@ -93,10 +93,10 @@ public class SeatSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
         public static final Codec<ViewAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.BOOL.optionalFieldOf("enable_first_person", true).forGetter(ViewAttr::enableFirstPerson),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("first_person_hud", List.of()).forGetter(ViewAttr::firstPersonHud),
-                Codec.FLOAT.optionalFieldOf("first_person_offset", 0f).forGetter(ViewAttr::firstPersonHeight),
+                Vec3.CODEC.optionalFieldOf("first_person_offset", Vec3.ZERO).forGetter(ViewAttr::firstPersonOffset),
                 Codec.BOOL.optionalFieldOf("enable_third_person", true).forGetter(ViewAttr::enableThirdPerson),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("third_person_hud", List.of()).forGetter(ViewAttr::thirdPersonHud),
-                Codec.FLOAT.optionalFieldOf("third_person_offset", 0.75f).forGetter(ViewAttr::thirdPersonHeight),
+                Vec3.CODEC.optionalFieldOf("third_person_offset", new Vec3(0, 0.75, 0)).forGetter(ViewAttr::thirdPersonOffset),
                 Codec.BOOL.optionalFieldOf("follow_vehicle", true).forGetter(ViewAttr::followVehicle),
                 Codec.BOOL.optionalFieldOf("focus_on_center", true).forGetter(ViewAttr::focusOnCenter),
                 Codec.FLOAT.optionalFieldOf("distance_scale", 1.1f).forGetter(ViewAttr::distanceScale)

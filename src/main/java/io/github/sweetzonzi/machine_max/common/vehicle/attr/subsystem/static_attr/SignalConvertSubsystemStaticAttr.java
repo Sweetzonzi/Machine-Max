@@ -5,10 +5,10 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemT
 import lombok.Getter;
 
 @Getter
-public class SignalConvertSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class SignalConvertSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     protected SignalConvertSubsystemStaticAttr(
-            float basicDurability) {
-        super(basicDurability);
+            BasicSubsystemStaticAttr.BasicAttr basicAttr) {
+        super(basicAttr);
     }
 
     @Override

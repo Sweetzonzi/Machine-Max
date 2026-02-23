@@ -8,22 +8,22 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemT
 import lombok.Getter;
 
 @Getter
-public class TurretDriverSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class TurretDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final MotorAttr pitchAxis;
     public final MotorAttr yawAxis;
 
     public static final MapCodec<TurretDriverSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             MotorAttr.CODEC.fieldOf("roll").forGetter(TurretDriverSubsystemStaticAttr::getPitchAxis),
             MotorAttr.CODEC.fieldOf("steering").forGetter(TurretDriverSubsystemStaticAttr::getYawAxis)
     ).apply(instance, TurretDriverSubsystemStaticAttr::new
     ));
 
     public TurretDriverSubsystemStaticAttr(
-            float basicDurability,
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             MotorAttr pitchAxis,
             MotorAttr yawAxis) {
-        super(basicDurability);
+        super(basicAttr);
         this.pitchAxis = pitchAxis;
         this.yawAxis = yawAxis;
     }

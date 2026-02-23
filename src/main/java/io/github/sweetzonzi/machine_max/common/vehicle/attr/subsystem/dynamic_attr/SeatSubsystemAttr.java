@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class SeatSubsystemAttr extends AbstractSubsystemAttr {
+public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final SeatSubsystemStaticAttr staticAttribute;
     public final String locator;
     public final Map<String, List<String>> moveSignalTargets;

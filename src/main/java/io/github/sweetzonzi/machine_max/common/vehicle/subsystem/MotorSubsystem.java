@@ -26,6 +26,7 @@ import java.util.UUID;
 
 @Getter
 public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader {
+    public final double RED_LINE_SPEED;//红线转速(rad/s)
     public final MotorSubsystemAttr attr;
     protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(MotorSubsystem.class, EntityDataSerializers.FLOAT);
     public double throttleInput;//当前电门输入（-1~1）
@@ -37,6 +38,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
     public MotorSubsystem(ISubsystemHost owner, String name, MotorSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+        RED_LINE_SPEED = attr.staticAttribute.redLineRpm * Math.PI / 30.0;//红线转速(rad/s)
         coupleTorquePD = new PDController(
                 1.5 * attr.getStaticAttribute().getInertia(), //kp
                 0.5 * attr.getStaticAttribute().getInertia(), //kd
@@ -56,7 +58,7 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
             float rotSpeed = getRotSpeed();
             WorkingState bestState = attr.getBestMatchWorkingState(
                     Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
-            if (bestState != null) {
+            if (bestState != MotorSubsystemStaticAttr.EMPTY_WORKING_STATE) {
                 if ((bestState != currentState && sinceLastSoundUpdate > 8) || sinceLastSoundUpdate > 30) {
                     currentState = bestState;
                     sinceLastSoundUpdate = 0;
@@ -109,9 +111,9 @@ public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader 
             if (!getSubPart().level.isClientSide()) { //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
                 rotSpeed += (netTorque - coupleTorque) / attr.staticAttribute.inertia / 60f;
                 rotSpeed = Math.clamp(rotSpeed,
-                        -1.1 * attr.staticAttribute.redLineRPM * Math.PI / 30,
-                        1.1 * attr.staticAttribute.redLineRPM * Math.PI / 30);
-                rotSpeed = 0.95 * rotSpeed + 0.05 * feedback; //额外修正
+                        -1.1 * attr.staticAttribute.redLineRpm * Math.PI / 30,
+                        1.1 * attr.staticAttribute.redLineRpm * Math.PI / 30);
+                rotSpeed = 0.95 * Math.clamp(rotSpeed, RED_LINE_SPEED * -1.05, RED_LINE_SPEED * 1.05) + 0.05 * feedback; // 额外修正
                 setRotSpeed((float) rotSpeed);
             }
             sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) ((netTorque - coupleTorque) * rotSpeed), (float) rotSpeed));//输出功率

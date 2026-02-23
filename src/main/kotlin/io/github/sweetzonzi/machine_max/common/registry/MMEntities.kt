@@ -15,7 +15,6 @@ object MMEntities {
     val PART_ENTITY = MachineMax.REGISTER.entityType{
         id = "part"
         factory = entityTypeBuilder(::MMPartEntity, MobCategory.MISC){
-            fireImmune()
             noSummon()
             noSave()
             eyeHeight(0.0F)

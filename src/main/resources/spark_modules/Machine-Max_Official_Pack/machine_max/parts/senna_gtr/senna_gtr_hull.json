@@ -28,7 +28,7 @@
               "locator": "hull_chassis_front",
               "type": "Simple",
               "direction": "yn",
-              "integrity": 10.0
+              "integrity": 50.0
             },
             "connector.machine_max.left_door_axis": {
               "locator": "hull_left_door_axis",
@@ -40,7 +40,9 @@
                 "zr": {
                   "lower_limit": 0.0,
                   "upper_limit": 80.0,
-                  "damping": 100
+                  "equilibrium": 80,
+                  "stiffness": 500,
+                  "damping": 200
                 }
               }
             },
@@ -54,7 +56,9 @@
                 "zr": {
                   "lower_limit": -80.0,
                   "upper_limit": 0.0,
-                  "damping": 100
+                  "equilibrium": -80,
+                  "stiffness": 500,
+                  "damping": 200
                 }
               }
             }
@@ -93,7 +97,7 @@
               "locator": "hull_chassis_back",
               "type": "Simple",
               "direction": "yn",
-              "integrity": 10.0
+              "integrity": 50.0
             },
             "connector.machine_max.left_door_lock": {
               "locator": "hull_left_door_lock",

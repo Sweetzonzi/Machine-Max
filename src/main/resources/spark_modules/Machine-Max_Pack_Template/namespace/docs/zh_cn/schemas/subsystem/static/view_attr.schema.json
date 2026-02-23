@@ -17,9 +17,9 @@
       "description": "第一人称视角的HUD界面资源列表。"
     },
     "first_person_offset": {
-      "type": "number",
-      "default": 0.0,
-      "description": "第一人称视角的高度偏移，单位米。"
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0.0, 0.0, 0.0],
+      "description": "第一人称视角的三维偏移，以子系统附着的零件姿态为基准，x+右，y+上，z+后，单位米。"
     },
     "enable_third_person": {
       "type": "boolean",
@@ -33,9 +33,9 @@
       "description": "第三人称视角的HUD界面资源列表。"
     },
     "third_person_offset": {
-      "type": "number",
-      "default": 0.75,
-      "description": "第三人称视角的高度偏移，单位米。"
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0.0, 0.75, 0.0],
+      "description": "第三人称视角的三维偏移，以子系统附着的零件姿态为基准，x+右，y+上，z+后，单位米。"
     },
     "follow_vehicle": {
       "type": "boolean",
@@ -59,7 +59,7 @@
     {
       "enable_first_person": true,
       "first_person_hud": ["machine_max:hud/driver"],
-      "first_person_offset": 0.3,
+      "first_person_offset": [0.0, 0.3, 0.0],
       "enable_third_person": true,
       "distance_scale": 1.2
     }

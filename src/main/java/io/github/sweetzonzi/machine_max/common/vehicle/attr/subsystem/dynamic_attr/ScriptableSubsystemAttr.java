@@ -11,7 +11,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.ScriptableSubsy
 import io.github.sweetzonzi.machine_max.external.js.hook.Hook;
 import net.minecraft.resources.ResourceLocation;
 
-public class ScriptableSubsystemAttr extends AbstractSubsystemAttr {
+public class ScriptableSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final ScriptableSubsystemStaticAttr staticAttribute;
     public final String script;
 

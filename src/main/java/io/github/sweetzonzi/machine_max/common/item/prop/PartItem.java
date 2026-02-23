@@ -48,7 +48,7 @@ import java.util.Objects;
 
 public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem {
     public PartItem() {
-        super(new Properties().stacksTo(1).durability(100));
+        super(new Properties().stacksTo(1).fireResistant());
     }
 
     /**

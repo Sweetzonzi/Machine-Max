@@ -87,7 +87,7 @@
     "hydro_priority": {
       "type": "integer",
       "default": 0,
-      "description": "Air resistance calculation priority, the higher the value the higher the priority. High priority parts will not be blocked by low priority parts causing changes in drag coefficients"
+      "description": "Air resistance calculation priority, the higher the value the higher the priority. Parts with higher or equal priority will block parts with lower or equal priority, causing changes in drag coefficients"
     },
     "hydrodynamics": {
       "type": "object",

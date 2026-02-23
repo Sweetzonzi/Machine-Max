@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @Getter
-public class CarControllerSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
+public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final Vec3 steeringCenter;
     public final TreeMap<Float, Float> steeringRadiusMap;
     public final boolean manualGearShift;
@@ -59,7 +59,7 @@ public class CarControllerSubsystemStaticAttr extends AbstractSubsystemStaticAtt
                     );
 
     public static final MapCodec<CarControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(AbstractSubsystemStaticAttr::getBasicDurability),
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Vec3.CODEC.optionalFieldOf("steering_center", Vec3.ZERO).forGetter(CarControllerSubsystemStaticAttr::getSteeringCenter),
             STEERING_RADIUS_CODEC.optionalFieldOf("steering_radius", createDefaultSteeringRadiusMap()).forGetter(CarControllerSubsystemStaticAttr::getSteeringRadiusMap),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(CarControllerSubsystemStaticAttr::isManualGearShift),
@@ -74,13 +74,13 @@ public class CarControllerSubsystemStaticAttr extends AbstractSubsystemStaticAtt
     }
 
     public CarControllerSubsystemStaticAttr(
-            float basicDurability,
+            BasicSubsystemStaticAttr.BasicAttr basicAttr,
             Vec3 steeringCenter,
             TreeMap<Float, Float> steeringRadiusMap,
             boolean manualGearShift,
             boolean autoHandBrake,
             List<String> controlInputKeys) {
-        super(basicDurability);
+        super(basicAttr);
         this.steeringCenter = steeringCenter;
         this.steeringRadiusMap = steeringRadiusMap;
         this.manualGearShift = manualGearShift;

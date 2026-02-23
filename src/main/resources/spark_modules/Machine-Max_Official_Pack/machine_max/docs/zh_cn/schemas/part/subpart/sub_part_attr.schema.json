@@ -87,7 +87,7 @@
     "hydro_priority": {
       "type": "integer",
       "default": 0,
-      "description": "空气阻力计算优先级，值越大优先级越高。优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化"
+      "description": "空气阻力计算优先级，值越大优先级越高。优先级高或相等的部件会遮挡优先级低或相等的部件，导致阻力系数发生变化"
     },
     "hydrodynamics": {
       "type": "object",

@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 
 //TODO
 @Getter
-public class SignalConvertSubsystemAttr extends AbstractSubsystemAttr{
+public class SignalConvertSubsystemAttr extends BasicSubsystemDynamicAttr{
     protected SignalConvertSubsystemAttr(
             ResourceLocation modelName) {
         super(modelName);

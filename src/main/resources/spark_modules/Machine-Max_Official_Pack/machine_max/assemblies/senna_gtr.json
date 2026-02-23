@@ -1,0 +1,6 @@
+{
+  "template": "machine_max:senna_gtr", // 蓝图对应的装配体模板资源路径
+  "tooltip": "machine_max:senna_gtr.html", // (可选) 蓝图物品的文本描述内容路径
+  "icon": "machine_max:textures/icon/senna_gtr/senna_gtr_icon.png", // (可选) 蓝图物品图标资源路径
+  "scale": 35.0 // (可选，默认1:35) 模型缩尺比，仅影响展示时的尺寸
+}

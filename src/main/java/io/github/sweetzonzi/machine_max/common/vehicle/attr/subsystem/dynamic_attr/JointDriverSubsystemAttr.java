@@ -16,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.Map;
 
 @Getter
-public class JointDriverSubsystemAttr extends AbstractSubsystemAttr {
+public class JointDriverSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final JointDriverSubsystemStaticAttr staticAttribute;
     public final String controlledConnector;
     public final String rotationOrder;
