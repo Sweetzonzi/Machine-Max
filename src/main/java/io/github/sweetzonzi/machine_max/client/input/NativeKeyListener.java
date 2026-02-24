@@ -127,7 +127,8 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
             while (true) {
                 try {
                     Minecraft minecraft = Minecraft.getInstance();
-                    if (minecraft.screen != null && minecraft.screen.getMinecraft().isWindowActive()) { //恢复窗口时恢复震动
+                    // 测试环境没有mc，所以判空
+                    if (minecraft != null && minecraft.screen != null && minecraft.screen.getMinecraft().isWindowActive()) { //恢复窗口时恢复震动
                         // todo 手柄震动的演示，后期可能需要区分每个玩家的手柄：
                         //   1.devices中是本地计算机所有连接的手柄，如果是支持多人同时在一台电脑上驾驶的情况需要区分
                         //   2.不同的座位上，手柄的震动位置、震动大小可以按需指定、更新
@@ -478,7 +479,7 @@ public class NativeKeyListener implements NativeMouseInputListener, NativeMouseW
         GlobalScreen.addNativeKeyListener(listener);
     }
 
-    static boolean sh = false;
+
     public static void main(String[] args) {
         try {
             // Get the XInput DLL version, which can be one of the following:
