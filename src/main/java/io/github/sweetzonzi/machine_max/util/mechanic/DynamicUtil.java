@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.util.mechanic;
 
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.AdvancedAeroAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import net.minecraft.world.phys.Vec3;
 
@@ -12,95 +13,304 @@ import java.util.List;
  * @author 甜粽子
  */
 public class DynamicUtil {
+
     /**
      * 根据给定部件的运动状态计算其受到的流体动力
      *
-     * @param density 流体密度，仅用于阻力二阶项和升力计算
-     * @param viscosity 流体动力粘度，用于一阶阻力项
-     * @param projectedArea 投影面积
-     * @param attr 要计算受力的零部件的流体动力属性
-     * @param localVel 相对部件自身坐标的部件速度
-     * @return 相对部件自身坐标的部件受力向量
+     * @param density       流体密度，仅用于阻力二阶项和升力计算
+     * @param viscosity     流体动力粘度，用于一阶阻力项
+     * @param projectedArea 三轴参考面积，通常为投影面积
+     * @param attr          要计算受力的零部件的流体动力属性
+     * @param localVel      流体动力计算点本地坐标系下的速度
+     * @return 流体动力计算点本地坐标系下的受力向量
      */
-    public static Vector3f aeroDynamicForce(float density, float viscosity, Vec3 projectedArea, HydrodynamicAttr attr, Vector3f localVel) {
-        if (density <= 0) return new Vector3f();//真空中没有气动力
-        Vector3f result = new Vector3f();
-        double xzVel = Math.sqrt(localVel.x * localVel.x + localVel.z * localVel.z);
-        double xyVel = Math.sqrt(localVel.x * localVel.x + localVel.y * localVel.y);
-        double yzVel = Math.sqrt(localVel.y * localVel.y + localVel.z * localVel.z);
-        double vel = Math.sqrt(localVel.x * localVel.x + localVel.y * localVel.y + localVel.z * localVel.z);
-        float mach = (float) (vel / 340.29);
+    public static Vector3f aeroDynamicForce(
+            float density,
+            float viscosity,
+            Vec3 projectedArea,
+            HydrodynamicAttr attr,
+            Vector3f localVel) {
+        if (density <= 0)
+            return Vector3f.ZERO;
+
+        // 速度量
+        float vx = localVel.x;
+        float vy = localVel.y;
+        float vz = localVel.z;
+
+        float vel2 = vx * vx + vy * vy + vz * vz;
+        if (vel2 < 1e-6f)
+            return Vector3f.ZERO;
+
+        float vel = (float) Math.sqrt(vel2);
+
+        // 马赫数与跨音增益
+        float mach = vel / 340.29f;
         float transSonicAmplifier = calculateTransSonicAmplifier(attr.transSonicAmplifier(), mach);
-        
-        //计算湿表面积（投影面积之和*2）
+
+        // 湿表面积（投影面积之和 * 2）
         float wettedArea = (float) (projectedArea.x + projectedArea.y + projectedArea.z) * 2f;
-        
-        //阻力项
-        List<Float> xCoeff, yCoeff, zCoeff;
-        if (localVel.x > 0) xCoeff = attr.leftward();
-        else xCoeff = attr.rightward();
-        for (int x = 0; x < xCoeff.size(); x++) {
-            float dragCoeff = xCoeff.get(x);
-            float velocityPower = (float) Math.pow(Math.abs(localVel.x), x + 1);
-            //一阶阻力项乘以粘度并使用湿表面积，二阶阻力项乘以密度并使用投影面积
-            float dragForce;
-            if (x == 0) {
-                dragForce = viscosity * dragCoeff * velocityPower * wettedArea;
-            } else {
-                dragForce = density * dragCoeff * velocityPower * (float) projectedArea.x * 0.5f;
-            }
-            result.x += (float) (-Math.signum(localVel.x) * dragForce);
+
+        Vector3f result = new Vector3f();
+
+        // 是否尝试使用高级气动
+        boolean useAdvanced = attr.advanced()
+                && vz < 0.0f // 来流方向正确（z-）
+                && vel > 1e-3f;
+
+        if (useAdvanced) {
+            // —— 高级气动框架 ——
+            // 1. 先计算并叠加“一阶粘性阻力”（所有方向都保留）
+            applyLinearDrag(result, viscosity, wettedArea, attr, localVel);
+
+            // 2. 高级升阻力
+            Vector3f advancedForce = advancedAeroForce(
+                    density,
+                    projectedArea,
+                    attr.advancedAero(),
+                    localVel);
+
+            result.addLocal(advancedForce);
+
+            // x 方向侧滑阻力仍使用简单模型（二阶）
+            applySimpleQuadraticDragX(
+                    result, density, projectedArea, attr, vx);
+        } else {
+            // —— 完全简单模型 ——
+            applySimpleDragAllDirections(
+                    result,
+                    density,
+                    viscosity,
+                    projectedArea,
+                    wettedArea,
+                    attr,
+                    localVel);
         }
-        if (localVel.y > 0) yCoeff = attr.upward();
-        else yCoeff = attr.downward();
-        for (int y = 0; y < yCoeff.size(); y++) {
-            float dragCoeff = yCoeff.get(y);
-            float velocityPower = (float) Math.pow(Math.abs(localVel.y), y + 1);
-            //一阶阻力项乘以粘度并使用湿表面积，二阶阻力项乘以密度并使用投影面积
-            float dragForce;
-            if (y == 0) {
-                dragForce = viscosity * dragCoeff * velocityPower * wettedArea;
-            } else {
-                dragForce = density * dragCoeff * velocityPower * (float) projectedArea.y * 0.5f;
-            }
-            result.y += (float) (-Math.signum(localVel.y) * dragForce);
+
+        // 超声增益
+        result.multLocal(transSonicAmplifier);
+
+        // 简单升力（仅在非高级模式下）
+        if (!useAdvanced) {
+            float xzVel = (float) Math.sqrt(vx * vx + vz * vz);
+            float xyVel = (float) Math.sqrt(vx * vx + vy * vy);
+            float yzVel = (float) Math.sqrt(vy * vy + vz * vz);
+
+            result.x += attr.xLift() * yzVel * density * (float) projectedArea.x * 0.5f;
+            result.y += attr.yLift() * xzVel * density * (float) projectedArea.y * 0.5f;
+            result.z += attr.zLift() * xyVel * density * (float) projectedArea.z * 0.5f;
         }
-        if (localVel.z > 0) zCoeff = attr.backward();
-        else zCoeff = attr.forward();
-        for (int z = 0; z < zCoeff.size(); z++) {
-            float dragCoeff = zCoeff.get(z);
-            float velocityPower = (float) Math.pow(Math.abs(localVel.z), z + 1);
-            //一阶阻力项乘以粘度并使用湿表面积，二阶阻力项乘以密度并使用投影面积
-            float dragForce;
-            if (z == 0) {
-                dragForce = viscosity * dragCoeff * velocityPower * wettedArea;
-            } else {
-                dragForce = density * dragCoeff * velocityPower * (float) projectedArea.z * 0.5f;
-            }
-            result.z += (float) (-Math.signum(localVel.z) * dragForce);
-        }
-        result = result.mult(transSonicAmplifier);//阻力项乘以超声增益系数
-        
-        //升力项（使用密度计算）
-        float xLift = attr.xLift() * (float) yzVel * density * (float) projectedArea.x * 0.5f;
-        float yLift = attr.yLift() * (float) xzVel * density * (float) projectedArea.y * 0.5f;
-        float zLift = attr.zLift() * (float) xyVel * density * (float) projectedArea.z * 0.5f;
-        
-        //计算结果
-        result.x += xLift;
-        result.y += yLift;
-        result.z += zLift;
-        result.multLocal(attr.scale());//应用缩放系数
+
+        // 全局缩放
+        result.multLocal(attr.scale());
         return result;
     }
 
-    private static float calculateTransSonicAmplifier(float baseAmplifier, float mach){
-        if (mach <= 0.8) return 1.0f;
-        else if (mach <= 1.2) {
-            float temp = (mach - 0.8f)/0.4f;
-            temp = (float) (3 * Math.pow(temp, 2) - 2 * Math.pow(temp, 3));
-            return 1.0f + (baseAmplifier - 1.0f) * temp;
+    /*
+     * =========================
+     * 简单模型工具函数
+     * =========================
+     */
+
+    private static void applySimpleDragAllDirections(
+            Vector3f result,
+            float density,
+            float viscosity,
+            Vec3 projectedArea,
+            float wettedArea,
+            HydrodynamicAttr attr,
+            Vector3f v) {
+        applyAxisDrag(
+                result, v.x,
+                v.x > 0 ? attr.leftward() : attr.rightward(),
+                viscosity, density,
+                wettedArea, (float) projectedArea.x,
+                Axis.X);
+        applyAxisDrag(
+                result, v.y,
+                v.y > 0 ? attr.upward() : attr.downward(),
+                viscosity, density,
+                wettedArea, (float) projectedArea.y,
+                Axis.Y);
+        applyAxisDrag(
+                result, v.z,
+                v.z > 0 ? attr.backward() : attr.forward(),
+                viscosity, density,
+                wettedArea, (float) projectedArea.z,
+                Axis.Z);
+    }
+
+    private static void applyLinearDrag(
+            Vector3f result,
+            float viscosity,
+            float wettedArea,
+            HydrodynamicAttr attr,
+            Vector3f v) {
+        applyLinearAxis(result, v.x,
+                v.x > 0 ? attr.leftward() : attr.rightward(),
+                viscosity, wettedArea, Axis.X);
+        applyLinearAxis(result, v.y,
+                v.y > 0 ? attr.upward() : attr.downward(),
+                viscosity, wettedArea, Axis.Y);
+        applyLinearAxis(result, v.z,
+                v.z > 0 ? attr.backward() : attr.forward(),
+                viscosity, wettedArea, Axis.Z);
+    }
+
+    private static void applySimpleQuadraticDragX(
+            Vector3f result,
+            float density,
+            Vec3 projectedArea,
+            HydrodynamicAttr attr,
+            float vx) {
+        List<Float> coeff = vx > 0 ? attr.leftward() : attr.rightward();
+        if (coeff.size() < 2)
+            return;
+
+        float force = 0.5f * density
+                * coeff.get(1)
+                * vx * vx
+                * (float) projectedArea.x;
+
+        result.x += -Math.signum(vx) * force;
+    }
+
+    private static void applyAxisDrag(
+            Vector3f result,
+            float v,
+            List<Float> coeff,
+            float viscosity,
+            float density,
+            float wettedArea,
+            float projectedArea,
+            Axis axis) {
+        float sign = Math.signum(v);
+        float absV = Math.abs(v);
+
+        for (int i = 0; i < coeff.size(); i++) {
+            float c = coeff.get(i);
+            float force;
+            if (i == 0) {
+                force = viscosity * c * absV * wettedArea;
+            } else {
+                force = 0.5f * density * c * absV * absV * projectedArea;
+            }
+            axis.add(result, -sign * force);
         }
-        else return baseAmplifier;
+    }
+
+    private static void applyLinearAxis(
+            Vector3f result,
+            float v,
+            List<Float> coeff,
+            float viscosity,
+            float wettedArea,
+            Axis axis) {
+        if (coeff.isEmpty())
+            return;
+        float force = viscosity * coeff.get(0) * Math.abs(v) * wettedArea;
+        axis.add(result, -Math.signum(v) * force);
+    }
+
+    /*
+     * =========================
+     * 高级气动（占位）
+     * =========================
+     */
+
+    private static Vector3f advancedAeroForce(
+            float density,
+            Vec3 projectedArea,
+            AdvancedAeroAttr aero,
+            Vector3f v) {
+        // 局部速度分量
+        float vy = v.y;
+        float vz = v.z;
+
+        // 来流速度模长（只考虑 y-z 平面）
+        float v2 = vy * vy + vz * vz;
+        if (v2 < 1e-6f)
+            return Vector3f.ZERO;
+
+        float vMag = (float) Math.sqrt(v2);
+
+        // === 1. 攻角 α ===
+        // z- 为来流方向
+        float alpha = (float) Math.atan2(vy, -vz);
+
+        // === 2. 升力系数 Cl（带对称失速裁剪） ===
+        float cl = aero.liftSlope() * (alpha - aero.alpha0());
+
+        float clMax = aero.liftSlope() * aero.alphaStall();
+        if (cl > clMax)
+            cl = clMax;
+        else if (cl < -clMax)
+            cl = -clMax;
+
+        // === 3. 阻力系数 Cd ===
+        float cd = aero.cd0() + aero.kInduced() * cl * cl;
+
+        // === 4. 动压 q ===
+        float q = 0.5f * density * v2;
+
+        // 机翼面积：使用 y 方向投影面积
+        float area = (float) projectedArea.y;
+
+        // === 5. 升力与阻力大小 ===
+        float lift = q * area * cl;
+        float drag = q * area * cd;
+
+        // === 6. 力方向分解 ===
+        // 来流单位向量（反向速度）
+        float invV = 1.0f / vMag;
+        float flowY = -vy * invV;
+        float flowZ = -vz * invV;
+
+        // 升力方向：来流在 y-z 平面的法向（右手系）
+        float liftY = -flowZ;
+        float liftZ = flowY;
+
+        Vector3f result = new Vector3f();
+
+        // 阻力（反向来流）
+        result.y += drag * flowY;
+        result.z += drag * flowZ;
+
+        // 升力
+        result.y += lift * liftY;
+        result.z += lift * liftZ;
+
+        return result;
+    }
+
+    private static float calculateTransSonicAmplifier(float baseAmplifier, float mach) {
+        if (mach <= 0.8f)
+            return 1.0f;
+        else if (mach <= 1.2f) {
+            float t = (mach - 0.8f) / 0.4f;
+            t = (float) (3 * t * t - 2 * t * t * t);
+            return 1.0f + (baseAmplifier - 1.0f) * t;
+        } else
+            return baseAmplifier;
+    }
+
+    private enum Axis {
+        X {
+            void add(Vector3f v, float f) {
+                v.x += f;
+            }
+        },
+        Y {
+            void add(Vector3f v, float f) {
+                v.y += f;
+            }
+        },
+        Z {
+            void add(Vector3f v, float f) {
+                v.z += f;
+            }
+        };
+
+        abstract void add(Vector3f v, float f);
     }
 }

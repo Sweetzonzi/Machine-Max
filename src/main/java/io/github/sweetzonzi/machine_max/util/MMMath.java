@@ -91,6 +91,24 @@ public class MMMath {
         return result;
     }
 
+    public static void getLinearVelocityLocal(PhysicsRigidBody obj, Vector3f store) {
+        //TODO:检查逻辑
+        obj.getLinearVelocity(store);//获取物体质心在世界坐标系下的线速度
+        Quaternion worldToLocal = obj.getPhysicsRotation(null); //获取物体相对世界坐标的四元数
+        MyQuaternion.rotateInverse(worldToLocal, store, store);//旋转世界坐标系向量到刚体自身坐标系
+    }
+
+    public static void relPointLocalVel(Vector3f relPointPos, PhysicsRigidBody obj, Vector3f store) {
+        // 质心线速度（局部）
+        getLinearVelocityLocal(obj, store);
+
+        // 角速度（局部）
+        Vector3f omega = obj.getAngularVelocityLocal(null);
+        omega.cross(relPointPos, omega);
+
+        store.addLocal(omega);
+    }
+
     public static Vector3f relPointLocalVel(Vector3f relPointPos, PhysicsRigidBody obj) {
         Vector3f result = getLinearVelocityLocal(obj);//获取物体质心在刚体坐标系下的线速度
         Vector3f relAngularVel = obj.getAngularVelocityLocal(null);//获取物体相对自身坐标系的三轴角速度

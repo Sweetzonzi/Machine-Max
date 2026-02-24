@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.common.vehicle.attr;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,7 @@ import java.util.Map;
  */
 public record HydrodynamicAttr(
         float scale,
-        Vec3 effectiveRange,
+        float effectiveRange,
         float transSonicAmplifier,
         // 阻力系数：[0] 一阶（线性），[1] 二阶（平方）
         List<Float> forward,
@@ -56,7 +55,7 @@ public record HydrodynamicAttr(
             RecordCodecBuilder.create(instance -> instance.group(
                     Codec.FLOAT.optionalFieldOf("scale", 1f)
                             .forGetter(HydrodynamicAttr::scale),
-                    Vec3.CODEC.optionalFieldOf("effective_range", new Vec3(1, 1, 1))
+                    Codec.FLOAT.optionalFieldOf("effective_range", 1f)
                             .forGetter(HydrodynamicAttr::effectiveRange),
                     Codec.FLOAT.optionalFieldOf("transonic_amplifier", 5f)
                             .forGetter(HydrodynamicAttr::transSonicAmplifier),
@@ -94,7 +93,7 @@ public record HydrodynamicAttr(
 
     public static final HydrodynamicAttr DEFAULT = new HydrodynamicAttr(
             1f,
-            new Vec3(1, 1, 1),
+            1f,
             5f,
             List.of(0.1f, 1f),
             List.of(0.1f, 1f),

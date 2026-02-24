@@ -12,9 +12,10 @@
       "description": "Scale factor, used to adjust hydrodynamic effects as a whole."
     },
     "effective_range": {
-      "$ref": "../../base/vector_3d.schema.json",
-      "default": [1.0, 1.0, 1.0],
-      "description": "Effective calculation range in three directions, unit in m, when obstructions are detected within this distance in the corresponding axis movement direction, the actual air drag coefficient of the part will be reduced, to simulate drag reduction effects such as streamline flow caused by vehicle shell obstruction."
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": "Effective calculation range, unit in m, when obstructions are detected within this distance in the flow direction, the actual air drag coefficient of the part will be reduced, to simulate drag reduction effects such as streamline flow caused by vehicle shell obstruction."
     },
     "transonic_amplifier": {
       "type": "number",

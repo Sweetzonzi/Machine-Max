@@ -184,7 +184,7 @@
                 "lower_limit": 1.0,
                 "upper_limit": 15.0,
                 "equilibrium": 1.0,
-                "stiffness": 25000,
+                "stiffness": 35000,
                 "damping": 350
               }
             }
@@ -212,7 +212,7 @@
                 "lower_limit": 1.0,
                 "upper_limit": 15.0,
                 "equilibrium": 1.0,
-                "stiffness": 25000,
+                "stiffness": 35000,
                 "damping": 350
               }
             }
@@ -246,7 +246,7 @@
                 "lower_limit": -15.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 25000,
+                "stiffness": 35000,
                 "damping": 350
               }
             }
@@ -275,7 +275,7 @@
                 "lower_limit": -15.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 25000,
+                "stiffness": 35000,
                 "damping": 350
               }
             }
@@ -358,12 +358,33 @@
           }
         },
         "projected_area": [4.8, 10.25, 2.46],
-        "hydro_priority": 10,
         "hydrodynamics": {
-          "": {
+          "front_hydro": { // 车头气动计算点，主要提供前、上和侧向的阻力
+            "front_drag": [0.0, 0.3],
+            "back_drag": [0.0, 0.0],
+            "up_drag": [0.0, 0.25], // 两个气动提供向上的阻力计算点，因此阻力系数取一半，下同
+            "down_drag": [0.0, 0.0],
+            "left_drag": [0.0, 0.25],
+            "right_drag": [0.0, 0.25],
+            "y_lift": 0.06
+          },
+          "back_hydro": { // 车尾气动计算点，主要提供后、上和侧向的阻力
             "front_drag": [0.0, 0.0],
-            "back_drag": [0.0, 0.3],
-            "y_lift": [0.0, 0.4]
+            "back_drag": [0.0, 0.4], // 启动修型稍差，阻力系数略大
+            "up_drag": [0.0, 0.25], // 两个气动提供向上的阻力计算点，因此阻力系数取一半，下同
+            "down_drag": [0.0, 0.0],
+            "left_drag": [0.0, 0.25],
+            "right_drag": [0.0, 0.25],
+            "y_lift": 0.06
+          },
+          "DownHydro": { // 车底气动计算点组，包含两个气动计算点，提供下向的阻力
+            "scale": 0.5, // 包含两个气动计算点，因此总阻力值需要缩小一半
+            "front_drag": [0.0, 0.0],
+            "back_drag": [0.0, 0.0],
+            "up_drag": [0.0, 0.0],
+            "down_drag": [0.0, 0.5],
+            "left_drag": [0.0, 0.0],
+            "right_drag": [0.0, 0.0]
           }
         }
       }

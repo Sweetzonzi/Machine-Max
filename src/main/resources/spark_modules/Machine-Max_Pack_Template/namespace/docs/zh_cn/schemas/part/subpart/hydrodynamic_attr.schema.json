@@ -12,9 +12,10 @@
       "description": "缩放系数，用于整体调整流体动力效果。"
     },
     "effective_range": {
-      "$ref": "../../base/vector_3d.schema.json",
-      "default": [1.0, 1.0, 1.0],
-      "description": "三个方向上的有效计算范围，单位为m，当在对应轴运动方向上的此距离内检测到遮挡时将会降低部件的实际空气阻力系数，以模拟如车壳遮挡整流带来的减阻效果。"
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": "有效计算范围，单位为m，当在来流方向上的此距离内检测到遮挡时将会降低部件的实际空气阻力系数，以模拟如车壳遮挡整流带来的减阻效果。"
     },
     "transonic_amplifier": {
       "type": "number",

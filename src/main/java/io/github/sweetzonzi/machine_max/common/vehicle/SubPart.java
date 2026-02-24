@@ -29,6 +29,7 @@ import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Matrix3f;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
@@ -56,6 +57,7 @@ import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import jme3utilities.math.MyMath;
+import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -108,6 +110,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final InteractBoxes interactBoxes;//交互判定
     public final HashMap<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
+    public static final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
     //物理
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
@@ -637,92 +640,87 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
+    // ===== 临时流体动力计算向量缓存，避免每 tick 分配 =====
+    private final Vector3f tmpRigidVel = new Vector3f();
+    private final Vector3f tmpLocalVel = new Vector3f();
+    private final Vector3f tmpWorldVel = new Vector3f();
+    private final Vector3f tmpRayDir = new Vector3f();
+    private final Vector3f tmpTarget = new Vector3f();
+    private final Vector3f tmpLocalAeroForce = new Vector3f();
+    private final Vector3f tmpRigidAeroForce = new Vector3f();
+
     @Override
     public void prePhysicsTick() {
         super.prePhysicsTick();
         for (AbstractConnector connector : this.connectors.values()) connector.prePhysicsTick();
-        Vector3f vel = this.body.getLinearVelocity(null);
-        //仅在有速度时应用流体动力
-        if (vel.length() > 0.1f) {
+        this.body.getLinearVelocity(tmpWorldVel);
+        // 仅在有速度时应用流体动力
+        if (tmpWorldVel.lengthSquared() > 0.01f) {
             for (Map.Entry<String, HydrodynamicAttr> entry : attr.hydrodynamics.entrySet()) {
                 String name = entry.getKey();
                 HydrodynamicAttr hydrodynamicAttr = entry.getValue();
-                Set<String> locatorNames = HashSet.newHashSet(1);
-                if (getBonesToRender().containsKey(name)) { // 优先寻找骨骼内的全部定位器
-                    locatorNames.addAll(getBonesToRender().get(name).getLocators().keySet());
-                } else locatorNames.add(name); // 否则尝试寻找指定名称的定位器
-                for (String locatorName : locatorNames) {
-                    Vector3f hydroCenter = getLocatorLocalPos(locatorName);
-                    Vector3f localVel = MMMath.relPointLocalVel(hydroCenter, this.body);
-                    Vector3f pos = getLocatorWorldPos(locatorName);
-                    //遮挡关系处理
-                    float xOcclusion = 1;//遮挡系数，1为无遮挡，应用全部流体动力；0为完全被遮挡，不应用流体动力
-                    float yOcclusion = 1;
-                    float zOcclusion = 1;
-                    if (Math.abs(localVel.x) > 0.1f && hydrodynamicAttr.effectiveRange().x > 0) {
-                        Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(Math.signum(localVel.x), 0, 0), this.body).mult((float) hydrodynamicAttr.effectiveRange().x));
-                        if (!target.equals(pos)) {
-                            List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
-                            for (PhysicsRayTestResult ray : result) {
-                                var hit = ray.getCollisionObject();
-                                var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
-                                if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
-                                if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                                    if (sp.attr.hydroPriority >= attr.hydroPriority) {
-                                        float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
-                                        if (tempOcclusion < xOcclusion) xOcclusion = Math.max(0, tempOcclusion);
-                                        if (xOcclusion <= 0) break;
-                                    }
-                                }
+
+                for (String locatorName : attr.hydrodynamicLocators.get(name)) {
+                    Transform hydroCenterTransform = getLocatorLocalTransform(locatorName);
+                    Vector3f hydroCenterPos = hydroCenterTransform.getTranslation();
+                    Quaternion hydroCenterRot = hydroCenterTransform.getRotation();
+
+                    // === 计算气动点局部速度 ===
+                    MMMath.relPointLocalVel(hydroCenterPos, this.body, tmpRigidVel);
+                    MyQuaternion.rotate(hydroCenterRot, tmpRigidVel, tmpLocalVel);
+
+                    if (tmpLocalVel.lengthSquared() < 0.01f) continue;
+
+                    // === 遮挡检测（仅一次，沿来流方向） ===
+                    float occlusion = 1f;
+                    double range = hydrodynamicAttr.effectiveRange();
+                    if (range > 0) {
+                        // 世界坐标下的来流方向
+                        MyQuaternion.rotate(hydroCenterRot, tmpLocalVel, tmpRayDir);
+                        tmpRayDir.negateLocal().normalize();
+
+                        Vector3f pos = getLocatorWorldPos(locatorName);
+                        tmpTarget.set(tmpRayDir).multLocal((float) range).addLocal(pos);
+
+                        List<PhysicsRayTestResult> results =
+                                getPhysicsLevel().getWorld().rayTest(pos, tmpTarget);
+
+                        for (PhysicsRayTestResult ray : results) {
+                            var hit = ray.getCollisionObject();
+                            if (hit == this.body) continue;
+
+                            var owner = PhysicsBodyExtensionKt.getOwner(hit);
+                            if (owner instanceof SubPart sp &&
+                                    sp.part.vehicle == this.part.vehicle &&
+                                    sp.attr.hydroPriority >= attr.hydroPriority) {
+
+                                occlusion = Math.min(occlusion, ray.getHitFraction());
+                                break;
                             }
                         }
                     }
-                    if (Math.abs(localVel.y) > 0.1f && hydrodynamicAttr.effectiveRange().y > 0) {
-                        Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, Math.signum(localVel.y), 0), this.body).mult((float) hydrodynamicAttr.effectiveRange().y));
-                        if (!target.equals(pos)) {
-                            List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
-                            for (PhysicsRayTestResult ray : result) {
-                                var hit = ray.getCollisionObject();
-                                var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
-                                if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
-                                if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                                    if (sp.attr.hydroPriority >= attr.hydroPriority) {
-                                        float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
-                                        if (tempOcclusion < yOcclusion) yOcclusion = Math.max(0, tempOcclusion);
-                                        if (yOcclusion <= 0) break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (Math.abs(localVel.z) > 0.1f && hydrodynamicAttr.effectiveRange().z > 0) {
-                        Vector3f target = pos.add(MMMath.localVectorToWorldVector(new Vector3f(0, 0, Math.signum(localVel.z)), this.body).mult((float) hydrodynamicAttr.effectiveRange().z));
-                        if (!target.equals(pos)) {
-                            List<PhysicsRayTestResult> result = getPhysicsLevel().getWorld().rayTest(pos, target);
-                            for (PhysicsRayTestResult ray : result) {
-                                var hit = ray.getCollisionObject();
-                                var hitOwner = PhysicsBodyExtensionKt.getOwner(hit);
-                                if (hit == this.body || !(hitOwner instanceof SubPart)) continue;
-                                if ((hitOwner instanceof SubPart sp && sp.part.vehicle == this.part.vehicle)) {
-                                    if (sp.attr.hydroPriority >= attr.hydroPriority) {
-                                        float tempOcclusion = ray.getHitFraction();//距离越近，遮挡效果越大
-                                        if (tempOcclusion < zOcclusion) zOcclusion = Math.max(0, tempOcclusion);
-                                        if (zOcclusion <= 0) break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    //流体动力计算
-                    Vector3f localAeroForce = DynamicUtil.aeroDynamicForce(
-                            1.29f,//kg/m^3 流体密度
-                            1.8e-5f,//Pa·s 空气动力粘度
-                            this.projectedArea,
-                            hydrodynamicAttr,
-                            localVel).mult(xOcclusion, yOcclusion, zOcclusion).mult(1f);
-                    this.body.applyForce(//应用流体动力
-                            MMMath.localVectorToWorldVector(localAeroForce, this.body),
-                            MMMath.localVectorToWorldVector(hydroCenter, this.body));
+
+                    if (occlusion <= 0f) continue;
+
+                    // === 气动力计算（气动点局部坐标） ===
+                    tmpLocalAeroForce.set(
+                            DynamicUtil.aeroDynamicForce(
+                                    1.29f,        // kg/m^3 空气密度
+                                    1.8e-5f,      // Pa·s 动力粘度
+                                    this.projectedArea,
+                                    hydrodynamicAttr,
+                                    tmpLocalVel
+                            )
+                    ).multLocal(occlusion);
+
+                    // === 转回刚体局部坐标 ===
+                    MyQuaternion.rotateInverse(hydroCenterRot, tmpLocalAeroForce, tmpRigidAeroForce);
+
+                    // === 应用到世界 ===
+                    this.body.applyForce(
+                            MMMath.localVectorToWorldVector(tmpRigidAeroForce, this.body),
+                            MMMath.localVectorToWorldVector(hydroCenterPos, this.body)
+                    );
                 }
             }
         }
@@ -732,7 +730,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
             //遍历范围内的方块
             AABB aabb = SparkMathKt.toAABB(PhysicsBodyExtensionKt.stateOf(this.body).getCachedBoundingBox())
-                    .expandTowards(new Vec3(vel.x, 0, vel.z).scale(0.1f));
+                    .expandTowards(new Vec3(tmpRigidVel.x, 0, tmpRigidVel.z).scale(0.1f));
             int minX = (int) Math.floor(aabb.minX);
             int minZ = (int) Math.floor(aabb.minZ);
             int maxX = (int) Math.ceil(aabb.maxX);
@@ -776,19 +774,19 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                 if (attr.climbAssist && partX == x && partZ == z) {
                                     // 仅在部件重心所处方块柱施加额外攀爬辅助力
                                     if (height > 0 && height <= stepHeight) {
-                                        var horizonVel = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
+                                        var horizonVel = Math.sqrt(tmpRigidVel.x * tmpRigidVel.x + tmpRigidVel.z * tmpRigidVel.z);
                                         var speedFactor = 0.7 * Math.exp(-0.25 * horizonVel) + 0.3;
-                                        var ang = Math.max(0, Math.atan2(vel.y, horizonVel));
+                                        var ang = Math.max(0, Math.atan2(tmpRigidVel.y, horizonVel));
                                         var tgtAng = speedFactor * Math.atan2(height, 1) + (1 - speedFactor) * ang;
                                         float mass = body.getMass() + 0.015f * (part.vehicle.totalMass - body.getMass());
-                                        float extraVel = (float) Math.max(-5, Math.max(Math.sin(tgtAng) * vel.length(), 2f * speedFactor) - vel.y);
+                                        float extraVel = (float) Math.max(-5, Math.max(Math.sin(tgtAng) * tmpRigidVel.length(), 2f * speedFactor) - tmpRigidVel.y);
 
-                                        if (!(extraVel <= 0 && vel.y < 0)) {
+                                        if (!(extraVel <= 0 && tmpRigidVel.y < 0)) {
                                             float horizontalVelScale = (float) Math.max(0, (Math.cos(ang) - Math.cos(tgtAng)));
                                             body.applyCentralImpulse(new Vector3f(
-                                                    -horizontalVelScale * vel.x,
+                                                    -horizontalVelScale * tmpRigidVel.x,
                                                     extraVel,
-                                                    -horizontalVelScale * vel.z).mult(mass));
+                                                    -horizontalVelScale * tmpRigidVel.z).mult(mass));
                                         }
                                     }
                                 }
@@ -1261,7 +1259,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     @Override
     public ConcurrentMap<String, SignalChannel> getSignalInputChannels() {
-        throw new UnsupportedOperationException("Sub-parts should use signalStorage instead of signalInputChannels");
+        return signalInputChannels;
     }
 
     @Override

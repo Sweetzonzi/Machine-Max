@@ -66,7 +66,7 @@
         "projected_area": [0.23, 0.35, 2.34],
         "hydrodynamics": {
           "": {
-            "effective_range": [5, 2, 2],
+            "effective_range": 5,
             "front_drag": [0.0, 0.3],
             "back_drag": [0.0, 0.3]
           }

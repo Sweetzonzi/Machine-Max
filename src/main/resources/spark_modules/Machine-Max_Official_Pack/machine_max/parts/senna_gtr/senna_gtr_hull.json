@@ -13,7 +13,7 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 120.0,
-          "mass": 200.0,
+          "mass": 150.0,
           "block_collision": "ground",
           "collision_height": 1.5,
           "hit_boxes": {
@@ -63,12 +63,12 @@
               }
             }
           },
-          "projected_area": [8.6, 13.9, 6.5],
+          "projected_area": [4.6, 6.9, 5.5],
           "hydro_priority": 10,
           "hydrodynamics": {
             "": {
-              "front_drag": [0.0, 0.3],
-              "back_drag": [0.0, 0.5]
+              "front_drag": [0.1, 0.1],
+              "back_drag": [0.1, 0.0]
             }
           }
         }
@@ -82,7 +82,7 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 120.0,
-          "mass": 200.0,
+          "mass": 150.0,
           "block_collision": "ground",
           "collision_height": 1.5,
           "hit_boxes": {
@@ -112,33 +112,13 @@
               "integrity": 20.0
             }
           },
-          "projected_area": [8.6, 13.9, 6.5],
+          "projected_area": [4.6, 6.9, 5.5],
           "hydro_priority": 10,
           "hydrodynamics": {
-            "front_hydro": { // 车头气动计算点，主要提供前、上和侧向的阻力
-              "front_drag": [0.0, 0.3],
-              "back_drag": [],
-              "up_drag": [0.0, 0.25], // 两个气动提供向上的阻力计算点，因此阻力系数取一半，下同
-              "down_drag": [],
-              "left_drag": [0.0, 0.25],
-              "right_drag": [0.0, 0.25]
-            },
-            "back_hydro": { // 车尾气动计算点，主要提供后、上和侧向的阻力
-              "front_drag": [],
-              "back_drag": [0.0, 0.4], // 启动修型稍差，阻力系数略大
-              "up_drag": [0.0, 0.25], // 两个气动提供向上的阻力计算点，因此阻力系数取一半，下同
-              "down_drag": [],
-              "left_drag": [0.0, 0.25],
-              "right_drag": [0.0, 0.25]
-            },
-            "DownHydro": { // 车底气动计算点组，包含两个气动计算点，提供下向的阻力
-              "scale": 0.5, // 包含两个气动计算点，因此总阻力值需要缩小一半
-              "front_drag": [],
-              "back_drag": [],
-              "up_drag": [],
-              "down_drag": [0.0, 0.5],
-              "left_drag": [],
-              "right_drag": []
+            "": {
+              "front_drag": [0.1, 0.0],
+              "back_drag": [0.1, 0.1],
+              "y_lift": -0.06
             }
           }
         }

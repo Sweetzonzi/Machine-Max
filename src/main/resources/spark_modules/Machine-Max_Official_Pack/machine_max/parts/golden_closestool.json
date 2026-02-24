@@ -76,7 +76,7 @@
         "hydro_priority": 0,
         "hydrodynamics": { 
           "": {
-            "effective_range": [5.0, 5.0, 5.0]
+            "effective_range": 5.0
           }
         }
       }

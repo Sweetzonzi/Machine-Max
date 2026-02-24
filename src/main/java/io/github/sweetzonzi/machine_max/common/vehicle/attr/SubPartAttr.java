@@ -22,9 +22,11 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -58,6 +60,7 @@ public class SubPartAttr {
     public final ConcurrentMap<Long, Float> wheelHalfWidths = new ConcurrentHashMap<>();
     public final ConcurrentMap<Long, Boolean> isWheelSurface = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Transform> locatorTransforms = new ConcurrentHashMap<>();
+    public final ConcurrentMap<String, Set<String>> hydrodynamicLocators = new ConcurrentHashMap<>();
 
     public enum BlockCollisionType {
         TRUE, FALSE, GROUND
@@ -257,6 +260,10 @@ public class SubPartAttr {
                 }
                 shape.correctAxes(massCenter);
             }
+            
+            // 构建气动计算点缓存
+            buildHydrodynamicLocatorsCache(bones);
+            
             hitBoxShape = shape;
         }
         return hitBoxShape;
@@ -390,6 +397,30 @@ public class SubPartAttr {
 
     private String getBlockCollision() {
         return blockCollision.toString().toLowerCase();
+    }
+
+    /**
+     * 构建气动计算点缓存
+     * 将hydrodynamics配置中的定位器名称映射到实际的定位器名称集合
+     */
+    private void buildHydrodynamicLocatorsCache(Map<String, OBone> bones) {
+        hydrodynamicLocators.clear();
+        
+        for (Map.Entry<String, HydrodynamicAttr> entry : hydrodynamics.entrySet()) {
+            String hydrodynamicName = entry.getKey();
+            Set<String> locatorNames = new HashSet<>();
+            
+            // 如果配置的定位器名称在骨骼中存在，则使用该骨骼下的所有定位器
+            if (bones.containsKey(hydrodynamicName)) {
+                OBone bone = bones.get(hydrodynamicName);
+                locatorNames.addAll(bone.getLocators().keySet());
+            } else {
+                // 否则直接使用配置的定位器名称
+                locatorNames.add(hydrodynamicName);
+            }
+            
+            hydrodynamicLocators.put(hydrodynamicName, locatorNames);
+        }
     }
 
     private void addLocator(Map<String, OLocator> locators) {
