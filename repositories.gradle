@@ -2,7 +2,7 @@ dependencies {
     // 物理库
 //    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
 //    implementation("io.github.solarmoonqaq:spark-core-${mod_loader}:${spark_core_version}")
-    implementation files('libs/SparkCore-1.21.1-neoforge-1.0.1006-SNAPSHOT.jar')
+    implementation files('libs/SparkCore-1.21.1-neoforge-1.0.1007-SNAPSHOT.jar')
 
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
@@ -20,12 +20,13 @@ dependencies {
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
     // jni原生键盘鼠标监听器
-    implementation files('libs/jnativehook-2.2-MM.jar')
-    additionalRuntimeClasspath files('libs/jnativehook-2.2-MM.jar')
+//    implementation files('libs/jnativehook-2.2-MM.jar')
+//    additionalRuntimeClasspath files('libs/jnativehook-2.2-MM.jar')
+    jarJar(implementation("com.github.kwhat:jnativehook:2.2.2"))
     // 适用于Xbox手柄的XInput协议的java实现库JXInput
-    implementation "com.github.StrikerX3:JXInput:v1.0.0"
-    additionalRuntimeClasspath "com.github.StrikerX3:JXInput:v1.0.0"
-//    jarJar(implementation("com.github.kwhat:jnativehook:2.2.2"))
+//    implementation "com.github.StrikerX3:JXInput:v1.0.0"
+//    additionalRuntimeClasspath "com.github.StrikerX3:JXInput:v1.0.0"
+    jarJar(implementation("com.github.StrikerX3:JXInput:v1.0.0"))
     // 其它mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib

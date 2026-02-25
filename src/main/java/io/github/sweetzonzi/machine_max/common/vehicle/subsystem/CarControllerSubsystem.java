@@ -146,115 +146,112 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onSignalUpdated(String channelName, ISignalSender sender) {
         Object signalValue = getSignalChannel(channelName).get(sender);
-        if (isActive()) {
-            if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
-                if (sender instanceof WheelDriverSubsystem wheel) {
-                    if (wheel.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle)
-                        wheels.remove(wheel);
-                    else {
-                        wheels.put(wheel, controlChannel);
-                        addCallbackTarget(controlChannel, wheel);
+        if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
+            if (sender instanceof WheelDriverSubsystem wheel) {
+                if (wheel.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle)
+                    wheels.remove(wheel);
+                else {
+                    wheels.put(wheel, controlChannel);
+                    addCallbackTarget(controlChannel, wheel);
+                }
+            } else if (sender instanceof EngineSubsystem engine) {
+                if (engine.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle)
+                    this.engines.remove(engine);
+                else {
+                    engines.put(engine, controlChannel);
+                    addCallbackTarget(controlChannel, engine);
+                    //计算引擎最大转速和最大扭矩转速的平均值 Calculate the average maximum speed and max torque speed of the motor
+                    avgEngineMinSpeed = 0;
+                    avgEngineMaxTorqueSpeed = 0;
+                    avgEngineMaxSpeed = 0;
+                    for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
+                        avgEngineMinSpeed += entry.getKey().attr.staticAttribute.idleRpm;
+                        avgEngineMaxTorqueSpeed += entry.getKey().attr.staticAttribute.maxTorqueRpm;
+                        avgEngineMaxSpeed += entry.getKey().attr.staticAttribute.redLineRpm;
                     }
-                } else if (sender instanceof EngineSubsystem engine) {
-                    if (engine.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle)
-                        this.engines.remove(engine);
-                    else {
-                        engines.put(engine, controlChannel);
-                        addCallbackTarget(controlChannel, engine);
-                        //计算引擎最大转速和最大扭矩转速的平均值 Calculate the average maximum speed and max torque speed of the motor
-                        avgEngineMinSpeed = 0;
-                        avgEngineMaxTorqueSpeed = 0;
-                        avgEngineMaxSpeed = 0;
-                        for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
-                            avgEngineMinSpeed += entry.getKey().attr.staticAttribute.idleRpm;
-                            avgEngineMaxTorqueSpeed += entry.getKey().attr.staticAttribute.maxTorqueRpm;
-                            avgEngineMaxSpeed += entry.getKey().attr.staticAttribute.redLineRpm;
-                        }
-                        engineCount = engines.size();
-                        if (engineCount > 0) {
-                            avgEngineMinSpeed = (float) (avgEngineMinSpeed * Math.PI / engineCount / 30f);
-                            avgEngineMaxTorqueSpeed = (float) (avgEngineMaxTorqueSpeed * Math.PI / engineCount / 30f);
-                            avgEngineMaxSpeed = (float) (avgEngineMaxSpeed * Math.PI / engineCount / 30f);
-                        } else {
-                            avgEngineMinSpeed = 0f;
-                            avgEngineMaxTorqueSpeed = 0f;
-                            avgEngineMaxSpeed = 0f;
-                        }
-                    }
-                } else if (sender instanceof MotorSubsystem motor) {
-                    if (motor.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle)
-                        this.motors.remove(motor);
-                    else {
-                        motors.put(motor, controlChannel);
-                        addCallbackTarget(controlChannel, motor);
-                        //计算引擎最大转速和最大扭矩转速的平均值 Calculate the average maximum speed and max torque speed of the motor
-                        avgEngineMinSpeed = 0;
-                        avgEngineMaxTorqueSpeed = 0;
-                        avgEngineMaxSpeed = 0;
-                        for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
-                            float maxTorqueMinRpm = (float) (entry.getKey().attr.staticAttribute.maxPower / entry.getKey().attr.staticAttribute.maxTorque * 30f / Math.PI);
-                            avgEngineMaxTorqueSpeed += 0.9f * maxTorqueMinRpm + 0.1f * entry.getKey().attr.staticAttribute.redLineRpm;
-                            avgEngineMaxSpeed += entry.getKey().attr.staticAttribute.redLineRpm;
-                        }
-                        motorCount = motors.size();
-                        if (motorCount > 0) {
-                            avgEngineMaxTorqueSpeed = (float) (avgEngineMaxTorqueSpeed * Math.PI / motorCount / 30f);
-                            avgEngineMaxSpeed = (float) (avgEngineMaxSpeed * Math.PI / motorCount / 30f);
-                        } else {
-                            avgEngineMaxTorqueSpeed = 0f;
-                            avgEngineMaxSpeed = 0f;
-                        }
-                    }
-                } else if (sender instanceof GearboxSubsystem gearbox) {
-                    if (gearbox.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle) {
-                        this.gearboxes.remove(gearbox);
-                        overrideCountDown.remove(gearbox);
+                    engineCount = engines.size();
+                    if (engineCount > 0) {
+                        avgEngineMinSpeed = (float) (avgEngineMinSpeed * Math.PI / engineCount / 30f);
+                        avgEngineMaxTorqueSpeed = (float) (avgEngineMaxTorqueSpeed * Math.PI / engineCount / 30f);
+                        avgEngineMaxSpeed = (float) (avgEngineMaxSpeed * Math.PI / engineCount / 30f);
                     } else {
-                        gearboxes.put(gearbox, controlChannel);
-                        addCallbackTarget(controlChannel, gearbox);
-                        overrideCountDown.put(gearbox, 0f);
+                        avgEngineMinSpeed = 0f;
+                        avgEngineMaxTorqueSpeed = 0f;
+                        avgEngineMaxSpeed = 0f;
                     }
                 }
-            } else if (signalValue instanceof RegularInputSignal regularInputSignal) {//处理按键输入 Handle key input
-                int tickCount = regularInputSignal.getInputTickCount();
-                switch (regularInputSignal.getInputType()) {
-                    case CLUTCH:
-                        for (ISignalReceiver gearbox : gearboxes.keySet()) {
-                            overrideCountDown.put(gearbox, 1f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
-                        }
-                        if (tickCount == 0) {//踩离合 Unclutch
-                            for (GearboxSubsystem gearbox : gearboxes.keySet())
-                                gearbox.setClutched(false);
-                        } else {//松离合 Clutch
-                            for (GearboxSubsystem gearbox : gearboxes.keySet())
-                                gearbox.setClutched(true);
-                        }
-                        break;
-                    case UP_SHIFT://升档 Shift up
-                        for (ISignalReceiver gearbox : gearboxes.keySet()) {
-                            overrideCountDown.put(gearbox, 3f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
-                        }
-                        for (GearboxSubsystem gearbox : gearboxes.keySet()) gearbox.upShift();
-                        break;
-                    case DOWN_SHIFT://降档 Shift down
-                        for (ISignalReceiver gearbox : gearboxes.keySet()) {
-                            overrideCountDown.put(gearbox, 3f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
-                        }
-                        for (GearboxSubsystem gearbox : gearboxes.keySet()) gearbox.downShift();
-                        break;
-                    case HAND_BRAKE:
-                        handBrake = tickCount == 0;
-                        overrideCountDown.put(this, tickCount == 0 ? 100f : 0f);
-                        break;
-                    case TOGGLE_HAND_BRAKE:
-                        handBrake = !handBrake;
-                        overrideCountDown.put(this, 1f);
-                        break;
-                    default://忽视其他输入 Ignore other inputs
-                        break;
+            } else if (sender instanceof MotorSubsystem motor) {
+                if (motor.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle)
+                    this.motors.remove(motor);
+                else {
+                    motors.put(motor, controlChannel);
+                    addCallbackTarget(controlChannel, motor);
+                    //计算引擎最大转速和最大扭矩转速的平均值 Calculate the average maximum speed and max torque speed of the motor
+                    avgEngineMinSpeed = 0;
+                    avgEngineMaxTorqueSpeed = 0;
+                    avgEngineMaxSpeed = 0;
+                    for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
+                        float maxTorqueMinRpm = (float) (entry.getKey().attr.staticAttribute.maxPower / entry.getKey().attr.staticAttribute.maxTorque * 30f / Math.PI);
+                        avgEngineMaxTorqueSpeed += 0.9f * maxTorqueMinRpm + 0.1f * entry.getKey().attr.staticAttribute.redLineRpm;
+                        avgEngineMaxSpeed += entry.getKey().attr.staticAttribute.redLineRpm;
+                    }
+                    motorCount = motors.size();
+                    if (motorCount > 0) {
+                        avgEngineMaxTorqueSpeed = (float) (avgEngineMaxTorqueSpeed * Math.PI / motorCount / 30f);
+                        avgEngineMaxSpeed = (float) (avgEngineMaxSpeed * Math.PI / motorCount / 30f);
+                    } else {
+                        avgEngineMaxTorqueSpeed = 0f;
+                        avgEngineMaxSpeed = 0f;
+                    }
+                }
+            } else if (sender instanceof GearboxSubsystem gearbox) {
+                if (gearbox.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle) {
+                    this.gearboxes.remove(gearbox);
+                    overrideCountDown.remove(gearbox);
+                } else {
+                    gearboxes.put(gearbox, controlChannel);
+                    addCallbackTarget(controlChannel, gearbox);
+                    overrideCountDown.put(gearbox, 0f);
                 }
             }
-
+        } else if (signalValue instanceof RegularInputSignal regularInputSignal) {//处理按键输入 Handle key input
+            int tickCount = regularInputSignal.getInputTickCount();
+            switch (regularInputSignal.getInputType()) {
+                case CLUTCH:
+                    for (ISignalReceiver gearbox : gearboxes.keySet()) {
+                        overrideCountDown.put(gearbox, 1f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
+                    }
+                    if (tickCount == 0) {//踩离合 Unclutch
+                        for (GearboxSubsystem gearbox : gearboxes.keySet())
+                            gearbox.setClutched(false);
+                    } else {//松离合 Clutch
+                        for (GearboxSubsystem gearbox : gearboxes.keySet())
+                            gearbox.setClutched(true);
+                    }
+                    break;
+                case UP_SHIFT://升档 Shift up
+                    for (ISignalReceiver gearbox : gearboxes.keySet()) {
+                        overrideCountDown.put(gearbox, 3f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
+                    }
+                    for (GearboxSubsystem gearbox : gearboxes.keySet()) gearbox.upShift();
+                    break;
+                case DOWN_SHIFT://降档 Shift down
+                    for (ISignalReceiver gearbox : gearboxes.keySet()) {
+                        overrideCountDown.put(gearbox, 3f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
+                    }
+                    for (GearboxSubsystem gearbox : gearboxes.keySet()) gearbox.downShift();
+                    break;
+                case HAND_BRAKE:
+                    handBrake = tickCount == 0;
+                    overrideCountDown.put(this, tickCount == 0 ? 100f : 0f);
+                    break;
+                case TOGGLE_HAND_BRAKE:
+                    handBrake = !handBrake;
+                    overrideCountDown.put(this, 1f);
+                    break;
+                default://忽视其他输入 Ignore other inputs
+                    break;
+            }
         }
     }
 

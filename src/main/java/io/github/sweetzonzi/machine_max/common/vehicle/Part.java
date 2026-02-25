@@ -576,10 +576,9 @@ public class Part {
             SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
                 for (SubPart subPart : subParts.values()) {
                     if (finalProgress == 0) {
-                        subPart.body.setGravity(Vector3f.ZERO);
+                        subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(0.1f));
                     } else {
-                        if (subPart.body.getGravity(null).lengthSquared() == 0)
-                            subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null));
+                        subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null));
                         subPart.body.activate();
                     }
                 }

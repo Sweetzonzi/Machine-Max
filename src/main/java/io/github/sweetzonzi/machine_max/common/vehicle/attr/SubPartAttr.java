@@ -207,7 +207,7 @@ public class SubPartAttr {
                                         ballShape,
                                         PhysicsHelperKt.toBVector3f(cube.getTransformedCenter(pose)));
                                 // 一般判定用的圆柱体
-                                float cylinderRadius = 0.7f * radius;
+                                float cylinderRadius = (float) Math.sqrt(radius * radius - halfWidth * halfWidth);
                                 Vector3f cylinderSize = new Vector3f(halfWidth + 0.01f, cylinderRadius, cylinderRadius);
                                 CylinderCollisionShape cylinderShape = new CylinderCollisionShape(cylinderSize, 0);
                                 hitBoxNames.put(cylinderShape.nativeId(), hitBoxName);

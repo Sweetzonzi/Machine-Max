@@ -4,8 +4,8 @@
   "basic_durability": 100,
   "roll": {
     "max_drive_force": 1400.0,
-    "max_brake_force": 500.0,
-    "max_hand_brake_force": 400.0,
+    "max_brake_force": 800.0,
+    "max_hand_brake_force": 700.0,
     "max_speed": 3140.0
   },
   "steering": {

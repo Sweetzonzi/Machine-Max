@@ -92,8 +92,8 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             new Matrix4f(poseStack.last().pose()),
                             new Matrix3f(poseStack.last().normal()),
                             ysmGlow
-                                    ? bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity)))
-                                    : bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                                    ? bufferSource.getBuffer(RenderType.eyes(getTextureLocation(entity)))
+                                    : bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity))),
                             ysmGlow
                                     ? Brightness.FULL_BRIGHT.pack()
                                     : light,
@@ -127,7 +127,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             cube.renderVertexes(
                                     new Matrix4f(transform),
                                     new Matrix3f(transform),
-                                    bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                                    bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity))),
                                     light,
                                     overlay,
                                     color,

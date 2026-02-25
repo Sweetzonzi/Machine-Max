@@ -277,15 +277,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof PhysicsChunkSection terrain) {
             other.shouldShowDebugBoxWhenNonColldeWith = true;
-            if (isWheel(hitBoxIndex) && !this.isWheelSurface(hitBoxIndex)) {
-                // 世界 -> 刚体
-                Transform worldToWheel = body.getTransform(null).invert();
-                var localNormal = SparkMathKt.toVector3f(normal).mulPosition(SparkMathKt.toMatrix4f(worldToWheel.toTransformMatrix()));
-                if (Math.abs(localNormal.x) > 0.95) { //
-                    ManifoldPoints.setDistance1(manifoldPointId, 500);
-                    return; // 忽略轮胎碰撞体积的非轮面也非轮侧碰撞
-                }
-            }
             //基本信息获取
             var hitBox = this.getHitBox(hitBoxIndex);
             var vel = this.getLinearVelocity();

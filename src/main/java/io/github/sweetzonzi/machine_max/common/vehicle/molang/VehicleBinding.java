@@ -2,31 +2,37 @@ package io.github.sweetzonzi.machine_max.common.vehicle.molang;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimInstance;
+import cn.solarmoon.spark_core.js.molang.IMolangContext;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import kotlin.jvm.JvmField;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
+import org.graalvm.polyglot.Value;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class VehicleBinding{
-    private final AnimInstance anim;
+public class VehicleBinding implements IMolangContext {
 
-    public VehicleBinding(AnimInstance anim) {
+    private AnimInstance anim;
+
+    @Override
+    public void update(@NotNull String molang, @NotNull AnimInstance anim, @NotNull Context context, @NotNull Value bindings) {
         this.anim = anim;
-        this.durability = getDurability(getAnimatable());
-        this.max_durability = getMaxDurability(getAnimatable());
+        durability = getDurability(getAnimatable());
+        max_durability = getMaxDurability(getAnimatable());
     }
 
     @HostAccess.Export
     @JvmField
-    public final Double durability;
+    private Double durability;
 
     @HostAccess.Export
     @JvmField
-    public final Double max_durability;
+    private Double max_durability;
 
     @HostAccess.Export
     @Nullable
