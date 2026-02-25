@@ -35,6 +35,7 @@ import org.joml.Vector3f;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,7 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     protected final AnimatableParams params;//各种渲染参数
     private final ModelController modelController;
     private final AnimController animController;
+    private final Map<String, Object> variables = HashMap.newHashMap(1);
 
     public ModelAnimatable(AnimatableParams params) {
         if (params == null) throw new NullPointerException();

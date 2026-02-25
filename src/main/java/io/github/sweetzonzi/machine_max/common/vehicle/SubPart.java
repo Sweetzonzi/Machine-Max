@@ -112,6 +112,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
     public static final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
+    public final ConcurrentMap<String, Object> variables = new ConcurrentHashMap<>();//部件存储的molang值
     //物理
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;

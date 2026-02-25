@@ -23,6 +23,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
+import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -57,7 +58,8 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     public AtomicReference<BoundingBox> boundingBox = new AtomicReference<>();
     public AtomicReference<Vector3f> bodyCenter = new AtomicReference<>();
     private final Map<Entity, Vector3f> onBoardPositions = HashMap.newHashMap(1);
-
+    @Getter
+    private final Map<String, Object> variables = HashMap.newHashMap(1);
     /**
      * 不应被使用！
      *

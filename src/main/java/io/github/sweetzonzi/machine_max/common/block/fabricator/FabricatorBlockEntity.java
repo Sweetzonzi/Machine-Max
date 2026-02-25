@@ -36,6 +36,7 @@ public class FabricatorBlockEntity extends BaseContainerBlockEntity implements I
     //动画相关
     public final AnimController animController = new AnimController(this);
     public final ModelController modelController = new ModelController(this);
+    private final Map<String, Object> variables = HashMap.newHashMap(1);
     private ProductionTask renderingTask; // 当前渲染的任务
     // 动画实例
     public AnimInstance workAnim;

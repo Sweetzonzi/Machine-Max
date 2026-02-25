@@ -32,6 +32,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -69,21 +70,24 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                     Part part = subPart.part;
                     if (!livingEntity.isCrouching() && !subPart.destroyed) { // 一般状态下组装部件并尝试维修
                         var research = player.getData(MMAttachments.getBLUEPRINT());
-                        float assembleStep = 5 * (1 + research.calculateAssemblyBuff(part, player));
                         float repairStep = 5 * (1 + research.calculateRepairBuff(part, player));
-                        boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
                         boolean repaired = subPart.repair(
                                 repairStep * SUBPART_REPAIR_PER_TICK,
                                 repairStep * SUBSYSTEM_REPAIR_PER_TICK,
                                 repairStep * CONNECTOR_REPAIR_PER_TICK);
-                        if (assembled && remainingUseDuration % 10 == 0)
-                            BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
-                        if (repaired && remainingUseDuration % 10 == 0)
-                            BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
+                        // 若配方已解锁或持有蓝图，则尝试同时组装部件
+                        if (player.isCreative() || research.canAssemble(player, part)) {
+                            float assembleStep = 5 * (1 + research.calculateAssemblyBuff(part, player));
+                            boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
+                            if (assembled && remainingUseDuration % 10 == 0)
+                                BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                            if (repaired && remainingUseDuration % 10 == 0)
+                                BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
+                        }
                     } else { // 潜行时拆解部件为原材料
                         if (part.getAssemblingProgress() > 0) {
                             part.disassemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);
-                            if (part.assemblingProgress <= 0) {
+                            if (part.getAssemblingProgress() <= 0) {
                                 // 停止使用动作，保留0进度的部件
                                 livingEntity.stopUsingItem();
                             }
@@ -92,23 +96,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                         }
                     }
                 } else { // 客户端仅负责音效与粒子效果
-                    boolean shouldPlayEffect = subPart.part.getAssemblingProgress() < 1;
-                    if (!shouldPlayEffect)
-                        shouldPlayEffect = subPart.getDurability() < subPart.getMaxDurability();
-                    if (!shouldPlayEffect)
-                        for (AbstractSubsystem subsystem : subPart.getSubsystems().values()) {
-                            if (subsystem.getDurability() < subsystem.getMaxDurability()) {
-                                shouldPlayEffect = true;
-                                break;
-                            }
-                        }
-                    if (!shouldPlayEffect)
-                        for (AbstractConnector connector : subPart.getConnectors().values()) {
-                            if (connector.getIntegrity() < connector.getBasicIntegrity()) {
-                                shouldPlayEffect = true;
-                                break;
-                            }
-                        }
+                    boolean shouldPlayEffect = shouldPlayEffect(subPart);
                     if (shouldPlayEffect) {
                         var ray = eyesight.getTargetBodyCache().get(subPart.body);
                         var hitPos = eyesight.getHitPoint(ray);
@@ -177,6 +165,27 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                 playWeldingSound(level, player, 1.5f, 0.3f);
             }
         }
+    }
+
+    private boolean shouldPlayEffect(SubPart subPart) {
+        boolean shouldPlayEffect = subPart.getDurability() < subPart.getMaxDurability();
+        if (!shouldPlayEffect)
+            for (AbstractSubsystem subsystem : subPart.getSubsystems().values()) {
+                if (subsystem.getDurability() < subsystem.getMaxDurability()) {
+                    shouldPlayEffect = true;
+                    break;
+                }
+            }
+        if (!shouldPlayEffect)
+            for (AbstractConnector connector : subPart.getConnectors().values()) {
+                if (connector.getIntegrity() < connector.getBasicIntegrity()) {
+                    shouldPlayEffect = true;
+                    break;
+                }
+            }
+        if (!shouldPlayEffect)
+            shouldPlayEffect = subPart.part.getAssemblingProgress() < 1;
+        return shouldPlayEffect;
     }
 
     private void playWeldingSound(Level level, Player player, float pitch, float volume) {

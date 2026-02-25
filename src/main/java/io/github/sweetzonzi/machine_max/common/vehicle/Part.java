@@ -121,7 +121,7 @@ public class Part {
         this.variant = type.getVariants().get(variantName);
         this.customRecipe = data.customRecipe == FabricatingRecipe.EMPTY ? FabricatingRecipe.EMPTY : data.customRecipe;
         this.uuid = UUID.fromString(data.uuid);
-        this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : Integer.MAX_VALUE);
+        this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : 0);
         this.setAssemblingProgress(readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f);
         this.rootSubPart = createSubParts(type.getVariants().get(variantName).getSubParts());//重建子部件并指定根子部件
         //遍历零件，录入基本数据

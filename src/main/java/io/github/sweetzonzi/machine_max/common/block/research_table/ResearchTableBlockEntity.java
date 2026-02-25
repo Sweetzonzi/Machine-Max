@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.common.menu.BlueprintResearchMenu;
 import io.github.sweetzonzi.machine_max.common.registry.MMBlockEntities;
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -22,6 +23,9 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 蓝图研发台 BlockEntity
  * 当前职责：
@@ -31,10 +35,12 @@ import org.joml.Quaternionf;
  * - 不存储任何数据
  * - 不进行 tick
  */
+@Getter
 public class ResearchTableBlockEntity extends BlockEntity implements MenuProvider, IBlockEntityAnimatable<ResearchTableBlockEntity> {
 
     public final AnimController animController = new AnimController(this);
     public final ModelController modelController = new ModelController(this);
+    private final Map<String, Object> variables = HashMap.newHashMap(1);
 
     public ResearchTableBlockEntity(BlockPos pos, BlockState state) {
         super(MMBlockEntities.getRESEARCH_TABLE_BLOCK_ENTITY().get(), pos, state);

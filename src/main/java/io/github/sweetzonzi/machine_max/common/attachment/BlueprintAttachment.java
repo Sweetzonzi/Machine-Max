@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
@@ -539,6 +540,15 @@ public class BlueprintAttachment {
         player.setData(MMAttachments.getBLUEPRINT(), this);
     }
 
+    public boolean canAssemble(Player player, Part part) {
+        if (player.isCreative()) return true; // 创造模式直接返回true
+        var recipe = part.getRecipe();
+        for (RecipeHolder<FabricatingRecipe> holder : getAvailablePartRecipeFor(player, part.type.getRegistryKey())) {
+            if (holder.value().equals(recipe)) return true;
+        }
+        return false;
+    }
+
     /**
      * 统计玩家库存，获取所有可用于制造指定部件的配方，不包括已研发但未持有的配方，创造模式无视库存直接展示所有配方
      *
@@ -559,11 +569,10 @@ public class BlueprintAttachment {
      * @return 可用配方集合
      */
     public LinkedHashSet<RecipeHolder<FabricatingRecipe>> getAvailablePartRecipeFor(Player player, ResourceLocation partType, boolean withResearched) {
-        if (isDirty() && !player.isCreative()) {
-            rebuildAvailableRecipes(player);
-        }
         if (!player.isCreative()) { // 非创造模式检查背包
-            LinkedHashSet<RecipeHolder<FabricatingRecipe>> result = new LinkedHashSet<>(availableRecipes.get(partType));
+            if (isDirty()) rebuildAvailableRecipes(player); // 刷新可用配方列表
+            LinkedHashSet<RecipeHolder<FabricatingRecipe>> result = new LinkedHashSet<>();
+            if (availableRecipes.containsKey(partType)) result.addAll(availableRecipes.get(partType));
             if (withResearched) {
                 // 检查已研发但未持有的配方
                 for (RecipeHolder<FabricatingRecipe> holder : MMDynamicRes.PART_RECIPES.get(partType)) {

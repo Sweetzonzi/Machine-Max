@@ -68,11 +68,11 @@ public class AssemblyHud3D implements IHud3DElement {
 
     private static final int HUD_BG = new Color(32, 32, 32, 128).getRGB();
     private static final int HUD_THEME = new Color(255, 100, 0, 255).getRGB();
-//    private static final int HUD_THEME = new Color(150, 200, 255, 200).getRGB();
+    //    private static final int HUD_THEME = new Color(150, 200, 255, 200).getRGB();
     private static final int BAR_BG = new Color(64, 64, 64, 32).getRGB();
     private static final int ROW_BG_DARK = 0x66222222;
     private static final int ROW_BG_LIGHT = 0x555A5A5A;
-//    private static final int ROW_BG_ACTIVE = new Color(150, 200, 255, 155).getRGB();
+    //    private static final int ROW_BG_ACTIVE = new Color(150, 200, 255, 155).getRGB();
     private static final int ROW_BG_ACTIVE = new Color(255, 100, 0, 155).getRGB();
     private static final int ROW_BG_LACK = new Color(150, 32, 32, 128).getRGB();
 
@@ -168,6 +168,7 @@ public class AssemblyHud3D implements IHud3DElement {
         if (part != null && part.getRecipe() instanceof FabricatingRecipe recipe)
             materials = buildMaterialStatus(recipe, part, ctx.player);
         else materials = List.of();
+        var research = ctx.player.getData(MMAttachments.getBLUEPRINT());
         if (subPart != null) {
             warningMessages.clear();
             hintMessages.clear();
@@ -195,6 +196,9 @@ public class AssemblyHud3D implements IHud3DElement {
                                 decimalFormat.format(connector.getIntegrity()),
                                 decimalFormat.format(connector.getBasicIntegrity())));
                 }
+            }
+            if (!research.canAssemble(ctx.player, subPart.part)) {
+                hintMessages.add(Component.translatable("hud.hint.machine_max.cannot_assemble"));
             }
         }
         int hudHeight = HEADER_HEIGHT + PROJECTION_HEIGHT + materials.size() * MATERIAL_LINE_HEIGHT + PADDING;
@@ -295,7 +299,7 @@ public class AssemblyHud3D implements IHud3DElement {
 
         if (!materials.isEmpty()) {
             // 材料列表
-            for (MaterialStatus m : materials) {
+            for (MaterialStatus m : materials.reversed()) {
                 drawMaterialRow(ctx, startX, startY, m);
                 startY += MATERIAL_LINE_HEIGHT;
                 if (startY > startY + animatedHudHeight.get()) break;
@@ -328,32 +332,38 @@ public class AssemblyHud3D implements IHud3DElement {
             }
         }
         // 绘制按键提示
-        if (ctx.mc.player != null) {
+        if (ctx.mc.player != null && subPart != null) {
             startY += TEXT_LINE_HEIGHT + 2;
             boolean crouching = ctx.mc.player.isCrouching();
             if (ctx.mc.player.getMainHandItem().getItem() instanceof WeldingTorchItem) {
-                ctx.drawText(
-                        Component.translatable("hud.key.machine_max.assemble",
-                                ctx.mc.options.keyUse.getKey().getDisplayName()),
-                        startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
-                );
+                var availableRecipes = research.getAvailablePartRecipeFor(ctx.player, subPart.part.type.getRegistryKey());
+                if (research.canAssemble(ctx.player, subPart.part)) {
+                    ctx.drawText(
+                            Component.translatable("hud.key.machine_max.assemble",
+                                    ctx.mc.options.keyUse.getKey().getDisplayName()),
+                            startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                    );
+                } else {
+                    ctx.drawText(
+                            Component.translatable("hud.key.machine_max.repair_without_assemble",
+                                    ctx.mc.options.keyUse.getKey().getDisplayName()),
+                            startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                    );
+                }
                 startY += TEXT_LINE_HEIGHT + 2;
                 ctx.drawText(Component.translatable("hud.key.machine_max.disassemble",
                                 ctx.mc.options.keyShift.getKey().getDisplayName(),
                                 ctx.mc.options.keyUse.getKey().getDisplayName()),
                         startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
                 );
-                if (subPart != null) {
-                    if (ctx.player.isCreative() || (part.getAssemblingProgress() <= 0 && part.getMaterialProgress() <= 0)) {
-                        var availableRecipes = ctx.player.getData(MMAttachments.getBLUEPRINT()).getAvailablePartRecipeFor(ctx.player, subPart.part.type.getRegistryKey());
-                        if (availableRecipes != null && availableRecipes.size() > 1) {
-                            startY += TEXT_LINE_HEIGHT + 2;
-                            ctx.drawText(Component.translatable("hud.key.machine_max.cycle_recipe",
-                                            KeyBinding.assemblyCycleRecipeKey.getKey().getDisplayName(),
-                                            availableRecipes.size()),
-                                    startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(availableRecipes.size() > 1 ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
-                            );
-                        }
+                if (ctx.player.isCreative() || (part.getAssemblingProgress() <= 0 && part.getMaterialProgress() <= 0)) {
+                    if (!availableRecipes.isEmpty() && availableRecipes.size() > 1) {
+                        startY += TEXT_LINE_HEIGHT + 2;
+                        ctx.drawText(Component.translatable("hud.key.machine_max.cycle_recipe",
+                                        KeyBinding.assemblyCycleRecipeKey.getKey().getDisplayName(),
+                                        availableRecipes.size()),
+                                startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(availableRecipes.size() > 1 ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                        );
                     }
                 }
             } else if (ctx.mc.player.getMainHandItem().getItem() instanceof CrowbarItem) {

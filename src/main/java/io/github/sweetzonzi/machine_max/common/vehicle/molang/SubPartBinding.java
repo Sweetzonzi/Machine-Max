@@ -55,10 +55,10 @@ public class SubPartBinding implements IMolangContext {
         var holder = getAnimatable().getAnimatable();
         if (holder instanceof LivingEntity) {
             if (((IEntityMixin) holder).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                return seat.getOwner().getSubPart().signalStorage.get(channel);
+                return seat.getOwner().getSubPart().variables.get(channel);
             } else return null;
         } else if (holder instanceof SubPart subPart)
-            return subPart.signalStorage.get(channel);
+            return subPart.variables.get(channel);
         else return null;
     }
 
