@@ -82,7 +82,8 @@ public abstract class DestroyableObject implements SyncedDataHolder {
             clientSyncPose();
         }
         //判定摧毁
-        if (!destroyed && getDurability() <= 0) onDestroyed();
+        if (checkDestroyed())
+            onDestroyed();
     }
 
     public void postTick() {
@@ -95,7 +96,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
             }
             syncToClient();
         }
-        if(isDestroyed() && getDestroyTime() <= 0) this.destroy();
+        if (isDestroyed() && getDestroyTime() <= 0) this.destroy();
     }
 
     public void prePhysicsTick() {
@@ -118,6 +119,10 @@ public abstract class DestroyableObject implements SyncedDataHolder {
             hurtTime = hurtDuration;
             accumulatedDamage.add(Pair.of(damage, data));
         }
+    }
+
+    protected boolean checkDestroyed() {
+        return !destroyed && getDurability() <= 0;
     }
 
     protected void onDestroyed() {

@@ -20,7 +20,7 @@
           "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
             "Collision": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
               "type": "wheel",//碰撞形状类型, 支持box、sphere、cylinder、wheel
-              "friction": [1.4, 2.0, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
+              "friction": [1.7, 2.0, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
               "slip_adaptation": 0.5,//(可选, 默认0.5)滑动适应性系数(0~1), 该属性可削弱打滑时的摩擦系数降低效果, 提升抓地力
               "rolling_friction": 0.05,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力
               "restitution": 0.2,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
@@ -31,7 +31,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -39,7 +39,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -49,7 +49,7 @@
                   "value": 0.1, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减至0.1倍
                   "condition": {
                     "type": "damage_tag", // 判断伤害是否属于某个标签
-                    "id": "machine_max:is_impact" // 伤害标签注册名
+                    "id": "c:is_impact" // 伤害标签注册名
                   }
                 },
                 {
@@ -57,7 +57,7 @@
                   "value": -2.0, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减5点（不小于0）
                   "condition": {
                     "type": "damage_tag", // 判断伤害是否属于某个标签
-                    "id": "machine_max:is_impact" // 伤害标签注册名
+                    "id": "c:is_impact" // 伤害标签注册名
                   }
                 },
                 {
@@ -126,7 +126,7 @@
           "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
             "Collision": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
               "type": "wheel",//碰撞形状类型, 支持box、sphere、cylinder、wheel
-              "friction": [1.4, 2.0, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
+              "friction": [1.7, 2.0, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
               "slip_adaptation": 0.5,//(可选, 默认0.5)滑动适应性系数(0~1), 该属性可削弱打滑时的摩擦系数降低效果, 提升抓地力
               "rolling_friction": 0.05,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力
               "restitution": 0.2,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
@@ -137,7 +137,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -145,7 +145,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -155,7 +155,7 @@
                   "value": 0.1, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减至0.1倍
                   "condition": {
                     "type": "damage_tag", // 判断伤害是否属于某个标签
-                    "id": "machine_max:is_impact" // 伤害标签注册名
+                    "id": "c:is_impact" // 伤害标签注册名
                   }
                 },
                 {
@@ -163,7 +163,7 @@
                   "value": -2.0, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减5点（不小于0）
                   "condition": {
                     "type": "damage_tag", // 判断伤害是否属于某个标签
-                    "id": "machine_max:is_impact" // 伤害标签注册名
+                    "id": "c:is_impact" // 伤害标签注册名
                   }
                 },
                 {

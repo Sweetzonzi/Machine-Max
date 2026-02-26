@@ -44,7 +44,7 @@
                 "value": -10.0, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减5点（不小于0）
                 "condition": {
                   "type": "damage_tag", // 判断伤害是否属于某个标签
-                  "id": "machine_max:is_impact" // 伤害标签注册名
+                  "id": "c:is_impact" // 伤害标签注册名
                 }
               },
               {

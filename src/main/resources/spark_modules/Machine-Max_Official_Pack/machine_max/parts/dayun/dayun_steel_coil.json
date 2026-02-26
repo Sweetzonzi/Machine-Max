@@ -28,7 +28,7 @@
                 "value": -10.0,
                 "condition": {
                   "type": "damage_tag",
-                  "id": "machine_max:is_impact"
+                  "id": "c:is_impact"
                 }
               },
               {

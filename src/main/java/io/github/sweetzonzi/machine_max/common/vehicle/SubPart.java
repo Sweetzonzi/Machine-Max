@@ -47,6 +47,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBoxes;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
@@ -312,57 +313,19 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             ManifoldPoints.setCombinedRollingFriction(manifoldPointId, Math.max(0f, body.getRollingFriction() * blockRollingFriction));
             //若是需要攀爬辅助处理的方块
             if (climbableBlocks.contains(blockPos)) {
-                if (attr.isClimbAssist()) {
-                    Vector3f frictionTorque = contactVel.normalize()
-                            .mult((float) (1 - Math.exp(-0.05 * Math.abs(contactVel.lengthSquared()))))
-                            .mult(ManifoldPoints.getCombinedFriction(manifoldPointId))
-                            .mult(partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId));
-                    Vector3f frictionImpulse = new Vector3f(0, (float) (1 - Math.exp(-0.5 * Math.abs(contactVel.y))), 0)
-                            .mult(ManifoldPoints.getCombinedFriction(manifoldPointId))
-                            .mult(-partMass / 3 * ManifoldPoints.getDistance1(manifoldPointId));
-                    if (frictionTorque.lengthSquared() > 0.1f)
-                        body.applyTorqueImpulse(worldContactPoint.subtract(body.getPhysicsLocation(null)).cross(frictionTorque));
-                    if (frictionImpulse.lengthSquared() > 0.1f)
-                        body.applyCentralImpulse(frictionImpulse);
-                    //手动给予摩擦力
-                    Vector3f lateral1 = new Vector3f();
-                    Vector3f lateral2 = new Vector3f();
-                    ManifoldPoints.getLateralFrictionDir1(manifoldPointId, lateral1);
-                    ManifoldPoints.getLateralFrictionDir2(manifoldPointId, lateral2);
-                    lateral1 = lateral1.normalize();
-                    lateral2 = lateral2.normalize();
-                    lateral1.multLocal((float) (-partMass / 60f * MMMath.sigmoidSignum(lateral1.dot(contactVel))));
-                    lateral2.multLocal((float) (-partMass / 60f * MMMath.sigmoidSignum(lateral2.dot(contactVel))));
-                    body.applyCentralImpulse(lateral1);
-                    body.applyCentralImpulse(lateral2);
-                }
-                //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
-                ManifoldPoints.setDistance1(manifoldPointId, 500f);
                 //重设碰撞法线方向
                 normal = Vector3f.UNIT_Y;
                 ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
                 ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
-                return; //爬坡辅助的方块不参与后续碰撞处理
-            } else { //非爬坡辅助的一般方块
-                double velXZ = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
-                if (velXZ > 12.5f) {
-                    //临近区块交界处的高速碰撞额外处理增稳
-                    var relContactPoint = SparkMathKt.toVector3f(worldContactPoint).sub(SparkMathKt.toVector3f(terrain.getSectionPos().origin()));
-                    if (relContactPoint.x <= velXZ / 60f + 0.1
-                            || relContactPoint.x >= 15.9 - velXZ / 60f
-                            || relContactPoint.z <= velXZ / 60f + 0.1
-                            || relContactPoint.z >= 15.9 - velXZ / 60f) {
-                        if (normal.y > 0.9f) {
-                            normal = Vector3f.UNIT_Y;
-                            ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
-                            if (vel.y > 0.1f) {
-                                body.setLinearVelocity(new Vector3f(vel.x, vel.y * 0.75f, vel.z));
-                            }
-                            vel.set(1, 0f);
-                            contactVel.set(1, 0f);
-                        }
-                    }
+                ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
+                ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
+                if (attr.isClimbAssist()) {
+                    // 人工设置一个小的侵入深度，法线向上，若侵入深度为0.05则期望每帧使部件上浮0.05*ERP的高度
+                    ManifoldPoints.setDistance1(manifoldPointId, Math.clamp(worldContactPoint.y - blockPos.getY() + 1, -0.03f, -0.02f));
+                } else { //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
+                    ManifoldPoints.setDistance1(manifoldPointId, 500f);
                 }
+                return; //爬坡辅助的方块不参与后续碰撞处理
             }
             //调用子系统碰撞回调
             if (hitBox.subsystem != null) {
@@ -433,6 +396,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     DamageSource source = level.damageSources().flyIntoWall();
                     if (hitBox.modifyDamage(source, partDamage) > 1) {
                         PartDamageData data = new PartDamageData(source, null, normal, contactVel, worldContactPoint, hitBox);
+                        hitBox.modifyDamage(source, partDamage);
                         onHurt(data, partDamage);
                     }
                 }
@@ -453,9 +417,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                         contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
                         }
                     }
-                    if (contactVel.length() > 4f && !climbableBlocks.contains(blockPos) && finalNormal.y > 0.95f && worldContactPoint.y - blockPos.getY() > -0.1f) {
+                    if (contactVel.length() > 5 && !climbableBlocks.contains(blockPos) && finalNormal.y > 0.95f && worldContactPoint.y - blockPos.getY() > -0.1f) {
                         // 漂移烟雾与音效
-                        if (Math.random() < Math.max(1f, 0.02f * contactVel.length()))
+                        if (Math.random() < Math.max(1f, 0.01f * contactVel.length()))
                             level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
                                     worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
                                     contactVel.x * (0.03f + 0.02f * (Math.random() - 0.5f)),
@@ -585,13 +549,14 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
         }
         //载具不与乘客发生碰撞
+        AbstractControllableSubsystem sub;
         if (ownerA instanceof SubPart subPart && ownerB instanceof LivingEntity livingEntity) {
-            var sub = ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem();
+            sub = ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem();
             if (sub != null && sub.getOwner().getSubPart().getPart().getVehicle() == subPart.part.vehicle) {
                 event.setShouldCollide(false);
             }
         } else if (ownerB instanceof SubPart subPart && ownerA instanceof LivingEntity livingEntity) {
-            var sub = ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem();
+            sub = ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem();
             if (sub != null && sub.getOwner().getSubPart().getPart().getVehicle() == subPart.part.vehicle) {
                 event.setShouldCollide(false);
             }
@@ -722,12 +687,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
             //遍历范围内的方块
             AABB aabb = SparkMathKt.toAABB(PhysicsBodyExtensionKt.stateOf(this.body).getCachedBoundingBox())
-                    .expandTowards(new Vec3(tmpRigidVel.x, 0, tmpRigidVel.z).scale(0.1f));
+                    .expandTowards(new Vec3(tmpWorldVel.x, 0, tmpWorldVel.z).scale(0.1f));
             int minX = (int) Math.floor(aabb.minX);
             int minZ = (int) Math.floor(aabb.minZ);
             int maxX = (int) Math.ceil(aabb.maxX);
             int maxZ = (int) Math.ceil(aabb.maxZ);
-            float y0 = bodyMinY + 0.2f;
+            float y0 = bodyMinY + 0.05f;
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos currentPos = new BlockPos(x, (int) Math.floor(y0), z);
@@ -764,21 +729,20 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                 int partX = (int) Math.floor(pos.x);
                                 int partZ = (int) Math.floor(pos.z);
                                 if (attr.climbAssist && partX == x && partZ == z) {
-                                    // 仅在部件重心所处方块柱施加额外攀爬辅助力
+                                    // 在部件重心所处方块柱施加额外攀爬辅助力
                                     if (height > 0 && height <= stepHeight) {
-                                        var horizonVel = Math.sqrt(tmpRigidVel.x * tmpRigidVel.x + tmpRigidVel.z * tmpRigidVel.z);
+                                        var horizonVel = Math.sqrt(tmpWorldVel.x * tmpWorldVel.x + tmpWorldVel.z * tmpWorldVel.z);
                                         var speedFactor = 0.7 * Math.exp(-0.25 * horizonVel) + 0.3;
-                                        var ang = Math.max(0, Math.atan2(tmpRigidVel.y, horizonVel));
+                                        var ang = Math.max(0, Math.atan2(tmpWorldVel.y, horizonVel));
                                         var tgtAng = speedFactor * Math.atan2(height, 1) + (1 - speedFactor) * ang;
-                                        float mass = body.getMass() + 0.015f * (part.vehicle.totalMass - body.getMass());
-                                        float extraVel = (float) Math.max(-5, Math.max(Math.sin(tgtAng) * tmpRigidVel.length(), 2f * speedFactor) - tmpRigidVel.y);
+                                        float extraVel = (float) Math.max(-5, Math.max(Math.sin(tgtAng) * tmpWorldVel.length(), 2f * speedFactor) - tmpWorldVel.y);
 
-                                        if (!(extraVel <= 0 && tmpRigidVel.y < 0)) {
+                                        if (!(extraVel <= 0 && tmpWorldVel.y < 0)) {
                                             float horizontalVelScale = (float) Math.max(0, (Math.cos(ang) - Math.cos(tgtAng)));
-                                            body.applyCentralImpulse(new Vector3f(
-                                                    -horizontalVelScale * tmpRigidVel.x,
-                                                    extraVel,
-                                                    -horizontalVelScale * tmpRigidVel.z).mult(mass));
+//                                            body.applyCentralImpulse(new Vector3f(
+//                                                    -horizontalVelScale * tmpWorldVel.x,
+//                                                    extraVel,
+//                                                    -horizontalVelScale * tmpWorldVel.z).mult(0.5f * body.getMass()));
                                         }
                                     }
                                 }

@@ -78,7 +78,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         this.subPartName = subPart.name;
         this.partUUID = subPart.part.uuid;
         this.vehicleUUID = subPart.part.vehicle.uuid;
-        this.setPos(SparkMathKt.toVec3(subPart.body.getPhysicsLocation(null)));
+        this.setPos(SparkMathKt.toVec3(subPart.getPosition()));
     }
 
     @Override

@@ -26,8 +26,8 @@
             "CollisionShape": {
               "type": "wheel",
               "friction": [
-                1.5,
-                2.0,
+                2.5,
+                2.5,
                 1.0
               ],
               "slip_adaptation": 0.5,
@@ -40,7 +40,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -48,7 +48,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -58,7 +58,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -66,7 +66,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -140,8 +140,8 @@
             "CollisionShape": {
               "type": "wheel",
               "friction": [
-                1.5,
-                2.0,
+                2.5,
+                2.5,
                 1.0
               ],
               "slip_adaptation": 0.5,
@@ -154,7 +154,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -162,7 +162,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -172,7 +172,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -180,7 +180,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {

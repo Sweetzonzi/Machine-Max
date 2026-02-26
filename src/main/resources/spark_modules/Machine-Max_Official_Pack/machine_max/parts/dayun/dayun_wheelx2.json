@@ -30,7 +30,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -38,7 +38,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -48,7 +48,7 @@
                   "value": 0.1, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减至0.1倍
                   "condition": {
                     "type": "damage_tag", // 判断伤害是否属于某个标签
-                    "id": "machine_max:is_impact" // 伤害标签注册名
+                    "id": "c:is_impact" // 伤害标签注册名
                   }
                 },
                 {
@@ -56,7 +56,7 @@
                   "value": -2.0, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减5点（不小于0）
                   "condition": {
                     "type": "damage_tag", // 判断伤害是否属于某个标签
-                    "id": "machine_max:is_impact" // 伤害标签注册名
+                    "id": "c:is_impact" // 伤害标签注册名
                   }
                 },
                 {
@@ -134,7 +134,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -142,7 +142,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -152,7 +152,7 @@
                   "value": 0.1, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减至0.1倍
                   "condition": {
                     "type": "damage_tag", // 判断伤害是否属于某个标签
-                    "id": "machine_max:is_impact" // 伤害标签注册名
+                    "id": "c:is_impact" // 伤害标签注册名
                   }
                 },
                 {
@@ -160,7 +160,7 @@
                   "value": -2.0, // 修正量, 根据operation不同, 以不同的行为影响传入的数值, 这里会将撞击伤害削减5点（不小于0）
                   "condition": {
                     "type": "damage_tag", // 判断伤害是否属于某个标签
-                    "id": "machine_max:is_impact" // 伤害标签注册名
+                    "id": "c:is_impact" // 伤害标签注册名
                   }
                 },
                 {

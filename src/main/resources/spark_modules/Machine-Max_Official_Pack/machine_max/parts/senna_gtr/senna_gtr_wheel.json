@@ -20,7 +20,7 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [2.0, 2.5, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
+              "friction": [2.5, 2.5, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
               "slip_adaptation": 0.5,//(可选, 默认0.5)滑动适应性系数(0~1), 该属性可削弱打滑时的摩擦系数降低效果, 提升抓地力
               "rolling_friction": 0.05,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力
               "restitution": 0.05,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
@@ -31,7 +31,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -39,7 +39,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -49,7 +49,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -57,7 +57,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -126,7 +126,7 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [2.0, 2.5, 1.0],
+              "friction": [2.5, 2.5, 1.0],
               "slip_adaptation": 0.5,
               "rolling_friction": 0.05,
               "restitution": 0.05,
@@ -137,7 +137,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -145,7 +145,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -155,7 +155,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -163,7 +163,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -243,7 +243,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -251,7 +251,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -261,7 +261,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -269,7 +269,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -349,7 +349,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -357,7 +357,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 }
               ],
@@ -367,7 +367,7 @@
                   "value": 0.1,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
@@ -375,7 +375,7 @@
                   "value": -2.0,
                   "condition": {
                     "type": "damage_tag",
-                    "id": "machine_max:is_impact"
+                    "id": "c:is_impact"
                   }
                 },
                 {
