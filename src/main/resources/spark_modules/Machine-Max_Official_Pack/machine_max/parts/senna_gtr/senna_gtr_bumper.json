@@ -81,11 +81,12 @@
             }
           },
           "projected_area": [0.13, 1.04, 0.74],
+          "hydro_priority": 20,
           "hydrodynamics": {
             "": {
               "front_drag": [0.1, 0.12],
               "back_drag": [0.1, 0.12],
-              "y_lift": -0.24
+              "y_lift": -1.6
             }
           }
         }
@@ -167,11 +168,12 @@
             }
           },
           "projected_area": [0.13, 1.04, 0.74],
+          "hydro_priority": 20,
           "hydrodynamics": {
             "": {
               "front_drag": [0.1, 0.12],
               "back_drag": [0.1, 0.12],
-              "y_lift": -0.24
+              "y_lift": -2.2
             }
           }
         }

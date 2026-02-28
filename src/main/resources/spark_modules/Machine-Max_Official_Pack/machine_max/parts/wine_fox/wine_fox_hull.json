@@ -363,8 +363,8 @@
                 "lower_limit": -1.0, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.5, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
                 "equilibrium": -0.1, //(可选, 默认0)弹簧阻尼关节的平衡位置, 当关节处于此位置时, 关节受到的刚度力(力矩)等于0
-                "stiffness": 8000, //刚度系数(N/m)
-                "damping": 197 //阻尼系数(N/(m/s))
+                "stiffness": 12000, //刚度系数(N/m)
+                "damping": 300 //阻尼系数(N/(m/s))
               },
               "xr": { //控制的轴, x、y、z分别对应x、y、z轴的平动, xr、yr、zr分别对应x、y、z轴的旋转
                 "lower_limit": 1.0, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
@@ -378,10 +378,10 @@
               },
               "zr": {
                 "lower_limit": 1.0,
-                "upper_limit": 15.0,
+                "upper_limit": 5.0,
                 "equilibrium": 1.0,
-                "stiffness": 10000,
-                "damping": 197
+                "stiffness": 6000,
+                "damping": 85
               }
             }
           },
@@ -398,8 +398,8 @@
                 "lower_limit": -1.0,
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
-                "stiffness": 8000,
-                "damping": 197
+                "stiffness": 12000,
+                "damping": 300
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -407,10 +407,10 @@
               },
               "zr": {
                 "lower_limit": 1.0,
-                "upper_limit": 15.0,
+                "upper_limit": 5.0,
                 "equilibrium": 1.0,
-                "stiffness": 10000,
-                "damping": 197
+                "stiffness": 6000,
+                "damping": 85
               }
             }
           },
@@ -427,8 +427,8 @@
                 "lower_limit": -1.0,
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
-                "stiffness": 8000,
-                "damping": 197
+                "stiffness": 12000,
+                "damping": 300
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -441,11 +441,11 @@
                 "damping": 20
               },
               "zr": {
-                "lower_limit": -15.0,
+                "lower_limit": -5.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 10000,
-                "damping": 197
+                "stiffness": 6000,
+                "damping": 85
               }
             }
           },
@@ -462,19 +462,19 @@
                 "lower_limit": -1.0,
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
-                "stiffness": 8000,
-                "damping": 197
+                "stiffness": 12000,
+                "damping": 300
               },
               "xr": {
                 "lower_limit": 1.0,
                 "upper_limit": -1.0
               },
               "zr": {
-                "lower_limit": -15.0,
+                "lower_limit": -5.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 10000,
-                "damping": 197
+                "stiffness": 6000,
+                "damping": 85
               }
             }
           },

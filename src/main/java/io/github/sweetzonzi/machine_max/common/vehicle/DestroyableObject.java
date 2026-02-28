@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.body.ManifoldPoint;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -146,6 +147,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
             int hitBoxIndex,
             int otherHitBoxIndex,
             float impactAngle,
+            ManifoldPoint point1, ManifoldPoint point2,
             long manifoldPointId
     ) {
     }

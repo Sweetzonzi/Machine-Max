@@ -120,7 +120,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         }
         machine_Max$sweepTestStart.setTranslation(PhysicsHelperKt.toBVector3f(center));
         machine_Max$sweepTestEnd.setTranslation(PhysicsHelperKt.toBVector3f(center.add(delta)));
-        SparkLevel.getPhysicsLevel(entity.level()).getWorld().sweepTest(
+        SparkLevel.getPhysicsLevel(entity.level()).getWorld().getWorldSnapshot().sweepTest(
                 machine_Max$collideTestShape,
                 machine_Max$sweepTestStart,
                 machine_Max$sweepTestEnd, results, 0.05f);
@@ -132,9 +132,6 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         Vec3 groundNormal = null;
         double minGroundAngle = 90.0;
         Vec3 movement = Vec3.ZERO;
-
-        // 按 hitFraction 从近到远排序，保证约束稳定
-        results.sort((a, b) -> Float.compare(a.getHitFraction(), b.getHitFraction()));
 
         for (PhysicsSweepTestResult result : results) {
             PhysicsCollisionObject pco = result.getCollisionObject();

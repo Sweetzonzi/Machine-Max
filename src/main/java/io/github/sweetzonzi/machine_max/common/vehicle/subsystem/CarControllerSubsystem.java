@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CarControllerSubsystemAttr;
@@ -18,7 +19,9 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     public final CarControllerSubsystemAttr attr;
     public byte[] moveInput;
     public byte[] moveInputConflict;
+    Vector3f[] vs = new Vector3f[6];
     public float speed = 0.0f;
+    public float avgSlipRatio = 0.0f;
     private final Map<ISignalReceiver, Float> overrideCountDown = new HashMap<>();
 
     float avgEngineMaxSpeed = 0f;
@@ -66,6 +69,9 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
+        if (!wheels.isEmpty()) {
+
+        }
         this.speed = -getOwner().getSubPart().getLinearVelocityLocal().z;
         if (isActive() && getOwner().getSubPart().getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
@@ -394,7 +400,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             avgEngineSpeed += (float) entry.getKey().getRotSpeed();
         }
         for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
-            sendCallbackToAllListeners(entry.getValue(), (float) moveInput[2]);
+            sendCallbackToAllListeners(entry.getValue(), actualThrottle);
             avgEngineSpeed += entry.getKey().getRotSpeed();
         }
         if (engineCount > 1)
@@ -480,7 +486,9 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             return 0;
         } else {
             // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
+            float minSteeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(0f) / steeringInput * 100f;//最小转向半径(米) Minimum steering radius (m)
             float steeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput * 100f;//实际转向半径(米) Actual steering radius (m)
+            steeringRadius = actualHandBrake > 1e-7f ? minSteeringRadius : steeringRadius;
             double deltaRadius = pivot.x - attr.staticAttribute.steeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
             double deltaForward = pivot.z - attr.staticAttribute.steeringCenter.z;
@@ -515,16 +523,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             // 不使用ABS或刹车力为0或车速小于2m/s时，直接返回原始刹车力
             return rawBrake;
         }
-
-        // 获取轮胎角速度
-        float angularVelocity = -wheel.getRelativeAngularVel().get(0); // X轴角速度
-
-        // 计算轮胎线速度
-        float wheelLinearSpeed = angularVelocity * wheel.attr.staticAttribute.getAbsWheelRadius();
-
-        // 计算滑移率
-        float slipRatio = (speed - wheelLinearSpeed) / speed;
-
+        float slipRatio = calculateSlipRatio(wheel);
         // ABS控制逻辑
         float targetSlipRatio = wheel.attr.staticAttribute.getAbsTargetSlipRatio();
         float effectiveBrake = rawBrake;
@@ -536,5 +535,14 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         }
 
         return Math.max(0f, Math.min(1f, effectiveBrake));
+    }
+
+    protected float calculateSlipRatio(WheelDriverSubsystem wheel) {
+        // 获取轮胎角速度
+        float angularVelocity = -wheel.getRelativeAngularVel().get(0); // X轴角速度
+        // 计算轮胎线速度
+        float wheelLinearSpeed = angularVelocity * wheel.attr.staticAttribute.getAbsWheelRadius();
+        // 计算滑移率
+        return (speed - wheelLinearSpeed) / speed;
     }
 }

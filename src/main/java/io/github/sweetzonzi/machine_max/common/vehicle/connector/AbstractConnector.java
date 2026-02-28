@@ -308,7 +308,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     if (jointAttr.equilibrium() != null)
                         joint.set(MotorParam.Equilibrium, i, (float) (jointAttr.equilibrium() * (i <= 2 ? 1 : Math.PI / 180)));
                     if (jointAttr.stiffness() != null) {
-                        float maxStiffness = 4 * m_eff / (1f / 60f / 60f);  // 稳定性条件: k_max = 4·m_eff/Δt²
+                        float maxStiffness = safe * 4 * m_eff / (1f / 60f / 60f);  // 稳定性条件: k_max = 4·m_eff/Δt²
                         if (jointAttr.stiffness() > maxStiffness)
                             MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的刚度值过大:{}，已自动限制为{}！",
                                     Component.translatable(this.getName()).getString(),
@@ -322,10 +322,14 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     if (jointAttr.damping() != null) {
                         //限制最大阻尼以确保稳定性
                         float maxDamping;
-                        float stiffness = joint.get(MotorParam.Stiffness, i);
-                        if (stiffness > 0)//最大阻尼估算值
-                            maxDamping = safe * Math.min((float) (2 * Math.sqrt(stiffness * m_eff)), safe * 2 * m_eff * 60f);
-                        else maxDamping = safe * 2 * m_eff * 60f;//纯阻尼系统的处理，采用显式欧拉稳定性条件
+                        float stiffness = joint.get(MotorParam.Stiffness, i) / 60 / 60 / m_eff;
+                        if (stiffness >= 4f - 1e-6f) {
+                            maxDamping = 0f; // 刚度已达上限，阻尼只能为0
+                        } else {
+                            float C_max = (4f - stiffness) / 2f;
+                            maxDamping = C_max * m_eff * 60f;
+                        }
+                        maxDamping *= safe; // 安全系数
                         if (jointAttr.damping() > maxDamping) {
                             joint.set(MotorParam.MotorErp, i, 0.5f);
                             joint.set(MotorParam.StopErp, i, 0.2f);
@@ -337,8 +341,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                                     i, jointAttr.damping(), maxDamping);
                         }
                         joint.set(MotorParam.Damping, i, Math.min(jointAttr.damping(), maxDamping));
-                        joint.set(MotorParam.MotorCfm, i, 1e-4f);
-                        joint.set(MotorParam.StopCfm, i, 1e-4f);
+                        joint.set(MotorParam.MotorCfm, i, 1e-5f);
+                        joint.set(MotorParam.StopCfm, i, 1e-5f);
                         joint.enableSpring(i, true);
                     }
                 }
