@@ -56,6 +56,10 @@ public class CameraController {
     private static float roll = 0;
     public static Vec3 aimDirection = new Vec3(1, 0, 0);
     private static float speedDistanceFactor = 0.0f;
+    /**
+     * 角度是否已初始化，避免刚进游戏和刚上车时从0开始插值
+     */
+    private static boolean anglesInitialized = false;
 
     public static void init() {
         client = Minecraft.getInstance();
@@ -110,6 +114,21 @@ public class CameraController {
         CameraType type = client.options.getCameraType();
         Entity entity = camera.getEntity();
         float partialTick = (float) event.getPartialTick();
+        
+        // 初始化角度，避免刚进游戏和刚上车时从0开始插值
+        if (!anglesInitialized) {
+            aimPitch = entity.getViewXRot(partialTick);
+            aimYaw = entity.getViewYRot(partialTick);
+            aimRoll = 0F;
+            targetViewPitch = aimPitch;
+            targetViewYaw = aimYaw;
+            targetViewRoll = aimRoll;
+            pitch = aimPitch;
+            yaw = aimYaw;
+            roll = aimRoll;
+            anglesInitialized = true;
+        }
+        
         //更新计算相机相对其所处坐标系的旋转
 //        pitch = 0.6f * pitch + 0.4f * targetViewPitch;
 //        yaw = 0.6f * yaw + 0.4f * targetViewYaw;
@@ -161,11 +180,12 @@ public class CameraController {
                 if (onBoard) {
                     onBoard = false;
                     justLeft = true;
+                    anglesInitialized = false;
                 }
                 //回到实体实时视角
                 aimPitch = entity.getViewXRot(partialTick);
                 aimYaw = entity.getViewYRot(partialTick);
-                aimRoll = 0;
+                aimRoll = 0F;
             }
             if (justLeft) {
                 targetViewPitch = aimPitch;
