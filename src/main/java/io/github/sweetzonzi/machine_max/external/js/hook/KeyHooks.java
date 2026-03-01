@@ -15,9 +15,9 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static io.github.sweetzonzi.machine_max.external.js.hook.Hook.HOOK_SIGNAL_MAP;
 /**
@@ -41,7 +41,7 @@ public class KeyHooks {
         LEFT_ALT(new EVENT("left.alt")),
         RIGHT_ALT(new EVENT("right.alt")),
         ;
-        private final EVENT event;
+        public final EVENT event;
 
         Combination(EVENT s) {
             event = s;
@@ -63,6 +63,29 @@ public class KeyHooks {
             return false; //过滤后续的信号
         }
 
+    }
+
+    public enum OtherKeyType {
+        LeftMouseButton("key.mouse.left"),
+        RightMouseButton("key.mouse.right"),
+        MiddleMouseButton("key.mouse.middle"),
+        MouseButton4("key.mouse.4"),
+        MouseButton5("key.mouse.5"),
+        MouseButton6("key.mouse.6"),
+        MouseButton7("key.mouse.7"),
+        MouseButton8("key.mouse.8"),
+
+        ;
+
+        private final String s;
+        OtherKeyType(String s) {
+            this.s = s;
+        }
+
+        @Override
+        public String toString() {
+            return s;
+        }
     }
 
     public static class GamePadSetting {
@@ -91,7 +114,8 @@ public class KeyHooks {
         private KeyMapping mapping = null;
         private GamePadSetting gamePadSetting = null;
         private final List<EVENT> children = new ArrayList<>();
-        private final List<Combination> combinationKeys = new ArrayList<>();
+        private final Collection<Combination> combinationKeys = new HashSet<>();
+        private final Collection<EVENT> combinationEvents = new HashSet<>();
 
         public EVENT(String keyName) {
             this.keyName = InputSignalProvider.key(keyName);
@@ -152,12 +176,18 @@ public class KeyHooks {
                     pass = false; // 不予通过
                 }
             }
+            for (EVENT eck : combinationEvents) {
+                if (!eck.isHover()) { // 绑定的按键未按下
+                    pass = false; // 不予通过
+                }
+            }
             if (pass) { //上方过滤器通过再交予该过滤器，节省性能
                 for (Combination value : Combination.values()) {
-                    if (
-                            !combinationKeys.isEmpty() && // 排除没有绑定任何组合键的情况
-                                    !combinationKeys.contains(value) && value.event.isHover()// 并且未绑定的部分被按下
-                    ) {
+                    boolean filter =  !combinationKeys.isEmpty() && // 排除没有绑定任何组合键的情况
+                            !combinationKeys.contains(value) && value.event.isHover();// 并且未绑定的部分被按下
+                    filter = filter || !combinationEvents.isEmpty() && // 排除没有绑定任何组合键的情况
+                            !combinationEvents.contains(value.event) && value.event.isHover();// 并且未绑定的部分被按下
+                    if (filter) {
                         pass = false; // 不予通过
                     }
 
@@ -430,6 +460,18 @@ public class KeyHooks {
         }
 
         /**
+         * 添加一个组合键到 combinationEvents 集合，
+         * 当集合里所有组合键都被触发时，那些事件处理器才能触发
+         *
+         * @param combination 一个组合键
+         * @return {@link EVENT} 对象，用于链式调用
+         */
+        public EVENT with(EVENT combination) {
+            combinationEvents.add(combination);
+            return this;
+        }
+
+        /**
          * 清理所有的连接关系，包括了所有的子事件体和所有组合键均被清空
          * 在它下面定义的事件恢复为初始状态
          *
@@ -438,8 +480,10 @@ public class KeyHooks {
         public EVENT flush() {
             children.clear();
             combinationKeys.clear();
+            combinationEvents.clear();
             return this;
         }
+
 
         private interface RootEvent {
         }
