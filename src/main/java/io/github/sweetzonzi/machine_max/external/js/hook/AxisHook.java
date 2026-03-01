@@ -1,64 +1,37 @@
 package io.github.sweetzonzi.machine_max.external.js.hook;
 
-import lombok.Getter;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * 轴事件钩子类，用于监听和处理轴输入事件
+ * <p>
+ * 该类提供了一个统一的接口来处理各种轴输入事件，如鼠标移动、滚轮滚动等。
+ * 它使用线程池异步处理事件，确保事件处理不会阻塞主线程。
+ * <p>
+ * 主要功能：
+ * 1. 注册轴类型并监听其数据变化
+ * 2. 统一的事件处理机制，支持异步事件触发
+ * 3. 自动处理空值，将null转换为0D
+ * 4. 保持轴类型的注册顺序，确保事件回调中数据顺序的一致性
+ */
 public class AxisHook {
     public static final String AxisDataHead = "axis."; //不会自增的数据 多用于轴输入
-    private final static List<AxisHook> axisHookList = new ArrayList<>();
-    private NotNullAxisEvent notNullAxisEvent;
-    private NullableAxisEvent nullableAxisEvent;
+    private final static Set<AxisHook> axisHookList = new HashSet<>();
     /// 优化：添加线程池用于异步处理事件 暂时仅为轴输入支持
     private static final ExecutorService eventExecutor = Executors.newCachedThreadPool();
 
-    @Getter
     private final Map<AxisType, Double> dataMap = new ConcurrentHashMap<>();
+    private final List<AxisType> axisTypesList = new ArrayList<>(); // 保存轴类型的顺序
 
-    private boolean nullable = false;
-
-    static {
-        new Thread(()->{
-            while (true) {
-                try {
-                    Thread.sleep(Duration.of(40, ChronoUnit.MILLIS));
-
-                    for (AxisHook ah : axisHookList) {
-                        Double[] nullableData = new Double[ah.dataMap.size()];
-                        double[] values = new double[ah.dataMap.size()];
-
-                        int i = 0;
-                        for (AxisType axisType : ah.dataMap.keySet()) {
-                            Double v = ah.dataMap.get(axisType);
-                            if (!ah.nullable && v == null) v = 0D;
-                            nullableData[i] = v;
-                            values[i] = v;
-                            i ++;
-                        }
-                        if (ah.nullable) {
-                            eventExecutor.execute(() -> {ah.nullableAxisEvent.event(nullableData);});
-                        } else {
-                            eventExecutor.execute(() -> {ah.notNullAxisEvent.event(values);});
-
-                        }
-                    }
-                } catch (InterruptedException ignore) {}
-            }
-        }).start();
-    }
+    private AxisEvent axisEvent;
 
     @FunctionalInterface
-    public interface NotNullAxisEvent {
+    public interface AxisEvent {
         void event(double... delta);
-    }
-    @FunctionalInterface
-    public interface NullableAxisEvent {
-        void event(Double... delta);
     }
 
     /**
@@ -67,25 +40,23 @@ public class AxisHook {
     public static AxisHook createWith(AxisType... types) {
         AxisHook instance = new AxisHook();
         for (AxisType type : types) {
-            instance.dataMap.put(type, null);
+            instance.dataMap.put(type, 0D); //todo 默认值暂时为0，以后也许要为不同类型定义各自定义默认值
+            instance.axisTypesList.add(type); // 保存轴类型的顺序
         }
         axisHookList.add(instance);
         return instance;
     }
 
-    public void NotNullBind(NotNullAxisEvent event) {
-        notNullAxisEvent = event;
-    }
-    public void NullableBind(NullableAxisEvent event) {
-        nullable = true;
-        nullableAxisEvent = event;
+    public AxisHook EVENT(AxisEvent event) {
+        axisEvent = event;
+        return this;
     }
 
     public enum AxisType {
         XScroll, // 鼠标水平滚轮
         YScroll, // 鼠标垂直滚轮
-        XMove, // 鼠标水平Delta移动
-        YMove, // 鼠标垂直Delta移动
+        XDelta, // 鼠标水平Delta移动
+        YDelta, // 鼠标垂直Delta移动
         XPosition, // 鼠标水平绝对位置
         YPosition, // 鼠标垂直绝对位置
         ;
@@ -106,8 +77,7 @@ public class AxisHook {
         }
 
         public boolean isCancel() {
-            boolean b = isCancel;
-            return b;
+            return isCancel;
         }
     }
 
@@ -117,23 +87,41 @@ public class AxisHook {
     public static void putAxisData(AxisType type, Double data) {
         for (AxisHook ah : axisHookList) {
             ah.dataMap.put(type, data);
+            ah.triggerEvent(); // 数据输入时触发事件
+        }
+    }
+
+    /**
+     * 触发事件的方法
+     * */
+    private void triggerEvent() {
+        if (axisEvent != null) {
+            double[] values = new double[axisTypesList.size()];
+            int i = 0;
+            for (AxisType axisType : axisTypesList) {
+                Double v = dataMap.get(axisType);
+                if (v == null) v = 0D;
+                values[i] = v;
+                i++;
+            }
+            eventExecutor.execute(() -> {axisEvent.event(values);});
         }
     }
 
 /// 使用示范
     public static void main(String[] args) {
-        AxisHook.createWith(AxisType.XMove, AxisType.YMove)
-                .NotNullBind(bind -> {  //不可空数据，遇空自动覆盖为0
+        AxisHook.createWith(AxisType.XDelta, AxisType.YDelta)
+                .EVENT(bind -> {  // 统一使用 EVENT 方法，遇空自动覆盖为0
             double x = bind[0];
             double y = bind[1];
         });
 
-        AxisHook.createWith(AxisType.XMove, AxisType.YMove, AxisType.XScroll, AxisType.XPosition)
-                .NullableBind(bind -> { //可空数据，所以用 Double接收
-            Double x = bind[0];
-            Double y = bind[1];
-            Double xScroll = bind[2];
-            Double xPosition = bind[3];
+        AxisHook.createWith(AxisType.XDelta, AxisType.YDelta, AxisType.XScroll, AxisType.XPosition)
+                .EVENT(bind -> { // 统一使用 EVENT 方法，遇空自动覆盖为0
+            double x = bind[0];
+            double y = bind[1];
+            double xScroll = bind[2];
+            double xPosition = bind[3];
         });
     }
 }

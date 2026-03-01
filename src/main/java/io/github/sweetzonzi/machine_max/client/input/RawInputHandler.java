@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.external.js.hook.AxisHook;
 import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.MovementInputPayload;
@@ -58,6 +59,14 @@ public class RawInputHandler {
     static int rot_x_conflict = 0;
     static int rot_y_conflict = 0;
     static int rot_z_conflict = 0;
+
+    // 鼠标拖动绑定示范
+//    static AxisHook mouseBind = AxisHook.createWith(AxisHook.AxisType.XDelta, AxisHook.AxisType.YDelta)
+//            .EVENT(bind -> {  //不可空数据，遇空自动覆盖为0
+//                double x = bind[0];
+//                double y = bind[1];
+//                System.out.println("x: " + x + " y: " + y);
+//    });
 
 
     /**

@@ -4,7 +4,6 @@ import com.llamalad7.mixinextras.sugar.Local;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
 import io.github.sweetzonzi.machine_max.client.input.RawInputHandler;
 import io.github.sweetzonzi.machine_max.external.js.hook.AxisHook;
-import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import net.minecraft.client.MouseHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -38,9 +37,14 @@ public class MouseHandlerMixin {
     private void onMove(long window, double x, double y, CallbackInfo ci) {
         double deltaX = x - lastX;
         double deltaY = y - lastY;
+        // 注入鼠标拖动信号
+        AxisHook.putAxisData(AxisHook.AxisType.XDelta, deltaX);
+        AxisHook.putAxisData(AxisHook.AxisType.YDelta, deltaY);
+        // 注入鼠标当前坐标位置
+        AxisHook.putAxisData(AxisHook.AxisType.XPosition, x);
+        AxisHook.putAxisData(AxisHook.AxisType.YPosition, y);
 
-        AxisHook.putAxisData(AxisHook.AxisType.XMove, deltaX);
-        AxisHook.putAxisData(AxisHook.AxisType.YMove, deltaY);
-
+        lastX = x;
+        lastY = y;
     }
 }
