@@ -25,13 +25,19 @@
       "default": [0, 0, 0],
       "description": "Steering center position, relative to the part's local coordinate system."
     },
-    "steering_radius": {
+    "min_steering_radius": {
+      "type": "number",
+      "minimum": 0,
+      "default": 5.0,
+      "description": "Minimum steering radius, in meters. Used for steering limits at low speeds and when handbrake is applied."
+    },
+    "lateral_acceleration": {
       "oneOf": [
         {
           "type": "number",
           "minimum": 0,
-          "default": 5.0,
-          "description": "Steering radius, in meters, used to calculate steering angle. Supports single value input or speed-radius mapping table."
+          "default": 8.0,
+          "description": "Lateral acceleration limit, in m/s². Used to calculate steering radius in real-time based on speed (radius = speed² / acceleration)."
         },
         {
           "type": "object",
@@ -39,19 +45,47 @@
             "type": "number",
             "minimum": 0
           },
-          "description": "Speed-steering radius mapping table, where keys are speed (km/h) and values are corresponding steering radius (meters). Supports linear interpolation.",
+          "description": "Speed-lateral acceleration mapping table, where keys are speed (km/h) and values are corresponding lateral acceleration limits (m/s²). Supports linear interpolation.",
           "examples": [
             {
-              "0": 3.0,
-              "30": 5.0,
-              "60": 8.0,
-              "100": 12.0
+              "0": 8.0,
+              "30": 6.0,
+              "60": 4.0,
+              "100": 3.0
             }
           ]
         }
       ],
-      "default": 5.0,
-      "description": "Steering radius, in meters, used to calculate steering angle. Supports single value input or speed-radius mapping table."
+      "default": 8.0,
+      "description": "Lateral acceleration limit, in m/s². Used to calculate steering radius in real-time based on speed (radius = speed² / acceleration)."
+    },
+    "max_drift_angular_velocity": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "Maximum drift angular velocity, in rad/s. Used as the target value for PD controller during drifting."
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "Speed-maximum drift angular velocity mapping table, where keys are speed (km/h) and values are corresponding maximum drift angular velocity (rad/s). Supports linear interpolation.",
+          "examples": [
+            {
+              "0": 0.8,
+              "30": 1.0,
+              "60": 1.2,
+              "100": 1.5
+            }
+          ]
+        }
+      ],
+      "default": 1.0,
+      "description": "Maximum drift angular velocity, in rad/s. Used as the target value for PD controller during drifting."
     },
     "manual_gear_shift": {
       "type": "boolean",
@@ -75,10 +109,41 @@
   "examples": [
     {
       "type": "machine_max:car_controller",
+      "description": "Minimal example - only required fields"
+    },
+    {
+      "type": "machine_max:car_controller",
       "basic_durability": 50.0,
-      "steering_radius": 5.0,
+      "steering_center": [0, 0.5, 0],
+      "min_steering_radius": 4.0,
+      "lateral_acceleration": 8.0,
+      "max_drift_angular_velocity": 2.0,
       "manual_gear_shift": true,
-      "control_inputs": ["move_control", "regular_control"]
+      "auto_hand_brake": true,
+      "control_inputs": ["move_control", "regular_control"],
+      "description": "Complete example - includes all optional fields"
+    },
+    {
+      "type": "machine_max:car_controller",
+      "basic_durability": 60.0,
+      "steering_center": [0, 0.3, -0.2],
+      "min_steering_radius": 3.5,
+      "lateral_acceleration": {
+        "0": 8.0,
+        "30": 6.0,
+        "60": 4.0,
+        "100": 3.0
+      },
+      "max_drift_angular_velocity": {
+        "0": 1.5,
+        "30": 2.0,
+        "60": 2.5,
+        "100": 3.0
+      },
+      "manual_gear_shift": false,
+      "auto_hand_brake": true,
+      "control_inputs": ["move_control"],
+      "description": "Advanced example - using mapping tables"
     }
   ]
 }

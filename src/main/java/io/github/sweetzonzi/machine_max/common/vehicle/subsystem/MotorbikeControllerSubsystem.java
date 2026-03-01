@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
@@ -21,7 +22,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
     public MotorbikeControllerSubsystem(ISubsystemHost owner, String name, MotorbikeControllerSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.rollController = new PIDController(25.0f, 2.0f, 7.0f, 1f / 60f, -180, 180);
+        this.rollController = new PIDController(25.0f, 2.0f, 7.0f, 1.0 / PhysicsLevel.TPS, -180, 180);
     }
 
     @Override

@@ -120,18 +120,16 @@ public class MMMath {
 
     public static Vector3f relPointWorldVel(Vector3f relPointPos, PhysicsRigidBody obj) {
         Vector3f result = obj.getLinearVelocity(null);//获取物体质心在世界坐标系下的线速度
-        Vector3f relAngularVel = obj.getAngularVelocity(null);//获取物体在世界坐标系的三轴角速度
-        // 计算旋转带来的额外速度
-        Vector3f extraVelocity = new Vector3f();
-        relAngularVel.cross(localVectorToWorldVector(relPointPos, obj), extraVelocity);
-        return result.add(extraVelocity);
+        return result.add(relPointExtraVelFromAngularVel(relPointPos, obj.getPhysicsRotation(null), obj.getAngularVelocity(null)));
     }
 
     public static Vector3f relPointWorldVel(Vector3f relPointPos, Quaternion rotation, Vector3f worldVel, Vector3f angularVel) {
-        // 计算旋转带来的额外速度
+        return worldVel.add(relPointExtraVelFromAngularVel(relPointPos, rotation, angularVel));
+    }
+
+    public static Vector3f relPointExtraVelFromAngularVel(Vector3f relPointPos, Quaternion rotation, Vector3f angularVel){
         Vector3f extraVelocity = new Vector3f();
-        angularVel.cross(localVectorToWorldVector(relPointPos, rotation), extraVelocity);
-        return worldVel.add(extraVelocity);
+        return angularVel.cross(localVectorToWorldVector(relPointPos, rotation), extraVelocity);
     }
 
     public static Vector3f worldPointWorldVel(Vector3f worldPointPos, PhysicsRigidBody obj) {

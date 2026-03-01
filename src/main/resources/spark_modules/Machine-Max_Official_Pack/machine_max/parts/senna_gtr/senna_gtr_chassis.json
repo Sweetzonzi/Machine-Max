@@ -6,7 +6,7 @@
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "model": "machine_max:senna_gtr_chassis.geo",
-    "textures": "machine_max:textures/part/senna_gtr.png",
+    "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
     "animations": "machine_max:senna_gtr",
     "tags": ["chassis", "senna_gtr"],
     "sub_parts": {
@@ -165,10 +165,10 @@
             "joint_attrs": {
               "y": {
                 "lower_limit": -1.0,
-                "upper_limit": 1.5,
+                "upper_limit": 0.5,
                 "equilibrium": -0.1,
-                "stiffness": 25000,
-                "damping": 350
+                "stiffness": 65000,
+                "damping": 1500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -178,13 +178,13 @@
                 "lower_limit": -45.0,
                 "upper_limit": 45.0,
                 "stiffness": 1000,
-                "damping": 20
+                "damping": 200
               },
               "zr": {
                 "lower_limit": 1.0,
-                "upper_limit": 15.0,
+                "upper_limit": 3.0,
                 "equilibrium": 1.0,
-                "stiffness": 35000,
+                "stiffness": 25000,
                 "damping": 350
               }
             }
@@ -199,10 +199,10 @@
             "joint_attrs": {
               "y": {
                 "lower_limit": -1.0,
-                "upper_limit": 1.5,
+                "upper_limit": 0.5,
                 "equilibrium": -0.1,
-                "stiffness": 25000,
-                "damping": 350
+                "stiffness": 65000,
+                "damping": 1500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -210,9 +210,9 @@
               },
               "zr": {
                 "lower_limit": 1.0,
-                "upper_limit": 15.0,
+                "upper_limit": 3.0,
                 "equilibrium": 1.0,
-                "stiffness": 35000,
+                "stiffness": 25000,
                 "damping": 350
               }
             }
@@ -227,10 +227,10 @@
             "joint_attrs": {
               "y": {
                 "lower_limit": -1.0,
-                "upper_limit": 1.5,
+                "upper_limit": 0.5,
                 "equilibrium": -0.1,
-                "stiffness": 25000,
-                "damping": 350
+                "stiffness": 65000,
+                "damping": 1500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -240,13 +240,13 @@
                 "lower_limit": -45.0,
                 "upper_limit": 45.0,
                 "stiffness": 1000,
-                "damping": 20
+                "damping": 200
               },
               "zr": {
-                "lower_limit": -15.0,
+                "lower_limit": -3.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 35000,
+                "stiffness": 25000,
                 "damping": 350
               }
             }
@@ -262,20 +262,20 @@
             "joint_attrs": {
               "y": {
                 "lower_limit": -1.0,
-                "upper_limit": 1.5,
+                "upper_limit": 0.5,
                 "equilibrium": -0.1,
-                "stiffness": 25000,
-                "damping": 350
+                "stiffness": 65000,
+                "damping": 1500
               },
               "xr": {
                 "lower_limit": 1.0,
                 "upper_limit": -1.0
               },
               "zr": {
-                "lower_limit": -15.0,
+                "lower_limit": -3.0,
                 "upper_limit": -1.0,
                 "equilibrium": -1.0,
-                "stiffness": 35000,
+                "stiffness": 25000,
                 "damping": 350
               }
             }

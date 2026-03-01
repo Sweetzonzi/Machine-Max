@@ -15,7 +15,9 @@ import java.util.TreeMap;
 @Getter
 public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final Vec3 steeringCenter;
-    public final TreeMap<Float, Float> steeringRadiusMap;
+    public final float minSteeringRadius;
+    public final TreeMap<Float, Float> lateralAccelerationMap;
+    public final TreeMap<Float, Float> maxDriftAngularVelocityMap;
     public final boolean manualGearShift;
     public final boolean autoHandBrake;
     public final List<String> controlInputKeys;
@@ -61,42 +63,81 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public static final MapCodec<CarControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Vec3.CODEC.optionalFieldOf("steering_center", Vec3.ZERO).forGetter(CarControllerSubsystemStaticAttr::getSteeringCenter),
-            STEERING_RADIUS_CODEC.optionalFieldOf("steering_radius", createDefaultSteeringRadiusMap()).forGetter(CarControllerSubsystemStaticAttr::getSteeringRadiusMap),
+            Codec.FLOAT.optionalFieldOf("min_steering_radius", 5.0f).forGetter(CarControllerSubsystemStaticAttr::getMinSteeringRadius),
+            STEERING_RADIUS_CODEC.optionalFieldOf("lateral_acceleration", createDefaultLateralAccelerationMap()).forGetter(CarControllerSubsystemStaticAttr::getLateralAccelerationMap),
+            STEERING_RADIUS_CODEC.optionalFieldOf("max_drift_angular_velocity", createDefaultMaxDriftAngularVelocityMap()).forGetter(CarControllerSubsystemStaticAttr::getMaxDriftAngularVelocityMap),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(CarControllerSubsystemStaticAttr::isManualGearShift),
             Codec.BOOL.optionalFieldOf("auto_hand_brake", true).forGetter(CarControllerSubsystemStaticAttr::isAutoHandBrake),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(CarControllerSubsystemStaticAttr::getControlInputKeys)
     ).apply(instance, CarControllerSubsystemStaticAttr::new));
 
-    public static TreeMap<Float, Float> createDefaultSteeringRadiusMap() {
+    public static TreeMap<Float, Float> createDefaultLateralAccelerationMap() {
         TreeMap<Float, Float> map = new TreeMap<>();
-        map.put(0.0f, 5.0f);
+        map.put(0.0f, 8.0f); // 默认侧向加速度 8 m/s²
+        return map;
+    }
+
+    public static TreeMap<Float, Float> createDefaultMaxDriftAngularVelocityMap() {
+        TreeMap<Float, Float> map = new TreeMap<>();
+        map.put(0.0f, 1.0f); // 默认最大漂移角速度 1 rad/s
         return map;
     }
 
     public CarControllerSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr,
             Vec3 steeringCenter,
-            TreeMap<Float, Float> steeringRadiusMap,
+            float minSteeringRadius,
+            TreeMap<Float, Float> lateralAccelerationMap,
+            TreeMap<Float, Float> maxDriftAngularVelocityMap,
             boolean manualGearShift,
             boolean autoHandBrake,
             List<String> controlInputKeys) {
         super(basicAttr);
         this.steeringCenter = steeringCenter;
-        this.steeringRadiusMap = steeringRadiusMap;
+        this.minSteeringRadius = minSteeringRadius;
+        this.lateralAccelerationMap = lateralAccelerationMap;
+        this.maxDriftAngularVelocityMap = maxDriftAngularVelocityMap;
         this.manualGearShift = manualGearShift;
         this.autoHandBrake = autoHandBrake;
         this.controlInputKeys = controlInputKeys;
     }
 
     public float getSteeringRadiusAtSpeed(float currentMps) {
-        if (steeringRadiusMap.isEmpty()) {
-            return 5.0f;
+        // 根据侧向加速度计算转向半径: radius = v² / a
+        float lateralAcceleration = getLateralAccelerationAtSpeed(currentMps);
+        if (lateralAcceleration <= 0) {
+            return minSteeringRadius;
+        }
+        float radius = (currentMps * currentMps) / lateralAcceleration;
+        return Math.max(radius, minSteeringRadius);
+    }
+
+    public float getLateralAccelerationAtSpeed(float currentMps) {
+        if (lateralAccelerationMap.isEmpty()) {
+            return 8.0f;
         }
         float currentKmh = currentMps * 3.6f; // 转为 km/h
-        Map.Entry<Float, Float> floor = steeringRadiusMap.floorEntry(currentKmh);
-        Map.Entry<Float, Float> ceiling = steeringRadiusMap.ceilingEntry(currentKmh);
+        Map.Entry<Float, Float> floor = lateralAccelerationMap.floorEntry(currentKmh);
+        Map.Entry<Float, Float> ceiling = lateralAccelerationMap.ceilingEntry(currentKmh);
         
-        if (floor == null && ceiling == null) return 5.0f;
+        if (floor == null && ceiling == null) return 8.0f;
+        if (floor == null) return ceiling.getValue();
+        if (ceiling == null) return floor.getValue();
+        if (floor.getKey().equals(ceiling.getKey())) return floor.getValue();
+        
+        float ratio = (currentKmh - floor.getKey()) / (ceiling.getKey() - floor.getKey());
+        return floor.getValue() + (ceiling.getValue() - floor.getValue()) * ratio;
+    }
+
+    public float getMaxDriftAngularVelocityAtSpeed(float currentMps) {
+        if (maxDriftAngularVelocityMap.isEmpty()) {
+            return 2.0f;
+        }
+        float currentKmh = currentMps * 3.6f; // 转为 km/h
+        Map.Entry<Float, Float> floor = maxDriftAngularVelocityMap.floorEntry(currentKmh);
+        Map.Entry<Float, Float> ceiling = maxDriftAngularVelocityMap.ceilingEntry(currentKmh);
+        
+        if (floor == null && ceiling == null) return 2.0f;
         if (floor == null) return ceiling.getValue();
         if (ceiling == null) return floor.getValue();
         if (floor.getKey().equals(ceiling.getKey())) return floor.getValue();

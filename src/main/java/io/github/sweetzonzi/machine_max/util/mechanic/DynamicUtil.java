@@ -15,52 +15,39 @@ import java.util.List;
 public class DynamicUtil {
 
     /**
-     * 计算基于滑移率的摩擦系数缩放因子。
-     *
-     * <p>该函数实现一个光滑可导（C¹ 连续）的单峰摩擦曲线，
-     * 用于模拟“静摩擦 → 峰值 → 动摩擦”的典型行为。
-     *
-     * <h3>设计目标</h3>
-     * <ul>
-     *     <li>滑移率 s = 0 时，μ = 1.0 × μ_static</li>
-     *     <li>s = 0.15 时达到峰值，μ ≈ 1.2 × μ_static</li>
-     *     <li>s → 1 时逐渐下降至 μ ≈ 0.9 × μ_static</li>
-     * </ul>
-     *
-     * <h3>内部常数说明（经验物理参数）</h3>
-     * <ul>
-     *     <li>0.15 —— 峰值滑移率（15%），符合常见橡胶-地面实验区间 10~20%</li>
-     *     <li>1.2 —— 峰值放大系数，表示微观咬合带来的摩擦增强</li>
-     *     <li>0.9 —— 大滑移动摩擦衰减系数</li>
-     * </ul>
-     *
-     * <p>曲线使用 smoothstep(x)=x²(3−2x) 进行 Hermite 插值，
-     * 确保在分段连接处一阶导数连续，避免物理求解器抖动。
-     *
-     * @param slipRatio 滑移率 s，建议范围 [0, +∞)，内部会自动钳制到 [0,1]
-     * @return 摩擦系数相对于静摩擦系数 μ_static 的缩放因子
+     * 通用滑移率摩擦缩放函数 (C¹ 连续分段曲线)
+     * * @param slipRatio     当前滑移率 (通常 0.0 ~ 1.0+)
+     * @param peakSlip      峰值滑移率点 (例如 0.15)
+     * @param baseScale     初始摩擦系数缩放 (s=0 时的值，通常为 1.0)
+     * @param peakScale     峰值摩擦系数缩放 (s=peakSlip 时的值，例如 1.2)
+     * @param kineticScale  极限滑移下的摩擦系数缩放 (s=1.0 时的值，例如 0.9)
+     * @return 最终的摩擦缩放因子
      */
-    public static float frictionScaleFromSlip(float slipRatio) {
-
-        // ----------- 魔法数字（物理经验值） -----------
-        final float PEAK_SLIP = 0.15f;     // 峰值滑移率 15%
-        final float PEAK_SCALE = 1.2f;     // 峰值为静摩擦的 1.2 倍
-        final float KINETIC_SCALE = 0.9f;  // 大滑移时衰减至 0.9 倍
-        // ---------------------------------------------
-
+    public static float calculateSlipScale(
+            float slipRatio,
+            float peakSlip,
+            float baseScale,
+            float peakScale,
+            float kineticScale
+    ) {
         float s = Math.max(0f, slipRatio);
 
-        if (s <= PEAK_SLIP) {
-            // 上升段：1.0 → 1.2
-            float t = s / PEAK_SLIP;
-            float smooth = t * t * (3f - 2f * t); // smoothstep
-            return 1.0f + (PEAK_SCALE - 1.0f) * smooth;
+        if (s < peakSlip) {
+            // --- 上升段：从 baseScale 到 peakScale ---
+            // 归一化插值因子 [0, 1]
+            float t = s / Math.max(1e-5f, peakSlip);
+            // Smoothstep 插值: 3t^2 - 2t^3
+            float smooth = t * t * (3f - 2f * t);
+            return baseScale + (peakScale - baseScale) * smooth;
+
         } else {
-            // 下降段：1.2 → 0.9
-            float t = (s - PEAK_SLIP) / (1f - PEAK_SLIP);
+            // --- 下降段：从 peakScale 到 kineticScale ---
+            // 归一化插值因子 [0, 1]，超过 1.0 的部分会被 clamp
+            float t = (s - peakSlip) / Math.max(1e-5f, 1f - peakSlip);
             t = Math.min(t, 1f);
-            float smooth = t * t * (3f - 2f * t); // smoothstep
-            return PEAK_SCALE + (KINETIC_SCALE - PEAK_SCALE) * smooth;
+            // Smoothstep 插值
+            float smooth = t * t * (3f - 2f * t);
+            return peakScale + (kineticScale - peakScale) * smooth;
         }
     }
 
@@ -142,13 +129,13 @@ public class DynamicUtil {
 
         // 简单升力（仅在非高级模式下）
         if (!useAdvanced) {
-            float xzVel = (float) Math.sqrt(vx * vx + vz * vz);
-            float xyVel = (float) Math.sqrt(vx * vx + vy * vy);
-            float yzVel = (float) Math.sqrt(vy * vy + vz * vz);
+            float xzVel2 = vx * vx + vz * vz;
+            float xyVel2 = vx * vx + vy * vy;
+            float yzVel2 = vy * vy + vz * vz;
 
-            result.x += attr.xLift() * yzVel * density * (float) projectedArea.x * 0.5f;
-            result.y += attr.yLift() * xzVel * density * (float) projectedArea.y * 0.5f;
-            result.z += attr.zLift() * xyVel * density * (float) projectedArea.z * 0.5f;
+            result.x += attr.xLift() * yzVel2 * density * (float) projectedArea.x * 0.5f;
+            result.y += attr.yLift() * xzVel2 * density * (float) projectedArea.y * 0.5f;
+            result.z += attr.zLift() * xyVel2 * density * (float) projectedArea.z * 0.5f;
         }
 
         // 全局缩放

@@ -7,7 +7,7 @@
   "variants": {//部件变体列表, 支持单值或多键值对
     "front": {//变体名称
       "model": "machine_max:senna_gtr_front_bumper.geo", //模型路径
-      "textures": "machine_max:textures/part/senna_gtr.png",
+      "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
       "tags": ["bumper", "senna_gtr", "front"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
@@ -80,13 +80,13 @@
               "integrity": 15.0 //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             }
           },
-          "projected_area": [0.13, 1.04, 0.74],
+          "projected_area": [0.13, 1.0, 0.74],
           "hydro_priority": 20,
           "hydrodynamics": {
             "": {
               "front_drag": [0.1, 0.12],
               "back_drag": [0.1, 0.12],
-              "y_lift": -1.6
+              "y_lift": -0.2
             }
           }
         }
@@ -94,7 +94,7 @@
     },
     "back": {//变体名称
       "model": "machine_max:senna_gtr_back_bumper.geo", //模型路径
-      "textures": "machine_max:textures/part/senna_gtr.png",
+      "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
       "tags": ["bumper", "senna_gtr", "back"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
@@ -167,13 +167,13 @@
               "integrity": 15.0 //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             }
           },
-          "projected_area": [0.13, 1.04, 0.74],
+          "projected_area": [0.13, 1.0, 0.74],
           "hydro_priority": 20,
           "hydrodynamics": {
             "": {
               "front_drag": [0.1, 0.12],
               "back_drag": [0.1, 0.12],
-              "y_lift": -2.2
+              "y_lift": -0.15
             }
           }
         }

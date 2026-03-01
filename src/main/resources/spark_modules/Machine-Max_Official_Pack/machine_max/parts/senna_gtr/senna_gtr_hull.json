@@ -7,7 +7,7 @@
   "variants": {
     "front": {
       "model": "machine_max:senna_gtr_front_hull.geo",
-      "textures": "machine_max:textures/part/senna_gtr.png",
+      "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:senna_gtr",
       "tags": ["hull", "senna_gtr", "front"],
       "sub_parts": {
@@ -76,7 +76,7 @@
     },
     "back": {
       "model": "machine_max:senna_gtr_back_hull.geo",
-      "textures": "machine_max:textures/part/senna_gtr.png",
+      "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:senna_gtr",
       "tags": ["hull", "senna_gtr", "back"],
       "sub_parts": {
@@ -116,9 +116,9 @@
           "hydro_priority": 10,
           "hydrodynamics": {
             "": {
-              "front_drag": [0.1, 0.0],
+              "front_drag": [0.1, 0.05],
               "back_drag": [0.1, 0.1],
-              "y_lift": -1.5
+              "y_lift": -0.001
             }
           }
         }

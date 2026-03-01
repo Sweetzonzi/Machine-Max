@@ -19,7 +19,9 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
     public static final MapCodec<MotorbikeControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Vec3.CODEC.optionalFieldOf("steering_center", Vec3.ZERO).forGetter(MotorbikeControllerSubsystemStaticAttr::getSteeringCenter),
-            CarControllerSubsystemStaticAttr.STEERING_RADIUS_CODEC.optionalFieldOf("steering_radius", CarControllerSubsystemStaticAttr.createDefaultSteeringRadiusMap()).forGetter(MotorbikeControllerSubsystemStaticAttr::getSteeringRadiusMap),
+            Codec.FLOAT.optionalFieldOf("min_steering_radius", 5.0f).forGetter(MotorbikeControllerSubsystemStaticAttr::getMinSteeringRadius),
+            CarControllerSubsystemStaticAttr.STEERING_RADIUS_CODEC.optionalFieldOf("lateral_acceleration", CarControllerSubsystemStaticAttr.createDefaultLateralAccelerationMap()).forGetter(MotorbikeControllerSubsystemStaticAttr::getLateralAccelerationMap),
+            CarControllerSubsystemStaticAttr.STEERING_RADIUS_CODEC.optionalFieldOf("max_drift_angular_velocity", CarControllerSubsystemStaticAttr.createDefaultMaxDriftAngularVelocityMap()).forGetter(MotorbikeControllerSubsystemStaticAttr::getMaxDriftAngularVelocityMap),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(MotorbikeControllerSubsystemStaticAttr::isManualGearShift),
             Codec.BOOL.optionalFieldOf("auto_hand_brake", true).forGetter(MotorbikeControllerSubsystemStaticAttr::isAutoHandBrake),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(MotorbikeControllerSubsystemStaticAttr::getControlInputKeys),
@@ -31,7 +33,9 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
     public MotorbikeControllerSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr,
             Vec3 steeringCenter,
-            TreeMap<Float, Float> steeringRadiusMap,
+            float minSteeringRadius,
+            TreeMap<Float, Float> lateralAccelerationMap,
+            TreeMap<Float, Float> maxDriftAngularVelocityMap,
             boolean manualGearShift,
             boolean autoHandBrake,
             List<String> controlInputKeys,
@@ -40,7 +44,9 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             float correctionForceMultiplier) {
         super(basicAttr,
                 steeringCenter,
-                steeringRadiusMap,
+                minSteeringRadius,
+                lateralAccelerationMap,
+                maxDriftAngularVelocityMap,
                 manualGearShift,
                 autoHandBrake,
                 controlInputKeys);

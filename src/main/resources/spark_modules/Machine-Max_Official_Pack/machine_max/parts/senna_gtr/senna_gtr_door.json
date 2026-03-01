@@ -7,7 +7,7 @@
   "variants": {
     "left": {
       "model": "machine_max:senna_gtr_door_left.geo",
-      "textures": "machine_max:textures/part/senna_gtr.png",
+      "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty",
       "tags": ["door", "senna_gtr", "left"],
       "sub_parts": {
@@ -47,7 +47,7 @@
     },
     "right": {//变体名称
       "model": "machine_max:senna_gtr_door_right.geo",
-      "textures": "machine_max:textures/part/senna_gtr.png",
+      "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty",
       "tags": ["door", "senna_gtr", "right"],
       "sub_parts": {

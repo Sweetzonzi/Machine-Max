@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -8,7 +10,11 @@ import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CarControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
+import io.github.sweetzonzi.machine_max.util.control.PDController;
+import io.github.sweetzonzi.machine_max.util.control.PIDController;
 import lombok.Getter;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +23,7 @@ import java.util.Map;
 @Getter
 public class CarControllerSubsystem extends AbstractSubsystem {
     public final CarControllerSubsystemAttr attr;
+    public LivingEntity controller;
     public byte[] moveInput;
     public byte[] moveInputConflict;
     Vector3f[] vs = new Vector3f[6];
@@ -36,14 +43,33 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     private final Map<WheelDriverSubsystem, String> wheels = new HashMap<>();//控制的车轮其接收控制的信号频道映射 Control wheel and its receiving signal channel mapping
 
     public boolean handBrake = true;
+    public boolean isDrifting = false;
     public float actualThrottle = 0f;
     public float actualBrake = 0f;
     public float actualHandBrake = 0f;
     public float actualSteering = 0f;
 
+    private final PIDController driftingPD;
+    /**
+     * 漂移角，弧度制
+     */
+    public float driftRad = 0.0f;
+    public boolean drifting = false;
+    private final float DRIFT_START_RAD = SparkMathKt.toRadians(5.0f);
+    private final float DRIFT_END_RAD = SparkMathKt.toRadians(3.0f);
+    /**
+     * 漂移控制与一般控制的融合权重，0为纯原生控制，1为漂移接管
+     */
+    private float driftWeight = 0;
+    /**
+     * 漂移转向输入，弧度制
+     */
+    private float driftControl = 0;
+
     public CarControllerSubsystem(ISubsystemHost owner, String name, CarControllerSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+        this.driftingPD = new PIDController(1.5, 0.2, 0.1, 1.0 / PhysicsLevel.TPS, -1, 1);
     }
 
     @Override
@@ -69,14 +95,33 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        if (!wheels.isEmpty()) {
-
+        // 获取基础物理数据
+        Vector3f localVel = getOwner().getSubPart().getLinearVelocityLocal();
+        this.speed = -localVel.z; // 前进速度
+        this.driftRad = (float) Math.atan2(localVel.x, Math.abs(localVel.z) + 0.1f);
+        float bodyYawRate = getOwner().getSubPart().body.getAngularVelocityLocal(null).y; // 当前角速度
+        // 漂移状态判断
+        if (drifting && Math.abs(driftRad) < DRIFT_END_RAD) {
+            drifting = false;
+        } else if (!drifting && Math.abs(driftRad) > DRIFT_START_RAD) {
+            drifting = true;
         }
-        this.speed = -getOwner().getSubPart().getLinearVelocityLocal().z;
+        // 强制手刹起漂时漂移控制权重为 1
+        if (actualHandBrake > 0.5f && localVel.lengthSquared() > 4) driftWeight = 1.0f;
+        else if (drifting && localVel.lengthSquared() > 4) driftWeight = 1.0f;
+        else driftWeight = 0.0f;
         if (isActive() && getOwner().getSubPart().getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
-                actualSteering = actualSteering * 0.9f + (moveInput[4]) * 0.1f;
+                actualSteering = actualSteering * 0.9f + (moveInput[4] / 100f) * 0.1f;
+                // 使用最大漂移角速度作为PD控制器的目标值
+                float maxDriftAngularVelocity = attr.staticAttribute.getMaxDriftAngularVelocityAtSpeed(Math.abs(speed));
+                if (driftWeight > 1e-4)
+                    driftControl = (float) driftingPD.step(actualSteering * maxDriftAngularVelocity, bodyYawRate);
+                else {
+                    driftControl = 0.0f;
+                    driftingPD.resetError();
+                }
             }
             actualHandBrake = actualHandBrake * 0.9f + (handBrake ? 1 : 0) * 0.1f;
             distributeControlSignals();
@@ -95,7 +140,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         for (Map.Entry<String, List<String>> entry : attr.steeringOutputTargets.entrySet()) {
             String signalChannel = entry.getKey();
             List<String> targets = entry.getValue();
-            var steering = actualSteering * 0.01f;
+            var steering = actualSteering;
             for (String targetName : targets)
                 sendSignalToTarget(signalChannel, targetName, steering);
         }
@@ -267,11 +312,15 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         boolean hasMoveInput = false;
         for (String inputKey : attr.staticAttribute.controlInputKeys) {//遍历输入信号 Iterate over input signalChannel
             SignalChannel signalChannel = getSignalChannel(inputKey);
-            for (Object signal : signalChannel.values()) {
+            for (Map.Entry<ISignalSender, Object> entry : signalChannel.entrySet()) {
+                ISignalSender sender = entry.getKey();
+                Object signal = entry.getValue();
                 if (signal instanceof MoveInputSignal moveInputSignal) {//找到移动输入信号 Find move input signal
                     moveInput = moveInputSignal.getMoveInput();
                     moveInputConflict = moveInputSignal.getMoveInputConflict();
                     hasMoveInput = true;
+                    if (sender instanceof SeatSubsystem seat)
+                        this.controller = seat.passenger;
                     break;
                 }
             }
@@ -283,6 +332,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         } else {
             this.moveInput = null;
             this.moveInputConflict = null;
+            this.controller = null;
         }
     }
 
@@ -323,7 +373,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     String channel = entry.getValue();
                     WheelDriverSubsystem wheel = entry.getKey();
                     if (wheel.connector.joint != null) {
-                        float steeringInput = ackermannSteering(actualSteering, wheel.connector);
+                        float steeringInput = steering(actualSteering, wheel.connector);
                         float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
                         sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                     }
@@ -341,7 +391,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         String channel = entry.getValue();
                         WheelDriverSubsystem wheel = entry.getKey();
                         if (wheel.connector.joint != null) {
-                            float steeringInput = ackermannSteering(actualSteering, wheel.connector);
+                            float steeringInput = steering(actualSteering, wheel.connector);
                             float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
                             sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                         }
@@ -358,7 +408,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         String channel = entry.getValue();
                         WheelDriverSubsystem wheel = entry.getKey();
                         if (wheel.connector.joint != null) {
-                            float steeringInput = ackermannSteering(actualSteering, wheel.connector);
+                            float steeringInput = steering(actualSteering, wheel.connector);
                             float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
                             sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                         }
@@ -385,7 +435,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     String channel = entry.getValue();
                     WheelDriverSubsystem wheel = entry.getKey();
                     if (wheel.connector.joint != null) {
-                        float steeringInput = ackermannSteering(actualSteering, wheel.connector);
+                        float steeringInput = steering(actualSteering, wheel.connector);
                         sendCallbackToListener(channel, wheel, new WheelControlSignal(actualBrake, actualHandBrake, steeringInput));
                     }
                 }
@@ -477,6 +527,11 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         return result;
     }
 
+    protected float steering(float steeringInput, AdvancedConnector wheelDrive) {
+        if (driftWeight <= 0f) return ackermannSteering(steeringInput, wheelDrive);
+        else return (1 - driftWeight) * ackermannSteering(steeringInput, wheelDrive) + driftWeight * driftSteering();
+    }
+
     protected float ackermannSteering(float steeringInput, AdvancedConnector wheelDrive) {
         New6Dof joint = wheelDrive.joint;
         Vector3f pivot = new Vector3f();
@@ -486,14 +541,21 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             return 0;
         } else {
             // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
-            float minSteeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(0f) / steeringInput * 100f;//最小转向半径(米) Minimum steering radius (m)
-            float steeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput * 100f;//实际转向半径(米) Actual steering radius (m)
-            steeringRadius = actualHandBrake > 1e-7f ? minSteeringRadius : steeringRadius;
+            float steeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput;//实际转向半径(米) Actual steering radius (m)
             double deltaRadius = pivot.x - attr.staticAttribute.steeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
             double deltaForward = pivot.z - attr.staticAttribute.steeringCenter.z;
             return (float) Math.atan(deltaForward / (steeringRadius + deltaRadius));
         }
+    }
+
+    /**
+     * 漂移模式下自动反打方向，并使用PD控制器逼近目标角速度
+     *
+     * @return 轮胎转向角度，以弧度为单位
+     */
+    protected float driftSteering() {
+        return 0.5f * driftRad + driftControl;
     }
 
     @Override
@@ -541,8 +603,9 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         // 获取轮胎角速度
         float angularVelocity = -wheel.getRelativeAngularVel().get(0); // X轴角速度
         // 计算轮胎线速度
-        float wheelLinearSpeed = angularVelocity * wheel.attr.staticAttribute.getAbsWheelRadius();
+        float wheelLinearSpeed = Math.abs(angularVelocity * wheel.attr.staticAttribute.getAbsWheelRadius());
+        float absSpeed = Math.abs(speed);
         // 计算滑移率
-        return (speed - wheelLinearSpeed) / speed;
+        return Math.abs(absSpeed - wheelLinearSpeed) / (Math.min(absSpeed, wheelLinearSpeed) + 0.1f);
     }
 }

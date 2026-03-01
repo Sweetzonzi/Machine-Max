@@ -271,6 +271,13 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         return result;
     }
 
+    public Vector3f getAngularVelocityLocal() {
+        Vector3f result = getAngularVelocity();//获取物体在世界坐标系下的角速度
+        Quaternion worldToLocal = getRotation(); //获取物体相对世界坐标的四元数
+        MyQuaternion.rotateInverse(worldToLocal, result, result);//旋转世界坐标系向量到刚体自身坐标系
+        return result;
+    }
+
     public Vector3f getFrontVector() {
         return PhysicsHelperKt.toBVector3f(getQuaternionf().transform(new org.joml.Vector3f(0, 0, -1)));
     }

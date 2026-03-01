@@ -93,6 +93,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil.calculateSlipScale;
+
 @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
 @Getter
 public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPart>, ISubsystemHost, ISignalReceiver {
@@ -241,7 +243,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         //获取世界坐标下的碰撞点法线，由另一物体指向自身
         point2.getNormalWorld(normal);
         //计算相对接触速度
-        Vector3f contactVel = MMMath.relPointWorldVel(localContactPoint, body.getPhysicsRotation(null), getLinearVelocity(), getAngularVelocity());
+        Vector3f contactVel = MMMath.relPointWorldVel(
+                localContactPoint,
+                body.getPhysicsRotation(null),
+                body.getLinearVelocity(null),
+                body.getAngularVelocity(null));
         contactVel.subtractLocal((o2 instanceof PhysicsRigidBody) ? MMMath.relPointWorldVel(otherLocalContactPoint, other) : new Vector3f());
         //计算碰撞角度（法线与速度方向的夹角）
         float impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(contactVel.normalize())));
@@ -250,8 +256,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         HitBox hitBox = this.getHitBox(hitBoxIndex);
         //根据实际接触部位重设摩擦系数
         Vector3f friction = PhysicsHelperKt.toBVector3f(hitBox.attr.friction());
-        if (!friction.equals(body.getAnisotropicFriction(null)))
-            body.setAnisotropicFriction(friction, AfMode.basic);
+        if (!friction.equals(body.getAnisotropicFriction(null)) && !isWheel(hitBoxIndex))
+            body.setAnisotropicFriction(friction, AfMode.basic); // 非轮子部件重设摩擦系数，轮胎另行处理逻辑
         if (hitBox.attr.rollingFriction() != body.getRollingFriction())
             body.setRollingFriction(hitBox.attr.rollingFriction());
         if (hitBox.attr.rollingFriction() != body.getSpinningFriction())
@@ -272,6 +278,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
+    Vector3f tmpFront = new Vector3f();
+    Vector3f tmpSide = new Vector3f();
 
     @Override
     protected void onCollideWithTerrain(PhysicsRigidBody other, Vector3f normal, Vector3f worldContactPoint, Vector3f localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel, int hitBoxIndex, int otherHitBoxIndex, float impactAngle, ManifoldPoint point1, ManifoldPoint point2, long manifoldPointId) {
@@ -302,15 +310,38 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //等效质量计算，考虑连接部件的影响
             float partMass = this.getEquivalentMass();
             //摩擦力修正
-            float normalVel = contactVel.dot(normal); // 法线方向上的速度
-            Vector3f vt = contactVel.subtract(normal.mult(normalVel)); // 切向相对速度
-            float tangentialSpeed = vt.length(); // 切向速度
-            float slipRatio = tangentialSpeed / (tangentialSpeed + 1.0f); // 滑移率
-            float muDry = DynamicUtil.frictionScaleFromSlip(slipRatio); // 干燥状态摩擦修正系数
+            float normalContactVel = contactVel.dot(normal); // 法线方向上的接触速度
+            Vector3f slipVel = contactVel.subtract(normal.mult(normalContactVel)); // 滑移速度
+            Vector3f wheelVel = MMMath.relPointExtraVelFromAngularVel(localContactPoint, body.getPhysicsRotation(null), body.getAngularVelocity(null));
+            //获取前向和侧向
+            normal.cross(getRightVector(), tmpFront);
+            tmpFront.cross(normal, tmpSide);
+            float slipAngle = (float) Math.atan2(tmpSide.dot(slipVel), tmpFront.dot(slipVel)); // 滑移角(rad)
+            float moveVelLen = body.getLinearVelocity(null).length();
+            float wheelVelLen = Math.abs(wheelVel.dot(tmpFront));
+            float slipRatio = Math.abs(moveVelLen - wheelVelLen) / (Math.max(moveVelLen, wheelVelLen) + 0.1f); // 滑移率
             float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation()); // 有效湿滑强度
             float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * slipRatio * 0.7f); // 湿滑衰减
-            // 重设摩擦系数
-            ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * blockFriction * muDry * wetFactor));
+            if (isWheel(hitBoxIndex) && isWheelSurface(hitBoxIndex)) { // 轮胎特殊处理
+                double cos2 = Math.cos(slipAngle) * Math.cos(slipAngle);
+                double sin2 = Math.sin(slipAngle) * Math.sin(slipAngle);
+                float angleDeg = (float) Math.toDegrees(Math.abs(slipAngle));
+                float s_angle = angleDeg / 90.0f; // 归一化到 [0, 1]
+                double muFront = hitBox.getMuFront() // 滑移率15%时摩擦系数达到峰值
+                        * calculateSlipScale(slipRatio, 0.15f, 1.0f, 1.3f, 0.9f);
+                double muSide = hitBox.getMuSide() // 设定侧向在 12度达到峰值，且动摩擦衰减更剧烈(0.5f)
+                        * calculateSlipScale(s_angle, 0.133f, 1.0f, 1.1f, 0.5f);
+                // 根据摩擦方向调整摩擦系数，越接近某个方向，实际摩擦系数越接近对应方向的摩擦系数
+                float scale = (float) (muFront * muSide / Math.sqrt(muFront * muFront * sin2 + muSide * muSide * cos2));
+                // 重设摩擦方向
+                Vector3f slipVelNorm = slipVel.normalize();
+                ManifoldPoints.setLateralFrictionDir1(manifoldPointId, slipVelNorm);
+                ManifoldPoints.setLateralFrictionDir2(manifoldPointId, normal.cross(slipVelNorm));
+                // 重设摩擦系数
+                ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * scale * blockFriction * wetFactor));
+            } else { // 一般物体直接重设摩擦系数
+                ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * blockFriction * wetFactor));
+            }
             ManifoldPoints.setCombinedRollingFriction(manifoldPointId, Math.max(0f, body.getRollingFriction() * blockRollingFriction));
             //若是需要攀爬辅助处理的方块
             if (climbableBlocks.contains(blockPos)) {
@@ -760,7 +791,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public void postPhysicsTick() {
         super.postPhysicsTick();
         for (AbstractConnector connector : this.connectors.values()) connector.postPhysicsTick();
-        getAnimController().physTick();
     }
 
     /**

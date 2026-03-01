@@ -173,7 +173,7 @@ public class CameraController {
                 //回到保存记录的位置
                 if (seat.getOwner().getSubPart().getEntity() instanceof MMPartEntity partEntity) {
                     entity.setXRot(aimPitch);
-                    entity.setYRot(Mth.wrapDegrees(aimYaw + partEntity.getYRot()));
+                    entity.setYRot(Mth.wrapDegrees(aimYaw + 180 +  partEntity.getYRot()));
 //                    entity.setYHeadRot(aimYaw + 180 + partEntity.getYRot());
                 }
             } else {

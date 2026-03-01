@@ -46,4 +46,19 @@ public class HitBox {
         return attr.unPenetrateDamageFactor();
     }
 
+    /**
+     * 获取碰撞箱的前向摩擦系数
+     * @return 前向摩擦系数
+     */
+    public double getMuFront() {
+        return attr.friction().y();
+    }
+    /**
+     * 获取碰撞箱的侧向摩擦系数
+     * @return 侧向摩擦系数
+     */
+    public double getMuSide() {
+        return attr.friction().x();
+    }
+
 }

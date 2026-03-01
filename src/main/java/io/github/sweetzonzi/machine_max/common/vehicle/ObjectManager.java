@@ -270,9 +270,8 @@ public class ObjectManager {
         Level level = event.getLevel().getMcLevel();
         PhysicsLevel physicsLevel = event.getLevel();
         SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-            physicsLevel.getWorld().useScr(true);//补偿弹性系数以改善小物体的碰撞精度
             physicsLevel.getWorld().getSolverInfo().setGlobalCfm(1e-5f);
-            physicsLevel.getWorld().getSolverInfo().setNumIterations(25);
+            physicsLevel.getWorld().getSolverInfo().setNumIterations(100);
 //            Plane plane = new Plane(Vector3f.UNIT_Y, -59.5f);//测试平面
 //            PlaneCollisionShape shape = new PlaneCollisionShape(plane);
 //            PhysicsRigidBody body = new PhysicsRigidBody(shape, 0);

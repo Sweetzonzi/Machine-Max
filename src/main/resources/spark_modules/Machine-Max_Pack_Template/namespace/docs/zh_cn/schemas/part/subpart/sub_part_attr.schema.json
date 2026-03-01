@@ -127,9 +127,6 @@
       },
       "hydro_priority": 0,
       "hydrodynamics": {
-        "AeroDynamicCenter": {
-          "effective_range": 5.0
-        }
       }
     }
   ]

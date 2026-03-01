@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -51,7 +52,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
         coupleTorquePD = new PDController(
                 1.5 * attr.getStaticAttribute().getInertia(), //kp
                 0.5 * attr.getStaticAttribute().getInertia(), //kd
-                1 / 60f //step
+                1.0 / PhysicsLevel.TPS //step
         );
         if (attr.getStaticAttribute().workingStates.isEmpty() && getLevel().isClientSide())
             attr.getStaticAttribute().createSounds();
@@ -104,7 +105,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
         if (speedFeedback instanceof EmptySignal) {
             //挂空挡时，全部输出用于改变发动机转速
             if (!getSubPart().level.isClientSide()) { //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
-                rotSpeed += netTorque / attr.staticAttribute.inertia / 60f;
+                rotSpeed += netTorque / attr.staticAttribute.inertia / PhysicsLevel.TPS;
                 rotSpeed = 0.995 * rotSpeed + 0.005 * IDLE_SPEED;//额外修正
                 setRotSpeed((float) rotSpeed);
             }
@@ -120,7 +121,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             ) : 0; // 使用耦合扭矩补偿转速差，考虑饱和模拟打滑
             //有转速反馈信号时，根据转速反馈信号控制引擎转速
             if (!getSubPart().level.isClientSide()) { //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
-                rotSpeed += (netTorque - coupleTorque) / attr.staticAttribute.inertia / 60f;
+                rotSpeed += (netTorque - coupleTorque) / attr.staticAttribute.inertia / PhysicsLevel.TPS;
                 rotSpeed = Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 2);
                 rotSpeed = 0.95 * Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.05 * feedback; // 额外修正
                 setRotSpeed((float) rotSpeed);
@@ -129,7 +130,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速信号
         } else {
             //没有转速反馈信号时，直接取用引擎转速
-            rotSpeed += netTorque / (7 * attr.staticAttribute.inertia) / 60f;
+            rotSpeed += netTorque / (7 * attr.staticAttribute.inertia) / PhysicsLevel.TPS;
             rotSpeed = Math.max(rotSpeed, 0.8 * IDLE_SPEED);
             if (!isActive()) rotSpeed = 0;
             sendSignalToAllTargets("power", new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));
