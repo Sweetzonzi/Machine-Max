@@ -6,10 +6,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,6 +43,8 @@ public class InputListener {
     public static final Map<String, List<ChainAbleInput>> pressKeyInputs = new ConcurrentHashMap<>();
     public static final Map<String, Boolean> pressKeyStatus = new ConcurrentHashMap<>();
     public static final Map<String, Boolean> combineKeyStatus = new ConcurrentHashMap<>();
+    // 存储懒注册的 ChainAbleInput 实例
+    public static final List<ChainAbleInput> lazyRegisterInputs = new ArrayList<>();
 
     // 调试日志开关
     private static final boolean DEBUG = false;
@@ -96,6 +95,30 @@ public class InputListener {
             while (true) {
                 try {
                     if (windowHandle != null) {
+                        // 处理懒注册的 ChainAbleInput
+                        List<ChainAbleInput> lazyInputs = new ArrayList<>();
+                        for (ChainAbleInput input : lazyRegisterInputs) {
+                            if (input.isLazyRegister() && input.getContext() instanceof GLFWKeyContext glfwKeyContext) {
+                                String keyText = glfwKeyContext.getKeyText();
+                                if (keyText != null) {
+                                    lazyInputs.add(input);
+                                }
+                            }
+                        }
+                        for (ChainAbleInput input : lazyInputs) {
+                            if (input.getContext() instanceof GLFWKeyContext glfwKeyContext) {
+                                String keyText = glfwKeyContext.getKeyText();
+                                if (keyText != null) {
+                                    // 移除旧的懒注册记录
+                                    lazyRegisterInputs.remove(input);
+                                    // 更新 keyName 并注册
+                                    input.setKeyName(keyText);
+                                    input.setLazyRegister(false);
+                                    pressKeyInputs.computeIfAbsent(keyText, k -> new ArrayList<>()).add(input);
+                                }
+                            }
+                        }
+                        
                         for (String keyText : pressKeyInputs.keySet()) {
                             List<ChainAbleInput> chainAbleInputs = pressKeyInputs.get(keyText);
                             for (ChainAbleInput chainAbleInput : chainAbleInputs) {

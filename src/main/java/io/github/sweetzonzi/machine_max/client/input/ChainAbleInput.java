@@ -48,6 +48,10 @@ public class ChainAbleInput {
     @Getter
     private InputContext context;
 
+    @Getter
+    @Setter
+    private boolean lazyRegister = false;
+
     private String combinedKeyName;
 
 
@@ -69,7 +73,13 @@ public class ChainAbleInput {
         GLFWKeyContext glfwKeyContext = new GLFWKeyContext(glfwKey);
         context = glfwKeyContext;
         keyName = glfwKeyContext.getKeyText();
-        InputListener.pressKeyInputs.computeIfAbsent(keyName, k -> new ArrayList<>()).add(this);
+        // 若名称获取失败则走懒注册机制
+        if (keyName == null) {
+            lazyRegister = true;
+            InputListener.lazyRegisterInputs.add(this);
+        } else {
+            InputListener.pressKeyInputs.computeIfAbsent(keyName, k -> new ArrayList<>()).add(this);
+        }
     }
 
 //    public ChainAbleInput(XInputButton button) {
@@ -166,14 +176,17 @@ public class ChainAbleInput {
         while (last.next != null) {
             last = last.next;
         }
-        if (next.keyName.equals(last.keyName)) {
+        // 检查 next.keyName 是否为 null
+        if (next.keyName != null && last.keyName != null && next.keyName.equals(last.keyName)) {
             last.pressTimes += next.pressTimes;
             return last;
         }
         last.setNext(next);
 
         // 更新combinedKey
-        InputListener.pressKeyInputs.getOrDefault(keyName, new ArrayList<>()).removeIf(nativeInput -> nativeInput.equals(this));
+        if (keyName != null) {
+            InputListener.pressKeyInputs.getOrDefault(keyName, new ArrayList<>()).removeIf(nativeInput -> nativeInput.equals(this));
+        }
         String oldCombinedKeyName = getCombinedKeyName();
         if (oldCombinedKeyName != null && !oldCombinedKeyName.isEmpty()) {
             InputListener.combineKeyInputsMap.getOrDefault(oldCombinedKeyName, new ArrayList<>()).remove(this);
