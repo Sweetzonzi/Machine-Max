@@ -260,7 +260,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             body.setRestitution(hitBox.attr.restitution());
         if (other.getCollisionGroup() == CollisionGroups.TERRAIN) {
             //与方块碰撞时
-            this.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
+            this.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, point1, point2, manifoldPointId);
         } else if (other.getCollisionGroup() == CollisionGroups.PHYSICS_BODY) {
             //与另一刚体碰撞时
             this.onCollideWithRigid(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
@@ -274,8 +274,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
 
     @Override
-    protected void onCollideWithTerrain(PhysicsRigidBody other, Vector3f normal, Vector3f worldContactPoint, Vector3f localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel, int hitBoxIndex, int otherHitBoxIndex, float impactAngle, long manifoldPointId) {
-        super.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
+    protected void onCollideWithTerrain(PhysicsRigidBody other, Vector3f normal, Vector3f worldContactPoint, Vector3f localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel, int hitBoxIndex, int otherHitBoxIndex, float impactAngle, ManifoldPoint point1, ManifoldPoint point2, long manifoldPointId) {
+        super.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, point1, point2, manifoldPointId);
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof PhysicsChunkSection terrain) {
             other.shouldShowDebugBoxWhenNonColldeWith = true;
@@ -298,30 +298,32 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float blockFriction = block.getFriction();
             float blockRollingFriction = block.getRollingFriction();
             float blockRestitution = block.getRestitution();
-            float blockSlip = block.getSlip();
+            float blockSlip = block.getSlip(); // 湿滑系数，0~1，0表示完全干燥，1表示完全湿滑
             //等效质量计算，考虑连接部件的影响
             float partMass = this.getEquivalentMass();
             //摩擦力修正
-            float slip = (float) 1 - (blockSlip * (1 - hitBox.attr.slipAdaptation()));//潮湿与打滑带来的修正系数
-            if (contactVel.length() > 1f && impactAngle > 60f && impactAngle < 120f) {//打滑时
-                slip = (float) (Math.pow(slip, 0.5 * (contactVel.length() - 1)) * 0.9f);//根据打滑情况额外降低摩擦系数
-                //TODO:漂移音效，摩擦力应先上升后下降
-            }
-            //重设摩擦系数
-            float bodyFriction = body.getFriction();
-            ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, bodyFriction * blockFriction * slip));
+            float normalVel = contactVel.dot(normal); // 法线方向上的速度
+            Vector3f vt = contactVel.subtract(normal.mult(normalVel)); // 切向相对速度
+            float tangentialSpeed = vt.length(); // 切向速度
+            float slipRatio = tangentialSpeed / (tangentialSpeed + 1.0f); // 滑移率
+            float muDry = DynamicUtil.frictionScaleFromSlip(slipRatio); // 干燥状态摩擦修正系数
+            float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation()); // 有效湿滑强度
+            float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * slipRatio * 0.7f); // 湿滑衰减
+            // 重设摩擦系数
+            ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * blockFriction * muDry * wetFactor));
             ManifoldPoints.setCombinedRollingFriction(manifoldPointId, Math.max(0f, body.getRollingFriction() * blockRollingFriction));
             //若是需要攀爬辅助处理的方块
             if (climbableBlocks.contains(blockPos)) {
                 //重设碰撞法线方向
-                normal = Vector3f.UNIT_Y;
+                normal = point1.getIndex() == 0 ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate();
                 ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
                 ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
                 if (attr.isClimbAssist()) {
                     // 人工设置一个小的侵入深度，法线向上，若侵入深度为0.05则期望每帧使部件上浮0.05*ERP的高度
-                    ManifoldPoints.setDistance1(manifoldPointId, Math.clamp(worldContactPoint.y - blockPos.getY() + 1, -0.03f, -0.02f));
+//                    ManifoldPoints.setDistance1(manifoldPointId, -0.05f);
+                    ManifoldPoints.setDistance1(manifoldPointId, Math.clamp(worldContactPoint.y - blockPos.getY() + 1, -0.05f, -0.01f));
                 } else { //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
                     ManifoldPoints.setDistance1(manifoldPointId, 500f);
                 }
@@ -417,9 +419,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                         contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
                         }
                     }
-                    if (contactVel.length() > 5 && !climbableBlocks.contains(blockPos) && finalNormal.y > 0.95f && worldContactPoint.y - blockPos.getY() > -0.1f) {
+                    if (slipRatio > 0.3 && !climbableBlocks.contains(blockPos) && finalNormal.y > 0.95f && worldContactPoint.y - blockPos.getY() > -0.1f) {
                         // 漂移烟雾与音效
-                        if (Math.random() < Math.max(1f, 0.01f * contactVel.length()))
+                        if (Math.random() < 0.5 * slipRatio)
                             level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
                                     worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
                                     contactVel.x * (0.03f + 0.02f * (Math.random() - 0.5f)),
@@ -611,8 +613,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         super.prePhysicsTick();
         for (AbstractConnector connector : this.connectors.values()) connector.prePhysicsTick();
         this.body.getLinearVelocity(tmpWorldVel);
-        // 仅在有速度时应用流体动力
-        if (tmpWorldVel.lengthSquared() > 0.01f) {
+        // 仅在服务端且有速度时应用流体动力
+        if (!level.isClientSide() && tmpWorldVel.lengthSquared() > 0.01f) {
             for (Map.Entry<String, HydrodynamicAttr> entry : attr.hydrodynamics.entrySet()) {
                 String name = entry.getKey();
                 HydrodynamicAttr hydrodynamicAttr = entry.getValue();

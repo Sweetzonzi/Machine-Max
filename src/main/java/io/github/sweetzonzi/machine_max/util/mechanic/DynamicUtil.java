@@ -15,6 +15,56 @@ import java.util.List;
 public class DynamicUtil {
 
     /**
+     * 计算基于滑移率的摩擦系数缩放因子。
+     *
+     * <p>该函数实现一个光滑可导（C¹ 连续）的单峰摩擦曲线，
+     * 用于模拟“静摩擦 → 峰值 → 动摩擦”的典型行为。
+     *
+     * <h3>设计目标</h3>
+     * <ul>
+     *     <li>滑移率 s = 0 时，μ = 1.0 × μ_static</li>
+     *     <li>s = 0.15 时达到峰值，μ ≈ 1.2 × μ_static</li>
+     *     <li>s → 1 时逐渐下降至 μ ≈ 0.9 × μ_static</li>
+     * </ul>
+     *
+     * <h3>内部常数说明（经验物理参数）</h3>
+     * <ul>
+     *     <li>0.15 —— 峰值滑移率（15%），符合常见橡胶-地面实验区间 10~20%</li>
+     *     <li>1.2 —— 峰值放大系数，表示微观咬合带来的摩擦增强</li>
+     *     <li>0.9 —— 大滑移动摩擦衰减系数</li>
+     * </ul>
+     *
+     * <p>曲线使用 smoothstep(x)=x²(3−2x) 进行 Hermite 插值，
+     * 确保在分段连接处一阶导数连续，避免物理求解器抖动。
+     *
+     * @param slipRatio 滑移率 s，建议范围 [0, +∞)，内部会自动钳制到 [0,1]
+     * @return 摩擦系数相对于静摩擦系数 μ_static 的缩放因子
+     */
+    public static float frictionScaleFromSlip(float slipRatio) {
+
+        // ----------- 魔法数字（物理经验值） -----------
+        final float PEAK_SLIP = 0.15f;     // 峰值滑移率 15%
+        final float PEAK_SCALE = 1.2f;     // 峰值为静摩擦的 1.2 倍
+        final float KINETIC_SCALE = 0.9f;  // 大滑移时衰减至 0.9 倍
+        // ---------------------------------------------
+
+        float s = Math.max(0f, slipRatio);
+
+        if (s <= PEAK_SLIP) {
+            // 上升段：1.0 → 1.2
+            float t = s / PEAK_SLIP;
+            float smooth = t * t * (3f - 2f * t); // smoothstep
+            return 1.0f + (PEAK_SCALE - 1.0f) * smooth;
+        } else {
+            // 下降段：1.2 → 0.9
+            float t = (s - PEAK_SLIP) / (1f - PEAK_SLIP);
+            t = Math.min(t, 1f);
+            float smooth = t * t * (3f - 2f * t); // smoothstep
+            return PEAK_SCALE + (KINETIC_SCALE - PEAK_SCALE) * smooth;
+        }
+    }
+
+    /**
      * 根据给定部件的运动状态计算其受到的流体动力
      *
      * @param density       流体密度，仅用于阻力二阶项和升力计算

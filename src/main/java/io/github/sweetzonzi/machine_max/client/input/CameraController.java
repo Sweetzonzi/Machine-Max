@@ -32,19 +32,34 @@ import org.joml.Quaternionf;
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public class CameraController {
     private static Minecraft client;
-    private static float pitch = 0;
-    private static float yaw = 0;
-    private static float roll = 0;
+    /**
+     * 玩家乘坐载具的刚体变换，用于基于部件坐标系额外旋转视角
+     */
     private static Transform extraTransform = new Transform();
+    /**
+     * 玩家乘坐载具的上一tick刚体变换，用于插值
+     */
     private static Transform oldExtraTransform = new Transform();
+    private static boolean onBoard = false;
+    private static boolean justLeft = false;
+    // 目标观察方向，根据鼠标滑动实时更新
     private static float targetViewPitch = 0;
     private static float targetViewYaw = 0;
     private static float targetViewRoll = 0;
+    // 目标瞄准方向，非自由视角下根据鼠标滑动实时更新
     private static float aimPitch = 0;
     private static float aimYaw = 0;
     private static float aimRoll = 0;
+    // 实际观察方向，每帧向目标瞄准方向逼近
+    private static float pitch = 0;
+    private static float yaw = 0;
+    private static float roll = 0;
     public static Vec3 aimDirection = new Vec3(1, 0, 0);
     private static float speedDistanceFactor = 0.0f;
+    /**
+     * 角度是否已初始化，避免刚进游戏和刚上车时从0开始插值
+     */
+    private static boolean anglesInitialized = false;
 
     public static void init() {
         client = Minecraft.getInstance();
@@ -88,39 +103,52 @@ public class CameraController {
         }
     }
 
+    /**
+     * 临时变量
+     */
+    private static final Transform tmpViewTransform = Transform.IDENTITY.clone();
+
     @SubscribeEvent
     public static void updateCameraRot(ViewportEvent.ComputeCameraAngles event) {
         Camera camera = event.getCamera();
         CameraType type = client.options.getCameraType();
         Entity entity = camera.getEntity();
         float partialTick = (float) event.getPartialTick();
+        
+        // 初始化角度，避免刚进游戏和刚上车时从0开始插值
+        if (!anglesInitialized) {
+            aimPitch = entity.getViewXRot(partialTick);
+            aimYaw = entity.getViewYRot(partialTick);
+            aimRoll = 0F;
+            targetViewPitch = aimPitch;
+            targetViewYaw = aimYaw;
+            targetViewRoll = aimRoll;
+            pitch = aimPitch;
+            yaw = aimYaw;
+            roll = aimRoll;
+            anglesInitialized = true;
+        }
+        
         //更新计算相机相对其所处坐标系的旋转
-        pitch = 0.6f * pitch + 0.4f * targetViewPitch;
-        yaw = 0.6f * yaw + 0.4f * targetViewYaw;
-        roll = 0.6f * roll + 0.4f * targetViewRoll;
+//        pitch = 0.6f * pitch + 0.4f * targetViewPitch;
+//        yaw = 0.6f * yaw + 0.4f * targetViewYaw;
+//        roll = 0.6f * roll + 0.4f * targetViewRoll;
+        pitch = targetViewPitch;
+        yaw = targetViewYaw;
+        roll = targetViewRoll;
         AbstractControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
-        if (subsystem instanceof SeatSubsystem seat) {
-            if (!type.isFirstPerson() && !seat.attr.staticAttribute.views.followVehicle()) throw new RuntimeException();
+        if (subsystem instanceof SeatSubsystem seat && (type.isFirstPerson() || seat.attr.staticAttribute.views.followVehicle())) {
             //基于附体坐标系旋转相机
             Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
-            //TODO: combine的TempVars.get()会IndexOutOfBoundsException？
-            Transform viewTransform;
-            try {
-                viewTransform = MyMath.combine(new Transform(new Vector3f(), SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
-                                Math.toRadians(roll),
-                                Math.toRadians(-yaw),
-                                Math.toRadians(pitch)))),
-                        extra, null);
-            } catch (Exception e) {
-                viewTransform = MyMath.combine(new Transform(new Vector3f(), SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
-                                Math.toRadians(roll),
-                                Math.toRadians(-yaw),
-                                Math.toRadians(pitch)))),
-                        extra, null);
-            }
+            //TODO: combine的TempVars.get()会在未找到座椅连接点时IndexOutOfBoundsException，检查逻辑
+            MyMath.combine(new Transform(Vector3f.ZERO, SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
+                            Math.toRadians(roll),
+                            Math.toRadians(-yaw),
+                            Math.toRadians(pitch)))),
+                    extra, tmpViewTransform);
             //计算对应欧拉角
             org.joml.Vector3f rot = new org.joml.Vector3f();
-            SparkMathKt.toQuaternionf(viewTransform.getRotation()).getEulerAnglesYXZ(rot);
+            SparkMathKt.toQuaternionf(tmpViewTransform.getRotation()).getEulerAnglesYXZ(rot);
             //计算相机瞄准方向向量
             aimDirection = new Vec3(Math.cos(rot.x) * Math.sin(rot.y), Math.sin(rot.x), Math.cos(rot.x) * Math.cos(rot.y));
             rot.mul((float) (180 / Math.PI));
@@ -138,21 +166,39 @@ public class CameraController {
         //非自由视角模式下，逐渐回正视角
         if (!RawInputHandler.freeCam) {
             if (subsystem instanceof SeatSubsystem seat) {
+                if (!onBoard) {
+                    onBoard = true;
+                    justLeft = false;
+                }
                 //回到保存记录的位置
                 if (seat.getOwner().getSubPart().getEntity() instanceof MMPartEntity partEntity) {
                     entity.setXRot(aimPitch);
-                    entity.setYRot(Mth.wrapDegrees(aimYaw + partEntity.getYRot() + 180));
+                    entity.setYRot(Mth.wrapDegrees(aimYaw + partEntity.getYRot()));
 //                    entity.setYHeadRot(aimYaw + 180 + partEntity.getYRot());
                 }
             } else {
+                if (onBoard) {
+                    onBoard = false;
+                    justLeft = true;
+                    anglesInitialized = false;
+                }
                 //回到实体实时视角
                 aimPitch = entity.getViewXRot(partialTick);
                 aimYaw = entity.getViewYRot(partialTick);
-                aimRoll = 0;
+                aimRoll = 0F;
             }
-            targetViewPitch = 0.9f * targetViewPitch + 0.1f * aimPitch;
-            targetViewYaw = 0.9f * targetViewYaw + 0.1f * aimYaw;
-            targetViewRoll = 0.9f * targetViewRoll + 0.1f * aimRoll;
+            if (justLeft) {
+                targetViewPitch = aimPitch;
+                targetViewYaw = aimYaw;
+                targetViewRoll = aimRoll;
+                pitch = aimPitch;
+                yaw = aimYaw;
+                roll = aimRoll;
+            } else {
+                targetViewPitch = 0.9f * targetViewPitch + 0.1f * aimPitch;
+                targetViewYaw = 0.9f * targetViewYaw + 0.1f * aimYaw;
+                targetViewRoll = 0.9f * targetViewRoll + 0.1f * aimRoll;
+            }
         }
     }
 

@@ -66,8 +66,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
                             Brightness.FULL_BRIGHT.pack(),
                             packedOverlay,
                             Color.WHITE.getRGB(),
-                            1,
-                            true
+                            1
                     );
                 }
             }
@@ -83,8 +82,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
                     Brightness.FULL_BRIGHT.pack(),
                     packedOverlay,
                     customModelItem.getColor(stack, Minecraft.getInstance().level, displayContext).getRGB(),
-                    1,
-                    true
+                    1
             );
             poseStack.popPose();
         }
