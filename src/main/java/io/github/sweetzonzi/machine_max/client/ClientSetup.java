@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.client;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
 //import io.github.sweetzonzi.machine_max.client.input.NativeKeyListener;
-import io.github.sweetzonzi.machine_max.client.input.InputListener;
 import io.github.sweetzonzi.machine_max.common.registry.MMVisualEffects;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -17,7 +16,6 @@ public class ClientSetup {
         CameraController.init();
         MMVisualEffects.init();
 //        NativeKeyListener.setUp();
-        InputListener.setUp();
         MachineMax.LOGGER.debug("Client setup complete");
     }
 }
