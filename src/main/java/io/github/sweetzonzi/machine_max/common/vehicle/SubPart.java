@@ -356,8 +356,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
                 if (attr.isClimbAssist()) {
                     // 人工设置一个小的侵入深度，法线向上，若侵入深度为0.05则期望每帧使部件上浮0.05*ERP的高度
-//                    ManifoldPoints.setDistance1(manifoldPointId, -0.05f);
-                    ManifoldPoints.setDistance1(manifoldPointId, Math.clamp(worldContactPoint.y - blockPos.getY() + 1, -0.03f, -0.006f));
+                    ManifoldPoints.setDistance1(manifoldPointId, Math.clamp(worldContactPoint.y - blockPos.getY() + 1, -0.01f, -0.006f));
                 } else { //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
                     ManifoldPoints.setDistance1(manifoldPointId, 500f);
                 }

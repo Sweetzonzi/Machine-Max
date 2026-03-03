@@ -525,7 +525,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
 
     protected float steering(float steeringInput, AdvancedConnector wheelDrive) {
         if (driftWeight <= 0f) return ackermannSteering(steeringInput, wheelDrive);
-        else return (1 - driftWeight) * ackermannSteering(steeringInput, wheelDrive) + driftWeight * driftSteering();
+        else
+            return (1 - driftWeight) * ackermannSteering(steeringInput, wheelDrive) + driftWeight * driftSteering(wheelDrive);
     }
 
     protected float ackermannSteering(float steeringInput, AdvancedConnector wheelDrive) {
@@ -546,12 +547,16 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     }
 
     /**
-     * 漂移模式下自动反打方向，并使用PD控制器逼近目标角速度
+     * 漂移模式下自动反打方向，并使用PD控制器逼近目标角速度，仅前轮转向
      *
      * @return 轮胎转向角度，以弧度为单位
      */
-    protected float driftSteering() {
-        return 0.5f * driftRad - driftControl;
+    protected float driftSteering(AdvancedConnector wheelDrive) {
+        New6Dof joint = wheelDrive.joint;
+        Vector3f pivot = new Vector3f();
+        if (wheelDrive.subPart.body == joint.getBodyA()) joint.getPivotA(pivot);
+        else joint.getPivotB(pivot);
+        return pivot.z <= getAttr().getStaticAttribute().getSteeringCenter().z() ? 0.5f * driftRad - driftControl : 0;
     }
 
     @Override

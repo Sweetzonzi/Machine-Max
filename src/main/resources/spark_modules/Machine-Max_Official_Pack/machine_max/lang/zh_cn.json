@@ -9,6 +9,8 @@
   "machine_max.kluo": "K螺小车车",
   "machine_max.r700": "探路者",
   "machine_max.senna_gtr": "Senna GTR",
+  "machine_max.vn": "净化",
+  "machine_max.szn": "统领",
 
   "title.machine_max.blueprint.ae86": "丰田 COROLLA AE86",
   "title.machine_max.blueprint.ae86at": "丰田 COROLLA AE86(全地形改装)",
@@ -20,6 +22,8 @@
   "title.machine_max.blueprint.kluo": "K螺小车车",
   "title.machine_max.blueprint.r700": "探路者R700",
   "title.machine_max.blueprint.senna_gtr": "迈凯伦Senna GTR",
+  "title.machine_max.blueprint.vn": "净化（Purge）",
+  "title.machine_max.blueprint.szn": "统领（Sovereign）",
 
   "description.machine_max.blueprint.ae86": "AE86是丰田出厂的一款小巧、轻量、经济效益取向的小车，在1983年以COROLLA四代的身份投入生产线。丰田在1978年推出的TERCEL，标志着由于汽车科技的进步，小型车由构造简单但成本较高且占空间的FR（前置引擎后轮驱动）转向较复杂但成本较低的FF（前置引擎前轮驱动）发展的开端。",
   "description.machine_max.blueprint.ae86at": "这辆AE86将传动系统改装为了四轮驱动，并换装了更强大的引擎、相适配的变速箱和全地形轮，越野能力得到大幅强化。",
@@ -30,6 +34,8 @@
   "description.machine_max.blueprint.kluo": "K螺小车车是一款复古风格的紧凑型油改电轿车，尽管续航有限，但加速能力和极速不容小觑。",
   "description.machine_max.blueprint.r700": "探路者R700是一款多功能越野车，专为探险和户外活动设计，具有良好的通过性和可靠性。",
   "description.machine_max.blueprint.senna_gtr": "迈凯伦Senna GTR是一款极致的赛道化超级跑车，采用先进的空气动力学设计，包括大型尾翼、扩散器和前扰流板，能够在高速行驶时产生巨大的下压力，确保车辆的稳定性和操控性。其轻量化车身和强劲的动力系统使其成为赛道上的王者。",
+  "description.machine_max.blueprint.vn": "净化是一台诞生于未来赛博都市阴影中的机密级高速摩托，由巨型科技寡头旗下的研发部门打造，却最终成为了反抗组织的利刃。该车采用极具攻击性的低趴流线造型，车身主体以哑光黑纳米合金为基底，关键结构覆盖着亮白色装甲护板，冷艳的粉紫色发光轮圈与车身管线在昏暗环境中格外醒目。车头的一体化导流罩与侧置散热格栅，配合可伸缩的空气动力学尾翼，能在高速巡航时提供稳定的下压力。车身两侧的双轮驱动结构与轻量化碳纤维车架，让它既能在摩天楼之间的狭窄巷道中灵活穿梭，又能在追捕与突围中爆发出惊人的爆发力，成为反抗者在霓虹雨幕中穿梭的理想座驾。",
+  "description.machine_max.blueprint.szn": "统领是一台驰骋于未来赛博都市的重型全地形突击载具，由巨型科技寡头军工部门研发，却沦为反抗组织突破封锁的核心装备。该车采用极具攻击性的棱角切割式车身设计，搭配宽体化防滚架与贯穿式霓虹能量导流罩，四组越野轮毂外侧嵌有荧光青绿色发光环带，在昏暗巷道中格外醒目。车身主体以哑光白装甲覆盖，核心动力舱裸露着酒红色合金骨架，辅以隐蔽式侧置散热格栅，独特的空气动力学造型既能分流高速行驶时的气流，又能在复杂地形下提供防护支撑。",
 
   "notes.machine_max.blueprint.example": "示例载具蓝图",
 
@@ -41,6 +47,8 @@
   "author.machine_max.blueprint.kluo": "模型作者: Maks 版权所有: K螺诺亚",
   "author.machine_max.blueprint.r700": "模型作者: 包子725",
   "author.machine_max.blueprint.senna_gtr": "模型作者: Maks",
+  "author.machine_max.blueprint.vn": "模型作者: Ao",
+  "author.machine_max.blueprint.szn": "模型作者: Ao",
 
 
   "machine_max.ae86_chassis_all_terrain": "AE86全地形车架",
@@ -81,6 +89,10 @@
   "machine_max.senna_gtr_wheel": "Senna GTR车轮",
   "machine_max.senna_gtr_bumper": "Senna GTR保险杠",
   "machine_max.senna_gtr_door": "Senna GTR车门",
+  "machine_max.vn_chassis": "净化车架",
+  "machine_max.vn_wheel": "净化车轮",
+  "machine_max.szn_chassis": "统领车架",
+  "machine_max.szn_wheel": "统领车轮",
   "machine_max.container_16x16x8": "1/2SCU储物箱",
   "machine_max.reinforced_container_16x16x8": "1/2SCU强化储物箱",
   "machine_max.container_16x16x32": "2SCU储物箱",

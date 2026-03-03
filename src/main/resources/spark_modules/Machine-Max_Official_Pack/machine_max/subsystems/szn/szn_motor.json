@@ -1,0 +1,9 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:motor", //电动机子系统, 低速下恒扭矩, 高速下恒功率
+  "basic_durability": 145,
+  "max_power": 100000,
+  "max_torque": 250,
+  "inertia": 5,
+  "damping_factors": [1.0, 0.05, 0.00005]
+}

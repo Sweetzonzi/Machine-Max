@@ -16,7 +16,7 @@ import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
 @Mod(MOD_ID)
 public class MachineMax {
-    //TODO:没学会配方只能拆，学会后可以拆装部件；组装进度为0时可以切换使用的组装配方
+    //TODO:可配置的完全不受tag限制的自由改装
     //TODO:排查上下车扭头问题
     //TODO:保存的蓝图在指定路径储存，可被特定方块访问蓝图库，并制作蓝图物品
     //TODO:重构网络包及各类同步系统，将拆除等事件化，特别是断开移除逻辑，使之支持移除个别零件

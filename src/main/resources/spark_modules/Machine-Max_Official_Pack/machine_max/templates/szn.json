@@ -1,0 +1,405 @@
+{
+  "max": [
+    2.0056579589843864,
+    1.5158355712890668,
+    2.1693298339843636
+  ],
+  "hp": 20.0,
+  "parts": {
+    "7be81402-672a-40b2-b28e-1696323643bc": {
+      "custom_recipe": "machine_max:szn_wheel",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 25.0
+            }
+          },
+          "id": 27,
+          "durability": 250.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -333.40576,
+              -59.250427,
+              -285.88864
+            ],
+            "rotation": [
+              -6.1872206E-4,
+              0.018514972,
+              -0.008937131,
+              0.99978846
+            ],
+            "linear_vel": [
+              -4.2677094E-4,
+              1.2757629E-4,
+              -1.6019482E-4
+            ],
+            "angular_vel": [
+              2.796396E-7,
+              -8.2708255E-5,
+              4.894761E-11
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:szn_wheel",
+      "name": "machine_max.szn_wheel",
+      "uuid": "7be81402-672a-40b2-b28e-1696323643bc",
+      "variant": "left"
+    },
+    "c384d3f0-efe8-4fe0-bb7e-b8bf469d655d": {
+      "custom_recipe": "machine_max:szn_chassis",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_wheel": {
+              "integrity": 40.0
+            },
+            "connector.machine_max.right_front_wheel": {
+              "integrity": 40.0
+            },
+            "connector.machine_max.right_back_wheel": {
+              "integrity": 40.0
+            },
+            "connector.machine_max.left_back_wheel": {
+              "integrity": 40.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.left_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.motor": {
+              "durability": 145.0
+            },
+            "subsystem.machine_max.right_back_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.car_controller": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.right_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.driver_seat": {
+              "durability": 20.0
+            },
+            "subsystem.machine_max.transmission": {
+              "durability": 290.0
+            },
+            "subsystem.machine_max.left_back_wheel_driver": {
+              "durability": 100.0
+            }
+          },
+          "id": 21,
+          "durability": 400.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -332.3334,
+              -59.04356,
+              -287.32803
+            ],
+            "rotation": [
+              -5.852342E-4,
+              0.018522182,
+              6.1379724E-5,
+              0.9998283
+            ],
+            "linear_vel": [
+              6.8215234E-4,
+              -1.1834502E-4,
+              -8.215625E-4
+            ],
+            "angular_vel": [
+              1.6280846E-6,
+              -8.321489E-5,
+              4.9954524E-6
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:szn_chassis",
+      "name": "machine_max.szn_chassis",
+      "uuid": "c384d3f0-efe8-4fe0-bb7e-b8bf469d655d",
+      "variant": "default"
+    },
+    "a81b2615-3f2a-4add-a045-3ff688c5828f": {
+      "custom_recipe": "machine_max:szn_wheel",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 25.0
+            }
+          },
+          "id": 25,
+          "durability": 250.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -333.50067,
+              -59.25046,
+              -288.44937
+            ],
+            "rotation": [
+              -0.17010157,
+              0.01975746,
+              -0.0056419577,
+              0.9852123
+            ],
+            "linear_vel": [
+              -1.4577078E-4,
+              -7.5899065E-5,
+              -8.6574943E-4
+            ],
+            "angular_vel": [
+              -4.0131686E-6,
+              -7.727106E-5,
+              1.3963924E-11
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:szn_wheel",
+      "name": "machine_max.szn_wheel",
+      "uuid": "a81b2615-3f2a-4add-a045-3ff688c5828f",
+      "variant": "left"
+    },
+    "ac06b0e0-f43d-47c3-a46d-078c400d78f5": {
+      "custom_recipe": "machine_max:szn_wheel",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 25.0
+            }
+          },
+          "id": 29,
+          "durability": 250.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -331.15732,
+              -59.250423,
+              -285.972
+            ],
+            "rotation": [
+              -4.3201516E-4,
+              0.018526629,
+              0.009174999,
+              0.9997862
+            ],
+            "linear_vel": [
+              1.757982E-4,
+              1.18367374E-4,
+              -1.8336548E-5
+            ],
+            "angular_vel": [
+              9.78906E-7,
+              -8.377251E-5,
+              -4.8039246E-11
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:szn_wheel",
+      "name": "machine_max.szn_wheel",
+      "uuid": "ac06b0e0-f43d-47c3-a46d-078c400d78f5",
+      "variant": "right"
+    },
+    "aeae55d6-8047-4238-974d-3dd628326573": {
+      "custom_recipe": "machine_max:szn_wheel",
+      "material_assembling_progress": 2147483647,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 25.0
+            }
+          },
+          "id": 23,
+          "durability": 250.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              -331.25223,
+              -59.250454,
+              -288.5327
+            ],
+            "rotation": [
+              -0.17468412,
+              0.016636847,
+              0.012302927,
+              0.98440707
+            ],
+            "linear_vel": [
+              3.8157453E-4,
+              -1.6180426E-4,
+              -9.892121E-5
+            ],
+            "angular_vel": [
+              5.8876856E-7,
+              -7.922713E-5,
+              1.230262E-10
+            ]
+          }
+        }
+      },
+      "registry_key": "machine_max:szn_wheel",
+      "name": "machine_max.szn_wheel",
+      "uuid": "aeae55d6-8047-4238-974d-3dd628326573",
+      "variant": "right"
+    }
+  },
+  "connections": [
+    {
+      "partUuidS": "aeae55d6-8047-4238-974d-3dd628326573",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c384d3f0-efe8-4fe0-bb7e-b8bf469d655d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_wheel",
+      "posRotA": {
+        "position": [
+          1.125,
+          -0.125,
+          -1.1640313
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "a81b2615-3f2a-4add-a045-3ff688c5828f",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c384d3f0-efe8-4fe0-bb7e-b8bf469d655d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_wheel",
+      "posRotA": {
+        "position": [
+          -1.125,
+          -0.125,
+          -1.1640313
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "7be81402-672a-40b2-b28e-1696323643bc",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c384d3f0-efe8-4fe0-bb7e-b8bf469d655d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_wheel",
+      "posRotA": {
+        "position": [
+          -1.125,
+          -0.125,
+          1.3984687
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "ac06b0e0-f43d-47c3-a46d-078c400d78f5",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c384d3f0-efe8-4fe0-bb7e-b8bf469d655d",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_wheel",
+      "posRotA": {
+        "position": [
+          1.125,
+          -0.125,
+          1.3984687
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "name": "szn",
+  "uuid": "c384d3f0-efe8-4fe0-bb7e-b8bf469d655d",
+  "pos": [
+    -332.3298767089844,
+    -59.209065246582036,
+    -287.23414916992186
+  ],
+  "min": [
+    -1.9958679199218636,
+    -1.0694992065429645,
+    -2.3405578613281364
+  ]
+}

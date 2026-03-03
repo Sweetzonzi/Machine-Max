@@ -1,0 +1,6 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:transmission",
+  "basic_durability": 290,
+  "auto_diff_lock_threshold": 5.0
+}

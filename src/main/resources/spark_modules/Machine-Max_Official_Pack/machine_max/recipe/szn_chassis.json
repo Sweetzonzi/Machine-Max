@@ -1,0 +1,53 @@
+{
+  "type": "machine_max:fabricating",
+  "research_cost": 600,
+  "upgrade_cost": 250,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:netherite_ingot"
+      },
+      "count": 3
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 64
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:power_component_1"
+      },
+      "count": 24
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 32
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 16
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 1,
+    "components": {
+      "machine_max:part_type": "machine_max:szn_chassis"
+    }
+  },
+  "time": 300
+}
