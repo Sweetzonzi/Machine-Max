@@ -18,6 +18,7 @@ public class InteractHud implements LayeredDraw.Layer {
     Minecraft minecraft = Minecraft.getInstance();
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
+        if (Minecraft.getInstance().options.hideGui) return;
         LocalPlayer localPlayer = minecraft.player;
         if (localPlayer == null) return;
         LivingEntityEyesightAttachment eyesight = localPlayer.getData(MMAttachments.getENTITY_EYESIGHT().get());

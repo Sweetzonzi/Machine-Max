@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
-import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
@@ -16,23 +15,30 @@ import lombok.Getter;
 public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
     public final MotorbikeControllerSubsystemAttr attr;
     public float roll = 0.0f;
+    public float omegaRoll = 0.0f;
 
-    private final PIDController rollController;
+    private final PIDController rollController; // 外环角度环控制器，输出目标角速度
+    private final PIDController omegaController; // 内环角速度环控制器，输出目标控制力矩
+    private final PIDController lowSpeedRollController; // 外环角度环控制器，输出目标角速度
 
     public MotorbikeControllerSubsystem(ISubsystemHost owner, String name, MotorbikeControllerSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.rollController = new PIDController(25.0f, 2.0f, 7.0f, 1.0 / PhysicsLevel.TPS, -180, 180);
+        this.rollController = new PIDController(0.1f, 0.0f, 0.1f, 1.0 / getPhysicsLevel().getTps(), -2, 2);
+        this.omegaController = new PIDController(500.0f, 5.0f, 50.0f, 1.0 / getPhysicsLevel().getTps(), -2000, 2000);
+        this.lowSpeedRollController = new PIDController(10.0f, 0.01f, 3.0f, 1.0 / getPhysicsLevel().getTps(), -1000, 1000);
     }
 
     @Override
     public void onPrePhysicsTick() {
         this.speed = -getOwner().getSubPart().getLinearVelocityLocal().z;
+        this.driftWeight = 0f;
         this.roll = SparkMathKt.toDegrees(getOwner().getSubPart().getRoll());
+        this.omegaRoll = getSubPart().body.getAngularVelocityLocal(null).z;
         if (isActive() && getOwner().getSubPart().getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
-                actualSteering = actualSteering * 0.9f + (moveInput[4]) * 0.1f;
+                actualSteering = actualSteering * 0.9f + (moveInput[4] / 100f) * 0.1f;
             }
             actualHandBrake = actualHandBrake * 0.9f + (handBrake ? 1 : 0) * 0.1f;
             motorbikeControl();
@@ -51,30 +57,48 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
         // 修正力倍率
         float correctionForceMultiplier = getAttr().getStaticAttribute().getCorrectionForceMultiplier();
         // 有人控制车辆，且未失去平衡或处于低速时应用修正力
-        if (moveInput != null && (Math.abs(speed) < 2 || Math.abs(roll) < getAttr().getStaticAttribute().getMaxAngle())) {
-            float targetRoll = calculateTargetRoll(
-                    speed,
-                    getAttr().getStaticAttribute().getSteeringRadiusAtSpeed(speed) / actualSteering * 100,
-                    getSubPart().body.getGravity(null).length());
-            float rollControl = (float) Math.clamp(rollController.step(0.8 * targetRoll + 0.2 * roll, roll), -2000, 2000);
+        float maxAngle = getAttr().getStaticAttribute().getMaxAngle();
+        float gravity = getSubPart().body.getGravity(null).length();
+        double massCenterHeight = -getAttr().getStaticAttribute().getSteeringCenter().y;
+        if (moveInput != null && (Math.abs(speed) < 2 || Math.abs(roll) < maxAngle)) {
+            float targetRoll = Math.clamp(
+                    calculateTargetRoll(
+                            speed,
+                            getAttr().getStaticAttribute().getSteeringRadiusAtSpeed(speed) / actualSteering,
+                            gravity),
+                    -0.8f * maxAngle, 0.8f * maxAngle);
+            float targetOmegaRoll = (float) rollController.step(targetRoll, roll, omegaRoll);
+            float rollControl = (float) omegaController.step(targetOmegaRoll, omegaRoll);
             // 应用修正力倍率
             rollControl *= correctionForceMultiplier;
-            getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, -rollControl), getOwner().getSubPart().body));
+            // 额外补偿理论平衡所需重力矩
+            rollControl -= (float) (getSubPart().getEquivalentMass() * gravity * massCenterHeight * Math.sin(Math.toRadians(roll)));
+            // 额外补偿向心力带来的倾覆力矩
+            if (Math.abs(actualSteering) > 1e-3) {
+                // 计算向心力
+                float force = getSubPart().getEquivalentMass() * speed * speed / (getAttr().getStaticAttribute().getSteeringRadiusAtSpeed(speed) / actualSteering);
+                // 计算倾覆力矩
+                rollControl += (float) (force * massCenterHeight * Math.cos(Math.toRadians(targetRoll)));
+            }
+            getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, rollControl), getOwner().getSubPart().body));
         } else if ( // 无人控制车辆，且已停稳，姿态合适时应用修正力
                 Math.abs(speed) < 0.5
-                        && Math.abs(roll) < 2.5 * getAttr().getStaticAttribute().getParkingAngle()) {
+                        && Math.abs(roll) < 5 + 1.5 * getAttr().getStaticAttribute().getParkingAngle()) {
             int wheelCount = 0;
             for (WheelDriverSubsystem wheel : getWheels().keySet()) {
                 if (wheel.connector.hasPart()) {
-                    wheelCount ++;
+                    wheelCount++;
                 }
             }
             if (wheelCount > 1) { // 未连接轮胎的部件不尝试应用修正力
                 float targetRoll = getAttr().getStaticAttribute().getParkingAngle() * (1 - Math.abs(speed));
-                float rollControl = (float) Math.clamp(rollController.step(targetRoll, roll), -2250, 2250);
+                // 倒立摆使用单级PID更稳定
+                float rollControl = (float) lowSpeedRollController.step(targetRoll, roll, omegaRoll);
                 // 应用修正力倍率
                 rollControl *= correctionForceMultiplier;
-                getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, -rollControl), getOwner().getSubPart().body));
+                // 额外补偿理论平衡所需重力矩
+                rollControl -= (float) (0.8 * getSubPart().getEquivalentMass() * gravity * massCenterHeight * Math.sin(Math.toRadians(roll)));
+                getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, rollControl), getOwner().getSubPart().body));
             }
         }
     }
@@ -94,7 +118,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
             return 0;
         } else {
             // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
-            float steeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput * 100f;//实际转向半径(米) Actual steering radius (m)
+            float steeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput;//实际转向半径(米) Actual steering radius (m)
             double deltaRadius = pivot.x - attr.staticAttribute.steeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
             double deltaForward = pivot.z - attr.staticAttribute.steeringCenter.z;

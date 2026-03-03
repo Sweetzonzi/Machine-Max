@@ -73,6 +73,7 @@ public class CustomHud implements LayeredDraw.Layer {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
+        if (Minecraft.getInstance().options.hideGui) return;
         if (!vehicleHud.isEmpty()) {
             for (GuiAnimatable renderable : vehicleHud.values()) {
                 renderable.render(guiGraphics, 0, 0, deltaTracker.getGameTimeDeltaTicks());

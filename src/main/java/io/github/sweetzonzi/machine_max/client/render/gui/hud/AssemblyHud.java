@@ -78,6 +78,7 @@ public class AssemblyHud implements LayeredDraw.Layer {
 
     @Override
     public void render(GuiGraphics g, DeltaTracker delta) {
+        if (Minecraft.getInstance().options.hideGui) return;
         LocalPlayer player = Minecraft.getInstance().player;
         if (player == null) return;
 

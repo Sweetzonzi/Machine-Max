@@ -1,0 +1,66 @@
+{
+  "subsystem.gearbox.up.light": {
+    "sounds": [
+      "machine_max:subsystem/gearbox/gear_up_light_1",
+      "machine_max:subsystem/gearbox/gear_up_light_2",
+      "machine_max:subsystem/gearbox/gear_up_light_3"
+    ],
+    "subtitle": "subtitles.subsystem.gearbox.up"
+  },
+  "subsystem.gearbox.up.medium": {
+    "sounds": [
+      "machine_max:subsystem/gearbox/gear_up_medium_1",
+      "machine_max:subsystem/gearbox/gear_up_medium_2",
+      "machine_max:subsystem/gearbox/gear_up_medium_3"
+    ],
+    "subtitle": "subtitles.subsystem.gearbox.up"
+  },
+  "subsystem.gearbox.up.heavy": {
+    "sounds": [
+      "machine_max:subsystem/gearbox/gear_up_heavy_1",
+      "machine_max:subsystem/gearbox/gear_up_heavy_2",
+      "machine_max:subsystem/gearbox/gear_up_heavy_3"
+    ],
+    "subtitle": "subtitles.subsystem.gearbox.up"
+  },
+  "subsystem.gearbox.down.light": {
+    "sounds": [
+      "machine_max:subsystem/gearbox/gear_down_light_1",
+      "machine_max:subsystem/gearbox/gear_down_light_2",
+      "machine_max:subsystem/gearbox/gear_down_light_3"
+    ],
+    "subtitle": "subtitles.subsystem.gearbox.down"
+  },
+  "subsystem.gearbox.down.medium": {
+    "sounds": [
+      "machine_max:subsystem/gearbox/gear_down_medium_1",
+      "machine_max:subsystem/gearbox/gear_down_medium_2",
+      "machine_max:subsystem/gearbox/gear_down_medium_3"
+    ],
+    "subtitle": "subtitles.subsystem.gearbox.down"
+  },
+  "subsystem.gearbox.down.heavy": {
+    "sounds": [
+      "machine_max:subsystem/gearbox/gear_down_heavy_1",
+      "machine_max:subsystem/gearbox/gear_down_heavy_2",
+      "machine_max:subsystem/gearbox/gear_down_heavy_3"
+    ],
+    "subtitle": "subtitles.subsystem.gearbox.down"
+  },
+  "subsystem.gearbox.clutch_in": {
+    "sounds": [
+      "machine_max:subsystem/gearbox/clutch_in_1",
+      "machine_max:subsystem/gearbox/clutch_in_2",
+      "machine_max:subsystem/gearbox/clutch_in_3"
+    ],
+    "subtitle": "subtitles.subsystem.gearbox.clutch_in"
+  },
+  "subsystem.gearbox.clutch_out": {
+    "sounds": [
+      "machine_max:subsystem/gearbox/clutch_out_1",
+      "machine_max:subsystem/gearbox/clutch_out_2",
+      "machine_max:subsystem/gearbox/clutch_out_3"
+    ],
+    "subtitle": "subtitles.subsystem.gearbox.clutch_out"
+  }
+}

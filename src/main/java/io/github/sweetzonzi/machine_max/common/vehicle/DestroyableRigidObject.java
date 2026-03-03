@@ -14,6 +14,8 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,6 +27,7 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     public final PhysicsRigidBody body;
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
     protected boolean updateLock = true;//是否禁止同步应用位姿数据到刚体
+    protected static final EntityDataAccessor<Boolean> IS_ACTIVE_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.BOOLEAN);
 
     protected DestroyableRigidObject(Level level, CompoundCollisionShape shape, float mass) {
         super(level);
@@ -36,16 +39,21 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
 
     @Override
     public void postTick() {
-        if (!level.isClientSide() && body.isInWorld() && (body.isActive() || body.isKinematic())) {
-            //从刚体同步数据
-            oldTransform = transform.clone();
-            transform = PhysicsBodyExtensionKt.stateOf(body).getTransform();
-            updateLock = true;//锁定刚体数据，仅利用服务端刚体数据更新同步用数据
-            setPosition(transform.getTranslation());
-            setRotation(transform.getRotation());
-            setLinearVelocity(body.getLinearVelocity(null));
-            setAngularVelocity(body.getAngularVelocity(null));
-            updateLock = false;//解锁刚体数据，允许set时应用位姿数据到刚体
+        if (!level.isClientSide() && body.isInWorld()) {
+            if ((body.isActive() || body.isKinematic())) {
+                //从刚体同步数据
+                oldTransform = transform.clone();
+                transform = PhysicsBodyExtensionKt.stateOf(body).getTransform();
+                updateLock = true;//锁定刚体数据，仅利用服务端刚体数据更新同步用数据
+                setPosition(transform.getTranslation());
+                setRotation(transform.getRotation());
+                setLinearVelocity(body.getLinearVelocity(null));
+                setAngularVelocity(body.getAngularVelocity(null));
+                getSyncedData().set(IS_ACTIVE_ID, true);
+                updateLock = false;//解锁刚体数据，允许set时应用位姿数据到刚体
+            } else if (!body.isActive()) { // 更新休眠状态
+                getSyncedData().set(IS_ACTIVE_ID, false);
+            }
         }
         super.postTick();//发送所有变化的数据
     }
@@ -87,6 +95,10 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
             PhysicsBodyExtensionKt.setOwner(body, null);
             PhysicsBodyExtensionKt.removePhysicsBody(getLevel(), this.body);
         }
+    }
+
+    public boolean isActive() {
+        return getSyncedData().get(IS_ACTIVE_ID);
     }
 
     @Override
@@ -136,5 +148,10 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     @Override
     public @NotNull PhysicsLevel getPhysicsLevel() {
         return SparkLevel.getPhysicsLevel(level);
+    }
+
+    @Override
+    protected void defineSyncedData(SynchedEntityData.Builder builder) {
+        builder.define(IS_ACTIVE_ID, true);
     }
 }

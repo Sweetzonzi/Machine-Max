@@ -1,19 +1,15 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
-import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CarControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
-import io.github.sweetzonzi.machine_max.util.control.PDController;
 import io.github.sweetzonzi.machine_max.util.control.PIDController;
 import lombok.Getter;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 import java.util.HashMap;
@@ -60,7 +56,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     /**
      * 漂移控制与一般控制的融合权重，0为纯原生控制，1为漂移接管
      */
-    private float driftWeight = 0;
+    protected float driftWeight = 0;
     /**
      * 漂移转向输入，弧度制
      */
@@ -69,7 +65,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     public CarControllerSubsystem(ISubsystemHost owner, String name, CarControllerSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.driftingPD = new PIDController(1.5, 0.2, 0.1, 1.0 / PhysicsLevel.TPS, -1, 1);
+        this.driftingPD = new PIDController(1.5, 0.2, 0.1, 1.0 / getPhysicsLevel().getTps(), -1, 1);
     }
 
     @Override
@@ -103,7 +99,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         // 漂移状态判断
         if (drifting && Math.abs(driftRad) < DRIFT_END_RAD) {
             drifting = false;
-        } else if (!drifting && Math.abs(driftRad) > DRIFT_START_RAD) {
+        } else if (!drifting && Math.abs(driftRad) > DRIFT_START_RAD && speed > 0) {
             drifting = true;
         }
         // 强制手刹起漂时漂移控制权重为 1
@@ -342,9 +338,9 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
                 if (moveInput[2] * speed > 0 || (Math.abs(speed) <= 1f)) {//加速行驶 Accelerate
-                    actualThrottle = actualThrottle * 0.9f + (Math.abs(moveInput[2])) * 0.1f;
+                    actualThrottle = actualThrottle * 0.9f + moveInput[2] * 0.1f;
                     actualBrake = actualBrake * 0.8f + 0 * 0.2f;
-                    avgEngineSpeed = calculateAvgSpeed();
+                    avgEngineSpeed = calculateAvgSpeedAndControl();
                     //起步时自动松离合和手刹 Auto release hand brake when starting
                     if (attr.staticAttribute.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                         handBrake = false;
@@ -362,7 +358,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 } else if (moveInput[2] * speed < 0) {//减速行驶 Brake
                     actualThrottle = actualThrottle * 0.8f + 0 * 0.2f;
                     actualBrake = actualBrake * 0.9f + 1 * 0.1f;
-                    avgEngineSpeed = calculateAvgSpeed();
+                    avgEngineSpeed = calculateAvgSpeedAndControl();
                     for (GearboxSubsystem gearbox : gearboxes.keySet()) {//减速时积极降档 Shift down early when braking
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
                             gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, 0.4f, 1.0f, moveInput[2]));
@@ -380,7 +376,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 }
             } else {//前进方向输入信号为0 Forward input signal is 0
                 actualThrottle = actualThrottle * 0.9f + 0 * 0.1f;
-                avgEngineSpeed = calculateAvgSpeed();
+                avgEngineSpeed = calculateAvgSpeedAndControl();
                 if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low
                     actualBrake = actualBrake * 0.9f + 1 * 0.1f;
                     if (attr.staticAttribute.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
@@ -443,10 +439,10 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         }
     }
 
-    private float calculateAvgSpeed() {
+    private float calculateAvgSpeedAndControl() {
         float avgEngineSpeed = 0f;
         for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
-            sendCallbackToAllListeners(entry.getValue(), actualThrottle);
+            sendCallbackToAllListeners(entry.getValue(), Math.abs(actualThrottle));
             avgEngineSpeed += (float) entry.getKey().getRotSpeed();
         }
         for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
@@ -555,7 +551,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
      * @return 轮胎转向角度，以弧度为单位
      */
     protected float driftSteering() {
-        return 0.5f * driftRad + driftControl;
+        return 0.5f * driftRad - driftControl;
     }
 
     @Override

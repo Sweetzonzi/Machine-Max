@@ -1,5 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.util.PPhase;
+import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.GearboxSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
@@ -8,6 +11,10 @@ import lombok.Setter;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,8 +29,8 @@ public class GearboxSubsystem extends AbstractSubsystem {
     public final int minNegativeGear;
     public final List<String> gearNames;//各级挡位的名称 Names of each gear position
     protected static final EntityDataAccessor<Integer> CURRENT_GEAR_ID = SynchedEntityData.defineId(GearboxSubsystem.class, EntityDataSerializers.INT);
-    @Setter
-    private boolean clutched = true;//离合状态，true为正常传动，false为不传动 Clutch status, true for normal transmission, false for no transmission
+    protected static final EntityDataAccessor<Boolean> CLUTCHED_ID = SynchedEntityData.defineId(GearboxSubsystem.class, EntityDataSerializers.BOOLEAN);
+    private int lastGear = 0;//上一次的挡位，仅用于客户端控制音效 Last gear position, only used for client control of sound effects
     private float remainingSwitchTime = 0.0f;//剩余换挡无动力时间 Remaining no-power time caused by switching gears
 
     public GearboxSubsystem(ISubsystemHost owner, String name, GearboxSubsystemAttr attr) {
@@ -63,7 +70,12 @@ public class GearboxSubsystem extends AbstractSubsystem {
     @Override
     public void onPrePhysicsTick() {
         distributePower();
-        if (remainingSwitchTime > 0.0f) remainingSwitchTime -= 1 / 60.0f;
+        if (remainingSwitchTime > 0.0f) {
+            remainingSwitchTime -= 1 / 60.0f;
+            if (remainingSwitchTime <= 0.0f) {
+                if (!isClutched()) setClutched(true);
+            }
+        }
     }
 
     @Override
@@ -98,16 +110,21 @@ public class GearboxSubsystem extends AbstractSubsystem {
     }
 
     public void switchGear(int gear) {
-        if (getCurrentGear() == gear || getLevel().isClientSide()) return;//当前挡位与目标挡位相同，无需切换
+        if (getCurrentGear() == gear) return;//当前挡位与目标挡位相同，无需切换
         if (gear >= 0 && gear < gearRatios.length) {//目标挡位有效
-            setCurrentGear(gear);//更新当前挡位
-            if (clutched) this.remainingSwitchTime = attr.staticAttribute.switchTime;//若未踩离合，开始换挡时间倒计时
-            //更新挡位信号
-            for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
-                String signalChannel = entry.getKey();
-                List<String> targets = entry.getValue();
-                for (String targetName : targets) {
-                    sendSignalToTarget(signalChannel, targetName, gear);
+            if (!getLevel().isClientSide()) { // 换挡逻辑
+                if (isClutched()) {
+                    this.remainingSwitchTime = attr.staticAttribute.switchTime;//若未踩离合，开始换挡时间倒计时
+                    setClutched(false);
+                }
+                setCurrentGear(gear);//更新当前挡位
+                //更新挡位信号
+                for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
+                    String signalChannel = entry.getKey();
+                    List<String> targets = entry.getValue();
+                    for (String targetName : targets) {
+                        sendSignalToTarget(signalChannel, targetName, gear);
+                    }
                 }
             }
         }
@@ -125,8 +142,12 @@ public class GearboxSubsystem extends AbstractSubsystem {
         }
     }
 
+    public void setClutched(boolean clutched) {
+        this.getSynchedData().set(CLUTCHED_ID, clutched);
+    }
+
     private void distributePower() {
-        if (!clutched || remainingSwitchTime > 0.0f) {
+        if (!isClutched() || remainingSwitchTime > 0.0f) {
             sendSignalToTarget("power", attr.powerOutputTarget, MechPowerSignal.ZERO);
             return;
         }
@@ -152,13 +173,13 @@ public class GearboxSubsystem extends AbstractSubsystem {
     }
 
     private void updateFeedback() {
-        if (!clutched || remainingSwitchTime > 0.0f) {//空挡时或正在换挡时，不反馈速度信号
+        if (!isClutched() || remainingSwitchTime > 0.0f) {//空挡时或正在换挡时，不反馈速度信号
             sendCallbackToAllListeners("speed_feedback", EmptySignal.INSTANCE);
             return;
         }
         float speed;
         SignalChannel speedSignal = getSignalChannel("speed_feedback");
-        if (!speedSignal.values().isEmpty()) {
+        if (!speedSignal.isEmpty()) {
             for (Object value : speedSignal.values()) {
                 if (value instanceof Float f) {
                     speed = f;//发送第一个反馈转速 TODO:发送平均值？
@@ -174,6 +195,73 @@ public class GearboxSubsystem extends AbstractSubsystem {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(CURRENT_GEAR_ID, 1);
+        builder.define(CLUTCHED_ID, true);
+    }
+
+    /**
+     * 在离合或换挡状态发生变化时播放相应音效
+     *
+     * @param dataAccessor 变化的数据
+     */
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
+        super.onSyncedDataUpdated(dataAccessor);
+        if (!getLevel().isClientSide()) return;
+        Vector3f pos = getSubPart().getPosition();
+        if (dataAccessor == CURRENT_GEAR_ID) {
+            if (getCurrentGear() > lastGear) {
+                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_gear_up", PPhase.ALL, () -> {
+                            getLevel().playLocalSound(
+                                    pos.x, pos.y, pos.z,
+                                    attr.staticAttribute.getGearUpSound(),
+                                    SoundSource.NEUTRAL,
+                                    0.5f,
+                                    1.2f,
+                                    false
+                            );
+                        }
+                );
+            } else {
+                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_gear_down", PPhase.ALL, () -> {
+                            getLevel().playLocalSound(
+                                    pos.x, pos.y, pos.z,
+                                    attr.staticAttribute.getGearDownSound(),
+                                    SoundSource.NEUTRAL,
+                                    0.5f,
+                                    1.2f,
+                                    false
+                            );
+                        }
+                );
+            }
+            lastGear = getCurrentGear();
+        } else if (dataAccessor == CLUTCHED_ID) {
+            if (isClutched()) {
+                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_clutch_in", PPhase.ALL, () -> {
+                            getLevel().playLocalSound(
+                                    pos.x, pos.y, pos.z,
+                                    attr.staticAttribute.getClutchInSound(),
+                                    SoundSource.NEUTRAL,
+                                    0.5f,
+                                    1.2f,
+                                    false
+                            );
+                        }
+                );
+            } else {
+                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_clutch_in", PPhase.ALL, () -> {
+                            getLevel().playLocalSound(
+                                    pos.x, pos.y, pos.z,
+                                    attr.staticAttribute.getClutchOutSound(),
+                                    SoundSource.NEUTRAL,
+                                    0.5f,
+                                    1.2f,
+                                    false
+                            );
+                        }
+                );
+            }
+        }
     }
 
     public int getCurrentGear() {
@@ -182,6 +270,10 @@ public class GearboxSubsystem extends AbstractSubsystem {
 
     public void setCurrentGear(int currentGear) {
         getSynchedData().set(CURRENT_GEAR_ID, currentGear);
+    }
+
+    public boolean isClutched() {
+        return getSynchedData().get(CLUTCHED_ID);
     }
 
     /**

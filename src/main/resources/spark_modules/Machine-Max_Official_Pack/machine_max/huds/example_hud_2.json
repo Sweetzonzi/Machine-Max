@@ -1,0 +1,197 @@
+{
+  "model": "machine_max:example_hud_2.geo",
+  "animation": "machine_max:example_hud",
+  "texture": "machine_max:textures/hud/example_hud_2.png",
+  "offset": [95, 45, -135], //(可选，默认[0, 0, 0]) 相对屏幕中心的偏移量，透视投影下单位为米，正交投影下单位为像素
+  "rotation": [-25, -30, 0],//(可选，默认[0, 0, 0]) 旋转角度，单位为度
+  "scale": [20, 20, 20],//(可选，默认[1, 1, 1]) 缩放比例
+  "color": [255, 255, 255], //(可选，默认白色) RGB颜色
+  "alpha": 255, //(可选，默认255) 透明度
+  "perspective": true,//(可选，默认true) 是否采用透视投影渲染
+  "texts": {
+    "0": {//骨骼与定位器名，要求骨骼和定位器名称一致
+      "key": "0",//翻译键，用于翻译文本
+      "centered": true,//(可选，默认true)是否居中显示
+      "shadow": false,//(可选，默认false)是否渲染文字阴影
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "1": {
+      "key": "1",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "2": {
+      "key": "2",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "3": {
+      "key": "3",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "4": {
+      "key": "4",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3],
+      "color": [255, 0, 0]
+    },
+    "5": {
+      "key": "5",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3],
+      "color": [255, 0, 0]
+    },
+    "6": {
+      "key": "6",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3],
+      "color": [255, 0, 0]
+    },
+    "F": {
+      "key": "F",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "H": {
+      "key": "H",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "C": {
+      "key": "C",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3],
+      "color": [255, 0, 0]
+    },
+    "L": {
+      "key": "L",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3],
+      "color": [255, 0, 0]
+    },
+    "-0": {
+      "key": "0",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "20": {
+      "key": "20",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "40": {
+      "key": "40",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "60": {
+      "key": "60",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "80": {
+      "key": "80",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "100": {
+      "key": "100",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "120": {
+      "key": "120",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "140": {
+      "key": "140",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "160": {
+      "key": "160",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "180": {
+      "key": "180",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3],
+      "color": [255, 0, 0]
+    },
+    "200": {
+      "key": "200",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3],
+      "color": [255, 0, 0]
+    },
+    "220": {
+      "key": "220",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3],
+      "color": [255, 0, 0]
+    },
+    "240": {
+      "key": "240",
+      "centered": true,
+      "shadow": false,
+      "scale": [0.3, 0.3, 0.3],
+      "color": [255, 0, 0]
+    },
+    "gear": {
+      "key": "hud.machine_max.default_1.gear",
+      "centered": true,
+      "shadow": true,
+      "scale": [0.3, 0.3, 0.3],
+      "molang_args": ["vehicle.get('gear')??'NO GBX'"]
+    },
+    "kmh": {
+      "key": "hud.machine_max.default_1.kmh",
+      "centered": true,
+      "shadow": true,
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "1_min_x1000": {
+      "key": "r/min x1000",
+      "centered": true,
+      "shadow": true,
+      "scale": [0.2, 0.2, 0.2]
+    },
+    "speed": {
+      "key": "hud.machine_max.default_1.speed",
+      "centered": true,
+      "shadow": true,
+      "scale": [0.6, 0.6, 0.6],
+      "molang_args": [//(可选，默认[]) Molang参数，将用于填充翻译文本预留的参数位置
+        "math.floor((math.abs(veh.get('vehicle_speed')??0.0)) * 3.6 / 100)",
+        "math.floor(math.mod((math.abs(veh.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
+        "math.floor(math.mod((math.abs(veh.get('vehicle_speed')??0.0)) * 3.6, 10))"
+      ],
+      "significand": 0 //(可选，默认0) Molang参数计算结果为数字时，保留的小数点后位数
+    }
+  }
+}

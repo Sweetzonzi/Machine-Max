@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
@@ -232,6 +234,10 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     public Level getLevel() {
         return getOwner().getLevel();
+    }
+
+    public PhysicsLevel getPhysicsLevel() {
+        return SparkLevel.getPhysicsLevel(getLevel());
     }
 
 }

@@ -23,7 +23,7 @@ public class MotorbikeControllerSubsystemAttr extends CarControllerSubsystemAttr
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             SIGNAL_TARGETS_CODEC.fieldOf("engine_outputs").forGetter(MotorbikeControllerSubsystemAttr::getEngineControlOutputTargets),
             SIGNAL_TARGETS_CODEC.fieldOf("wheel_outputs").forGetter(MotorbikeControllerSubsystemAttr::getWheelControlOutputTargets),
-            SIGNAL_TARGETS_CODEC.fieldOf("gearbox_outputs").forGetter(MotorbikeControllerSubsystemAttr::getGearboxControlOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("gearbox_outputs", Map.of()).forGetter(MotorbikeControllerSubsystemAttr::getGearboxControlOutputTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("part", "vehicle"))).forGetter(MotorbikeControllerSubsystemAttr::getSpeedOutputTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("throttle_outputs", Map.of("throttle", List.of("part", "vehicle"))).forGetter(MotorbikeControllerSubsystemAttr::getThrottleOutputTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("steering_outputs", Map.of("steering", List.of("part", "vehicle"))).forGetter(MotorbikeControllerSubsystemAttr::getSteeringOutputTargets),

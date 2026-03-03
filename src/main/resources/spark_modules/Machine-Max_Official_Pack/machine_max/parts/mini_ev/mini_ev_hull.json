@@ -285,7 +285,6 @@
                 "subsystem.machine_max.right_back_wheel_driver"
               ]
             },
-            "gearbox_outputs": {},
             "speed_outputs": { //(可选, 默认将移动速度(m/s)发至部件和载具的vehicle_speed频道)移动速度信号输出频道及目标
               "vehicle_speed": ["part", "vehicle"]
             },

@@ -1,0 +1,36 @@
+{ 
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:vn_chassis"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:vn_wheel"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:part"],
+      "components": {
+        "machine_max:part_type": "machine_max:vn_wheel"
+      },
+      "strict": false
+    }
+  ],
+  "result": { 
+    "id": "machine_max:assembly",
+    "count": 1, 
+    "components": { 
+      "machine_max:assembly_path": "machine_max:vn"
+    }
+  }
+}

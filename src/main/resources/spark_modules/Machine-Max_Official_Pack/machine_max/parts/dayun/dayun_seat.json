@@ -35,7 +35,7 @@
         "subsystems": { //(可选)子系统配置
           "subsystem.machinemax.seat": {
             "type": "machine_max:seat", //子系统类型
-            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:dayun_seat", //子系统型号, 需要与子系统类型相匹配
             "seat_point_locator": "seat_point", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "move_outputs": {
               "move_control": [

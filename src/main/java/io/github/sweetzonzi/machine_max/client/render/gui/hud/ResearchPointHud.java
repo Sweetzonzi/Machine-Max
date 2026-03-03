@@ -48,6 +48,7 @@ public class ResearchPointHud implements LayeredDraw.Layer {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, @NotNull DeltaTracker deltaTracker) {
+        if (Minecraft.getInstance().options.hideGui) return;
         updateTracker(deltaTracker);
         if (RESEARCH_POINTS.isEmpty() && HEIGHT.get() < 1e-5) return;
         int x = (int) (guiGraphics.guiWidth() / 4f);

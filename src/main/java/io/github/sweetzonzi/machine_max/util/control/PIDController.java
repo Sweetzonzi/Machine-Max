@@ -18,9 +18,10 @@ public class PIDController {
     private double error;//实时误差
     private double errorLastFrame;//前一次迭代的误差
     private double errorAccumulated;//累积误差
-    private double errorAccuMax;//累积误差上限
-    private double errorAccuMin;//累积误差下限
+    private double outputMax;//累积误差上限
+    private double outputMin;//累积误差下限
     private double errorSpeed;//误差变化率
+    private double lastOutput;//上一次输出
     private double STEP;//PID控制器的运行步长
 
     /**
@@ -30,12 +31,11 @@ public class PIDController {
      * @param i    积分系数：误差累积量越大，控制量越大
      * @param d    微分系数：误差变化速度越大，控制量越大
      * @param step 控制器运行步长，通常与物理计算步长相同
-     * @param min  积分误差的最小值，用于防止积分误差爆炸
-     * @param max  积分误差的最大值，用于防止积分误差爆炸
+     * @param min  输出的最小值，用于防止积分饱和
+     * @param max  输出的最大值，用于防止积分饱和
      */
     public PIDController(double p, double i, double d, double step, double min, double max) {
         this.adjust(p, i, d, step, min, max);
-        this.resetError();
     }
 
     /**
@@ -45,21 +45,22 @@ public class PIDController {
      * @param i    积分系数：误差累积量越大，控制量越大
      * @param d    微分系数：误差变化速度越大，控制量越大
      * @param step 控制器运行步长，通常与物理计算步长相同
-     * @param min  积分误差的最小值，用于防止积分误差爆炸
-     * @param max  积分误差的最大值，用于防止积分误差爆炸
+     * @param outputMin  输出的最小值，用于防止积分饱和
+     * @param outputMax  输出的最大值，用于防止积分饱和
      */
-    public void adjust(double p, double i, double d, double step, double min, double max) {
+    public void adjust(double p, double i, double d, double step, double outputMin, double outputMax) {
         this.P = p;
         this.I = i;
         this.D = d;
-        this.errorAccuMax = max;
-        this.errorAccuMin = min;
+        this.outputMax = outputMax;
+        this.outputMin = outputMin;
         if (step <= 0) {
             this.STEP = 0.1;
             MachineMax.LOGGER.error("PID's time step must be greater than 0!");
         } else {
             this.STEP = step;
         }
+        this.resetError();
     }
 
     /**
@@ -70,6 +71,7 @@ public class PIDController {
         this.errorAccumulated = 0;
         this.errorSpeed = 0;
         this.errorLastFrame = 0;
+        this.lastOutput = 0.5 * (this.outputMax + this.outputMin);
     }
 
     /**
@@ -82,9 +84,30 @@ public class PIDController {
      * @return 控制量输出，例如推力或炮塔旋转力矩的大小
      */
     public double step(double target, double actual) {
-        this.error = actual - target;//更新记录的误差
+        this.error = target - actual;//更新记录的误差
         this.errorSpeed = (this.error - this.errorLastFrame) / this.STEP;
-        this.errorAccumulated = Math.clamp(this.errorAccumulated + this.error * this.STEP, this.errorAccuMin, this.errorAccuMax);
+        return internalStep(target, actual, this.errorSpeed);
+    }
+
+    /**
+     * 对于给定的被控量，控制器会根据和目标的差距给出一个控制量以尝试修正被控量的值
+     * <p>
+     * 此方法应随时间推进反复被调用
+     *
+     * @param target 被控量目标值，例如目标速度或目标炮塔旋转角度
+     * @param actual 被控量实际值，例如实际速度或实际炮塔旋转角度
+     * @param speed  误差变化率，不根据记录误差计算，而是直接传入
+     * @return 控制量输出，例如推力或炮塔旋转力矩的大小
+     */
+    public double step(double target, double actual, double speed) {
+        this.error = target - actual;//更新记录的误差
+        this.errorSpeed = speed;
+        return internalStep(target, actual, this.errorSpeed);
+    }
+
+    private double internalStep(double target, double actual, double speed) {
+        if (lastOutput < outputMax && lastOutput > outputMin)
+            this.errorAccumulated = this.errorAccumulated + this.error * this.STEP;
         //P
         double output = this.P * error;
         //I
@@ -92,6 +115,7 @@ public class PIDController {
         //D
         output += this.D * errorSpeed;
         this.errorLastFrame = this.error;//更新记录的误差
-        return output;
+        lastOutput = output;
+        return Math.clamp(output, outputMin, outputMax);
     }
 }

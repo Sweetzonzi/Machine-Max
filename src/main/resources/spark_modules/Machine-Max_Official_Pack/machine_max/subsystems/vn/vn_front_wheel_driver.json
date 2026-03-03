@@ -1,0 +1,19 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动对接口上的部件滚动和转向
+  "basic_durability": 100,
+  "roll": {
+    "max_drive_force": 2500.0,
+    "max_brake_force": 800.0,
+    "max_hand_brake_force": 0.0,
+    "max_speed": 3140.0
+  },
+  "steering": {
+    "max_force": 1000,
+    "max_speed": 3.14
+  },
+  "abs_enabled": true, //(可选, 默认false)是否启用ABS
+  "abs_target_slip_ratio": 0.15, //(可选, 默认0.15)ABS目标滑移率
+  "abs_wheel_radius": 0.3984, //(可选, 默认0.3)轮胎半径(m)
+  "control_inputs": ["wheel_control", "move_control"]//(可选, 默认["wheel_control", "move_control"])接收的控制信号的频道列表, 优先级递减
+}
