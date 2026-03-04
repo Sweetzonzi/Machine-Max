@@ -176,5 +176,16 @@
   "connector.machine_max.trunk_door_axis": "后备箱盖转轴",
   "connector.machine_max.trunk_door_lock": "后备箱盖锁扣",
   "connector.machine_max.hood_axis": "引擎盖转轴",
-  "connector.machine_max.hood_lock": "引擎盖锁扣"
+  "connector.machine_max.hood_lock": "引擎盖锁扣",
+
+  "subtitles.subsystem.gearbox.up": "变速箱升档",
+  "subtitles.subsystem.gearbox.down": "变速箱降档",
+  "subtitles.subsystem.gearbox.clutch_in": "离合器接合",
+  "subtitles.subsystem.gearbox.clutch_out": "离合器分离",
+  "subtitles.subsystem.car_controller.handbrake_on": "手刹开启",
+  "subtitles.subsystem.car_controller.handbrake_off": "手刹关闭",
+  "subtitles.subsystem.wheel_driver.brake_on": "刹车开启",
+  "subtitles.subsystem.wheel_driver.brake_off": "刹车关闭",
+  "subtitles.subsystem.wheel_driver.air_brake_on": "气刹开启",
+  "subtitles.subsystem.wheel_driver.air_brake_off": "气刹关闭"
 }

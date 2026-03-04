@@ -4,8 +4,11 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes;
 import lombok.Getter;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -14,13 +17,30 @@ import java.util.TreeMap;
 
 @Getter
 public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
+    
+    public record HandBrakeSoundAttr(
+            SoundEvent handBrakeOn,
+            SoundEvent handBrakeOff
+    ) {
+        public static final HandBrakeSoundAttr DEFAULT = new HandBrakeSoundAttr(
+                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.car_controller.handbrake_on"), 16),
+                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.car_controller.handbrake_off"), 16)
+        );
+        
+        public static final Codec<HandBrakeSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                SoundEvent.DIRECT_CODEC.optionalFieldOf("handbrake_on", DEFAULT.handBrakeOn).forGetter(HandBrakeSoundAttr::handBrakeOn),
+                SoundEvent.DIRECT_CODEC.optionalFieldOf("handbrake_off", DEFAULT.handBrakeOff).forGetter(HandBrakeSoundAttr::handBrakeOff)
+        ).apply(instance, HandBrakeSoundAttr::new));
+    }
     public final Vec3 steeringCenter;
     public final float minSteeringRadius;
     public final TreeMap<Float, Float> lateralAccelerationMap;
     public final TreeMap<Float, Float> maxDriftAngularVelocityMap;
     public final boolean manualGearShift;
     public final boolean autoHandBrake;
+    public final boolean driftAssist;
     public final List<String> controlInputKeys;
+    public final HandBrakeSoundAttr sounds;//音效配置
 
     public static final Codec<TreeMap<Float, Float>> STEERING_RADIUS_CODEC =
             Codec.either(Codec.FLOAT, Codec.unboundedMap(Codec.STRING, Codec.FLOAT))
@@ -68,7 +88,9 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             STEERING_RADIUS_CODEC.optionalFieldOf("max_drift_angular_velocity", createDefaultMaxDriftAngularVelocityMap()).forGetter(CarControllerSubsystemStaticAttr::getMaxDriftAngularVelocityMap),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(CarControllerSubsystemStaticAttr::isManualGearShift),
             Codec.BOOL.optionalFieldOf("auto_hand_brake", true).forGetter(CarControllerSubsystemStaticAttr::isAutoHandBrake),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(CarControllerSubsystemStaticAttr::getControlInputKeys)
+            Codec.BOOL.optionalFieldOf("drift_assist", true).forGetter(CarControllerSubsystemStaticAttr::isDriftAssist),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(CarControllerSubsystemStaticAttr::getControlInputKeys),
+            HandBrakeSoundAttr.CODEC.optionalFieldOf("sounds", HandBrakeSoundAttr.DEFAULT).forGetter(CarControllerSubsystemStaticAttr::getSounds)
     ).apply(instance, CarControllerSubsystemStaticAttr::new));
 
     public static TreeMap<Float, Float> createDefaultLateralAccelerationMap() {
@@ -91,7 +113,9 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             TreeMap<Float, Float> maxDriftAngularVelocityMap,
             boolean manualGearShift,
             boolean autoHandBrake,
-            List<String> controlInputKeys) {
+            boolean driftAssist,
+            List<String> controlInputKeys,
+            HandBrakeSoundAttr sounds) {
         super(basicAttr);
         this.steeringCenter = steeringCenter;
         this.minSteeringRadius = minSteeringRadius;
@@ -99,7 +123,9 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.maxDriftAngularVelocityMap = maxDriftAngularVelocityMap;
         this.manualGearShift = manualGearShift;
         this.autoHandBrake = autoHandBrake;
+        this.driftAssist = driftAssist;
         this.controlInputKeys = controlInputKeys;
+        this.sounds = sounds;
     }
 
     public float getSteeringRadiusAtSpeed(float currentMps) {
@@ -154,6 +180,14 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     @Override
     public SubsystemTypes getType() {
         return SubsystemTypes.CAR_CTRL;
+    }
+
+    public SoundEvent getHandBrakeOnSound() {
+        return sounds.handBrakeOn;
+    }
+
+    public SoundEvent getHandBrakeOffSound() {
+        return sounds.handBrakeOff;
     }
 
 }

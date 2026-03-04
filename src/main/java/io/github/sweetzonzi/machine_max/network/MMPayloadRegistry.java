@@ -26,6 +26,11 @@ public class MMPayloadRegistry {
         final PayloadRegistrar research = event.registrar("research:1.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.0.0");
         //注册网络包及其处理
+        input.playToServer(//玩家配置
+                ControlPreferencePayload.TYPE,
+                ControlPreferencePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ControlPreferencePayload::handle)
+        );
         input.playBidirectional(//移动输入
                 MovementInputPayload.TYPE,
                 MovementInputPayload.STREAM_CODEC,

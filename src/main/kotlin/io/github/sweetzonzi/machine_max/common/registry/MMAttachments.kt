@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment
+import io.github.sweetzonzi.machine_max.common.attachment.ControlPreferenceAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
@@ -26,6 +27,15 @@ object MMAttachments {
     val VEHICLE_ASSEMBLY = MachineMax.REGISTER.attachment {
         id = "vehicle_assembly_cache"
         factory = { _ -> VehicleAssemblyAttachment(Minecraft.getInstance().player) }
+    }
+
+    //实体的载具控制偏好
+    @JvmStatic
+    val CONTROL_PREFERENCE = MachineMax.REGISTER.attachment {
+        id = "control_preference"
+        factory = { _ -> ControlPreferenceAttachment() }
+        copyOnDeath = true
+        serializer = ControlPreferenceAttachment.CODEC
     }
 
     //实体保存的蓝图与研发点

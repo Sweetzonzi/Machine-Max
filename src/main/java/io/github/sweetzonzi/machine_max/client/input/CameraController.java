@@ -7,7 +7,9 @@ import com.jme3.math.Vector3f;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
+import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
@@ -137,7 +139,7 @@ public class CameraController {
         yaw = targetViewYaw;
         roll = targetViewRoll;
         AbstractControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
-        if (subsystem instanceof SeatSubsystem seat && (type.isFirstPerson() || seat.attr.staticAttribute.views.followVehicle())) {
+        if (subsystem instanceof SeatSubsystem seat && (type.isFirstPerson() || ControlPreference.shouldFollowPose(seat))) {
             //基于附体坐标系旋转相机
             Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
             //TODO: combine的TempVars.get()会在未找到座椅连接点时IndexOutOfBoundsException，检查逻辑

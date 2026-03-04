@@ -61,6 +61,7 @@ import jme3utilities.math.MyMath;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -77,6 +78,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -296,6 +298,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             if (relBlockPos.getX() < 0 || relBlockPos.getY() < 0 || relBlockPos.getZ() < 0 ||
                     relBlockPos.getX() > 15 || relBlockPos.getY() > 15 || relBlockPos.getZ() > 15) {
                 ManifoldPoints.setDistance1(manifoldPointId, 500);//阻止接触约束计算
+//                MachineMax.LOGGER.warn("接触点超出区块边界: {}", blockPos);
                 return;//若方块不属于本区块，则不处理碰撞
             }
             SectionSnapshot.BlockSnapshot block = terrain.getBlockSnapshot(blockPos);
@@ -348,19 +351,23 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
             //若是需要攀爬辅助处理的方块
             if (climbableBlocks.contains(blockPos)) {
+                var shape = blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
+                float blockHeight = (float) shape.max(Direction.Axis.Y);
                 //重设碰撞法线方向
                 normal = point1.getIndex() == 0 ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate();
                 ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
                 ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
-                if (attr.isClimbAssist()) {
-                    // 人工设置一个小的侵入深度，法线向上，若侵入深度为0.05则期望每帧使部件上浮0.05*ERP的高度
-                    ManifoldPoints.setDistance1(manifoldPointId, Math.clamp(worldContactPoint.y - blockPos.getY() + 1, -0.01f, -0.006f));
-                } else { //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
-                    ManifoldPoints.setDistance1(manifoldPointId, 500f);
+                if (worldContactPoint.y < blockPos.getY() + blockHeight) {
+                    if (attr.isClimbAssist()) {
+                        // 人工设置一个小的侵入深度，法线向上，若侵入深度为0.05则期望每帧使部件上浮0.05*ERP的高度
+                        ManifoldPoints.setDistance1(manifoldPointId, -0.01f);
+                    } else { //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
+                        ManifoldPoints.setDistance1(manifoldPointId, 500f);
+                    }
+                    return; //爬坡辅助的方块不参与后续碰撞处理
                 }
-                return; //爬坡辅助的方块不参与后续碰撞处理
             }
             //调用子系统碰撞回调
             if (hitBox.subsystem != null) {
@@ -737,7 +744,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             int minZ = (int) Math.floor(aabb.minZ);
             int maxX = (int) Math.ceil(aabb.maxX);
             int maxZ = (int) Math.ceil(aabb.maxZ);
-            float y0 = bodyMinY + 0.05f;
+            float y0 = (float) Math.floor(bodyMinY) - 0.1f;
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos currentPos = new BlockPos(x, (int) Math.floor(y0), z);
@@ -766,31 +773,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                 height = higherTerrainHeight - y0;
                                 highestBlockPos = highestBlockPos.above();
                             }
-
                             // 根据高度判断是否可攀爬
                             if (height <= stepHeight) {
                                 climbableBlocks.addAll(noCollisionBlocks);
-                                Vector3f pos = body.getPhysicsLocation(null);
-                                int partX = (int) Math.floor(pos.x);
-                                int partZ = (int) Math.floor(pos.z);
-                                if (attr.climbAssist && partX == x && partZ == z) {
-                                    // 在部件重心所处方块柱施加额外攀爬辅助力
-                                    if (height > 0 && height <= stepHeight) {
-                                        var horizonVel = Math.sqrt(tmpWorldVel.x * tmpWorldVel.x + tmpWorldVel.z * tmpWorldVel.z);
-                                        var speedFactor = 0.7 * Math.exp(-0.25 * horizonVel) + 0.3;
-                                        var ang = Math.max(0, Math.atan2(tmpWorldVel.y, horizonVel));
-                                        var tgtAng = speedFactor * Math.atan2(height, 1) + (1 - speedFactor) * ang;
-                                        float extraVel = (float) Math.max(-5, Math.max(Math.sin(tgtAng) * tmpWorldVel.length(), 2f * speedFactor) - tmpWorldVel.y);
-
-                                        if (!(extraVel <= 0 && tmpWorldVel.y < 0)) {
-                                            float horizontalVelScale = (float) Math.max(0, (Math.cos(ang) - Math.cos(tgtAng)));
-//                                            body.applyCentralImpulse(new Vector3f(
-//                                                    -horizontalVelScale * tmpWorldVel.x,
-//                                                    extraVel,
-//                                                    -horizontalVelScale * tmpWorldVel.z).mult(0.5f * body.getMass()));
-                                        }
-                                    }
-                                }
                             }
                         }
                     }

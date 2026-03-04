@@ -1,0 +1,11 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:motorbike_controller",
+  "basic_durability": 100,
+  "steering_center": [0,-0.375,0.117],//对于全轮转向的载具, 此位置应取四轮位置的几何中心
+  "min_steering_radius": 3.0,
+  "lateral_acceleration": 30.0,
+  "max_angle": 15.0,
+  "parking_angle": 0.0,
+  "max_drift_angular_velocity": 2.0
+}

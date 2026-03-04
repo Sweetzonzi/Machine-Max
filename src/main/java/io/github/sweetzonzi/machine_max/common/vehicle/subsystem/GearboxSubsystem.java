@@ -59,7 +59,7 @@ public class GearboxSubsystem extends AbstractSubsystem {
     public void onTick() {
         super.onTick();
         String gear = this.gearNames.get(this.getCurrentGear());
-        if (!this.isClutched() || this.getRemainingSwitchTime() > 0.0f) gear = "N";
+//        if (!this.isClutched() || this.getRemainingSwitchTime() > 0.0f) gear = "N";
         for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
             String signalChannel = entry.getKey();
             List<String> targets = entry.getValue();

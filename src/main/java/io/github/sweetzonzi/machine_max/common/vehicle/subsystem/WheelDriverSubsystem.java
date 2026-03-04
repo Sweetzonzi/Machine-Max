@@ -12,13 +12,16 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_at
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import jme3utilities.math.MyQuaternion;
+import lombok.Getter;
+import net.minecraft.sounds.SoundSource;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 public class WheelDriverSubsystem extends AbstractSubsystem {
+    @Getter
     public final WheelDriverSubsystemAttr attr;
+    @Getter
     public final AdvancedConnector connector;
     private final float MAX_SPEED;
     private final float MAX_STEERING_SPEED;
@@ -26,6 +29,8 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
     private final float MAX_BRAKE_FORCE;
     private final float MAX_HAND_BRAKE_FORCE;
     private final float MAX_STEERING_FORCE;
+    private volatile boolean isBraking = false;
+    private boolean wasBraking = false;
 
     public WheelDriverSubsystem(ISubsystemHost owner, String name, WheelDriverSubsystemAttr attr) {
         super(owner, name, attr);
@@ -52,6 +57,31 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
             //检查并设置关节的旋转顺序 Check and set joint rotation order
             if (RotationOrder.XZY != joint.getRotationOrder()) {
                 joint.setRotationOrder(RotationOrder.XZY);
+            }
+        }
+        // 播放音效
+        if (getLevel().isClientSide()) {
+            Vector3f pos = getSubPart().getPosition();
+            if (isBraking && !wasBraking) {
+                wasBraking = true;
+                getLevel().playLocalSound(
+                        pos.x, pos.y, pos.z,
+                        getAttr().getStaticAttribute().getBrakeOnSound(),
+                        SoundSource.NEUTRAL,
+                        1f,
+                        1f,
+                        false
+                );
+            } else if (!isBraking && wasBraking) {
+                wasBraking = false;
+                getLevel().playLocalSound(
+                        pos.x, pos.y, pos.z,
+                        getAttr().getStaticAttribute().getBrakeOffSound(),
+                        SoundSource.NEUTRAL,
+                        1f,
+                        1f,
+                        false
+                );
             }
         }
     }
@@ -88,6 +118,11 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
                 rollingMotor.setMotorEnabled(true);
                 float torque = 0;
                 float brakeTorque = wheelControlSignal.getBrakeControl() * MAX_BRAKE_FORCE;
+                if (brakeTorque > 0.05 * MAX_BRAKE_FORCE && !isBraking) {
+                    isBraking = true;
+                } else if (brakeTorque < 0.05 * MAX_BRAKE_FORCE && isBraking) {
+                    isBraking = false;
+                }
                 float handBrakeTorque = wheelControlSignal.getHandBrakeControl() * MAX_HAND_BRAKE_FORCE;
                 if (speed != 0) torque = totalPower / Math.abs(speed);//正扭矩代表加速，负扭矩代表减速
                 torque = Math.clamp(torque, -MAX_DRIVE_FORCE, MAX_DRIVE_FORCE);//限制最大驱动力 Limit maximum drive force

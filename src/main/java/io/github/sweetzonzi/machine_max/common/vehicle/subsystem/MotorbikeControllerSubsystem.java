@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorbikeControllerSubsystemAttr;
@@ -117,8 +118,10 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
         if (steeringInput == 0) {
             return 0;
         } else {
-            // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
-            float steeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput;//实际转向半径(米) Actual steering radius (m)
+            //实际转向半径(米) Actual steering radius (m)
+            float steeringRadius = ControlPreference.shouldLimitSpeedTurning(this)
+                    ? attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
+                    : attr.staticAttribute.getMinSteeringRadius() / steeringInput; // 否则使用最小转向半径
             double deltaRadius = pivot.x - attr.staticAttribute.steeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
             double deltaForward = pivot.z - attr.staticAttribute.steeringCenter.z;
