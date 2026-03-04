@@ -47,4 +47,10 @@ public class MouseHandlerMixin {
         lastX = x;
         lastY = y;
     }
+
+    @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true)
+    private void onScroll(long windowPointer, double xOffset, double yOffset, CallbackInfo ci) {
+        AxisHook.putAxisData(AxisHook.AxisType.XScroll, xOffset);
+        AxisHook.putAxisData(AxisHook.AxisType.YScroll, yOffset);
+    }
 }

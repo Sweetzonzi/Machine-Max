@@ -67,6 +67,12 @@ public class RawInputHandler {
 //                double y = bind[1];
 //                System.out.println("x: " + x + " y: " + y);
 //    });
+    // 鼠标y轴滚轮绑定示范
+//    static AxisHook mouseScrollBind = AxisHook.createWith(AxisHook.AxisType.YScroll)
+//            .EVENT(bind -> {  //不可空数据，遇空自动覆盖为0
+//                double y = bind[0];
+//                System.out.println(" y scroll: " + y);
+//    });
 
 
     /**
