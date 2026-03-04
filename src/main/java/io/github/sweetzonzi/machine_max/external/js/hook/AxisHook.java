@@ -87,24 +87,26 @@ public class AxisHook {
     public static void putAxisData(AxisType type, Double data) {
         for (AxisHook ah : axisHookList) {
             ah.dataMap.put(type, data);
-            ah.triggerEvent(); // 数据输入时触发事件
+            ah.triggerEvent(type); // 数据输入时触发事件
         }
     }
 
     /**
      * 触发事件的方法
      * */
-    private void triggerEvent() {
+    private void triggerEvent(AxisType triggerType) {
         if (axisEvent != null) {
             double[] values = new double[axisTypesList.size()];
             int i = 0;
+            boolean match = false;
             for (AxisType axisType : axisTypesList) {
+                if (axisType.equals(triggerType)) match = true;
                 Double v = dataMap.get(axisType);
                 if (v == null) v = 0D;
                 values[i] = v;
                 i++;
             }
-            eventExecutor.execute(() -> {axisEvent.event(values);});
+            if (match) eventExecutor.execute(() -> {axisEvent.event(values);});
         }
     }
 
