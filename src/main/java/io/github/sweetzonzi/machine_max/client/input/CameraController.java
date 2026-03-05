@@ -118,7 +118,7 @@ public class CameraController {
         CameraType type = client.options.getCameraType();
         Entity entity = camera.getEntity();
         float partialTick = (float) event.getPartialTick();
-        
+
         // 初始化角度，避免刚进游戏和刚上车时从0开始插值
         if (!anglesInitialized) {
             aimPitch = entity.getViewXRot(partialTick);
@@ -132,7 +132,7 @@ public class CameraController {
             roll = aimRoll;
             anglesInitialized = true;
         }
-        
+
         //更新计算相机相对其所处坐标系的旋转
 //        pitch = 0.6f * pitch + 0.4f * targetViewPitch;
 //        yaw = 0.6f * yaw + 0.4f * targetViewYaw;
@@ -147,7 +147,7 @@ public class CameraController {
             //TODO: combine的TempVars.get()会在未找到座椅连接点时IndexOutOfBoundsException，检查逻辑
             MyMath.combine(new Transform(Vector3f.ZERO, SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
                             Math.toRadians(roll),
-                            Math.toRadians(yaw),
+                            Math.toRadians(-yaw),
                             Math.toRadians(pitch)))),
                     extra, tmpViewTransform);
             //计算对应欧拉角
@@ -158,7 +158,7 @@ public class CameraController {
             rot.mul((float) (180 / Math.PI));
             //应用旋转
             event.setPitch(rot.x);
-            event.setYaw(rot.y + Mth.wrapDegrees(125.5f));
+            event.setYaw(-rot.y);
             event.setRoll(rot.z);
         } else {
             //基于世界坐标系旋转相机
@@ -173,11 +173,13 @@ public class CameraController {
                 if (!onBoard) {
                     onBoard = true;
                     justLeft = false;
+                    aimYaw = 180;
+                    targetViewYaw = 180;
                 }
                 //回到保存记录的位置
                 if (seat.getOwner().getSubPart().getEntity() instanceof MMPartEntity partEntity) {
                     entity.setXRot(aimPitch);
-                    entity.setYRot(Mth.wrapDegrees(aimYaw));
+                    entity.setYRot(aimYaw + 180 + partEntity.getYRot());
 //                    entity.setYHeadRot(aimYaw + 180 + partEntity.getYRot());
                 }
             } else {
