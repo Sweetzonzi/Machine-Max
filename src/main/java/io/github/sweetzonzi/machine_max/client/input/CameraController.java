@@ -12,6 +12,8 @@ import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.external.js.hook.AxisHook;
+import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import jme3utilities.math.MyMath;
@@ -143,7 +145,7 @@ public class CameraController {
             //TODO: combine的TempVars.get()会在未找到座椅连接点时IndexOutOfBoundsException，检查逻辑
             MyMath.combine(new Transform(Vector3f.ZERO, SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
                             Math.toRadians(roll),
-                            Math.toRadians(-yaw),
+                            Math.toRadians(yaw),
                             Math.toRadians(pitch)))),
                     extra, tmpViewTransform);
             //计算对应欧拉角
@@ -154,7 +156,7 @@ public class CameraController {
             rot.mul((float) (180 / Math.PI));
             //应用旋转
             event.setPitch(rot.x);
-            event.setYaw(-rot.y);
+            event.setYaw(rot.y + Mth.wrapDegrees(125.5f));
             event.setRoll(rot.z);
         } else {
             //基于世界坐标系旋转相机
@@ -173,7 +175,7 @@ public class CameraController {
                 //回到保存记录的位置
                 if (seat.getOwner().getSubPart().getEntity() instanceof MMPartEntity partEntity) {
                     entity.setXRot(aimPitch);
-                    entity.setYRot(Mth.wrapDegrees(aimYaw + 180 +  partEntity.getYRot()));
+                    entity.setYRot(Mth.wrapDegrees(aimYaw));
 //                    entity.setYHeadRot(aimYaw + 180 + partEntity.getYRot());
                 }
             } else {
