@@ -225,7 +225,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         getLevel().addFreshEntity(this.entity);
     }
 
-    public void onContactProcessed(PhysicsCollisionObject o1, @NotNull PhysicsCollisionObject o2, ManifoldPoint point1, ManifoldPoint point2, long manifoldPointId) {
+    public void onContactProcessed(PhysicsCollisionObject o1, @NotNull PhysicsCollisionObject o2,
+                                   ManifoldPoint point1, ManifoldPoint point2,
+                                   long manifoldPointId) {
         if (level.isClientSide() && !isActive()) return; // 忽略非激活客户端刚体
         PhysicsRigidBody other = (PhysicsRigidBody) o2;
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
@@ -285,8 +287,26 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     Vector3f tmpSide = new Vector3f();
 
     @Override
-    protected void onCollideWithTerrain(PhysicsRigidBody other, Vector3f normal, Vector3f worldContactPoint, Vector3f localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel, int hitBoxIndex, int otherHitBoxIndex, float impactAngle, ManifoldPoint point1, ManifoldPoint point2, long manifoldPointId) {
-        super.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, point1, point2, manifoldPointId);
+    protected void onCollideWithTerrain(
+            PhysicsRigidBody other,
+            Vector3f normal,
+            Vector3f worldContactPoint,
+            Vector3f localContactPoint, Vector3f otherLocalContactPoint,
+            Vector3f contactVel,
+            int hitBoxIndex, int otherHitBoxIndex,
+            float impactAngle,
+            ManifoldPoint point1, ManifoldPoint point2,
+            long manifoldPointId) {
+        super.onCollideWithTerrain(
+                other,
+                normal,
+                worldContactPoint,
+                localContactPoint, otherLocalContactPoint,
+                contactVel,
+                hitBoxIndex, otherHitBoxIndex,
+                impactAngle,
+                point1, point2,
+                manifoldPointId);
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof PhysicsChunkSection terrain) {
             other.shouldShowDebugBoxWhenNonColldeWith = true;
@@ -333,7 +353,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     float angleDeg = (float) Math.toDegrees(Math.abs(slipAngle));
                     float s_angle = angleDeg / 90.0f; // 归一化到 [0, 1]
                     double muFront = hitBox.getMuFront() // 滑移率15%时摩擦系数达到峰值
-                            * calculateSlipScale(slipRatio, 0.15f, 1.0f, 1.3f, 0.9f);
+                            * calculateSlipScale(slipRatio, 0.15f, 1.0f, 1.4f, 0.9f);
                     double muSide = hitBox.getMuSide() // 设定侧向在 12度达到峰值，且动摩擦衰减更剧烈(0.5f)
                             * calculateSlipScale(s_angle, 0.133f, 1.0f, 1.1f, 0.5f);
                     // 根据摩擦方向调整摩擦系数，越接近某个方向，实际摩擦系数越接近对应方向的摩擦系数
@@ -521,7 +541,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                                        int hitBoxIndex, int otherHitBoxIndex, float impactAngle, long manifoldPointId) {
         super.onCollideWithEntity(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
-        if (otherOwner instanceof LivingEntity livingEntity && !livingEntity.isRemoved() && !livingEntity.isDeadOrDying() && !livingEntity.hasImpulse && !(livingEntity.getVehicle() instanceof MMPartEntity)) {//不处理相对速度不足的碰撞
+        if (otherOwner instanceof LivingEntity livingEntity
+                && !livingEntity.isRemoved()
+                && !livingEntity.isDeadOrDying()
+                && !livingEntity.hasImpulse
+                && !(livingEntity.getVehicle() instanceof MMPartEntity)) {//不处理相对速度不足的碰撞
             var hitBox = this.getHitBox(hitBoxIndex);
             var vel = this.getLinearVelocity();
             //调用子系统碰撞回调

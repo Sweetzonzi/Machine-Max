@@ -101,8 +101,8 @@ public class CameraController {
         if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
             VehicleCore vehicle = seat.getOwner().getSubPart().getPart().getVehicle();
             //根据速度调整相机距离
-            speedDistanceFactor = 0.9f * speedDistanceFactor + 0.1f * (float) MMMath.sigmoid(0.1 * vehicle.getVelocity().length());
-            float newDistance = (float) ((seat.attr.staticAttribute.views.distanceScale() + 0.25 * speedDistanceFactor) * vehicle.cameraDistance);
+            speedDistanceFactor = 0.8f * speedDistanceFactor + 0.2f * (float) (2 * MMMath.sigmoid(0.1 * vehicle.getVelocity().length()) - 1);
+            float newDistance = (float) ((seat.attr.staticAttribute.views.distanceScale() + 0.4 * speedDistanceFactor) * vehicle.cameraDistance);
             event.setDistance(newDistance);
         }
     }
