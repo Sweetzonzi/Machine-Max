@@ -60,6 +60,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     private final Map<Entity, Vector3f> onBoardPositions = HashMap.newHashMap(1);
     @Getter
     private final Map<String, Object> variables = HashMap.newHashMap(1);
+
     /**
      * 不应被使用！
      *
@@ -196,7 +197,8 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                         PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
                         if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart someSubPart) {
                             // 跳过轮胎轮面
-                            if (someSubPart.isWheel(result.triangleIndex()) && someSubPart.isWheelSurface(result.triangleIndex())) continue;
+                            if (someSubPart.isWheel(result.triangleIndex()) && someSubPart.isWheelSurface(result.triangleIndex()))
+                                continue;
                             //TODO: new一个新的source存储攻击来袭方向
                             Vector3f normal = result.getHitNormalLocal(null);
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
@@ -251,11 +253,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     }
 
     @Override
-    public boolean canBeHitByProjectile() {
-        return true;//投射物命中判定交由物理引擎处理
-    }
-
-    @Override
     public @NotNull AABB makeBoundingBox() {
         if (subPart != null && boundingBox != null) {
             BoundingBox bb = boundingBox.get();
@@ -305,7 +302,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             onBoardPositions.remove(passenger); //移除登车位置记录
             for (Pose pose : passenger.getDismountPoses()) { //尝试所有可用姿势（站立，潜行，匍匐等）
                 AABB aabb = passenger.getLocalBoundsForPose(pose);
-                if(DismountHelper.canDismountTo(this.level(), passenger, aabb.move(pos.subtract(passenger.position()))))
+                if (DismountHelper.canDismountTo(this.level(), passenger, aabb.move(pos.subtract(passenger.position()))))
                     return pos;
             }
         }

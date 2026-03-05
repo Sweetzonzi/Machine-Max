@@ -4,14 +4,20 @@ import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
+import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
+
+import java.util.List;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class PartHitHandler {
@@ -42,6 +48,66 @@ public class PartHitHandler {
             // 射线检测结果为空，说明没有命中任何部件，取消事件
             event.setCanceled(true);
 //            MachineMax.LOGGER.debug("Projectile hit nothing, cancel event");
+        }
+    }
+
+    @SubscribeEvent
+    public static void onProjectileTick(EntityTickEvent.Pre event) {
+        if (event.getEntity() instanceof Projectile projectile) {
+            if (projectile.isRemoved() || projectile.getDeltaMovement().lengthSqr() < 0.16) return;
+            // 上一 tick 位置
+            Vec3 prevPos = projectile.position().subtract(projectile.getDeltaMovement());
+            // 当前 tick 位置
+            Vec3 currentPos = projectile.position();
+
+            Vector3f start = PhysicsHelperKt.toBVector3f(prevPos);
+            Vector3f end = PhysicsHelperKt.toBVector3f(currentPos);
+
+            var physicsLevel = SparkLevel.getPhysicsLevel(projectile.level());
+            var snapshot = physicsLevel.getWorld().getWorldSnapshot();
+
+            List<PhysicsRayTestResult> results = snapshot.rayTest(start, end);
+
+            if (results.isEmpty()) return;
+
+            SubPart hitSubPart = null;
+            PhysicsRayTestResult hitResult = null;
+
+            for (PhysicsRayTestResult result : results) {
+                if (!(PhysicsBodyExtensionKt.getOwner(result.getCollisionObject()) instanceof SubPart subPart))
+                    continue;
+                if (subPart.isWheel(result.triangleIndex()) && subPart.isWheelSurface(result.triangleIndex()))
+                    continue;
+                hitSubPart = subPart;
+                hitResult = result;
+                break;
+            }
+
+            if (hitSubPart == null) return;
+
+            Vec3 hitPos = new Vec3(
+                    start.x + (end.x - start.x) * hitResult.getHitFraction(),
+                    start.y + (end.y - start.y) * hitResult.getHitFraction(),
+                    start.z + (end.z - start.z) * hitResult.getHitFraction()
+            );
+
+            MMPartEntity partEntity = hitSubPart.getEntity();
+
+            if (partEntity == null) return;
+
+            HitResult vallinaHitResult = new EntityHitResult(
+                    partEntity,
+                    hitPos
+            );
+
+            IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
+
+            mixinProjectile.machine_Max$setHitPoint(start.add(end.subtract(start).mult(hitResult.getHitFraction())));
+            mixinProjectile.machine_Max$setHitNormal(hitResult.getHitNormalLocal(null));
+            mixinProjectile.machine_Max$setHitBox(hitSubPart.getHitBox(hitResult.triangleIndex()));
+            mixinProjectile.machine_Max$setHitSubPart(hitSubPart);
+
+            mixinProjectile.machine_Max$manualProjectileHit(vallinaHitResult);
         }
     }
 }

@@ -73,6 +73,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
@@ -379,7 +380,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
-                if (worldContactPoint.y < blockPos.getY() + blockHeight) {
+                if (worldContactPoint.y < blockPos.getY() + blockHeight - 0.01f) {
                     if (attr.isClimbAssist()) {
                         // 人工设置一个小的侵入深度，法线向上，若侵入深度为0.05则期望每帧使部件上浮0.05*ERP的高度
                         ManifoldPoints.setDistance1(manifoldPointId, -0.01f);
@@ -844,8 +845,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
                         knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
                     }
-                    if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION))
-                        knockBack *= 15.0f;
+                    if (source.is(DamageTypeTags.IS_EXPLOSION))
+                        knockBack *= 10.0f;
                     float finalKnockBack = knockBack;
                     SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {//施加动量
                         part.vehicle.activate();
