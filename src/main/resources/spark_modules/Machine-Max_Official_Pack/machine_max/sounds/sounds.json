@@ -62,5 +62,47 @@
       "machine_max:subsystem/gearbox/clutch_out_3"
     ],
     "subtitle": "subtitles.subsystem.gearbox.clutch_out"
+  },
+  "subsystem.car_controller.handbrake_on": {
+    "sounds": [
+      "machine_max:subsystem/car_controller/handbrake_on"
+    ],
+    "subtitle": "subtitles.subsystem.car_controller.handbrake_on"
+  },
+  "subsystem.car_controller.handbrake_off": {
+    "sounds": [
+      "machine_max:subsystem/car_controller/handbrake_off"
+    ],
+    "subtitle": "subtitles.subsystem.car_controller.handbrake_off"
+  },
+  "subsystem.wheel_driver.brake_on": {
+    "sounds": [
+      "machine_max:subsystem/wheel_driver/brake_start_1",
+      "machine_max:subsystem/wheel_driver/brake_start_2",
+      "machine_max:subsystem/wheel_driver/brake_start_3"
+    ],
+    "subtitle": "subtitles.subsystem.wheel_driver.brake_on"
+  },
+  "subsystem.wheel_driver.brake_off": {
+    "sounds": [
+      "machine_max:subsystem/wheel_driver/brake_end"
+    ],
+    "subtitle": "subtitles.subsystem.wheel_driver.brake_off"
+  },
+  "subsystem.wheel_driver.air_brake_on": {
+    "sounds": [
+      "machine_max:subsystem/wheel_driver/air_brake_start_1",
+      "machine_max:subsystem/wheel_driver/air_brake_start_2",
+      "machine_max:subsystem/wheel_driver/air_brake_start_3"
+    ],
+    "subtitle": "subtitles.subsystem.wheel_driver.air_brake_on"
+  },
+  "subsystem.wheel_driver.air_brake_off": {
+    "sounds": [
+      "machine_max:subsystem/wheel_driver/air_brake_end_1",
+      "machine_max:subsystem/wheel_driver/air_brake_end_2",
+      "machine_max:subsystem/wheel_driver/air_brake_end_3"
+    ],
+    "subtitle": "subtitles.subsystem.wheel_driver.air_brake_off"
   }
 }

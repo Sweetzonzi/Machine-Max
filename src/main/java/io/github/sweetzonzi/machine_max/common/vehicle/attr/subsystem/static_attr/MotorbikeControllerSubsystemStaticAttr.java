@@ -27,7 +27,8 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(MotorbikeControllerSubsystemStaticAttr::getControlInputKeys),
             Codec.FLOAT.optionalFieldOf("max_angle", 30f).forGetter(MotorbikeControllerSubsystemStaticAttr::getMaxAngle),
             Codec.FLOAT.optionalFieldOf("parking_angle", 5f).forGetter(MotorbikeControllerSubsystemStaticAttr::getParkingAngle),
-            Codec.FLOAT.optionalFieldOf("correction_force_multiplier", 1.0f).forGetter(MotorbikeControllerSubsystemStaticAttr::getCorrectionForceMultiplier)
+            Codec.FLOAT.optionalFieldOf("correction_force_multiplier", 1.0f).forGetter(MotorbikeControllerSubsystemStaticAttr::getCorrectionForceMultiplier),
+            HandBrakeSoundAttr.CODEC.optionalFieldOf("sounds", HandBrakeSoundAttr.DEFAULT).forGetter(MotorbikeControllerSubsystemStaticAttr::getSounds)
     ).apply(instance, MotorbikeControllerSubsystemStaticAttr::new));
 
     public MotorbikeControllerSubsystemStaticAttr(
@@ -41,7 +42,9 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             List<String> controlInputKeys,
             float maxAngle,
             float parkingAngle,
-            float correctionForceMultiplier) {
+            float correctionForceMultiplier,
+            HandBrakeSoundAttr sounds
+    ) {
         super(basicAttr,
                 steeringCenter,
                 minSteeringRadius,
@@ -49,7 +52,9 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
                 maxDriftAngularVelocityMap,
                 manualGearShift,
                 autoHandBrake,
-                controlInputKeys);
+                false,
+                controlInputKeys,
+                sounds);
         this.maxAngle = maxAngle;
         this.parkingAngle = parkingAngle;
         this.correctionForceMultiplier = correctionForceMultiplier;

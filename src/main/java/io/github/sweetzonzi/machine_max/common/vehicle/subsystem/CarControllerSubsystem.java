@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.CarControllerSubsystemAttr;
@@ -10,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnect
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.control.PIDController;
 import lombok.Getter;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 
 import java.util.HashMap;
@@ -38,12 +40,16 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     private final Map<GearboxSubsystem, String> gearboxes = new HashMap<>();//控制的变速箱其接收控制的信号频道映射 Control gearbox and its receiving signal channel mapping
     private final Map<WheelDriverSubsystem, String> wheels = new HashMap<>();//控制的车轮其接收控制的信号频道映射 Control wheel and its receiving signal channel mapping
 
-    public boolean handBrake = true;
+    public boolean handBrake = false;
     public boolean isDrifting = false;
     public float actualThrottle = 0f;
     public float actualBrake = 0f;
     public float actualHandBrake = 0f;
     public float actualSteering = 0f;
+    /**
+     * 手刹状态，仅用于客户端音效
+     */
+    private boolean handBrakeEnabled = false;
 
     private final PIDController driftingPD;
     /**
@@ -86,6 +92,33 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 }
             }
         }
+        // 手刹车音效播放
+        var pos = getSubPart().getPosition();
+        if (handBrakeEnabled) {
+            if (actualHandBrake < 0.1f) {
+                handBrakeEnabled = false;
+                if (getLevel().isClientSide())
+                    getLevel().playLocalSound(
+                            pos.x, pos.y, pos.z,
+                            getAttr().getStaticAttribute().getHandBrakeOffSound(),
+                            SoundSource.NEUTRAL,
+                            1.0f,
+                            1.0f,
+                            false
+                    );
+            }
+        } else if (actualHandBrake >= 0.1f) {
+            handBrakeEnabled = true;
+            if (getLevel().isClientSide())
+                getLevel().playLocalSound(
+                        pos.x, pos.y, pos.z,
+                        getAttr().getStaticAttribute().getHandBrakeOnSound(),
+                        SoundSource.NEUTRAL,
+                        1.0f,
+                        1.0f,
+                        false
+                );
+        }
     }
 
     @Override
@@ -102,8 +135,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         } else if (!drifting && Math.abs(driftRad) > DRIFT_START_RAD && speed > 0) {
             drifting = true;
         }
-        // 强制手刹起漂时漂移控制权重为 1
-        if (actualHandBrake > 0.5f && localVel.lengthSquared() > 4) driftWeight = 1.0f;
+        if (!ControlPreference.shouldDriftAssist(this)) driftWeight = 0.0f;
+        else if (actualHandBrake > 0.5f && localVel.lengthSquared() > 4) driftWeight = 1.0f; // 强制手刹起漂时漂移控制权重为 1
         else if (drifting && localVel.lengthSquared() > 4) driftWeight = 1.0f;
         else driftWeight = 0.0f;
         if (isActive() && getOwner().getSubPart().getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
@@ -342,7 +375,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     actualBrake = actualBrake * 0.8f + 0 * 0.2f;
                     avgEngineSpeed = calculateAvgSpeedAndControl();
                     //起步时自动松离合和手刹 Auto release hand brake when starting
-                    if (attr.staticAttribute.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
+                    if (ControlPreference.shouldAutoHandBrake(this) && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                         handBrake = false;
                         overrideCountDown.put(this, 2f);
                     }
@@ -379,7 +412,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                 avgEngineSpeed = calculateAvgSpeedAndControl();
                 if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low
                     actualBrake = actualBrake * 0.9f + 1 * 0.1f;
-                    if (attr.staticAttribute.autoHandBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
+                    if (ControlPreference.shouldAutoHandBrake(this) && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                         handBrake = true;
                         overrideCountDown.put(this, 0.5f);
                     }
@@ -416,7 +449,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     }
                 }
             }
-        } else {//无输入信号 No input signal
+        } else { //无输入信号 No input signal
             for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
                 sendCallbackToAllListeners(entry.getValue(), EmptySignal.INSTANCE);
             }
@@ -471,7 +504,8 @@ public class CarControllerSubsystem extends AbstractSubsystem {
      */
     protected int autoGearShift(GearboxSubsystem gearbox, float engineSpeed, float upShiftThreshold, float downShiftThreshold, byte direction) {
         int gear = gearbox.getCurrentGear();
-        if (attr.staticAttribute.manualGearShift) return gear;//手动变速箱时不自动换挡 Manual gearbox shifting is not automatic
+        if (!ControlPreference.shouldAutoSwitchGear(this))
+            return gear;//手动变速箱时不自动换挡 Manual gearbox shifting is not automatic
         int upGear = Math.min(gear + 1, gearbox.gearRatios.length - 1);
         int downGear = Math.max(gear - 1, 0);
         double ratio = gearbox.gearRatios[gear];
@@ -537,8 +571,10 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         if (steeringInput == 0) {
             return 0;
         } else {
-            // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
-            float steeringRadius = attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput;//实际转向半径(米) Actual steering radius (m)
+            //实际转向半径(米) Actual steering radius (m)
+            float steeringRadius = ControlPreference.shouldLimitSpeedTurning(this)
+                    ? attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
+                    : attr.staticAttribute.getMinSteeringRadius() / steeringInput; // 否则使用最小转向半径
             double deltaRadius = pivot.x - attr.staticAttribute.steeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
             double deltaForward = pivot.z - attr.staticAttribute.steeringCenter.z;

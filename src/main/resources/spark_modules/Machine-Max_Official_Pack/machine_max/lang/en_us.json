@@ -165,5 +165,16 @@
   "connector.machine_max.trunk_door_axis": "Trunk Door Hinge",
   "connector.machine_max.trunk_door_lock": "Trunk Door Lock",
   "connector.machine_max.hood_axis": "Hood Hinge",
-  "connector.machine_max.hood_lock": "Hood Latch"
+  "connector.machine_max.hood_lock": "Hood Latch",
+
+  "subtitles.subsystem.gearbox.up": "Gearbox shifts up",
+  "subtitles.subsystem.gearbox.down": "Gearbox shifts down",
+  "subtitles.subsystem.gearbox.clutch_in": "Clutch engages",
+  "subtitles.subsystem.gearbox.clutch_out": "Clutch disengages",
+  "subtitles.subsystem.car_controller.handbrake_on": "Handbrake engages",
+  "subtitles.subsystem.car_controller.handbrake_off": "Handbrake disengages",
+  "subtitles.subsystem.wheel_driver.brake_on": "Brake engages",
+  "subtitles.subsystem.wheel_driver.brake_off": "Brake disengages",
+  "subtitles.subsystem.wheel_driver.air_brake_on": "Air brake engages",
+  "subtitles.subsystem.wheel_driver.air_brake_off": "Air brake disengages"
 }

@@ -97,11 +97,39 @@
       "default": true,
       "description": "Whether to automatically apply handbrake. Automatically applies handbrake when vehicle is stationary and no input is given."
     },
+    "drift_assist": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to enable drift assist. Automatically assists in maintaining drift state when the vehicle is turning."
+    },
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
       "default": ["move_control"],
       "description": "List of control input signal keys, from highest to lowest priority."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "handbrake_on": {
+          "$ref": "base/sound_event.schema.json",
+          "description": "Sound event for handbrake engagement.",
+          "default": {
+            "sound_id": "machine_max:subsystem.car_controller.handbrake_on",
+            "range": 16
+          }
+        },
+        "handbrake_off": {
+          "$ref": "base/sound_event.schema.json",
+          "description": "Sound event for handbrake disengagement.",
+          "default": {
+            "sound_id": "machine_max:subsystem.car_controller.handbrake_off",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Sound configuration for handbrake operations."
     }
   },
   "required": ["type"],
@@ -120,6 +148,7 @@
       "max_drift_angular_velocity": 2.0,
       "manual_gear_shift": true,
       "auto_hand_brake": true,
+      "drift_assist": true,
       "control_inputs": ["move_control", "regular_control"],
       "description": "Complete example - includes all optional fields"
     },
@@ -142,8 +171,9 @@
       },
       "manual_gear_shift": false,
       "auto_hand_brake": true,
+      "drift_assist": false,
       "control_inputs": ["move_control"],
-      "description": "Advanced example - using mapping tables"
+      "description": "Advanced example - using mapping tables, drift assist disabled"
     }
   ]
 }
