@@ -2,14 +2,12 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
-import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.vehicle.CollisionManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 

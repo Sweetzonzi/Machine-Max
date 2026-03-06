@@ -12,7 +12,6 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;

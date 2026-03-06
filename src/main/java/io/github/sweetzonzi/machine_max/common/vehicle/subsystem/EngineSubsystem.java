@@ -1,7 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
-import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.MachineMax;

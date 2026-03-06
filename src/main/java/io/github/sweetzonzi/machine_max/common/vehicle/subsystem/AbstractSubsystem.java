@@ -7,7 +7,6 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;

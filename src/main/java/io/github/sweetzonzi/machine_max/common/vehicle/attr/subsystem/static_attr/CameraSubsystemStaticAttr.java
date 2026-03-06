@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr;
 
-import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes;

@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.vehicle.attr;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.vehicle.DamageModifier;
-import lombok.Getter;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;

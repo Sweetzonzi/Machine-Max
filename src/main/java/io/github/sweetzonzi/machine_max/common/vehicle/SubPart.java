@@ -66,7 +66,6 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
@@ -79,7 +78,6 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -138,7 +136,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         this.getModelController().setModel(new ModelIndex("part", part.variant.getModel()));
         this.getModelController().setTextureLocation(part.variant.getTexture(textureName));
         if (!attr.interactBoxes.isEmpty()) {
-            this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape(part.variant, "default"));
+            this.interactBoxes = new InteractBoxes(this, attr.interactBoxes, attr.getInteractBoxShape(part.variant));
         } else this.interactBoxes = null;
         PhysicsBodyExtensionKt.setOwner(this.body, this);
         this.body.setSleepingThresholds(0.1f, 0.1f);
@@ -1294,8 +1292,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         return new ModelIndex("part", part.variant.getModel());
     }
 
-    public Map<String, OBone> getBonesToRender() {
-        return attr.getBonesToRender(part.variant);
+    public Map<String, OBone> getBones() {
+        return attr.getBones(part.variant);
     }
 
     @Override

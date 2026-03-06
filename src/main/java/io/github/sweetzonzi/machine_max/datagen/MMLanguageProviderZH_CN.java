@@ -72,13 +72,13 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("message.machine_max.blueprint_pass", "未选中任何载具，取消保存蓝图");
         this.add("message.machine_max.blueprint.place_failed", "空间不足，无法部署载具");
         // 物品
-        this.add("block.machine_max.fabricator", "制造器(WIP)");
-        this.add("block.machine_max.research_table", "研究台");
         this.add("itemGroup.machine_max.main", "MachineMax: 工具与材料");
         this.add("itemGroup.machine_max.part", "MachineMax: 零部件");
         this.add("itemGroup.machine_max.vehicle_blueprint", "MachineMax: 载具设计图");
         this.add("itemGroup.machine_max.fabricating_blueprint", "MachineMax: 制造蓝图");
         this.add("itemGroup.machine_max.assembly", "MachineMax: 装配体");
+        this.add("block.machine_max.fabricator", "制造器(WIP)");
+        this.add("block.machine_max.research_table", "研究台");
         this.add("item.machine_max.crowbar", "撬棍");
         this.add("item.machine_max.welding_torch", "焊枪");
         this.add("item.machine_max.spray_can", "喷漆罐");

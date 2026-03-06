@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.connector;
 
 import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;

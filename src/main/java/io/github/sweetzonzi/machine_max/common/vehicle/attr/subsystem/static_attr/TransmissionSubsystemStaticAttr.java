@@ -7,7 +7,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemT
 import lombok.Getter;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 传动系统属性，将输入的动力按权重分流至各个输出端，再将各个输出端的运行速度反馈加权平均汇总至输入端。

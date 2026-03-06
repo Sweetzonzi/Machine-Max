@@ -105,6 +105,7 @@
   "item.machine_max.structural_component_1": "初级结构部件",
   "item.machine_max.weapon_component_1": "初级武器零件",
   "item.machine_max.welding_torch": "焊枪",
+  "itemGroup.machine_max.assembly": "MachineMax: 装配体",
   "itemGroup.machine_max.fabricating_blueprint": "MachineMax: 制造蓝图",
   "itemGroup.machine_max.main": "MachineMax: 工具与材料",
   "itemGroup.machine_max.part": "MachineMax: 零部件",

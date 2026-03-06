@@ -48,8 +48,8 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.awt.*;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 
 import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem.MODEL;
 import static io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem.TEXTURE;

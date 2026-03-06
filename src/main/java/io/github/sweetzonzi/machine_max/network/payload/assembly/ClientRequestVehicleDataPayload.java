@@ -15,7 +15,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 

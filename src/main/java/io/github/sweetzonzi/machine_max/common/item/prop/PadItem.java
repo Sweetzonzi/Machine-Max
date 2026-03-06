@@ -1,13 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import io.github.sweetzonzi.machine_max.common.menu.BlueprintResearchMenu;
-import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;

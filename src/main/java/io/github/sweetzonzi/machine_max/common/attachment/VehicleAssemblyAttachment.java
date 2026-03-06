@@ -19,7 +19,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartChangeRecipePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PlayerPartAssemblyCacheSyncPayload;

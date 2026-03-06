@@ -1,14 +1,11 @@
 package io.github.sweetzonzi.machine_max.mixin;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.client.event.RenderLevelLastEvent;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.neoforged.neoforge.common.NeoForge;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;

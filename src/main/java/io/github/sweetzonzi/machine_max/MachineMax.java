@@ -6,7 +6,6 @@ import io.github.sweetzonzi.machine_max.common.registry.*;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import org.slf4j.Logger;

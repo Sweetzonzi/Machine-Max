@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.client;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
-//import io.github.sweetzonzi.machine_max.client.input.NativeKeyListener;
 import io.github.sweetzonzi.machine_max.common.registry.MMVisualEffects;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;

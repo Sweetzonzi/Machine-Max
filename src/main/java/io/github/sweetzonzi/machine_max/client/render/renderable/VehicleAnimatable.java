@@ -6,7 +6,6 @@ import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.sweetzonzi.machine_max.client.render.renderable.ITickableRenderable;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;

@@ -134,8 +134,8 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                             }
                         } else message.append("无法连接两个高级连接点");
                     } else {
-                        message = Component.empty().append(" 连接点" + Component.translatable(targetConnector.name).getString()
-                               + "不接受部件" + partType.getRegistryKey() + "的" + Component.translatable(variantName).getString() + "变体");
+                        message = Component.empty().append(" 连接点 " + Component.translatable(targetConnector.name).getString()
+                               + " 不接受部件 " + Component.translatable(partType.getRegistryKey().toLanguageKey()).getString() + " 的 " + Component.translatable(variantName).getString() + " 变体");
                     }
                 } else {
                     message.append("未选中可用的部件接口，右键将直接放置零件");

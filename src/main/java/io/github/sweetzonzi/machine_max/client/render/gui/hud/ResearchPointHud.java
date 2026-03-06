@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud;
 
 import com.mojang.datafixers.util.Pair;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.network.ClientResearchHandler;
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.AnimatedFloat;
 import io.github.sweetzonzi.machine_max.client.render.gui.animation.TimeSource;
@@ -11,7 +10,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.MutableComponent;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;

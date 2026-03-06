@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.client.render.gui.renderable;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
@@ -15,8 +14,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import org.joml.AxisAngle4f;
-import org.joml.Quaternionf;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;

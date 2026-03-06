@@ -16,8 +16,6 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static io.github.sweetzonzi.machine_max.external.js.hook.Hook.HOOK_SIGNAL_MAP;
 /**

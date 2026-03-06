@@ -7,7 +7,6 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
-import io.github.sweetzonzi.machine_max.external.js.hook.AxisHook;
 import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.MovementInputPayload;

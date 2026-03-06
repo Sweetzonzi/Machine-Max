@@ -15,6 +15,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import jme3utilities.math.MyMath;
+import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -22,11 +23,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -52,6 +49,7 @@ public class SubPartAttr {
     public final Map<String, HydrodynamicAttr> hydrodynamics;
 
     // 运行时缓存
+    @Getter(value = AccessLevel.PRIVATE)
     private Map<String, OBone> bonesCache = null;
     public CompoundCollisionShape hitBoxShape = null;
     public CompoundCollisionShape interactBoxShape = null;
@@ -272,7 +270,7 @@ public class SubPartAttr {
     /**
      * 获取子部件在指定状态的交互体积
      */
-    public CompoundCollisionShape getInteractBoxShape(VariantAttr attr, String state) {
+    public CompoundCollisionShape getInteractBoxShape(VariantAttr attr) {
         if (interactBoxShape == null) {
             ResourceLocation modelLocation = attr.getModel();
             var shape = new CompoundCollisionShape(1);
@@ -338,7 +336,7 @@ public class SubPartAttr {
      * @param variant 变体属性，存储模型路径
      * @return 骨骼列表
      */
-    public Map<String, OBone> getBonesToRender(VariantAttr variant) {
+    public Map<String, OBone> getBones(VariantAttr variant) {
         if (bonesCache == null) {
             bonesCache = filterBones(
                     OModel.getORIGINS().get(new ModelIndex("part", variant.getModel())).getBones(),

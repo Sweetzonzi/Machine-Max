@@ -4,7 +4,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
 import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import lombok.Getter;

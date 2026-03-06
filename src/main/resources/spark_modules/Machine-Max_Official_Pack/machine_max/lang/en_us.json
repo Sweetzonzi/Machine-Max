@@ -92,7 +92,7 @@
   "hud.machine_max.default_1.gear": "§o%1$s",
   "hud.machine_max.default_1.kmh": "§oKM/H",
 
-  "subpart.machine_max.main": "Main",
+  "sub_part.machine_max.main": "Main",
 
   "interact.machine_max.golden.seat": "Enter Toilet",
   "interact.machine_max.seat": "Enter Seat",

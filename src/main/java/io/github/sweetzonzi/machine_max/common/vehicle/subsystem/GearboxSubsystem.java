@@ -7,12 +7,9 @@ import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.GearboxSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import org.jetbrains.annotations.NotNull;
 

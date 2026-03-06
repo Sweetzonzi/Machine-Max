@@ -26,7 +26,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsyst
 import io.github.sweetzonzi.machine_max.util.Easing;
 import io.github.sweetzonzi.machine_max.util.ViewOrientationResolver;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Brightness;
@@ -39,9 +38,9 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.Random;
 
@@ -423,7 +422,7 @@ public class AssemblyHud3D implements IHud3DElement {
         ModelController modelController = subPart.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         // 渲染所有块
-        var bonesToRender = subPart.attr.getBonesToRender(subPart.part.variant);
+        var bonesToRender = subPart.attr.getBones(subPart.part.variant);
         for (OBone bone : bonesToRender.values()) {
             ModelRenderHelperKt.render(
                     bone,

@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
-import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.api.SparkLevel;
@@ -22,8 +21,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
@@ -276,7 +275,7 @@ public class Part {
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
-                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey(), connectorName, connectorAttr.locatorName()).getString());
+                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey().toLanguageKey(), connectorName, connectorAttr.locatorName()).getString());
         }
     }
 
@@ -311,9 +310,7 @@ public class Part {
             String name = subPartEntry.getKey();
             SubPartAttr subPartAttr = subPartEntry.getValue();
             SubPart subPart = new SubPart(name, this, subPartAttr);//创建零件
-            //获取模型用于构建碰撞
-            OModel model = subPart.getModelController().getOriginModel();
-            LinkedHashMap<String, OBone> bones = model.getBones();//从模型获取所有骨骼
+            Map<String, OBone> bones = subPartAttr.getBones(variant);//获取属于该零件的骨骼
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(0);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());//从模型获取所有定位器
 

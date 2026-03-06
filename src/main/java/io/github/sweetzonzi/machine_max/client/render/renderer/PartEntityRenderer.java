@@ -8,7 +8,6 @@ import cn.solarmoon.spark_core.animation.renderer.GeoEntityRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.RenderTypeUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import net.minecraft.client.Minecraft;
@@ -81,7 +80,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 color = new Color(64, 64, 64, entity.subPart.getDestroyTime() < 20 ? 255 * entity.subPart.getDestroyTime() / 20 : 255).getRGB();
             }
             int light = LightTexture.pack(blockLight, skyLight);
-            var bones = entity.subPart.getBonesToRender();
+            var bones = entity.subPart.getBones();
             if (entity.subPart.part.getAssemblingProgress() >= 1.0f) {
                 // 整体渲染
                 for (OBone bone : bones.values()) {
@@ -146,7 +145,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             blockLight = (int) ((1 - progress) * 15 + progress * blockLight);
             skyLight = (int) ((1 - progress) * 15 + progress * skyLight);
             int light = LightTexture.pack(blockLight, skyLight);
-            var bones = entity.subPart.getBonesToRender();
+            var bones = entity.subPart.getBones();
             int cubeCount = 0;
             for (OBone bone : bones.values()) {
                 cubeCount += bone.getCubes().size();

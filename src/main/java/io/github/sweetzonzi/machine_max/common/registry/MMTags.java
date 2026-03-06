@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.registry;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.item.Item;

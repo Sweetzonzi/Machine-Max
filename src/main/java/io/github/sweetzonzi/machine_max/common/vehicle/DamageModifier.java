@@ -13,8 +13,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.entity.EntityType;
-import net.neoforged.neoforge.common.Tags;
 
 import java.util.List;
 import java.util.Locale;
