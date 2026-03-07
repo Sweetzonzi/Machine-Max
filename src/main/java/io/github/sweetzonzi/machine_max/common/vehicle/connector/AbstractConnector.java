@@ -198,7 +198,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     if (totalImpact >= getIntegrity() && hasPart()) {
                         //强冲击，立即击落部件
                         subPart.part.vehicle.detachConnector(this);
-                        float finalImpact = (subPart.destroyed ? 0.5f * totalImpact : 0.1f * totalImpact);
+                        float finalImpact = (subPart.isDestroyed() ? 0.5f * totalImpact : 0.1f * totalImpact);
                         SparkLevel.submitImmediateTask(subPart.level, PPhase.ALL, () -> {
                             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"), 64f);
                             SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO,
@@ -207,7 +207,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                         });
                     }
                     //削减部件完整性
-                    setIntegrityInternal(Math.clamp(getIntegrity() - (subPart.destroyed ? totalImpact : 0.2f * totalImpact), 0, getBasicIntegrity()));
+                    setIntegrityInternal(Math.clamp(getIntegrity() - (subPart.isDestroyed() ? totalImpact : 0.2f * totalImpact), 0, getBasicIntegrity()));
                 }
                 accumulatedImpact.clear();
             }
@@ -366,15 +366,6 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     attachedConnector.signalPort.onConnectorDetach();
                 }
                 detachJoint();
-                //重建部件连接点
-                if (!destroy) {
-                    this.createAttachPointBody(
-                            MMMath.relPointWorldPos(offsetFromMassCenter.getTranslation(), subPart.body),
-                            subPart.body.getPhysicsRotation(null).mult(offsetFromMassCenter.getRotation()));
-                    attachedConnector.createAttachPointBody(
-                            MMMath.relPointWorldPos(attachedConnector.offsetFromMassCenter.getTranslation(), attachedConnector.subPart.body),
-                            attachedConnector.subPart.body.getPhysicsRotation(null).mult(attachedConnector.offsetFromMassCenter.getRotation()));
-                }
                 //重置安装姿态变换
                 this.actualTransform = this.offsetFromMassCenter.clone();
                 this.attachedConnector.actualTransform = this.attachedConnector.offsetFromMassCenter.clone();
@@ -624,14 +615,6 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             body.setCollideWithGroups(CollisionGroups.NONE);
             body.setPhysicsLocation(position);
             body.setPhysicsRotation(rotation);
-//            PhysicsBodyExtensionKt.onPrePhysicsTick(body, event -> {
-//                prePhysicsTick();
-//                return null;
-//            });
-//            PhysicsBodyExtensionKt.onTick(body, event -> {
-//                mcTick();
-//                return null;
-//            });
             PhysicsBodyExtensionKt.addPhysicsBody(subPart.getLevel(), this.body);
         }
     }

@@ -8,6 +8,8 @@ import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.shapes.*;
+import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
+import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
@@ -59,6 +61,7 @@ public class SubPartAttr {
     public final ConcurrentMap<Long, Boolean> isWheelSurface = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Transform> locatorTransforms = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Set<String>> hydrodynamicLocators = new ConcurrentHashMap<>();
+    public final Transform massCenterTransform = new Transform();
 
     public enum BlockCollisionType {
         TRUE, FALSE, GROUND
@@ -230,6 +233,7 @@ public class SubPartAttr {
                 throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
             // 调整零件质心
             Transform massCenter = null;
+            //TODO: 读取指定质心位置
             OLocator locator = locators.get("MassCenter");
             if (locator != null) {
                 org.joml.Vector3f rotation = locator.getRotation().toVector3f();
@@ -237,26 +241,25 @@ public class SubPartAttr {
                         PhysicsHelperKt.toBVector3f(locator.getOffset()),
                         SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
                 );
-            } else if (!startBone.isEmpty()) {
-                OBone startBoneInstance = bones.get(this.startBone);
-                if (startBoneInstance != null) {
-                    org.joml.Vector3f rotation = startBoneInstance.getRotation().toVector3f();
-                    var offset = startBoneInstance.getPivot().toVector3f();
-                    massCenter = new Transform(
-                            PhysicsHelperKt.toBVector3f(offset),
-                            SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
-                    );
+            } else { // 未指定质心则取所有子形状的平均位置
+                Vector3f center = new Vector3f();
+                for (ChildCollisionShape child : shape.listChildren()) {
+                    center.add(child.copyOffset(null));
                 }
+                center.multLocal(1f / shape.countChildren());
+                massCenter = new Transform(center, Quaternion.IDENTITY);
             }
             if (massCenter != null) {
                 // 重新计算定位器相对质心的变换
                 for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.entrySet()) {
                     String locatorName = locatorTransform.getKey();
                     Transform transform = locatorTransform.getValue();
-                    MyMath.combine(massCenter.invert(), transform, transform);
+                    MyMath.combine(massCenter, transform, transform);
                     locatorTransforms.put(locatorName, transform);
                 }
-                shape.correctAxes(massCenter);
+                shape.correctAxes(massCenter.invert());
+                // 缓存质心位置
+                this.massCenterTransform.fromTransformMatrix(massCenter.toTransformMatrix());
             }
             
             // 构建气动计算点缓存
@@ -312,19 +315,9 @@ public class SubPartAttr {
                         PhysicsHelperKt.toBVector3f(locator.getOffset()),
                         SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
                 );
-            } else if (!startBone.isEmpty()) {
-                OBone startBoneInstance = bones.get(this.startBone);
-                if (startBoneInstance != null) {
-                    org.joml.Vector3f rotation = startBoneInstance.getRotation().toVector3f();
-                    var offset = startBoneInstance.getPivot().toVector3f();
-                    transform = new Transform(
-                            PhysicsHelperKt.toBVector3f(offset),
-                            SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
-                    );
-                }
             }
             if (transform != null)
-                shape.correctAxes(transform);
+                shape.correctAxes(transform.invert());
             interactBoxShape = shape;
         }
         return interactBoxShape;

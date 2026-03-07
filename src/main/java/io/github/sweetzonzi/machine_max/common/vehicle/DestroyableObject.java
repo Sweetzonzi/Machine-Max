@@ -49,7 +49,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     @Setter
     private int id = ENTITY_COUNTER.incrementAndGet();//客户端的ID应当根据收到的创建包更新
     protected static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.FLOAT);
-    public volatile boolean destroyed = false;
+    protected static final EntityDataAccessor<Boolean> DATA_DESTROYED_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Integer> DESTROY_TIME_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.INT);
     ConcurrentLinkedQueue<Pair<Float, PartDamageData>> accumulatedDamage = new ConcurrentLinkedQueue<>();
     protected final SynchedEntityData syncedData;
@@ -66,6 +66,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         syncheddata$builder.define(DATA_VEL_ID, new org.joml.Vector3f());
         syncheddata$builder.define(DATA_ANG_VEL_ID, new org.joml.Vector3f());
         syncheddata$builder.define(DATA_DURABILITY_ID, 20.0F);
+        syncheddata$builder.define(DATA_DESTROYED_ID, false);
         syncheddata$builder.define(DESTROY_TIME_ID, 200);
         this.defineSyncedData(syncheddata$builder);
         this.syncedData = syncheddata$builder.build();
@@ -83,8 +84,8 @@ public abstract class DestroyableObject implements SyncedDataHolder {
             clientSyncPose();
         }
         //判定摧毁
-        if (checkDestroyed())
-            onDestroyed();
+        if (!level.isClientSide() && checkDestroyed())
+            setDestroyed();
     }
 
     public void postTick() {
@@ -122,12 +123,16 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         }
     }
 
-    protected boolean checkDestroyed() {
-        return !destroyed && getDurability() <= 0;
+    public boolean isDestroyed() {
+        return getSyncedData().get(DATA_DESTROYED_ID);
     }
 
-    protected void onDestroyed() {
-        this.destroyed = true;
+    protected boolean checkDestroyed() {
+        return !getSyncedData().get(DATA_DESTROYED_ID) && getDurability() <= 0;
+    }
+
+    protected void setDestroyed() {
+        getSyncedData().set(DATA_DESTROYED_ID, true);
     }
 
     /**
@@ -223,6 +228,8 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         } else if (key.equals(DATA_ANG_VEL_ID)) {
             Vector3f angularVelocity = PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_ANG_VEL_ID));
             this.setAngularVelocity(angularVelocity);//应用到刚体(若有)
+        } else if (key.equals(DATA_DESTROYED_ID)) {
+            this.setDestroyed();
         }
     }
 

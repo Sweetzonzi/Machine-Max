@@ -10,7 +10,7 @@
   },
   "steering": {
     "max_force": 4000,
-    "max_speed": 3.14
+    "max_speed": 6.28
   },
   "abs_wheel_radius": 0.4218
 }

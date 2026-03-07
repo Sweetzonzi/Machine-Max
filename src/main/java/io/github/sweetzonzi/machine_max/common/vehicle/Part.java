@@ -250,7 +250,7 @@ public class Part {
                 locator.getBone().applyTransformWithParents(pose, startBone);
                 pose.translate(locator.getOffset().toVector3f())
                         .rotate(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x));
-                pose.mul(SparkMathKt.toMatrix4f(subPart.massCenterTransform.toTransformMatrix()));
+                pose.mul(SparkMathKt.toMatrix4f(subPart.getLocalMassCenterTransform().toTransformMatrix()));
                 Transform posRot = new Transform( //连接点的位置与姿态
                         PhysicsHelperKt.toBVector3f(pose.getTranslation(new org.joml.Vector3f())),
                         SparkMathKt.toBQuaternion(pose.getNormalizedRotation(new Quaternionf()))

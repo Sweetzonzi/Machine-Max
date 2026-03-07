@@ -67,7 +67,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                     if (getUseDuration(stack, livingEntity) - remainingUseDuration < 15 || remainingUseDuration % 5 != 0)
                         return;
                     Part part = subPart.part;
-                    if (!livingEntity.isCrouching() && !subPart.destroyed) { // 一般状态下组装部件并尝试维修
+                    if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下组装部件并尝试维修
                         var research = player.getData(MMAttachments.getBLUEPRINT());
                         float repairStep = 5 * (1 + research.calculateRepairBuff(part, player));
                         boolean repaired = subPart.repair(

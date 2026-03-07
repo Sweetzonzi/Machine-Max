@@ -31,7 +31,7 @@ public class HitBox {
     }
 
     public float getRHA(SubPart subPart) {
-        return attr.RHA() * (subPart.destroyed ? 0.5f : 1.0f);
+        return attr.RHA() * (subPart.isDestroyed() ? 0.5f : 1.0f);
     }
 
     public boolean hasAngleEffect() {

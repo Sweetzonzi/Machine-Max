@@ -7,6 +7,7 @@ import cn.solarmoon.spark_core.animation.model.origin.OCube;
 import cn.solarmoon.spark_core.animation.renderer.GeoEntityRenderer;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.RenderTypeUtil;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
@@ -60,7 +61,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         ModelController modelController = entity.subPart.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         if (modelInstance == null) return;
-        var worldMatrix = entity.subPart.getWorldPositionMatrix(partialTick);
+        var worldMatrix = entity.subPart.getRenderWorldPositionMatrix(partialTick);
         int color = Color.WHITE.getRGB();
         var pos = entity.subPart.transform.getTranslation();
         BlockPos blockpos = new BlockPos((int) pos.x, (int) pos.y, (int) pos.z);
@@ -71,6 +72,8 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         poseStack.translate(-entityPos.x, -entityPos.y, -entityPos.z);
         poseStack.pushPose();
         poseStack.mulPose(worldMatrix);
+        // 若质心不在原点，则还需要额外偏移模型渲染位姿
+        poseStack.mulPose(SparkMathKt.toMatrix4f(entity.subPart.getLocalMassCenterTransform().toTransformMatrix()));
         int overlay = OverlayTexture.NO_OVERLAY;
         // 受击闪烁效果
         if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);

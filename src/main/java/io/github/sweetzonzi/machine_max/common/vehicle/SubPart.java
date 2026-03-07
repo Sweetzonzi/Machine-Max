@@ -89,6 +89,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -109,7 +110,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final Part part;
     public String name;
     public final SubPartAttr attr;
-    public Transform massCenterTransform = new Transform();
     public final ConcurrentHashMap<String, HitBox> hitBoxes = new ConcurrentHashMap<>();
     public final InteractBoxes interactBoxes;//交互判定
     public final HashMap<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
@@ -284,6 +284,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     Vector3f tmpFront = new Vector3f();
     Vector3f tmpSide = new Vector3f();
+    Vector3f climbAssistImpulse = new Vector3f();
 
     @Override
     protected void onCollideWithTerrain(
@@ -312,7 +313,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //基本信息获取
             var hitBox = this.getHitBox(hitBoxIndex);
             var vel = this.getLinearVelocity();
-            BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, ManifoldPoints.getDistance1(manifoldPointId));
+            BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, 0);
             BlockPos relBlockPos = blockPos.subtract(terrain.getSectionPos().origin());
             if (relBlockPos.getX() < 0 || relBlockPos.getY() < 0 || relBlockPos.getZ() < 0 ||
                     relBlockPos.getX() > 15 || relBlockPos.getY() > 15 || relBlockPos.getZ() > 15) {
@@ -351,8 +352,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     double sin2 = Math.sin(slipAngle) * Math.sin(slipAngle);
                     float angleDeg = (float) Math.toDegrees(Math.abs(slipAngle));
                     float s_angle = angleDeg / 90.0f; // 归一化到 [0, 1]
-                    double muFront = hitBox.getMuFront() // 滑移率15%时摩擦系数达到峰值
-                            * calculateSlipScale(slipRatio, 0.15f, 1.0f, 1.4f, 0.9f);
+                    double muFront = hitBox.getMuFront() // 滑移率20%时摩擦系数达到峰值
+                            * calculateSlipScale(slipRatio, 0.20f, 1.0f, 1.4f, 0.9f);
                     double muSide = hitBox.getMuSide() // 设定侧向在 12度达到峰值，且动摩擦衰减更剧烈(0.5f)
                             * calculateSlipScale(s_angle, 0.133f, 1.0f, 1.1f, 0.5f);
                     // 根据摩擦方向调整摩擦系数，越接近某个方向，实际摩擦系数越接近对应方向的摩擦系数
@@ -371,21 +372,43 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //若是需要攀爬辅助处理的方块
             if (climbableBlocks.contains(blockPos)) {
                 var shape = blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
+                boolean side = Math.abs(normal.y) < 0.98f; // 侧面碰撞
                 float blockHeight = (float) shape.max(Direction.Axis.Y);
-                //重设碰撞法线方向
-                normal = point1.getIndex() == 0 ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate();
-                ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
                 ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
-                if (worldContactPoint.y < blockPos.getY() + blockHeight - 0.01f) {
-                    if (attr.isClimbAssist()) {
-                        // 人工设置一个小的侵入深度，法线向上，若侵入深度为0.05则期望每帧使部件上浮0.05*ERP的高度
-                        ManifoldPoints.setDistance1(manifoldPointId, -0.01f);
-                    } else { //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
-                        ManifoldPoints.setDistance1(manifoldPointId, 500f);
+                //重设碰撞法线方向
+                normal = point1.getIndex() == 0 ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate();
+                ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
+                if (attr.isClimbAssist()
+                        && (side || worldContactPoint.y < blockPos.getY() + blockHeight - 0.02f)) {
+                    // 人工设置一个小的侵入深度，法线向上，若侵入深度为0.05则期望每帧使部件上浮0.05*ERP的高度
+                    ManifoldPoints.setDistance1(manifoldPointId, -0.02f);
+                    // 在部件重心所处方块柱施加额外攀爬辅助力，提升低速通过性
+                    var horizonVel = Math.sqrt(tmpWorldVel.x * tmpWorldVel.x + tmpWorldVel.z * tmpWorldVel.z);
+                    var speedFactor = 0.7 * Math.exp(-0.25 * horizonVel) + 0.3;
+                    var ang = Math.max(0, Math.atan2(tmpWorldVel.y, horizonVel));
+                    var tgtAng = speedFactor * Math.atan2(blockHeight, 1) + (1 - speedFactor) * ang;
+                    float extraVel = (float) Math.max(-5, Math.max(Math.sin(tgtAng) * tmpWorldVel.length(), 2f * speedFactor) - tmpWorldVel.y);
+                    if (!(extraVel <= 0 && tmpWorldVel.y < 0)) {
+                        float horizontalVelScale = (float) Math.max(0, (Math.cos(ang) - Math.cos(tgtAng)));
+                        getPhysicsLevel().submitDeduplicatedTask(getId() + "_" + name + "_climb_assist", PPhase.PRE, () -> {
+                            body.applyCentralImpulse(new Vector3f(
+                                    -horizontalVelScale * tmpWorldVel.x,
+                                    extraVel,
+                                    -horizontalVelScale * tmpWorldVel.z).mult(0.2f * body.getMass()));
+                            return null;
+                        });
                     }
                     return; //爬坡辅助的方块不参与后续碰撞处理
+                } else if (!attr.isClimbAssist()
+                        && (side || bodyMinY < blockPos.getY() + blockHeight - 0.05f)
+                ) {
+                    //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
+                    ManifoldPoints.setDistance1(manifoldPointId, 500f);
+                    return; //爬坡辅助的方块不参与后续碰撞处理
+                } else {
+//                    MachineMax.LOGGER.debug("爬坡辅助方块碰撞，但不在爬坡辅助范围内: {}", blockPos);
                 }
             }
             //调用子系统碰撞回调
@@ -758,7 +781,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
         //攀爬辅助处理
         climbableBlocks.clear();
-        if (!level.isClientSide() && body.isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
+        if (body.isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
             //遍历范围内的方块
             AABB aabb = SparkMathKt.toAABB(PhysicsBodyExtensionKt.stateOf(this.body).getCachedBoundingBox())
@@ -767,7 +790,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             int minZ = (int) Math.floor(aabb.minZ);
             int maxX = (int) Math.ceil(aabb.maxX);
             int maxZ = (int) Math.ceil(aabb.maxZ);
-            float y0 = (float) Math.floor(bodyMinY) - 0.1f;
+            float y0 = (float) Math.floor(bodyMinY) - 0.5f;
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos currentPos = new BlockPos(x, (int) Math.floor(y0), z);
@@ -1020,8 +1043,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
-    protected void onDestroyed() {
-        super.onDestroyed();
+    protected void setDestroyed() {
+        super.setDestroyed();
         for (AbstractSubsystem subsystem : subsystems.values()) {
             subsystem.setActive(false);
         }
@@ -1302,6 +1325,20 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         if (interactBoxes != null) {
             interactBoxes.updatePose();//同步刚体与交互判定区位置
         }
+    }
+
+    public Transform getLocalMassCenterTransform() {
+        return getAttr().getMassCenterTransform();
+    }
+
+    /**
+     * 获取模型坐标原点在世界坐标系下的位姿变换
+     *
+     * @param number 插值系数，0-1
+     * @return 模型坐标原点在世界坐标系下的位姿变换，常用于渲染
+     */
+    public Matrix4f getRenderWorldPositionMatrix(@NotNull Number number) {
+        return getWorldPositionMatrix(number).mul(SparkMathKt.toMatrix4f(getLocalMassCenterTransform().toTransformMatrix()));
     }
 
 }

@@ -131,12 +131,10 @@ public class CameraController {
         }
 
         //更新计算相机相对其所处坐标系的旋转
-//        pitch = 0.6f * pitch + 0.4f * targetViewPitch;
-//        yaw = 0.6f * yaw + 0.4f * targetViewYaw;
-//        roll = 0.6f * roll + 0.4f * targetViewRoll;
-        pitch = targetViewPitch;
-        yaw = targetViewYaw;
-        roll = targetViewRoll;
+        float lerp = 0.25f;
+        pitch = (1-lerp) * pitch + lerp * targetViewPitch;
+        yaw = (1-lerp) * yaw + lerp * targetViewYaw;
+        roll = (1-lerp) * roll + lerp * targetViewRoll;
         AbstractControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
         if (subsystem instanceof SeatSubsystem seat && (type.isFirstPerson() || ControlPreference.shouldFollowPose(seat))) {
             //基于附体坐标系旋转相机
