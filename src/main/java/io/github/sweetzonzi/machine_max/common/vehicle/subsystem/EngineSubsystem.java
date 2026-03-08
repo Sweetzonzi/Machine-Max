@@ -105,7 +105,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             //挂空挡时，全部输出用于改变发动机转速
             if (!getSubPart().level.isClientSide()) { //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
                 rotSpeed += netTorque / attr.staticAttribute.inertia / getPhysicsLevel().getTps();
-                rotSpeed = 0.995 * rotSpeed + 0.005 * IDLE_SPEED;//额外修正
+                rotSpeed = 0.995 * Math.clamp(rotSpeed, 0.5 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.005 * IDLE_SPEED;//额外修正
                 setRotSpeed((float) rotSpeed);
             }
             sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
@@ -122,7 +122,7 @@ public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader
             if (!getSubPart().level.isClientSide()) { //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
                 rotSpeed += (netTorque - coupleTorque) / attr.staticAttribute.inertia / getPhysicsLevel().getTps();
                 rotSpeed = Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 2);
-                rotSpeed = 0.95 * Math.clamp(rotSpeed, 0.1 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.05 * feedback; // 额外修正
+                rotSpeed = 0.95 * Math.clamp(rotSpeed, 0.5 * IDLE_SPEED, RED_LINE_SPEED * 1.05) + 0.05 * feedback; // 额外修正
                 setRotSpeed((float) rotSpeed);
             }
             sendSignalToAllTargets("power", new MechPowerSignal((float) ((netTorque + coupleTorque) * rotSpeed), (float) rotSpeed));//输出功率信号

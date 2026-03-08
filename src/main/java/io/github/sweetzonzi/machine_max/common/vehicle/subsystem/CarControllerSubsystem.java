@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
@@ -375,7 +376,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                     actualBrake = actualBrake * 0.8f + 0 * 0.2f;
                     avgEngineSpeed = calculateAvgSpeedAndControl();
                     //起步时自动松离合和手刹 Auto release hand brake when starting
-                    if (ControlPreference.shouldAutoHandBrake(this) && overrideCountDown.getOrDefault(this, 0f) <= 0) {
+                    if (ControlPreference.shouldAutoHandBrake(this) && handBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                         handBrake = false;
                         overrideCountDown.put(this, 2f);
                     }
@@ -398,15 +399,24 @@ public class CarControllerSubsystem extends AbstractSubsystem {
                         }
                     }
                 }
+                float maxSlip = 0;
                 for (Map.Entry<WheelDriverSubsystem, String> entry : wheels.entrySet()) {
                     String channel = entry.getValue();
                     WheelDriverSubsystem wheel = entry.getKey();
+                    maxSlip = Math.max(maxSlip, calculateSlipRatio(wheel));
                     if (wheel.connector.joint != null) {
                         float steeringInput = steering(actualSteering, wheel.connector);
                         float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
                         sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                     }
                 }
+//                // 简易牵引力控制
+//                if (maxSlip > 0.15f) {
+//                    if (actualThrottle > 0)
+//                        actualThrottle = Math.max(0, actualThrottle - maxSlip * 0.5f);
+//                    else
+//                        actualThrottle = Math.min(0, actualThrottle + maxSlip * 0.5f);
+//                }
             } else {//前进方向输入信号为0 Forward input signal is 0
                 actualThrottle = actualThrottle * 0.9f + 0 * 0.1f;
                 avgEngineSpeed = calculateAvgSpeedAndControl();
@@ -453,20 +463,18 @@ public class CarControllerSubsystem extends AbstractSubsystem {
             for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
                 sendCallbackToAllListeners(entry.getValue(), EmptySignal.INSTANCE);
             }
-            for (GearboxSubsystem gearbox : gearboxes.keySet()) {
-                if (overrideCountDown.get(gearbox) <= 0) {
-                    gearbox.setClutched(false);//停止传输动力 Stop transmission power
-                }
+            actualBrake = actualBrake * 0.8f + 0 * 0.2f;
+            if (ControlPreference.shouldAutoHandBrake(this) && !handBrake) {
+                handBrake = true;
+                actualHandBrake = 1f;
+                overrideCountDown.put(this, 0.5f);
             }
-            if (Math.abs(speed) < 1f) {//维持原有信号状态 Maintain the original signal status
-                actualBrake = actualBrake * 0.8f + 0 * 0.2f;
-                for (Map.Entry<WheelDriverSubsystem, String> entry : wheels.entrySet()) {
-                    String channel = entry.getValue();
-                    WheelDriverSubsystem wheel = entry.getKey();
-                    if (wheel.connector.joint != null) {
-                        float steeringInput = steering(actualSteering, wheel.connector);
-                        sendCallbackToListener(channel, wheel, new WheelControlSignal(actualBrake, actualHandBrake, steeringInput));
-                    }
+            for (Map.Entry<WheelDriverSubsystem, String> entry : wheels.entrySet()) {
+                String channel = entry.getValue();
+                WheelDriverSubsystem wheel = entry.getKey();
+                if (wheel.connector.joint != null) {
+                    float steeringInput = steering(actualSteering, wheel.connector);
+                    sendCallbackToListener(channel, wheel, new WheelControlSignal(actualBrake, actualHandBrake, steeringInput));
                 }
             }
         }
@@ -517,12 +525,13 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         if (speed > 0.5f) {//前进时输出正转速，正挡 Forward output positive rotational speed, positive gear
             double upGearDownShiftIndex = (engineSpeed * upGearRatio / ratio - avgEngineMinSpeed) / Math.max(0.1f, avgEngineMaxTorqueSpeed - avgEngineMinSpeed);
             double downGearUpShiftIndex = (engineSpeed * downGearRatio / ratio - avgEngineMaxTorqueSpeed) / Math.max(0.1f, avgEngineMaxSpeed - avgEngineMaxTorqueSpeed);
-            //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
             if (direction < 0 && overrideCountDown.get(gearbox) <= 0 && speed < 3f) {
                 result = gearbox.minNegativeGear; //最低负挡 Lowest negative gear
                 gearbox.setClutched(false);//停止传输动力 Stop transmission power
             } else if (engineSpeed * ratio < 0) {
-                result = gearbox.minNegativeGear; //最低负挡 Lowest negative gear
+                //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
+                result = gearbox.minPositiveGear; //最低正挡 Lowest positive gear
+                gearbox.setClutched(true);
             } else if (upShiftIndex > upShiftThreshold && upGearDownShiftIndex > downShiftThreshold) result = upGear;
             else if (downShiftIndex < downShiftThreshold && downGearUpShiftIndex < upShiftThreshold && downGear != gearbox.minNegativeGear) {
                 //减速且降档后转速低于最大引擎转速时，降挡 Shift down when braking and the speed is low after gear downshift
@@ -533,12 +542,13 @@ public class CarControllerSubsystem extends AbstractSubsystem {
         } else if (speed < -0.5f) {//后退时输出负转速，倒挡 Reverse output negative rotational speed, reverse gear
             double upGearUpShiftIndex = (engineSpeed * upGearRatio / ratio - avgEngineMaxTorqueSpeed) / Math.max(0.1f, avgEngineMaxSpeed - avgEngineMaxTorqueSpeed);
             double downGearDownShiftIndex = (engineSpeed * downGearRatio / ratio - avgEngineMinSpeed) / Math.max(0.1f, avgEngineMaxTorqueSpeed - avgEngineMinSpeed);
-            //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
             if (direction > 0 && overrideCountDown.get(gearbox) <= 0 && speed > -3f) {
                 result = gearbox.minPositiveGear;//最低正挡 Lowest positive gear
                 gearbox.setClutched(false);//停止传输动力 Stop transmission power
             } else if (engineSpeed * ratio > 0) {
-                result = gearbox.minPositiveGear;//最低正挡 Lowest positive gear
+                //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
+                result = gearbox.minNegativeGear;//最低负挡 Lowest negative gear
+                gearbox.setClutched(true);
             } else if (upShiftIndex > upShiftThreshold && downGearDownShiftIndex > downShiftThreshold)
                 result = downGear;
             else if (downShiftIndex < downShiftThreshold && upGearUpShiftIndex < upShiftThreshold && upGear != gearbox.minPositiveGear) {

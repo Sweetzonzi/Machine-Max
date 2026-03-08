@@ -188,11 +188,13 @@ public class WheelDriverSubsystem extends AbstractSubsystem {
 
     public Vector3f getRelativeAngularVel() {
         Vector3f result = new Vector3f();
-        Vector3f angularVelA = connector.joint.getBodyA().getAngularVelocity(null);
-        Vector3f angularVelB = connector.joint.getBodyB().getAngularVelocity(null);
-        Vector3f relativeVelInWorld = angularVelB.subtract(angularVelA);
-        Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
-        MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
+        if (connector.joint != null) {
+            Vector3f angularVelA = connector.joint.getBodyA().getAngularVelocity(null);
+            Vector3f angularVelB = connector.joint.getBodyB().getAngularVelocity(null);
+            Vector3f relativeVelInWorld = angularVelB.subtract(angularVelA);
+            Quaternion localToWorld = connector.joint.getBodyA().getPhysicsRotation(null);
+            MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
+        }
         return result;
     }
 

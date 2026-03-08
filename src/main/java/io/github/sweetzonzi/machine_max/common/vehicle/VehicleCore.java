@@ -162,8 +162,8 @@ public class VehicleCore {
      * 主线程tick，默认tps=20
      */
     public void preTick() {
-        if (tickCount == 100)
-            recalculateCameraDistance();
+//        if (tickCount == 100)
+//            recalculateCameraDistance();
         //保持激活与控制量更新
         Vec3 newPos = new Vec3(0, 0, 0);
         Vec3 newVel = new Vec3(0, 0, 0);
@@ -753,7 +753,7 @@ public class VehicleCore {
         float maxDistance = 4f;
         for (Part part : this.partMap.values()) {
             for (SubPart subPart : part.subParts.values()) {
-                float distance = center.distance(subPart.body.getPhysicsLocation(null));
+                float distance = center.distance(subPart.getPosition());
                 float radius = subPart.collisionShape.maxRadius() + distance;
                 if (radius > maxDistance) maxDistance = radius;
             }

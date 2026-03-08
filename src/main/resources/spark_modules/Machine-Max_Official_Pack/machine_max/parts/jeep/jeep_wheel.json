@@ -20,19 +20,19 @@
           "durability": 250.0,
           "mass": 45.0,
           "block_collision": "ground",
-          "collision_height": 1.5,
+          "collision_height": 2.5,
           "climb_assist": true,
           "hit_boxes": {
             "CollisionShape": {
               "type": "wheel",
               "friction": [
-                2.5,
-                2.5,
+                2.8,
+                2.8,
                 1.0
               ],
               "slip_adaptation": 0.5,
               "rolling_friction": 0.05,
-              "restitution": 0.2,
+              "restitution": 0.05,
               "block_damage_factor": 0.05,
               "impact_modifiers": [
                 {
@@ -134,19 +134,19 @@
           "durability": 250.0,
           "mass": 45.0,
           "block_collision": "ground",
-          "collision_height": 1.5,
+          "collision_height": 2.5,
           "climb_assist": true,
           "hit_boxes": {
             "CollisionShape": {
               "type": "wheel",
               "friction": [
-                2.5,
-                2.5,
+                2.8,
+                2.8,
                 1.0
               ],
               "slip_adaptation": 0.5,
               "rolling_friction": 0.05,
-              "restitution": 0.2,
+              "restitution": 0.05,
               "block_damage_factor": 0.05,
               "impact_modifiers": [
                 {

@@ -58,6 +58,7 @@ public class SubPartAttr {
     public final ConcurrentMap<Long, String> interactBoxNames = new ConcurrentHashMap<>();
     public final ConcurrentMap<Long, String> hitBoxNames = new ConcurrentHashMap<>();
     public final ConcurrentMap<Long, Float> wheelHalfWidths = new ConcurrentHashMap<>();
+    public final ConcurrentMap<Long, Float> wheelRadius = new ConcurrentHashMap<>();
     public final ConcurrentMap<Long, Boolean> isWheelSurface = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Transform> locatorTransforms = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Set<String>> hydrodynamicLocators = new ConcurrentHashMap<>();
@@ -203,6 +204,7 @@ public class SubPartAttr {
                                 SphereCollisionShape ballShape = new SphereCollisionShape(radius);
                                 hitBoxNames.put(ballShape.nativeId(), hitBoxName);
                                 wheelHalfWidths.put(ballShape.nativeId(), halfWidth);
+                                wheelRadius.put(ballShape.nativeId(), radius);
                                 isWheelSurface.put(ballShape.nativeId(), true);
                                 shape.addChildShape(
                                         ballShape,

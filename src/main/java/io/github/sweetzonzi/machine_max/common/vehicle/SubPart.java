@@ -57,6 +57,7 @@ import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
+import io.github.sweetzonzi.machine_max.util.terrain.LocalHeightField;
 import jme3utilities.math.MyMath;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
@@ -122,7 +123,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final float stepHeight;
     public Vec3 projectedArea = null;
     public float bodyMinY = -99999;
-    public HashSet<BlockPos> climbableBlocks = new HashSet<>();
+    private final HashSet<BlockPos> climbableBlocks = new HashSet<>();
+    private final LocalHeightField heightField = new LocalHeightField(2, 1);//爬坡辅助用高度场
 
     public SubPart(String name, Part part, SubPartAttr attr) {
         super(part.level, attr.getCollisionShape(part.variant), attr.mass);
@@ -372,7 +374,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             //若是需要攀爬辅助处理的方块
             if (climbableBlocks.contains(blockPos)) {
                 var shape = blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
-                boolean side = Math.abs(normal.y) < 0.98f; // 侧面碰撞
+                boolean side = Math.abs(normal.y) < 0.99f; // 侧面碰撞
                 float blockHeight = (float) shape.max(Direction.Axis.Y);
                 ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
                 ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
@@ -380,35 +382,30 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 //重设碰撞法线方向
                 normal = point1.getIndex() == 0 ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate();
                 ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
-                if (attr.isClimbAssist()
-                        && (side || worldContactPoint.y < blockPos.getY() + blockHeight - 0.02f)) {
-                    // 人工设置一个小的侵入深度，法线向上，若侵入深度为0.05则期望每帧使部件上浮0.05*ERP的高度
-                    ManifoldPoints.setDistance1(manifoldPointId, -0.02f);
-                    // 在部件重心所处方块柱施加额外攀爬辅助力，提升低速通过性
-                    var horizonVel = Math.sqrt(tmpWorldVel.x * tmpWorldVel.x + tmpWorldVel.z * tmpWorldVel.z);
-                    var speedFactor = 0.7 * Math.exp(-0.25 * horizonVel) + 0.3;
-                    var ang = Math.max(0, Math.atan2(tmpWorldVel.y, horizonVel));
-                    var tgtAng = speedFactor * Math.atan2(blockHeight, 1) + (1 - speedFactor) * ang;
-                    float extraVel = (float) Math.max(-5, Math.max(Math.sin(tgtAng) * tmpWorldVel.length(), 2f * speedFactor) - tmpWorldVel.y);
-                    if (!(extraVel <= 0 && tmpWorldVel.y < 0)) {
-                        float horizontalVelScale = (float) Math.max(0, (Math.cos(ang) - Math.cos(tgtAng)));
-                        getPhysicsLevel().submitDeduplicatedTask(getId() + "_" + name + "_climb_assist", PPhase.PRE, () -> {
-                            body.applyCentralImpulse(new Vector3f(
-                                    -horizontalVelScale * tmpWorldVel.x,
-                                    extraVel,
-                                    -horizontalVelScale * tmpWorldVel.z).mult(0.2f * body.getMass()));
-                            return null;
-                        });
-                    }
-                    return; //爬坡辅助的方块不参与后续碰撞处理
-                } else if (!attr.isClimbAssist()
-                        && (side || bodyMinY < blockPos.getY() + blockHeight - 0.05f)
-                ) {
+                if (isWheelSurface(hitBoxIndex)) { // 轮胎特殊处理
+                    var result = heightField.solveContact(
+                            body.getPhysicsLocation(null), getWheelRadius(hitBoxIndex), worldContactPoint);
+                    if (result.penetration() >= 0) { // 正穿透代表需要修正为虚拟高度场
+                        ManifoldPoints.setDistance1(manifoldPointId, -result.penetration());
+                        ManifoldPoints.setNormalWorldOnB(manifoldPointId, point1.getIndex() == 0 ? result.normal() : result.normal().negate());
+                        ManifoldPoints.setPositionWorldOnA(manifoldPointId, result.contact());
+                        ManifoldPoints.setPositionWorldOnB(manifoldPointId, result.contact());
+                        ManifoldPoints.setCombinedRestitution(manifoldPointId, 0f);
+                        // 重设摩擦方向，确保摩擦力能够帮助爬坡
+                        Vector3f slipVelNorm = slipVel.subtract(result.normal().mult(slipVel.dot(normal))).normalize();
+                        ManifoldPoints.setLateralFrictionDir1(manifoldPointId, slipVelNorm);
+                        ManifoldPoints.setLateralFrictionDir2(manifoldPointId, normal.cross(slipVelNorm));
+                        return;
+                    } else if (result.penetration() < 0 && Float.isFinite(result.penetration())) { // 有限负穿透代表尚未接触高度场，无碰撞
+                        ManifoldPoints.setDistance1(manifoldPointId, 500f);
+                        return;
+                    } // 无穷值代表无平滑高程数据，如断崖边，不处理
+                } else if (side
+                        || (isWheel(hitBoxIndex) && !isWheelSurface(hitBoxIndex))
+                        || bodyMinY < blockPos.getY() + blockHeight - 0.05f) {
                     //穿透深度设为正值代表分离，让物理引擎忽视该接触点的处理
                     ManifoldPoints.setDistance1(manifoldPointId, 500f);
                     return; //爬坡辅助的方块不参与后续碰撞处理
-                } else {
-//                    MachineMax.LOGGER.debug("爬坡辅助方块碰撞，但不在爬坡辅助范围内: {}", blockPos);
                 }
             }
             //调用子系统碰撞回调
@@ -457,13 +454,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     //部件减速
                     ManifoldPoints.setDistance1(manifoldPointId, 500f);//阻止接触约束计算
                     ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);//重置默认冲量，采用计算结果
-                    Vector3f aVel = body.getAngularVelocity(null);
-                    Vector3f impulse = normal.mult((float) (Math.sqrt(2 * finalActualPartEnergy * partMass)));
+                    Vector3f impulse = normal.mult((float) (Math.sqrt(2 * finalActualPartEnergy * body.getMass())));
                     Vector3f offset = worldContactPoint.subtract(body.getPhysicsLocation(null));
-                    Matrix3f inertia = body.getInverseInertiaWorld(null);
-                    body.setLinearVelocity(vel.add(impulse.mult(1f / body.getMass())));
-                    Vector3f deltaOmega = inertia.mult(offset.cross(impulse), null);
-                    body.setAngularVelocity(aVel.add(deltaOmega));
+                    body.applyImpulse(impulse, offset);
                     //对部件造成伤害
                     float partDamage = (float) (finalActualPartEnergy / 250);
                     DamageSource source = level.damageSources().flyIntoWall();
@@ -609,7 +602,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             });
             //实体击退与伤害
             other.setLinearVelocity(other.getLinearVelocity(null).add(impulseVec.mult((float) (1f / entityMass))));
-            SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
+            SparkLevel.submitDeduplicatedTask(level, livingEntity.getUUID() + "_entity_knockback", PPhase.PRE, () -> {
                 float damage = (float) (contactEnergy * miu / (250 * entityMass));
                 if (damage > 1) {
                     if (!level.isClientSide) {
@@ -618,7 +611,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
                             SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.AMBIENT, 1f, 1f);
                 }
-                livingEntity.setDeltaMovement(SparkMathKt.toVec3(impulseVec.mult((float) (0.05 / entityMass)).add(0, 0.1f, 0)));
+                livingEntity.addDeltaMovement(SparkMathKt.toVec3(impulseVec.mult((float) (0.05 / entityMass)).add(0, 0.1f, 0)));
             });
         }
     }
@@ -783,6 +776,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         climbableBlocks.clear();
         if (body.isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
+            Vector3f pos = body.getPhysicsLocation(null);
+            // 更新爬坡辅助用高度场
+            if (getAttr().isClimbAssist()) heightField.rebuild(getPhysicsLevel(), (int) pos.x, (int) pos.z, bodyMinY);
             //遍历范围内的方块
             AABB aabb = SparkMathKt.toAABB(PhysicsBodyExtensionKt.stateOf(this.body).getCachedBoundingBox())
                     .expandTowards(new Vec3(tmpWorldVel.x, 0, tmpWorldVel.z).scale(0.1f));
@@ -791,6 +787,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             int maxX = (int) Math.ceil(aabb.maxX);
             int maxZ = (int) Math.ceil(aabb.maxZ);
             float y0 = (float) Math.floor(bodyMinY) - 0.5f;
+            Set<BlockPos> noCollisionBlocks = new HashSet<>();
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos currentPos = new BlockPos(x, (int) Math.floor(y0), z);
@@ -804,7 +801,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
                         if (terrainHeight > y0 && terrainHeight < bodyMinY + attr.stepHeight) {
                             float height = terrainHeight - bodyMinY; // 部件最低点与地形的高度差
-                            Set<BlockPos> noCollisionBlocks = new HashSet<>();
+                            noCollisionBlocks.clear();
                             // 向上遍历检查连续方块
                             BlockPos highestBlockPos = currentPos;
                             while (height <= stepHeight) {
@@ -1150,6 +1147,27 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     /**
+     * 获取轮胎半径
+     *
+     * @param contactPointIndex 接触点序号
+     * @return 轮胎半径
+     */
+    public float getWheelRadius(int contactPointIndex) {
+        try {
+            ChildCollisionShape[] children = this.collisionShape.listChildren();
+            if (children.length >= contactPointIndex)
+                return getWheelRadius(children[contactPointIndex].getShape().nativeId());
+            else throw new IndexOutOfBoundsException();
+        } catch (IndexOutOfBoundsException e) {
+            return 0f;
+        }
+    }
+
+    public float getWheelRadius(long childShapeId) {
+        return attr.getWheelRadius().getOrDefault(childShapeId, 0f);
+    }
+
+    /**
      * 碰撞是否发生在轮胎碰撞体的有效范围内
      *
      * @param contactPointIndex 接触点序号
@@ -1161,30 +1179,31 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         ChildCollisionShape child = children[contactPointIndex];
         long shapeId = child.getShape().nativeId();
         if (isWheel(shapeId) && isWheelSurface(shapeId)) {
-            float halfWidth = attr.getWheelHalfWidths().getOrDefault(shapeId, 0f);
-            if (worldContact) {
-                // 子形状 -> 刚体
-                Transform wheelToBody = child.copyTransform(null);
-                // 刚体 -> 世界
-                Transform bodyToWorld = body.getTransform(null);
-                // 子形状 -> 世界
-                Transform wheelToWorld = MyMath.combine(wheelToBody, bodyToWorld, null);
-                // 世界 -> 子形状
-                Transform worldToWheel = wheelToWorld.invert();
-                // 世界接触点 -> 子形状局部坐标
-                var localContactPoint =
-                        SparkMathKt.toVector3f(contactPoint).mulPosition(SparkMathKt.toMatrix4f(worldToWheel.toTransformMatrix()));
-                // X 轴即轮胎宽度方向
-                return Math.abs(localContactPoint.x) <= halfWidth;
-            } else {
-                // 刚体 -> 局部
-                Transform bodyToWheel = child.copyTransform(null).invert();
-                // 刚体接触点 -> 子形状局部坐标
-                var localContactPoint =
-                        SparkMathKt.toVector3f(contactPoint).mulPosition(SparkMathKt.toMatrix4f(bodyToWheel.toTransformMatrix()));
-                // X 轴即轮胎宽度方向
-                return Math.abs(localContactPoint.x) <= halfWidth;
-            }
+            return true;
+//            float halfWidth = attr.getWheelHalfWidths().getOrDefault(shapeId, 0f);
+//            if (worldContact) {
+//                // 子形状 -> 刚体
+//                Transform wheelToBody = child.copyTransform(null);
+//                // 刚体 -> 世界
+//                Transform bodyToWorld = body.getTransform(null);
+//                // 子形状 -> 世界
+//                Transform wheelToWorld = MyMath.combine(wheelToBody, bodyToWorld, null);
+//                // 世界 -> 子形状
+//                Transform worldToWheel = wheelToWorld.invert();
+//                // 世界接触点 -> 子形状局部坐标
+//                var localContactPoint =
+//                        SparkMathKt.toVector3f(contactPoint).mulPosition(SparkMathKt.toMatrix4f(worldToWheel.toTransformMatrix()));
+//                // X 轴即轮胎宽度方向
+//                return Math.abs(localContactPoint.x) <= halfWidth;
+//            } else {
+//                // 刚体 -> 局部
+//                Transform bodyToWheel = child.copyTransform(null).invert();
+//                // 刚体接触点 -> 子形状局部坐标
+//                var localContactPoint =
+//                        SparkMathKt.toVector3f(contactPoint).mulPosition(SparkMathKt.toMatrix4f(bodyToWheel.toTransformMatrix()));
+//                // X 轴即轮胎宽度方向
+//                return Math.abs(localContactPoint.x) <= halfWidth;
+//            }
         } else return true;
     }
 
