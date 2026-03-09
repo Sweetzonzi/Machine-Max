@@ -1,6 +1,9 @@
 package io.github.sweetzonzi.machine_max.client.render.renderer;
 
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
+import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelper;
+import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
@@ -20,19 +23,20 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
-import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
-import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
+import io.github.sweetzonzi.machine_max.common.visual.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -43,7 +47,6 @@ import java.util.Map;
 public class PartAssemblyRenderer extends VisualEffectRenderer {
 
     private Player player;
-    private ModelAnimatable partToPlace = null;
 
     @Override
     public void tick() {
@@ -59,19 +62,15 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         } else VisualEffectHelper.boundingBox = null;
 
         var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
-        if (cache.getPartType() instanceof PartType) {
+        if (cache.getPartType() instanceof PartType type) {
             VariantAttr variantAttr = cache.getVariant();
             if (variantAttr == null) {
-                this.partToPlace = null;
                 VisualEffectHelper.partToPlace = null;
                 return;
             }
             ResourceLocation model = variantAttr.getModel();
-            ResourceLocation texture = variantAttr.getTextureList().getFirst();
-            ResourceLocation animation = variantAttr.getAnimations();
             if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.getModelIndex().getLocation() != model) {
-                VisualEffectHelper.partToPlace = new AnimatableParams(new ModelIndex("part", model), animation, texture);
-                VisualEffectHelper.partToPlace.setTransparency(64);
+                VisualEffectHelper.partToPlace = new PartAnimatable(player.level(), type, cache.getVariantName());
                 VisualEffectHelper.partToPlace.setTransform(new Transform(
                         PhysicsHelperKt.toBVector3f(player.level().clip(new ClipContext(
                                 player.getEyePosition(),
@@ -79,10 +78,8 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
                                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).getLocation()),
                         Quaternion.IDENTITY
                 ));
-                this.partToPlace = null; // 清空原有已有动画体
             }
         } else {
-            this.partToPlace = null;
             VisualEffectHelper.partToPlace = null;
         }
     }
@@ -105,20 +102,35 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
             renderAttachPoints(partType, variant, camPos, poseStack, bufferSource, partialTick);
             renderPart(camPos, poseStack, bufferSource, partialTick);
         } else {
-            this.partToPlace = null;
             VisualEffectHelper.partToPlace = null;
         }
     }
 
     public void renderPart(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
         if (player == null) return;
-        if (partToPlace != null) {
+        if (VisualEffectHelper.partToPlace instanceof PartAnimatable part) {
             poseStack.pushPose();
             poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
-            partToPlace.render(poseStack, (MultiBufferSource.BufferSource) bufferSource, partialTick);
+            for (SubPartAnimatable subPart : part.getSubParts().values()) {
+                poseStack.pushPose();
+                poseStack.mulPose(subPart.getRenderWorldPositionMatrix(partialTick));
+                for (OBone bone : subPart.getBones().values()) {
+                    ModelRenderHelperKt.render(
+                            bone,
+                            subPart.getModelController().getModel().getPose(),
+                            new Matrix4f(poseStack.last().pose()),
+                            new Matrix3f(poseStack.last().normal()),
+                            bufferSource.getBuffer(RenderType.entityCutout(subPart.getModelController().getTextureLocation())),
+                            Brightness.FULL_BRIGHT.pack(),
+                            OverlayTexture.NO_OVERLAY,
+                            new Color(255, 255, 255, 64).getRGB(),
+                            partialTick,
+                            false
+                    );
+                }
+                poseStack.popPose();
+            }
             poseStack.popPose();
-        } else if (VisualEffectHelper.partToPlace != null) {
-            partToPlace = new ModelAnimatable(VisualEffectHelper.partToPlace);
         }
     }
 

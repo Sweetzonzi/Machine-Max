@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentMap;
  * <p>This class is used to store objects that are only used for rendering, and to avoid server-side objects to get client-side objects.</p>
  */
 public class VisualEffectHelper {
-    public static AnimatableParams partToPlace = null;
+    public static PartAnimatable partToPlace = null;
     public static RenderableBoundingBox boundingBox = null;
     public static ConcurrentMap<AbstractConnector, PhysicsRigidBody> attachPoints = new ConcurrentHashMap<>();
 }

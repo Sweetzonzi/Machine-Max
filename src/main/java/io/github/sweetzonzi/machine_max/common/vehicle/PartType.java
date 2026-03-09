@@ -25,6 +25,7 @@ public class PartType {
     public final float vehicleDamageRateDestroyed;//部件被摧毁时的伤害传递系数
     public final boolean shareDurability;//部件内零件是否共享耐久度
     public final Map<String, VariantAttr> variants;//部件所有变体列表
+    public final int maxStackSize;//部件最大堆叠数量
     private ResourceLocation registryKey = null;
 
     // 编解码器
@@ -51,6 +52,7 @@ public class PartType {
             Codec.FLOAT.optionalFieldOf("vehicle_damage_rate", 1.0f).forGetter(PartType::getVehicleDamageRate),
             Codec.FLOAT.optionalFieldOf("vehicle_damage_rate_destroyed", 0.1f).forGetter(PartType::getVehicleDamageRateDestroyed),
             Codec.BOOL.optionalFieldOf("share_durability", true).forGetter(PartType::isShareDurability),
+            Codec.INT.optionalFieldOf("max_stack_size", 1).forGetter(PartType::getMaxStackSize),
             VARIANT_MAP_CODEC.fieldOf("variants").forGetter(PartType::getVariants)
     ).apply(instance, PartType::new));
 
@@ -62,8 +64,9 @@ public class PartType {
             float vehicleDamageRate = buffer.readFloat();
             float vehicleDamageRateDestroyed = buffer.readFloat();
             boolean shareDurability = buffer.readBoolean();
+            int maxStackSize = buffer.readInt();
             Map<String, VariantAttr> variants = buffer.readJsonWithCodec(VARIANT_MAP_CODEC);
-            return new PartType(icon, vehicleDurabilityRate, vehicleDamageRate, vehicleDamageRateDestroyed, shareDurability, variants);
+            return new PartType(icon, vehicleDurabilityRate, vehicleDamageRate, vehicleDamageRateDestroyed, shareDurability, maxStackSize, variants);
         }
 
         @Override
@@ -73,6 +76,7 @@ public class PartType {
             buffer.writeFloat(value.vehicleDamageRate);
             buffer.writeFloat(value.vehicleDamageRateDestroyed);
             buffer.writeBoolean(value.shareDurability);
+            buffer.writeInt(value.maxStackSize);
             buffer.writeJsonWithCodec(VARIANT_MAP_CODEC, value.variants);
         }
     };
@@ -83,6 +87,7 @@ public class PartType {
             float vehicleDamageRate,
             float vehicleDamageRateDestroyed,
             boolean shareDurability,
+            int maxStackSize,
             Map<String, VariantAttr> variants
     ) {
         this.icon = icon;
@@ -90,6 +95,7 @@ public class PartType {
         this.vehicleDamageRate = vehicleDamageRate;
         this.vehicleDamageRateDestroyed = vehicleDamageRateDestroyed;
         this.shareDurability = shareDurability;
+        this.maxStackSize = maxStackSize;
         this.variants = variants;
     }
 

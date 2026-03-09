@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
+import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.ItemStack
@@ -100,11 +101,12 @@ object MMCreativeTabs {
         when (event.tab) {
             MACHINE_MAX_PART_TAB.get() -> {
                 MachineMax.LOGGER.info("Putting parts into creative tab...")
-                val externalParts = ArrayList<ItemStack>(1)//将所有外部包物品加入创造物品栏
-                MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
+                val externalParts = ArrayList<ItemStack>(1)//将所有外部包部件加入创造物品栏
+                MMDynamicRes.PART_TYPES.forEach { (loc, type) ->
                     val itemStack = ItemStack(MMItems.PART_ITEM)
                     itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
                     itemStack.set(MMDataComponents.PART_TYPE, loc)
+                    itemStack.set(DataComponents.MAX_STACK_SIZE, type.maxStackSize)
                     externalParts.add(itemStack)
                 }
                 externalParts.forEach { event.accept(it) }

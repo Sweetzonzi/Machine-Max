@@ -4,6 +4,7 @@
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.5,
   "vehicle_damage_rate_destroyed": 0.1,
+  "max_stack_size": 2,
   "variants": {
     "left": {
       "model": "machine_max:jeep_wheel_left.geo",

@@ -4,6 +4,7 @@
   "vehicle_durability_rate": 1.0,//(可选, 默认1.0)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
   "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
   "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.5)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
+  "max_stack_size": 4,
   "variants": {//部件变体列表, 支持单值或多键值对
     "left": {//变体名称
       "model": "machine_max:wine_fox_wheel_left.geo", //模型路径

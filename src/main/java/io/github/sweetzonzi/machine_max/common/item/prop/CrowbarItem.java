@@ -16,6 +16,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -93,6 +94,8 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                         if (part.assemblingProgress >= 1f) { // 仅完成组装的部件可作为物品掉落
                             ItemStack itemStack = new ItemStack(MMItems.getPART_ITEM());
                             itemStack.set(MMDataComponents.getPART_TYPE(), partType.getRegistryKey());
+                            itemStack.set(MMDataComponents.getRECIPE_TYPE(), part.getCustomRecipe());
+                            itemStack.set(DataComponents.MAX_STACK_SIZE, partType.getMaxStackSize());
                             if (!player.addItem(itemStack)) {//尝试直接放入物品栏，失败则掉落为实体
                                 Entity itemStackEntity = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), itemStack);
                                 level.addFreshEntity(itemStackEntity);

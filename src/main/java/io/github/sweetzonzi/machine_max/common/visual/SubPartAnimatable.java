@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
@@ -18,7 +19,7 @@ import org.joml.Matrix4f;
 import java.util.Map;
 
 @Getter
-public class SubPartAnimatable implements IAnimatable<SubPartAttr> {
+public class SubPartAnimatable implements IAnimatable<SubPartAnimatable> {
     // 静态属性
     public final VariantAttr variantAttr;
     public final SubPartAttr attr;
@@ -28,26 +29,41 @@ public class SubPartAnimatable implements IAnimatable<SubPartAttr> {
     public final ModelIndex modelIndex;
     // 渲染位姿
     public Transform transform = new Transform();
-    public Transform oldTransform = new Transform();
+    public Transform oldTransform = null;
 
     public SubPartAnimatable(VariantAttr variantAttr, SubPartAttr attr, Level level) {
         this.variantAttr = variantAttr;
         this.attr = attr;
         this.level = level;
+        this.modelIndex = new ModelIndex("part", variantAttr.getModel());
         this.modelController = new ModelController(this);
         this.animController = new AnimController(this);
-        this.modelIndex = new ModelIndex("part", variantAttr.getModel());
     }
 
     public SubPartAnimatable(SubPart subPart) {
         this(subPart.part.getVariant(), subPart.attr, subPart.level);
-        this.transform = subPart.getTransform().clone();
-        this.oldTransform = subPart.getTransform().clone();
+        setTransform(subPart.getTransform());
+    }
+
+    public void setTransform(Transform transform) {
+        this.transform = transform.clone();
+        this.oldTransform = transform.clone();
+    }
+
+    public void updateTransform(Transform transform) {
+        if (this.oldTransform == null) {
+            this.oldTransform = transform.clone();
+        } else this.oldTransform = this.transform;
+        this.transform = transform.clone();
+    }
+
+    public Map<String, OBone> getBones() {
+        return attr.getBones(variantAttr);
     }
 
     @Override
-    public SubPartAttr getAnimatable() {
-        return this.attr;
+    public SubPartAnimatable getAnimatable() {
+        return this;
     }
 
     @Override
