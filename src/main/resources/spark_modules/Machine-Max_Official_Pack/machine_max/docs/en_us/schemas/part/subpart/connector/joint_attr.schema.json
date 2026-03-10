@@ -48,6 +48,21 @@
       "stiffness": 100000,
       "damping": 1000,
       "description": "Fixed joint (lower and upper limits are the same)"
+    },
+    {
+      "lower_limit": -0.2,
+      "upper_limit": 0.2,
+      "stiffness": 50000,
+      "damping": 200,
+      "description": "Suspension joint, allows small range displacement, used for shock absorbers"
+    },
+    {
+      "lower_limit": -90.0,
+      "upper_limit": 90.0,
+      "equilibrium": 0.0,
+      "stiffness": 1000,
+      "damping": 50,
+      "description": "Hinge joint, allows large angle rotation, used for doors or hatches"
     }
   ]
 }

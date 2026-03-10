@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector
 import io.github.sweetzonzi.machine_max.util.data.PosRot;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import org.jetbrains.annotations.NotNull;
 
@@ -85,5 +86,13 @@ public class ConnectionData {
 
     public ConnectionData(Pair<AbstractConnector, SimpleConnector> connectorPair){
         this(connectorPair.getFirst(), connectorPair.getSecond());
+    }
+
+    @Override
+    public String toString() {
+        return "[" + Component.translatable(subPartNameA).getString()
+                + "->" + Component.translatable(advConnectorName).getString()
+                + ":" + Component.translatable(subPartNameS).getString()
+                + "->" + Component.translatable(simpleConnectorName).getString() + "]";
     }
 }

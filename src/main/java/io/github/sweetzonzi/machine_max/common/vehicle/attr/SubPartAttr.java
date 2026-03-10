@@ -36,6 +36,7 @@ public class SubPartAttr {
     public final List<String> endBones;
     // 物理属性
     public final float mass;
+    public final String massCenterName;
     public final Vec3 projectedArea;
     public final BlockCollisionType blockCollision;
     public final float stepHeight;
@@ -73,11 +74,12 @@ public class SubPartAttr {
             Codec.STRING.listOf().optionalFieldOf("end_bones", List.of()).forGetter(SubPartAttr::getEndBones),
             Codec.FLOAT.optionalFieldOf("durability", 20f).forGetter(SubPartAttr::getDurability),
             Codec.FLOAT.optionalFieldOf("mass", 25f).forGetter(SubPartAttr::getMass),
+            Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::getMassCenterName),
             Vec3.CODEC.optionalFieldOf("projected_area", Vec3.ZERO).forGetter(SubPartAttr::getProjectedArea),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
             Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
-            HitBoxAttr.MAP_CODEC.optionalFieldOf("hit_boxes", Map.of()).forGetter(SubPartAttr::getHitBoxes),
+            HitBoxAttr.MAP_CODEC.fieldOf("hit_boxes").forGetter(SubPartAttr::getHitBoxes),
             InteractBoxAttr.MAP_CODEC.optionalFieldOf("interact_boxes", Map.of()).forGetter(SubPartAttr::getInteractBoxes),
             ConnectorAttr.MAP_CODEC.optionalFieldOf("connectors", Map.of()).forGetter(SubPartAttr::getConnectors),
             AbstractSubsystemAttr.MAP_CODEC.optionalFieldOf("subsystems", Map.of()).forGetter(SubPartAttr::getSubsystems),
@@ -95,6 +97,7 @@ public class SubPartAttr {
             List<String> endBones,
             float durability,
             float mass,
+            String massCenterName,
             Vec3 projectedArea,
             String blockCollision,
             float stepHeight,
@@ -111,6 +114,7 @@ public class SubPartAttr {
         this.durability = durability;
         if (mass <= 0) throw new IllegalArgumentException("error.machine_max.subpart.zero_mass");
         this.mass = mass;
+        this.massCenterName = massCenterName;
         this.projectedArea = projectedArea;
         this.blockCollision = BlockCollisionType.valueOf(blockCollision.toUpperCase());
         this.stepHeight = stepHeight;
@@ -234,9 +238,8 @@ public class SubPartAttr {
             if (shape.countChildren() <= 0)
                 throw new IllegalArgumentException(Component.translatable("error.machine_max.subpart.empty_collision_shape").getString());
             // 调整零件质心
-            Transform massCenter = null;
-            //TODO: 读取指定质心位置
-            OLocator locator = locators.get("MassCenter");
+            Transform massCenter;
+            OLocator locator = locators.get(this.massCenterName);
             if (locator != null) {
                 org.joml.Vector3f rotation = locator.getRotation().toVector3f();
                 massCenter = new Transform(
@@ -246,24 +249,22 @@ public class SubPartAttr {
             } else { // 未指定质心则取所有子形状的平均位置
                 Vector3f center = new Vector3f();
                 for (ChildCollisionShape child : shape.listChildren()) {
-                    center.add(child.copyOffset(null));
+                    center.addLocal(child.copyOffset(null));
                 }
                 center.multLocal(1f / shape.countChildren());
                 massCenter = new Transform(center, Quaternion.IDENTITY);
             }
-            if (massCenter != null) {
-                // 重新计算定位器相对质心的变换
-                for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.entrySet()) {
-                    String locatorName = locatorTransform.getKey();
-                    Transform transform = locatorTransform.getValue();
-                    MyMath.combine(massCenter, transform, transform);
-                    locatorTransforms.put(locatorName, transform);
-                }
-                shape.correctAxes(massCenter.invert());
-                // 缓存质心位置
-                this.massCenterTransform.fromTransformMatrix(massCenter.toTransformMatrix());
+            // 重新计算定位器相对质心的变换
+            for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.entrySet()) {
+                String locatorName = locatorTransform.getKey();
+                Transform transform = locatorTransform.getValue();
+                MyMath.combine(massCenter.invert(), transform, transform);
+                locatorTransforms.put(locatorName, transform);
             }
-            
+            shape.correctAxes(massCenter);
+            // 缓存质心位置
+            this.massCenterTransform.fromTransformMatrix(massCenter.toTransformMatrix());
+
             // 构建气动计算点缓存
             buildHydrodynamicLocatorsCache(bones);
             
@@ -273,7 +274,7 @@ public class SubPartAttr {
     }
 
     /**
-     * 获取子部件在指定状态的交互体积
+     * 获取子部件在指定状态的交互体积，必须在getCollisionShape之后调用
      */
     public CompoundCollisionShape getInteractBoxShape(VariantAttr attr) {
         if (interactBoxShape == null) {
@@ -308,18 +309,7 @@ public class SubPartAttr {
                     MachineMax.LOGGER.error("未找到对应的交互形状骨骼{}。", interactBoxEntry.getValue().getBoneName());
                 }
             }
-
-            Transform transform = null;
-            OLocator locator = locators.get("MassCenter");
-            if (locator != null) {
-                org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-                transform = new Transform(
-                        PhysicsHelperKt.toBVector3f(locator.getOffset()),
-                        SparkMathKt.toBQuaternion(new Quaternionf().rotationZYX(rotation.x, rotation.y, rotation.z))
-                );
-            }
-            if (transform != null)
-                shape.correctAxes(transform.invert());
+            shape.correctAxes(this.massCenterTransform);
             interactBoxShape = shape;
         }
         return interactBoxShape;

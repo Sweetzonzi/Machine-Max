@@ -99,7 +99,7 @@
         "subsystems": {
           "subsystem.machine_max.driver_seat": {
             "type": "machine_max:seat", //子系统类型
-            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:vn_seat", //子系统型号, 需要与子系统类型相匹配
             "seat_point_locator": "seat", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "move_outputs": { //(可选,默认为空)子系统移动控制输出列表
               "move_control": ["subsystem.machine_max.motorbike_controller"] //将控制信号转发给车辆控制系统
@@ -160,7 +160,7 @@
             "locator": "front_wheel", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "type": "Advanced", //连接点类型, 支持Simple和Advanced
             "direction": "xn",
-            "integrity": 30.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "integrity": 40.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             "forbidden_tags": ["hull", "chassis"], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
             "joint_attrs": { //关节属性, 目前仅在关节类型为Advanced时生效
               "y": {
@@ -185,7 +185,7 @@
             "locator": "back_wheel",
             "type": "Advanced",
             "direction": "xn",
-            "integrity": 30.0,
+            "integrity": 40.0,
             "forbidden_tags": ["hull", "chassis"],
             "joint_attrs": {
               "y": {

@@ -38,6 +38,7 @@ public class SubPartAnimatable implements IAnimatable<SubPartAnimatable> {
         this.modelIndex = new ModelIndex("part", variantAttr.getModel());
         this.modelController = new ModelController(this);
         this.animController = new AnimController(this);
+        this.modelController.setTextureLocation(variantAttr.getTextureList().getFirst());
     }
 
     public SubPartAnimatable(SubPart subPart) {
@@ -97,6 +98,6 @@ public class SubPartAnimatable implements IAnimatable<SubPartAnimatable> {
      * @return 模型坐标原点在世界坐标系下的位姿变换，常用于渲染
      */
     public Matrix4f getRenderWorldPositionMatrix(@NotNull Number number) {
-        return getWorldPositionMatrix(number).mul(SparkMathKt.toMatrix4f(getAttr().getMassCenterTransform().toTransformMatrix()));
+        return getWorldPositionMatrix(number).mul(SparkMathKt.toMatrix4f(getAttr().getMassCenterTransform().invert().toTransformMatrix()));
     }
 }

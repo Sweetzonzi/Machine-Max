@@ -10,6 +10,7 @@ import java.util.Map;
 
 
 public record HitBoxAttr(
+        String id,
         String shapeType,
         String subsystem,
 
@@ -27,6 +28,7 @@ public record HitBoxAttr(
         DamageModifier damageModifiers,
         float unPenetrateDamageFactor) {
     public static final Codec<HitBoxAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.optionalFieldOf("id", "").forGetter(HitBoxAttr::id),
             Codec.STRING.fieldOf("type").forGetter(HitBoxAttr::shapeType),
             Codec.STRING.optionalFieldOf("subsystem", "").forGetter(HitBoxAttr::subsystem),
             Vec3.CODEC.optionalFieldOf("friction", new Vec3(0.5, 0.5, 0.5)).forGetter(HitBoxAttr::friction),

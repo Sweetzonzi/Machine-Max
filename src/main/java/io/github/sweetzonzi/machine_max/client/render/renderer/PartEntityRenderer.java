@@ -72,8 +72,6 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         poseStack.translate(-entityPos.x, -entityPos.y, -entityPos.z);
         poseStack.pushPose();
         poseStack.mulPose(worldMatrix);
-        // 若质心不在原点，则还需要额外偏移模型渲染位姿
-        poseStack.mulPose(SparkMathKt.toMatrix4f(entity.subPart.getLocalMassCenterTransform().toTransformMatrix()));
         int overlay = OverlayTexture.NO_OVERLAY;
         // 受击闪烁效果
         if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);

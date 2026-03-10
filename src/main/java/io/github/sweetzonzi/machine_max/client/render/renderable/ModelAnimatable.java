@@ -39,8 +39,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 正在将功能向SubPartAnimatable等迁移
+ */
 @Getter
 @OnlyIn(Dist.CLIENT)
+@Deprecated()
 public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable {
     private final Minecraft minecraft = Minecraft.getInstance();
     protected final AnimatableParams params;//各种渲染参数

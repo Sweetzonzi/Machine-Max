@@ -27,7 +27,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.*;
-import org.joml.Math;
 import org.joml.Quaternionf;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
@@ -132,18 +131,18 @@ public class CameraController {
 
         //更新计算相机相对其所处坐标系的旋转
         float lerp = 0.25f;
-        pitch = (1-lerp) * pitch + lerp * targetViewPitch;
-        yaw = (1-lerp) * yaw + lerp * targetViewYaw;
-        roll = (1-lerp) * roll + lerp * targetViewRoll;
+        pitch = (1 - lerp) * pitch + lerp * targetViewPitch;
+        yaw = (1 - lerp) * yaw + lerp * targetViewYaw;
+        roll = (1 - lerp) * roll + lerp * targetViewRoll;
         AbstractControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
         if (subsystem instanceof SeatSubsystem seat && (type.isFirstPerson() || ControlPreference.shouldFollowPose(seat))) {
             //基于附体坐标系旋转相机
             Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
             //TODO: combine的TempVars.get()会在未找到座椅连接点时IndexOutOfBoundsException，检查逻辑
             MyMath.combine(new Transform(Vector3f.ZERO, SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
-                            Math.toRadians(roll),
-                            Math.toRadians(-yaw),
-                            Math.toRadians(pitch)))),
+                            (float) Math.toRadians(roll),
+                            (float) Math.toRadians(-yaw),
+                            (float) Math.toRadians(pitch)))),
                     extra, tmpViewTransform);
             //计算对应欧拉角
             org.joml.Vector3f rot = new org.joml.Vector3f();
@@ -231,11 +230,34 @@ public class CameraController {
         //保持与默认旋转视角相同的缩放量（为什么会有缩放？）
         float f = (float) xRot * 0.15F;
         float f1 = (float) yRot * 0.15F;
-        targetViewPitch += f;
-        targetViewYaw += f1;
-        if (!RawInputHandler.freeCam) {
-            aimPitch += f;
-            aimYaw += f1;
+        LocalPlayer player = client.player;
+        if (player == null) return;
+        AbstractControllableSubsystem subsystem = ((IEntityMixin) player).machine_Max$getControllingSubsystem();
+        if (subsystem instanceof SeatSubsystem seat) {
+            if (!RawInputHandler.freeCam) {
+                // 俯仰角限制：零位（水平方向）对应0度，-90为仰头至最高，90为俯视至最低，因此需要调整正负号
+                float minPitch = -seat.attr.staticAttribute.views.minPitch();
+                float maxPitch = -seat.attr.staticAttribute.views.maxPitch();
+                // 偏航角限制：由于底层坐标系限制，零位（正前方）对应180度
+                // 因此yaw限制范围为 [180 - yawLimit/2, 180 + yawLimit/2]
+                float yawLimit = seat.attr.staticAttribute.views.yawLimit() / 2;
+                float minYaw = 180 - yawLimit;
+                float maxYaw = 180 + yawLimit;
+                targetViewPitch = Math.clamp(targetViewPitch + f, maxPitch, minPitch);
+                targetViewYaw = Math.clamp(targetViewYaw + f1, minYaw, maxYaw);
+                aimPitch = Math.clamp(aimPitch + f, maxPitch, minPitch);
+                aimYaw = Math.clamp(aimYaw + f1, minYaw, maxYaw);
+            } else {
+                targetViewPitch += f;
+                targetViewYaw += f1;
+            }
+        } else {
+            targetViewPitch += f;
+            targetViewYaw += f1;
+            if (!RawInputHandler.freeCam) {
+                aimPitch += f;
+                aimYaw += f1;
+            }
         }
     }
 

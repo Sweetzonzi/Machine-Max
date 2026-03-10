@@ -52,6 +52,27 @@
       "minimum": 0,
       "default": 1.1,
       "description": "摄像机距离缩放系数。"
+    },
+    "min_pitch": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": -70,
+      "description": "最小俯仰角限制（单位：度）。零度对应水平方向。例如，min_pitch=-30表示最多向下看30度。"
+    },
+    "max_pitch": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": 45,
+      "description": "最大俯仰角限制（单位：度）。零度对应水平方向。例如，max_pitch=60表示最多向上看60度。"
+    },
+    "yaw_limit": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360,
+      "default": 90,
+      "description": "偏航角限制（单位：度）。此值表示总角度范围，因此实际偏航角范围为[180 - yaw_limit/2, 180 + yaw_limit/2]。例如，yaw_limit=90表示水平方向±45度的移动范围。"
     }
   },
   "additionalProperties": false,
@@ -62,6 +83,14 @@
       "first_person_offset": [0.0, 0.3, 0.0],
       "enable_third_person": true,
       "distance_scale": 1.2
+    },
+    {
+      "enable_first_person": true,
+      "first_person_offset": [0.0, 0.2, 0.0],
+      "enable_third_person": false,
+      "min_pitch": -30,
+      "max_pitch": 60,
+      "yaw_limit": 120
     }
   ]
 }

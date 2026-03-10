@@ -92,7 +92,7 @@
             "locator": "chassis_connection",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "type": "Simple", //连接点类型, 支持Simple和Advanced
             "direction": "xp",
-            "integrity": 30.0,
+            "integrity": 40.0,
             "impact_reduction": 2.0
           }
         },

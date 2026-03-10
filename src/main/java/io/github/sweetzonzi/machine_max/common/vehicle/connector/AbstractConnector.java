@@ -72,8 +72,6 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     protected final SynchedEntityData synchedData;
     protected final ConcurrentLinkedQueue<Float> accumulatedImpact = new ConcurrentLinkedQueue<>();
     protected final ConcurrentLinkedQueue<Float> accumulatedIntegrityChange = new ConcurrentLinkedQueue<>();
-    public final float impactReduction;
-    public final float impactMultiplier;
     @Setter
     public AbstractConnector attachedConnector;//与本连接点对接的连接点
     public final Transform offsetFromMassCenter;//被安装零件的连接点相对本部件质心的位置与姿态
@@ -90,8 +88,6 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.actualTransform = offsetFromMassCenter.clone();
         this.signalPort = new SignalPort(this, attr.signalTargets(), attr.signalTranslations());
         this.collideBetweenParts = attr.collideBetweenParts();
-        this.impactReduction = attr.connectedTo().isEmpty() ? attr.impactReduction() : 0;
-        this.impactMultiplier = attr.connectedTo().isEmpty() ? Math.max(attr.impactMultiplier(), 0) : 0;
         this.internal = !attr.connectedTo().isEmpty();
         this.attr = attr;
         SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
@@ -186,19 +182,19 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
      * <p>Handles the impact caused by other threads to the connector, which will be handled in the main thread, see {@link #mcTick()}</p>
      */
     protected void handleAccumulatedImpact() {
-        if (!subPart.level.isClientSide()) {
+        if (!subPart.level.isClientSide() && !this.isInternal()) {
             float totalImpact = 0;
-            if (impactMultiplier >= 0 && !accumulatedImpact.isEmpty()) {
+            if (attr.impactMultiplier() >= 0 && !accumulatedImpact.isEmpty()) {
                 while (!accumulatedImpact.isEmpty()) {
                     totalImpact += accumulatedImpact.poll();
                 }
-                totalImpact -= getImpactReduction();
-                totalImpact *= getImpactMultiplier();
+                totalImpact -= attr.impactReduction();
+                totalImpact *= attr.impactMultiplier();
                 if (totalImpact > 0) {
                     if (totalImpact >= getIntegrity() && hasPart()) {
                         //强冲击，立即击落部件
                         subPart.part.vehicle.detachConnector(this);
-                        float finalImpact = (subPart.isDestroyed() ? 0.5f * totalImpact : 0.1f * totalImpact);
+                        float finalImpact = (subPart.isDestroyed() ? totalImpact : attr.impactAbsorption() * totalImpact);
                         SparkLevel.submitImmediateTask(subPart.level, PPhase.ALL, () -> {
                             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"), 64f);
                             SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO,

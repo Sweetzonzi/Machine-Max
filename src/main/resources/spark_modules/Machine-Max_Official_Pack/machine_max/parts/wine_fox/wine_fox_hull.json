@@ -11,7 +11,9 @@
     "tags": ["hull", "wine_fox"],
     "sub_parts": {
       "sub_part.machine_max.main": {
-        "start_bone": "AllHull",
+        "start_bone": "AllHull", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
+        "end_bones": ["AllEngine"], // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
+        "mass_center": "hull_mass_center",
         "durability": 120.0,
         "mass": 200.0,
         "block_collision": "ground",
@@ -152,7 +154,7 @@
           },
           "subsystem.machine_max.copilot_seat": {
             "type": "machine_max:seat", //子系统类型
-            "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
+            "definition": "machine_max:default_passenger_seat", //子系统型号, 需要与子系统类型相匹配
             "seat_point_locator": "RightFrontSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.right_seat", "interact.machine_max.right_seat_fast"]

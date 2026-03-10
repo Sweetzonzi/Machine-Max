@@ -114,7 +114,7 @@ public class VehicleCore {
                         advConnector.setActualTransform(connectionData.posRotA.toTransform());
                         simpleConnector.setActualTransform(connectionData.posRotS.toTransform());
                         this.attachConnector(advConnector, simpleConnector, null);
-                    } else throw new IllegalArgumentException("未在载具中找到连接数据所需的连接点");
+                    } else MachineMax.LOGGER.error("Connector {} not found in vehicle {}.", connectionData, this.name);
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
             subSystemController.initAllSubsystems();//子系统初始化

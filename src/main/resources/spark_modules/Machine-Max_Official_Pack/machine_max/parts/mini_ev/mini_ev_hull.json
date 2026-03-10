@@ -23,7 +23,7 @@
         "collision_height": 1.5, //(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
         "hit_boxes": { //键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
           "HullCollisionShape": { //值:碰撞形状属性
-            "name": "part", //(可选, 默认"part")碰撞箱名称, 供子系统等查找
+            "id": "part", //(可选, 默认"")同id的碰撞体积不会被同一次攻击多次伤害
             "type": "box", //碰撞形状类型, 支持box、sphere、cylinder
             "block_damage_factor": 1.0, //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
             "angle_effect": true, //(可选, 默认true)等效护甲厚度是否受入射角度影响, 若为false, 则计算厚度时不考虑入射角度
@@ -93,7 +93,7 @@
             "rha": 3 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
           },
           "EngineCollisionShape": { //值:碰撞形状属性
-            "name": "engine", //(可选, 默认"part")碰撞箱名称, 供子系统等查找
+            "id": "engine", //(可选, 默认"")同id的碰撞体积不会被同一次攻击多次伤害
             "type": "box", //碰撞形状类型, 支持box、sphere、cylinder
             "subsystem": "subsystem.machine_max.motor", //(可选, 默认"")子系统名称, 对此碰撞形状造成的伤害会等量地传导给此子系统, 若为空则不属于任何子系统
             "block_damage_factor": 0.95, //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
@@ -249,7 +249,7 @@
           },
           "subsystem.machine_max.copilot_seat": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_seat",
+            "definition": "machine_max:default_passenger_seat",
             "seat_point_locator": "RightFrontSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.right_front_door"]
@@ -257,7 +257,7 @@
           },
           "subsystem.machine_max.left_back_seat": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_seat",
+            "definition": "machine_max:default_passenger_seat",
             "seat_point_locator": "LeftBackSeatPoint",
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.left_back_door"]
@@ -265,7 +265,7 @@
           },
           "subsystem.machine_max.right_back_seat": {
             "type": "machine_max:seat",
-            "definition": "machine_max:default_seat",
+            "definition": "machine_max:default_passenger_seat",
             "seat_point_locator": "RightBackSeatPoint",
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.right_back_door"]

@@ -104,7 +104,7 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                             if (!variant.equals("default") && partType.variants.size() > 1)
                                 message.append(" 部件变体类型:" + Component.translatable(variant).getString());
                             if (VisualEffectHelper.partToPlace != null) {
-                                VisualEffectHelper.partToPlace.setTransform(
+                                VisualEffectHelper.partToPlace.updateTransform(
                                         targetConnector.mergeTransform(targetConnector.calculateExtraTransform(
                                                 connectorAttr.direction(),
                                                 PhysicsHelperKt.toBVector3f(cache.getOffset()),
@@ -129,7 +129,7 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                     if (VisualEffectHelper.partToPlace != null) {
                         LivingEntity livingEntity = (LivingEntity) entity;
                         Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(cache.getAttachRotation() - entity.getYRot()));
-                        VisualEffectHelper.partToPlace.setTransform(
+                        VisualEffectHelper.partToPlace.updateTransform(
                                 new Transform(
                                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                                 entity.getEyePosition(),

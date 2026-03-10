@@ -250,7 +250,8 @@ public class Part {
                 locator.getBone().applyTransformWithParents(pose, startBone);
                 pose.translate(locator.getOffset().toVector3f())
                         .rotate(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x));
-                pose.mul(SparkMathKt.toMatrix4f(subPart.getLocalMassCenterTransform().toTransformMatrix()));
+                // 按照质心位置调整连接点位置
+                pose.mul(SparkMathKt.toMatrix4f(subPart.getLocalMassCenterTransform().invert().toTransformMatrix()));
                 Transform posRot = new Transform( //连接点的位置与姿态
                         PhysicsHelperKt.toBVector3f(pose.getTranslation(new org.joml.Vector3f())),
                         SparkMathKt.toBQuaternion(pose.getNormalizedRotation(new Quaternionf()))
@@ -261,14 +262,14 @@ public class Part {
                             connectorName,
                             connectorAttr,
                             subPart,
-                            posRot
+                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName())
                     );
                 } else {
                     connector = new AdvancedConnector(
                             connectorName,
                             connectorAttr,
                             subPart,
-                            posRot
+                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName())
                     );
                 }
                 subPart.connectors.put(connectorName, connector);

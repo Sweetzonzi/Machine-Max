@@ -30,6 +30,7 @@ public class PartAnimatable implements IAnimatable<PartAnimatable> {
     public final PartType partType;
     public final Level level;
     public final Map<String, SubPartAnimatable> subParts = new HashMap<>();
+    public VariantAttr variantAttr;
     public SubPartAnimatable rootSubPart;
     public final ModelIndex modelIndex = new ModelIndex("part", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
     public final AnimController animController = new AnimController(this);
@@ -51,7 +52,8 @@ public class PartAnimatable implements IAnimatable<PartAnimatable> {
 
     public void setVariant(String variant) {
         VariantAttr variantAttr = partType.getVariant(variant);
-        if (variantAttr != null) {
+        if (variantAttr != null && this.variantAttr != variantAttr) {
+            this.variantAttr = variantAttr;
             subParts.clear();
             rootSubPart = null;
             for (Map.Entry<String, SubPartAttr> entry : variantAttr.subParts.entrySet()) {

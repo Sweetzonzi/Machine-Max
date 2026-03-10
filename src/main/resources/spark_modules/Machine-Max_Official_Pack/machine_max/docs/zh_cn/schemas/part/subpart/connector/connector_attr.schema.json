@@ -36,6 +36,13 @@
       "default": 1.5,
       "description": "连接点的冲击吸收率，在计算部件击落前，应用冲击减免后应用，大于1将使连接点更容易断开。"
     },
+    "impact_absorption": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.2,
+      "description": "连接点受到冲击但未被击落时，冲击转为结构完整性损耗的比例。例如0.2表示20%的冲击会转化为结构完整性的损耗。"
+    },
     "required_tags": {
       "type": "array",
       "items": { "type": "string" },
@@ -90,9 +97,17 @@
   "additionalProperties": false,
   "examples": [
     {
+      "locator": "Hull",
+      "type": "Simple",
+      "description": "最简连接点示例，仅包含必需字段"
+    },
+    {
       "locator": "LeftFrontWheel",
       "type": "Advanced",
       "required_tags": ["variant:left"],
+      "impact_absorption": 0.1,
+      "impact_reduction": 3.0,
+      "impact_multiplier": 0.5,
       "joint_attrs": {
         "y": {
           "lower_limit": -0.5,
@@ -107,7 +122,7 @@
           "damping": 20
         }
       },
-      "description": "左前轮连接点，仅允许左变体，具有垂直缓冲和转向能力"
+      "description": "左前轮连接点，仅允许左变体，具有垂直缓冲和转向能力，冲击吸收率较低，冲击减免较高"
     }
   ]
 }

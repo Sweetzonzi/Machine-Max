@@ -137,7 +137,7 @@
   "additionalProperties": false,
   "examples": [
     {
-      "name": "chassis",
+      "id": "chassis",
       "type": "box",
       "rha": 10.0,
       "block_damage_factor": 1.5,

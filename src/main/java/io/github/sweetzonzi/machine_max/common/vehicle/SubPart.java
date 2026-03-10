@@ -941,7 +941,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         final float DISTANCE_EXPONENT = 2.0f; // 距离指数：1=反比，2=平方反比
         final float MIN_DISTANCE = 0.1f; // 最小距离，防止除零和过大的权重
         for (AbstractConnector connector : this.connectors.values()) {
-            if (!connector.hasPart() || connector.getImpactMultiplier() == 0) continue; // 仅有连接且可破坏的连接点参与分配
+            if (!connector.hasPart() || connector.isInternal() || connector.attr.impactMultiplier() <= 0) continue; // 仅有连接且可破坏的连接点参与分配
             Vector3f connectorPos = MMMath.relPointWorldPos(connector.offsetFromMassCenter.getTranslation(), this.body);
             float distance = Math.max(connectorPos.distance(impactPoint), MIN_DISTANCE);
             // 权重是距离的指数反比，距离越远权重越小
@@ -1357,7 +1357,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      * @return 模型坐标原点在世界坐标系下的位姿变换，常用于渲染
      */
     public Matrix4f getRenderWorldPositionMatrix(@NotNull Number number) {
-        return getWorldPositionMatrix(number).mul(SparkMathKt.toMatrix4f(getLocalMassCenterTransform().toTransformMatrix()));
+        return getWorldPositionMatrix(number).mul(SparkMathKt.toMatrix4f(getLocalMassCenterTransform().invert().toTransformMatrix()));
     }
 
 }

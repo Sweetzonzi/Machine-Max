@@ -107,7 +107,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                         && targetSubPart.part.getMaterialProgress() == 0) {
                     message.append("右键以直接完成" + Component.translatable(targetSubPart.part.name).getString() + "的组装进度");
                     if (VisualEffectHelper.partToPlace != null) {
-                        VisualEffectHelper.partToPlace.setTransform(
+                        VisualEffectHelper.partToPlace.updateTransform(
                                 new Transform(
                                         targetSubPart.part.rootSubPart.getPosition(),
                                         targetSubPart.part.rootSubPart.getRotation()
@@ -123,7 +123,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                             if (!variantName.equals("default") && partType.variants.size() > 1)
                                 message.append(" 部件变体类型:" + Component.translatable(variantName).getString());
                             if (VisualEffectHelper.partToPlace != null) {
-                                VisualEffectHelper.partToPlace.setTransform(
+                                VisualEffectHelper.partToPlace.updateTransform(
                                         targetConnector.mergeTransform(targetConnector.calculateExtraTransform(
                                                 connectorAttr.direction(),
                                                 PhysicsHelperKt.toBVector3f(cache.getOffset()),
@@ -142,7 +142,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                     if (VisualEffectHelper.partToPlace != null) {
                         LivingEntity livingEntity = (LivingEntity) entity;
                         Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(cache.getAttachRotation() - entity.getYRot()));
-                        VisualEffectHelper.partToPlace.setTransform(
+                        VisualEffectHelper.partToPlace.updateTransform(
                                 new Transform(
                                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                                 entity.getEyePosition(),

@@ -1,0 +1,18 @@
+{
+  "$schema": "../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:seat", //子系统类型
+  "block_damage": false, //(可选,默认false)是否无条件阻拦乘客受到伤害
+  "render_passenger": true, //(可选,默认true)是否渲染乘客
+  "passenger_scale": [1.0, 1.0, 1.0],//(可选,默认[1,1,1])乘客渲染时的缩放比例
+  "views": {
+    "enable_first_person": true, //(可选,默认true)是否启用第一人称视角
+    "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
+    "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
+    "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心
+    "distance_scale": 1.2, //(可选,默认1.1)第三人称视角距离倍率
+    "min_pitch": -90, //(可选,默认-70)第三人称视角的俯仰角范围下限
+    "max_pitch": 90, //(可选,默认45)第三人称视角的俯仰角范围上限
+    "yaw_limit": 360 //(可选,默认180)第三人称视角的偏航角范围限制，180代表±90°
+  },
+  "allow_use_items": true //(可选,默认false)是否允许乘客执行开启物品栏、使用物品等操作
+}

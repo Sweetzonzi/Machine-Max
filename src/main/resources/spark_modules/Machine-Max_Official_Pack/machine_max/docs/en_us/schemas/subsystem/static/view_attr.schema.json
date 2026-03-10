@@ -52,6 +52,27 @@
       "minimum": 0,
       "default": 1.1,
       "description": "Camera distance scaling factor."
+    },
+    "min_pitch": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": -70,
+      "description": "Minimum pitch angle in degrees. Zero degrees is horizontal. For example, min_pitch=-30 means you can look down up to 30 degrees."
+    },
+    "max_pitch": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": 45,
+      "description": "Maximum pitch angle in degrees. Zero degrees is horizontal. For example, max_pitch=60 means you can look up up to 60 degrees."
+    },
+    "yaw_limit": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360,
+      "default": 180,
+      "description": "Yaw angle limit in degrees. This represents the total angular range, so the actual yaw range will be [180 - yaw_limit/2, 180 + yaw_limit/2]. For example, yaw_limit=90 means ±45 degrees of horizontal movement."
     }
   },
   "additionalProperties": false,
@@ -62,6 +83,14 @@
       "first_person_offset": [0.0, 0.3, 0.0],
       "enable_third_person": true,
       "distance_scale": 1.2
+    },
+    {
+      "enable_first_person": true,
+      "first_person_offset": [0.0, 0.2, 0.0],
+      "enable_third_person": false,
+      "min_pitch": -30,
+      "max_pitch": 60,
+      "yaw_limit": 120
     }
   ]
 }

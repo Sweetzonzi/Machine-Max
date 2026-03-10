@@ -68,8 +68,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
                 VisualEffectHelper.partToPlace = null;
                 return;
             }
-            ResourceLocation model = variantAttr.getModel();
-            if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.getModelIndex().getLocation() != model) {
+            if (VisualEffectHelper.partToPlace == null || VisualEffectHelper.partToPlace.variantAttr != variantAttr) {
                 VisualEffectHelper.partToPlace = new PartAnimatable(player.level(), type, cache.getVariantName());
                 VisualEffectHelper.partToPlace.setTransform(new Transform(
                         PhysicsHelperKt.toBVector3f(player.level().clip(new ClipContext(
@@ -120,7 +119,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
                             subPart.getModelController().getModel().getPose(),
                             new Matrix4f(poseStack.last().pose()),
                             new Matrix3f(poseStack.last().normal()),
-                            bufferSource.getBuffer(RenderType.entityCutout(subPart.getModelController().getTextureLocation())),
+                            bufferSource.getBuffer(RenderType.entityTranslucent(subPart.getModelController().getTextureLocation())),
                             Brightness.FULL_BRIGHT.pack(),
                             OverlayTexture.NO_OVERLAY,
                             new Color(255, 255, 255, 64).getRGB(),
