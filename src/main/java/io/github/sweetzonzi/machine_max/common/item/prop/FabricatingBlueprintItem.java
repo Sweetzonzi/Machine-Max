@@ -20,6 +20,7 @@ import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
+import jme3utilities.math.MyMath;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -104,13 +105,16 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                             if (!variant.equals("default") && partType.variants.size() > 1)
                                 message.append(" 部件变体类型:" + Component.translatable(variant).getString());
                             if (VisualEffectHelper.partToPlace != null) {
+                                var massCenterInv = variantAttr.getSubParts().get(cache.getConnectorName().getFirst()).getMassCenterTransform().invert();
                                 VisualEffectHelper.partToPlace.updateTransform(
-                                        targetConnector.mergeTransform(targetConnector.calculateExtraTransform(
-                                                connectorAttr.direction(),
-                                                PhysicsHelperKt.toBVector3f(cache.getOffset()),
-                                                SparkMathKt.toBQuaternion(cache.getQuaternion()),
-                                                cache.getAttachRotation()
-                                        ).invert())
+                                        targetConnector.mergeTransform(
+                                                MyMath.combine(targetConnector.calculateExtraTransform(
+                                                        connectorAttr.direction(),
+                                                        PhysicsHelperKt.toBVector3f(cache.getOffset()),
+                                                        SparkMathKt.toBQuaternion(cache.getQuaternion()),
+                                                        cache.getAttachRotation()
+                                                ), massCenterInv, null).invert()
+                                        )
                                 );
                             }
                         } else message.append("无法连接两个高级连接点");

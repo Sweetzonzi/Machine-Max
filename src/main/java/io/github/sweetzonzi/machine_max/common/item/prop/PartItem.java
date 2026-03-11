@@ -19,6 +19,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
+import jme3utilities.math.MyMath;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -117,25 +118,28 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                 } else if (targetConnector != null && connectorAttr != null) {
                     if (targetConnector.conditionCheck(partType, variantName)) {
                         if ((targetConnector instanceof SimpleConnector || connectorAttr.isSimpleConnector())) {
-                            message.append("目标接口:" + Component.translatable(targetConnector.name).getString() + "部件接口:"
-                                    + Component.translatable(cache.getConnectorName().getFirst()).getString() + " "
+                            message.append("目标接口:" + Component.translatable(targetConnector.name).getString() + " 部件接口:"
+                                    + Component.translatable(cache.getConnectorName().getFirst()).getString() + "-"
                                     + Component.translatable(cache.getConnectorName().getSecond()).getString());
                             if (!variantName.equals("default") && partType.variants.size() > 1)
                                 message.append(" 部件变体类型:" + Component.translatable(variantName).getString());
                             if (VisualEffectHelper.partToPlace != null) {
+                                var massCenterInv = variantAttr.getSubParts().get(cache.getConnectorName().getFirst()).getMassCenterTransform().invert();
                                 VisualEffectHelper.partToPlace.updateTransform(
-                                        targetConnector.mergeTransform(targetConnector.calculateExtraTransform(
-                                                connectorAttr.direction(),
-                                                PhysicsHelperKt.toBVector3f(cache.getOffset()),
-                                                SparkMathKt.toBQuaternion(cache.getQuaternion()),
-                                                cache.getAttachRotation()
-                                        ).invert())
+                                        targetConnector.mergeTransform(
+                                                MyMath.combine(targetConnector.calculateExtraTransform(
+                                                        connectorAttr.direction(),
+                                                        PhysicsHelperKt.toBVector3f(cache.getOffset()),
+                                                        SparkMathKt.toBQuaternion(cache.getQuaternion()),
+                                                        cache.getAttachRotation()
+                                                ), massCenterInv, null).invert()
+                                        )
                                 );
                             }
                         } else message.append("无法连接两个高级连接点");
                     } else {
                         message = Component.empty().append(" 连接点 " + Component.translatable(targetConnector.name).getString()
-                               + " 不接受部件 " + Component.translatable(partType.getRegistryKey().toLanguageKey()).getString() + " 的 " + Component.translatable(variantName).getString() + " 变体");
+                                + " 不接受部件 " + Component.translatable(partType.getRegistryKey().toLanguageKey()).getString() + " 的 " + Component.translatable(variantName).getString() + " 变体");
                     }
                 } else {
                     message.append("未选中可用的部件接口，右键将直接放置零件");

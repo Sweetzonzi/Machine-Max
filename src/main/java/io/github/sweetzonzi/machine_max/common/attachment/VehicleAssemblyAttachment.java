@@ -275,9 +275,6 @@ public class VehicleAssemblyAttachment {
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标连接点所属的载具
                             targetConnector.adjustTransform(part.externalConnectors.get(connectorName), attachRotation);
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
-                            if (!entity.hasInfiniteMaterials()) {
-                                VisualEffectHelper.partToPlace = null;
-                            }
                             if (stack.getItem() instanceof PartItem) {
                                 var pos = part.rootSubPart.getPosition();
                                 ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.2f);
