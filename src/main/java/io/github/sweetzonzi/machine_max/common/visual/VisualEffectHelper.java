@@ -14,4 +14,9 @@ public class VisualEffectHelper {
     public static PartAnimatable partToPlace = null;
     public static RenderableBoundingBox boundingBox = null;
     public static ConcurrentMap<AbstractConnector, PhysicsRigidBody> attachPoints = new ConcurrentHashMap<>();
+    /**
+     * 载具蓝图/装配体放置预览的3D投影动画体，用于显示即将放置的载具模型。
+     * <p>与{@link #boundingBox}配合使用，提供更直观的放置预览。</p>
+     */
+    public static VehicleAnimatable vehicleProjection = null;
 }

@@ -60,9 +60,10 @@ public class VehicleAnimatable implements IAnimatable<VehicleAnimatable> {
     public final AnimController animController = new AnimController(this);
     public final ModelController modelController = new ModelController(this);
     public final Map<Integer, SubPartAnimatable> subParts = new HashMap<>();
+    public VehicleData vehicleData;
     public Transform transform = new Transform();
     private final Transform delta = new Transform();
-    private float scale = 1.0f; //TODO: 动态scale
+    private float scale; //TODO: 动态scale
 
     public VehicleAnimatable(VehicleCore vehicle) {
         this(vehicle.level, new VehicleData(vehicle), 1.0f);
@@ -84,6 +85,7 @@ public class VehicleAnimatable implements IAnimatable<VehicleAnimatable> {
 
     public void update(VehicleData vehicleData) {
         subParts.clear();
+        this.vehicleData = vehicleData;
         for (PartData partData : vehicleData.parts.values()) {
             PartType type = level.isClientSide()
                     ? MMDynamicRes.PART_TYPES.get(partData.registryKey)

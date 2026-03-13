@@ -142,6 +142,12 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                         else boundingBox.setColor(Color.GREEN);
                         return null;
                     });
+                    // 创建或更新载具3D投影预览
+                    if (VisualEffectHelper.vehicleProjection == null
+                            || VisualEffectHelper.vehicleProjection.vehicleData != vehicleData) {
+                        VisualEffectHelper.vehicleProjection = new VehicleAnimatable(level, vehicleData);
+                        VisualEffectHelper.vehicleProjection.setTransform(transform);
+                    } else VisualEffectHelper.vehicleProjection.updateTransform(transform);
                 }
             } catch (NullPointerException ignored) {
             }

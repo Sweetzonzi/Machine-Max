@@ -52,14 +52,17 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
     public void tick() {
         player = Minecraft.getInstance().player;
         if (player == null) return;
-        // 清理无效的包围盒
+        // 清理无效的包围盒和投影
         Item rightItem = player.getMainHandItem().getItem();
         Item leftItem = player.getOffhandItem().getItem();
         if (rightItem instanceof VehicleBlueprintItem
                 || leftItem instanceof VehicleBlueprintItem
                 || rightItem instanceof AssemblyItem
                 || leftItem instanceof AssemblyItem) {
-        } else VisualEffectHelper.boundingBox = null;
+        } else {
+            VisualEffectHelper.boundingBox = null;
+            VisualEffectHelper.vehicleProjection = null;
+        }
 
         var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
         if (cache.getPartType() instanceof PartType type) {
@@ -91,6 +94,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
     public void render(@NotNull Minecraft minecraft, @NotNull Vec3 camPos, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, float partialTick) {
         renderPartToAssembly(camPos, poseStack, bufferSource, partialTick);
         renderBoundingBoxes(camPos, poseStack, bufferSource, partialTick);
+        renderVehicleProjection(camPos, poseStack, bufferSource, partialTick);
     }
 
     public void renderPartToAssembly(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
@@ -156,6 +160,54 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
         if (boundingBox != null) {
             renderBoundingBox(boundingBox, camPos, poseStack, bufferSource, partialTick);
         }
+    }
+
+    /**
+     * 渲染载具蓝图/装配体的3D投影预览。
+     * <p>使用半透明颜色渲染，颜色取自{@link VisualEffectHelper#boundingBox}的状态（绿色可放置/红色碰撞）。</p>
+     *
+     * @param camPos       摄像机位置
+     * @param poseStack    位姿栈
+     * @param bufferSource 渲染缓冲区
+     * @param partialTick  部分刻
+     */
+    private void renderVehicleProjection(Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
+        if (player == null) return;
+        VehicleAnimatable vehicle = VisualEffectHelper.vehicleProjection;
+        if (vehicle == null) return;
+        
+        // 取用AABB颜色，若AABB不存在则使用默认绿色
+        Color baseColor;
+        if (VisualEffectHelper.boundingBox != null) {
+            baseColor = VisualEffectHelper.boundingBox.getColor();
+        } else {
+            baseColor = Color.GREEN;
+        }
+        // 转换为半透明颜色（Alpha = 64）
+        Color translucentColor = new Color(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), 64);
+        
+        poseStack.pushPose();
+        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+        for (SubPartAnimatable subPart : vehicle.getSubParts().values()) {
+            poseStack.pushPose();
+            poseStack.mulPose(subPart.getRenderWorldPositionMatrix(partialTick));
+            for (OBone bone : subPart.getBones().values()) {
+                ModelRenderHelperKt.render(
+                        bone,
+                        subPart.getModelController().getModel().getPose(),
+                        new Matrix4f(poseStack.last().pose()),
+                        new Matrix3f(poseStack.last().normal()),
+                        bufferSource.getBuffer(RenderType.entityTranslucent(subPart.getModelController().getTextureLocation())),
+                        Brightness.FULL_BRIGHT.pack(),
+                        OverlayTexture.NO_OVERLAY,
+                        translucentColor.getRGB(),
+                        partialTick,
+                        false
+                );
+            }
+            poseStack.popPose();
+        }
+        poseStack.popPose();
     }
 
     private void renderBoundingBox(RenderableBoundingBox boundingBox, Vec3 camPos, PoseStack poseStack, MultiBufferSource bufferSource, float partialTick) {
