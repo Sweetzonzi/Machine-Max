@@ -19,6 +19,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
+import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import jme3utilities.math.MyMath;
 import net.minecraft.network.chat.Component;
@@ -188,27 +189,54 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
     }
 
     public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
-        var animatable = new ItemAnimatable(itemStack, level);
-        PartType partType = PartAssemblyItem.getPartType(itemStack, level);//获取物品保存的部件类型
-        if (partType == null) return animatable;
-        String variant = partType.getVariantIterator().next();
-        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
-            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        else customModels = new HashMap<>();
+        // GUI上下文：使用2D图标模型
         if (context == ItemDisplayContext.GUI) {
+            var animatable = new ItemAnimatable(itemStack, level);
+            PartType partType = PartAssemblyItem.getPartType(itemStack, level);//获取物品保存的部件类型
+            if (partType == null) return animatable;
+            String variant = partType.getVariantIterator().next();
+            HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
+            if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
+                customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+            else customModels = new HashMap<>();
             animatable.getModelController().setModel(new ModelIndex(
                     "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item_icon_2d_128x")));
             animatable.getModelController().setTextureLocation(partType.getDefaultIcon());
+            if (customModels != null) {
+                customModels.put(context, animatable);
+                itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
+            }
+            return animatable;
         } else {
-            animatable.getModelController().setModel(new ModelIndex("part", partType.getVariant(variant).getModel()));
-            animatable.getModelController().setTextureLocation(partType.getVariant(variant).getTextureList().getFirst());
+            // 非GUI上下文（第一人称、第三人称等）：使用PartAnimatable以支持按零件渲染
+            PartType partType = PartAssemblyItem.getPartType(itemStack, level);
+            if (partType == null) {
+                // 无法获取部件类型，回退到ItemAnimatable
+                return new ItemAnimatable(itemStack, level);
+            }
+            // 获取默认变体（使用第一个变体）
+            String variant = partType.getVariantIterator().next();
+            // 创建PartAnimatable，表示整个部件及其所有零件
+            PartAnimatable partAnimatable = new PartAnimatable(level, partType, variant);
+            // 设置部件的基础变换为单位变换，渲染器会应用偏移、旋转、缩放
+            partAnimatable.setTransform(new com.jme3.math.Transform());
+            // 缓存到物品组件，遵循现有模式
+            HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
+            if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
+                customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+            else customModels = new HashMap<>();
+            if (customModels != null) {
+                customModels.put(context, partAnimatable);
+                itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
+            }
+            return partAnimatable;
         }
-        if (customModels != null) {
-            customModels.put(context, animatable);
-            itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
-        }
-        return animatable;
+    }
+
+    @Override
+    public boolean use2dModel(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        // 仅在GUI中使用2D图标模型，其他上下文使用3D零件渲染
+        return displayContext == ItemDisplayContext.GUI;
     }
 
     @Override
