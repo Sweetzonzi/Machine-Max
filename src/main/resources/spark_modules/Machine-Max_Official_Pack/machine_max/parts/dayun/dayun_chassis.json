@@ -149,7 +149,7 @@
             "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
             "impact_multiplier": 0.8, //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
             "required_tags": [
-              "variant:left"
+              "left"
             ], //连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //连接部件不可包含的标签, 留空以允许任意标签
@@ -186,7 +186,7 @@
             "direction": "xn",
             "integrity": 1500.0,
             "required_tags": [
-              "variant:left"
+              "left"
             ], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
@@ -217,7 +217,7 @@
             "direction": "xn",
             "integrity": 1500.0,
             "required_tags": [
-              "variant:left"
+              "left"
             ], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
@@ -248,7 +248,7 @@
             "direction": "xp",
             "integrity": 1500.0,
             "required_tags": [
-              "variant:right"
+              "right"
             ], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
@@ -285,7 +285,7 @@
             "direction": "xp",
             "integrity": 1500.0,
             "required_tags": [
-              "variant:right"
+              "right"
             ], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
@@ -316,7 +316,7 @@
             "direction": "xp",
             "integrity": 1500.0,
             "required_tags": [
-              "variant:right"
+              "right"
             ], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
             "acceptable_tags": [], //(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
             "forbidden_tags": [], //(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签

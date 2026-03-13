@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
@@ -186,12 +187,12 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
         } else return super.getName(stack);
     }
 
-    public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
+    public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
         PartType partType = PartAssemblyItem.getPartType(itemStack, level);//获取物品保存的部件类型
         if (partType == null) return animatable;
         String variant = partType.getVariantIterator().next();
-        HashMap<ItemDisplayContext, ItemAnimatable> customModels;
+        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();

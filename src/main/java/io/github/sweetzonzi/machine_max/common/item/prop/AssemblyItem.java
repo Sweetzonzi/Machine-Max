@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
@@ -255,9 +256,9 @@ public class AssemblyItem extends Item implements ICustomModelItem {
     }
 
     @Override
-    public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
+    public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
-        HashMap<ItemDisplayContext, ItemAnimatable> customModels;
+        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
         if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
         else customModels = new HashMap<>();

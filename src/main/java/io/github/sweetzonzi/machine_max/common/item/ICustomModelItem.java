@@ -23,10 +23,10 @@ public interface ICustomModelItem {
      */
     default IAnimatable<?> getRenderInstance(ItemStack itemStack, Level level, ItemDisplayContext context){
         try {
-            Map<ItemDisplayContext, ItemAnimatable> customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+            Map<ItemDisplayContext, IAnimatable<?>> customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
             if (customModels == null) customModels = new HashMap<>();
-            ItemAnimatable animatable = customModels.get(context);
-            if (animatable == null || animatable.getItemStack() != itemStack || animatable.getAnimLevel() != level)
+            IAnimatable<?> animatable = customModels.get(context);
+            if (animatable == null || animatable.getAnimLevel() != level)
                 animatable = createItemAnimatable(itemStack, level, context);
             return animatable;
         } catch (Exception e) {
@@ -34,7 +34,7 @@ public interface ICustomModelItem {
         }
     }
 
-    ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context);
+    IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context);
 
     /**
      * <p>是否在特定情况下使用2D模型，例如物品栏、掉落物等场景</p>

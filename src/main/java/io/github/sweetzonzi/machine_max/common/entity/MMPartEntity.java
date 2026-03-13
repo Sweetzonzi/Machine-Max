@@ -7,11 +7,14 @@ import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
+import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.BlackBoard;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.objects.PhysicsRigidBody;
+import com.jme3.bullet.objects.PhysicsGhostObject;
+import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
@@ -41,15 +44,14 @@ import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMPartEntity>, IEntityWithComplexSpawn, EntityPatch {
@@ -61,6 +63,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     public AtomicReference<BoundingBox> boundingBox = new AtomicReference<>();
     public AtomicReference<Vector3f> bodyCenter = new AtomicReference<>();
     private final Map<Entity, Vector3f> onBoardPositions = HashMap.newHashMap(1);
+    private PhysicsGhostObject testGhost;
     @Getter
     private final Map<String, Object> variables = HashMap.newHashMap(1);
 
@@ -282,11 +285,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     }
 
     @Override
-    protected void removePassenger(Entity passenger) {
-        super.removePassenger(passenger);
-    }
-
-    @Override
     protected @NotNull Vec3 getPassengerAttachmentPoint(@NotNull Entity entity, @NotNull EntityDimensions dimensions, float partialTick) {
         var subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
         if (entity instanceof LivingEntity && subsystem instanceof SeatSubsystem seat) {
@@ -297,16 +295,117 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         } else return new Vec3(0, 0, 0);
     }
 
+    /**
+     * 获取或创建测试用的幽灵刚体，并根据乘客姿势更新碰撞形状
+     */
+    private PhysicsGhostObject getOrCreateTestGhost(LivingEntity passenger, Pose pose) {
+        if (testGhost == null) {
+            // 懒加载创建幽灵刚体
+            testGhost = new PhysicsGhostObject(new BoxCollisionShape(1, 1, 1)); // 临时形状，后面会更新
+            testGhost.setCollisionGroup(CollisionGroups.PAWN);
+            testGhost.setCollideWithGroups(CollisionGroups.PHYSICS_BODY); // 仅检测与车辆刚体的碰撞
+        }
+        // 根据乘客姿势更新碰撞形状
+        AABB aabb = passenger.getLocalBoundsForPose(pose);
+        float halfX = (float) (aabb.getXsize() * 0.5);
+        float halfY = (float) (aabb.getYsize() * 0.5);
+        float halfZ = (float) (aabb.getZsize() * 0.5);
+        testGhost.setCollisionShape(new BoxCollisionShape(halfX, halfY, halfZ));
+        return testGhost;
+    }
+
+    /**
+     * 检查下车位置是否有效（地形可通过且不与车辆刚体碰撞）
+     */
+    private boolean isDismountLocationValid(Vec3 position, LivingEntity passenger, Pose pose) {
+        // 1. 检查地形可通过性
+        AABB aabb = passenger.getLocalBoundsForPose(pose);
+        if (!DismountHelper.canDismountTo(this.level(), passenger, aabb.move(position.subtract(passenger.position())))) {
+            return false;
+        }
+        // 2. 检查刚体碰撞
+        PhysicsGhostObject ghost = getOrCreateTestGhost(passenger, pose);
+        ghost.setPhysicsLocation(PhysicsHelperKt.toBVector3f(position));
+        int contactCount = getPhysicsLevel().getWorld().contactTest(ghost, null);
+        return contactCount == 0;
+    }
+
+    /**
+     * 生成候选下车位置列表（包括原始位置、邻位和刚体周围位置）
+     * 每个位置的高度通过原版方法调整，避免陷入地面
+     */
+    private List<Vec3> generateCandidatePositions(Vec3 originalPos, LivingEntity passenger) {
+        List<Vec3> candidates = new ArrayList<>();
+        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+
+        // 生成XZ位置的偏移列表
+        List<Vec3> xzPositions = new ArrayList<>();
+        xzPositions.add(new Vec3(originalPos.x, 0, originalPos.z)); // 原始XZ位置
+
+        // 邻位偏移（XZ平面）
+        double[] offsets = {0.5, 1.0, -0.5, -1.0};
+        for (double dx : offsets) {
+            for (double dz : offsets) {
+                if (dx == 0 && dz == 0) continue;
+                xzPositions.add(new Vec3(originalPos.x + dx, 0, originalPos.z + dz));
+            }
+        }
+
+        // 刚体周围位置（从刚体位置向外搜索）
+        if (subPart != null) {
+            Vec3 bodyPos = SparkMathKt.toVec3(subPart.getPosition());
+            double radius = 1.5;
+            int samples = 8;
+            for (int i = 0; i < samples; i++) {
+                double angle = 2 * Math.PI * i / samples;
+                double x = bodyPos.x + radius * Math.cos(angle);
+                double z = bodyPos.z + radius * Math.sin(angle);
+                xzPositions.add(new Vec3(x, 0, z));
+            }
+        }
+
+        // 为每个XZ位置计算合适的高度
+        for (Vec3 xzPos : xzPositions) {
+            mutablePos.set(xzPos.x, xzPos.y, xzPos.z);
+            double floorHeight = this.level().getBlockFloorHeight(mutablePos);
+            if (DismountHelper.isBlockFloorValid(floorHeight)) {
+                Vec3 adjustedPos = Vec3.upFromBottomCenterOf(mutablePos, floorHeight);
+                candidates.add(adjustedPos);
+            }
+            // 如果地面高度无效，也可以尝试使用原始高度（防止车辆在空中时无法下车）
+            else {
+                // 使用原始位置的Y坐标作为备选
+                candidates.add(new Vec3(xzPos.x, originalPos.y, xzPos.z));
+            }
+        }
+
+        return candidates;
+    }
+
     @Override
     public @NotNull Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {
         if (subPart != null && onBoardPositions.containsKey(passenger)) { //优先使用记录的登车位置
-            Vec3 pos = SparkMathKt.toVec3(MMMath.relPointWorldPos(onBoardPositions.get(passenger), subPart.body));
-            pos = pos.add(0, 0.1, 0); //防止陷地
+            Vec3 originalPos = SparkMathKt.toVec3(MMMath.relPointWorldPos(onBoardPositions.get(passenger), subPart.body));
+            originalPos = originalPos.add(0, 0.1, 0); //防止陷地
             onBoardPositions.remove(passenger); //移除登车位置记录
-            for (Pose pose : passenger.getDismountPoses()) { //尝试所有可用姿势（站立，潜行，匍匐等）
-                AABB aabb = passenger.getLocalBoundsForPose(pose);
-                if (DismountHelper.canDismountTo(this.level(), passenger, aabb.move(pos.subtract(passenger.position()))))
-                    return pos;
+
+            // 1. 首先尝试原始位置，所有姿势
+            for (Pose pose : passenger.getDismountPoses()) {
+                if (isDismountLocationValid(originalPos, passenger, pose)) {
+                    return originalPos;
+                }
+            }
+
+            // 2. 生成候选位置列表（包括邻位和刚体周围位置）
+            java.util.List<Vec3> candidatePositions = generateCandidatePositions(originalPos, passenger);
+
+            // 3. 对每个候选位置，尝试所有姿势
+            for (Vec3 candidate : candidatePositions) {
+                for (Pose pose : passenger.getDismountPoses()) {
+                    if (isDismountLocationValid(candidate, passenger, pose)) {
+                        return candidate;
+                    }
+                }
             }
         }
         return super.getDismountLocationForPassenger(passenger);//回退

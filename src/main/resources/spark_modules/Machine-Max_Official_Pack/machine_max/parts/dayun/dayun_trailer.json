@@ -86,7 +86,7 @@
             "impact_reduction": 3.0,
             "impact_multiplier": 0.8,
             "required_tags": [
-              "variant:left"
+              "left"
             ],
             "forbidden_tags": ["chassis", "hull"],
             "joint_attrs": {
@@ -125,7 +125,7 @@
             "impact_multiplier": 0.8,
             //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
             "required_tags": [
-              "variant:left"
+              "left"
             ],
             "forbidden_tags": ["chassis", "hull"],
             "joint_attrs": {
@@ -164,7 +164,7 @@
             "impact_multiplier": 0.8,
             //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
             "required_tags": [
-              "variant:left"
+              "left"
             ],
             "forbidden_tags": ["chassis", "hull"],
             "joint_attrs": {
@@ -203,7 +203,7 @@
             "impact_multiplier": 0.8,
             //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
             "required_tags": [
-              "variant:right"
+              "right"
             ],
             "forbidden_tags": ["chassis", "hull"],
             "joint_attrs": {
@@ -242,7 +242,7 @@
             "impact_multiplier": 0.8,
             //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
             "required_tags": [
-              "variant:right"
+              "right"
             ],
             "forbidden_tags": ["chassis", "hull"],
             "joint_attrs": {
@@ -281,7 +281,7 @@
             "impact_multiplier": 0.8,
             //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
             "required_tags": [
-              "variant:right"
+              "right"
             ],
             "forbidden_tags": ["chassis", "hull"],
             "joint_attrs": {

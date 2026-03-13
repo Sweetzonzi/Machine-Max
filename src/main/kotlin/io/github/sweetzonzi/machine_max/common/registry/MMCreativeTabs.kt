@@ -49,7 +49,15 @@ object MMCreativeTabs {
         factory = {
             CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.machine_max.assembly"))
-                .icon { ItemStack(MMItems.EMPTY_BLUEPRINT) }
+                .icon {
+                    if (MMDynamicRes.TEMPLATES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
+                    else {
+                        val randomIndex = (0 until MMDynamicRes.TEMPLATES.size).random()
+                        val item = ItemStack(MMItems.ASSEMBLY_ITEM)
+                        item.set(MMDataComponents.ASSEMBLY_PATH, MMDynamicRes.TEMPLATES.keys.toList()[randomIndex])
+                        item
+                    }
+                }
                 .build()
         }
     }
@@ -60,7 +68,15 @@ object MMCreativeTabs {
         factory = {
             CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.machine_max.vehicle_blueprint"))
-                .icon { ItemStack(MMItems.EMPTY_BLUEPRINT) }
+                .icon {
+                    if (MMDynamicRes.TEMPLATES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
+                    else {
+                        val randomIndex = (0 until MMDynamicRes.TEMPLATES.size).random()
+                        val item = ItemStack(MMItems.VEHICLE_BLUEPRINT)
+                        item.set(MMDataComponents.VEHICLE_BLUEPRINT_PATH, MMDynamicRes.TEMPLATES.keys.toList()[randomIndex])
+                        item
+                    }
+                }
                 .build()
         }
     }
@@ -91,7 +107,15 @@ object MMCreativeTabs {
         factory = {
             CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.machine_max.fabricating_blueprint"))
-                .icon { ItemStack(MMItems.EMPTY_BLUEPRINT) }
+                .icon {
+                    if (MMDynamicRes.PART_TYPES.isEmpty()) ItemStack(MMItems.EMPTY_BLUEPRINT)
+                    else {
+                        val randomIndex = (0 until MMDynamicRes.PART_TYPES.size).random()
+                        val item = ItemStack(MMItems.FABRICATING_BLUEPRINT)
+                        item.set(MMDataComponents.PART_TYPE, MMDynamicRes.PART_TYPES.keys.toList()[randomIndex])
+                        item
+                    }
+                }
                 .build()
         }
     }

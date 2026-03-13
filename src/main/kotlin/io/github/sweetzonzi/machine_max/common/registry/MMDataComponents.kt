@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
+import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.entry_builder.dataComponentBuilder
 import com.mojang.serialization.Codec
@@ -136,7 +137,7 @@ object MMDataComponents {
     }
 
     @JvmStatic
-    val CUSTOM_ITEM_MODEL = MachineMax.REGISTER.dataComponentType<HashMap<ItemDisplayContext, ItemAnimatable>> {
+    val CUSTOM_ITEM_MODEL = MachineMax.REGISTER.dataComponentType<HashMap<ItemDisplayContext, IAnimatable<*>>> {
         id = "custom_item_model"
         factory = dataComponentBuilder {
             persistent(Codec.unit(java.util.HashMap.newHashMap(6)))

@@ -370,7 +370,7 @@
             "direction": "xn",
             "integrity": 100.0,
             "required_tags": [
-              "variant:left"
+              "left"
             ],
             "acceptable_tags": [],
             "forbidden_tags": ["chassis", "hull"],
@@ -401,7 +401,7 @@
             "direction": "xp",
             "integrity": 100.0,
             "required_tags": [
-              "variant:right"
+              "right"
             ],
             "acceptable_tags": [],
             "forbidden_tags": ["chassis", "hull"],
@@ -432,7 +432,7 @@
             "direction": "xp",
             "integrity": 100.0,
             "required_tags": [
-              "variant:right"
+              "right"
             ],
             "acceptable_tags": [],
             "forbidden_tags": ["chassis", "hull"],
