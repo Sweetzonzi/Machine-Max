@@ -21,6 +21,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnect
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
+import io.github.sweetzonzi.machine_max.util.MMMath;
 import jme3utilities.math.MyMath;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -241,7 +242,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
 
     @Override
     public Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        if (displayContext == ItemDisplayContext.GUI) return new Vector3f(1);
+        if (displayContext == ItemDisplayContext.GUI) return MMMath.ONE;
         else return new Vector3f(0.3f);
     }
 }

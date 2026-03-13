@@ -21,6 +21,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
+import io.github.sweetzonzi.machine_max.common.visual.VehicleAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.external.html.HtNode;
@@ -259,30 +260,72 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         return vehicleData;
     }
 
+    @Override
+    public boolean use2dModel(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        // GUI中有图标时使用2D模型，其他情况使用3D模型
+        if (displayContext == ItemDisplayContext.GUI) {
+            BlueprintData blueprintData = getBlueprintData(itemStack);
+            return !blueprintData.getIcon().equals(BlueprintData.EMPTY);
+        }
+        // 非GUI上下文（手持、地面、物品展示框等）使用3D蓝图物品模型
+        return false;
+    }
+
+    @Override
     public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
-        var animatable = new ItemAnimatable(itemStack, level);
-        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
-            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        else customModels = new HashMap<>();
-        try {
-            BlueprintData blueprintData = getBlueprintData(itemStack);//获取物品保存的部件类型
-            if (((ICustomModelItem) itemStack.getItem()).use2dModel(itemStack, level, context)
-                    && context == ItemDisplayContext.GUI
-                    && !blueprintData.getIcon().equals(BlueprintData.EMPTY)
-            ) {
+        // 获取蓝图数据
+        BlueprintData blueprintData = getBlueprintData(itemStack);
+        
+        // GUI上下文特殊处理
+        if (context == ItemDisplayContext.GUI) {
+            // GUI中有图标：使用2D图标模型（配合蓝底背景）
+            if (!blueprintData.getIcon().equals(BlueprintData.EMPTY)) {
+                var animatable = new ItemAnimatable(itemStack, level);
                 animatable.getModelController().setModel(ICON_MODEL);
                 animatable.getModelController().setTextureLocation(blueprintData.getIcon());
-            } else throw new NullPointerException();
-        } catch (NullPointerException e) {
-            animatable.getModelController().setModel(MODEL);
-            animatable.getModelController().setTextureLocation(TEXTURE);
+                cacheAnimatable(itemStack, context, animatable);
+                return animatable;
+            }
+            
+            // GUI中无图标：使用VehicleAnimatable显示3D载具模型（配合蓝底背景）
+            VehicleData vehicleData = getVehicleData(itemStack);
+            if (vehicleData != null) {
+                float size = (float) vehicleData.max.subtract(vehicleData.min).length();
+                // 创建VehicleAnimatable，根据载具尺寸缩放模型
+                VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, 1f / size);
+                vehicleAnimatable.getModelController().setModel(ICON_MODEL);
+                vehicleAnimatable.getModelController().setTextureLocation(BG_TEXTURE);
+                // 将载具质心变换设为原点，确保载具在GUI中居中显示
+                vehicleAnimatable.setTransform(new Transform());
+                cacheAnimatable(itemStack, context, vehicleAnimatable);
+                return vehicleAnimatable;
+            }
+            // 无法获取载具数据，回退到蓝图物品模型
+        }
+        
+        // 非GUI上下文（手持、地面、物品展示框等）：使用3D蓝图物品模型
+        var animatable = new ItemAnimatable(itemStack, level);
+        animatable.getModelController().setModel(MODEL);
+        animatable.getModelController().setTextureLocation(TEXTURE);
+        cacheAnimatable(itemStack, context, animatable);
+        return animatable;
+    }
+    
+    /**
+     * 缓存动画体到物品组件，遵循现有模式
+     */
+    private void cacheAnimatable(ItemStack itemStack, ItemDisplayContext context, IAnimatable<?> animatable) {
+        HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && 
+            !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty()) {
+            customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
+        } else {
+            customModels = new HashMap<>();
         }
         if (customModels != null) {
             customModels.put(context, animatable);
             itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
         }
-        return animatable;
     }
 
     @Override
@@ -298,5 +341,10 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
             return new Vector3f(-15f, -30f, 45f).mul((float) (Math.PI / 180f));
         }
         return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
+    }
+
+    @Override
+    public Color getColor(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        return displayContext == ItemDisplayContext.GUI ? FabricatingBlueprintItem.COLOR : Color.WHITE;
     }
 }

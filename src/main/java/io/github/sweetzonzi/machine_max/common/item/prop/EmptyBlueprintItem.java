@@ -78,7 +78,7 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem, MenuPr
         if (displayContext == ItemDisplayContext.GUI
                 || displayContext == ItemDisplayContext.FIXED
                 || displayContext == ItemDisplayContext.GROUND) {
-            return new Vector3f(-15f, -30f, 45f).mul((float) (Math.PI / 180f));
+            return new Vector3f(25, 30, 0).mul((float) (Math.PI / 180));
         }
         return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
     }

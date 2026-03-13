@@ -195,14 +195,8 @@ public @NotNull Component getName(@NotNull ItemStack stack) {
     }
 
     @Override
-    public Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        if (displayContext == ItemDisplayContext.GUI) return new Vector3f(1);
-        else return new Vector3f(0.3f);
-    }
-
-    @Override
     public Color getColor(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        return COLOR;
+        return displayContext == ItemDisplayContext.GUI ? COLOR : Color.WHITE;
     }
 
     /**

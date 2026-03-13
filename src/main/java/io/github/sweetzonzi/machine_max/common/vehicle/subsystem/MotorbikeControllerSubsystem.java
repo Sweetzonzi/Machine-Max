@@ -27,7 +27,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
         this.attr = attr;
         this.rollController = new PIDController(0.1f, 0.0f, 0.1f, 1.0 / getPhysicsLevel().getTps(), -2, 2);
         this.omegaController = new PIDController(500.0f, 5.0f, 50.0f, 1.0 / getPhysicsLevel().getTps(), -2000, 2000);
-        this.lowSpeedRollController = new PIDController(10.0f, 0.01f, 3.0f, 1.0 / getPhysicsLevel().getTps(), -1000, 1000);
+        this.lowSpeedRollController = new PIDController(15.0f, 0.01f, 3.0f, 1.0 / getPhysicsLevel().getTps(), -2000, 2000);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
             getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, rollControl), getOwner().getSubPart().body));
         } else if ( // 无人控制车辆，且已停稳，姿态合适时应用修正力
                 Math.abs(speed) < 0.5
-                        && Math.abs(roll) < 5 + 1.5 * getAttr().getStaticAttribute().getParkingAngle()) {
+                        && Math.abs(roll) < 10 + 1.5 * getAttr().getStaticAttribute().getParkingAngle()) {
             int wheelCount = 0;
             for (WheelDriverSubsystem wheel : getWheels().keySet()) {
                 if (wheel.connector.hasPart()) {

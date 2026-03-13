@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.item;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
+import io.github.sweetzonzi.machine_max.util.MMMath;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -47,15 +48,15 @@ public interface ICustomModelItem {
     }
 
     default Vector3f getRenderOffset(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        return new Vector3f(0.0f, 0.0f, 0.0f);
+        return MMMath.ZERO;
     }
 
     default Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        return new Vector3f(0.0f, 0.0f, 0.0f);
+        return MMMath.ZERO;
     }
 
     default Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
-        return new Vector3f(1.0f, 1.0f, 1.0f);
+        return MMMath.ONE;
     }
 
     default Color getColor(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {

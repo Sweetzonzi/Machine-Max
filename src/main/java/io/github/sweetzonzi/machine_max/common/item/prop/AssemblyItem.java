@@ -18,6 +18,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.visual.RenderableBoundingBox;
+import io.github.sweetzonzi.machine_max.common.visual.VehicleAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.external.html.HtNode;
@@ -256,19 +257,83 @@ public class AssemblyItem extends Item implements ICustomModelItem {
     }
 
     @Override
+    public boolean use2dModel(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        // GUI中有图标时使用2D模型，其他情况使用3D模型
+        if (displayContext == ItemDisplayContext.GUI) {
+            AssemblyData assemblyData = getAssemblyData(itemStack);
+            // 假设AssemblyData有EMPTY常量表示空图标
+            return !assemblyData.getIcon().equals(AssemblyData.EMPTY);
+        }
+        // 非GUI上下文（手持、地面、物品展示框等）使用3D装配体物品模型
+        return false;
+    }
+
+    @Override
     public IAnimatable<?> createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
+        // 获取装配体数据
+        AssemblyData assemblyData = getAssemblyData(itemStack);
+        
+        // GUI上下文特殊处理
+        if (context == ItemDisplayContext.GUI) {
+            // GUI中有图标：使用2D图标模型（配合蓝底背景）
+            if (!assemblyData.getIcon().equals(AssemblyData.EMPTY)) {
+                var animatable = new ItemAnimatable(itemStack, level);
+                animatable.getModelController().setModel(VehicleBlueprintItem.ICON_MODEL);
+                animatable.getModelController().setTextureLocation(assemblyData.getIcon());
+                cacheAnimatable(itemStack, context, animatable);
+                return animatable;
+            }
+            
+            // GUI中无图标：使用VehicleAnimatable显示3D载具模型（配合蓝底背景）
+            VehicleData vehicleData = getVehicleData(itemStack);
+            if (vehicleData != null) {
+                // 传递AssemblyData中的scale属性（默认为35.0f）
+                VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, assemblyData.getScale());
+                // 将载具质心变换设为原点，确保居中显示
+                vehicleAnimatable.setTransform(new Transform());
+                cacheAnimatable(itemStack, context, vehicleAnimatable);
+                return vehicleAnimatable;
+            }
+            
+            // 无法获取载具数据，回退到装配体物品模型
+        }
+        
+        // 非GUI上下文（手持、地面、物品展示框等）：直接使用VehicleAnimatable渲染载具模型
+        // 装配体没有默认模型，在世界中时应当直接渲染载具模型，并应用缩放比例
+        VehicleData vehicleData = getVehicleData(itemStack);
+        if (vehicleData != null) {
+            float scale = 1 / assemblyData.getScale();
+            if (context.firstPerson()) scale *= 4f; // 第一人称视角下模型适当放大，避免完全看不见
+            // 传递AssemblyData中的scale属性（默认为35.0f，代表1：35的缩尺比）
+            VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, scale);
+            // 将载具质心变换设为原点，确保渲染位置正确
+            vehicleAnimatable.setTransform(new Transform());
+            cacheAnimatable(itemStack, context, vehicleAnimatable);
+            return vehicleAnimatable;
+        }
+        
+        // 无法获取载具数据，回退到蓝图物品模型（极少数情况）
         var animatable = new ItemAnimatable(itemStack, level);
+        animatable.getModelController().setModel(EmptyBlueprintItem.MODEL);
+        animatable.getModelController().setTextureLocation(EmptyBlueprintItem.TEXTURE);
+        cacheAnimatable(itemStack, context, animatable);
+        return animatable;
+    }
+    
+    /**
+     * 缓存动画体到物品组件，遵循现有模式
+     */
+    private void cacheAnimatable(ItemStack itemStack, ItemDisplayContext context, IAnimatable<?> animatable) {
         HashMap<ItemDisplayContext, IAnimatable<?>> customModels;
-        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty())
+        if (itemStack.has(MMDataComponents.getCUSTOM_ITEM_MODEL()) && 
+            !Objects.requireNonNull(itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL())).isEmpty()) {
             customModels = itemStack.get(MMDataComponents.getCUSTOM_ITEM_MODEL());
-        else customModels = new HashMap<>();
-        AssemblyData assemblyData = getAssemblyData(itemStack);//获取物品保存的部件类型
-        animatable.getModelController().setModel(VehicleBlueprintItem.ICON_MODEL);
-        animatable.getModelController().setTextureLocation(assemblyData.getIcon());
+        } else {
+            customModels = new HashMap<>();
+        }
         if (customModels != null) {
             customModels.put(context, animatable);
             itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
         }
-        return animatable;
     }
 }

@@ -102,7 +102,7 @@ public class SprayCanItem extends Item implements ICustomModelItem {
                 || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND
                 || displayContext == ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
             return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
-        return new Vector3f(0, 45, 30).mul((float) (Math.PI / 180));
+        return new Vector3f(25, 30, 0).mul((float) (Math.PI / 180));
     }
 
     @Override
