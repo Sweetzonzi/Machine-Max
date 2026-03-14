@@ -774,7 +774,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
         //攀爬辅助处理
         climbableBlocks.clear();
-        if (body.isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
+        if (isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
             Vector3f pos = body.getPhysicsLocation(null);
             // 更新爬坡辅助用高度场

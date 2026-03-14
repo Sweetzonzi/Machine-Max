@@ -111,12 +111,14 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 float i = 0f;
                 for (OBone bone : bones.values()) {
                     Matrix4f transform = new Matrix4f(poseStack.last().pose());
+                    Matrix3f normal = new Matrix3f(poseStack.last().normal());
                     bone.applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
+                    bone.applyNormalTransformWithParents(modelInstance.getPose(), normal, partialTick);
                     for (OCube cube : bone.getCubes()) {
                         if (i / cubeCount >= entity.subPart.part.getAssemblingProgress()) {
                             cube.renderVertexes(
-                                    new Matrix4f(transform),
-                                    new Matrix3f(transform),
+                                    transform,
+                                    normal,
                                     bufferSource.getBuffer(RenderType.lines()),
                                     light,
                                     overlay,
@@ -125,8 +127,8 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             );
                         } else {
                             cube.renderVertexes(
-                                    new Matrix4f(transform),
-                                    new Matrix3f(transform),
+                                    transform,
+                                    normal,
                                     bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity))),
                                     light,
                                     overlay,
