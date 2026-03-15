@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.attr;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 
@@ -71,6 +72,7 @@ public record ConnectorAttr(
     );
 
     public boolean conditionCheck(PartType partType, String variant){
+        if (MMServerConfig.ignoreAssemblyTagRequirements()) return true; // 检查服务端配置，视情况忽略配方要求
         Set<String> tags = new HashSet<>(partType.getVariant(variant).getTags());
         //检查必须拥有的tag情况(必须全都有)
         if (this.requiredTags().isEmpty() || tags.containsAll(this.requiredTags())) {
@@ -96,6 +98,6 @@ public record ConnectorAttr(
     }
 
     public boolean isSimpleConnector(){
-        return this.type().toLowerCase(Locale.ROOT).equals("simple");
+        return this.type().equalsIgnoreCase("simple");
     }
 }

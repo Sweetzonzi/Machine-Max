@@ -147,5 +147,41 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("hud.hint.machine_max.rp_add_reason.subsystem_damage", "Damage Subsystem");
         this.add("hud.hint.machine_max.rp_add_reason.subsystem_destroy", "Destroy Subsystem");
         this.add("hud.hint.machine_max.rp_add_reason.unknown", "Unknown");
+        // Configuration
+        this.add("machine_max.configuration.title", "Machine Max Configuration");
+        this.add("machine_max.configuration.section.machine.max.client.toml.title", "Client Configuration");
+        this.add("machine_max.configuration.section.machine.max.client.toml", "Client Configuration");
+        this.add("machine_max.configuration.section.machine.max.server.toml", "Server Configuration");
+        // Ground Vehicle Configuration
+        this.add("machine_max.configuration.ground_vehicle", "Ground Vehicle");
+        this.add("machine_max.configuration.ground_vehicle.button", "Ground Vehicle");
+        this.add("machine_max.configuration.ground_vehicle.tooltip", "Ground vehicle related settings");
+        this.add("machine_max.configuration.full_power_time", "Full Power Time");
+        this.add("machine_max.configuration.full_power_time.tooltip", "Time (in seconds) to reach full throttle when holding key");
+        this.add("machine_max.configuration.full_steering_time", "Full Steering Time");
+        this.add("machine_max.configuration.full_steering_time.tooltip", "Time (in seconds) to reach full steering when holding key");
+        this.add("machine_max.configuration.auto_switch_gear", "Auto Switch Gear");
+        this.add("machine_max.configuration.auto_switch_gear.tooltip", "Whether to automatically shift gears based on input, vehicle speed and engine RPM");
+        this.add("machine_max.configuration.auto_handbrake", "Auto Handbrake");
+        this.add("machine_max.configuration.auto_handbrake.tooltip", "Whether to automatically apply handbrake when vehicle stops and release it when starting");
+        this.add("machine_max.configuration.drift_assist", "Drift Assist");
+        this.add("machine_max.configuration.drift_assist.tooltip", "Whether to automatically counter-steer during drifting to maintain control");
+        this.add("machine_max.configuration.pose_preference", "Pose Preference");
+        this.add("machine_max.configuration.pose_preference.tooltip", "Whether to automatically rotate camera view to follow vehicle orientation");
+        this.add("machine_max.configuration.speed_turning_limit", "Speed Turning Limit");
+        this.add("machine_max.configuration.speed_turning_limit.tooltip", "Whether to limit lateral acceleration during high-speed turning to prevent loss of control or rollover");
+        // Ship Configuration
+        this.add("machine_max.configuration.ship", "Ship");
+        this.add("machine_max.configuration.ship.button", "Ship");
+        this.add("machine_max.configuration.ship.tooltip", "Ship related settings");
+        // Plane Configuration
+        this.add("machine_max.configuration.plane", "Plane");
+        this.add("machine_max.configuration.plane.button", "Plane");
+        this.add("machine_max.configuration.plane.tooltip", "Plane related settings");
+        // Server Configuration
+        this.add("machine_max.configuration.should_destroy_blocks", "Allow Collision Destroy Blocks");
+        this.add("machine_max.configuration.should_destroy_blocks.tooltip", "Whether or not the parts should destroy blocks when the impact is big enough");
+        this.add("machine_max.configuration.ignore_assembly_tag_requirements", "Ignore Assembly Tag Requirements");
+        this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "Whether to ignore connector tag requirements when assembling vehicles");
     }
 }

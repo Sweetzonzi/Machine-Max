@@ -2,6 +2,8 @@ package io.github.sweetzonzi.machine_max;
 
 import cn.solarmoon.spark_core.entry_builder.ObjectRegister;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
+import io.github.sweetzonzi.machine_max.common.MMCommonConfig;
+import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.registry.*;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.neoforged.bus.api.IEventBus;
@@ -16,7 +18,6 @@ import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 @Mod(MOD_ID)
 public class MachineMax {
     //TODO:可配置的完全不受tag限制的自由改装
-    //TODO:排查上下车扭头问题
     //TODO:保存的蓝图在指定路径储存，可被特定方块访问蓝图库，并制作蓝图物品
     //TODO:重构网络包及各类同步系统，将拆除等事件化，特别是断开移除逻辑，使之支持移除个别零件
     //TODO:优化关节断开逻辑：Vehicle每刻/事件触发检查关节连接关系，检测到不连通再断开记录的关系；断开网络包靠id识别SubPart而非载具uuid-部件uuid-接口名的方式以节约带宽
@@ -24,7 +25,6 @@ public class MachineMax {
     //TODO:排查AE86AT左轮胎转动惯量计算BUG（可能已修复）
     //TODO:GUI贴图渲染
     //TODO:受配置文件控制的销毁倒计时
-    //TODO:重构流体动力，额外引入升力/阻力系数随攻角变化，以及叶元体理论
     //TODO:交互系统的反馈信号以及连接多个子系统，依次互动/同时互动？
     //TODO:过载与座椅过载吸收/耐受
     //TODO:放置部件前检查空间是否足够
@@ -37,7 +37,6 @@ public class MachineMax {
     //TODO:载具触发压力板
     //TODO:把拼好的载具保存为微缩模型，分不同可选比例
     //TODO:使用蓝图快速重新组装部分零件缺失的载具，需要图匹配算法
-    //TODO:指定连接口是否有部件连接的molang，或许返回部件名？
     //TODO:显示内含物品的fast_item_storage子系统，容量为1，互动立刻和手中物品交换，无GUI
     //TODO:预制装配体的可动态保存生成
     //TODO:改装件，改变部件或子系统属性
@@ -63,10 +62,18 @@ public class MachineMax {
         MMSounds.register();//注册所有音效
         MMResources.register();//注册所有自定义配方类型
         MMPackModuleRegistries.register(bus);//注册所有SparkCore扩展包模块
-        // 注册客户端配置文件
+        // 注册配置文件
         container.registerConfig(
                 ModConfig.Type.CLIENT,
                 MMClientConfig.CLIENT_SPEC
+        );
+        container.registerConfig(
+                ModConfig.Type.COMMON,
+                MMCommonConfig.COMMON_SPEC
+        );
+        container.registerConfig(
+                ModConfig.Type.SERVER,
+                MMServerConfig.SERVER_SPEC
         );
     }
 }

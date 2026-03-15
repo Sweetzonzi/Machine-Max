@@ -171,5 +171,41 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("hud.hint.machine_max.rp_add_reason.subsystem_damage", "伤害子系统");
         this.add("hud.hint.machine_max.rp_add_reason.subsystem_destroy", "瘫痪子系统");
         this.add("hud.hint.machine_max.rp_add_reason.unknown", "未知");
+        // 配置项
+        this.add("machine_max.configuration.title", "Machine Max 配置");
+        this.add("machine_max.configuration.section.machine.max.client.toml.title", "客户端配置");
+        this.add("machine_max.configuration.section.machine.max.client.toml", "客户端配置");
+        this.add("machine_max.configuration.section.machine.max.server.toml", "服务器配置");
+        // 地面载具配置
+        this.add("machine_max.configuration.ground_vehicle", "地面载具");
+        this.add("machine_max.configuration.ground_vehicle.button", "地面载具");
+        this.add("machine_max.configuration.ground_vehicle.tooltip", "地面载具相关设置");
+        this.add("machine_max.configuration.full_power_time", "满动力时间");
+        this.add("machine_max.configuration.full_power_time.tooltip", "按住按键达到满动力所需的时间（秒）");
+        this.add("machine_max.configuration.full_steering_time", "满转向时间");
+        this.add("machine_max.configuration.full_steering_time.tooltip", "按住按键达到满转向所需的时间（秒）");
+        this.add("machine_max.configuration.auto_switch_gear", "自动换挡");
+        this.add("machine_max.configuration.auto_switch_gear.tooltip", "根据输入、车速和发动机转速自动换挡");
+        this.add("machine_max.configuration.auto_handbrake", "自动手刹");
+        this.add("machine_max.configuration.auto_handbrake.tooltip", "车辆停止时自动拉手刹，启动时自动释放");
+        this.add("machine_max.configuration.drift_assist", "漂移辅助");
+        this.add("machine_max.configuration.drift_assist.tooltip", "漂移时自动反打方向以保持控制");
+        this.add("machine_max.configuration.pose_preference", "视角跟随");
+        this.add("machine_max.configuration.pose_preference.tooltip", "自动旋转摄像机视角以跟随载具方向");
+        this.add("machine_max.configuration.speed_turning_limit", "高速转向限制");
+        this.add("machine_max.configuration.speed_turning_limit.tooltip", "高速行驶时限制转向时的侧向加速度，防止失控或侧翻");
+        // 舰艇配置
+        this.add("machine_max.configuration.ship", "舰艇");
+        this.add("machine_max.configuration.ship.button", "舰艇");
+        this.add("machine_max.configuration.ship.tooltip", "舰艇相关设置");
+        // 飞行器配置
+        this.add("machine_max.configuration.plane", "飞行器");
+        this.add("machine_max.configuration.plane.button", "飞行器");
+        this.add("machine_max.configuration.plane.tooltip", "飞行器相关设置");
+        // 服务器配置
+        this.add("machine_max.configuration.should_destroy_blocks", "允许碰撞破坏方块");
+        this.add("machine_max.configuration.should_destroy_blocks.tooltip", "是否允许部件在冲击力足够大时破坏方块");
+        this.add("machine_max.configuration.ignore_assembly_tag_requirements", "忽略组装Tag要求");
+        this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "使用零件组装载具时是否忽视连接点的Tag要求");
     }
 }
