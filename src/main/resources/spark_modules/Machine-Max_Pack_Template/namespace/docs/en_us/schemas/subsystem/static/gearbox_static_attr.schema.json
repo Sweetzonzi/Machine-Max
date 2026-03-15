@@ -42,6 +42,45 @@
       "items": { "type": "string" },
       "default": ["gearbox_control"],
       "description": "List of shifting control signal keys, specifying the selected reduction ratio."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "clutch_in": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event for clutch engagement.",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.clutch_in",
+            "range": 16
+          }
+        },
+        "clutch_out": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event for clutch disengagement.",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.clutch_out",
+            "range": 16
+          }
+        },
+        "gear_up": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event for shifting up.",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.up.light",
+            "range": 16
+          }
+        },
+        "gear_down": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event for shifting down.",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.down.light",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Sound configuration for gearbox operations."
     }
   },
   "required": ["type"],
@@ -53,6 +92,31 @@
       "final_ratio": 12.0,
       "ratios": [-4.0, 3.8, 2.8, 2.0, 1.5, 1.2, 0.9],
       "switch_time": 0.4
+    },
+    {
+      "type": "machine_max:gearbox",
+      "basic_durability": 40.0,
+      "final_ratio": 8.0,
+      "ratios": [-3.0, 2.5, 1.8, 1.2, 0.8],
+      "switch_time": 0.2,
+      "sounds": {
+        "clutch_in": {
+          "sound_id": "minecraft:block.iron_trapdoor.close",
+          "range": 8
+        },
+        "clutch_out": {
+          "sound_id": "minecraft:block.iron_trapdoor.open",
+          "range": 8
+        },
+        "gear_up": {
+          "sound_id": "minecraft:entity.arrow.hit_player",
+          "range": 12
+        },
+        "gear_down": {
+          "sound_id": "minecraft:entity.arrow.hit",
+          "range": 12
+        }
+      }
     }
   ]
 }

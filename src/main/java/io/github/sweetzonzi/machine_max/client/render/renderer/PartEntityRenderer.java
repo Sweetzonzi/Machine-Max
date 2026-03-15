@@ -91,10 +91,12 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             modelInstance.getPose(),
                             new Matrix4f(poseStack.last().pose()),
                             new Matrix3f(poseStack.last().normal()),
-                            ysmGlow
+                            ysmGlow && ! entity.subPart.isDestroyed()
                                     ? bufferSource.getBuffer(RenderType.eyes(getTextureLocation(entity)))
-                                    : bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity))),
-                            ysmGlow
+                                    : entity.subPart.getDestroyTime() >= 20
+                                    ? bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity)))
+                                    : bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
+                            ysmGlow && ! entity.subPart.isDestroyed()
                                     ? Brightness.FULL_BRIGHT.pack()
                                     : light,
                             overlay,

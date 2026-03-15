@@ -15,12 +15,14 @@ import java.util.List;
 public class GearboxSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     
     public record GearBoxSoundAttr(
+            BasicSoundAttr basicSounds,
             SoundEvent clutchIn,
             SoundEvent clutchOut,
             SoundEvent gearUp,
             SoundEvent gearDown
     ) {
         public static final GearBoxSoundAttr DEFAULT = new GearBoxSoundAttr(
+                BasicSoundAttr.DEFAULT,
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.gearbox.clutch_in"), 16),
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.gearbox.clutch_out"), 16),
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.gearbox.up.light"), 16),
@@ -28,6 +30,7 @@ public class GearboxSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         );
 
         public static final Codec<GearBoxSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                BasicSoundAttr.basicSounds(GearBoxSoundAttr::basicSounds),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("clutch_in", DEFAULT.clutchIn).forGetter(GearBoxSoundAttr::clutchIn),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("clutch_out", DEFAULT.clutchOut).forGetter(GearBoxSoundAttr::clutchOut),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("gear_up", DEFAULT.gearUp).forGetter(GearBoxSoundAttr::gearUp),
@@ -48,7 +51,7 @@ public class GearboxSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float switchTime,
             List<String> ratioControlSignalKeys,
             GearBoxSoundAttr sounds) {
-        super(basicAttr);
+        super(basicAttr, sounds.basicSounds());
         this.finalRatio = finalRatio;
         this.ratios = ratios;
         this.switchTime = switchTime;

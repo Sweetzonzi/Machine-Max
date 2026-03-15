@@ -41,7 +41,8 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                     90.0f
             )).forGetter(SeatSubsystemStaticAttr::getViews),
             Codec.STRING.listOf().optionalFieldOf("view_inputs", List.of()).forGetter(SeatSubsystemStaticAttr::getViewInputs),
-            Codec.BOOL.optionalFieldOf("allow_use_items", false).forGetter(SeatSubsystemStaticAttr::isAllowUseItems)
+            Codec.BOOL.optionalFieldOf("allow_use_items", false).forGetter(SeatSubsystemStaticAttr::isAllowUseItems),
+            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, SeatSubsystemStaticAttr::new));
 
     public SeatSubsystemStaticAttr(
@@ -51,8 +52,10 @@ public class SeatSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Vec3 passengerScale,
             ViewAttr views,
             List<String> viewInputs,
-            boolean allowUseItems) {
-        super(basicAttr);
+            boolean allowUseItems,
+            BasicSoundAttr sounds
+    ) {
+        super(basicAttr, sounds);
         this.blockDamage = blockDamage;
         //合法性检查
         if (!views.enableFirstPerson() && !views.enableThirdPerson())

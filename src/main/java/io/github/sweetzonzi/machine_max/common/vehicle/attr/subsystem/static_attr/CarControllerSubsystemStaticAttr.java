@@ -19,15 +19,18 @@ import java.util.TreeMap;
 public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     
     public record HandBrakeSoundAttr(
+            BasicSoundAttr basicSounds,
             SoundEvent handBrakeOn,
             SoundEvent handBrakeOff
     ) {
         public static final HandBrakeSoundAttr DEFAULT = new HandBrakeSoundAttr(
+                BasicSoundAttr.DEFAULT,
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.car_controller.handbrake_on"), 16),
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.car_controller.handbrake_off"), 16)
         );
         
         public static final Codec<HandBrakeSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                BasicSoundAttr.basicSounds(HandBrakeSoundAttr::basicSounds),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("handbrake_on", DEFAULT.handBrakeOn).forGetter(HandBrakeSoundAttr::handBrakeOn),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("handbrake_off", DEFAULT.handBrakeOff).forGetter(HandBrakeSoundAttr::handBrakeOff)
         ).apply(instance, HandBrakeSoundAttr::new));
@@ -116,7 +119,7 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             boolean driftAssist,
             List<String> controlInputKeys,
             HandBrakeSoundAttr sounds) {
-        super(basicAttr);
+        super(basicAttr, sounds.basicSounds());
         this.steeringCenter = steeringCenter;
         this.minSteeringRadius = minSteeringRadius;
         this.lateralAccelerationMap = lateralAccelerationMap;

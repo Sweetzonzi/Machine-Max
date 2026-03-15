@@ -846,6 +846,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      * @return 伤害是否被正常处理
      */
     public boolean onHurt(PartDamageData data, float damage) {
+        if (level.isClientSide()) return true; // 客户端不处理伤害
         SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, data, damage);
         if (!NeoForge.EVENT_BUS.post(event).isCanceled()) {
             DamageSource source = event.getData().source();
@@ -854,16 +855,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             Vector3f normal = data.normal();
             Vector3f worldContactPoint = data.worldContactPoint();
             Vector3f worldContactSpeed = data.worldContactSpeed();
-            Vec3 sourcePos = source.getSourcePosition();
-            if (sourcePos == null)
-                sourcePos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(body).getTransform().getTranslation());
-            Vec3 finalSourcePos = sourcePos;
+            Vec3 sourcePos = SparkMathKt.toVec3(worldContactPoint);
             float armor = hitBox.getRHA(this);
             float armorPenetration;
             //击退处理与特殊逻辑
             if (!source.is(MMTags.HAS_PEN_DEPTH)) {//原版伤害处理
                 //冲击效果 (部件间的冲击交由物理引擎处理)
-                if (!level.isClientSide() && !source.is(MMDamageTypes.PART_COLLISION)) {
+                if (!source.is(MMDamageTypes.PART_COLLISION)) {
                     float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 250f);//伤害转化为动量，使用log函数以使冲量与部件耐久匹配
                     if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
                         knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
@@ -901,29 +899,46 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
                     subPartDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
                 //对部件造成伤害
-                if (!level.isClientSide()) accumulateDamage(subPartDamage, data);
-                else {
-                    SparkLevel.submitImmediateTask(level, PPhase.ALL, () -> {
-                        //TODO:播放击穿音效特效
-                    });
-                }
-            } else if (level.isClientSide()) {
-                float finalDamage = damage;
-                SparkLevel.submitImmediateTask(level, PPhase.ALL, () -> {
-                    //播放命中未击穿音效
-                    SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.no_pen"), 64f);
-                    SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
-                            (float) ((2 - Math.min(7f, finalDamage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
-                            0.1f + 0.4f * Math.min(7f, finalDamage) / 7f);
+                accumulateDamage(subPartDamage, data);
+                //播放击穿音效
+                float finalDamage = subPartDamage;
+                SparkLevel.submitImmediateTask(level, PPhase.POST, () -> {
+                    //播放击穿音效特效
+                    SoundEvent sound = hitBox.getHitPenSound();
+//                        SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
+//                                (float) ((2 - Math.min(7f, finalDamage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
+//                                0.1f + 0.4f * Math.min(7f, finalDamage) / 7f);
+                    level.playSound(
+                            null,
+                            sourcePos.x, sourcePos.y, sourcePos.z,
+                            sound, SoundSource.NEUTRAL,
+                            0.5f,
+                            1
+                    );
+                });
+            } else {
+                SparkLevel.submitImmediateTask(level, PPhase.POST, () -> {
+                    //播放击穿音效特效
+                    SoundEvent sound = hitBox.getHitPenSound();
+//                        SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
+//                                (float) ((2 - Math.min(7f, finalDamage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
+//                                0.1f + 0.4f * Math.min(7f, finalDamage) / 7f);
+                    level.playSound(
+                            null,
+                            sourcePos.x, sourcePos.y, sourcePos.z,
+                            sound, SoundSource.NEUTRAL,
+                            0.5f,
+                            1
+                    );
                     //添加粒子
                     var pos = SparkMathKt.toVec3(worldContactPoint);
-//                for (int i = 0; i < 3; i++) {
-//                    var dir = normal.mult(0.3f).add(new Vector3f(
-//                            (float) (Math.random() - 0.5f),
-//                            (float) (Math.random() - 0.5f),
-//                            (float) (Math.random() - 0.5f)).mult(0.1f));
-//                    level.addParticle(ParticleTypes.FIREWORK, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
-//                }
+                    for (int i = 0; i < 3; i++) {
+                        var dir = normal.mult(0.3f).add(new Vector3f(
+                                (float) (Math.random() - 0.5f),
+                                (float) (Math.random() - 0.5f),
+                                (float) (Math.random() - 0.5f)).mult(0.1f));
+                        level.addParticle(ParticleTypes.FIREWORK, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
+                    }
                 });
             }
             return true; //返回true表示命中，且伤害已被处理
@@ -1032,16 +1047,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     soundPos = SparkMathKt.toVec3(data.worldContactPoint());
                 }
             }
-            setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
-            //TODO:对载具造成伤害
-            //发包同步部件状态
-            syncToClient();
-            //播放音效
             if (totalDamage > 0) {
-                SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.penetrate"), 64f);
-                SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, soundPos, Vec3.ZERO,
-                        (float) ((2 - 2 * Math.min(0.5f * getMaxDurability(), totalDamage) / getMaxDurability()) * (1f + 0.2f * (Math.random() - 0.5f))),
-                        0.2f + 0.8f * 2 * Math.min(0.5f * getMaxDurability(), totalDamage) / getMaxDurability());
+                setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
+                //TODO:对载具造成伤害
+                //发包同步部件状态
+                syncToClient();
             }
         }
     }

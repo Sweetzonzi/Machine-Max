@@ -14,7 +14,6 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
@@ -31,8 +30,6 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
     public final List<Double> dampingFactors; //发动机各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
     public final List<String> throttleInputKeys; //优先级从高至低
 
-    public static final Codec<Map<String, List<String>>> RPM_OUTPUT_TARGETS_CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING.listOf());
-
     public static final MapCodec<EngineSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.FLOAT.fieldOf("max_power").forGetter(EngineSubsystemStaticAttr::getMaxPower),
@@ -46,7 +43,8 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
             Codec.BOOL.optionalFieldOf("four_stroke", true).forGetter(EngineSubsystemStaticAttr::isFourStroke),
             Codec.INT.optionalFieldOf("cylinder", 4).forGetter(EngineSubsystemStaticAttr::getCylinderCount),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(20.0, 0.1, 0.00005)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys)
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys),
+            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, EngineSubsystemStaticAttr::new));
     public static final int LOAD_STATE_COUNT = 4;
     public static final double RPM_INCREASE_RATIO = 1.4; // 40% 增加，即 1.4 倍
@@ -69,8 +67,9 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
             boolean fourStroke,
             int cylinderCount,
             List<Double> dampingFactors,
-            List<String> throttleInputKeys) {
-        super(basicAttr);
+            List<String> throttleInputKeys,
+            BasicSoundAttr sounds) {
+        super(basicAttr, sounds);
         this.maxPower = maxPower;
         this.maxTorque = maxTorque;
         this.idleRpm = idleRpm;

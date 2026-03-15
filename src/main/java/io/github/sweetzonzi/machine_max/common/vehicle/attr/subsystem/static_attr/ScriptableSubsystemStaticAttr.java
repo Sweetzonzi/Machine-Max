@@ -10,15 +10,16 @@ public class ScriptableSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final String script;
 
     public ScriptableSubsystemStaticAttr(
-            BasicSubsystemStaticAttr.BasicAttr basicAttr, String script) {
-        super(basicAttr);
+            BasicSubsystemStaticAttr.BasicAttr basicAttr, String script, BasicSoundAttr sounds) {
+        super(basicAttr, sounds);
         this.script = script;
         Hook.run(this, basicDurability, script);
     }
 
     public static final MapCodec<ScriptableSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
-            Codec.STRING.optionalFieldOf("script", "").forGetter(ScriptableSubsystemStaticAttr::getScript)
+            Codec.STRING.optionalFieldOf("script", "").forGetter(ScriptableSubsystemStaticAttr::getScript),
+            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, ScriptableSubsystemStaticAttr::new));
 
     private String getScript() {

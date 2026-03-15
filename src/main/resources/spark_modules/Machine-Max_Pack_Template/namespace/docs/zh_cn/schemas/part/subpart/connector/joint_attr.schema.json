@@ -48,6 +48,21 @@
       "stiffness": 100000,
       "damping": 1000,
       "description": "固定关节（上下限相同）"
+    },
+    {
+      "lower_limit": -0.2,
+      "upper_limit": 0.2,
+      "stiffness": 50000,
+      "damping": 200,
+      "description": "缓冲关节，允许小范围位移，用于减震器"
+    },
+    {
+      "lower_limit": -90.0,
+      "upper_limit": 90.0,
+      "equilibrium": 0.0,
+      "stiffness": 1000,
+      "damping": 50,
+      "description": "铰链关节，允许大角度旋转，用于门或舱盖"
     }
   ]
 }

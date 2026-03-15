@@ -46,8 +46,24 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "clutch_in": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "Sound event for clutch engagement.",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.clutch_in",
@@ -55,7 +71,7 @@
           }
         },
         "clutch_out": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "Sound event for clutch disengagement.",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.clutch_out",
@@ -63,7 +79,7 @@
           }
         },
         "gear_up": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "Sound event for shifting up.",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.up.light",
@@ -71,7 +87,7 @@
           }
         },
         "gear_down": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "Sound event for shifting down.",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.down.light",

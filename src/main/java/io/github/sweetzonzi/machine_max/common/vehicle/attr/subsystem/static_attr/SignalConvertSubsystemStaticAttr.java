@@ -8,7 +8,7 @@ import lombok.Getter;
 public class SignalConvertSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     protected SignalConvertSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr) {
-        super(basicAttr);
+        super(basicAttr, BasicSoundAttr.DEFAULT);
     }
 
     @Override

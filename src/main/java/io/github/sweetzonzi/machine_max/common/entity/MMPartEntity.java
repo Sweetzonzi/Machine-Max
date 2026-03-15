@@ -156,6 +156,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                 PartDamageData data = new PartDamageData(source, null, normal,
                         PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
                                 .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBox);
+                MachineMax.LOGGER.debug("{} 投射物命中", this.getName().getString());
                 return hitSubPart.onHurt(data, amount);
             } else return false;
         } else if (source.getSourcePosition() != null && source.getDirectEntity() instanceof Entity entity) {

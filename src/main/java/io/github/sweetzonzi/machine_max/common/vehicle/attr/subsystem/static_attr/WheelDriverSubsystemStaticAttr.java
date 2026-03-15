@@ -15,15 +15,18 @@ import java.util.List;
 public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     
     public record BrakeSoundAttr(
+            BasicSoundAttr basicSounds,
             SoundEvent brakeOn,
             SoundEvent brakeOff
     ) {
         public static final BrakeSoundAttr DEFAULT = new BrakeSoundAttr(
+                BasicSoundAttr.DEFAULT,
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.wheel_driver.brake_on"), 16),
                 SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.wheel_driver.brake_off"), 16)
         );
         
         public static final Codec<BrakeSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                BasicSoundAttr.basicSounds(BrakeSoundAttr::basicSounds),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("brake_on", DEFAULT.brakeOn).forGetter(BrakeSoundAttr::brakeOn),
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("brake_off", DEFAULT.brakeOff).forGetter(BrakeSoundAttr::brakeOff)
         ).apply(instance, BrakeSoundAttr::new));
@@ -65,7 +68,7 @@ public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float absTargetSlipRatio,
             float absWheelRadius,
             BrakeSoundAttr sounds) {
-        super(basicAttr);
+        super(basicAttr, sounds.basicSounds());
         this.controlSignalKeys = controlSignalKeys;
         this.rollingAxis = rollingAxis;
         this.steeringAxis = steeringAxis;

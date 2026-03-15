@@ -1,4 +1,21 @@
 {
+  "hit_box.hit.up_pen.metal": {
+    "sounds": [
+      "machine_max:hit_box/metal_un_pen"
+    ]
+  },
+  "hit_box.hit.pen.metal": {
+    "sounds": [
+      "machine_max:hit_box/metal_pen"
+    ]
+  },
+  "hit_box.hit.pen.glass": {
+    "sounds": [
+      "machine_max:hit_box/glass_hit_1",
+      "machine_max:hit_box/glass_hit_2",
+      "machine_max:hit_box/glass_hit_3"
+    ]
+  },
   "subsystem.gearbox.up.light": {
     "sounds": [
       "machine_max:subsystem/gearbox/gear_up_light_1",
@@ -104,5 +121,12 @@
       "machine_max:subsystem/wheel_driver/air_brake_end_3"
     ],
     "subtitle": "subtitles.subsystem.wheel_driver.air_brake_off"
+  },
+  "subsystem.baisc.glass.break": {
+    "sounds": [
+      "machine_max:subsystem/basic/glass_tail_1",
+      "machine_max:subsystem/basic/glass_tail_2",
+      "machine_max:subsystem/basic/glass_tail_3"
+    ]
   }
 }

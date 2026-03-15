@@ -111,8 +111,24 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "handbrake_on": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "手刹开启时的音效事件。",
           "default": {
             "sound_id": "machine_max:subsystem.car_controller.handbrake_on",
@@ -120,7 +136,7 @@
           }
         },
         "handbrake_off": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "手刹关闭时的音效事件。",
           "default": {
             "sound_id": "machine_max:subsystem.car_controller.handbrake_off",

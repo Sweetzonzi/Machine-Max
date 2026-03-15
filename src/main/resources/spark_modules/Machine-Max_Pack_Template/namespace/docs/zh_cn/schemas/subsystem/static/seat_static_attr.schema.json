@@ -66,16 +66,28 @@
   "additionalProperties": false,
   "examples": [
     {
+      "type": "machine_max:seat"
+    },
+    {
       "type": "machine_max:seat",
       "basic_durability": 30.0,
       "block_damage": true,
       "render_passenger": true,
       "views": {
         "enable_first_person": true,
-        "first_person_offset": 0.2,
+        "first_person_hud": ["machine_max:hud/driver"],
+        "first_person_offset": [0.0, 0.2, 0.0],
         "enable_third_person": true,
-        "third_person_offset": 0.8
+        "third_person_hud": ["machine_max:hud/vehicle"],
+        "third_person_offset": [0.0, 0.8, 0.0],
+        "follow_vehicle": true,
+        "focus_on_center": false,
+        "distance_scale": 1.2,
+        "min_pitch": -30,
+        "max_pitch": 60,
+        "yaw_limit": 120
       },
+      "view_inputs": ["view_switch"],
       "allow_use_items": true
     }
   ]

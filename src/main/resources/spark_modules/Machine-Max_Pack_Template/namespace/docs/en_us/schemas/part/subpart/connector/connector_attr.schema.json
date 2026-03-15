@@ -36,6 +36,13 @@
       "default": 1.5,
       "description": "Impact absorption rate of the connection point, applied after impact reduction before calculating part detachment, greater than 1 will make the connection point easier to break."
     },
+    "impact_absorption": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.2,
+      "description": "The proportion of impact converted to structural integrity loss when the connection point is impacted but not detached. For example, 0.2 means 20% of the impact will be converted to structural integrity loss."
+    },
     "required_tags": {
       "type": "array",
       "items": { "type": "string" },
@@ -90,9 +97,17 @@
   "additionalProperties": false,
   "examples": [
     {
+      "locator": "Hull",
+      "type": "Simple",
+      "description": "Minimal connection point example, only includes required fields"
+    },
+    {
       "locator": "LeftFrontWheel",
       "type": "Advanced",
       "required_tags": ["variant:left"],
+      "impact_absorption": 0.1,
+      "impact_reduction": 3.0,
+      "impact_multiplier": 0.5,
       "joint_attrs": {
         "y": {
           "lower_limit": -0.5,
@@ -107,7 +122,7 @@
           "damping": 20
         }
       },
-      "description": "Left front wheel connection point, only allows left variant, has vertical suspension and steering capability"
+      "description": "Left front wheel connection point, only allows left variant, has vertical suspension and steering capability, low impact absorption rate, high impact reduction"
     }
   ]
 }

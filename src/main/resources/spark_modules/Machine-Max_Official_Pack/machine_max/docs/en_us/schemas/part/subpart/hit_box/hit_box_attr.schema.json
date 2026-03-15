@@ -136,6 +136,29 @@
       "type": "string",
       "default": "true",
       "description": "Activation condition, uses molang expression to control whether the hit box is active. Can be used to implement features like glass losing hit detection after being broken, trailer supports, etc."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "hit_un_pen": {
+          "$ref": "../../../base/sound_event.schema.json",
+          "description": "Sound event when hit box is hit but not penetrated.",
+          "default": {
+            "sound_id": "machine_max:hit_box.hit.up_pen.metal",
+            "range": 64
+          }
+        },
+        "hit_pen": {
+          "$ref": "../../../base/sound_event.schema.json",
+          "description": "Sound event when hit box is hit and penetrated.",
+          "default": {
+            "sound_id": "machine_max:hit_box.hit.pen.metal",
+            "range": 64
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Sound configuration for hit box impacts."
     }
   },
   "required": ["type"],

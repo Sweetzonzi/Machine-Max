@@ -88,6 +88,90 @@
             ],
             "un_penetrate_damage_factor": 0.5, //(可选, 默认0.0)攻击未能完全击穿护甲时的伤害系数, 公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor, 此项为0.0时未击穿则无伤害
             "rha": 3 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
+          },
+          "FrontGlass": { // 挡风玻璃
+            "id": "front_glass",
+            "type": "box",
+            "impact_modifiers": [
+              {
+                "operation": "multiply",
+                "value": 0.0, // 玻璃受击不影响连接点牢固程度
+                "condition": {
+                  "type": "always"
+                }
+              }
+            ],
+            "penetration_modifiers": [],
+            "damage_modifiers": [],
+            "rha": 0,
+            "subsystem": "subsystem.machine_max.front_glass",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.front_glass')", // 仅当前挡风玻璃未被摧毁时才生效
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
+          },
+          "BackLeftGlass": { // 左后车窗玻璃
+            "id": "back_left_glass",
+            "type": "box",
+            "impact_modifiers": [
+              {
+                "operation": "multiply",
+                "value": 0.0, // 玻璃受击不影响连接点牢固程度
+                "condition": {
+                  "type": "always"
+                }
+              }
+            ],
+            "penetration_modifiers": [],
+            "damage_modifiers": [],
+            "rha": 0,
+            "subsystem": "subsystem.machine_max.back_left_glass",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.back_left_glass')", // 仅当前左后车窗玻璃未被摧毁时才生效
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
+          },
+          "BackRightGlass": { // 右后车窗玻璃
+            "id": "back_right_glass",
+            "type": "box",
+            "impact_modifiers": [
+              {
+                "operation": "multiply",
+                "value": 0.0, // 玻璃受击不影响连接点牢固程度
+                "condition": {
+                  "type": "always"
+                }
+              }
+            ],
+            "penetration_modifiers": [],
+            "damage_modifiers": [],
+            "rha": 0,
+            "subsystem": "subsystem.machine_max.back_right_glass",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.back_right_glass')", // 仅当前右后车窗玻璃未被摧毁时才生效
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
           }
         },
         "interact_boxes": { //交互判定区列表
@@ -244,6 +328,18 @@
             "type": "machine_max:wheel_driver",
             "definition": "machine_max:wine_fox_back_wheel_driver",
             "connector": "connector.machine_max.right_back_wheel"
+          },
+          "subsystem.machine_max.front_glass": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.back_left_glass": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.back_right_glass": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
+            "definition": "machine_max:default_glass"
           }
         },
         "connectors": {

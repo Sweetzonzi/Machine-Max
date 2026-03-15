@@ -14,15 +14,18 @@ public class TurretDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public static final MapCodec<TurretDriverSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             MotorAttr.CODEC.fieldOf("roll").forGetter(TurretDriverSubsystemStaticAttr::getPitchAxis),
-            MotorAttr.CODEC.fieldOf("steering").forGetter(TurretDriverSubsystemStaticAttr::getYawAxis)
+            MotorAttr.CODEC.fieldOf("steering").forGetter(TurretDriverSubsystemStaticAttr::getYawAxis),
+            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, TurretDriverSubsystemStaticAttr::new
     ));
 
     public TurretDriverSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr,
             MotorAttr pitchAxis,
-            MotorAttr yawAxis) {
-        super(basicAttr);
+            MotorAttr yawAxis,
+            BasicSoundAttr sounds
+    ) {
+        super(basicAttr, sounds);
         this.pitchAxis = pitchAxis;
         this.yawAxis = yawAxis;
     }

@@ -8,11 +8,12 @@ import lombok.Getter;
 @Getter
 public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public static final MapCodec<CameraSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr)
+            BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
+            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, CameraSubsystemStaticAttr::new));
 
-    protected CameraSubsystemStaticAttr(BasicSubsystemStaticAttr.BasicAttr basicAttr) {
-        super(basicAttr);
+    protected CameraSubsystemStaticAttr(BasicSubsystemStaticAttr.BasicAttr basicAttr, BasicSubsystemStaticAttr.BasicSoundAttr sounds) {
+        super(basicAttr, sounds);
     }
 
     @Override

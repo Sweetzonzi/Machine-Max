@@ -115,8 +115,24 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "brake_on": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "Sound event for brake engagement.",
           "default": {
             "sound_id": "machine_max:subsystem.wheel_driver.brake_on",
@@ -124,7 +140,7 @@
           }
         },
         "brake_off": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "Sound event for brake disengagement.",
           "default": {
             "sound_id": "machine_max:subsystem.wheel_driver.brake_off",

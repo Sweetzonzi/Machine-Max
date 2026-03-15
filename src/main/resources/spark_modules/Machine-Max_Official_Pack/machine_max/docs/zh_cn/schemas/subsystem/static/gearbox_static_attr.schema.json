@@ -46,8 +46,24 @@
     "sounds": {
       "type": "object",
       "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
         "clutch_in": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "离合踩下时的音效事件。",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.clutch_in",
@@ -55,7 +71,7 @@
           }
         },
         "clutch_out": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "离合松开时的音效事件。",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.clutch_out",
@@ -63,7 +79,7 @@
           }
         },
         "gear_up": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "升挡时的音效事件。",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.up.light",
@@ -71,7 +87,7 @@
           }
         },
         "gear_down": {
-          "$ref": "base/sound_event.schema.json",
+          "$ref": "../../base/sound_event.schema.json",
           "description": "降挡时的音效事件。",
           "default": {
             "sound_id": "machine_max:subsystem.gearbox.down.light",

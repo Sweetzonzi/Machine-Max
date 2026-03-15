@@ -8,19 +8,22 @@
 					"rotation": [0, 0, "vehicle.get('steering')*225"]
 				},
 				"PointerArmor": {
-					"rotation": {
-						"0.0": [0, 0, "-225*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
-					}
+					"rotation": [0, 0, "-225*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
 				},
 				"PointerFuel": {
-					"rotation": {
-						"0.0": [0, 0, 180]
-					}
+					"rotation": [0, 0, 180]
 				},
 				"PointerSpeed": {
-					"rotation": {
-						"0.0": [0, 0, "-225*(math.abs(vehicle.get('vehicle_speed')??0)/33)"]
-					}
+					"rotation": [0, 0, "-225*(math.abs(vehicle.get('vehicle_speed')??0)/33)"]
+				},
+				"FrontGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.front_glass')"
+				},
+				"BackLeftGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.back_left_glass')"
+				},
+				"BackRightGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.back_right_glass')"
 				}
 			}
 		}

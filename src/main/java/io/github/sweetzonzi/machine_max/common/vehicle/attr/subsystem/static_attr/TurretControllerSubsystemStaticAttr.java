@@ -6,7 +6,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemT
 public class TurretControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     protected TurretControllerSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr) {
-        super(basicAttr);
+        super(basicAttr, BasicSoundAttr.DEFAULT);
     }
 
     @Override

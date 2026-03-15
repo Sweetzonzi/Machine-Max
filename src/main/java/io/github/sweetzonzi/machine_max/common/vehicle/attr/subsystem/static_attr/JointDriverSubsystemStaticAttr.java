@@ -20,7 +20,8 @@ public class JointDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.STRING.fieldOf("locator").forGetter(JointDriverSubsystemStaticAttr::getControlledConnector),
             Codec.STRING.fieldOf("rotation_order").forGetter(JointDriverSubsystemStaticAttr::getRotationOrder),
-            MotorAttr.MAP_CODEC.fieldOf("axes").forGetter(JointDriverSubsystemStaticAttr::getAxisParams)
+            MotorAttr.MAP_CODEC.fieldOf("axes").forGetter(JointDriverSubsystemStaticAttr::getAxisParams),
+            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, JointDriverSubsystemStaticAttr::new
     ));
 
@@ -28,8 +29,10 @@ public class JointDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicSubsystemStaticAttr.BasicAttr basicAttr,
             String controlledConnector,
             String rotationOrder,
-            Map<Axis, MotorAttr> axisParams) {
-        super(basicAttr);
+            Map<Axis, MotorAttr> axisParams,
+            BasicSoundAttr sounds
+    ) {
+        super(basicAttr, sounds);
         this.controlledConnector = controlledConnector;
         this.rotationOrder = rotationOrder;
         this.axisParams = axisParams;

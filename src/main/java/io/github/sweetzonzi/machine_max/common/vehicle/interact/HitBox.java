@@ -5,6 +5,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import lombok.Getter;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
 
 @Getter
@@ -18,7 +19,6 @@ public class HitBox {
         this.subPart = subPart;
         this.attr = attr;
         this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem(), null);
-        this.active = true;
     }
 
     /**
@@ -82,6 +82,14 @@ public class HitBox {
      */
     public double getMuSide() {
         return attr.friction().x();
+    }
+
+    public SoundEvent getHitPenSound() {
+        return attr.sounds().onHitPen();
+    }
+
+    public SoundEvent getHitUnPenSound() {
+        return attr.sounds().onHitUnPen();
     }
 
 }

@@ -39,6 +39,13 @@
       "default": true,
       "description": "部件内零件是否共享耐久度。如果为true，所有子部件共享同一耐久度池；如果为false，每个子部件有独立耐久度"
     },
+    "max_stack_size": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 64,
+      "default": 1,
+      "description": "部件物品的最大堆叠数量。决定此部件在物品栏中可以堆叠多少个。默认值为1（不可堆叠）"
+    },
     "variants": {
       "oneOf": [
         {

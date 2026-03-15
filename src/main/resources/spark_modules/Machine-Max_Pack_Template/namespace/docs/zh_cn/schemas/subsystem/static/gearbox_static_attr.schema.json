@@ -42,6 +42,45 @@
       "items": { "type": "string" },
       "default": ["gearbox_control"],
       "description": "换挡控制信号键列表，指定选用的减速比。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "clutch_in": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "离合踩下时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.clutch_in",
+            "range": 16
+          }
+        },
+        "clutch_out": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "离合松开时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.clutch_out",
+            "range": 16
+          }
+        },
+        "gear_up": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "升挡时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.up.light",
+            "range": 16
+          }
+        },
+        "gear_down": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "降挡时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.down.light",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "变速箱操作音效配置。"
     }
   },
   "required": ["type"],
@@ -53,6 +92,31 @@
       "final_ratio": 12.0,
       "ratios": [-4.0, 3.8, 2.8, 2.0, 1.5, 1.2, 0.9],
       "switch_time": 0.4
+    },
+    {
+      "type": "machine_max:gearbox",
+      "basic_durability": 40.0,
+      "final_ratio": 8.0,
+      "ratios": [-3.0, 2.5, 1.8, 1.2, 0.8],
+      "switch_time": 0.2,
+      "sounds": {
+        "clutch_in": {
+          "sound_id": "minecraft:block.iron_trapdoor.close",
+          "range": 8
+        },
+        "clutch_out": {
+          "sound_id": "minecraft:block.iron_trapdoor.open",
+          "range": 8
+        },
+        "gear_up": {
+          "sound_id": "minecraft:entity.arrow.hit_player",
+          "range": 12
+        },
+        "gear_down": {
+          "sound_id": "minecraft:entity.arrow.hit",
+          "range": 12
+        }
+      }
     }
   ]
 }

@@ -8,6 +8,7 @@
     "type": {
       "type": "string",
       "enum": [
+        "machine_max:basic",
         "machine_max:car_controller",
         "machine_max:engine",
         "machine_max:gearbox",
@@ -95,7 +96,7 @@
         }
       },
       "then": {
-        "$ref": "static/motor_controller_static_attr.schema.json"
+        "$ref": "static/motorbike_controller_static_attr.schema.json"
       }
     },
     {
