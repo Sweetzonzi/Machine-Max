@@ -32,10 +32,12 @@ public class PartHitHandler {
             for (PhysicsRayTestResult result : results) {//遍历射线检测结果
                 if (PhysicsBodyExtensionKt.getOwner(result.getCollisionObject()) instanceof SubPart candidatedSubPart) {
                     if(candidatedSubPart.isWheel(result.triangleIndex()) && candidatedSubPart.isWheelSurface(result.triangleIndex())) continue; // 跳过轮子的球面部分
+                    var hitBox = candidatedSubPart.getHitBox(result.triangleIndex());
+                    if (hitBox != null && !hitBox.isActive()) continue; // 跳过未激活的碰撞箱
                     if (subPartEntity.subPart != null && candidatedSubPart == subPartEntity.subPart) {//若命中的是本零件
                         mixinProjectile.machine_Max$setHitPoint(start.add(end.subtract(start).mult(result.getHitFraction())));
                         mixinProjectile.machine_Max$setHitNormal(result.getHitNormalLocal(null));
-                        mixinProjectile.machine_Max$setHitBox(subPartEntity.subPart.getHitBox(result.triangleIndex()));
+                        mixinProjectile.machine_Max$setHitBox(hitBox);
                         mixinProjectile.machine_Max$setHitSubPart(candidatedSubPart);
                     } else {
                         // 第一个命中部件刚体与部件实体不匹配，说明投射物被挡住，取消事件
@@ -78,6 +80,8 @@ public class PartHitHandler {
                     continue;
                 if (subPart.isWheel(result.triangleIndex()) && subPart.isWheelSurface(result.triangleIndex()))
                     continue;
+                var hitBox = subPart.getHitBox(result.triangleIndex());
+                if (hitBox != null && !hitBox.isActive()) continue; // 跳过未激活的碰撞箱
                 hitSubPart = subPart;
                 hitResult = result;
                 break;

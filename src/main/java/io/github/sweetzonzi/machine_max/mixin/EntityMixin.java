@@ -11,6 +11,7 @@ import com.jme3.bullet.collision.shapes.CapsuleCollisionShape;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -134,8 +135,10 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             if (group != CollisionGroups.PHYSICS_BODY) continue;
 
             if (!(PhysicsBodyExtensionKt.getOwner(pco) instanceof SubPart subPart)) continue;
-            if (subPart.part.getAssemblingProgress() <= 0) continue; // 未组装时不检测碰撞
-
+            if (subPart.part.getAssemblingProgress() <= 0.25f) continue; // 未组装时不检测碰撞
+            HitBox hitBox = subPart.getHitBox(result.triangleIndex());
+            if (hitBox == null || !hitBox.isActive())
+                continue; // 无效碰撞或未激活时忽略
             Vec3 normal = SparkMathKt.toVec3(result.getHitNormalLocal(null)).normalize();
 
             // 当前运动方向未朝向该碰撞面，忽略

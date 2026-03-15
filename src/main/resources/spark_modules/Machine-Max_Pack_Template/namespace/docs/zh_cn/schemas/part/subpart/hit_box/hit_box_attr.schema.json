@@ -131,11 +131,19 @@
       "minimum": 0.0,
       "default": 0.0,
       "description": "攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害。"
+    },
+    "condition": {
+      "type": "string",
+      "default": "true",
+      "description": "生效条件，使用molang表达式控制碰撞箱是否生效。可用于实现玻璃被击碎后不再有命中判定、拖车撑脚等功能。"
     }
   },
   "required": ["type"],
   "additionalProperties": false,
   "examples": [
+    {
+      "type": "box"
+    },
     {
       "id": "chassis",
       "type": "box",
@@ -150,7 +158,8 @@
             "type": "always"
           }
         }
-      ]
+      ],
+      "condition": "!subpart.has_connector('connector.machine_max.chassis_connection')"
     }
   ]
 }

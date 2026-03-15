@@ -702,6 +702,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public void prePhysicsTick() {
         super.prePhysicsTick();
         for (AbstractConnector connector : this.connectors.values()) connector.prePhysicsTick();
+        // 更新所有HitBox的生效状态
+        for (HitBox hitBox : hitBoxes.values()) {
+            hitBox.updateActive();
+        }
         this.body.getLinearVelocity(tmpWorldVel);
         // 仅在服务端且有速度时应用流体动力
         if (!level.isClientSide() && tmpWorldVel.lengthSquared() > 0.01f) {
@@ -1181,6 +1185,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         ChildCollisionShape[] children = this.collisionShape.listChildren();
         ChildCollisionShape child = children[contactPointIndex];
         long shapeId = child.getShape().nativeId();
+        // 检查HitBox是否激活
+        HitBox hitBox = getHitBox(shapeId);
+        if (hitBox != null && !hitBox.isActive()) {
+            return false;
+        }
         if (isWheel(shapeId) && isWheelSurface(shapeId)) {
             return true;
 //            float halfWidth = attr.getWheelHalfWidths().getOrDefault(shapeId, 0f);

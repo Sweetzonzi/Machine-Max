@@ -67,6 +67,14 @@
                 }
               }
             ]
+          },
+          "support_collision": {
+            "type": "box",
+            "restitution": 0.1,
+            "rolling_friction": 0.5,
+            "slip_adaptation": 0.5,
+            "block_damage_factor": 0.1,
+            "condition": "!subpart.has_connector('connector.machine_max.chassis_connection')"
           }
         },
         "connectors": {

@@ -205,10 +205,12 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                             // 跳过轮胎轮面
                             if (someSubPart.isWheel(result.triangleIndex()) && someSubPart.isWheelSurface(result.triangleIndex()))
                                 continue;
+                            HitBox hitBox = someSubPart.getHitBox(result.triangleIndex());
+                            // 跳过未激活的碰撞箱
+                            if (hitBox != null && !hitBox.isActive()) continue;
                             //TODO: new一个新的source存储攻击来袭方向
                             Vector3f normal = result.getHitNormalLocal(null);
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
-                            HitBox hitBox = someSubPart.getHitBox(result.triangleIndex());
                             //将伤害转发给部件进行操作
                             PartDamageData data = new PartDamageData(source, null, normal, end.subtract(start).normalize(), contactPoint, hitBox);
                             return someSubPart.onHurt(data, amount);

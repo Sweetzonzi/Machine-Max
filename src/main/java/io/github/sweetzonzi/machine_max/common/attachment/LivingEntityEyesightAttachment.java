@@ -92,8 +92,11 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
                     if (object instanceof PhysicsRigidBody body
                             && PhysicsBodyExtensionKt.getOwner(body) != null
                             && PhysicsBodyExtensionKt.getOwner(body) != entity) {//如果射线命中物体是刚体
-                        if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart)
+                        if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart subPart) {
                             if(subPart.isWheelSurface(result.triangleIndex())) continue; // 跳过轮子的球面部分
+                            var hitBox = subPart.getHitBox(result.triangleIndex());
+                            if (hitBox != null && !hitBox.isActive()) continue; // 跳过未激活的碰撞箱
+                        }
                         eyesight.targetBodies.put(body, result);//将射线命中物体和相应信息存入targets列表
                         eyesight.sortedTargetBodies.add(body);//将射线命中物体加入sortedTargets列表
                         if (PhysicsBodyExtensionKt.getOwner(body) instanceof InteractBoxes interactBoxes) {

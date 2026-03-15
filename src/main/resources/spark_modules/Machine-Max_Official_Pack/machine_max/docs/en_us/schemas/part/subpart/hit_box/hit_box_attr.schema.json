@@ -131,11 +131,19 @@
       "minimum": 0.0,
       "default": 0.0,
       "description": "Damage coefficient when attack fails to fully penetrate armor, formula: attack damage * (penetration depth / equivalent armor)^un_penetrate_damage_factor, when this value is 0.0, no damage is dealt if not penetrated."
+    },
+    "condition": {
+      "type": "string",
+      "default": "true",
+      "description": "Activation condition, uses molang expression to control whether the hit box is active. Can be used to implement features like glass losing hit detection after being broken, trailer supports, etc."
     }
   },
   "required": ["type"],
   "additionalProperties": false,
   "examples": [
+    {
+      "type": "box"
+    },
     {
       "id": "chassis",
       "type": "box",
@@ -150,7 +158,8 @@
             "type": "always"
           }
         }
-      ]
+      ],
+      "condition": "!subpart.has_connector('connector.machine_max.chassis_connection')"
     }
   ]
 }

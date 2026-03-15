@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.interact;
 
+import cn.solarmoon.spark_core.js.molang.JSMolangValueKt;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
@@ -11,11 +12,33 @@ public class HitBox {
     public final SubPart subPart;
     public final HitBoxAttr attr;
     public final AbstractSubsystem subsystem;
+    private boolean active = true;
 
     public HitBox(SubPart subPart, HitBoxAttr attr) {
         this.subPart = subPart;
         this.attr = attr;
         this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem(), null);
+        this.active = true;
+    }
+
+    /**
+     * 根据condition脚本更新激活状态
+     * 应在每物理刻（prePhysicsTick）调用
+     */
+    public void updateActive() {
+        String condition = attr.condition();
+        if (condition == null || condition.isEmpty()) {
+            active = true;
+            return;
+        }
+        try {
+            active = JSMolangValueKt.evalAsBoolean(condition, subPart);
+        } catch (Exception e) {
+            io.github.sweetzonzi.machine_max.MachineMax.LOGGER.warn(
+                    "Failed to evaluate condition for HitBox '{}' in part '{}-{}': {}",
+                    attr.id(), subPart.part.name, subPart.name, e.getMessage()
+            );
+        }
     }
 
     public float modifyImpact(DamageSource source, float amount) {

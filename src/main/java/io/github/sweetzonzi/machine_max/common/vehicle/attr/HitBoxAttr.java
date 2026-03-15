@@ -26,7 +26,8 @@ public record HitBoxAttr(
         DamageModifier impactModifiers,
         DamageModifier piercingModifiers,
         DamageModifier damageModifiers,
-        float unPenetrateDamageFactor) {
+        float unPenetrateDamageFactor,
+        String condition) {
     public static final Codec<HitBoxAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.optionalFieldOf("id", "").forGetter(HitBoxAttr::id),
             Codec.STRING.fieldOf("type").forGetter(HitBoxAttr::shapeType),
@@ -42,7 +43,8 @@ public record HitBoxAttr(
             DamageModifier.CODEC.optionalFieldOf("impact_modifiers", new DamageModifier(List.of())).forGetter(HitBoxAttr::impactModifiers),
             DamageModifier.CODEC.optionalFieldOf("penetration_modifiers", DamageModifier.DEFAULT_PEN_DEPTH_MODIFIERS).forGetter(HitBoxAttr::piercingModifiers),
             DamageModifier.CODEC.optionalFieldOf("damage_modifiers", DamageModifier.DEFAULT_DAMAGE_MODIFIERS).forGetter(HitBoxAttr::damageModifiers),
-            Codec.FLOAT.optionalFieldOf("un_penetrate_damage_factor", 0.0f).forGetter(HitBoxAttr::unPenetrateDamageFactor)
+            Codec.FLOAT.optionalFieldOf("un_penetrate_damage_factor", 0.0f).forGetter(HitBoxAttr::unPenetrateDamageFactor),
+            Codec.STRING.optionalFieldOf("condition", "true").forGetter(HitBoxAttr::condition)
     ).apply(instance, HitBoxAttr::new));
 
     public static final Codec<Map<String, HitBoxAttr>> MAP_CODEC = Codec.unboundedMap(
