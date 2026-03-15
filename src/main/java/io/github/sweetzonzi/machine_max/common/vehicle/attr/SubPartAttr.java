@@ -144,14 +144,14 @@ public class SubPartAttr {
             // 获取并储存定位器
             LinkedHashMap<String, OLocator> locators = LinkedHashMap.newLinkedHashMap(1);
             for (OBone bone : bones.values()) locators.putAll(bone.getLocators());
-            addLocator(locators);
+            addLocator(locators, bones.get(startBone));
 
             for (Map.Entry<String, HitBoxAttr> hitBoxEntry : this.hitBoxes.entrySet()) {
                 if (bones.get(hitBoxEntry.getKey()) != null) {
                     String hitBoxName = hitBoxEntry.getKey();
                     OBone bone = bones.get(hitBoxEntry.getKey());
                     Matrix4f pose = new Matrix4f();
-                    bone.applyTransformWithParents(pose, bones.get(startBone));
+                    bone.applyTransformToLocal(pose, bones.get(startBone));
                     switch (hitBoxEntry.getValue().shapeType()) {
                         case "box":
                             for (OCube cube : bone.getCubes()) {
@@ -258,7 +258,7 @@ public class SubPartAttr {
             for (Map.Entry<String, Transform> locatorTransform : locatorTransforms.entrySet()) {
                 String locatorName = locatorTransform.getKey();
                 Transform transform = locatorTransform.getValue();
-                MyMath.combine(massCenter.invert(), transform, transform);
+                MyMath.combine(transform, massCenter.invert(), transform);
                 locatorTransforms.put(locatorName, transform);
             }
             shape.correctAxes(massCenter);
@@ -294,7 +294,7 @@ public class SubPartAttr {
                     String interactBoxName = interactBoxEntry.getKey();
                     OBone bone = bones.get(boneName);
                     Matrix4f pose = new Matrix4f();
-                    bone.applyTransformWithParents(pose, bones.get(startBone));
+                    bone.applyTransformToLocal(pose, bones.get(startBone));
                     for (OCube cube : bone.getCubes()) {
                         org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
                         BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
@@ -406,15 +406,21 @@ public class SubPartAttr {
         }
     }
 
-    private void addLocator(Map<String, OLocator> locators) {
+    private void addLocator(Map<String, OLocator> locators, OBone startBone) {
+        Matrix4f pose = new Matrix4f();
+        Quaternionf quaternion = new Quaternionf();
+        org.joml.Vector3f translation = new org.joml.Vector3f();
         for (Map.Entry<String, OLocator> entry : locators.entrySet()) {
             String locatorName = entry.getKey();
             OLocator locator = entry.getValue();
-            org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-            Quaternionf quaternion = new Quaternionf().rotationXYZ(rotation.x, rotation.y, rotation.z);
+
+            pose.identity().setTranslation(locator.getOffset().toVector3f()).rotateZYX(locator.getRotation().toVector3f());
+
+            locator.getBone().applyTransformToLocal(pose, startBone);
+
             Transform transform = new Transform(
-                    PhysicsHelperKt.toBVector3f(locator.getOffset()),
-                    SparkMathKt.toBQuaternion(quaternion)
+                    PhysicsHelperKt.toBVector3f(pose.getTranslation(translation)),
+                    SparkMathKt.toBQuaternion(pose.getNormalizedRotation(quaternion))
             );
             locatorTransforms.put(locatorName, transform);
         }

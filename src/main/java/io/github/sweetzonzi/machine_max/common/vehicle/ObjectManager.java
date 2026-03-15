@@ -237,7 +237,6 @@ public class ObjectManager {
                     try {
                         VehicleCore vehicle = new VehicleCore(level, savedVehicleData, true);
                         vehicle.loadFromSavedData = true;
-                        vehicle.setKinematic(true);
                         addVehicle(vehicle);
                         i++;
                     } catch (Exception e) {

@@ -190,16 +190,9 @@ public class VehicleCore {
             ObjectManager.removeVehicle(this);//移除掉出世界的载具
             return;
         }
-        if (inLoadedChunk && !isRemoved) {//TODO:如果在已加载区块内，或速度大于某个阈值
+        if (inLoadedChunk && !isRemoved) {
             if (!loaded) {
-                if (loadFromSavedData) {
-                    if (tickCount > 100 && !level.isClientSide()) {//等待五秒防止因地形未加载而跌入虚空
-                        loaded = true;
-                        setKinematic(false);
-                    }
-                } else {
-                    loaded = true;
-                }
+                loaded = true;
             }
             subSystemController.tick();
         } else if (this.velocity.length() < 30) {
@@ -237,14 +230,6 @@ public class VehicleCore {
         SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values())
                 part.subParts.values().forEach(subPart -> subPart.body.setGravity(gravity));
-            return null;
-        });
-    }
-
-    public void setKinematic(boolean kinematic) {
-        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-            for (Part part : partMap.values())
-                part.subParts.values().forEach(subPart -> subPart.body.setKinematic(kinematic));
             return null;
         });
     }

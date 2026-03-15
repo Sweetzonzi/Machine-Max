@@ -275,10 +275,6 @@ public class VehicleAssemblyAttachment {
                             VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标连接点所属的载具
                             targetConnector.adjustTransform(part.externalConnectors.get(connectorName), attachRotation);
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
-                            if (stack.getItem() instanceof PartItem) {
-                                var pos = part.rootSubPart.getPosition();
-                                ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, 10, 1, 1, 1, 0.2f);
-                            }
                             return InteractionResultHolder.consume(stack);
                         } else return InteractionResultHolder.pass(stack);
                     } else return InteractionResultHolder.pass(stack);
@@ -364,21 +360,12 @@ public class VehicleAssemblyAttachment {
             this.quaternion = new Quaternionf();
         } else {
             OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel()));
-            OBone startBone = null;
-            if (getConnectorName() != null) {
-                String startBoneName = getVariant().getSubParts().get(getConnectorName().getFirst()).getStartBone();
-                startBone = model.getBone(startBoneName);
-            }
             var locators = model.getLocators();
             OLocator partConnectorLocator = locators.get(getConnector().locatorName());
             if (partConnectorLocator != null) {
-                Vector3f rotation = partConnectorLocator.getRotation().toVector3f();
-                Matrix4f pose = new Matrix4f();
-                partConnectorLocator.getBone().applyTransformWithParents(pose, startBone);
-                pose.translate(partConnectorLocator.getOffset().toVector3f())
-                        .rotate(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x));
-                this.offset = pose.getTranslation(new Vector3f());
-                this.quaternion = pose.getNormalizedRotation(new Quaternionf());
+                Transform transform = getVariant().getSubParts().get(getConnectorName().getFirst()).getLocatorTransforms().get(getConnector().locatorName());
+                this.offset = SparkMathKt.toVector3f(transform.getTranslation());
+                this.quaternion = SparkMathKt.toQuaternionf(transform.getRotation());
             } else {
                 this.offset = new Vector3f();
                 this.quaternion = new Quaternionf();

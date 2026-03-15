@@ -236,26 +236,12 @@ public class Part {
 
     private void createConnectors(
             SubPart subPart,
-            SubPartAttr subPartAttr,
-            LinkedHashMap<String, OLocator> locators
+            SubPartAttr subPartAttr
     ) {
-        OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel()));
-        OBone startBone = model.getBone(subPartAttr.getStartBone());
         for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartAttr.connectors.entrySet()) {
             String connectorName = connectorEntry.getKey();
             ConnectorAttr connectorAttr = connectorEntry.getValue();
-            if (locators.get(connectorAttr.locatorName()) instanceof OLocator locator) {//若找到了对应的零件连接点Locator
-                org.joml.Vector3f rotation = locator.getRotation().toVector3f();
-                Matrix4f pose = new Matrix4f();
-                locator.getBone().applyTransformWithParents(pose, startBone);
-                pose.translate(locator.getOffset().toVector3f())
-                        .rotate(new Quaternionf().rotationZYX(rotation.z, rotation.y, rotation.x));
-                // 按照质心位置调整连接点位置
-                pose.mul(SparkMathKt.toMatrix4f(subPart.getLocalMassCenterTransform().invert().toTransformMatrix()));
-                Transform posRot = new Transform( //连接点的位置与姿态
-                        PhysicsHelperKt.toBVector3f(pose.getTranslation(new org.joml.Vector3f())),
-                        SparkMathKt.toBQuaternion(pose.getNormalizedRotation(new Quaternionf()))
-                );
+            if (subPartAttr.getLocatorTransforms().containsKey(connectorAttr.locatorName())) {//若找到了对应的零件连接点Locator
                 AbstractConnector connector;
                 if (connectorAttr.isSimpleConnector()) {
                     connector = new SimpleConnector(
@@ -322,7 +308,7 @@ public class Part {
             subPart.body.setCcdSweptSphereRadius(subPart.collisionShape.maxRadius());//设置CCD半径
             subPart.projectedArea = calculateProjectedArea(subPart);
             //创建零件连接点
-            createConnectors(subPart, subPartAttr, locators);
+            createConnectors(subPart, subPartAttr);
             //创建部件内子系统
             createSubsystems(subPart, subPartAttr.subsystems);//创建子系统，赋予部件实际功能
             //创建命中判定区属性并匹配对应子系统(内部实现)

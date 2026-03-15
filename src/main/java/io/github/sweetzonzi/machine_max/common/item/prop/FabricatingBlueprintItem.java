@@ -106,15 +106,13 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                             if (!variant.equals("default") && partType.variants.size() > 1)
                                 message.append(" 部件变体类型:" + Component.translatable(variant).getString());
                             if (VisualEffectHelper.partToPlace != null) {
-                                var massCenterInv = variantAttr.getSubParts().get(cache.getConnectorName().getFirst()).getMassCenterTransform().invert();
                                 VisualEffectHelper.partToPlace.updateTransform(
                                         targetConnector.mergeTransform(
-                                                MyMath.combine(targetConnector.calculateExtraTransform(
+                                                targetConnector.calculateExtraTransform(
                                                         connectorAttr.direction(),
                                                         PhysicsHelperKt.toBVector3f(cache.getOffset()),
                                                         SparkMathKt.toBQuaternion(cache.getQuaternion()),
-                                                        cache.getAttachRotation()
-                                                ), massCenterInv, null).invert()
+                                                        cache.getAttachRotation()).invert()
                                         )
                                 );
                             }

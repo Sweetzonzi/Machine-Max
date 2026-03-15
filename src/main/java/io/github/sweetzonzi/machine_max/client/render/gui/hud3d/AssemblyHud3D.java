@@ -419,6 +419,8 @@ public class AssemblyHud3D implements IHud3DElement {
         ctx.poseStack.mulPose(projectionRot.get()); // 按照视角方向旋转投影
         Vector3f offset = resolveViewTranslation(subPart).mul(-1f);
         ctx.poseStack.translate(offset.x(), offset.y(), offset.z()); // 将展示中心挪到AABB中心
+        ctx.poseStack.pushPose();
+        ctx.poseStack.mulPose(SparkMathKt.toMatrix4f(subPart.getLocalMassCenterTransform().invert().toTransformMatrix())); // 考虑模型原点和质心的位置差异
         ModelController modelController = subPart.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         // 渲染所有块
@@ -460,6 +462,7 @@ public class AssemblyHud3D implements IHud3DElement {
                 }
             }
         }
+        ctx.poseStack.popPose();
         float halfSize = subPart.getBody().getCollisionShape().boundingBoxWithoutRecalculate(
                 com.jme3.math.Vector3f.ZERO,
                 com.jme3.math.Matrix3f.IDENTITY,

@@ -254,7 +254,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 body.getPhysicsRotation(null),
                 body.getLinearVelocity(null),
                 body.getAngularVelocity(null));
-        contactVel.subtractLocal((o2 instanceof PhysicsRigidBody) ? MMMath.relPointWorldVel(otherLocalContactPoint, other) : new Vector3f());
+        if (o2 instanceof PhysicsRigidBody && !other.isStatic())
+            contactVel.subtractLocal(MMMath.relPointWorldVel(otherLocalContactPoint, other));
         //计算碰撞角度（法线与速度方向的夹角）
         float impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(contactVel.normalize())));
         if (Float.isNaN(impactAngle)) impactAngle = 0; // 处理NaN情况
@@ -774,7 +775,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
         //攀爬辅助处理
         climbableBlocks.clear();
-        if (isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
+        if (!level.isClientSide() && isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
             Vector3f pos = body.getPhysicsLocation(null);
             // 更新爬坡辅助用高度场
@@ -786,7 +787,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             int minZ = (int) Math.floor(aabb.minZ);
             int maxX = (int) Math.ceil(aabb.maxX);
             int maxZ = (int) Math.ceil(aabb.maxZ);
-            float y0 = (float) Math.floor(bodyMinY) - 0.5f;
+            float y0 = (float) Math.floor(bodyMinY) - 0.1f;
             Set<BlockPos> noCollisionBlocks = new HashSet<>();
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
@@ -795,8 +796,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
                     if (blockSnapshot != null) {
                         BlockState blockState = blockSnapshot.getState();
-                        float blockHeight = getPhysicsLevel().getBlockShapeManager().getCollisionShape(blockState)
-                                .boundingBoxWithoutRecalculate(Vector3f.ZERO, Matrix3f.IDENTITY, null).getYExtent() * 2;
+                        float blockHeight = blockState.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO)
+                                ? 1.0f
+                                : (float) blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).max(Direction.Axis.Y);
                         float terrainHeight = blockHeight + currentPos.getY();
 
                         if (terrainHeight > y0 && terrainHeight < bodyMinY + attr.stepHeight) {
@@ -941,7 +943,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         final float DISTANCE_EXPONENT = 2.0f; // 距离指数：1=反比，2=平方反比
         final float MIN_DISTANCE = 0.1f; // 最小距离，防止除零和过大的权重
         for (AbstractConnector connector : this.connectors.values()) {
-            if (!connector.hasPart() || connector.isInternal() || connector.attr.impactMultiplier() <= 0) continue; // 仅有连接且可破坏的连接点参与分配
+            if (!connector.hasPart() || connector.isInternal() || connector.attr.impactMultiplier() <= 0)
+                continue; // 仅有连接且可破坏的连接点参与分配
             Vector3f connectorPos = MMMath.relPointWorldPos(connector.offsetFromMassCenter.getTranslation(), this.body);
             float distance = Math.max(connectorPos.distance(impactPoint), MIN_DISTANCE);
             // 权重是距离的指数反比，距离越远权重越小
