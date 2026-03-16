@@ -156,7 +156,10 @@ public class SubPartAttr {
                         case "box":
                             for (OCube cube : bone.getCubes()) {
                                 org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
-                                BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
+                                BoxCollisionShape boxShape = new BoxCollisionShape(
+                                        Math.max(Math.abs(size.x), 0.01f),
+                                        Math.max(Math.abs(size.y), 0.01f),
+                                        Math.max(Math.abs(size.z), 0.01f));
                                 // 存储所有状态的子形状对应关系
                                 hitBoxNames.put(boxShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
@@ -192,7 +195,11 @@ public class SubPartAttr {
                             for (OCube cube : bone.getCubes()) {
                                 //TODO: 检查尺寸方向是否正确
                                 Vector3f size = PhysicsHelperKt.toBVector3f(cube.getSize().scale(0.5f));
-                                CapsuleCollisionShape cylinderShape = new CapsuleCollisionShape(size.x, size.y, 0);
+                                CapsuleCollisionShape cylinderShape = new CapsuleCollisionShape(
+                                        Math.max(Math.abs(size.x), 0.01f),
+                                        Math.max(Math.abs(size.y), 0.01f),
+                                        0
+                                );
                                 hitBoxNames.put(cylinderShape.nativeId(), hitBoxName);
                                 shape.addChildShape(
                                         cylinderShape,
@@ -202,8 +209,8 @@ public class SubPartAttr {
                             break;
                         case "wheel":
                             for (OCube cube : bone.getCubes()) {
-                                float radius = (float) (cube.getSize().y / 2);
-                                float halfWidth = (float) cube.getSize().x / 2;
+                                float radius = (float) (Math.max(Math.abs(cube.getSize().y), 0.01f) / 2);
+                                float halfWidth = (float) (Math.max(Math.abs(cube.getSize().x), 0.01f) / 2);
                                 // 地形接触用的球体
                                 SphereCollisionShape ballShape = new SphereCollisionShape(radius);
                                 hitBoxNames.put(ballShape.nativeId(), hitBoxName);
@@ -297,7 +304,10 @@ public class SubPartAttr {
                     bone.applyTransformToLocal(pose, bones.get(startBone));
                     for (OCube cube : bone.getCubes()) {
                         org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();
-                        BoxCollisionShape boxShape = new BoxCollisionShape(size.x, size.y, size.z);
+                        BoxCollisionShape boxShape = new BoxCollisionShape(
+                                Math.max(Math.abs(size.x), 0.01f),
+                                Math.max(Math.abs(size.y), 0.01f),
+                                Math.max(Math.abs(size.z), 0.01f));
                         // 存储所有状态的子形状对应关系
                         interactBoxNames.put(boxShape.nativeId(), interactBoxName);
                         shape.addChildShape(

@@ -559,6 +559,8 @@ public class BlueprintAttachment {
         return getAvailablePartRecipeFor(player, partType, false);
     }
 
+    private static final LinkedHashSet<RecipeHolder<FabricatingRecipe>> EMPTY_SET = new LinkedHashSet<>(1);
+
     /**
      * 统计玩家库存，获取所有可用于制造指定部件的配方，创造模式无视库存直接展示所有配方
      *
@@ -583,7 +585,7 @@ public class BlueprintAttachment {
                 }
             }
             return result;
-        } else return MMDynamicRes.PART_RECIPES.get(partType); // 创造模式直接返回所有配方
+        } else return MMDynamicRes.PART_RECIPES.getOrDefault(partType, EMPTY_SET); // 创造模式直接返回所有配方
     }
 
     /**
