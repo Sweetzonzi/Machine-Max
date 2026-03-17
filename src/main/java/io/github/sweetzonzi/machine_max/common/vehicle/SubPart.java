@@ -790,7 +790,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             int minZ = (int) Math.floor(aabb.minZ);
             int maxX = (int) Math.ceil(aabb.maxX);
             int maxZ = (int) Math.ceil(aabb.maxZ);
-            float y0 = (float) Math.floor(bodyMinY) - 0.1f;
+            float y0 = attr.climbAssist ? (float) Math.floor(bodyMinY) - 0.1f : bodyMinY + 0.1f;
             Set<BlockPos> noCollisionBlocks = new HashSet<>();
             for (int x = minX; x <= maxX; x++) {
                 for (int z = minZ; z <= maxZ; z++) {
