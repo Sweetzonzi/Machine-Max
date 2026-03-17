@@ -12,7 +12,7 @@
     "sub_parts": {
       "sub_part.machine_max.main": {
         "start_bone": "AllHull", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
-        "end_bones": ["AllEngine"], // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
+        "end_bones": [], // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
         "mass_center": "hull_mass_center",
         "durability": 120.0,
         "mass": 200.0,
@@ -20,7 +20,6 @@
         "collision_height": 1.5,
         "hit_boxes": { //键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
           "HullCollision": { //值:碰撞形状属性
-            "id": "part",
             "type": "box", //碰撞形状类型, 支持box、sphere、cylinder
             "block_damage_factor": 1.0, //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
             "angle_effect": true, //(可选, 默认true)等效护甲厚度是否受入射角度影响, 若为false, 则计算厚度时不考虑入射角度
@@ -89,6 +88,12 @@
             "un_penetrate_damage_factor": 0.5, //(可选, 默认0.0)攻击未能完全击穿护甲时的伤害系数, 公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor, 此项为0.0时未击穿则无伤害
             "rha": 3 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
           },
+          "EngineCollision": { // 挡风玻璃
+            "id": "engine",
+            "type": "box",
+            "rha": 1,
+            "subsystem": "subsystem.machine_max.engine"
+          },
           "FrontGlass": { // 挡风玻璃
             "id": "front_glass",
             "type": "box",
@@ -117,8 +122,8 @@
               }
             }
           },
-          "BackLeftGlass": { // 左后车窗玻璃
-            "id": "back_left_glass",
+          "LeftBackGlass": { // 左后车窗玻璃
+            "id": "left_back_glass",
             "type": "box",
             "impact_modifiers": [
               {
@@ -132,8 +137,8 @@
             "penetration_modifiers": [],
             "damage_modifiers": [],
             "rha": 0,
-            "subsystem": "subsystem.machine_max.back_left_glass",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.back_left_glass')", // 仅当前左后车窗玻璃未被摧毁时才生效
+            "subsystem": "subsystem.machine_max.left_back_glass",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_back_glass')", // 仅当前左后车窗玻璃未被摧毁时才生效
             "sounds": {
               "hit_un_pen": {
                 "sound_id": "machine_max:hit_box.hit.pen.glass",
@@ -145,8 +150,8 @@
               }
             }
           },
-          "BackRightGlass": { // 右后车窗玻璃
-            "id": "back_right_glass",
+          "RightBackGlass": { // 右后车窗玻璃
+            "id": "right_back_glass",
             "type": "box",
             "impact_modifiers": [
               {
@@ -160,8 +165,68 @@
             "penetration_modifiers": [],
             "damage_modifiers": [],
             "rha": 0,
-            "subsystem": "subsystem.machine_max.back_right_glass",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.back_right_glass')", // 仅当前右后车窗玻璃未被摧毁时才生效
+            "subsystem": "subsystem.machine_max.right_back_glass",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_glass')", // 仅当前右后车窗玻璃未被摧毁时才生效
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
+          },
+          "LeftFrontHeadLight": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.left_front_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_front_light')",
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
+          },
+          "RightFrontHeadLight": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.right_front_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_front_light')",
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
+          },
+          "LeftRearLight": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.left_back_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_back_light')",
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
+          },
+          "RightRearLight": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.right_back_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_light')",
             "sounds": {
               "hit_un_pen": {
                 "sound_id": "machine_max:hit_box.hit.pen.glass",
@@ -333,12 +398,28 @@
             "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.back_left_glass": {
+          "subsystem.machine_max.left_back_glass": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.back_right_glass": {
+          "subsystem.machine_max.right_back_glass": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.left_front_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.right_front_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.left_back_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.right_back_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
           }
         },
@@ -476,7 +557,7 @@
             "type": "Advanced",
             "direction": "zn",
             "required_tags": ["front", "bumper"], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
-            "integrity": 30.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "integrity": 10.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             "joint_attrs": {
               "zr": {
                 "lower_limit": -30.0,
@@ -492,7 +573,7 @@
             "type": "Advanced",
             "direction": "zn",
             "required_tags": ["front", "bumper"], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
-            "integrity": 30.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "integrity": 10.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             "joint_attrs": {
               "zr": {
                 "lower_limit": -30.0,
@@ -508,7 +589,7 @@
             "type": "Advanced",
             "direction": "zp",
             "required_tags": ["back", "bumper"], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
-            "integrity": 30.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "integrity": 10.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             "joint_attrs": {
               "zr": {
                 "lower_limit": -30.0,
@@ -524,7 +605,7 @@
             "type": "Advanced",
             "direction": "zp",
             "required_tags": ["back", "bumper"], //(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
-            "integrity": 30.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "integrity": 10.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
             "joint_attrs": {
               "zr": {
                 "lower_limit": -30.0,
@@ -587,6 +668,12 @@
                 "damping": 100
               }
             }
+          },
+          "connector.machine_max.trunk_door_lock": {
+            "locator": "hull_trunk_door_lock",
+            "type": "Simple",
+            "required_tags": ["trunk"],
+            "integrity": 10.0
           },
           "connector.machine_max.hood_axis": {
             "locator": "hull_hood_axis",

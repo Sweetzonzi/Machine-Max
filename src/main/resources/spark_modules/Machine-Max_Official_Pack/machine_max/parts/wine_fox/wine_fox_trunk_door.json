@@ -5,18 +5,19 @@
   "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
   "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.5)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": {//部件变体列表, 支持单值或多键值对
-    "model": "machine_max:wine_fox_trunk_door.geo", //模型路径
-    "textures": "machine_max:textures/part/wine_fox.png",
-    "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
+    "model": "machine_max:wine_fox.geo", //模型路径
+    "textures": "machine_max:textures/part/wine_fox/wine_fox.png",
+    "animations": "machine_max:wine_fox",
     "tags": ["trunk", "wine_fox"],//(可选)部件标签列表
     "sub_parts": {//零件(子部件)列表
       "sub_part.machine_max.main": {//零件(子部件)名称
+        "start_bone": "Trunk", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
         "durability": 50.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
         "mass": 35.0,//零件质量(kg)
         "block_collision": "ground",//(可选, 默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
         "collision_height": 1.5,//(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
         "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
-          "Collision": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
+          "TrunkHitBox": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
             "type": "box",//碰撞形状类型, 支持box、sphere、cylinder、wheel
             "friction": [1.5, 2.0, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
             "restitution": 0.2,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
@@ -47,6 +48,78 @@
                 }
               }
             ]
+          },
+          "BackGlass": { // 挡风玻璃
+            "id": "glass",
+            "type": "box",
+            "impact_modifiers": [
+              {
+                "operation": "multiply",
+                "value": 0.0, // 玻璃受击不影响连接点牢固程度
+                "condition": {
+                  "type": "always"
+                }
+              }
+            ],
+            "penetration_modifiers": [],
+            "damage_modifiers": [],
+            "rha": 0,
+            "subsystem": "subsystem.machine_max.glass",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glass')", // 仅当前挡风玻璃未被摧毁时才生效
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
+          },
+          "TrunkLeftLight": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.left_back_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_back_light')",
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
+          },
+          "TrunkRightLight": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.right_back_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_light')",
+            "sounds": {
+              "hit_un_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 16
+              },
+              "hit_pen": {
+                "sound_id": "machine_max:hit_box.hit.pen.glass",
+                "range": 32
+              }
+            }
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.glass": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示玻璃是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.left_back_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.right_back_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
           }
         },
         "connectors": {//子部件用于与其他零件连接的连接点列表

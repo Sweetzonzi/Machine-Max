@@ -19,11 +19,44 @@
 				"FrontGlass": {
 					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.front_glass')"
 				},
-				"BackLeftGlass": {
-					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.back_left_glass')"
+				"ysmGlowTrunkRightLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_light')"
 				},
-				"BackRightGlass": {
-					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.back_right_glass')"
+				"ysmGlowTrunkLeftLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_back_light')"
+				},
+				"LeftBackGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_back_glass')"
+				},
+				"RightBackGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_glass')"
+				},
+				"ysmGlowLeftRearLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_back_light')"
+				},
+				"ysmGlowRightRearLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_light')"
+				},
+				"ysmGlowLeftFrontHeadLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_front_light')"
+				},
+				"ysmGlowRightFrontHeadLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_front_light')"
+				},
+				"LeftFrontGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glass')"
+				},
+				"RightFrontGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glass')"
+				},
+				"BackGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glass')"
+				},
+				"ysmGlowLeftFogLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_front_light')"
+				},
+				"ysmGlowRightFogLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_front_light')"
 				}
 			}
 		}
