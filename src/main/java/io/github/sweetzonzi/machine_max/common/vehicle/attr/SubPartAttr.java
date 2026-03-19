@@ -349,14 +349,14 @@ public class SubPartAttr {
      * @return 过滤后的骨骼列表
      */
     public static Map<String, OBone> filterBones(LinkedHashMap<String, OBone> bones, String startBone, List<String> endBones) {
-        if (startBone.isEmpty()) return bones;
+        if (startBone.isEmpty() && endBones.isEmpty()) return bones;
         else {
             LinkedHashMap<String, OBone> filteredBones = new LinkedHashMap<>();
             for (Map.Entry<String, OBone> entry : bones.entrySet()) {
                 String boneName = entry.getKey();
                 OBone bone = entry.getValue();
                 if (endBones.contains(boneName)) continue; // 跳过子骨骼
-                if (boneName.equals(startBone)) {
+                if (boneName.equals(startBone) || startBone.isEmpty()) {
                     filteredBones.put(boneName, bone);
                 } else if (bone.isChildOf(startBone)) {
                     // 排除子骨骼
