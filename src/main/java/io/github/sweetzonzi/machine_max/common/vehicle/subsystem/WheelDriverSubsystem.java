@@ -18,7 +18,7 @@ import net.minecraft.sounds.SoundSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-public class WheelDriverSubsystem extends AbstractSubsystem {
+public class WheelDriverSubsystem extends BasicSubsystem {
     @Getter
     public final WheelDriverSubsystemAttr attr;
     @Getter

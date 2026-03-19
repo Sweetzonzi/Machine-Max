@@ -20,14 +20,14 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
 
     private final PIDController rollController; // 外环角度环控制器，输出目标角速度
     private final PIDController omegaController; // 内环角速度环控制器，输出目标控制力矩
-    private final PIDController lowSpeedRollController; // 外环角度环控制器，输出目标角速度
+    private final PIDController lowSpeedRollController;
 
     public MotorbikeControllerSubsystem(ISubsystemHost owner, String name, MotorbikeControllerSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
         this.rollController = new PIDController(0.1f, 0.0f, 0.1f, 1.0 / getPhysicsLevel().getTps(), -2, 2);
         this.omegaController = new PIDController(500.0f, 5.0f, 50.0f, 1.0 / getPhysicsLevel().getTps(), -2000, 2000);
-        this.lowSpeedRollController = new PIDController(15.0f, 0.01f, 3.0f, 1.0 / getPhysicsLevel().getTps(), -2000, 2000);
+        this.lowSpeedRollController = new PIDController(5.0f, 0f, 0.1f, 1.0 / getPhysicsLevel().getTps(), -2000, 2000);
     }
 
     @Override
@@ -98,7 +98,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
                 // 应用修正力倍率
                 rollControl *= correctionForceMultiplier;
                 // 额外补偿理论平衡所需重力矩
-                rollControl -= (float) (0.8 * getSubPart().getEquivalentMass() * gravity * massCenterHeight * Math.sin(Math.toRadians(roll)));
+                rollControl -= (float) (1.0 * getSubPart().body.getMass() * gravity * massCenterHeight * Math.sin(Math.toRadians(roll)));
                 getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, rollControl), getOwner().getSubPart().body));
             }
         }

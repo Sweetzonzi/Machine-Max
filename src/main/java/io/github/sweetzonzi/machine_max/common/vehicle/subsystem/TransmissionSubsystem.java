@@ -13,7 +13,7 @@ import java.util.Map;
 
 //TODO:测试负传动比的情形
 @Getter
-public class TransmissionSubsystem extends AbstractSubsystem {
+public class TransmissionSubsystem extends BasicSubsystem {
     public final TransmissionSubsystemAttr attr;
     private final Map<ISignalReceiver, Float> powerReceivers = new HashMap<>();//功率接收者及其反馈转速列表
     private final Map<ISignalReceiver, Float> powerReceiverGearRatios = new HashMap<>();//功率输出目标及其信号通道列表

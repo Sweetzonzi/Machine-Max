@@ -24,7 +24,8 @@
 						"chassis_locator": {
 							"offset": [0, 3, -125],
 							"rotation": [0, 0, -180]
-						}
+						},
+						"mass_center": [0, 0, 0]
 					}
 				},
 				{

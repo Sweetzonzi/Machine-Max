@@ -36,4 +36,8 @@ public class BasicSubsystemDynamicAttr extends AbstractSubsystemAttr {
     public AbstractSubsystem createSubsystem(ISubsystemHost owner, String name) {
         return new BasicSubsystem(owner, name, this);
     }
+
+    public boolean isHidden() {
+        return staticAttribute.getBasicAttr().hidden();
+    }
 }

@@ -43,6 +43,10 @@ public class BasicSubsystem extends AbstractSubsystem {
         }
     }
 
+    public boolean isHidden() {
+        return attr.isHidden();
+    }
+
     @Override
     public Map<String, List<String>> getTargetNames() {
         return Map.of(); // 不涉及信号传输，无目标

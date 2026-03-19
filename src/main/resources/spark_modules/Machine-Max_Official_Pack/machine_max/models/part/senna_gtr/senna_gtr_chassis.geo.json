@@ -13,7 +13,10 @@
 			"bones": [
 				{
 					"name": "Root",
-					"pivot": [0, 0.58091, -0.83496]
+					"pivot": [0, 0.58091, -0.83496],
+					"locators": {
+						"mass_center": [0, 0, 0]
+					}
 				},
 				{
 					"name": "RightSeat",

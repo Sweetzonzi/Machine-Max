@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class GearboxSubsystem extends AbstractSubsystem {
+public class GearboxSubsystem extends BasicSubsystem {
     public final GearboxSubsystemAttr attr;
     public final double[] gearRatios;//各级实际传动比率 Actual transmission ratio of each gear
     public final int minPositiveGear;

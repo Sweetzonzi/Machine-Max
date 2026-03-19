@@ -131,8 +131,7 @@ public class GuiAnimatable extends ModelAnimatable implements Renderable {
         ModelRenderHelperKt.render(
                 getModelController().getOriginModel(),
                 modelInstance.getPose(),
-                poseStack.last().pose(),
-                poseStack.last().normal(),
+                poseStack,
                 bufferSource.getBuffer(RenderType.entityTranslucent(getModelController().getTextureLocation())),
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,

@@ -89,8 +89,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                     ModelRenderHelperKt.render(
                             bone,
                             modelInstance.getPose(),
-                            new Matrix4f(poseStack.last().pose()),
-                            new Matrix3f(poseStack.last().normal()),
+                            poseStack,
                             ysmGlow && ! entity.subPart.isDestroyed()
                                     ? bufferSource.getBuffer(RenderType.eyes(getTextureLocation(entity)))
                                     : entity.subPart.getDestroyTime() >= 20
@@ -112,15 +111,14 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 }
                 float i = 0f;
                 for (OBone bone : bones.values()) {
-                    Matrix4f transform = new Matrix4f(poseStack.last().pose());
-                    Matrix3f normal = new Matrix3f(poseStack.last().normal());
+                    Matrix4f transform = new Matrix4f();
                     bone.applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
-                    bone.applyNormalTransformWithParents(modelInstance.getPose(), normal, partialTick);
+                    poseStack.popPose();
+                    poseStack.mulPose(transform);
                     for (OCube cube : bone.getCubes()) {
                         if (i / cubeCount >= entity.subPart.part.getAssemblingProgress()) {
                             cube.renderVertexes(
-                                    transform,
-                                    normal,
+                                    poseStack,
                                     bufferSource.getBuffer(RenderType.lines()),
                                     light,
                                     overlay,
@@ -129,8 +127,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             );
                         } else {
                             cube.renderVertexes(
-                                    transform,
-                                    normal,
+                                    poseStack,
                                     bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity))),
                                     light,
                                     overlay,
@@ -140,6 +137,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                         }
                         i++;
                     }
+                    poseStack.pushPose();
                 }
             }
         } else {
@@ -162,8 +160,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 ModelRenderHelperKt.render(
                         bone,
                         modelInstance.getPose(),
-                        new Matrix4f(poseStack.last().pose()),
-                        poseStack.last().normal(),
+                        poseStack,
                         bufferSource.getBuffer(RenderTypeUtil.pureEffect(partialTick, (float) (15f * Math.sqrt((17.0 - entity.subPart.tickCount - partialTick) / 17)))),
                         light,
                         overlay,
@@ -176,8 +173,10 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             // 按块渲染，附带随机颜色
             float i = 0f;
             for (OBone bone : bones.values()) {
-                Matrix4f transform = new Matrix4f(poseStack.last().pose());
+                Matrix4f transform = new Matrix4f();
                 bone.applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
+                poseStack.popPose();
+                poseStack.mulPose(transform);
                 for (OCube cube : bone.getCubes()) {
                     if (entity.subPart.part.getAssemblingProgress() >= 1.0f || i / cubeCount < entity.subPart.part.getAssemblingProgress()) {
                         // 将 HSB 转换为 RGB
@@ -185,8 +184,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                         // 创建新的颜色对象，包含 alpha 值
                         color = new Color(rgb.getRed(), rgb.getGreen(), rgb.getBlue(), alpha).getRGB();
                         cube.renderVertexes(
-                                new Matrix4f(transform),
-                                new Matrix3f(transform),
+                                poseStack,
                                 bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
                                 light,
                                 overlay,
@@ -195,8 +193,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                         );
                     } else {
                         cube.renderVertexes(
-                                new Matrix4f(transform),
-                                new Matrix3f(transform),
+                                poseStack,
                                 bufferSource.getBuffer(RenderType.lines()),
                                 light,
                                 overlay,
@@ -206,6 +203,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                     }
                     i++;
                 }
+                poseStack.pushPose();
             }
         }
         poseStack.popPose();

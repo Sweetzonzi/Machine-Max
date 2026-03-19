@@ -83,8 +83,7 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
         ModelRenderHelperKt.render(
                 getModelController().getOriginModel(),
                 model.getPose(),
-                poseStack.last().pose(),
-                poseStack.last().normal(),
+                poseStack,
                 bufferSource.getBuffer(RenderType.entityTranslucent(getModelController().getModel().getTextureLocation())),
                 Brightness.FULL_BRIGHT.pack(),
                 OverlayTexture.NO_OVERLAY,

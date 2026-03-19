@@ -14,5 +14,6 @@ public class MachineMaxClient {
         MachineMax.REGISTER.register(bus);
         // 配置菜单
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        bus.addListener(MMClientConfig::onChangeConfig);
     }
 }

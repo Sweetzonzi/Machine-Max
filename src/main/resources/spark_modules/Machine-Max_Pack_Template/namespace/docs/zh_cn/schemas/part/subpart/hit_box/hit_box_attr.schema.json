@@ -136,6 +136,29 @@
       "type": "string",
       "default": "true",
       "description": "生效条件，使用molang表达式控制碰撞箱是否生效。可用于实现玻璃被击碎后不再有命中判定、拖车撑脚等功能。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "hit_un_pen": {
+          "$ref": "../../../base/sound_event.schema.json",
+          "description": "碰撞箱被命中但未穿透时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:hit_box.hit.up_pen.metal",
+            "range": 64
+          }
+        },
+        "hit_pen": {
+          "$ref": "../../../base/sound_event.schema.json",
+          "description": "碰撞箱被命中且穿透时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:hit_box.hit.pen.metal",
+            "range": 64
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "碰撞箱命中音效配置。"
     }
   },
   "required": ["type"],

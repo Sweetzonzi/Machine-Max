@@ -32,8 +32,7 @@ public class ResearchTableBlockEntityRenderer extends GeoBlockEntityRenderer<Res
             ModelRenderHelperKt.render(
                     modelController.getOriginModel(),
                     modelController.getModel().getPose(),
-                    poseStack.last().pose(),
-                    poseStack.last().normal(),
+                    poseStack,
                     bufferSource.getBuffer(RenderType.entityTranslucent(getGeoTextureLocation(blockEntity))),
                     packedLight,
                     packedOverlay,

@@ -32,8 +32,8 @@
     },
     "mass_center": {
       "type": "string",
-      "default": "",
-      "description": "质心定位器名称，用于指定模型中的同名定位器作为质心位置。若未指定，则会以碰撞体积的几何中心作为质心。"
+      "default": "mass_center",
+      "description": "质心定位器名称，用于指定模型中的同名定位器作为质心位置。若未指定或未找到定位器，则会以碰撞体积的几何中心作为质心。"
     },
     "projected_area": {
       "$ref": "../../base/vector_3d.schema.json",

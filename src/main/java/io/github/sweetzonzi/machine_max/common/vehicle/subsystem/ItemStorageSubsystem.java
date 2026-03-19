@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class ItemStorageSubsystem extends AbstractSubsystem implements MenuProvider {
+public class ItemStorageSubsystem extends BasicSubsystem implements MenuProvider {
     public final ItemStorageSubsystemAttr attr;
     public final SimpleContainer container;
 

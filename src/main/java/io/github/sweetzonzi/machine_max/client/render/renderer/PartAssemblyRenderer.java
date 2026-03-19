@@ -121,8 +121,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
                     ModelRenderHelperKt.render(
                             bone,
                             subPart.getModelController().getModel().getPose(),
-                            new Matrix4f(poseStack.last().pose()),
-                            new Matrix3f(poseStack.last().normal()),
+                            poseStack,
                             bufferSource.getBuffer(RenderType.entityTranslucent(subPart.getModelController().getTextureLocation())),
                             Brightness.FULL_BRIGHT.pack(),
                             OverlayTexture.NO_OVERLAY,
@@ -195,8 +194,7 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
                 ModelRenderHelperKt.render(
                         bone,
                         subPart.getModelController().getModel().getPose(),
-                        new Matrix4f(poseStack.last().pose()),
-                        new Matrix3f(poseStack.last().normal()),
+                        poseStack,
                         bufferSource.getBuffer(RenderType.entityTranslucent(subPart.getModelController().getTextureLocation())),
                         Brightness.FULL_BRIGHT.pack(),
                         OverlayTexture.NO_OVERLAY,

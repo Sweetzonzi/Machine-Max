@@ -15,7 +15,8 @@
 					"name": "Root",
 					"pivot": [0, -2.51372, -1.84438],
 					"locators": {
-						"SeatPoint": [0, 8.5, 6]
+						"SeatPoint": [0, 8.5, 6],
+						"mass_center": [0, 0, 0]
 					}
 				},
 				{

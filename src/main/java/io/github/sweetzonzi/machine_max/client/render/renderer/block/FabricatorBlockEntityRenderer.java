@@ -41,8 +41,7 @@ public class FabricatorBlockEntityRenderer extends GeoBlockEntityRenderer<Fabric
             ModelRenderHelperKt.render(
                     modelController.getOriginModel(),
                     modelController.getModel().getPose(),
-                    poseStack.last().pose(),
-                    poseStack.last().normal(),
+                    poseStack,
                     bufferSource.getBuffer(RenderType.entityTranslucent(getGeoTextureLocation(blockEntity))),
                     packedLight,
                     packedOverlay,

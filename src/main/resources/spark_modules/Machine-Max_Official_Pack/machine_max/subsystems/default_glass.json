@@ -9,5 +9,6 @@
       "sound_id": "machine_max:subsystem.baisc.glass.break",
       "range": 32
     }
-  }
+  },
+  "hidden": true // (可选, 默认false)是否在HUD等处隐藏子系统信息的显示，避免此类无功能子系统干扰玩家
 }

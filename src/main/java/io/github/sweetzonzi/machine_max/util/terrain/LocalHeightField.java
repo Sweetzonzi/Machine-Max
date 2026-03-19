@@ -109,7 +109,11 @@ public class LocalHeightField {
             SectionSnapshot.BlockSnapshot snap =
                     level.terrainManager.getBlockSnapshotAt(pos);
 
-            if (snap == null) continue;
+            if (snap == null) {
+                if (highest == Float.NEGATIVE_INFINITY)
+                    continue;
+                else break;
+            }
 
             BlockState state = snap.getState();
 
@@ -118,7 +122,11 @@ public class LocalHeightField {
                     BlockPos.ZERO
             );
 
-            if (shape.isEmpty()) continue;
+            if (shape.isEmpty()) {
+                if (highest == Float.NEGATIVE_INFINITY)
+                    continue;
+                else break;
+            }
 
             float height = (float) shape.max(Direction.Axis.Y);
 
@@ -275,9 +283,10 @@ public class LocalHeightField {
         int x0 = (int) Math.floor(gx);
         int z0 = (int) Math.floor(gz);
 
-        if (x0 < 0 || z0 < 0 || x0 >= size - 1 || z0 >= size - 1) {
-            return Float.NEGATIVE_INFINITY;
-        }
+        if (x0 < 0) x0 = 0;
+        if (z0 < 0) z0 = 0;
+        if (x0 >= size - 1) x0 = size - 2;
+        if (z0 >= size - 1) z0 = size - 2;
 
         float fx = gx - x0;
         float fz = gz - z0;
@@ -359,19 +368,19 @@ public class LocalHeightField {
         float z = initialContact.z;
 
         Vector3f normal = new Vector3f();
+        if(wheelCenter.subtract(initialContact).lengthSquared() > 1e-6f)
+            for (int i = 0; i < 3; i++) {
 
-        for (int i = 0; i < 3; i++) {
+                float h = getHeight(x, z);
 
-            float h = getHeight(x, z);
+                if (Float.isInfinite(h)) break;
 
-            if (Float.isInfinite(h)) break;
+                normal.set(getNormal(x, z));
 
-            normal.set(getNormal(x, z));
-
-            // 根据法线反推球面接触点
-            x = wheelCenter.x - normal.x * radius;
-            z = wheelCenter.z - normal.z * radius;
-        }
+                // 根据法线反推球面接触点
+                x = wheelCenter.x - normal.x * radius;
+                z = wheelCenter.z - normal.z * radius;
+            }
 
         float h = getHeight(x, z);
 

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class EngineSubsystem extends AbstractSubsystem implements ISoundSpreader {
+public class EngineSubsystem extends BasicSubsystem implements ISoundSpreader {
     public final EngineSubsystemAttr attr;
     public final double RED_LINE_SPEED;//红线转速(rad/s)
     public final double MAX_TORQUE_SPEED;//最大扭矩转速(rad/s)

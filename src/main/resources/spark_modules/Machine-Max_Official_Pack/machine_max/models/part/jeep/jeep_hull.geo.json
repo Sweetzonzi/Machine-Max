@@ -26,7 +26,8 @@
 						"top_front": {
 							"offset": [0, 11.3362, -25.02559],
 							"rotation": [5, 0, 0]
-						}
+						},
+						"hull_mass_center": [0, 0, 0]
 					}
 				},
 				{

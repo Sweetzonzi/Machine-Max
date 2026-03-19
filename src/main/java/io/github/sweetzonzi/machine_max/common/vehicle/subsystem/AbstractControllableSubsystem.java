@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.MoveInputSignal;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.RegularInputSignal;
@@ -12,13 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-abstract public class AbstractControllableSubsystem extends AbstractSubsystem {
+abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     public Map<String, List<String>> moveSignalTargets = new HashMap<>();
     public Map<String, List<String>> viewSignalTargets = new HashMap<>();
     public Map<String, List<String>> regularSignalTargets = new HashMap<>();
 
-    protected AbstractControllableSubsystem(ISubsystemHost owner, String name, AbstractSubsystemAttr attr) {
+    protected AbstractControllableSubsystem(ISubsystemHost owner, String name, BasicSubsystemDynamicAttr attr) {
         super(owner, name, attr);
     }
 

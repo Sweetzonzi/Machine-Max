@@ -334,7 +334,8 @@
 					],
 					"locators": {
 						"back_bumper_chassis_left": [8, -0.72241, 1.89341],
-						"back_bumper_chassis_right": [-8, -0.72241, 1.89341]
+						"back_bumper_chassis_right": [-8, -0.72241, 1.89341],
+						"mass_center": [0, 0, 0]
 					}
 				},
 				{

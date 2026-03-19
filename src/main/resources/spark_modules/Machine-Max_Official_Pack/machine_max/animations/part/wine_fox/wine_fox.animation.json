@@ -57,6 +57,12 @@
 				},
 				"ysmGlowRightFogLight": {
 					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_front_light')"
+				},
+				"RightDoorMirror": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')"
+				},
+				"LeftDoorMirror": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')"
 				}
 			}
 		}

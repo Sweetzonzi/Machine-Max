@@ -2,7 +2,7 @@ dependencies {
     // 物理库
 //    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
 //    implementation("io.github.solarmoonqaq:spark-core-${mod_loader}:${spark_core_version}")
-    implementation files('libs/SparkCore-1.21.1-neoforge-1.0.1012-SNAPSHOT.jar')
+    implementation files('libs/SparkCore-1.21.1-neoforge-1.0.1013-SNAPSHOT.jar')
 
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
@@ -22,6 +22,7 @@ dependencies {
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
     // 其它mod
+    implementation("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // 本地lib
 //    additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])

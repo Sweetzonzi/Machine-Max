@@ -22,7 +22,8 @@
 						"wheel_locator_back_left_1": [21, -0.25, 22],
 						"wheel_locator_back_right_1": [-21, -0.25, 22],
 						"wheel_locator_back_right_2": [-21, -0.25, 49],
-						"wheel_locator_back_left_2": [21, -0.25, 49]
+						"wheel_locator_back_left_2": [21, -0.25, 49],
+						"mass_center": [0, 0, 0]
 					}
 				},
 				{

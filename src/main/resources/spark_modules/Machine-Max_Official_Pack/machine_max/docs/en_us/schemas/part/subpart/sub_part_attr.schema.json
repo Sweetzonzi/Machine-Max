@@ -32,8 +32,8 @@
     },
     "mass_center": {
       "type": "string",
-      "default": "",
-      "description": "Mass center locator name, used to specify a locator with the same name in the model as the mass center position. If not specified, the geometric center of the collision volume will be used as the mass center."
+      "default": "mass_center",
+      "description": "Mass center locator name, used to specify a locator with the same name in the model as the mass center position. If not specified or not found, the geometric center of the collision volume will be used as the mass center."
     },
     "projected_area": {
       "$ref": "../../base/vector_3d.schema.json",

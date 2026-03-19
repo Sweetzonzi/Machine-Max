@@ -53,20 +53,20 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             if (animatable == null) return;
             ModelInstance modelInstance = animatable.getModelController().getModel();
             if (modelInstance == null) return;
-            
+
             // 检查动画体类型，分发到对应的渲染逻辑
             if (animatable instanceof VehicleAnimatable vehicleAnimatable) {
                 // VehicleAnimatable渲染逻辑：载具级别的多零件渲染
                 renderVehicleAnimatable(vehicleAnimatable, customModelItem, stack, displayContext,
-                                        poseStack, buffer, packedLight, packedOverlay);
+                        poseStack, buffer, packedLight, packedOverlay);
             } else if (animatable instanceof PartAnimatable partAnimatable) {
                 // PartAnimatable渲染逻辑：部件级别的多零件渲染，支持start_bone和end_bones过滤
-                renderPartAnimatable(partAnimatable, customModelItem, stack, displayContext, 
-                                     poseStack, buffer, packedLight, packedOverlay);
+                renderPartAnimatable(partAnimatable, customModelItem, stack, displayContext,
+                        poseStack, buffer, packedLight, packedOverlay);
             } else {
                 // 原有渲染逻辑，处理ItemAnimatable等其他动画类型
                 renderDefaultAnimatable(animatable, customModelItem, stack, displayContext,
-                                        poseStack, buffer, packedLight, packedOverlay);
+                        poseStack, buffer, packedLight, packedOverlay);
             }
         }
     }
@@ -101,18 +101,20 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
                     && VehicleBlueprintItem.getBlueprintData(stack).getIcon() != BlueprintData.EMPTY
                     && VehicleBlueprintItem.getBlueprintData(stack).isRenderBackground())
                     || customModelItem instanceof FabricatingBlueprintItem) {
+                poseStack.pushPose();
+                poseStack.translate(0F, 0F, 5.5F);
                 // 图标下额外渲染蓝图背景，以和装配体/部件物品做出区分
                 ModelRenderHelperKt.render(
                         animatable.getModelController().getOriginModel(),
                         modelInstance.getPose(),
-                        poseStack.last().pose().translate(AXIS_ZN),
-                        poseStack.last().normal(),
+                        poseStack,
                         buffer.getBuffer(RenderType.entityCutout(VehicleBlueprintItem.BG_TEXTURE)),
                         Brightness.FULL_BRIGHT.pack(),
                         packedOverlay,
                         Color.WHITE.getRGB(),
                         1
                 );
+                poseStack.popPose();
             }
         }
         poseStack.pushPose();
@@ -123,8 +125,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
         ModelRenderHelperKt.render(
                 animatable.getModelController().getOriginModel(),
                 modelInstance.getPose(),
-                poseStack.last().pose(),
-                poseStack.last().normal(),
+                poseStack,
                 buffer.getBuffer(RenderType.entityCutout(animatable.getModelController().getTextureLocation())),
                 packedLight,
                 packedOverlay,
@@ -151,8 +152,8 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
     ) {
         Level level = Minecraft.getInstance().level;
         poseStack.pushPose();
-        poseStack.translate(0.5F, 0.5F, 0.5F);
-        
+        poseStack.translate(0.5F, 0.5F, -0.5F);
+
         // 应用物品级别的变换（偏移、旋转、缩放）
         Vector3f offset = customModelItem.getRenderOffset(stack, level, displayContext);
         Vector3f rotation = customModelItem.getRenderRotation(stack, level, displayContext);
@@ -161,28 +162,27 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
         poseStack.translate(offset.x, offset.y, offset.z);
         poseStack.mulPose(new Quaternionf().rotateZYX(rotation.x, rotation.y, rotation.z));
         poseStack.scale(scale.x, scale.y, scale.z);
-        
+
         // 遍历部件的所有零件
         for (SubPartAnimatable subPart : partAnimatable.getSubParts().values()) {
             poseStack.pushPose();
             // 应用零件的变换矩阵（使用1f作为插值系数，物品渲染通常不需要插值）
             poseStack.mulPose(subPart.getRenderWorldPositionMatrix(1f));
-            
+
             // 渲染该零件的所有骨骼（已根据start_bone和end_bones过滤）
             for (OBone bone : subPart.getBones().values()) {
                 ModelRenderHelperKt.render(
-                         bone,
-                         subPart.getModelController().getModel().getPose(),
-                         new Matrix4f(poseStack.last().pose()),
-                         new Matrix3f(poseStack.last().normal()),
-                         buffer.getBuffer(RenderType.entityCutout(
-                                 subPart.getModelController().getTextureLocation())),
-                         packedLight,
-                         packedOverlay,
-                         customModelItem.getColor(stack, Minecraft.getInstance().level, displayContext).getRGB(),
-                         1f,
-                         false
-                 );
+                        bone,
+                        subPart.getModelController().getModel().getPose(),
+                        poseStack,
+                        buffer.getBuffer(RenderType.entityCutout(
+                                subPart.getModelController().getTextureLocation())),
+                        packedLight,
+                        packedOverlay,
+                        customModelItem.getColor(stack, Minecraft.getInstance().level, displayContext).getRGB(),
+                        1f,
+                        false
+                );
             }
             poseStack.popPose();
         }
@@ -191,21 +191,21 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
 
     /**
      * 渲染VehicleAnimatable对象，载具级别的多零件渲染。
-     * 
+     *
      * <p>遍历载具的所有零件（SubPartAnimatable），应用各自的变换矩阵，
      * 渲染每个零件的骨骼（已根据start_bone和end_bones过滤）。</p>
-     * 
+     *
      * <p>渲染逻辑与{@link #renderPartAnimatable}相似，但处理的是整个载具而非单个部件。
      * 用于载具蓝图/装配体在GUI中的3D预览（当未提供图标时）。</p>
-     * 
+     *
      * @param vehicleAnimatable 载具动画体对象
-     * @param customModelItem 自定义模型物品接口
-     * @param stack 物品堆栈
-     * @param displayContext 渲染上下文
-     * @param poseStack 位姿栈
-     * @param buffer 渲染缓冲区
-     * @param packedLight 打包的光照值
-     * @param packedOverlay 打包的叠加层值
+     * @param customModelItem   自定义模型物品接口
+     * @param stack             物品堆栈
+     * @param displayContext    渲染上下文
+     * @param poseStack         位姿栈
+     * @param buffer            渲染缓冲区
+     * @param packedLight       打包的光照值
+     * @param packedOverlay     打包的叠加层值
      */
     private void renderVehicleAnimatable(
             VehicleAnimatable vehicleAnimatable,
@@ -220,7 +220,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
         Level level = Minecraft.getInstance().level;
         poseStack.pushPose();
         poseStack.translate(0.5F, 0.5F, 0.5F);
-        
+
         // 应用物品级别的变换（偏移、旋转、缩放）
         Vector3f offset = customModelItem.getRenderOffset(stack, level, displayContext);
         Vector3f rotation = customModelItem.getRenderRotation(stack, level, displayContext);
@@ -238,8 +238,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
                 ModelRenderHelperKt.render(
                         vehicleAnimatable.getModelController().getOriginModel(),
                         vehicleAnimatable.getModelController().getModel().getPose(),
-                        poseStack.last().pose(),
-                        poseStack.last().normal(),
+                        poseStack,
                         buffer.getBuffer(RenderType.entityCutout(VehicleBlueprintItem.BG_TEXTURE)),
                         Brightness.FULL_BRIGHT.pack(),
                         packedOverlay,
@@ -269,18 +268,17 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             // 渲染该零件的所有骨骼（已根据start_bone和end_bones过滤）
             for (OBone bone : subPart.getBones().values()) {
                 ModelRenderHelperKt.render(
-                         bone,
-                         subPart.getModelController().getModel().getPose(),
-                         new Matrix4f(poseStack.last().pose()),
-                         new Matrix3f(poseStack.last().normal()),
-                         buffer.getBuffer(RenderType.entityCutout(
-                                 subPart.getModelController().getTextureLocation())),
-                         packedLight,
-                         packedOverlay,
-                         customModelItem.getColor(stack, Minecraft.getInstance().level, displayContext).getRGB(),
-                         1f,
-                         false
-                 );
+                        bone,
+                        subPart.getModelController().getModel().getPose(),
+                        poseStack,
+                        buffer.getBuffer(RenderType.entityCutout(
+                                subPart.getModelController().getTextureLocation())),
+                        packedLight,
+                        packedOverlay,
+                        customModelItem.getColor(stack, Minecraft.getInstance().level, displayContext).getRGB(),
+                        1f,
+                        false
+                );
             }
             poseStack.popPose();
         }

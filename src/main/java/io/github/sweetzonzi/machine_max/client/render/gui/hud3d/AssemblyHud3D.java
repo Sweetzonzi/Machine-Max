@@ -23,6 +23,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.BasicSubsystem;
 import io.github.sweetzonzi.machine_max.util.Easing;
 import io.github.sweetzonzi.machine_max.util.ViewOrientationResolver;
 import net.minecraft.client.player.LocalPlayer;
@@ -175,6 +176,7 @@ public class AssemblyHud3D implements IHud3DElement {
                 warningMessages.add(Component.translatable("hud.warn.machine_max.subpart_destroying", decimalFormat.format(subPart.getDestroyTime() * 0.05f)));
             }
             for (AbstractSubsystem subsystem : subPart.subsystems.values()) {
+                if (subsystem instanceof BasicSubsystem basicSubsystem && basicSubsystem.isHidden()) continue;
                 if (subsystem.isDestroyed())
                     warningMessages.add(Component.translatable("hud.warn.machine_max.subsystem_malfunction",
                             Component.translatable(subsystem.name).getString()));
@@ -429,8 +431,7 @@ public class AssemblyHud3D implements IHud3DElement {
             ModelRenderHelperKt.render(
                     bone,
                     modelInstance.getPose(),
-                    new Matrix4f(ctx.poseStack.last().pose()),
-                    normal,
+                    ctx.poseStack,
                     ctx.buffer.getBuffer(MMRenderTypes.alwaysVisibleSolid()),
                     Brightness.FULL_BRIGHT.pack(),
                     OverlayTexture.NO_OVERLAY,
@@ -445,12 +446,11 @@ public class AssemblyHud3D implements IHud3DElement {
             String subsystemName = entry.getValue().subsystem();
             if (bonesToRender.containsKey(name) && !subsystemName.isEmpty()) {
                 AbstractSubsystem subsystem = subPart.subsystems.get(subsystemName);
-                if (subsystem != null) {
+                if (subsystem instanceof BasicSubsystem basicSubsystem && !basicSubsystem.isHidden()) {
                     ModelRenderHelperKt.render(
                             bonesToRender.get(name),
                             modelInstance.getPose(),
-                            new Matrix4f(ctx.poseStack.last().pose()),
-                            normal,
+                            ctx.poseStack,
                             ctx.buffer.getBuffer(MMRenderTypes.alwaysVisibleSolid()),
                             Brightness.FULL_BRIGHT.pack(),
                             OverlayTexture.NO_OVERLAY,

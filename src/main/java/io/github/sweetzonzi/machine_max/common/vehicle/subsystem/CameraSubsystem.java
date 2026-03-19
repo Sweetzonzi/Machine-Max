@@ -6,7 +6,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_at
 import java.util.List;
 import java.util.Map;
 
-public class CameraSubsystem extends AbstractSubsystem{
+public class CameraSubsystem extends BasicSubsystem {
     public final CameraSubsystemAttr attr;
 
     public CameraSubsystem(ISubsystemHost owner, String name, CameraSubsystemAttr attr) {

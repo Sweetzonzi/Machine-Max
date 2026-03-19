@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JointDriverSubsystem extends AbstractSubsystem{
+public class JointDriverSubsystem extends BasicSubsystem {
     public final JointDriverSubsystemAttr attr;
     public final AdvancedConnector connector;
     private final Float[] powerAllocation = new Float[6];

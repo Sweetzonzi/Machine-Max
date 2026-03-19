@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
-public class CarControllerSubsystem extends AbstractSubsystem {
+public class CarControllerSubsystem extends BasicSubsystem {
     public final CarControllerSubsystemAttr attr;
     public LivingEntity controller;
     public byte[] moveInput;
@@ -72,7 +72,7 @@ public class CarControllerSubsystem extends AbstractSubsystem {
     public CarControllerSubsystem(ISubsystemHost owner, String name, CarControllerSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        this.driftingPD = new PIDController(1.5, 0.2, 0.1, 1.0 / getPhysicsLevel().getTps(), -1, 1);
+        this.driftingPD = new PIDController(1.5, 0.01, 0.1, 1.0 / getPhysicsLevel().getTps(), -1, 1);
     }
 
     @Override

@@ -18,11 +18,7 @@
 				{
 					"name": "Hull",
 					"parent": "Root",
-					"pivot": [0, 4.25, 3.4],
-					"locators": {
-						"BackLeft": [16.575, 8.5, 26.35],
-						"BackRight": [-16.575, 8.5, 26.35]
-					}
+					"pivot": [0, 4.25, 3.4]
 				},
 				{
 					"name": "door_L",
@@ -3714,11 +3710,13 @@
 						}
 					],
 					"locators": {
-						"MassCenter": [0, 0, 0],
+						"hull_mass_center": [0, 0, 0],
 						"LeftFrontSeatPoint": [6.8, 5.1, 2.55],
 						"RightFrontSeatPoint": [-6.8, 5.1, 2.55],
 						"LeftBackSeatPoint": [6.8, 5.1, 21.25],
-						"RightBackSeatPoint": [-6.8, 5.1, 21.25]
+						"RightBackSeatPoint": [-6.8, 5.1, 21.25],
+						"BackLeft": [16.575, 8.5, 26.35],
+						"BackRight": [-16.575, 8.5, 26.35]
 					}
 				},
 				{

@@ -4,9 +4,11 @@ import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreferenceAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.network.payload.ControlPreferencePayload;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -38,6 +40,23 @@ public class MMClientConfig {
         );
         event.getPlayer().setData(MMAttachments.getCONTROL_PREFERENCE(), preferences);
         PacketDistributor.sendToServer(new ControlPreferencePayload(preferences));
+    }
+
+    public static void onChangeConfig(ModConfigEvent.Reloading event) {
+        //不使用@SubscribeEvent注解，而是在MachineMaxClient中注册监听器，因为与onPlayerLogin的bus不同
+        if (event.getConfig().getSpec() == CLIENT_SPEC) {
+            var player = Minecraft.getInstance().player;
+            if (player != null) {
+                var preferences = new ControlPreferenceAttachment(
+                        getGroundAutoSwitchGear(),
+                        getGroundAutoHandbrake(),
+                        getGroundDriftAssist(),
+                        getGroundSpeedTurningLimit()
+                );
+                player.setData(MMAttachments.getCONTROL_PREFERENCE(), preferences);
+                PacketDistributor.sendToServer(new ControlPreferencePayload(preferences));
+            }
+        }
     }
 
 

@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Getter
-public class MotorSubsystem extends AbstractSubsystem implements ISoundSpreader {
+public class MotorSubsystem extends BasicSubsystem implements ISoundSpreader {
     public final double RED_LINE_SPEED;//红线转速(rad/s)
     public final MotorSubsystemAttr attr;
     protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(MotorSubsystem.class, EntityDataSerializers.FLOAT);

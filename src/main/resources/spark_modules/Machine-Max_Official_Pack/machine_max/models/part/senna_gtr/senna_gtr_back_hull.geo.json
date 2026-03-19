@@ -13,7 +13,10 @@
 			"bones": [
 				{
 					"name": "Hull",
-					"pivot": [-0.03037, 10.20748, 4.96817]
+					"pivot": [-0.03037, 10.20748, 4.96817],
+					"locators": {
+						"mass_center": [0, 0, 0]
+					}
 				},
 				{
 					"name": "BackHull",

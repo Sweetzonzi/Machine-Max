@@ -7,6 +7,7 @@ import com.jme3.math.Vector3f;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
@@ -155,7 +156,7 @@ public class CameraController {
             event.setYaw(-rot.y);
             event.setRoll(rot.z);
         } else {
-            //基于世界坐标系旋转相机
+            //基于世界坐标系旋转相机 TODO: 玩家朝向有bug
             event.setPitch(pitch);
             event.setYaw(yaw);
             event.setRoll(roll);
@@ -174,7 +175,6 @@ public class CameraController {
                 if (seat.getOwner().getSubPart().getEntity() instanceof MMPartEntity partEntity) {
                     entity.setXRot(aimPitch);
                     entity.setYRot(aimYaw + 180 + partEntity.getYRot());
-//                    entity.setYHeadRot(aimYaw + 180 + partEntity.getYRot());
                 }
             } else {
                 if (onBoard) {
@@ -243,10 +243,20 @@ public class CameraController {
                 float yawLimit = seat.attr.staticAttribute.views.yawLimit() / 2;
                 float minYaw = 180 - yawLimit;
                 float maxYaw = 180 + yawLimit;
-                targetViewPitch = Math.clamp(targetViewPitch + f, maxPitch, minPitch);
-                targetViewYaw = Math.clamp(targetViewYaw + f1, minYaw, maxYaw);
-                aimPitch = Math.clamp(aimPitch + f, maxPitch, minPitch);
-                aimYaw = Math.clamp(aimYaw + f1, minYaw, maxYaw);
+                if (ControlPreference.shouldFollowPose(seat) || client.options.getCameraType().isFirstPerson()) {
+                    targetViewPitch = Math.clamp(targetViewPitch + f, maxPitch, minPitch);
+                    targetViewYaw = Math.clamp(targetViewYaw + f1, minYaw, maxYaw);
+                    aimPitch = Math.clamp(aimPitch + f, maxPitch, minPitch);
+                    aimYaw = Math.clamp(aimYaw + f1, minYaw, maxYaw);
+                } else {
+                    float yaw = seat.getSubPart().getYaw();
+                    float pitch = seat.getSubPart().getPitch();
+                    //TODO: 根据当前yaw和pitch钳制范围
+                    targetViewPitch = targetViewPitch + f;
+                    targetViewYaw = targetViewYaw + f1;
+                    aimPitch = aimPitch + f;
+                    aimYaw = aimYaw + f1;
+                }
             } else {
                 targetViewPitch += f;
                 targetViewYaw += f1;

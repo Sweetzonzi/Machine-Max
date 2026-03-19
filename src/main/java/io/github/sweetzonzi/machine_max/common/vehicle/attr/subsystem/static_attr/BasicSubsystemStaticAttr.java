@@ -47,17 +47,20 @@ public class BasicSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
      * @param basicDurability 基础耐久度
      * @param passDamage 是否传递伤害至子系统持有者
      * @param limitDamage 是否限制伤害传递值至子系统剩余耐久度，例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者
+     * @param hidden 是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统
      */
     public record BasicAttr(
             float basicDurability,
             boolean passDamage,
-            boolean limitDamage
+            boolean limitDamage,
+            boolean hidden
     ) {
         public static final MapCodec<BasicAttr> CODEC =
                 RecordCodecBuilder.mapCodec(instance -> instance.group(
                         Codec.FLOAT.optionalFieldOf("basic_durability", 20f).forGetter(BasicAttr::basicDurability),
                         Codec.BOOL.optionalFieldOf("pass_damage", true).forGetter(BasicAttr::passDamage),
-                        Codec.BOOL.optionalFieldOf("limit_damage", false).forGetter(BasicAttr::limitDamage)
+                        Codec.BOOL.optionalFieldOf("limit_damage", false).forGetter(BasicAttr::limitDamage),
+                        Codec.BOOL.optionalFieldOf("hidden", false).forGetter(BasicAttr::hidden)
                 ).apply(instance, BasicAttr::new));
     }
 

@@ -74,7 +74,7 @@ public class SubPartAttr {
             Codec.STRING.listOf().optionalFieldOf("end_bones", List.of()).forGetter(SubPartAttr::getEndBones),
             Codec.FLOAT.optionalFieldOf("durability", 20f).forGetter(SubPartAttr::getDurability),
             Codec.FLOAT.optionalFieldOf("mass", 25f).forGetter(SubPartAttr::getMass),
-            Codec.STRING.optionalFieldOf("mass_center", "").forGetter(SubPartAttr::getMassCenterName),
+            Codec.STRING.optionalFieldOf("mass_center", "mass_center").forGetter(SubPartAttr::getMassCenterName),
             Vec3.CODEC.optionalFieldOf("projected_area", Vec3.ZERO).forGetter(SubPartAttr::getProjectedArea),
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
