@@ -113,7 +113,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 for (OBone bone : bones.values()) {
                     Matrix4f transform = new Matrix4f();
                     bone.applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
-                    poseStack.popPose();
+                    poseStack.pushPose();
                     poseStack.mulPose(transform);
                     for (OCube cube : bone.getCubes()) {
                         if (i / cubeCount >= entity.subPart.part.getAssemblingProgress()) {
@@ -137,7 +137,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                         }
                         i++;
                     }
-                    poseStack.pushPose();
+                    poseStack.popPose();
                 }
             }
         } else {
@@ -175,7 +175,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             for (OBone bone : bones.values()) {
                 Matrix4f transform = new Matrix4f();
                 bone.applyTransformWithParents(modelInstance.getPose(), transform, partialTick);
-                poseStack.popPose();
+                poseStack.pushPose();
                 poseStack.mulPose(transform);
                 for (OCube cube : bone.getCubes()) {
                     if (entity.subPart.part.getAssemblingProgress() >= 1.0f || i / cubeCount < entity.subPart.part.getAssemblingProgress()) {
@@ -203,7 +203,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                     }
                     i++;
                 }
-                poseStack.pushPose();
+                poseStack.popPose();
             }
         }
         poseStack.popPose();

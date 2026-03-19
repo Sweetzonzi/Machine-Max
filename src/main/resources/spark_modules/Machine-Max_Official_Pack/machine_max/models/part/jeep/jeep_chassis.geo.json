@@ -4404,7 +4404,7 @@
 						"seat_point_right": [-10, 11, 4],
 						"seat_point_left": [10, 11, 4],
 						"trunk": [0, 4, 31],
-						"chassis_mass_center": [0, 3, 0]
+						"chassis_mass_center": [0, 0, 0]
 					}
 				},
 				{

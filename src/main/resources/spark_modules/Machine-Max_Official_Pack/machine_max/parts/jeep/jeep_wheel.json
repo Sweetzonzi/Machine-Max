@@ -27,8 +27,8 @@
             "CollisionShape": {
               "type": "wheel",
               "friction": [
-                2.8,
-                2.8,
+                1.5,
+                1.7,
                 1.0
               ],
               "slip_adaptation": 0.5,
@@ -141,8 +141,8 @@
             "CollisionShape": {
               "type": "wheel",
               "friction": [
-                2.8,
-                2.8,
+                1.5,
+                1.7,
                 1.0
               ],
               "slip_adaptation": 0.5,
