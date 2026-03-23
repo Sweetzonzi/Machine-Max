@@ -167,6 +167,14 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         this.stepHeight = attr.stepHeight;
         this.projectedArea = attr.projectedArea;
         //各类回调
+        PhysicsBodyExtensionKt.onCollidePre(this.body, event -> {
+            var o1 = event.getO1();
+            var o2 = event.getO2();
+            var point1 = event.getO1Point();
+            var point2 = event.getO2Point();
+            long manifoldPointId = point1.getId();
+            return this.onPreContact(o1, o2, point1, point2, manifoldPointId);
+        });
         PhysicsBodyExtensionKt.onCollideProcessed(this.body, event -> {
             var o1 = event.getO1();
             var o2 = event.getO2();
@@ -227,10 +235,60 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         getLevel().addFreshEntity(this.entity);
     }
 
+    public boolean onPreContact(PhysicsCollisionObject o1, @NotNull PhysicsCollisionObject o2,
+                                ManifoldPoint point1, ManifoldPoint point2,
+                                long manifoldPointId) {
+        if (level.isClientSide() && !isActive()) return false; // 忽略非激活客户端刚体
+        PhysicsRigidBody other = (PhysicsRigidBody) o2;
+        Vector3f normal = new Vector3f();
+        int hitBoxIndex;
+        Vector3f worldContactPoint = new Vector3f();
+        hitBoxIndex = point1.getTriangleIndex();
+        point1.getPositionWorld(worldContactPoint);
+        if (!isEffectiveContact(hitBoxIndex, worldContactPoint, true)) {
+            ManifoldPoints.setAppliedImpulse(manifoldPointId, 0);
+            ManifoldPoints.setDistance1(manifoldPointId, 500);
+            return false; // 忽略无效碰撞
+        }
+        //获取世界坐标下的碰撞点法线，由另一物体指向自身
+        point2.getNormalWorld(normal);
+        if (other.getCollisionGroup() == CollisionGroups.TERRAIN) {
+            //与方块碰撞时
+            return this.onPreCollideWithTerrain(other, normal, worldContactPoint, hitBoxIndex);
+        } else return true;
+    }
+
+
+    protected boolean onPreCollideWithTerrain(
+            PhysicsRigidBody other,
+            Vector3f normal,
+            Vector3f worldContactPoint,
+            int hitBoxIndex) {
+        var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
+        if (otherOwner instanceof PhysicsChunkSection terrain) {
+            other.shouldShowDebugBoxWhenNonColldeWith = true;
+            //基本信息获取
+            BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, 0);
+            //若是需要攀爬辅助处理的方块
+            if (climbableBlocks.contains(blockPos)) {
+                Vector3f pos = body.getPhysicsLocation(null);
+                float radius = 0;
+                if (!attr.climbAssist)
+                    pos.set(worldContactPoint);
+                else if (isWheelSurface(hitBoxIndex))
+                    radius = getWheelRadius(hitBoxIndex);
+                var result = heightField.solveContact(pos, radius, worldContactPoint);
+                // 有限负穿透代表尚未接触高度场，无碰撞
+                if (result.penetration() > 0 && result.normal().y < 0.999f) { // 正穿透代表需要修正为虚拟高度场
+                    return true;
+                } else return !(result.penetration() <= 0) || !Float.isFinite(result.penetration());
+            } else return true;
+        } else return false;
+    }
+
     public void onContactProcessed(PhysicsCollisionObject o1, @NotNull PhysicsCollisionObject o2,
                                    ManifoldPoint point1, ManifoldPoint point2,
                                    long manifoldPointId) {
-
         if (level.isClientSide() && !isActive()) return; // 忽略非激活客户端刚体
         PhysicsRigidBody other = (PhysicsRigidBody) o2;
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
@@ -292,9 +350,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     Vector3f tmpFront = new Vector3f();
     Vector3f tmpSide = new Vector3f();
-    Vector3f climbAssistImpulse = new Vector3f();
 
-    @Override
     protected void onCollideWithTerrain(
             PhysicsRigidBody other,
             Vector3f normal,
@@ -305,25 +361,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float impactAngle,
             ManifoldPoint point1, ManifoldPoint point2,
             long manifoldPointId) {
-//        if (!attr.climbAssist) {
-//            ManifoldPoints.setFlags(manifoldPointId, 0);
-//            ManifoldPoints.setAppliedImpulse(manifoldPointId, 0);
-//            ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0);
-//            ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0);
-//                ManifoldPoints.setDistance1(manifoldPointId, Float.MAX_VALUE);
-////            ManifoldPoints.setDistance1(manifoldPointId, 0.1f);
-//            return;
-//        }
-        super.onCollideWithTerrain(
-                other,
-                normal,
-                worldContactPoint,
-                localContactPoint, otherLocalContactPoint,
-                contactVel,
-                hitBoxIndex, otherHitBoxIndex,
-                impactAngle,
-                point1, point2,
-                manifoldPointId);
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof PhysicsChunkSection terrain) {
             other.shouldShowDebugBoxWhenNonColldeWith = true;
@@ -421,9 +458,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     ManifoldPoints.setCombinedRestitution(manifoldPointId, 0f);
                     ManifoldPoints.setCombinedFriction(manifoldPointId, 0f);
                     return;
-                } else {
-//                    MachineMax.LOGGER.warn("高度场接触点未找到: {}", blockPos);
-                } // 无穷值代表无平滑高程数据，如断崖边，不处理
+                }
             }
             //调用子系统碰撞回调
             if (hitBox.subsystem != null) {
@@ -528,11 +563,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
-    @Override
     protected void onCollideWithRigid(PhysicsRigidBody other, Vector3f normal, Vector3f worldContactPoint, Vector3f
                                               localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel, int hitBoxIndex, int otherHitBoxIndex,
                                       float impactAngle, long manifoldPointId) {
-        super.onCollideWithRigid(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof SubPart otherSubPart) {
             var hitBox = this.getHitBox(hitBoxIndex);
@@ -565,11 +598,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
     }
 
-    @Override
     protected void onCollideWithEntity(PhysicsRigidBody other, Vector3f normal, Vector3f
                                                worldContactPoint, Vector3f localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel,
                                        int hitBoxIndex, int otherHitBoxIndex, float impactAngle, long manifoldPointId) {
-        super.onCollideWithEntity(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
         var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
         if (otherOwner instanceof LivingEntity livingEntity
                 && !livingEntity.isRemoved()

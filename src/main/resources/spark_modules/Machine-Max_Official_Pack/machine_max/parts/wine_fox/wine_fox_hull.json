@@ -695,6 +695,26 @@
             "type": "Simple",
             "required_tags": ["hood"],
             "integrity": 10.0
+          },
+          "connector.machine_max.top_left_front": {
+            "locator": "hull_top_left_front",
+            "type": "Simple",
+            "integrity": 5.0
+          },
+          "connector.machine_max.top_left_back": {
+            "locator": "hull_top_left_back",
+            "type": "Simple",
+            "integrity": 5.0
+          },
+          "connector.machine_max.top_right_front": {
+            "locator": "hull_top_right_front",
+            "type": "Simple",
+            "integrity": 5.0
+          },
+          "connector.machine_max.top_right_back": {
+            "locator": "hull_top_right_back",
+            "type": "Simple",
+            "integrity": 5.0
           }
         },
         "projected_area": [8.6, 13.9, 6.5],

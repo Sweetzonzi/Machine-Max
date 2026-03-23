@@ -1,0 +1,63 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/wine_fox/wine_fox_rack_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
+  "vehicle_durability_rate": 1.0,//(可选, 默认1.0)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
+  "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
+  "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.5)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
+  "variants": {//部件变体列表, 支持单值或多键值对
+    "model": "machine_max:wine_fox.geo", //模型路径
+    "textures": "machine_max:textures/part/wine_fox/wine_fox.png",
+    "animations": "machine_max:wine_fox",
+    "tags": ["rack", "wine_fox"],//(可选)部件标签列表
+    "sub_parts": {//零件(子部件)列表
+      "sub_part.machine_max.main": {//零件(子部件)名称
+        "start_bone": "Rack", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
+        "durability": 50.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
+        "mass": 10.0,//零件质量(kg)
+        "block_collision": "true",//(可选, 默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
+        "collision_height": 1.5,//(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
+        "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
+          "RackHitBox": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
+            "type": "box" //碰撞形状类型, 支持box、sphere、cylinder、wheel
+          }
+        },
+        "connectors": {//子部件用于与其他零件连接的连接点列表
+          "connector.machine_max.left_back": {//连接点名称
+            "locator": "rack_left_back",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+            "type": "Simple", //连接点类型, 支持Simple和Advanced
+            "direction": "yn",
+            "integrity": 5.0 //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+          },
+          "connector.machine_max.right_back": {
+            "locator": "rack_right_back",
+            "type": "Simple",
+            "direction": "yn",
+            "integrity": 5.0
+          },
+          "connector.machine_max.left_front": {
+            "locator": "rack_left_front",
+            "type": "Simple",
+            "direction": "yn",
+            "integrity": 5.0
+          },
+          "connector.machine_max.right_front": {
+            "locator": "rack_right_front",
+            "type": "Simple",
+            "direction": "yn",
+            "integrity": 5.0
+          },
+          "connector.machine_max.top_left": {
+            "locator": "rack_top_left",
+            "type": "Simple",
+            "integrity": 5.0
+          },
+          "connector.machine_max.top_right": {
+            "locator": "rack_top_right",
+            "type": "Simple",
+            "integrity": 5.0
+          }
+        }
+      }
+    }
+  }
+}

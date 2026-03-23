@@ -141,50 +141,6 @@ public abstract class DestroyableObject implements SyncedDataHolder {
      */
     abstract protected void handleAccumulatedDamage();
 
-
-    protected void onCollideWithTerrain(
-            PhysicsRigidBody other,
-            Vector3f normal,
-            Vector3f worldContactPoint,
-            Vector3f localContactPoint,
-            Vector3f otherLocalContactPoint,
-            Vector3f contactVel,
-            int hitBoxIndex,
-            int otherHitBoxIndex,
-            float impactAngle,
-            ManifoldPoint point1, ManifoldPoint point2,
-            long manifoldPointId
-    ) {
-    }
-
-    protected void onCollideWithRigid(
-            PhysicsRigidBody other,
-            Vector3f normal,
-            Vector3f worldContactPoint,
-            Vector3f localContactPoint,
-            Vector3f otherLocalContactPoint,
-            Vector3f contactVel,
-            int hitBoxIndex,
-            int otherHitBoxIndex,
-            float impactAngle,
-            long manifoldPointId
-    ) {
-    }
-
-    protected void onCollideWithEntity(
-            PhysicsRigidBody other,
-            Vector3f normal,
-            Vector3f worldContactPoint,
-            Vector3f localContactPoint,
-            Vector3f otherLocalContactPoint,
-            Vector3f contactVel,
-            int hitBoxIndex,
-            int otherHitBoxIndex,
-            float impactAngle,
-            long manifoldPointId
-    ) {
-    }
-
     public void addToLevel() {
         ObjectManager.addDestroyableObject(this);
     }
