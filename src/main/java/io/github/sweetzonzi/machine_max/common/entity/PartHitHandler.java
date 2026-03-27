@@ -28,7 +28,7 @@ public class PartHitHandler {
             IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
             var start = PhysicsHelperKt.toBVector3f(projectile.getPosition(1).subtract(projectile.getDeltaMovement().scale(1.5)).subtract(projectile.getDeltaMovement().normalize().scale(projectile.getBoundingBox().getSize())));
             var end = PhysicsHelperKt.toBVector3f(projectile.getPosition(1).add(projectile.getDeltaMovement().scale(1.5).add(projectile.getDeltaMovement().normalize().scale(projectile.getBoundingBox().getSize()))));
-            var results = SparkLevel.getPhysicsLevel(projectile.level()).getWorld().rayTest(start, end);
+            var results = SparkLevel.getPhysicsLevel(projectile.level()).getWorld().getWorldSnapshot().rayTest(start, end);
             for (PhysicsRayTestResult result : results) {//遍历射线检测结果
                 if (PhysicsBodyExtensionKt.getOwner(result.getCollisionObject()) instanceof SubPart candidatedSubPart) {
                     if(candidatedSubPart.isWheel(result.triangleIndex()) && candidatedSubPart.isWheelSurface(result.triangleIndex())) continue; // 跳过轮子的球面部分
@@ -81,7 +81,7 @@ public class PartHitHandler {
                 if (subPart.isWheel(result.triangleIndex()) && subPart.isWheelSurface(result.triangleIndex()))
                     continue;
                 var hitBox = subPart.getHitBox(result.triangleIndex());
-                if (hitBox != null && !hitBox.isActive()) continue; // 跳过未激活的碰撞箱
+                if (!hitBox.isActive()) continue; // 跳过未激活的碰撞箱
                 hitSubPart = subPart;
                 hitResult = result;
                 break;

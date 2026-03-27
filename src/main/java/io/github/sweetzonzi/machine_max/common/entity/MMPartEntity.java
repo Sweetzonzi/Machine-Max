@@ -198,7 +198,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                         return nearest.onHurt(data, amount);
                     } else throw new IllegalStateException("No subpart found for explosion damage.");
                 } else {//一般伤害处理
-                    var results = physicsLevel.getWorld().rayTest(start, end);
+                    var results = physicsLevel.getWorld().getWorldSnapshot().rayTest(start, end);
                     for (var result : results) {
                         PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
                         if (PhysicsBodyExtensionKt.getOwner(body) instanceof SubPart someSubPart) {

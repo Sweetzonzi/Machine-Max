@@ -183,7 +183,7 @@ public class VehicleAssemblyAttachment {
         var eyesight = owner.getData(MMAttachments.getENTITY_EYESIGHT());
         AbstractConnector targetConnector = eyesight.getEmptyConnector();//获取视线看着的部件连接点
         PartType partType = this.getPartType();
-        if (partType == null) return;
+        if (partType == null || targetConnector == null) return;
         int i = partType.variants.size();//设置最大迭代次数
         while (i >= 0) {
             //循环获取下一个部件变体，直到找到合适的部件变体或到达迭代次数上限

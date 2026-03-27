@@ -15,7 +15,7 @@
         "end_bones": [], // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
         "mass_center": "hull_mass_center",
         "durability": 120.0,
-        "mass": 200.0,
+        "mass": 400.0,
         "block_collision": "ground",
         "collision_height": 1.5,
         "hit_boxes": { //键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
@@ -437,8 +437,8 @@
                 "lower_limit": -1.0, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
                 "upper_limit": 1.5, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
                 "equilibrium": -0.1, //(可选, 默认0)弹簧阻尼关节的平衡位置, 当关节处于此位置时, 关节受到的刚度力(力矩)等于0
-                "stiffness": 12000, //刚度系数(N/m)
-                "damping": 300 //阻尼系数(N/(m/s))
+                "stiffness": 22000, //刚度系数(N/m)
+                "damping": 500 //阻尼系数(N/(m/s))
               },
               "xr": { //控制的轴, x、y、z分别对应x、y、z轴的平动, xr、yr、zr分别对应x、y、z轴的旋转
                 "lower_limit": 1.0, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
@@ -472,8 +472,8 @@
                 "lower_limit": -1.0,
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
-                "stiffness": 12000,
-                "damping": 300
+                "stiffness": 22000,
+                "damping": 500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -501,8 +501,8 @@
                 "lower_limit": -1.0,
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
-                "stiffness": 12000,
-                "damping": 300
+                "stiffness": 22000,
+                "damping": 500
               },
               "xr": {
                 "lower_limit": 1.0,
@@ -536,8 +536,8 @@
                 "lower_limit": -1.0,
                 "upper_limit": 1.5,
                 "equilibrium": -0.1,
-                "stiffness": 12000,
-                "damping": 300
+                "stiffness": 22000,
+                "damping": 500
               },
               "xr": {
                 "lower_limit": 1.0,
