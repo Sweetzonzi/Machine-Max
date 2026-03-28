@@ -12,3 +12,17 @@ pluginManagement {
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
+
+rootProject.name = 'Machine-Max'
+
+def sparkCoreDir = file("../Spark-Core") // 此处修改为Spark-Core源码所在目录
+if (sparkCoreDir.exists()) { // 首选同目录下Spark-Core源码作为依赖
+    includeBuild(sparkCoreDir) {
+        dependencySubstitution {
+            substitute(module("io.github.solarmoonqaq:spark-core-${mod_loader}"))
+                    .using(project(":"))
+        }
+    }
+} else { // 若不存在，则使用发布的/本地jar作为依赖
+    println("[Machine-Max] Spark-Core not found, using published/local jar")
+}

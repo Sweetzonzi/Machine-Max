@@ -1,9 +1,6 @@
 dependencies {
     // 物理库
-//    implementation "cn.solarmoon:spark-core-neoforge:${minecraft_version}-${spark_core_version}"
-//    implementation("io.github.solarmoonqaq:spark-core-${mod_loader}:${spark_core_version}")
-    implementation files('libs/SparkCore-1.21.1-neoforge-1.0.1014-SNAPSHOT.jar')
-
+    implementation("io.github.solarmoonqaq:spark-core-${mod_loader}:${spark_core_version}")
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -14,8 +11,6 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js
     compileOnly "org.mozilla:rhino:1.8.0"
-//    implementation("org.mozilla:rhino:1.8.0")
-//    implementation("cn.solarmoon:spark-core-graaljs-neoforge:1.21.1-1.0.0")
     implementation files('libs/spark-core-graaljs-neoforge-1.21.1-1.0.0.jar')
     // 暴雪粒子
 //    implementation files('libs/particlestorm-1.1.4.jar')
@@ -24,9 +19,6 @@ dependencies {
     // 其它mod
     implementation("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
-    // 本地lib
-//    additionalRuntimeClasspath fileTree(dir: 'libs', includes: ['*.jar'])
-
     // Lombok 配置
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
