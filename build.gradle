@@ -10,8 +10,12 @@ plugins {
     id 'org.jetbrains.dokka' version '1.9.20'
 }
 
-tasks.named('wrapper', Wrapper).configure {
-    distributionType = Wrapper.DistributionType.ALL
+try {
+    // 单独作为项目时运行
+    tasks.named('wrapper', Wrapper).configure {
+        distributionType = Wrapper.DistributionType.ALL
+    }
+} catch (Exception ignored) {
 }
 
 version = mod_version
@@ -123,4 +127,10 @@ kotlin {
 
 compileKotlin {
     kotlinOptions.jvmTarget = "21"
+}
+
+try {
+    // 作为子模块时运行
+    apply from: rootProject.file('modules/Machine-Max/repositories.gradle')
+} catch (Exception ignored) {
 }
