@@ -15,7 +15,7 @@ plugins {
 
 rootProject.name = 'Machine-Max'
 
-def sparkCoreDir = file("../Spark-Core") // 此处修改为Spark-Core源码所在目录
+def sparkCoreDir = file("${spark_core_dir}") // 此处修改为Spark-Core源码所在目录
 if (sparkCoreDir.exists()) { // 首选同目录下Spark-Core源码作为依赖
     includeBuild(sparkCoreDir) {
         dependencySubstitution {

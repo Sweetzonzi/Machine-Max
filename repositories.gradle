@@ -1,6 +1,11 @@
 dependencies {
     // 物理库
-    implementation("io.github.solarmoonqaq:spark-core-${mod_loader}:${spark_core_version}")
+    try {
+        // workspace加载模块时
+        implementation(project(':Spark-Core')) //模块化加载
+    } catch (Exception ignore) { // 失败，说明是单独作为项目时运行
+        implementation("io.github.solarmoonqaq:spark-core-${mod_loader}:${spark_core_version}") //默认加载
+    }
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
