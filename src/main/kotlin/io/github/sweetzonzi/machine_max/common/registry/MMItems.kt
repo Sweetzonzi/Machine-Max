@@ -56,6 +56,13 @@ object MMItems {
         factory = { BlockItem(MMBlocks.RESEARCH_TABLE_BLOCK.get(), Item.Properties()) }
     }
 
+    //全站仪
+    @JvmStatic
+    val TOTAL_STATION_BLOCK_ITEM = MachineMax.REGISTER.item{
+        id="total_station"
+        factory = { BlockItem(MMBlocks.TOTAL_STATION_BLOCK.get(), Item.Properties()) }
+    }
+
     //PAD
 //    @JvmStatic
 //    val PAD_ITEM = MachineMax.REGISTER.item{
@@ -171,7 +178,8 @@ object MMItems {
         event.registerItem(
             CustomModelBlockEntityExtension(),
 //            FABRICATOR_BLOCK_ITEM,
-            RESEARCH_TABLE_BLOCK_ITEM
+            RESEARCH_TABLE_BLOCK_ITEM,
+            TOTAL_STATION_BLOCK_ITEM
         )
     }
 

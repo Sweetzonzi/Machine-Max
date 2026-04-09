@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.block.fabricator.FabricatorBlockEntity
 import io.github.sweetzonzi.machine_max.common.block.research_table.ResearchTableBlockEntity
 import io.github.sweetzonzi.machine_max.common.block.road.RoadBaseBlockEntity
+import io.github.sweetzonzi.machine_max.common.block.total_station.TotalStationBlockEntity
 
 object MMBlockEntities {
     @JvmStatic
@@ -30,6 +31,14 @@ object MMBlockEntities {
         factory = ::ResearchTableBlockEntity
         validBlocks {
             +MMBlocks.RESEARCH_TABLE_BLOCK.get()
+        }
+    }
+    @JvmStatic
+    val TOTAL_STATION_BLOCK_ENTITY = MachineMax.REGISTER.blockEntityType{
+        id = "total_station"
+        factory = ::TotalStationBlockEntity
+        validBlocks {
+            +MMBlocks.TOTAL_STATION_BLOCK.get()
         }
     }
 }
