@@ -47,8 +47,10 @@ public class TotalStationBlock extends BaseEntityBlock {
         BlockPos pos = ctx.getClickedPos();
         Direction facing = ctx.getHorizontalDirection().getClockWise();
 
+        BlockPos down = pos.below();
         BlockPos up = pos.above();
 
+        if (!level.getBlockState(down).isSolid()) return null;
         if (!level.getBlockState(up).canBeReplaced(ctx)) return null;
 
         return defaultBlockState()
@@ -81,6 +83,25 @@ public class TotalStationBlock extends BaseEntityBlock {
         }
 
         return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+        if (level.isClientSide) return;
+
+        BlockPos main = getMainPos(pos, state);
+        BlockPos down = main.below();
+
+        if (!level.getBlockState(down).isSolid()) {
+            for (BlockPos p : new BlockPos[]{
+                    main,
+                    main.above()
+            }) {
+                if (level.getBlockState(p).getBlock() == this) {
+                    level.destroyBlock(p, true);
+                }
+            }
+        }
     }
 
     @Override
