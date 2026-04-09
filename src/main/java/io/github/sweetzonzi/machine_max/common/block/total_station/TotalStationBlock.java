@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
@@ -28,12 +29,14 @@ import org.jetbrains.annotations.Nullable;
 
 public class TotalStationBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final EnumProperty<Half> HALF = BlockStateProperties.HALF;
 
     public TotalStationBlock() {
         super(Properties.of().sound(SoundType.METAL).noOcclusion().lightLevel(p -> 5));
         registerDefaultState(
                 stateDefinition.any()
                         .setValue(FACING, Direction.NORTH)
+                        .setValue(HALF, Half.BOTTOM)
         );
     }
 
@@ -49,40 +52,46 @@ public class TotalStationBlock extends BaseEntityBlock {
         if (!level.getBlockState(up).canBeReplaced(ctx)) return null;
 
         return defaultBlockState()
-                .setValue(FACING, facing);
+                .setValue(FACING, facing)
+                .setValue(HALF, Half.BOTTOM);
     }
 
-//    @Override
-//    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
-//                            @Nullable LivingEntity placer, @NotNull ItemStack stack) {
-//
-//        Direction facing = state.getValue(FACING);
-//
-//        BlockPos ext = pos.relative(facing.getClockWise());
-//        BlockPos up = pos.above();
-//        BlockPos upExt = up.relative(facing.getClockWise());
-//
-//        level.setBlock(ext,
-//                state.setValue(PART, ResearchTableBlock.Part.EXTENSION),
-//                3);
-//
-//        level.setBlock(up,
-//                state.setValue(HALF, Half.TOP),
-//                3);
-//
-//        level.setBlock(upExt,
-//                state.setValue(HALF, Half.TOP).setValue(PART, ResearchTableBlock.Part.EXTENSION),
-//                3);
-//    }
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+                            @Nullable LivingEntity placer, @NotNull ItemStack stack) {
+
+        BlockPos up = pos.above();
+
+        level.setBlock(up,
+                state.setValue(HALF, Half.TOP),
+                3);
+    }
+
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        BlockPos main = getMainPos(pos, state);
+
+        for (BlockPos p : new BlockPos[]{
+                main,
+                main.above()
+        }) {
+            if (level.getBlockState(p).getBlock() == this) {
+                level.destroyBlock(p, false);
+            }
+        }
+
+        return super.playerWillDestroy(level, pos, state, player);
+    }
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         } else {
-            MenuProvider menuprovider = this.getMenuProvider(state, level, pos);
+            BlockPos mainPos = getMainPos(pos, state);
+            MenuProvider menuprovider = this.getMenuProvider(level.getBlockState(mainPos), level, mainPos);
             if (menuprovider != null) {
-                player.openMenu(menuprovider, pos);
+                player.openMenu(menuprovider, mainPos);
             }
             return InteractionResult.CONSUME;
         }
@@ -90,22 +99,31 @@ public class TotalStationBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, HALF);
     }
 
     @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return null;
+    protected @NotNull MapCodec<? extends BaseEntityBlock> codec() {
+        return MapCodec.unit(this);
     }
 
     @Nullable
     @Override
     public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
-        return new TotalStationBlockEntity(pos, state);
+        if (state.getValue(HALF) == Half.BOTTOM) {
+            return new TotalStationBlockEntity(pos, state);
+        }
+        return null;
     }
 
     @Override
     protected @NotNull RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;
+    }
+
+    private BlockPos getMainPos(BlockPos pos, BlockState state) {
+        return state.getValue(HALF) == Half.TOP
+                ? pos.below()
+                : pos;
     }
 }
