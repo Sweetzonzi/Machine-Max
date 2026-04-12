@@ -26,6 +26,7 @@ import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttach
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
+import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.server.level.ServerLevel;
@@ -46,6 +47,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Getter
 @EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class VehicleCore {
+    private static final float COMBO_ATTACH_MAX_POS_ERROR = 0.1f;
+    private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = (float) Math.toRadians(1);//1°以内视为方向对齐
+
     //存储所有部件与连接关系
     public final MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
     //存储所有部件
@@ -58,7 +62,6 @@ public class VehicleCore {
     private ChunkPos oldChunkPos = new ChunkPos(0, 0);
     public int tickCount = 0;
     public volatile boolean inLevel = false;
-    private boolean structureRemoved = false;
     //属性
     @Setter
     public float hp = 20;//耐久度
@@ -323,45 +326,6 @@ public class VehicleCore {
         } else MachineMax.LOGGER.error("在载具{}中找不到部件{}，无法移除 ", this.uuid, uuid.toString());
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onConnectorAttach(ConnectorAttachEvent.Post event) {
-//        MachineMax.LOGGER.debug("收到连接器{}与{}的连接事件", event.getAdvancedConnector().name, event.getSimpleConnector().name);
-        AbstractConnector advancedConnector = event.getAdvancedConnector();
-        SimpleConnector simpleConnector = event.getSimpleConnector();
-        VehicleCore vehicle1 = advancedConnector.getSubPart().getPart().vehicle;
-        VehicleCore vehicle2 = simpleConnector.getSubPart().getPart().vehicle;
-        if (vehicle1 != vehicle2 && vehicle1 != null && vehicle2 != null) {
-            throw new UnsupportedOperationException("暂不支持连接不同载具之间的连接点"); //TODO:支持不同载具之间的连接点链接
-        }
-        VehicleCore vehicle = vehicle1 != null ? vehicle1 : vehicle2;
-        if (vehicle != null) {
-            Part part1 = advancedConnector.getSubPart().getPart();
-            Part part2 = simpleConnector.getSubPart().getPart();
-            vehicle.partMap.put(part1.uuid, part1);
-            vehicle.partMap.put(part2.uuid, part2);
-//            vehicle.partNet.addEdge(
-//                    advancedConnector.getSubPart().getPart(),
-//                    simpleConnector.getSubPart().getPart(),
-//                    Pair.of(advancedConnector, simpleConnector)
-//            );
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onConnectorDetach(ConnectorDetachEvent.Post event) {
-//        MachineMax.LOGGER.debug("收到连接器{}与{}的断开事件", event.getAdvancedConnector().name, event.getSimpleConnector().name);
-        VehicleCore vehicle1 = event.getAdvancedConnector().getSubPart().part.vehicle;
-        VehicleCore vehicle2 = event.getSimpleConnector().getSubPart().part.vehicle;
-        if (vehicle1 != vehicle2 && vehicle1 != null && vehicle2 != null) { // 若是不同载具之间的接口断开
-            vehicle1.structureRemoved = true;
-            vehicle2.structureRemoved = true;
-        }
-        VehicleCore vehicle = vehicle1 != null ? vehicle1 : vehicle2;
-        if (vehicle != null) {
-            vehicle.structureRemoved = true;
-        }
-    }
-
     /**
      * 连接两个接口
      * 若是新安装的部件，则尝试连接部件接口与载具其他已有接口
@@ -371,6 +335,8 @@ public class VehicleCore {
      * @param newPart    新安装的部件，可为null
      */
     public void attachConnector(AbstractConnector connector1, AbstractConnector connector2, @Nullable Part newPart) {
+        //TODO: connector所属载具的检查，至少有一个应属于该载具
+        //TODO: 支持两个不同载具的部件的连接
         if (newPart != null && !partMap.containsKey(newPart.uuid) && (connector1.subPart.part == newPart || connector2.subPart.part == newPart))
             this.addPart(newPart);
         if (connector1.subPart.part == connector2.subPart.part)
@@ -416,6 +382,28 @@ public class VehicleCore {
     }
 
     /**
+     * 获取连接点在世界空间中的连接方向单位向量
+     */
+    private Vector3f getConnectorWorldDirection(AbstractConnector connector) {
+        Vector3f localDirection = Axis.axisToVector(connector.attr.getDirection());
+        var worldRotation = connector.subPart.body.getPhysicsRotation(null).mult(connector.offsetFromMassCenter.getRotation());
+        Vector3f worldDirection = worldRotation.toRotationMatrix().mult(localDirection, new Vector3f());
+        if (worldDirection.lengthSquared() > 1e-6f) {
+            worldDirection = worldDirection.normalize();
+        }
+        return worldDirection;
+    }
+
+    private float getOppositeDirectionError(AbstractConnector connector1, AbstractConnector connector2) {
+        // 注意：xp/xn 等方向仅表示连接点相对 locator 的局部方向，不能做枚举硬配对；
+        // 需要先转到世界空间，再判断两连接点法线是否相向。
+        Vector3f direction1 = getConnectorWorldDirection(connector1);
+        Vector3f direction2 = getConnectorWorldDirection(connector2);
+        float alignedDot = Math.clamp(-direction1.dot(direction2), -1f, 1f);
+        return (float) Math.acos(alignedDot);
+    }
+
+    /**
      * 检查同部件内是否仍有可连接的接口，如有则连接
      *
      * @param newPart 新安装的部件
@@ -441,23 +429,22 @@ public class VehicleCore {
                                     advancedConnector = connector2;
                                 } else continue;//二者中存在AttachPointConnector时才可尝试连接
                                 //检查连接是否合理(连接点位置姿态差异)
-                                //TODO:同样检查法线是否对齐
                                 float posError = MMMath.relPointWorldPos(simpleConnector.offsetFromMassCenter.getTranslation(), simpleConnector.subPart.body).subtract(
                                         MMMath.relPointWorldPos(advancedConnector.offsetFromMassCenter.getTranslation(), advancedConnector.subPart.body)
                                 ).length();//计算连接点位置差异
-                                float rotError = SparkMathKt.toQuaternionf(
-                                        simpleConnector.subPart.body.getPhysicsRotation(null).mult(simpleConnector.offsetFromMassCenter.getRotation()).mult(
-                                                advancedConnector.subPart.body.getPhysicsRotation(null).mult(advancedConnector.offsetFromMassCenter.getRotation()).inverse()
-                                        )
-                                ).angle();//计算连接点姿态差异
-                                if (posError < 0.1f && rotError < 1f) {//若位置姿态差异小于阈值，则尝试连接
-                                    this.partNet.addEdge(//添加连接关系
-                                            advancedConnector.subPart.part,
-                                            simpleConnector.subPart.part,
-                                            Pair.of(advancedConnector, simpleConnector)
-                                    );
-                                    advancedConnector.attach(simpleConnector);//连接部件
-                                    result.add(new ConnectionData(advancedConnector, simpleConnector));//打包新增连接关系
+                                float directionError = getOppositeDirectionError(advancedConnector, simpleConnector);//计算连接点法线相向误差
+                                if (posError < COMBO_ATTACH_MAX_POS_ERROR
+                                        && directionError < COMBO_ATTACH_MAX_DIRECTION_ERROR) {//若位置与方向误差均小于阈值，则尝试连接
+                                    advancedConnector.alignActualTransformForJoint(simpleConnector);//连接前校正 actualTransform，避免关节初始应力异常
+                                    boolean attached = advancedConnector.attach(simpleConnector);//先连接，成功后再写入拓扑，避免产生伪连接
+                                    if (attached) {
+                                        this.partNet.addEdge(//添加连接关系
+                                                advancedConnector.subPart.part,
+                                                simpleConnector.subPart.part,
+                                                Pair.of(advancedConnector, simpleConnector)
+                                        );
+                                        result.add(new ConnectionData(advancedConnector, simpleConnector));//打包新增连接关系
+                                    }
                                 }
                             }
                         }

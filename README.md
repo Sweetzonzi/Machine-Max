@@ -7,6 +7,10 @@
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-lightgrey)
 
+## LLM 快速入口
+
+- [LLM 快速导览](docs/LLM_QUICKSTART.md)
+
 ## Java 代码结构总览
 
 Java 主代码位于 `src/main/java/io/github/sweetzonzi/machine_max`，可以按职责分成几层：

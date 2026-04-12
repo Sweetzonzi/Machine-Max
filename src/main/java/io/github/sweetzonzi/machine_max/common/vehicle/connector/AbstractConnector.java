@@ -451,8 +451,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         // 将相对刚体的局部变换与刚体的姿态合并
         Transform targetTransform = mergeTransform(partConnector.actualTransform.invert());
 
-        Transform rootTransform =
-                partConnector.subPart.body.getTransform(null).invert();
+        Transform rootTransform = partConnector.subPart.body.getTransform(null).invert();
 
         // 设置根 SubPart 的物理变换
         partConnector.subPart.body.setPhysicsTransform(targetTransform);
@@ -465,6 +464,30 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             MyMath.combine(transform, targetTransform, transform);
             subPart.body.setPhysicsTransform(transform);
         }
+    }
+
+    private Transform getConnectorWorldTransform() {
+        Vector3f worldPos = MMMath.relPointWorldPos(this.offsetFromMassCenter.getTranslation(), this.subPart.body);
+        Quaternion worldRotation = this.subPart.body.getPhysicsRotation(null).mult(this.offsetFromMassCenter.getRotation());
+        return new Transform(worldPos, worldRotation);
+    }
+
+    private Transform worldTransformToConnectorLocal(Transform worldTransform) {
+        Vector3f localPos = MMMath.worldPointLocalPos(worldTransform.getTranslation(), this.subPart.body);
+        Quaternion localRotation = this.subPart.body.getPhysicsRotation(null).inverse().mult(worldTransform.getRotation());
+        return new Transform(localPos, localRotation);
+    }
+
+    /**
+     * 在不移动刚体的前提下，将两个连接点的 actualTransform 对齐到同一世界关节参考系
+     * 用于已放置完成后的补连场景（如 ComboAttach），避免关节创建时出现过大的初始内力。
+     *
+     * @param targetConnector 目标连接点
+     */
+    public void alignActualTransformForJoint(AbstractConnector targetConnector) {
+        Transform jointWorldFrame = this.getConnectorWorldTransform();
+        this.actualTransform = this.worldTransformToConnectorLocal(jointWorldFrame);
+        targetConnector.actualTransform = targetConnector.worldTransformToConnectorLocal(jointWorldFrame);
     }
 
 
