@@ -19,21 +19,23 @@
         "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
           "SpoilerHitBox": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
             "type": "box",//碰撞形状类型, 支持box、sphere、cylinder、wheel
-            "friction": [1.5, 2.0, 1.0] //(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
+            "material": "machine_max:7035_aluminum_alloy"
           }
         },
         "connectors": {//子部件用于与其他零件连接的连接点列表
           "connector.machine_max.left": {//连接点名称
             "locator": "spoiler_left",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Simple", //连接点类型, 支持Simple和Advanced
-            "direction": "yn",
-            "integrity": 5.0 //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "definition": "machine_max:fixed_down",
+            "overwrite": {
+              "integrity": 5
+            }
           },
           "connector.machine_max.right": {//连接点名称
             "locator": "spoiler_right",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Simple", //连接点类型, 支持Simple和Advanced
-            "direction": "yn",
-            "integrity": 5.0 //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+            "definition": "machine_max:fixed_down",
+            "overwrite": {
+              "integrity": 5
+            }
           }
         },
         "projected_area": [0.2, 1.0, 0.5],

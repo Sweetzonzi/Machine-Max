@@ -100,8 +100,12 @@ public class PartType {
     }
 
     public static PartType get(Level level, ResourceLocation registryKey) {
-        if (level.isClientSide) return MMDynamicRes.PART_TYPES.get(registryKey);
-        else return MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
+        PartType result = null;
+        if (level.isClientSide) result = MMDynamicRes.PART_TYPES.get(registryKey);
+        else result = MMDynamicRes.SERVER_PART_TYPES.get(registryKey);
+        if (result == null)
+            throw new IllegalArgumentException("Unknown part type: " + registryKey);
+        return result;
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -91,7 +92,7 @@ public class VariantAttr {
             String subPartName = subParts.getKey();
             SubPartAttr subPart = subParts.getValue();
             for (Map.Entry<String, ConnectorAttr> connector : subPart.connectors.entrySet()) {//遍历零件的接口
-                if (connector.getValue().connectedTo().isEmpty())
+                if (connector.getValue().connectedTo.isEmpty())
                     connectors.add(Pair.of(subPartName, connector.getKey()));//外部接口加入可用接口集合
             }
         }
@@ -108,7 +109,7 @@ public class VariantAttr {
             String subPartName = entry.getKey();
             SubPartAttr subPart = entry.getValue();
             for (Map.Entry<String, ConnectorAttr> entry1 : subPart.connectors.entrySet()) {
-                if (entry1.getValue().connectedTo().isEmpty())//外部零件连接点
+                if (entry1.getValue().connectedTo.isEmpty())//外部零件连接点
                     connectors.put(Pair.of(subPartName, entry1.getKey()), entry1.getValue());
             }
         }

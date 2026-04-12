@@ -1,0 +1,9 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Simple", //连接点类型, 支持Simple和Advanced
+  "direction": "xp", //连接点法线方向, 指向被连接的零件方向, 取值: xp, yp, zp, xn, yn, zn
+  "integrity": 20.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+  "impact_absorption": 0.2, //(可选, 默认0.2)连接点受到冲击，但未超过剩余结构完整性即未能断开连接时，冲击转化为结构完整性损耗的比例，例如0.2表示20%的冲击会转化为结构完整性的损耗
+  "impact_reduction": 2.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
+  "impact_multiplier": 1.0 //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
+}

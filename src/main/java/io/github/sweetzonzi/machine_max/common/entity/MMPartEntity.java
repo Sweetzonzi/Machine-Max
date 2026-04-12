@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
@@ -47,6 +48,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
@@ -79,7 +81,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     }
 
     public MMPartEntity(Level level, SubPart subPart) {
-        super(MMEntities.getPART_ENTITY().get(), level);
+        this(MMEntities.getPART_ENTITY().get(), level);
         this.setNoGravity(true);
         this.subPart = subPart;
         this.subPartName = subPart.name;

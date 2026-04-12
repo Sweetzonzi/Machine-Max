@@ -1,9 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
-import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
-import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -15,7 +13,7 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
@@ -44,8 +42,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 
 import java.util.*;
 
@@ -241,28 +237,28 @@ public class Part {
         for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartAttr.connectors.entrySet()) {
             String connectorName = connectorEntry.getKey();
             ConnectorAttr connectorAttr = connectorEntry.getValue();
-            if (subPartAttr.getLocatorTransforms().containsKey(connectorAttr.locatorName())) {//若找到了对应的零件连接点Locator
+            if (subPartAttr.getLocatorTransforms().containsKey(connectorAttr.locatorName)) {//若找到了对应的零件连接点Locator
                 AbstractConnector connector;
                 if (connectorAttr.isSimpleConnector()) {
                     connector = new SimpleConnector(
                             connectorName,
                             connectorAttr,
                             subPart,
-                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName())
+                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName)
                     );
                 } else {
                     connector = new AdvancedConnector(
                             connectorName,
                             connectorAttr,
                             subPart,
-                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName())
+                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName)
                     );
                 }
                 subPart.connectors.put(connectorName, connector);
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
-                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey().toLanguageKey(), connectorName, connectorAttr.locatorName()).getString());
+                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey().toLanguageKey(), connectorName, connectorAttr.locatorName).getString());
         }
     }
 
@@ -317,7 +313,7 @@ public class Part {
                 String boneName = entry.getKey();
                 HitBoxAttr hitBoxAttr = entry.getValue();
                 subPart.hitBoxes.put(boneName, new HitBox(subPart, hitBoxAttr));
-                if (hitBoxAttr.shapeType().equals("wheel") && bones.containsKey(boneName)) {
+                if (hitBoxAttr.shapeType.equals("wheel") && bones.containsKey(boneName)) {
                     wheelParam = PhysicsHelperKt.toBVector3f(bones.get(boneName).getCubes().getFirst().getSize().toVector3f());
                 }
             }
@@ -330,7 +326,6 @@ public class Part {
                 subPart.body.setInverseInertiaLocal(new Vector3f(1.0f/Ix, 1.0f/Iyz, 1.0f/Iyz));
             }
         }
-        //TODO: 连接内部连接器
         //设置默认根零件，取质量最大的
         float maxMass = -100;
         SubPart rootSubPart = null;
@@ -340,6 +335,7 @@ public class Part {
                 maxMass = subPart.body.getMass();
                 rootSubPart = subPart;
             }
+            //TODO: 连接内部连接器
         }
         return rootSubPart;
     }

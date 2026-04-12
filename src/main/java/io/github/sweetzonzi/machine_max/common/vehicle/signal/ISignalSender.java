@@ -220,7 +220,7 @@ public interface ISignalSender {
             if (targetName.equals("vehicle")) {
                 if (ownerPart.part.vehicle != null)
                     targets.add(ownerPart.part.vehicle.subSystemController);
-            } else if (targetName.equals("part")) {
+            } else if (targetName.equals("subpart")) {
                 targets.add(ownerPart);
             } else if (subSystems.containsKey(targetName)) {
                 AbstractSubsystem subSystem = subSystems.get(targetName);

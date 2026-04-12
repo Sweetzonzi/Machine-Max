@@ -443,7 +443,7 @@ public class AssemblyHud3D implements IHud3DElement {
         // 独立渲染子系统，并根据耐久度调整渲染颜色
         for (Map.Entry<String, HitBoxAttr> entry : subPart.attr.getHitBoxes().entrySet()) {
             String name = entry.getKey();
-            String subsystemName = entry.getValue().subsystem();
+            String subsystemName = entry.getValue().subsystem;
             if (bonesToRender.containsKey(name) && !subsystemName.isEmpty()) {
                 AbstractSubsystem subsystem = subPart.subsystems.get(subsystemName);
                 if (subsystem instanceof BasicSubsystem basicSubsystem && !basicSubsystem.isHidden()) {

@@ -22,210 +22,18 @@
         "hit_boxes": {
           "collision": {
             "type": "box",
-            "block_damage_factor": 2.0,
-            "angle_effect": true,
-            "impact_modifiers": [],
-            "penetration_modifiers": [
-              {
-                "operation": "multiply",
-                "value": 0.5,
-                "condition": {
-                  "type": "not",
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "machine_max:has_pen_depth"
-                  }
-                }
-              }
-            ],
-            "damage_modifiers": [
-              {
-                "operation": "add",
-                "value": -10.0,
-                "condition": {
-                  "type": "damage_tag",
-                  "id": "c:is_impact"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.00,
-                "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:sweet_berry_bush"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.01,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:slime"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.01,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:magma_cube"
-                }
-              },
-              {
-                "operation": "add",
-                "value": -3.0,
-                "condition": {
-                  "type": "always"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.6,
-                "condition": {
-                  "type": "always"
-                }
-              }
-            ],
-            "un_penetrate_damage_factor": 0.01,
-            "rha": 5
+            "material": "machine_max:structural_steel",
+            "thickness": 2
           },
           "LeftDoorCollision": {
             "type": "box",
-            "block_damage_factor": 2.0,
-            "angle_effect": true,
-            "impact_modifiers": [],
-            "penetration_modifiers": [
-              {
-                "operation": "multiply",
-                "value": 0.5,
-                "condition": {
-                  "type": "not",
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "machine_max:has_pen_depth"
-                  }
-                }
-              }
-            ],
-            "damage_modifiers": [
-              {
-                "operation": "add",
-                "value": -10.0,
-                "condition": {
-                  "type": "damage_tag",
-                  "id": "c:is_impact"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.00,
-                "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:sweet_berry_bush"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.01,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:slime"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.01,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:magma_cube"
-                }
-              },
-              {
-                "operation": "add",
-                "value": -3.0,
-                "condition": {
-                  "type": "always"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.6,
-                "condition": {
-                  "type": "always"
-                }
-              }
-            ],
-            "un_penetrate_damage_factor": 0.01,
-            "rha": 5
+            "material": "machine_max:structural_steel",
+            "thickness": 2
           },
           "RightDoorCollision": {
             "type": "box",
-            "block_damage_factor": 2.0,
-            "angle_effect": true,
-            "impact_modifiers": [],
-            "penetration_modifiers": [
-              {
-                "operation": "multiply",
-                "value": 0.5,
-                "condition": {
-                  "type": "not",
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "machine_max:has_pen_depth"
-                  }
-                }
-              }
-            ],
-            "damage_modifiers": [
-              {
-                "operation": "add",
-                "value": -10.0,
-                "condition": {
-                  "type": "damage_tag",
-                  "id": "c:is_impact"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.00,
-                "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:sweet_berry_bush"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.01,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:slime"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.01,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:magma_cube"
-                }
-              },
-              {
-                "operation": "add",
-                "value": -3.0,
-                "condition": {
-                  "type": "always"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.6,
-                "condition": {
-                  "type": "always"
-                }
-              }
-            ],
-            "un_penetrate_damage_factor": 0.01,
-            "rha": 5
+            "material": "machine_max:structural_steel",
+            "thickness": 2
           }
         },
         "interact_boxes": {
@@ -247,9 +55,7 @@
         "connectors": {
           "connector.machine_max.chassis_connection": {
             "locator": "chassis_locator",
-            "type": "Simple",
-            "integrity": 100.0,
-            "direction": "yn",
+            "definition": "machine_max:fixed_down",
             "signal_targets": {
               "driver_occupied": ["interact.machine_max.left_front_door"],
               "copilot_occupied": ["interact.machine_max.right_front_door"]
@@ -257,36 +63,35 @@
           },
           "connector.machine_max.top_front": {
             "locator": "top_front",
-            "type": "Simple"
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.top_left_1": {
             "locator": "top_left_1",
-            "type": "Simple"
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.top_left_2": {
             "locator": "top_left_2",
-            "type": "Simple"
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.top_left_3": {
             "locator": "top_left_3",
-            "type": "Simple"
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.top_right_1": {
             "locator": "top_right_1",
-            "type": "Simple"
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.top_right_2": {
             "locator": "top_right_2",
-            "type": "Simple"
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.top_right_3": {
             "locator": "top_right_3",
-            "type": "Simple"
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.backup_wheel": {
             "locator": "backup_wheel",
-            "type": "Simple",
-            "direction": "zp"
+            "definition": "machine_max:fixed_back"
           }
         },
         "hydro_priority": 0,

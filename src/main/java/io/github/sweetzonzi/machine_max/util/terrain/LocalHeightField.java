@@ -36,11 +36,6 @@ public class LocalHeightField {
     private final float[][] smoothHeight;
 
     /**
-     * 平滑卷积核
-     */
-    private final float[][] kernel;
-
-    /**
      * 高度场左下角世界坐标
      */
     private int originX;
@@ -53,7 +48,6 @@ public class LocalHeightField {
         this.rawHeight = new float[size][size];
         this.smoothHeight = new float[size][size];
         float sigma = kernelRadius * 0.5f;
-        this.kernel = buildGaussianKernel(kernelRadius, sigma);
     }
 
     /**
@@ -156,7 +150,6 @@ public class LocalHeightField {
      * <p>
      * 1 不允许跨越断崖（高度为 -∞）
      * 2 不允许平滑结果超过原始高度
-     * 3 只允许不高于当前列的邻居参与，避免被拉高导致无接触
      *
      * @param iterations 卷积次数
      */
@@ -235,40 +228,6 @@ public class LocalHeightField {
     }
 
     /**
-     * 构建二维 Gaussian 卷积核
-     */
-    private float[][] buildGaussianKernel(int radius, float sigma) {
-
-        int size = radius * 2 + 1;
-
-        float[][] kernel = new float[size][size];
-
-        float sum = 0f;
-
-        for (int x = -radius; x <= radius; x++) {
-            for (int z = -radius; z <= radius; z++) {
-
-                float r2 = x * x + z * z;
-
-                float w = (float) Math.exp(-r2 / (2 * sigma * sigma));
-
-                kernel[x + radius][z + radius] = w;
-
-                sum += w;
-            }
-        }
-
-        // 归一化
-        for (int x = 0; x < size; x++) {
-            for (int z = 0; z < size; z++) {
-                kernel[x][z] /= sum;
-            }
-        }
-
-        return kernel;
-    }
-
-    /**
      * 双线性插值获取高度
      *
      * @param worldX 世界X
@@ -276,26 +235,28 @@ public class LocalHeightField {
      * @return 高度
      */
     public float getHeight(float worldX, float worldZ) {
+        // 将世界坐标映射到网格坐标（网格原点为左下角方块中心）
+        float u = worldX - (originX + 0.5f);
+        float v = worldZ - (originZ + 0.5f);
 
-        float gx = worldX - originX;
-        float gz = worldZ - originZ;
+        int x0 = (int) Math.floor(u);
+        int z0 = (int) Math.floor(v);
 
-        int x0 = (int) Math.floor(gx);
-        int z0 = (int) Math.floor(gz);
-
+        // 边界裁剪（允许的网格索引范围 [0, size-1] 对应 u ∈ [-0.5, size-0.5)）
         if (x0 < 0) x0 = 0;
         if (z0 < 0) z0 = 0;
         if (x0 >= size - 1) x0 = size - 2;
         if (z0 >= size - 1) z0 = size - 2;
 
-        float fx = gx - x0;
-        float fz = gz - z0;
+        float fx = u - x0;   // 插值权重（范围 [0,1]）
+        float fz = v - z0;
 
         float h00 = smoothHeight[x0][z0];
         float h10 = smoothHeight[x0 + 1][z0];
         float h01 = smoothHeight[x0][z0 + 1];
         float h11 = smoothHeight[x0 + 1][z0 + 1];
 
+        // 若任一角为断崖，则整点无效
         if (h00 == Float.NEGATIVE_INFINITY ||
                 h10 == Float.NEGATIVE_INFINITY ||
                 h01 == Float.NEGATIVE_INFINITY ||
@@ -305,7 +266,6 @@ public class LocalHeightField {
 
         float hx0 = h00 + (h10 - h00) * fx;
         float hx1 = h01 + (h11 - h01) * fx;
-
         return hx0 + (hx1 - hx0) * fz;
     }
 
@@ -327,7 +287,7 @@ public class LocalHeightField {
 
         float hL = getHeight(x - eps, z);
         float hR = getHeight(x + eps, z);
-        float hD = getHeight(x, z + eps);
+        float hD = getHeight(x, z - eps);
         float hU = getHeight(x, z + eps);
 
         if (Float.isInfinite(hL) ||

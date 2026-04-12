@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.attr;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import lombok.Getter;
 
 import java.util.List;

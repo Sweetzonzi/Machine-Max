@@ -11,6 +11,8 @@ object MMPackModuleRegistries {
         event.register(HudModule())//自定义HUD元素
         event.register(TooltipModule())//自定义描述信息
         event.register(SubsystemModule())//子系统型号
+        event.register(ConnectorModule())//连接点类型
+        event.register(MaterialModule())//材料类型
         event.register(PartModule())//自定义部件
         event.register(TemplateModule())//预装配结构体模板
         event.register(BlueprintModule())//自定义蓝图

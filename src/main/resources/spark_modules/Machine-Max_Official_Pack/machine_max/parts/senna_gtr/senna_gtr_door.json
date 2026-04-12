@@ -19,21 +19,21 @@
           "collision_height": 1.5,
           "hit_boxes": {
             "Collision": {
-              "type": "box"
+              "type": "box",
+              "material": "machine_max:7035_aluminum_alloy"
             }
           },
           "connectors": {
             "connector.machine_max.axis": {
               "locator": "left_door_hull_axis",
-              "type": "Simple",
-              "direction": "yn",
-              "integrity": 25.0
+              "definition": "machine_max:fixed_down",
+              "overwrite": {
+                "integrity": 5
+              }
             },
             "connector.machine_max.lock": {
               "locator": "left_door_hull_lock",
-              "type": "Simple",
-              "direction": "yn",
-              "integrity": 5.0
+              "definition": "machine_max:fixed_down"
             }
           },
           "projected_area": [0.19, 1.04, 0.29],
@@ -46,7 +46,7 @@
         }
       }
     },
-    "right": {//变体名称
+    "right": {
       "model": "machine_max:senna_gtr_door_right.geo",
       "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty",
@@ -59,21 +59,21 @@
           "collision_height": 1.5,
           "hit_boxes": {
             "Collision": {
-              "type": "box"
+              "type": "box",
+              "material": "machine_max:7035_aluminum_alloy"
             }
           },
           "connectors": {
             "connector.machine_max.axis": {
               "locator": "right_door_hull_axis",
-              "type": "Simple",
-              "direction": "yn",
-              "integrity": 25.0
+              "definition": "machine_max:fixed_down"
             },
             "connector.machine_max.lock": {
               "locator": "right_door_hull_lock",
-              "type": "Simple",
-              "direction": "yn",
-              "integrity": 5.0
+              "definition": "machine_max:fixed_down",
+              "overwrite": {
+                "integrity": 5
+              }
             }
           },
           "projected_area": [0.19, 1.04, 0.29],

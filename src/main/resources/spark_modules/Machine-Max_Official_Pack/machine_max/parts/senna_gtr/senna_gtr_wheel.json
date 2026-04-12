@@ -21,81 +21,13 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [3.2, 3.5, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
-              "slip_adaptation": 0.5,//(可选, 默认0.5)滑动适应性系数(0~1), 该属性可削弱打滑时的摩擦系数降低效果, 提升抓地力
-              "rolling_friction": 0.05,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力
-              "restitution": 0.05,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
-              "block_damage_factor": 0.05, //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
-              "impact_modifiers": [
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "add",
-                  "value": -2.0,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                }
-              ],
-              "damage_modifiers": [
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "add",
-                  "value": -2.0,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.05,
-                  "condition": {
-                    "type": "damage_type",
-                    "id": "minecraft:sweet_berry_bush"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.05,
-                  "condition": {
-                    "type": "entity_type",
-                    "id": "minecraft:slime"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "entity_type",
-                    "id": "minecraft:magma_cube"
-                  }
-                }
-              ]
+              "material": "machine_max:racing_tire"
             }
           },
           "connectors": {
             "connector.machine_max.chassis_connection": {
               "locator": "chassis_connection",
-              "type": "Simple",
-              "direction": "xp",
-              "integrity": 30.0,
-              "impact_reduction": 3.0,
-              "impact_multiplier": 0.8
+              "definition": "machine_max:fixed_right"
             }
           },
           "projected_area": [0.71, 0.40, 0.40],
@@ -127,81 +59,13 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [3.2, 3.5, 1.0],
-              "slip_adaptation": 0.5,
-              "rolling_friction": 0.05,
-              "restitution": 0.05,
-              "block_damage_factor": 0.05,
-              "impact_modifiers": [
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "add",
-                  "value": -2.0,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                }
-              ],
-              "damage_modifiers": [
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "add",
-                  "value": -2.0,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.05,
-                  "condition": {
-                    "type": "damage_type",
-                    "id": "minecraft:sweet_berry_bush"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.05,
-                  "condition": {
-                    "type": "entity_type",
-                    "id": "minecraft:slime"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "entity_type",
-                    "id": "minecraft:magma_cube"
-                  }
-                }
-              ]
+              "material": "machine_max:racing_tire"
             }
           },
           "connectors": {
             "connector.machine_max.chassis_connection": {
               "locator": "chassis_connection",
-              "type": "Simple",
-              "direction": "xn",
-              "integrity": 30.0,
-              "impact_reduction": 3.0,
-              "impact_multiplier": 0.8
+              "definition": "machine_max:fixed_left"
             }
           },
           "projected_area": [0.71, 0.40, 0.40],
@@ -233,81 +97,13 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [3.2, 3.5, 1.0],
-              "slip_adaptation": 0.5,
-              "rolling_friction": 0.05,
-              "restitution": 0.05,
-              "block_damage_factor": 0.05,
-              "impact_modifiers": [
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "add",
-                  "value": -2.0,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                }
-              ],
-              "damage_modifiers": [
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "add",
-                  "value": -2.0,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.05,
-                  "condition": {
-                    "type": "damage_type",
-                    "id": "minecraft:sweet_berry_bush"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.05,
-                  "condition": {
-                    "type": "entity_type",
-                    "id": "minecraft:slime"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "entity_type",
-                    "id": "minecraft:magma_cube"
-                  }
-                }
-              ]
+              "material": "machine_max:racing_tire"
             }
           },
           "connectors": {
             "connector.machine_max.chassis_connection": {
               "locator": "chassis_connection",
-              "type": "Simple",
-              "direction": "xp",
-              "integrity": 30.0,
-              "impact_reduction": 3.0,
-              "impact_multiplier": 0.8
+              "definition": "machine_max:fixed_right"
             }
           },
           "projected_area": [0.82, 0.45, 0.45],
@@ -339,81 +135,13 @@
           "hit_boxes": {
             "Collision": {
               "type": "wheel",
-              "friction": [3.2, 3.5, 1.0],
-              "slip_adaptation": 0.5,
-              "rolling_friction": 0.05,
-              "restitution": 0.05,
-              "block_damage_factor": 0.05,
-              "impact_modifiers": [
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "add",
-                  "value": -2.0,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                }
-              ],
-              "damage_modifiers": [
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "add",
-                  "value": -2.0,
-                  "condition": {
-                    "type": "damage_tag",
-                    "id": "c:is_impact"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.05,
-                  "condition": {
-                    "type": "damage_type",
-                    "id": "minecraft:sweet_berry_bush"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.05,
-                  "condition": {
-                    "type": "entity_type",
-                    "id": "minecraft:slime"
-                  }
-                },
-                {
-                  "operation": "multiply",
-                  "value": 0.1,
-                  "condition": {
-                    "type": "entity_type",
-                    "id": "minecraft:magma_cube"
-                  }
-                }
-              ]
+              "material": "machine_max:racing_tire"
             }
           },
           "connectors": {
             "connector.machine_max.chassis_connection": {
               "locator": "chassis_connection",
-              "type": "Simple",
-              "direction": "xn",
-              "integrity": 30.0,
-              "impact_reduction": 3.0,
-              "impact_multiplier": 0.8
+              "definition": "machine_max:fixed_left"
             }
           },
           "projected_area": [0.82, 0.45, 0.45],

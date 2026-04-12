@@ -13,7 +13,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
@@ -21,7 +21,6 @@ import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
-import jme3utilities.math.MyMath;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -40,7 +39,6 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -109,7 +107,7 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                                 VisualEffectHelper.partToPlace.updateTransform(
                                         targetConnector.mergeTransform(
                                                 targetConnector.calculateExtraTransform(
-                                                        connectorAttr.direction(),
+                                                        connectorAttr.getDirection(),
                                                         PhysicsHelperKt.toBVector3f(cache.getOffset()),
                                                         SparkMathKt.toBQuaternion(cache.getQuaternion()),
                                                         cache.getAttachRotation()).invert()

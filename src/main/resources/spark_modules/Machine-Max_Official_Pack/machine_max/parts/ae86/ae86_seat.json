@@ -18,7 +18,7 @@
         "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
           "CollisionShape": {//值:碰撞形状属性
             "type": "box",//碰撞形状类型, 支持box、sphere、cylinder
-            "rha": 1 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
+            "thickness": 1 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
           }
         },
         "interact_boxes": {//交互判定区列表
@@ -52,14 +52,7 @@
         "connectors": {//子部件用于与其他零件连接的连接点列表
           "connector.machine_max.chassis_connection": {//连接点名称
             "locator": "AttachPoint",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Simple", //连接点类型, 支持Simple和Advanced
-            "direction": "yn",//连接点方向，座椅应通过底面和车架相连，因此取y轴负方向
-            "integrity": 40.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
-            "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
-            "impact_multiplier": 0.5, //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
-            "required_tags": [],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
-            "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
-            "forbidden_tags": [],//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+            "definition": "machine_max:fixed_down",
             "signal_translations": {//将各个类型的频道的信号转换至interact频道，统一信号频道
               "left_front_door_interact": "interact",
               "right_front_door_interact": "interact",
@@ -82,5 +75,4 @@
       }
     }
   }
-
 }

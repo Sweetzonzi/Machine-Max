@@ -15,14 +15,13 @@ import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.util.MMMath;
-import jme3utilities.math.MyMath;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -130,7 +129,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                                 VisualEffectHelper.partToPlace.updateTransform(
                                         targetConnector.mergeTransform(
                                                 targetConnector.calculateExtraTransform(
-                                                        connectorAttr.direction(),
+                                                        connectorAttr.getDirection(),
                                                         PhysicsHelperKt.toBVector3f(cache.getOffset()),
                                                         SparkMathKt.toBQuaternion(cache.getQuaternion()),
                                                         cache.getAttachRotation()).invert()

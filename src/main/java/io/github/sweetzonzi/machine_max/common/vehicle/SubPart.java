@@ -142,15 +142,11 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         PhysicsBodyExtensionKt.setOwner(this.body, this);
         this.body.setSleepingThresholds(0.1f, 0.1f);
         this.body.setProtectGravity(true);
-//        this.body.setGravity(getPhysicsLevel().getWorld().getGravity(null));
         if (part.getLevel().isClientSide()) {
             this.body.setKinematic(true);
         }
         Vector3f inverseInertia = new Vector3f();
         this.body.getInverseInertiaLocal(inverseInertia);
-        if (inverseInertia.length() > 5) {
-            MachineMax.LOGGER.error("{} ({})转动惯量异常: {}", name, part.variantName, body.getInverseInertiaLocal(null));
-        }
         this.body.setFriction(1.0f);
         this.body.setCollisionGroup(CollisionGroups.PHYSICS_BODY);
         this.body.setCollideWithGroups(CollisionGroups.PHYSICS_BODY);
@@ -730,14 +726,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 entity.bodyCenter.set(center);
             }
             var animSet = OAnimationSet.getORIGINS().get(new ModelIndex("part", part.variant.getAnimations()));
-            if (!animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
+            if (level.isClientSide() && !animController.isPlayingAnim() && animSet != null && !animSet.getAnimations().isEmpty()) {
                 for (Map.Entry<String, OAnimation> entry : animSet.getAnimations().entrySet()) {
                     String name = entry.getKey();
                     var animInstance = new AnimInstance(this, new AnimIndex(new ModelIndex("part", part.variant.getAnimations()), name));
                     animInstance.enter();
                 }
             }
-            animController.tick();
         }
     }
 
@@ -753,7 +748,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @Override
     public void prePhysicsTick() {
         super.prePhysicsTick();
-//        if (true) return;
         for (AbstractConnector connector : this.connectors.values()) connector.prePhysicsTick();
         // 更新所有HitBox的生效状态
         for (HitBox hitBox : hitBoxes.values()) {
@@ -1014,7 +1008,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         final float DISTANCE_EXPONENT = 2.0f; // 距离指数：1=反比，2=平方反比
         final float MIN_DISTANCE = 0.1f; // 最小距离，防止除零和过大的权重
         for (AbstractConnector connector : this.connectors.values()) {
-            if (!connector.hasPart() || connector.isInternal() || connector.attr.impactMultiplier() <= 0)
+            if (!connector.hasPart() || connector.isInternal() || connector.attr.getImpactMultiplier() <= 0)
                 continue; // 仅有连接且可破坏的连接点参与分配
             Vector3f connectorPos = MMMath.relPointWorldPos(connector.offsetFromMassCenter.getTranslation(), this.body);
             float distance = Math.max(connectorPos.distance(impactPoint), MIN_DISTANCE);
@@ -1116,7 +1110,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
         for (AbstractConnector connector : connectors.values()) {
             //TODO:随机锁定/解锁某个关节的自由度？
-            if (connector.attr.impactMultiplier() > 0) {
+            if (connector.attr.getImpactMultiplier() > 0) {
 
             }
         }

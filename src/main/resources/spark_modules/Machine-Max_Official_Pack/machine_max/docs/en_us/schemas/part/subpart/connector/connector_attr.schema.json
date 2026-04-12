@@ -2,70 +2,76 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/connector/connector_attr.schema.json",
   "title": "Connection Point Attributes",
-  "description": "Defines the attributes of part connection points, including position, type, tag restrictions, joint attributes, signal transmission, etc. Connection points are used for physical connections and signal transmission between parts.",
+  "description": "Defines the attributes of part connection points, including position, definition ID, signal transmission, etc. Connection points are used for physical connections and signal transmission between parts. Static attributes are referenced through the definition field to predefined connection point types.",
   "type": "object",
   "properties": {
     "locator": {
       "type": "string",
       "description": "Locator name corresponding to the connection point, will search for Locators with matching names, using their position and orientation as the connection point's position and orientation."
     },
-    "type": {
+    "definition": {
       "type": "string",
-      "enum": ["Simple", "simple", "advanced", "Advanced"],
-      "description": "Connection point type. Simple: Simple connection point; Advanced: Advanced connection point, supports complex joint attributes."
+      "description": "Connection point definition ID, references predefined connection point static attributes. For example: \"machine_max:simple_connector\"."
     },
-    "direction": {
-      "$ref": "../../../base/axis.schema.json",
-      "description": "Normal direction of the connection point, used to determine the connection direction. X+ = right, Y+ = up, Z+ = back. "
-    },
-    "integrity": {
-      "type": "number",
-      "minimum": 0,
-      "default": 20.0,
-      "description": "Basic structural integrity of the part, the part can withstand impact forces not exceeding this value without detaching, impact forces come from damage or joint stress."
-    },
-    "impact_reduction": {
-      "type": "number",
-      "minimum": 0,
-      "default": 2.0,
-      "description": "Impact reduction value of the connection point, applied before calculating part detachment, can reduce impact to 0 to completely avoid effects on structural integrity."
-    },
-    "impact_multiplier": {
-      "type": "number",
-      "minimum": 0,
-      "default": 1.5,
-      "description": "Impact absorption rate of the connection point, applied after impact reduction before calculating part detachment, greater than 1 will make the connection point easier to break."
-    },
-    "impact_absorption": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "default": 0.2,
-      "description": "The proportion of impact converted to structural integrity loss when the connection point is impacted but not detached. For example, 0.2 means 20% of the impact will be converted to structural integrity loss."
-    },
-    "required_tags": {
-      "type": "array",
-      "items": { "type": "string" },
-      "default": [],
-      "description": "Tags that the connecting part must all have, leave empty to allow any tags. For example: [\"variant:left\"] means must include left variant tag."
-    },
-    "acceptable_tags": {
-      "type": "array",
-      "items": { "type": "string" },
-      "default": [],
-      "description": "Tags that the connecting part must have at least one of, leave empty to allow any tags. For example: [\"door\", \"hatch\"] means must include one of door or hatch tags."
-    },
-    "forbidden_tags": {
-      "type": "array",
-      "items": { "type": "string" },
-      "default": [],
-      "description": "Tags that the connecting part must not contain, leave empty to allow any tags. For example: [\"explosive\"] means cannot include explosive tag."
-    },
-    "joint_attrs": {
+    "overwrite": {
       "type": "object",
-      "additionalProperties": { "$ref": "joint_attr.schema.json"},
-      "default": {},
-      "description": "Joint attributes, currently only effective when joint type is Advanced. Keys are x, y, z, xr, yr, zr, representing translation along x, y, z axes and rotation around x, y, z axes respectively."
+      "description": "Connection point attribute overwrite. Can overwrite static connection point attributes pointed to by definition as needed.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["Simple", "simple", "advanced", "Advanced"],
+          "description": "Connection point type overwrite."
+        },
+        "direction": {
+          "$ref": "../../../base/axis.schema.json",
+          "description": "Connection point normal direction overwrite."
+        },
+        "integrity": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Structural integrity overwrite."
+        },
+        "impact_absorption": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Impact to structural loss ratio overwrite."
+        },
+        "impact_reduction": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Impact reduction value overwrite."
+        },
+        "impact_multiplier": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Impact multiplier overwrite."
+        },
+        "collide_between_parts": {
+          "type": "boolean",
+          "description": "Whether to allow collision between parts overwrite."
+        },
+        "required_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Required tags overwrite."
+        },
+        "acceptable_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Acceptable tags overwrite."
+        },
+        "forbidden_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Forbidden tags overwrite."
+        },
+        "joint_attrs": {
+          "type": "object",
+          "additionalProperties": { "$ref": "joint_attr.schema.json" },
+          "description": "Joint attributes overwrite."
+        }
+      },
+      "additionalProperties": false
     },
     "signal_translations": {
       "type": "object",
@@ -82,47 +88,56 @@
       "default": {},
       "description": "Control signal transmission targets of the connection point within this part, key is signal channel, value is target list (subsystem/connection point name/part/vehicle). For example: {\"move_control\": [\"car_controller\", \"engine\"]}."
     },
-    "collide_between_parts": {
-      "type": "boolean",
-      "default": false,
-      "description": "Whether the connection point allows collision between parts. Usually set to false to avoid penetration issues between connection points."
-    },
     "connected_to": {
       "type": "string",
       "default": "",
       "description": "Name of the connection point within the part that this connection point defaults to connecting to (not bone name!). Leave empty to not default connect. For example: \"hull\" means default connects to the connection point named hull."
     }
   },
-  "required": ["locator", "type"],
+  "required": ["locator", "definition"],
   "additionalProperties": false,
   "examples": [
     {
       "locator": "Hull",
-      "type": "Simple",
-      "description": "Minimal connection point example, only includes required fields"
+      "definition": "machine_max:simple_connector"
     },
     {
       "locator": "LeftFrontWheel",
-      "type": "Advanced",
-      "required_tags": ["variant:left"],
-      "impact_absorption": 0.1,
-      "impact_reduction": 3.0,
-      "impact_multiplier": 0.5,
-      "joint_attrs": {
-        "y": {
-          "lower_limit": -0.5,
-          "upper_limit": 1.0,
-          "stiffness": 28000,
-          "damping": 1500
-        },
-        "yr": {
-          "lower_limit": -45.0,
-          "upper_limit": 45.0,
-          "stiffness": 4000,
-          "damping": 20
+      "definition": "machine_max:advanced_wheel_connector",
+      "overwrite": {
+        "type": "Advanced",
+        "direction": "y+",
+        "integrity": 32.0,
+        "impact_absorption": 0.15,
+        "impact_reduction": 3.0,
+        "impact_multiplier": 0.8,
+        "collide_between_parts": false,
+        "required_tags": ["variant:left"],
+        "acceptable_tags": ["wheel", "suspension"],
+        "forbidden_tags": ["broken_only"],
+        "joint_attrs": {
+          "y": {
+            "lower_limit": -0.2,
+            "upper_limit": 0.25,
+            "stiffness": 30000,
+            "damping": 1600
+          },
+          "yr": {
+            "lower_limit": -35.0,
+            "upper_limit": 35.0,
+            "stiffness": 4500,
+            "damping": 24
+          }
         }
       },
-      "description": "Left front wheel connection point, only allows left variant, has vertical suspension and steering capability, low impact absorption rate, high impact reduction"
+      "signal_translations": {
+        "steering": "wheel_control"
+      },
+      "signal_targets": {
+        "wheel_control": ["wheel_driver", "subpart"],
+        "abs_request": ["vehicle"]
+      },
+      "connected_to": "front_left_hub"
     }
   ]
 }
