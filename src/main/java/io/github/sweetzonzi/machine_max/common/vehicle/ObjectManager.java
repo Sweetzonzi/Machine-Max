@@ -137,6 +137,41 @@ public class ObjectManager {
         vehicle.onRemoveFromLevel();
     }
 
+    /**
+     * 用于载具合并后的被吸收载具移除：
+     * 仅从管理器注销，不销毁部件，不广播VehicleRemovePayload
+     *
+     * @param vehicle 被吸收载具
+     * @return 是否成功移除
+     */
+    public static boolean removeMergedVehicle(VehicleCore vehicle) {
+        if (vehicle == null) return false;
+        if (!vehicle.partMap.isEmpty() || !vehicle.partNet.nodes().isEmpty()) {
+            MachineMax.LOGGER.error("载具{}仍包含部件，拒绝按合并流程移除", vehicle.getUuid());
+            return false;
+        }
+
+        Map<UUID, VehicleCore> vehiclesInLevel = levelVehicles.get(vehicle.level);
+        if (vehiclesInLevel != null) vehiclesInLevel.remove(vehicle.uuid);
+
+        if (!vehicle.level.isClientSide()) {
+            serverAllVehicles.remove(vehicle.getUuid());
+            serverVehiclesToAdd.remove(vehicle.getUuid());
+            saveVehicles((ServerLevel) vehicle.level);
+        } else {
+            clientAllVehicles.remove(vehicle.getUuid());
+            clientVehiclesToAdd.remove(vehicle.getUuid());
+        }
+
+        vehicle.isRemoved = true;
+        vehicle.inLevel = false;
+        vehicle.subSystemController.allSubsystems.clear();
+        vehicle.subSystemController.channels.clear();
+        vehicle.subSystemController.signalStorage.clear();
+        vehicle.subSystemController.resources.clear();
+        return true;
+    }
+
     public static int removeAllVehiclesInLevel(Level level) {
         // 获取该Level中的所有物体
         var vehicles = levelVehicles.getOrDefault(level, Map.of()).values();

@@ -90,15 +90,19 @@ public abstract class DestroyableObject implements SyncedDataHolder {
 
     public void postTick() {
         if (!level.isClientSide()) {
-            if (isDestroyed()) {//物体已被摧毁，倒计时结束后移除
-                int destroyTime = getDestroyTime();
-                if (destroyTime > 0) {
-                    setDestroyTime(destroyTime - 1);
-                }
+            if (isDestroyed()) { //物体已被摧毁，倒计时结束后移除
+                tickDestroyTimer();
             }
             syncToClient();
         }
         if (isDestroyed() && getDestroyTime() <= 0) this.destroy();
+    }
+
+    protected void tickDestroyTimer() {
+        int destroyTime = getDestroyTime();
+        if (destroyTime > 0) {
+            setDestroyTime(destroyTime - 1);
+        }
     }
 
     public void prePhysicsTick() {

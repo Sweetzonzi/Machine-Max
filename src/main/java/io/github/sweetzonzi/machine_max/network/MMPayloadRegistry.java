@@ -78,6 +78,11 @@ public class MMPayloadRegistry {
                 ConnectorAttachPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ConnectorAttachPayload::handle)
         );
+        sync.playToClient(//通知客户端合并载具并建立连接
+                VehicleMergePayload.TYPE,
+                VehicleMergePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(VehicleMergePayload::handle)
+        );
         sync.playToClient(//通知客户端移除连接
                 ConnectorDetachPayload.TYPE,
                 ConnectorDetachPayload.STREAM_CODEC,

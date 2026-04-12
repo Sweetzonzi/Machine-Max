@@ -25,6 +25,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsyst
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePayload;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleMergePayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
@@ -335,12 +336,19 @@ public class VehicleCore {
      * @param newPart    新安装的部件，可为null
      */
     public void attachConnector(AbstractConnector connector1, AbstractConnector connector2, @Nullable Part newPart) {
-        //TODO: connector所属载具的检查，至少有一个应属于该载具
-        //TODO: 支持两个不同载具的部件的连接
-        if (newPart != null && !partMap.containsKey(newPart.uuid) && (connector1.subPart.part == newPart || connector2.subPart.part == newPart))
-            this.addPart(newPart);
+        VehicleCore connectorVehicle1 = connector1.subPart.part.vehicle;
+        VehicleCore connectorVehicle2 = connector2.subPart.part.vehicle;
+        if (connectorVehicle1 == null || connectorVehicle2 == null) {
+            MachineMax.LOGGER.error("连接失败：连接点所属部件未绑定载具");
+            return;
+        }
+        if (connectorVehicle1 != this && connectorVehicle2 != this) {
+            MachineMax.LOGGER.error("连接失败：连接点{}与{}都不属于载具{}", connector1.name, connector2.name, this.uuid);
+            return;
+        }
         if (connector1.subPart.part == connector2.subPart.part)
             throw new UnsupportedOperationException("不能连接同一个部件内的接口");
+
         AbstractConnector advancedConnector;
         SimpleConnector simpleConnector;
         if (connector2 instanceof SimpleConnector) {
@@ -350,34 +358,166 @@ public class VehicleCore {
             simpleConnector = (SimpleConnector) connector1;
             advancedConnector = connector2;
         } else throw new UnsupportedOperationException("连接点之一必须是SimpleConnector类型");
+
+        VehicleCore advancedVehicle = advancedConnector.subPart.part.vehicle;
+        VehicleCore simpleVehicle = simpleConnector.subPart.part.vehicle;
+        if (advancedVehicle == null || simpleVehicle == null) {
+            MachineMax.LOGGER.error("连接失败：连接点所属部件未绑定载具");
+            return;
+        }
+        if (advancedVehicle.level != simpleVehicle.level || this.level != advancedVehicle.level) {
+            MachineMax.LOGGER.error("连接失败：跨维度载具不可连接");
+            return;
+        }
+
+        if (advancedVehicle == simpleVehicle) {
+            attachConnectorInSameVehicle(advancedConnector, simpleConnector, newPart);
+            return;
+        }
+
+        if (newPart != null) {
+            MachineMax.LOGGER.error("连接失败：跨载具合并不支持newPart参数");
+            return;
+        }
+
+        VehicleCore donorVehicle = advancedVehicle == this ? simpleVehicle : advancedVehicle;
+        attachConnectorAcrossVehicles(advancedConnector, simpleConnector, donorVehicle);
+    }
+
+    private void attachConnectorInSameVehicle(AbstractConnector advancedConnector, SimpleConnector simpleConnector, @Nullable Part newPart) {
+        if (newPart != null && !partMap.containsKey(newPart.uuid) && (advancedConnector.subPart.part == newPart || simpleConnector.subPart.part == newPart))
+            this.addPart(newPart);
         List<ConnectionData> comboList = new java.util.ArrayList<>(1);
         boolean attached = advancedConnector.attach(simpleConnector);//连接部件
-        if (attached) {
-            this.partNet.addEdge(//添加连接关系
-                    advancedConnector.subPart.part,
-                    simpleConnector.subPart.part,
-                    Pair.of(advancedConnector, simpleConnector)
+        if (!attached) return;
+
+        this.partNet.addEdge(//添加连接关系
+                advancedConnector.subPart.part,
+                simpleConnector.subPart.part,
+                Pair.of(advancedConnector, simpleConnector)
+        );
+        if (newPart != null) {
+            if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
+            newPart.addToLevel();//将新部件加入到世界
+        }
+        if (isInLevel()) {
+            advancedConnector.addToLevel();//将关节约束加入到世界
+            this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
+            recalculateCameraDistance();
+            this.activate();
+            if (!level.isClientSide()) {
+                comboList.addFirst(new ConnectionData(advancedConnector, simpleConnector));//特殊连接点在前面，以保证连接点属性得到正确应用
+                //发包客户端创建连接关系
+                PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new ConnectorAttachPayload(
+                        this.uuid,
+                        comboList,
+                        newPart != null,
+                        newPart == null ? null : new PartData(newPart)
+                ));
+            }
+        }
+    }
+
+    private void attachConnectorAcrossVehicles(AbstractConnector advancedConnector, SimpleConnector simpleConnector, VehicleCore donorVehicle) {
+        boolean attached = advancedConnector.attach(simpleConnector);
+        if (!attached) return;
+
+        this.absorbVehicle(donorVehicle);
+        this.partNet.addEdge(
+                advancedConnector.subPart.part,
+                simpleConnector.subPart.part,
+                Pair.of(advancedConnector, simpleConnector)
+        );
+
+        if (isInLevel()) advancedConnector.addToLevel();
+        this.subSystemController.onVehicleStructureChanged();
+        recalculateCameraDistance();
+        this.activate();
+        this.updateTotalMass();
+
+        List<ConnectionData> newConnections = List.of(new ConnectionData(advancedConnector, simpleConnector));
+        if (!level.isClientSide()) {
+            if (!ObjectManager.removeMergedVehicle(donorVehicle)) {
+                MachineMax.LOGGER.error("载具{}合并后无法移除被吸收载具{}", this.uuid, donorVehicle.uuid);
+                return;
+            }
+            PacketDistributor.sendToPlayersInDimension(
+                    (ServerLevel) this.level,
+                    new VehicleMergePayload(this.uuid, donorVehicle.uuid, newConnections)
             );
-            if (newPart != null) {
-                if (!level.isClientSide()) comboList = comboAttachConnector(newPart);//检查同部件内是否仍有可连接的接口，如有则连接
-                newPart.addToLevel();//将新部件加入到世界
+        }
+    }
+
+    private void absorbVehicle(VehicleCore donorVehicle) {
+        if (donorVehicle == this) return;
+        if (donorVehicle.level != this.level)
+            throw new IllegalArgumentException("不能合并不同维度的载具");
+
+        List<Map.Entry<EndpointPair<Part>, Pair<AbstractConnector, SimpleConnector>>> donorEdges = new ArrayList<>();
+        for (Pair<AbstractConnector, SimpleConnector> edge : donorVehicle.partNet.edges()) {
+            donorEdges.add(Map.entry(donorVehicle.partNet.incidentNodes(edge), edge));
+        }
+
+        for (Part part : new ArrayList<>(donorVehicle.partMap.values())) {
+            Set<AbstractSubsystem> subsystems = part.getAllSubsystems();
+            donorVehicle.subSystemController.removeSubsystems(subsystems, true);
+            donorVehicle.partMap.remove(part.uuid);
+            donorVehicle.partNet.removeNode(part);
+            this.partMap.put(part.uuid, part);
+            this.partNet.addNode(part);
+            part.vehicle = this;
+            this.subSystemController.addSubsystems(subsystems);
+        }
+
+        for (Map.Entry<EndpointPair<Part>, Pair<AbstractConnector, SimpleConnector>> edgeEntry : donorEdges) {
+            EndpointPair<Part> connectedParts = edgeEntry.getKey();
+            this.partNet.addEdge(connectedParts.nodeU(), connectedParts.nodeV(), edgeEntry.getValue());
+        }
+        donorVehicle.updateTotalMass();
+    }
+
+    public void clientHandleMerge(VehicleCore donorVehicle, List<ConnectionData> newConnections) {
+        if (!level.isClientSide()) return;
+        if (donorVehicle == this) {
+            MachineMax.LOGGER.warn("收到无效合并包：保留载具与被移除载具相同 {}", this.uuid);
+            return;
+        }
+        this.absorbVehicle(donorVehicle);
+        this.updateTotalMass();
+        for (ConnectionData connection : newConnections) {
+            Pair<AbstractConnector, SimpleConnector> connectorPair = this.connectionDataToConnectorPair(connection);
+            if (connectorPair == null) continue;
+            this.attachConnector(connectorPair.getFirst(), connectorPair.getSecond(), null);
+        }
+        if (newConnections.isEmpty()) {
+            this.subSystemController.onVehicleStructureChanged();
+            recalculateCameraDistance();
+            this.activate();
+        }
+        if (!ObjectManager.removeMergedVehicle(donorVehicle)) {
+            MachineMax.LOGGER.error("客户端处理载具合并时无法移除被吸收载具{}", donorVehicle.uuid);
+        }
+    }
+
+    @Nullable
+    private Pair<AbstractConnector, SimpleConnector> connectionDataToConnectorPair(ConnectionData connection) {
+        try {
+            Part partA = this.partMap.get(UUID.fromString(connection.partUuidA));
+            Part partB = this.partMap.get(UUID.fromString(connection.partUuidS));
+            if (partA == null || partB == null) {
+                MachineMax.LOGGER.error("载具{}中未找到连接关系对应部件: {}", this.uuid, connection);
+                return null;
             }
-            if (isInLevel()) {
-                advancedConnector.addToLevel();//将关节约束加入到世界
-                this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
-                recalculateCameraDistance();
-                this.activate();
-                if (!level.isClientSide()) {
-                    comboList.addFirst(new ConnectionData(advancedConnector, simpleConnector));//特殊连接点在前面，以保证连接点属性得到正确应用
-                    //发包客户端创建连接关系
-                    PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new ConnectorAttachPayload(
-                            this.uuid,
-                            comboList,
-                            newPart != null,
-                            newPart == null ? null : new PartData(newPart)
-                    ));
-                }
+            AbstractConnector connectorA = partA.subParts.get(connection.subPartNameA).connectors.get(connection.getAdvConnectorName());
+            AbstractConnector connectorB = partB.subParts.get(connection.subPartNameS).connectors.get(connection.getSimpleConnectorName());
+            if (!(connectorB instanceof SimpleConnector simpleConnector) || connectorA == null) {
+                MachineMax.LOGGER.error("载具{}中未找到连接关系对应连接点: {}", this.uuid, connection);
+                return null;
             }
+            return Pair.of(connectorA, simpleConnector);
+        } catch (Exception e) {
+            MachineMax.LOGGER.error("解析连接关系失败: {}", connection, e);
+            return null;
         }
     }
 

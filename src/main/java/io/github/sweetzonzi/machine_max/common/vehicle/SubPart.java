@@ -1104,7 +1104,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     protected void setDestroyed() {
-        super.setDestroyed();
         for (AbstractSubsystem subsystem : subsystems.values()) {
             subsystem.setActive(false);
         }
@@ -1114,12 +1113,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
             }
         }
-        if (level.isClientSide) {
+        if (level.isClientSide && !isDestroyed()) {
             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.destroyed"), 64f);
             SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(getTransform().getTranslation()), Vec3.ZERO,
                     (float) (1f + 0.2f * (Math.random() - 0.5f)),
                     1f);
         }
+        super.setDestroyed();
     }
 
     public float getEquivalentMass() {
