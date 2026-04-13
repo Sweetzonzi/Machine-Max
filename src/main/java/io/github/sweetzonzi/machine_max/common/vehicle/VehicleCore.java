@@ -14,6 +14,7 @@ import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.ConnectorAlignmentHelper;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
@@ -27,8 +28,6 @@ import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetach
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleMergePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleStatusSyncPayload;
-import io.github.sweetzonzi.machine_max.util.MMMath;
-import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -53,8 +52,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 public class VehicleCore implements SyncedDataHolder {
-    private static final float COMBO_ATTACH_MAX_POS_ERROR = 0.1f;
-    private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = (float) Math.toRadians(1);//1°以内视为方向对齐
+    private static final float COMBO_ATTACH_MAX_POS_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_POS_ERROR;
+    private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_DIRECTION_ERROR;//1°以内视为方向对齐
 
     //存储所有部件与连接关系
     public final MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet = NetworkBuilder.undirected().allowsParallelEdges(true).build();
@@ -668,28 +667,6 @@ public class VehicleCore implements SyncedDataHolder {
     }
 
     /**
-     * 获取连接点在世界空间中的连接方向单位向量
-     */
-    private Vector3f getConnectorWorldDirection(AbstractConnector connector) {
-        Vector3f localDirection = Axis.axisToVector(connector.attr.getDirection());
-        var worldRotation = connector.subPart.body.getPhysicsRotation(null).mult(connector.offsetFromMassCenter.getRotation());
-        Vector3f worldDirection = worldRotation.toRotationMatrix().mult(localDirection, new Vector3f());
-        if (worldDirection.lengthSquared() > 1e-6f) {
-            worldDirection = worldDirection.normalize();
-        }
-        return worldDirection;
-    }
-
-    private float getOppositeDirectionError(AbstractConnector connector1, AbstractConnector connector2) {
-        // 注意：xp/xn 等方向仅表示连接点相对 locator 的局部方向，不能做枚举硬配对；
-        // 需要先转到世界空间，再判断两连接点法线是否相向。
-        Vector3f direction1 = getConnectorWorldDirection(connector1);
-        Vector3f direction2 = getConnectorWorldDirection(connector2);
-        float alignedDot = Math.clamp(-direction1.dot(direction2), -1f, 1f);
-        return (float) Math.acos(alignedDot);
-    }
-
-    /**
      * 检查同部件内是否仍有可连接的接口，如有则连接
      *
      * @param newPart 新安装的部件
@@ -714,13 +691,12 @@ public class VehicleCore implements SyncedDataHolder {
                                     simpleConnector = (SimpleConnector) connector1;
                                     advancedConnector = connector2;
                                 } else continue;//二者中存在AttachPointConnector时才可尝试连接
-                                //检查连接是否合理(连接点位置姿态差异)
-                                float posError = MMMath.relPointWorldPos(simpleConnector.offsetFromMassCenter.getTranslation(), simpleConnector.subPart.body).subtract(
-                                        MMMath.relPointWorldPos(advancedConnector.offsetFromMassCenter.getTranslation(), advancedConnector.subPart.body)
-                                ).length();//计算连接点位置差异
-                                float directionError = getOppositeDirectionError(advancedConnector, simpleConnector);//计算连接点法线相向误差
-                                if (posError < COMBO_ATTACH_MAX_POS_ERROR
-                                        && directionError < COMBO_ATTACH_MAX_DIRECTION_ERROR) {//若位置与方向误差均小于阈值，则尝试连接
+                                if (ConnectorAlignmentHelper.isAlignedForAttach(
+                                        advancedConnector,
+                                        simpleConnector,
+                                        COMBO_ATTACH_MAX_POS_ERROR,
+                                        COMBO_ATTACH_MAX_DIRECTION_ERROR
+                                )) {//若位置与方向误差均小于阈值，则尝试连接
                                     advancedConnector.alignActualTransformForJoint(simpleConnector);//连接前校正 actualTransform，避免关节初始应力异常
                                     boolean attached = advancedConnector.attach(simpleConnector);//先连接，成功后再写入拓扑，避免产生伪连接
                                     if (attached) {

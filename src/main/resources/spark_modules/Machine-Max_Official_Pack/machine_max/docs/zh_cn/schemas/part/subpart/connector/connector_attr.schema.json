@@ -88,10 +88,10 @@
       "default": {},
       "description": "连接点在本零件内的控制信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/vehicle）。例如：{\"move_control\": [\"car_controller\", \"engine\"]}。"
     },
-    "connected_to": {
-      "type": "string",
-      "default": "",
-      "description": "连接点默认连接到的部件内连接点名称（不是骨骼名！）。留空表示不默认连接。例如：\"hull\"表示默认连接到名为hull的连接点。"
+    "internal": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否为部件内部连接点。为true时仅用于同一Part内部自动连接，不参与对外拼装。"
     }
   },
   "required": ["locator", "definition"],
@@ -137,7 +137,7 @@
         "wheel_control": ["wheel_driver", "subpart"],
         "abs_request": ["vehicle"]
       },
-      "connected_to": "front_left_hub"
+      "internal": true
     }
   ]
 }

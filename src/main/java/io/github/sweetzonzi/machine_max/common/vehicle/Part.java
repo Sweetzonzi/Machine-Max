@@ -12,6 +12,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
@@ -20,6 +21,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.ConnectorAlignmentHelper;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
@@ -291,6 +293,116 @@ public class Part {
         return new Vec3(xArea, yArea, zArea);
     }
 
+    private static String toConnectorKey(AbstractConnector connector) {
+        return connector.subPart.name + "." + connector.name;
+    }
+
+    private void autoAttachInternalConnectors() {
+        List<AbstractConnector> internalConnectors = new ArrayList<>();
+        for (SubPart subPart : subParts.values()) {
+            for (AbstractConnector connector : subPart.connectors.values()) {
+                if (connector.internal && !connector.hasPart()) {
+                    internalConnectors.add(connector);
+                }
+            }
+        }
+        if (internalConnectors.isEmpty()) return;
+
+        Map<AbstractConnector, Integer> matchCount = new HashMap<>();
+        for (AbstractConnector connector : internalConnectors) {
+            matchCount.put(connector, 0);
+        }
+        List<Pair<AbstractConnector, SimpleConnector>> feasiblePairs = new ArrayList<>();
+
+        for (int i = 0; i < internalConnectors.size(); i++) {
+            AbstractConnector connector1 = internalConnectors.get(i);
+            for (int j = i + 1; j < internalConnectors.size(); j++) {
+                AbstractConnector connector2 = internalConnectors.get(j);
+                AbstractConnector advancedConnector;
+                SimpleConnector simpleConnector;
+                if (connector1 instanceof AdvancedConnector && connector2 instanceof SimpleConnector) {
+                    advancedConnector = connector1;
+                    simpleConnector = (SimpleConnector) connector2;
+                } else if (connector2 instanceof AdvancedConnector && connector1 instanceof SimpleConnector) {
+                    advancedConnector = connector2;
+                    simpleConnector = (SimpleConnector) connector1;
+                } else {
+                    continue;
+                }
+
+                if (!advancedConnector.conditionCheck(simpleConnector.subPart.part)
+                        || !simpleConnector.conditionCheck(advancedConnector.subPart.part)) {
+                    continue;
+                }
+
+                if (!ConnectorAlignmentHelper.isAlignedForAttach(
+                        advancedConnector,
+                        simpleConnector,
+                        ConnectorAlignmentHelper.DEFAULT_MAX_POS_ERROR,
+                        ConnectorAlignmentHelper.DEFAULT_MAX_DIRECTION_ERROR
+                )) {
+                    continue;
+                }
+
+                feasiblePairs.add(Pair.of(advancedConnector, simpleConnector));
+                matchCount.put(advancedConnector, matchCount.get(advancedConnector) + 1);
+                matchCount.put(simpleConnector, matchCount.get(simpleConnector) + 1);
+            }
+        }
+
+        Set<AbstractConnector> conflictedConnectors = new HashSet<>();
+        List<String> conflictNames = new ArrayList<>();
+        List<String> unmatchedNames = new ArrayList<>();
+        for (AbstractConnector connector : internalConnectors) {
+            int count = matchCount.getOrDefault(connector, 0);
+            if (count > 1) {
+                conflictedConnectors.add(connector);
+                conflictNames.add(toConnectorKey(connector) + "(" + count + ")");
+            } else if (count == 0) {
+                unmatchedNames.add(toConnectorKey(connector));
+            }
+        }
+
+        if (!conflictNames.isEmpty()) {
+            MachineMax.LOGGER.warn(
+                    "部件{}({})内部连接点存在多个可行候选，已跳过冲突连接点: {}",
+                    this.name,
+                    this.uuid,
+                    String.join(", ", conflictNames)
+            );
+        }
+        if (!unmatchedNames.isEmpty()) {
+            MachineMax.LOGGER.warn(
+                    "部件{}({})内部连接点未找到可行候选: {}",
+                    this.name,
+                    this.uuid,
+                    String.join(", ", unmatchedNames)
+            );
+        }
+
+        for (Pair<AbstractConnector, SimpleConnector> pair : feasiblePairs) {
+            AbstractConnector advancedConnector = pair.getFirst();
+            SimpleConnector simpleConnector = pair.getSecond();
+            if (conflictedConnectors.contains(advancedConnector) || conflictedConnectors.contains(simpleConnector)) {
+                continue;
+            }
+            if (advancedConnector.hasPart() || simpleConnector.hasPart()) {
+                continue;
+            }
+            advancedConnector.alignActualTransformForJoint(simpleConnector);
+            boolean attached = advancedConnector.attach(simpleConnector);
+            if (!attached) {
+                MachineMax.LOGGER.warn(
+                        "部件{}({})内部连接点连接失败: {} <-> {}",
+                        this.name,
+                        this.uuid,
+                        toConnectorKey(advancedConnector),
+                        toConnectorKey(simpleConnector)
+                );
+            }
+        }
+    }
+
     private SubPart createSubParts(Map<String, SubPartAttr> subPartAttrMap) {
         //创建零件
         for (Map.Entry<String, SubPartAttr> subPartEntry : subPartAttrMap.entrySet()) {//遍历部件的零件属性
@@ -330,6 +442,7 @@ public class Part {
                 subPart.body.setInverseInertiaLocal(new Vector3f(1.0f/Ix, 1.0f/Iyz, 1.0f/Iyz));
             }
         }
+        autoAttachInternalConnectors();
         //设置默认根零件，取质量最大的
         float maxMass = -100;
         SubPart rootSubPart = null;
@@ -339,7 +452,6 @@ public class Part {
                 maxMass = subPart.body.getMass();
                 rootSubPart = subPart;
             }
-            //TODO: 连接内部连接器
         }
         return rootSubPart;
     }

@@ -36,21 +36,21 @@ public class ConnectorAttr {
      */
     public final Map<String, List<String>> signalTargets;
     /**
-     * 连接点默认连接到的部件内连接点名称(不是骨骼名！)
+     * 是否为部件内部连接点（不参与对外拼装）
      */
-    public final String connectedTo;
+    public final boolean internal;
     /**
      * 连接点最终属性，考虑用户自定义覆写
      */
     private final ConnectorStaticAttr attr;
 
-    public ConnectorAttr(String locatorName, ResourceLocation definition, @Nullable OverwriteAttr overwrite, Map<String, String> signalTranslations, Map<String, List<String>> signalTargets, String connectedTo) {
+    public ConnectorAttr(String locatorName, ResourceLocation definition, @Nullable OverwriteAttr overwrite, Map<String, String> signalTranslations, Map<String, List<String>> signalTargets, boolean internal) {
         this.locatorName = locatorName;
         this.definition = definition;
         this.overwrite = overwrite;
         this.signalTranslations = signalTranslations;
         this.signalTargets = signalTargets;
-        this.connectedTo = connectedTo;
+        this.internal = internal;
         this.attr = getEffectiveAttr();
     }
 
@@ -106,15 +106,15 @@ public class ConnectorAttr {
             OverwriteAttr.CODEC.optionalFieldOf("overwrite").forGetter(attr -> Optional.ofNullable(attr.getOverwrite())),
             Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("signal_translations", Map.of()).forGetter(ConnectorAttr::getSignalTranslations),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("signal_targets", Map.of()).forGetter(ConnectorAttr::getSignalTargets),
-            Codec.STRING.optionalFieldOf("connected_to", "").forGetter(ConnectorAttr::getConnectedTo)
+            Codec.BOOL.optionalFieldOf("internal", false).forGetter(ConnectorAttr::isInternal)
     ).apply(instance, (
             locator,
             definition,
             overwrite,
             signalTranslations,
             signalTargets,
-            connectedTo
-    ) -> new ConnectorAttr(locator, definition, overwrite.orElse(null), signalTranslations, signalTargets, connectedTo)));
+            internal
+    ) -> new ConnectorAttr(locator, definition, overwrite.orElse(null), signalTranslations, signalTargets, internal)));
 
     public static final Codec<Map<String, ConnectorAttr>> MAP_CODEC = Codec.unboundedMap(
             Codec.STRING,//连接点名称

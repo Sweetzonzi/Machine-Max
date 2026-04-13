@@ -88,7 +88,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.actualTransform = offsetFromMassCenter.clone();
         this.signalPort = new SignalPort(this, attr.getSignalTargets(), attr.getSignalTranslations());
         this.collideBetweenParts = attr.hasCollideBetweenParts();
-        this.internal = !attr.getConnectedTo().isEmpty();
+        this.internal = attr.isInternal();
         this.attr = attr;
         SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
         syncheddata$builder.define(DATA_INTEGRITY_ID, attr.getIntegrity());

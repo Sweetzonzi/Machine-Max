@@ -88,10 +88,10 @@
       "default": {},
       "description": "Control signal transmission targets of the connection point within this part, key is signal channel, value is target list (subsystem/connection point name/part/vehicle). For example: {\"move_control\": [\"car_controller\", \"engine\"]}."
     },
-    "connected_to": {
-      "type": "string",
-      "default": "",
-      "description": "Name of the connection point within the part that this connection point defaults to connecting to (not bone name!). Leave empty to not default connect. For example: \"hull\" means default connects to the connection point named hull."
+    "internal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is an internal connector. When true, it is only used for automatic pairing within the same Part and is not exposed for outward assembly."
     }
   },
   "required": ["locator", "definition"],
@@ -137,7 +137,7 @@
         "wheel_control": ["wheel_driver", "subpart"],
         "abs_request": ["vehicle"]
       },
-      "connected_to": "front_left_hub"
+      "internal": true
     }
   ]
 }
