@@ -1096,7 +1096,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
             if (totalDamage > 0) {
                 setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
-                //TODO:对载具造成伤害
+                if (part.vehicle != null) {
+                    float rate = isDestroyed() ? part.type.vehicleDamageRateDestroyed : part.type.vehicleDamageRate;
+                    part.vehicle.applyVehicleDamage(Math.max(0f, totalDamage * rate));
+                }
                 //发包同步部件状态
                 syncToClient();
             }

@@ -218,6 +218,10 @@ public class Part {
         return result;
     }
 
+    public float getVehicleDurabilityContribution() {
+        return getSharedMaxDurability() * Math.max(0f, this.type.vehicleDurabilityRate);
+    }
+
     private void createSubsystems(
             SubPart subPart,
             Map<String, AbstractSubsystemAttr> subSystemAttrMap

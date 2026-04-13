@@ -26,10 +26,15 @@ import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttach
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleMergePayload;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleStatusSyncPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SyncedDataHolder;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -39,6 +44,7 @@ import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -46,8 +52,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
-@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
-public class VehicleCore {
+public class VehicleCore implements SyncedDataHolder {
     private static final float COMBO_ATTACH_MAX_POS_ERROR = 0.1f;
     private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = (float) Math.toRadians(1);//1°以内视为方向对齐
 
@@ -64,8 +69,11 @@ public class VehicleCore {
     public int tickCount = 0;
     public volatile boolean inLevel = false;
     //属性
-    @Setter
-    public float hp = 20;//耐久度
+    private static final EntityDataAccessor<Float> DATA_HP_ID = SynchedEntityData.defineId(VehicleCore.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> DATA_DESTROYED_ID = SynchedEntityData.defineId(VehicleCore.class, EntityDataSerializers.BOOLEAN);
+    private final SynchedEntityData synchedData;
+    private float maxHp = 20f;//耐久度上限（本地重算，不走网络同步）
+    private boolean destroyedHandled = false;
     private Vec3 position = Vec3.ZERO;//位置
     private Vec3 velocity = Vec3.ZERO;//速度
     private Vec3 oldPosition = Vec3.ZERO;//上一帧位置
@@ -89,16 +97,19 @@ public class VehicleCore {
 
     public VehicleCore(Level level, Part rootPart) {
         this.level = level;
+        this.synchedData = this.createSynchedData();
         this.uuid = rootPart.uuid;
         ObjectManager.initVehicle(this);
         this.addPart(rootPart);
         subSystemController.initAllSubsystems();//子系统初始化
+        recalculateMaxHp(HpRecalcMode.INIT_TO_MAX);
     }
 
     public VehicleCore(Level level, VehicleData savedData, boolean readAdditionalData) {
         this.level = level;
+        this.synchedData = this.createSynchedData();
         this.uuid = UUID.fromString(savedData.uuid);
-        this.hp = savedData.hp;
+        this.synchedData.set(DATA_HP_ID, Math.max(savedData.hp, 0f));
         this.position = savedData.pos;
         this.oldPosition = savedData.pos;
         this.name = savedData.name;
@@ -122,6 +133,7 @@ public class VehicleCore {
                 } else throw new IllegalArgumentException("未在载具中找到连接数据所需的部件");
             }
             subSystemController.initAllSubsystems();//子系统初始化
+            recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
             recalculateCameraDistance();
         } catch (Exception e) {
             onRemoveFromLevel(); // 移除数据出错的载具
@@ -139,10 +151,11 @@ public class VehicleCore {
      */
     public VehicleCore(Level level, UUID uuid, MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet, VehicleCore oldVehicle) {
         this.level = level;
+        this.synchedData = this.createSynchedData();
         this.uuid = uuid;
         this.name = oldVehicle.name;
         this.position = oldVehicle.position;
-        //TODO:调整hp
+        this.synchedData.set(DATA_HP_ID, 0f);
         for (Part part : partNet.nodes()) {
             Set<AbstractSubsystem> subsystems = part.getAllSubsystems();
             oldVehicle.subSystemController.removeSubsystems(subsystems, true);
@@ -159,7 +172,130 @@ public class VehicleCore {
         }
         this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();
+        recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
         recalculateCameraDistance();
+    }
+
+    private enum HpRecalcMode {
+        INIT_TO_MAX,
+        GROW_WITH_MAX_DELTA,
+        CLAMP_ONLY
+    }
+
+    private SynchedEntityData createSynchedData() {
+        SynchedEntityData.Builder builder = new SynchedEntityData.Builder(this);
+        builder.define(DATA_HP_ID, 20.0f);
+        builder.define(DATA_DESTROYED_ID, false);
+        return builder.build();
+    }
+
+    public SynchedEntityData getSyncedData() {
+        return this.synchedData;
+    }
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull List<SynchedEntityData.DataValue<?>> updatedData) {
+    }
+
+    @Override
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> key) {
+        if (!level.isClientSide()) return;
+        if (key.equals(DATA_DESTROYED_ID) && isDestroyed()) {
+            markDestroyed();
+        }
+    }
+
+    public float getHp() {
+        return this.synchedData.get(DATA_HP_ID);
+    }
+
+    public void setHp(float hp) {
+        this.synchedData.set(DATA_HP_ID, Math.clamp(hp, 0f, this.maxHp));
+    }
+
+    public boolean isDestroyed() {
+        return this.synchedData.get(DATA_DESTROYED_ID);
+    }
+
+    private float calculateMaxHpFromParts() {
+        float result = 0f;
+        for (Part part : partMap.values()) {
+            result += Math.max(0f, part.getVehicleDurabilityContribution());
+        }
+        return Math.max(0f, result);
+    }
+
+    private void recalculateMaxHp(HpRecalcMode mode) {
+        float oldMaxHp = this.maxHp;
+        float newMaxHp = calculateMaxHpFromParts();
+        this.maxHp = newMaxHp;
+        if (isDestroyed()) {
+            setHp(0f);
+            return;
+        }
+        switch (mode) {
+            case INIT_TO_MAX -> setHp(newMaxHp);
+            case GROW_WITH_MAX_DELTA -> setHp(getHp() + Math.max(0f, newMaxHp - oldMaxHp));
+            case CLAMP_ONLY -> setHp(getHp());
+        }
+    }
+
+    public void applyVehicleDamage(float damage) {
+        if (level.isClientSide() || damage <= 0 || isRemoved || isDestroyed()) return;
+        setHp(getHp() - damage);
+    }
+
+    public void refreshMaxHp() {
+        recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
+    }
+    private void markDestroyed() {
+        this.synchedData.set(DATA_DESTROYED_ID, true);
+        setHp(0f);
+        for (Part part : partMap.values()) {
+            for (SubPart subPart : part.subParts.values()) {
+                if (!subPart.isDestroyed()) {
+                    subPart.setDestroyed();
+                }
+            }
+        }
+    }
+
+    private void syncStatusToClient() {
+        if (level.isClientSide()) return;
+        List<SynchedEntityData.DataValue<?>> list = this.synchedData.packDirty();
+        if (list != null) {
+            PacketDistributor.sendToPlayersInDimension((ServerLevel) this.level, new VehicleStatusSyncPayload(this.uuid, list));
+        }
+    }
+
+    private void distributeSplitHp(float sourceHp, List<VehicleCore> splitVehicles) {
+        List<VehicleCore> allVehicles = new ArrayList<>(1 + splitVehicles.size());
+        allVehicles.add(this);
+        allVehicles.addAll(splitVehicles);
+
+        for (VehicleCore vehicle : allVehicles) {
+            vehicle.recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
+        }
+
+        float totalMaxHp = 0f;
+        for (VehicleCore vehicle : allVehicles) {
+            totalMaxHp += vehicle.getMaxHp();
+        }
+        float availableHp = Math.max(sourceHp, 0f);
+        if (totalMaxHp <= 1e-6f) {
+            for (VehicleCore vehicle : allVehicles) vehicle.setHp(0f);
+            return;
+        }
+
+        float assignedHp = 0f;
+        for (int i = 0; i < allVehicles.size(); i++) {
+            VehicleCore vehicle = allVehicles.get(i);
+            float shareHp = (i == allVehicles.size() - 1)
+                    ? (availableHp - assignedHp)
+                    : (availableHp * vehicle.getMaxHp() / totalMaxHp);
+            vehicle.setHp(shareHp);
+            assignedHp += vehicle.getHp();
+        }
     }
 
     /**
@@ -202,6 +338,12 @@ public class VehicleCore {
         } else if (this.velocity.length() < 30) {
 //            deactivate();//休眠
         }
+        if (!isDestroyed() && getHp() <= 0f) {
+            markDestroyed();
+        }
+        if (!level.isClientSide()) {
+            syncStatusToClient();
+        }
         tickCount++;
     }
 
@@ -226,14 +368,6 @@ public class VehicleCore {
     public void activate() {
         SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
-            return null;
-        });
-    }
-
-    public void setGravity(Vector3f gravity) {
-        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-            for (Part part : partMap.values())
-                part.subParts.values().forEach(subPart -> subPart.body.setGravity(gravity));
             return null;
         });
     }
@@ -281,6 +415,7 @@ public class VehicleCore {
     public void removePart(Part part, Map<UUID, UUID> spiltVehicles) {
         if (partMap.containsValue(part)) {
             UUID partUuid = part.getUuid();
+            float hpBeforeSplit = getHp();
             subSystemController.removeSubsystems(part.getAllSubsystems(), false);
             partNet.removeNode(part);
             partMap.remove(part.uuid, part);
@@ -296,12 +431,15 @@ public class VehicleCore {
                     } else {
                         PacketDistributor.sendToPlayersInDimension(
                                 (ServerLevel) this.level,
-                                new PartRemovePayload(this.uuid, partUuid, serverHandleSpilt(spiltPartNets))
+                                new PartRemovePayload(this.uuid, partUuid, serverHandleSpilt(spiltPartNets, hpBeforeSplit))
                         );
                     }
                 } else {
-                    clientHandleSpilt(spiltPartNets, spiltVehicles);
+                    clientHandleSpilt(spiltPartNets, spiltVehicles, hpBeforeSplit);
                 }
+            }
+            if (spiltPartNets.size() <= 1) {
+                recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
             }
             if (partMap.values().isEmpty() && !level.isClientSide())
                 ObjectManager.removeVehicle(this);//如果所有部件都被移除，则销毁载具
@@ -385,8 +523,10 @@ public class VehicleCore {
     }
 
     private void attachConnectorInSameVehicle(AbstractConnector advancedConnector, SimpleConnector simpleConnector, @Nullable Part newPart) {
-        if (newPart != null && !partMap.containsKey(newPart.uuid) && (advancedConnector.subPart.part == newPart || simpleConnector.subPart.part == newPart))
+        if (newPart != null && !partMap.containsKey(newPart.uuid) && (advancedConnector.subPart.part == newPart || simpleConnector.subPart.part == newPart)) {
             this.addPart(newPart);
+            recalculateMaxHp(HpRecalcMode.GROW_WITH_MAX_DELTA);
+        }
         List<ConnectionData> comboList = new java.util.ArrayList<>(1);
         boolean attached = advancedConnector.attach(simpleConnector);//连接部件
         if (!attached) return;
@@ -422,12 +562,15 @@ public class VehicleCore {
         boolean attached = advancedConnector.attach(simpleConnector);
         if (!attached) return;
 
+        float mergedHp = this.getHp() + donorVehicle.getHp();
         this.absorbVehicle(donorVehicle);
         this.partNet.addEdge(
                 advancedConnector.subPart.part,
                 simpleConnector.subPart.part,
                 Pair.of(advancedConnector, simpleConnector)
         );
+        this.recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
+        this.setHp(mergedHp);
 
         if (isInLevel()) advancedConnector.addToLevel();
         this.subSystemController.onVehicleStructureChanged();
@@ -482,7 +625,10 @@ public class VehicleCore {
             MachineMax.LOGGER.warn("收到无效合并包：保留载具与被移除载具相同 {}", this.uuid);
             return;
         }
+        float mergedHp = this.getHp() + donorVehicle.getHp();
         this.absorbVehicle(donorVehicle);
+        this.recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
+        this.setHp(mergedHp);
         this.updateTotalMass();
         for (ConnectionData connection : newConnections) {
             Pair<AbstractConnector, SimpleConnector> connectorPair = this.connectionDataToConnectorPair(connection);
@@ -629,6 +775,7 @@ public class VehicleCore {
      */
     public void detachConnections(List<Pair<AbstractConnector, SimpleConnector>> connections, Map<UUID, UUID> spiltVehicles) {
         List<ConnectionData> connectionsToRemove = new ArrayList<>();
+        float hpBeforeSplit = getHp();
         for (Pair<AbstractConnector, SimpleConnector> connection : connections) {
             connection.getFirst().detach(false);
             this.activate();
@@ -646,10 +793,13 @@ public class VehicleCore {
             } else {//分裂为至少两个部分
                 //发包通知客户端拆除接口，并将分裂出的新载具UUID一同传输
                 PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new ConnectorDetachPayload(
-                        uuid, connectionsToRemove, serverHandleSpilt(spiltPartNets)));
+                        uuid, connectionsToRemove, serverHandleSpilt(spiltPartNets, hpBeforeSplit)));
             }
         } else {//客户端行为，仅应被载具断开连接的网络包调用
-            clientHandleSpilt(spiltPartNets, spiltVehicles);
+            clientHandleSpilt(spiltPartNets, spiltVehicles, hpBeforeSplit);
+        }
+        if (spiltPartNets.size() <= 1) {
+            recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
         }
         this.updateTotalMass();
         this.subSystemController.onVehicleStructureChanged();//通知子系统载具结构更新
@@ -662,7 +812,7 @@ public class VehicleCore {
      * @param spiltPartNets 连通性检查得出的所有子网络集合
      * @return 发送给客户端的同步 Map (子网络中某个部件的 UUID -> 新载具 UUID)
      */
-    private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets) {
+    private Map<UUID, UUID> serverHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, float sourceHp) {
         synchronized (partNet) { // 对图对象加锁，防止计算期间结构被修改
             if (spiltPartNets.size() <= 1) return Map.of();
 
@@ -675,6 +825,7 @@ public class VehicleCore {
             });
 
             Map<UUID, UUID> spiltVehiclesToSend = new HashMap<>();
+            List<VehicleCore> createdVehicles = new ArrayList<>();
 
             // 2. 索引为 0 的网络（质量最大者）保留当前载具身份，不进行处理。
             // 3. 从索引 1 开始，将较小的部分剥离并创建新载具。
@@ -689,10 +840,11 @@ public class VehicleCore {
                 // 该构造函数内部会从当前载具 (this) 中移除对应的 Part 和子系统
                 VehicleCore newVehicle = new VehicleCore(level, newVehicleUuid, network, this);
                 ObjectManager.addSpiltVehicle(newVehicle);
-                //TODO: 调整HP
+                createdVehicles.add(newVehicle);
                 spiltVehiclesToSend.put(referencePartUuid, newVehicleUuid);
             }
 
+            distributeSplitHp(sourceHp, createdVehicles);
             // 更新当前载具（即保留下来的最大部分）的总质量
             this.updateTotalMass();
             return spiltVehiclesToSend;
@@ -710,18 +862,26 @@ public class VehicleCore {
         return total;
     }
 
-    private void clientHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, Map<UUID, UUID> spiltVehicles) {
+    private void clientHandleSpilt(Set<MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>>> spiltPartNets, Map<UUID, UUID> spiltVehicles, float sourceHp) {
+        List<VehicleCore> createdVehicles = new ArrayList<>();
         for (Map.Entry<UUID, UUID> entry : spiltVehicles.entrySet()) {
             Part part = partMap.get(entry.getKey());
+            if (part == null) continue;
             UUID spiltVehicleUUID = entry.getValue();
             for (var vehicle : spiltPartNets) {
                 if (vehicle.nodes().contains(part)) {
                     //为分离的部件指定新的VehicleCore
                     VehicleCore spiltVehicle = new VehicleCore(level, spiltVehicleUUID, vehicle, this);
                     ObjectManager.addSpiltVehicle(spiltVehicle);
+                    createdVehicles.add(spiltVehicle);
                     break;//处理下一个被分离的部件
                 }
             }
+        }
+        if (!createdVehicles.isEmpty()) {
+            distributeSplitHp(sourceHp, createdVehicles);
+        } else {
+            recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
         }
     }
 
