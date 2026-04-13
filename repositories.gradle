@@ -10,8 +10,9 @@ dependencies {
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    // 玉
-    implementation "maven.modrinth:jade:${jade_version}"
+    // 玉（编译期可见，运行时可选）
+    compileOnly "maven.modrinth:jade:${jade_version}"
+    localRuntime "maven.modrinth:jade:${jade_version}"
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js

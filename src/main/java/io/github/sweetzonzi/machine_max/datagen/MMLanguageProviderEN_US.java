@@ -67,6 +67,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("tooltip.machine_max.wrench.cant_repair", "%1$s has been destroyed, cannot repair. Crouch and interact to unbolt the part");
         this.add("tooltip.machine_max.wrench.no_need_to_repair", "%1$s is no need to repair");
         this.add("tooltip.machine_max.spray_can.interact", "Interact to paint:");
+        this.add("tooltip.machine_max.jade.subpart_durability", "SubPart: %1$s");
+        this.add("tooltip.machine_max.jade.vehicle_durability", "Vehicle: %1$s");
         this.add("message.machine_max.blueprint_saved", "Blueprint has been saved to %1$s");
         this.add("message.machine_max.blueprint_error", "Failed to save blueprint: %1$s");
         this.add("message.machine_max.blueprint_pass", "No vehicle selected, skipping blueprint save");

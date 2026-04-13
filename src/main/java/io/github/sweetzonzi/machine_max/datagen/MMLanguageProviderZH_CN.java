@@ -67,6 +67,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("tooltip.machine_max.wrench.cant_repair", "%1$s已被摧毁，无法修复，潜行互动以解除固定便于拆除");
         this.add("tooltip.machine_max.wrench.no_need_to_repair", "%1$s无需修复或固定");
         this.add("tooltip.machine_max.spray_can.interact", "互动以喷涂：");
+        this.add("tooltip.machine_max.jade.subpart_durability", "零件耐久: %1$s");
+        this.add("tooltip.machine_max.jade.vehicle_durability", "载具耐久: %1$s");
         this.add("message.machine_max.blueprint_saved", "蓝图已保存至%1$s");
         this.add("message.machine_max.blueprint_error", "保存蓝图失败:%1$s");
         this.add("message.machine_max.blueprint_pass", "未选中任何载具，取消保存蓝图");
