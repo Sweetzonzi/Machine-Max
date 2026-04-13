@@ -11,6 +11,7 @@ public class MMJadePlugin implements IWailaPlugin {
 
     @Override
     public void registerClient(IWailaClientRegistration registration) {
+        // 客户端注册入口：把部件实体绑定到自定义状态提示 Provider。
         registration.registerEntityComponent(MMPartEntityStatusProvider.INSTANCE, MMPartEntity.class);
     }
 }

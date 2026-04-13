@@ -15,6 +15,7 @@ import java.util.Locale;
 public enum MMPartEntityStatusProvider implements IEntityComponentProvider {
     INSTANCE;
 
+    // Jade 侧用于识别该 Provider 的唯一键。
     private static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(
             MachineMax.MOD_ID,
             "mm_part_entity_status"
@@ -27,13 +28,17 @@ public enum MMPartEntityStatusProvider implements IEntityComponentProvider {
 
     @Override
     public void appendTooltip(ITooltip tooltip, EntityAccessor accessor, IPluginConfig config) {
+        // 仅处理本模组的部件实体，避免对其他实体做无意义计算。
         if (!(accessor.getEntity() instanceof MMPartEntity partEntity)) return;
         if (partEntity.subPart == null) return;
+
+        // 第一行展示子部件耐久。
         tooltip.add(Component.translatable(
                 "tooltip.machine_max.jade.subpart_durability",
                 formatDurabilityStatus(partEntity.subPart.getDurability(), partEntity.subPart.getMaxDurability())
         ));
 
+        // 第二行展示所属整车耐久（若该子部件已挂到载具上）。
         VehicleCore vehicle = partEntity.subPart.part.vehicle;
         if (vehicle != null) {
             tooltip.add(Component.translatable(
@@ -44,6 +49,7 @@ public enum MMPartEntityStatusProvider implements IEntityComponentProvider {
     }
 
     private static String formatDurabilityStatus(float current, float max) {
+        // 统一格式：当前/上限(百分比)，并处理无上限或异常值。
         float safeCurrent = Math.max(0f, current);
         if (max <= 0f) {
             return String.format(Locale.ROOT, "%.0f/N/A (N/A)", safeCurrent);
