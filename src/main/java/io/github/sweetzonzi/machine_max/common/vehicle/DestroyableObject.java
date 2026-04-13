@@ -1,14 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.body.ManifoldPoint;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
 import io.github.sweetzonzi.machine_max.network.payload.SubPartSyncPayload;
 import jme3utilities.math.MyQuaternion;
@@ -67,7 +66,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         syncheddata$builder.define(DATA_ANG_VEL_ID, new org.joml.Vector3f());
         syncheddata$builder.define(DATA_DURABILITY_ID, 20.0F);
         syncheddata$builder.define(DATA_DESTROYED_ID, false);
-        syncheddata$builder.define(DESTROY_TIME_ID, 200);
+        syncheddata$builder.define(DESTROY_TIME_ID, MMServerConfig.getSubPartDestroyMinTicks());
         this.defineSyncedData(syncheddata$builder);
         this.syncedData = syncheddata$builder.build();
     }
@@ -91,17 +90,21 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     public void postTick() {
         if (!level.isClientSide()) {
             if (isDestroyed()) { //物体已被摧毁，倒计时结束后移除
-                tickDestroyTimer();
+                tickDestroyTimer(1);
             }
             syncToClient();
         }
         if (isDestroyed() && getDestroyTime() <= 0) this.destroy();
     }
 
-    protected void tickDestroyTimer() {
+    /***
+     * 销毁倒计时前进指定tick数
+     * @param tick 步进的tick数
+     */
+    protected void tickDestroyTimer(int tick) {
         int destroyTime = getDestroyTime();
         if (destroyTime > 0) {
-            setDestroyTime(destroyTime - 1);
+            setDestroyTime(destroyTime - tick);
         }
     }
 
@@ -135,7 +138,15 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         return !getSyncedData().get(DATA_DESTROYED_ID) && getDurability() <= 0;
     }
 
+    protected int getInitialDestroyTimeTicks() {
+        int ticksByDurability = Math.round(getMaxDurability() * MMServerConfig.getSubPartDestroyTicksPerDurability());
+        return Math.max(ticksByDurability, MMServerConfig.getSubPartDestroyMinTicks());
+    }
+
     protected void setDestroyed() {
+        if (!level.isClientSide() && !isDestroyed()) {
+            setDestroyTime(getInitialDestroyTimeTicks());
+        }
         getSyncedData().set(DATA_DESTROYED_ID, true);
     }
 

@@ -154,6 +154,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.configuration.section.machine.max.client.toml.title", "Client Configuration");
         this.add("machine_max.configuration.section.machine.max.client.toml", "Client Configuration");
         this.add("machine_max.configuration.section.machine.max.server.toml", "Server Configuration");
+        this.add("config.jade.plugin_machine_max.mm_part_entity_status", "Machine Max Part Durability");
         // Ground Vehicle Configuration
         this.add("machine_max.configuration.ground_vehicle", "Ground Vehicle");
         this.add("machine_max.configuration.ground_vehicle.button", "Ground Vehicle");
@@ -185,5 +186,11 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.configuration.should_destroy_blocks.tooltip", "Whether or not the parts should destroy blocks when the impact is big enough");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements", "Ignore Assembly Tag Requirements");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "Whether to ignore connector tag requirements when assembling vehicles");
+        this.add("machine_max.configuration.subpart_destroy_ticks_per_durability", "SubPart Destroy Ticks Per Durability");
+        this.add("machine_max.configuration.subpart_destroy_ticks_per_durability.tooltip", "Destroy timer ticks per 1 max durability point for destroyed sub-parts");
+        this.add("machine_max.configuration.subpart_destroy_min_ticks", "SubPart Destroy Minimum Ticks");
+        this.add("machine_max.configuration.subpart_destroy_min_ticks.tooltip", "Minimum destroy timer ticks for destroyed sub-parts");
+        this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage", "SubPart Destroy Advance Ticks Per Damage");
+        this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage.tooltip", "Additional destroy timer advance ticks per 1 damage applied to already destroyed sub-parts");
     }
 }

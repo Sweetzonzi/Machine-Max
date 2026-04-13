@@ -178,6 +178,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.configuration.section.machine.max.client.toml.title", "客户端配置");
         this.add("machine_max.configuration.section.machine.max.client.toml", "客户端配置");
         this.add("machine_max.configuration.section.machine.max.server.toml", "服务器配置");
+        this.add("config.jade.plugin_machine_max.mm_part_entity_status", "Machine Max 部件耐久显示");
         // 地面载具配置
         this.add("machine_max.configuration.ground_vehicle", "地面载具");
         this.add("machine_max.configuration.ground_vehicle.button", "地面载具");
@@ -209,5 +210,11 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.configuration.should_destroy_blocks.tooltip", "是否允许部件在冲击力足够大时破坏方块");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements", "忽略组装Tag要求");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "使用零件组装载具时是否忽视连接点的Tag要求");
+        this.add("machine_max.configuration.subpart_destroy_ticks_per_durability", "零件销毁每耐久Tick");
+        this.add("machine_max.configuration.subpart_destroy_ticks_per_durability.tooltip", "零件损毁后，每1点最大耐久对应的销毁倒计时Tick数");
+        this.add("machine_max.configuration.subpart_destroy_min_ticks", "零件销毁最小Tick");
+        this.add("machine_max.configuration.subpart_destroy_min_ticks.tooltip", "零件损毁后的最小销毁倒计时Tick数");
+        this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage", "零件受伤加速销毁Tick");
+        this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage.tooltip", "零件已损毁时，每1点伤害额外推进的销毁倒计时Tick数");
     }
 }

@@ -1076,6 +1076,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      */
     protected void handleAccumulatedDamage() {
         if (!level.isClientSide() && !accumulatedDamage.isEmpty()) {
+            boolean destroyedBeforeDamage = isDestroyed();
             float totalDamage = 0;
             Vec3 soundPos = Vec3.ZERO;
             while (!accumulatedDamage.isEmpty()) {
@@ -1099,6 +1100,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 if (part.vehicle != null) {
                     float rate = isDestroyed() ? part.type.vehicleDamageRateDestroyed : part.type.vehicleDamageRate;
                     part.vehicle.applyVehicleDamage(Math.max(0f, totalDamage * rate));
+                }
+                if (destroyedBeforeDamage) {
+                    int extraAdvance = Math.round(totalDamage * MMServerConfig.getSubPartDestroyAdvanceTicksPerDamage());
+                    if (extraAdvance > 0) {
+                        tickDestroyTimer(extraAdvance);
+                    }
                 }
                 //发包同步部件状态
                 syncToClient();

@@ -1,6 +1,7 @@
 {
   "block.machine_max.fabricator": "制造器(WIP)",
   "block.machine_max.research_table": "研究台",
+  "config.jade.plugin_machine_max.mm_part_entity_status": "Machine Max 部件耐久显示",
   "error.machine_max.invalid_resource_location": "文件资源路径非法，仅允许小写英文字母、数字、下划线和连字符",
   "error.machine_max.item_storage_subsystem.invalid_column_num": "储物子系统储物空间列数必须大于1之间",
   "error.machine_max.item_storage_subsystem.invalid_row_num": "储物子系统储物空间行数必须大于1之间",
