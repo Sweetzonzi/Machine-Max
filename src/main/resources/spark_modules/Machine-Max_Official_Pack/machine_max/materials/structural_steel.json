@@ -19,12 +19,12 @@
   "penetration_modifiers": [
     {
       "operation": "multiply",
-      "value": 0.55,
+      "value": 0.5,
       "condition": {
         "type": "not",
         "condition": {
           "type": "damage_tag",
-          "id": "machine_max:has_pen_depth"
+          "id": "minecraft:bypasses_armor"
         }
       }
     }

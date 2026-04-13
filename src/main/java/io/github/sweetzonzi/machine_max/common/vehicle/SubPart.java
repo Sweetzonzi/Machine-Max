@@ -65,9 +65,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -123,7 +125,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Vec3 projectedArea = null;
     public float bodyMinY = -99999;
     private final HashSet<BlockPos> climbableBlocks = new HashSet<>();
-    private final LocalHeightField heightField = new LocalHeightField(2, 1);//爬坡辅助用高度场
+    private final LocalHeightField heightField = new LocalHeightField(2);//爬坡辅助用高度场
 
     public SubPart(String name, Part part, SubPartAttr attr) {
         super(part.level, attr.getCollisionShape(part.variant), attr.mass);
@@ -903,8 +905,18 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             Vector3f worldContactPoint = data.worldContactPoint();
             Vector3f worldContactSpeed = data.worldContactSpeed();
             Vec3 sourcePos = SparkMathKt.toVec3(worldContactPoint);
-            float armor = hitBox.getRHA(this);
+            float baseArmor = hitBox.getRHA(this);
+            float angleFactor = 1f;
+            float incidenceAngle = 0f;
+            if (worldContactSpeed.lengthSquared() > 1.0E-6f) {
+                float cos = Math.clamp(-normal.dot(worldContactSpeed.normalize()), 0.0001f, 1f);
+                angleFactor = cos;
+                incidenceAngle = (float) Math.toDegrees(Math.acos(cos));
+            }
+            float armor = baseArmor;
+            if (hitBox.hasAngleEffect()) armor /= angleFactor; // 按照设置考虑入射角影响
             float armorPenetration;
+            float finalDamage = 0f;
             //击退处理与特殊逻辑
             if (!source.is(MMTags.HAS_PEN_DEPTH)) {//原版伤害处理
                 //冲击效果 (部件间的冲击交由物理引擎处理)
@@ -930,7 +942,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     armorPenetration = hitBox.modifyPiercing(source, damage);// TODO: 研究一下Key是怎么用的,换成来自投射物的穿深数据
 //                armorPenetration = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
                 } catch (Exception e) {
-                    armorPenetration = damage / 2f;
+                    armorPenetration = damage;
                     MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", this.part.name);
                 }
             }
@@ -938,8 +950,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float impactDamage = hitBox.modifyImpact(source, damage);
             //分配冲击至连接点
             distributeDamageImpactToConnectors(impactDamage, worldContactPoint);
-            //甲弹对抗相关处理
-            if (hitBox.hasAngleEffect()) armorPenetration *= -normal.dot(worldContactSpeed.normalize());//按照设置考虑入射角影响
             //击穿判定
             if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
                 float subPartDamage = hitBox.modifyDamage(source, damage);
@@ -948,7 +958,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 //对部件造成伤害
                 accumulateDamage(subPartDamage, data);
                 //播放击穿音效
-                float finalDamage = subPartDamage;
+                finalDamage = subPartDamage;
                 SparkLevel.submitImmediateTask(level, PPhase.POST, () -> {
                     //播放击穿音效特效
                     SoundEvent sound = hitBox.getHitPenSound();
@@ -987,6 +997,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                         level.addParticle(ParticleTypes.FIREWORK, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
                     }
                 });
+            }
+            if (!level.isClientSide() && source.getEntity() instanceof ServerPlayer player) {
+                player.sendSystemMessage(Component.literal(String.format(
+                        "RHA(基本/角度)=%.1f/%.1f, 入射角=%.1f°, 穿深=%.2f, 冲击=%.2f, 伤害=%.2f",
+                        baseArmor, armor, incidenceAngle, armorPenetration, impactDamage, finalDamage
+                )));
             }
             return true; //返回true表示命中，且伤害已被处理
         }
@@ -1076,7 +1092,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      */
     protected void handleAccumulatedDamage() {
         if (!level.isClientSide() && !accumulatedDamage.isEmpty()) {
-            boolean destroyedBeforeDamage = isDestroyed();
             float totalDamage = 0;
             Vec3 soundPos = Vec3.ZERO;
             while (!accumulatedDamage.isEmpty()) {
@@ -1101,10 +1116,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     float rate = isDestroyed() ? part.type.vehicleDamageRateDestroyed : part.type.vehicleDamageRate;
                     part.vehicle.applyVehicleDamage(Math.max(0f, totalDamage * rate));
                 }
-                if (destroyedBeforeDamage) {
+                if (isDestroyed() && getDestroyTime() > 20) { // 仅剩最后1秒销毁倒计时时不再额外缩减
                     int extraAdvance = Math.round(totalDamage * MMServerConfig.getSubPartDestroyAdvanceTicksPerDamage());
                     if (extraAdvance > 0) {
-                        tickDestroyTimer(extraAdvance);
+                        tickDestroyTimer(Math.min(extraAdvance, getDestroyTime() - 20));
                     }
                 }
                 //发包同步部件状态
@@ -1133,13 +1148,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
     public float getEquivalentMass() {
-        float partMass = body.getMass();
-        for (AbstractConnector connector : this.connectors.values()) {
-            if (connector.hasPart())
-                partMass += (0.3f * connector.attachedConnector.subPart.body.getMass());
-        }
-        partMass += 0.05f * (part.vehicle.totalMass - body.getMass());
-        return partMass;
+        return MassUtil.getEquivalentMass(this);
     }
 
     @NotNull

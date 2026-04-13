@@ -24,17 +24,6 @@
     }
   ],
   "penetration_modifiers": [
-    {
-      "operation": "multiply",
-      "value": 0.75,
-      "condition": {
-        "type": "not",
-        "condition": {
-          "type": "damage_tag",
-          "id": "machine_max:has_pen_depth"
-        }
-      }
-    }
   ],
   "damage_modifiers": [
     {

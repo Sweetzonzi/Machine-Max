@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.util;
+package io.github.sweetzonzi.machine_max.util.terrain;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

@@ -4,7 +4,7 @@
     1.3642980402166245,
     1.4763870239257812
   ],
-  "hp": 20.0,
+  "hp": 100000000.0,
   "parts": {
     "86d9e7ad-f1c3-4888-9a98-f92d52de4212": {
       "custom_recipe": "machine_max:wine_fox_wheel",

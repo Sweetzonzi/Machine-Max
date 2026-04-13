@@ -33,7 +33,7 @@ public class PartHitHandler {
                 if (PhysicsBodyExtensionKt.getOwner(result.getCollisionObject()) instanceof SubPart candidatedSubPart) {
                     if(candidatedSubPart.isWheel(result.triangleIndex()) && candidatedSubPart.isWheelSurface(result.triangleIndex())) continue; // 跳过轮子的球面部分
                     var hitBox = candidatedSubPart.getHitBox(result.triangleIndex());
-                    if (hitBox != null && !hitBox.isActive()) continue; // 跳过未激活的碰撞箱
+                    if (!hitBox.isActive()) continue; // 跳过未激活的碰撞箱
                     if (subPartEntity.subPart != null && candidatedSubPart == subPartEntity.subPart) {//若命中的是本零件
                         mixinProjectile.machine_Max$setHitPoint(start.add(end.subtract(start).mult(result.getHitFraction())));
                         mixinProjectile.machine_Max$setHitNormal(result.getHitNormalLocal(null));

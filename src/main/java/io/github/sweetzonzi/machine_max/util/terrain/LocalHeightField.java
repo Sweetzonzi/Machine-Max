@@ -16,11 +16,6 @@ public class LocalHeightField {
     private final int radius;
 
     /**
-     * 卷积核半径（单位：方块）
-     */
-    private final int kernelRadius;
-
-    /**
      * 网格尺寸 = 2R+1
      */
     private final int size;
@@ -41,13 +36,11 @@ public class LocalHeightField {
     private int originX;
     private int originZ;
 
-    public LocalHeightField(int radius, int kernelRadius) {
+    public LocalHeightField(int radius) {
         this.radius = radius;
-        this.kernelRadius = kernelRadius;
         this.size = radius * 2 + 1;
         this.rawHeight = new float[size][size];
         this.smoothHeight = new float[size][size];
-        float sigma = kernelRadius * 0.5f;
     }
 
     /**
@@ -188,10 +181,10 @@ public class LocalHeightField {
                             // 跳过空气
                             if (h == Float.NEGATIVE_INFINITY) continue;
 
-                            float w = (dx == 0 || dz == 0) ? 1f : 1f;
+                            float w = (dx == 0 || dz == 0) ? 1f : 0.5f;
 
                             float delta = h - center;
-
+                            if (delta > 0) continue; // 比自身高的地形不纳入考虑，避免被额外抬高产生突变阶梯
                             deltaSum += delta * w;
                             weight += w;
                         }
@@ -328,7 +321,7 @@ public class LocalHeightField {
         float z = initialContact.z;
 
         Vector3f normal = new Vector3f();
-        if(wheelCenter.subtract(initialContact).lengthSquared() > 1e-6f)
+        if (wheelCenter.subtract(initialContact).lengthSquared() > 1e-6f)
             for (int i = 0; i < 3; i++) {
 
                 float h = getHeight(x, z);

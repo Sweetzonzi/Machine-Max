@@ -4,7 +4,7 @@
     1.4333805508083728,
     1.5201175477769624
   ],
-  "hp": 20.0,
+  "hp": 100000000.0,
   "parts": {
     "ae379755-9e25-42cb-bb53-b9abcaabcb48": {
       "custom_recipe": "machine_max:ae86_hull",

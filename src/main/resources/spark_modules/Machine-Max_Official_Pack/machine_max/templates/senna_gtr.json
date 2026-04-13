@@ -4,7 +4,7 @@
     1.242059881036937,
     1.732108376242934
   ],
-  "hp": 20.0,
+  "hp": 100000000.0,
   "parts": {
     "0e777c09-4fdc-4cb4-8614-0a961f8d2d45": {
       "custom_recipe": "machine_max:senna_gtr_wheel",

@@ -4,7 +4,7 @@
     0.878465016682938,
     0.6447550455729143
   ],
-  "hp": 20.0,
+  "hp": 100000000.0,
   "parts": {
     "847cc88a-37cc-4742-800f-a99d51cce5d7": {
       "custom_recipe": "machine_max:vn_chassis",

@@ -27,7 +27,8 @@ public final class DamageModifier {
 
     public static final DamageModifier DEFAULT_PEN_DEPTH_MODIFIERS = new DamageModifier(List.of(
             new ModifierEntry(Operation.MULTIPLY, 0.5f, new Condition.Not(
-                    new Condition.DamageTagCondition(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "has_pen_depth"))))
+//                    new Condition.DamageTagCondition(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "has_pen_depth"))))
+                    new Condition.DamageTagCondition(ResourceLocation.withDefaultNamespace("bypasses_armor"))))
     ));
 
     public static final DamageModifier DEFAULT_DAMAGE_MODIFIERS = new DamageModifier(List.of(
