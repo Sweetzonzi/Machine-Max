@@ -1,0 +1,22 @@
+﻿{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 80,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/r700/r700_chassis_icon.png",
+  "description": "research.machine_max.r700_chassis_blueprint.desc",
+  "unlock_recipe": "machine_max:r700_chassis"
+}

@@ -50,6 +50,8 @@
   "gui.machine_max.fabricator.status.queued": "排队中",
   "gui.machine_max.fabricator.tasks": "制造任务",
   "gui.machine_max.research.free_rp": "🔬自由研发点：",
+  "gui.machine_max.research.no_blueprint_product": "未找到可预览产物",
+  "gui.machine_max.research.no_preview": "无可预览产物",
   "gui.machine_max.research.recipe.apply_free_rp_1": "⏭ 加速研究",
   "gui.machine_max.research.recipe.apply_free_rp_2": "预计进度: %1$s/%2$s",
   "gui.machine_max.research.recipe.apply_free_rp_complete_1": "⏭ 立即完成研究",

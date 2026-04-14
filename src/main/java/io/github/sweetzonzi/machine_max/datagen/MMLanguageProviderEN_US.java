@@ -125,6 +125,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("gui.machine_max.fabricator.output_count", "Output Count: %s");
         this.add("gui.machine_max.fabricator.recipe_description", "Recipe Description:");
         this.add("gui.machine_max.fabricator.item_description", "Item Description:");
+        this.add("gui.machine_max.research.no_preview", "No preview available");
+        this.add("gui.machine_max.research.no_blueprint_product", "No unlocked product to preview");
         //Hud
         this.add("hud.warn.machine_max.subpart_destroying", "❌ DESTROYED, DESTRUCT IN: %1$ss");
         this.add("hud.warn.machine_max.subsystem_malfunction", "❌ %1$s MALFUNCTION");

@@ -1,6 +1,6 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
-  "icon": "machine_max:textures/icon/ae86_wheel_all_terrain_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
+  "icon": "machine_max:textures/icon/ae86/ae86_wheel_all_terrain_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
   "vehicle_durability_rate": 1.0,//(可选, 默认0.8)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
   "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
   "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具

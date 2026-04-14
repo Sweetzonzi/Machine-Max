@@ -10,7 +10,6 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -24,7 +23,7 @@ import java.util.Set;
 @Getter
 public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<FabricatingInput> {
     private final List<ResourceLocation> prerequisites;
-    private final ItemStack icon;
+    private final ResourceLocation icon;
     private final String tooltip;
 
     public static final MapCodec<ResearchRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->
@@ -32,7 +31,7 @@ public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<Fab
                     Codec.INT.fieldOf("research_cost").forGetter(ResearchRecipe::getResearchCost),
                     IngredientCountPair.CODEC.listOf().optionalFieldOf("research_ingredients", List.of()).forGetter(ResearchRecipe::getResearchIngredientPairs),
                     ResourceLocation.CODEC.listOf().optionalFieldOf("prerequisites", List.of()).forGetter(ResearchRecipe::getPrerequisites),
-                    ItemStack.CODEC.optionalFieldOf("icon", new ItemStack(Items.KNOWLEDGE_BOOK)).forGetter(ResearchRecipe::getIcon),
+                    ResourceLocation.CODEC.optionalFieldOf("icon", ResourceLocation.withDefaultNamespace("textures/missingno.png")).forGetter(ResearchRecipe::getIcon),
                     Codec.STRING.optionalFieldOf("description", "").forGetter(ResearchRecipe::getTooltip)
             ).apply(instance, ResearchRecipe::new)
     );
@@ -57,7 +56,7 @@ public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<Fab
                 prerequisites.add(ResourceLocation.STREAM_CODEC.decode(buffer));
             }
 
-            ItemStack icon = ItemStack.STREAM_CODEC.decode(buffer);
+            ResourceLocation icon = ResourceLocation.STREAM_CODEC.decode(buffer);
             String tooltip = buffer.readUtf();
             return new ResearchRecipe(researchPointCost, ingredients, prerequisites, icon, tooltip);
         }
@@ -78,7 +77,7 @@ public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<Fab
                 ResourceLocation.STREAM_CODEC.encode(buffer, prerequisite);
             }
 
-            ItemStack.STREAM_CODEC.encode(buffer, recipe.icon);
+            ResourceLocation.STREAM_CODEC.encode(buffer, recipe.icon);
             buffer.writeUtf(recipe.tooltip);
         }
     };
@@ -86,7 +85,7 @@ public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<Fab
     public ResearchRecipe(int researchCost,
                           List<IngredientCountPair> researchIngredientPairs,
                           List<ResourceLocation> prerequisites,
-                          ItemStack icon,
+                          ResourceLocation icon,
                           String tooltip) {
         super(researchCost, researchIngredientPairs);
         this.prerequisites = prerequisites;
@@ -120,7 +119,7 @@ public class ResearchRecipe extends AbstractResearchRecipe implements Recipe<Fab
 
     @Override
     public ItemStack getResultItem(HolderLookup.Provider registries) {
-        return icon;
+        return ItemStack.EMPTY;
     }
 
     @Override

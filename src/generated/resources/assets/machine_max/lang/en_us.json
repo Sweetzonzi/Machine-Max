@@ -49,6 +49,8 @@
   "gui.machine_max.fabricator.status.producing": "Producing",
   "gui.machine_max.fabricator.status.queued": "Queued",
   "gui.machine_max.fabricator.tasks": "Tasks",
+  "gui.machine_max.research.no_blueprint_product": "No unlocked product to preview",
+  "gui.machine_max.research.no_preview": "No preview available",
   "gui.machine_max.set_vehicle_name": "Set Vehicle Name",
   "hud.hint.machine_max.cannot_assemble": "Not researched or have no blueprint, cannot assemble",
   "hud.hint.machine_max.connector_integrity": "⚠ %1$s INTEGRITY: %2$s/%3$s",

@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,6 +20,7 @@ public record ResearchState(
         int missingPrerequisites,
         boolean blueprintResearch,
         @Nullable ResourceLocation unlockedFabricatingRecipe,
+        ItemStack previewItem,
         boolean hasProduct,
         boolean canReclaim
 ) {

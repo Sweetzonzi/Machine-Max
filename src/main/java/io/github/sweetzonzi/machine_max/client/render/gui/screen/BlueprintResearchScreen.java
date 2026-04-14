@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.client.render.gui.renderable.ResearchRec
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.menu.BlueprintResearchMenu;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchClaimPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCompleteRequestPayload;
@@ -17,6 +18,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
@@ -62,7 +64,10 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                     materialWidget.setResearchRecipe(state.recipe().value());
                 }
                 if (modelWidget != null) {
-                    modelWidget.setItemStack(state.recipe().value().getIcon());
+                    modelWidget.setItemStack(state.previewItem());
+                    modelWidget.setEmptyText(state.blueprintResearch()
+                            ? Component.translatable("gui.machine_max.research.no_blueprint_product")
+                            : Component.translatable("gui.machine_max.research.no_preview"));
                 }
             }
 
@@ -93,6 +98,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
 
         this.modelWidget = new ItemModelWidget(leftPos + this.imageWidth - 120 - 5, topPos + 5, 120, 120);
         this.modelWidget.setScale(20.0f);
+        this.modelWidget.setEmptyText(Component.translatable("gui.machine_max.research.no_preview"));
         this.addRenderableWidget(modelWidget);
     }
 
@@ -108,8 +114,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
         this.states = research.getAllResearchable().values().stream()
                 .filter(holder -> {
                     if (filter.isEmpty()) return true;
-                    ItemStack icon = holder.value().getIcon();
-                    return icon.getHoverName().getString().toLowerCase().contains(filter);
+                    return holder.id().toString().toLowerCase().contains(filter);
                 })
                 .map(holder -> {
                     ResourceLocation researchId = holder.id();
@@ -119,6 +124,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                     int missing = research.getMissingPrerequisites(researchId).size();
 
                     ResourceLocation unlockedRecipe = null;
+                    ItemStack previewItem = ItemStack.EMPTY;
                     boolean hasProduct = false;
                     boolean canReclaim = false;
                     boolean blueprintResearch = false;
@@ -128,6 +134,10 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                         blueprintResearch = true;
                         BlueprintResearchRecipe blueprintResearchRecipe = blueprintHolder.value();
                         unlockedRecipe = blueprintResearchRecipe.getUnlockRecipe();
+                        RecipeHolder<FabricatingRecipe> unlockedHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(unlockedRecipe);
+                        if (unlockedHolder != null && minecraft != null && minecraft.level != null) {
+                            previewItem = unlockedHolder.value().getResultItem(minecraft.level.registryAccess());
+                        }
                         hasProduct = research.getProducts().getOrDefault(researchId, ItemStack.EMPTY) != ItemStack.EMPTY;
                         canReclaim = research.canReclaim(researchId);
                     }
@@ -142,6 +152,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                             missing,
                             blueprintResearch,
                             unlockedRecipe,
+                            previewItem,
                             hasProduct,
                             canReclaim
                     );

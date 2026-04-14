@@ -1,12 +1,16 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.renderable;
 
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.ResearchState;
+import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import lombok.Setter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractScrollWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -42,6 +46,7 @@ public class ResearchRecipeListWidget extends AbstractScrollWidget {
     private static final int ENTRY_HEIGHT = 28;
     private static final int BUTTON_WIDTH = 10;
     private static final int BUTTON_HEIGHT = 10;
+    private static final ResourceLocation FALLBACK_ICON = ResourceLocation.withDefaultNamespace("textures/missingno.png");
 
     private final Minecraft minecraft;
     private final List<ResearchState> states = new ArrayList<>();
@@ -80,10 +85,15 @@ public class ResearchRecipeListWidget extends AbstractScrollWidget {
             int bg = (i == selectedIndex) ? BG_SELECTED : hoveredRow ? BG_HOVER : (i % 2 == 0 ? BG_EVEN : BG_ODD);
             g.fill(getX(), yPos, getX() + width, yPos + ENTRY_HEIGHT, bg);
 
-            g.renderItem(state.recipe().value().getIcon(), getX() + 4, yPos + 6);
+            ResourceLocation icon = state.recipe().value().getIcon();
+            g.blit(icon != null ? icon : FALLBACK_ICON, getX() + 4, yPos + 6, 0, 0, 16, 16, 16, 16);
 
             int nameColor = state.completed() ? TEXT_OK : (state.unlockable() ? TEXT_NORMAL : TEXT_MUTED);
-            g.drawString(minecraft.font, state.recipe().value().getIcon().getHoverName(), getX() + 26, yPos + 4, nameColor, false);
+            Component title = Component.translatable(state.recipe().id().toLanguageKey());
+            if (state.recipe().value() instanceof BlueprintResearchRecipe blueprint){
+                title = Component.translatable(blueprint.getUnlockRecipe().toLanguageKey());
+            }
+            g.drawString(minecraft.font, title, getX() + 26, yPos + 4, nameColor, false);
 
             String rpText = state.currentFreeRp() + "/" + state.requiredRp();
             g.drawString(minecraft.font, rpText, getX() + 26, yPos + 16, TEXT_MUTED, false);

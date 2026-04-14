@@ -1,0 +1,22 @@
+﻿{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 600,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:netherite_ingot"
+      },
+      "count": 3
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/szn/szn_chassis_icon.png",
+  "description": "research.machine_max.szn_chassis_blueprint.desc",
+  "unlock_recipe": "machine_max:szn_chassis"
+}

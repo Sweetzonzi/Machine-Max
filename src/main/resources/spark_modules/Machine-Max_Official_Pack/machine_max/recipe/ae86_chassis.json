@@ -1,23 +1,6 @@
-{ // 你也可以在这个目录下放置其他类型的配方，如工作台，熔炉或其他mod内容，但更推荐使用数据包
+﻿{ // 你也可以在这个目录下放置其他类型的配方，如工作台，熔炉或其他mod内容，但更推荐使用数据包
   "$schema": "../docs/zh_cn/schemas/recipe/fabricating_recipe.schema.json",
   "type": "machine_max:fabricating", // 代表此配方用于制造机与手动部件组装，当配方名和某个部件的注册名匹配时，将自动成为它的手动组装配方（仅零件可手动组装）
-  "researchable": true, // 是否可参与研发系统，默认true。设为false时不会出现在研发列表中
-  "research_cost": 100, // 首次研发的研发点消耗
-  "upgrade_cost": 50, // 升级蓝图等级的研发点消耗
-  "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
-    {
-      "ingredient": { // 原料的类型
-        "item": "minecraft:iron_ingot"
-      },
-      "count": 2 // 原料的数量，制造或组装时会搜索整个背包的库存来消耗，因此可大于64。
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
   "ingredients": [ // 配方原料列表。手动组装按result.count等比例ceil消耗；手动拆除按result.count等比例floor返还（floor为0的条目仍保留在材料对列表中）
     {
       "ingredient": { // 原料的类型
@@ -53,3 +36,4 @@
   },
   "time": 60 // 手动组装或制造机的制作时间，单位为tick，1秒=20tick
 }
+

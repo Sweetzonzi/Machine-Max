@@ -149,6 +149,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.research.recipe.insufficient_free_rp_2", "需要自由研发点: %1$s");
         this.add("gui.machine_max.research.recipe.research_unfinished_1", "⚠ 无法获取成果");
         this.add("gui.machine_max.research.recipe.research_unfinished_2", "研发未完成");
+        this.add("gui.machine_max.research.no_preview", "无可预览产物");
+        this.add("gui.machine_max.research.no_blueprint_product", "未找到可预览产物");
         // 组装HUD
         this.add("hud.warn.machine_max.subpart_destroying", "❌ 零件已损毁，销毁倒计时: %1$s秒");
         this.add("hud.warn.machine_max.subsystem_malfunction", "❌ %1$s瘫痪");

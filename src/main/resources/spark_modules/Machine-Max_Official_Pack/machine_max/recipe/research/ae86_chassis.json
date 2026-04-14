@@ -16,17 +16,7 @@
       "count": 1
     }
   ],
-  "prerequisites": [
-    "machine_max:engine_subsystem_basics",
-    "machine_max:gearbox_subsystem_basics"
-  ],
-  "icon": {
-    "id": "machine_max:fabricating_blueprint",
-    "count": 1,
-    "components": {
-      "machine_max:recipe_type": "machine_max:ae86_chassis"
-    }
-  },
+  "icon": "machine_max:textures/icon/ae86/ae86_chassis_icon.png",
   "description": "research.machine_max.ae86_chassis_blueprint.desc",
   "unlock_recipe": "machine_max:ae86_chassis"
 }

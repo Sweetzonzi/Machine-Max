@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/recipe/research_recipe.schema.json",
   "title": "Machine-Max Research Recipe",
@@ -18,22 +18,38 @@
       "items": { "type": "string" },
       "default": []
     },
-    "icon": { "$ref": "#/definitions/result_item" },
+    "icon": { "$ref": "#/definitions/resource_location" },
     "description": { "type": "string", "default": "" }
   },
   "required": ["type", "research_cost"],
   "additionalProperties": false,
   "definitions": {
     "ingredient_selector": {
-      "type": "object",
-      "properties": {
-        "item": { "type": "string" },
-        "tag": { "type": "string" }
-      },
-      "anyOf": [{ "required": ["item"] }, { "required": ["tag"] }],
-      "additionalProperties": false
-    },
-    "ingredient_count_pair": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "item": { "type": "string" },
+            "tag": { "type": "string" }
+          },
+          "anyOf": [{ "required": ["item"] }, { "required": ["tag"] }],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "neoforge:ingredient_type": { "type": "string" }
+          },
+          "anyOf": [{ "required": ["type"] }, { "required": ["neoforge:ingredient_type"] }],
+          "additionalProperties": true
+        }
+      ]
+    },    "ingredient_count_pair": {
       "type": "object",
       "properties": {
         "ingredient": { "$ref": "#/definitions/ingredient_selector" },
@@ -42,15 +58,10 @@
       "required": ["ingredient", "count"],
       "additionalProperties": false
     },
-    "result_item": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "count": { "type": "integer", "minimum": 1, "maximum": 99, "default": 1 },
-        "components": { "type": "object" }
-      },
-      "required": ["id"],
-      "additionalProperties": true
+    "resource_location": {
+      "type": "string",
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
     }
   }
 }
+

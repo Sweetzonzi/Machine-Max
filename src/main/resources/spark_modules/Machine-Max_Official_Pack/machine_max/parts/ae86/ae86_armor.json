@@ -1,6 +1,6 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
-  "icon": "machine_max:textures/icon/ae86_armor_icon.png",
+  "icon": "machine_max:textures/icon/ae86/ae86_armor_icon.png",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,

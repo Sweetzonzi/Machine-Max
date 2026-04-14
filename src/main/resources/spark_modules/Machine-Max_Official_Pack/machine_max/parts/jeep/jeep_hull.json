@@ -1,6 +1,6 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
-  "icon": "machine_max:textures/icon/jeep_hull.png",
+  "icon": "machine_max:textures/icon/jeep/jeep_hull_icon.png",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 1.0,
   "vehicle_damage_rate_destroyed": 0.1,

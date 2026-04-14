@@ -1,0 +1,29 @@
+﻿{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 100,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "type": "neoforge:components",
+        "items": [
+          "machine_max:part"
+        ],
+        "components": {
+          "machine_max:part_type": "machine_max:container_16x16x8"
+        },
+        "strict": false
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/container_16x16x32_icon.png",
+  "description": "research.machine_max.container_16x16x32_blueprint.desc",
+  "unlock_recipe": "machine_max:container_16x16x32"
+}

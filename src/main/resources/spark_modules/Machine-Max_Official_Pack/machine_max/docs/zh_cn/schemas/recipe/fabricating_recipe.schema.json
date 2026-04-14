@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/recipe/fabricating_recipe.schema.json",
   "title": "Machine-Max Fabricating Recipe",
@@ -40,30 +40,31 @@
   "additionalProperties": false,
   "definitions": {
     "ingredient_selector": {
-      "type": "object",
-      "properties": {
-        "item": {
-          "type": "string"
-        },
-        "tag": {
-          "type": "string"
-        }
-      },
       "anyOf": [
         {
-          "required": [
-            "item"
-          ]
+          "type": "string",
+          "pattern": "^#?[a-z0-9_.-]+:[a-z0-9_./-]+$"
         },
         {
-          "required": [
-            "tag"
-          ]
+          "type": "object",
+          "properties": {
+            "item": { "type": "string" },
+            "tag": { "type": "string" }
+          },
+          "anyOf": [{ "required": ["item"] }, { "required": ["tag"] }],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "neoforge:ingredient_type": { "type": "string" }
+          },
+          "anyOf": [{ "required": ["type"] }, { "required": ["neoforge:ingredient_type"] }],
+          "additionalProperties": true
         }
-      ],
-      "additionalProperties": false
-    },
-    "ingredient_count_pair": {
+      ]
+    },    "ingredient_count_pair": {
       "type": "object",
       "properties": {
         "ingredient": {
@@ -103,3 +104,4 @@
     }
   }
 }
+

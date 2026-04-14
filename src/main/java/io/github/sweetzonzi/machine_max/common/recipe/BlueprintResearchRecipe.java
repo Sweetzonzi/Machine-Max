@@ -8,7 +8,6 @@ import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +24,7 @@ public class BlueprintResearchRecipe extends ResearchRecipe {
                     Codec.INT.fieldOf("research_cost").forGetter(BlueprintResearchRecipe::getResearchCost),
                     IngredientCountPair.CODEC.listOf().optionalFieldOf("research_ingredients", List.of()).forGetter(BlueprintResearchRecipe::getResearchIngredientPairs),
                     ResourceLocation.CODEC.listOf().optionalFieldOf("prerequisites", List.of()).forGetter(BlueprintResearchRecipe::getPrerequisites),
-                    ItemStack.CODEC.optionalFieldOf("icon", ItemStack.EMPTY).forGetter(BlueprintResearchRecipe::getIcon),
+                    ResourceLocation.CODEC.optionalFieldOf("icon", ResourceLocation.withDefaultNamespace("textures/missingno.png")).forGetter(BlueprintResearchRecipe::getIcon),
                     Codec.STRING.optionalFieldOf("description", "").forGetter(BlueprintResearchRecipe::getTooltip),
                     ResourceLocation.CODEC.fieldOf("unlock_recipe").forGetter(BlueprintResearchRecipe::getUnlockRecipe)
             ).apply(instance, BlueprintResearchRecipe::new)
@@ -51,7 +50,7 @@ public class BlueprintResearchRecipe extends ResearchRecipe {
                 prerequisites.add(ResourceLocation.STREAM_CODEC.decode(buffer));
             }
 
-            ItemStack icon = ItemStack.STREAM_CODEC.decode(buffer);
+            ResourceLocation icon = ResourceLocation.STREAM_CODEC.decode(buffer);
             String tooltip = buffer.readUtf();
             ResourceLocation unlockRecipe = ResourceLocation.STREAM_CODEC.decode(buffer);
             return new BlueprintResearchRecipe(researchPointCost, ingredients, prerequisites, icon, tooltip, unlockRecipe);
@@ -73,7 +72,7 @@ public class BlueprintResearchRecipe extends ResearchRecipe {
                 ResourceLocation.STREAM_CODEC.encode(buffer, prerequisite);
             }
 
-            ItemStack.STREAM_CODEC.encode(buffer, recipe.getIcon());
+            ResourceLocation.STREAM_CODEC.encode(buffer, recipe.getIcon());
             buffer.writeUtf(recipe.getTooltip());
             ResourceLocation.STREAM_CODEC.encode(buffer, recipe.unlockRecipe);
         }
@@ -82,7 +81,7 @@ public class BlueprintResearchRecipe extends ResearchRecipe {
     public BlueprintResearchRecipe(int researchCost,
                                    List<IngredientCountPair> researchIngredientPairs,
                                    List<ResourceLocation> prerequisites,
-                                   ItemStack icon,
+                                   ResourceLocation icon,
                                    String tooltip,
                                    ResourceLocation unlockRecipe) {
         super(researchCost, researchIngredientPairs, prerequisites, icon, tooltip);
