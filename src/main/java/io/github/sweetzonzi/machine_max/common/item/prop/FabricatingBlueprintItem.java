@@ -154,11 +154,9 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
 public @NotNull Component getName(@NotNull ItemStack stack) {
     try {
         ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
-        RecipeHolder<FabricatingRecipe> recipeHolder = MMDynamicRes.ALL_RECIPES.get(type);
-        int researchLevel = stack.getOrDefault(MMDataComponents.getRESEARCH_LEVEL(), 0);
+        RecipeHolder<FabricatingRecipe> recipeHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(type);
         return recipeHolder.value().getResult().getHoverName().copy()
-                .append(Component.translatable("item.machine_max.fabricating_blueprint"))
-                .append(buildVersion(researchLevel));
+                .append(Component.translatable("item.machine_max.fabricating_blueprint"));
     } catch (Exception e) {
         return super.getName(stack);
     }
@@ -195,14 +193,4 @@ public @NotNull Component getName(@NotNull ItemStack stack) {
         return displayContext == ItemDisplayContext.GUI ? COLOR : Color.WHITE;
     }
 
-    /**
-     * 根据研发等级生成版本号文本：
-     * 研发等级 5  -> V1.05
-     * 研发等级 200 -> V2.00
-     */
-    public static Component buildVersion(int researchLevel) {
-        int majorVersion = 1 + researchLevel / 100;
-        int subVersion = researchLevel - (majorVersion - 1) * 100;
-        return Component.literal(String.format(" V%d.%02d", majorVersion, subVersion));
-    }
 }

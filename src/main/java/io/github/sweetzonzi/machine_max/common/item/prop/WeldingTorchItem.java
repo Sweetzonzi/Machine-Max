@@ -70,14 +70,14 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                     Part part = subPart.part;
                     if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下组装部件并尝试维修
                         var research = player.getData(MMAttachments.getBLUEPRINT());
-                        float repairStep = 5 * (1 + research.calculateRepairBuff(part, player));
+                        float repairStep = 5;
                         boolean repaired = subPart.repair(
                                 repairStep * SUBPART_REPAIR_PER_TICK,
                                 repairStep * SUBSYSTEM_REPAIR_PER_TICK,
                                 repairStep * CONNECTOR_REPAIR_PER_TICK);
                         // 若配方已解锁或持有蓝图，则尝试同时组装部件
                         if (player.isCreative() || research.canAssemble(player, part)) {
-                            float assembleStep = 5 * (1 + research.calculateAssemblyBuff(part, player));
+                            float assembleStep = 5;
                             boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
                             if (assembled && remainingUseDuration % 10 == 0)
                                 BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);

@@ -8,6 +8,6 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public class ResearchClaimHandler {
     public static void handler(final ResearchClaimPayload payload, final IPayloadContext context) {
         Player player = context.player();
-        context.enqueueWork(() -> player.getData(MMAttachments.getBLUEPRINT()).claim(player, payload.recipe()));
+        context.enqueueWork(() -> player.getData(MMAttachments.getBLUEPRINT()).claim(player, payload.researchId()));
     }
 }

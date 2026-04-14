@@ -694,7 +694,7 @@ public class AssemblyHud3D implements IHud3DElement {
         List<MaterialStatus> list = new ArrayList<>();
         int consumedTotal = part.getMaterialProgress();
 
-        for (IngredientCountPair pair : recipe.getIngredientPairs()) {
+        for (IngredientCountPair pair : recipe.getManualAssembleIngredientPairs()) {
             int required = pair.count();
             int consumed = Math.min(required, consumedTotal);
 

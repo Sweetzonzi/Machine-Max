@@ -70,10 +70,6 @@ public class MMJeiPlugin implements IModPlugin {
         if (context == UidContext.Ingredient || partType == null) {
             appendLocation(key, "recipe_type", recipeType);
         }
-        // 仅在物品列表上下文细分研发等级，防止配方上下文过度碎片化。
-        if (context == UidContext.Ingredient) {
-            appendInt(key, "research_level", stack.get(MMDataComponents.getRESEARCH_LEVEL()));
-        }
         return finishKey(key);
     }
 
@@ -119,12 +115,6 @@ public class MMJeiPlugin implements IModPlugin {
     private static void appendLocation(StringBuilder key, String name, ResourceLocation value) {
         if (value != null) {
             appendString(key, name, value.toString());
-        }
-    }
-
-    private static void appendInt(StringBuilder key, String name, Integer value) {
-        if (value != null) {
-            appendString(key, name, Integer.toString(value));
         }
     }
 

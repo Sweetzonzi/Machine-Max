@@ -2,6 +2,8 @@ package io.github.sweetzonzi.machine_max.external;
 
 import com.google.gson.JsonElement;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
@@ -27,25 +29,17 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 
 import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Predicate;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import static io.github.sweetzonzi.machine_max.MachineMax.LOGGER;
-import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
 public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, MaterialAttr> MATERIALS = new ConcurrentHashMap<>();
@@ -60,7 +54,9 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, String> TOOLTIPS = new ConcurrentHashMap<>(); //蓝图或装配体物品对应的描述信息
     public static ConcurrentMap<ResourceLocation, AnimatableParams> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
     public static HashMap<ResourceLocation, LinkedHashSet<RecipeHolder<FabricatingRecipe>>> PART_RECIPES = new HashMap<>(); // 零件配方
-    public static HashMap<ResourceLocation, RecipeHolder<FabricatingRecipe>> ALL_RECIPES = new HashMap<>(); // 所有配方
+    public static HashMap<ResourceLocation, RecipeHolder<FabricatingRecipe>> ALL_FABRICATING_RECIPES = new HashMap<>(); // 所有制造配方
+    public static HashMap<ResourceLocation, RecipeHolder<ResearchRecipe>> ALL_RESEARCH_RECIPES = new HashMap<>(); // 所有研发配方
+    public static HashMap<ResourceLocation, RecipeHolder<BlueprintResearchRecipe>> BLUEPRINT_RESEARCH_RECIPES = new HashMap<>(); // 蓝图研发配方
     public static ConcurrentMap<ResourceLocation, JsonElement> COLORS = new ConcurrentHashMap<>(); // 读取为自定义色彩合集 key注册路径， value是该文件的JsonElement对象
 
     public static List<Exception> exceptions = new ArrayList<>(); // 读取过程中出现的异常
@@ -84,7 +80,9 @@ public class MMDynamicRes {
         protected Set<FabricatingRecipe> prepare(ResourceManager manager, ProfilerFiller profiler) {
             MMDynamicRes.reload();//异步重新读取资源
             MMDynamicRes.PART_RECIPES.clear();
-            MMDynamicRes.ALL_RECIPES.clear();
+            MMDynamicRes.ALL_FABRICATING_RECIPES.clear();
+            MMDynamicRes.ALL_RESEARCH_RECIPES.clear();
+            MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.clear();
             return Set.of();
         }
 
@@ -95,7 +93,7 @@ public class MMDynamicRes {
                 RecipeManager recipeManager = serverResources.getRecipeManager();
                 var fabricatingRecipes = recipeManager.getAllRecipesFor(MMResources.getFABRICATION_RECIPE_TYPE().get());
                 for (RecipeHolder<FabricatingRecipe> recipeHolder : fabricatingRecipes) {
-                    MMDynamicRes.ALL_RECIPES.put(recipeHolder.id(), recipeHolder);
+                    MMDynamicRes.ALL_FABRICATING_RECIPES.put(recipeHolder.id(), recipeHolder);
                     FabricatingRecipe recipe = recipeHolder.value();
                     ItemStack stack = recipe.getResultItem(serverResources.getRegistryLookup());
                     if (stack.has(MMDataComponents.getPART_TYPE())) {
@@ -103,6 +101,17 @@ public class MMDynamicRes {
                         PART_RECIPES.computeIfAbsent(partType, k -> new LinkedHashSet<>()).add(recipeHolder);
                         count++;
                     }
+                }
+
+                var researchRecipes = recipeManager.getAllRecipesFor(MMResources.getRESEARCH_RECIPE_TYPE().get());
+                for (RecipeHolder<ResearchRecipe> recipeHolder : researchRecipes) {
+                    MMDynamicRes.ALL_RESEARCH_RECIPES.put(recipeHolder.id(), recipeHolder);
+                }
+
+                var blueprintResearchRecipes = recipeManager.getAllRecipesFor(MMResources.getBLUEPRINT_RESEARCH_RECIPE_TYPE().get());
+                for (RecipeHolder<BlueprintResearchRecipe> recipeHolder : blueprintResearchRecipes) {
+                    MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.put(recipeHolder.id(), recipeHolder);
+                    MMDynamicRes.ALL_RESEARCH_RECIPES.put(recipeHolder.id(), (RecipeHolder<ResearchRecipe>) (RecipeHolder<?>) recipeHolder);
                 }
 //                LOGGER.debug("从服务器数据为{}种个零件配方添加了{}种配方", PART_RECIPES.size(), count);
             }

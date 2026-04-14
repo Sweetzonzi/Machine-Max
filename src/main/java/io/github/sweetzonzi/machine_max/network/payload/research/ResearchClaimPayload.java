@@ -8,11 +8,11 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 public record ResearchClaimPayload(
-        ResourceLocation recipe
+        ResourceLocation researchId
 ) implements CustomPacketPayload {
     public static final Type<ResearchClaimPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "research_claim_payload"));
     public static final StreamCodec<FriendlyByteBuf, ResearchClaimPayload> STREAM_CODEC = StreamCodec.composite(
-            ResourceLocation.STREAM_CODEC, ResearchClaimPayload::recipe,
+            ResourceLocation.STREAM_CODEC, ResearchClaimPayload::researchId,
             ResearchClaimPayload::new
     );
 

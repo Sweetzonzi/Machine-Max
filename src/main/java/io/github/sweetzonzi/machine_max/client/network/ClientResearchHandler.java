@@ -4,7 +4,6 @@ import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.client.render.toast.BlueprintResearchToast;
 import io.github.sweetzonzi.machine_max.network.payload.research.FreeRpSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCompletePayload;
-import io.github.sweetzonzi.machine_max.network.payload.research.ResearchPushPayload;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -22,18 +21,15 @@ public class ClientResearchHandler {
     private static final Queue<Pair<RpAddReason, Integer>> RP_CHANGE = new ArrayDeque<>();
     public static void handleComplete(ResearchCompletePayload payload) {
         Minecraft mc = Minecraft.getInstance();
-        mc.execute(() -> mc.getToasts().addToast(
-                new BlueprintResearchToast(
-                        payload.product(),
-                        Component.translatable("toast.machine_max.research_complete"),
-                        payload.product().getHoverName().copy().withColor(Color.WHITE.getRGB())
-                )
-        ));
-        RP_CHANGE.addAll(payload.rpChanges());
-    }
-
-    public static void handlePush(ResearchPushPayload payload) {
-        RP_CHANGE.addAll(payload.rpChanges());
+        if (!payload.product().isEmpty()) {
+            mc.execute(() -> mc.getToasts().addToast(
+                    new BlueprintResearchToast(
+                            payload.product(),
+                            Component.translatable("toast.machine_max.research_complete"),
+                            payload.product().getHoverName().copy().withColor(Color.WHITE.getRGB())
+                    )
+            ));
+        }
     }
 
     public static void handleFreeRpChange(FreeRpSyncPayload payload) {

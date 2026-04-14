@@ -161,7 +161,6 @@ object MMCreativeTabs {
                 MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
                     val itemStack = ItemStack(MMItems.FABRICATING_BLUEPRINT)
                     itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
-                    itemStack.set(MMDataComponents.RESEARCH_LEVEL, 0)
                     itemStack.set(MMDataComponents.PART_TYPE, loc)
                     externalBlueprints.add(itemStack)
                 }

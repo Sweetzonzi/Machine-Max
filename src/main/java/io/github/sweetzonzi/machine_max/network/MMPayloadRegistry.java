@@ -23,7 +23,7 @@ public class MMPayloadRegistry {
     public static void register(final RegisterPayloadHandlersEvent event) {
         final PayloadRegistrar input = event.registrar("input:1.0.0");
         final PayloadRegistrar sync = event.registrar("sync:1.0.0");
-        final PayloadRegistrar research = event.registrar("research:1.0.0");
+        final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.0.0");
         //注册网络包及其处理
         input.playToServer(//玩家配置
@@ -149,23 +149,10 @@ public class MMPayloadRegistry {
                 FreeRpSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(FreeRpSyncHandler::handler)
         );
-        research.playToServer(//玩家应用自由研发点
-                ResearchApplyFreeRpPayload.TYPE,
-                ResearchApplyFreeRpPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchApplyFreeRpHandler::handler)
-        );
-        research.playToClient(//玩家推进蓝图研发进度
-                ResearchPushPayload.TYPE,
-                ResearchPushPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchPushHandler::handler)
-        );
-        research.playBidirectional(//玩家改变蓝图研发目标
-                ResearchSetPayload.TYPE,
-                ResearchSetPayload.STREAM_CODEC,
-                new DirectionalPayloadHandler<>(
-                        ResearchSetClientHandler::clientHandler,
-                        ResearchSetServerHandler::serverHandler
-                )
+        research.playToServer(//玩家请求完成一个研发项目
+                ResearchCompleteRequestPayload.TYPE,
+                ResearchCompleteRequestPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchCompleteRequestHandler::handler)
         );
         research.playToServer(//玩家获取研发产物
                 ResearchClaimPayload.TYPE,
@@ -176,14 +163,6 @@ public class MMPayloadRegistry {
                 ResearchReclaimPayload.TYPE,
                 ResearchReclaimPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ResearchReclaimHandler::handler)
-        );
-        research.playBidirectional(//玩家取消蓝图研发
-                ResearchCancelPayload.TYPE,
-                ResearchCancelPayload.STREAM_CODEC,
-                new DirectionalPayloadHandler<>(
-                        ResearchCancelHandler::clientHandler,
-                        ResearchCancelHandler::serverHandler
-                )
         );
         research.playToClient(//通知客户端蓝图研发完成
                 ResearchCompletePayload.TYPE,

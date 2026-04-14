@@ -1,0 +1,25 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/research_recipe.schema.json",
+  "type": "machine_max:research",
+  "research_cost": 80,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:energetic_component_1"
+      },
+      "count": 3
+    }
+  ],
+  "prerequisites": [],
+  "icon": {
+    "id": "machine_max:power_component_1",
+    "count": 1
+  },
+  "description": "research.machine_max.engine_subsystem_basics.desc"
+}

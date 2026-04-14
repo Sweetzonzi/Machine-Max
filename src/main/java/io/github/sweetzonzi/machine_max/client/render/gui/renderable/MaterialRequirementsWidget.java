@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.renderable;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
+import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -21,6 +22,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
     private final Minecraft minecraft;
     private boolean researchMaterial;
     private FabricatingRecipe currentRecipe;
+    private ResearchRecipe currentResearchRecipe;
     private final List<MaterialEntry> materialEntries = new ArrayList<>();
 
     // 布局配置
@@ -42,6 +44,15 @@ public class MaterialRequirementsWidget extends AbstractWidget {
 
     public void setRecipe(FabricatingRecipe recipe) {
         this.currentRecipe = recipe;
+        this.currentResearchRecipe = null;
+        updateMaterialEntries();
+        this.scrollOffset = 0; // 重置滚动位置
+        this.lastScrollUpdate = System.currentTimeMillis();
+    }
+
+    public void setResearchRecipe(ResearchRecipe recipe) {
+        this.currentResearchRecipe = recipe;
+        this.currentRecipe = null;
         updateMaterialEntries();
         this.scrollOffset = 0; // 重置滚动位置
         this.lastScrollUpdate = System.currentTimeMillis();
@@ -49,12 +60,18 @@ public class MaterialRequirementsWidget extends AbstractWidget {
 
     public void updateMaterialEntries() {
         materialEntries.clear();
-        if (currentRecipe == null || minecraft.player == null) return;
+        if ((currentRecipe == null && currentResearchRecipe == null) || minecraft.player == null) return;
 
         Player player = minecraft.player;
         boolean isCreative = player.isCreative();
 
-        for (IngredientCountPair ingredientPair : this.researchMaterial ? currentRecipe.getResearchIngredientPairs() : currentRecipe.getIngredientPairs()) {
+        List<IngredientCountPair> pairs;
+        if (this.researchMaterial) {
+            pairs = currentResearchRecipe != null ? currentResearchRecipe.getResearchIngredientPairs() : List.of();
+        } else {
+            pairs = currentRecipe != null ? currentRecipe.getIngredientPairs() : List.of();
+        }
+        for (IngredientCountPair ingredientPair : pairs) {
             ItemStack[] matchingItems = ingredientPair.ingredient().getItems();
             if (matchingItems.length == 0) continue;
 
@@ -94,7 +111,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
         // 绘制边框
         graphics.renderOutline(getX(), getY(), width, height, 0xFF555555);
 
-        if (currentRecipe == null) {
+        if (currentRecipe == null && currentResearchRecipe == null) {
             // 居中显示提示文本
             String text = "选择配方查看材料";
             int textWidth = minecraft.font.width(text);
@@ -103,8 +120,14 @@ public class MaterialRequirementsWidget extends AbstractWidget {
                     getY() + height / 2 - 4,
                     0xAAAAAA, false);
             return;
-        } else if ((currentRecipe.getIngredientPairs().isEmpty() && !researchMaterial)
-        || currentRecipe.getResearchIngredientPairs().isEmpty() && researchMaterial) {
+        } else {
+            List<IngredientCountPair> pairs;
+            if (researchMaterial) {
+                pairs = currentResearchRecipe != null ? currentResearchRecipe.getResearchIngredientPairs() : List.of();
+            } else {
+                pairs = currentRecipe != null ? currentRecipe.getIngredientPairs() : List.of();
+            }
+            if (pairs.isEmpty()) {
             // 居中显示提示文本
             String text = "无材料需求";
             int textWidth = minecraft.font.width(text);
@@ -113,6 +136,7 @@ public class MaterialRequirementsWidget extends AbstractWidget {
                     getY() + height / 2 - 4,
                     0xAAAAAA, false);
             return;
+            }
         }
         // 更新滚动文本
         updateScrollingText();

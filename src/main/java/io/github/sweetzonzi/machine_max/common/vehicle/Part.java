@@ -470,14 +470,23 @@ public class Part {
             ignoreMaterial = inventory.player.hasInfiniteMaterials();
         }
         FabricatingRecipe recipe = getRecipe();
-        // 未找到配方则不改变组装进度
-        if (recipe != null) {
+        // 未找到配方或非手动部件配方则不改变组装进度
+        if (recipe != null && recipe.isManualAssemblablePart()) {
             int totalTime = recipe.getProcessingTime();
             float step = progress / totalTime;
             float newProgress = Math.clamp(assemblingProgress + step, 0f, 1f);
 
             // 计算新的组装进度对应的材料需求
-            int totalMaterials = recipe.getIngredientList().size(); // 总材料数量
+            List<Ingredient> manualAssembleList = recipe.getManualAssembleIngredientList();
+            int totalMaterials = manualAssembleList.size(); // 手动组装总材料数量（ceil折算后）
+            if (totalMaterials <= 0) {
+                if (newProgress != assemblingProgress) {
+                    setAssemblingProgress(newProgress);
+                    return true;
+                }
+                return false;
+            }
+            materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
             int targetMaterialProgress = (int) Math.ceil(newProgress * totalMaterials);
 
             // 尝试提升材料进度
@@ -485,11 +494,10 @@ public class Part {
                 if (ignoreMaterial) { // 创造模式无视材料需求
                     materialProgress = Math.clamp(targetMaterialProgress, 0, totalMaterials);
                 } else { // 检查材料是否足够，如果不够则组装进度最多提升至材料供给进度的值
-                    materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
                     for (int i = materialProgress; i < targetMaterialProgress; i++) {
                         // 获取下一个需要消耗的材料
                         if (i < totalMaterials) {
-                            Ingredient requiredIngredient = recipe.getIngredientList().get(i);
+                            Ingredient requiredIngredient = manualAssembleList.get(i);
 
                             // 在容器中查找匹配的物品
                             boolean found = false;
@@ -540,14 +548,24 @@ public class Part {
             ignoreMaterial = inventory.player.hasInfiniteMaterials();
         }
         FabricatingRecipe recipe = getRecipe();
-        // 未找到配方则不改变组装进度
-        if (recipe != null) {
+        // 未找到配方或非手动部件配方则不改变组装进度
+        if (recipe != null && recipe.isManualAssemblablePart()) {
             int totalTime = recipe.getProcessingTime();
             float step = progress / totalTime;
             float newProgress = Math.clamp(assemblingProgress - step, 0f, 1f);
 
             // 计算新的组装进度对应的材料需求
-            int totalMaterials = recipe.getIngredientList().size(); // 总材料数量
+            List<Ingredient> manualDisassembleList = recipe.getManualDisassembleIngredientList();
+            int totalMaterials = manualDisassembleList.size(); // 手动拆除总返还材料数量（floor折算后）
+            if (totalMaterials <= 0) {
+                materialProgress = 0;
+                if (newProgress != assemblingProgress) {
+                    setAssemblingProgress(newProgress);
+                    return true;
+                }
+                return false;
+            }
+            materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
             int targetMaterialProgress = (int) Math.floor(newProgress * totalMaterials);
 
             // 检查是否需要返还材料
@@ -561,7 +579,7 @@ public class Part {
                     for (int i = 0; i < materialsToReturn; i++) {
                         if (materialProgress > 0) {
                             materialProgress--;
-                            Ingredient ingredientToReturn = recipe.getIngredientList().get(materialProgress);
+                            Ingredient ingredientToReturn = manualDisassembleList.get(materialProgress);
 
                             // 创建要返还的物品（取第一个匹配项）
                             ItemStack[] matchingStacks = ingredientToReturn.getItems();
@@ -645,7 +663,11 @@ public class Part {
      */
     public void setMaterialProgress(int progress) {
         if (getRecipe() instanceof FabricatingRecipe recipe) {
-            materialProgress = Math.clamp(progress, 0, recipe.getIngredientList().size());
+            if (recipe.isManualAssemblablePart()) {
+                materialProgress = Math.clamp(progress, 0, recipe.getManualAssembleIngredientList().size());
+            } else {
+                materialProgress = 0;
+            }
         } else materialProgress = Math.max(0, progress);
     }
 

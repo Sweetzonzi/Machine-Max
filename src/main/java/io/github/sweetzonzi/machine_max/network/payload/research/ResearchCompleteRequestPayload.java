@@ -7,13 +7,13 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-public record ResearchSetPayload(
-        ResourceLocation recipe
+public record ResearchCompleteRequestPayload(
+        ResourceLocation researchId
 ) implements CustomPacketPayload {
-    public static final Type<ResearchSetPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "research_set_payload"));
-    public static final StreamCodec<FriendlyByteBuf, ResearchSetPayload> STREAM_CODEC = StreamCodec.composite(
-            ResourceLocation.STREAM_CODEC, ResearchSetPayload::recipe,
-            ResearchSetPayload::new
+    public static final Type<ResearchCompleteRequestPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "research_complete_request_payload"));
+    public static final StreamCodec<FriendlyByteBuf, ResearchCompleteRequestPayload> STREAM_CODEC = StreamCodec.composite(
+            ResourceLocation.STREAM_CODEC, ResearchCompleteRequestPayload::researchId,
+            ResearchCompleteRequestPayload::new
     );
 
     @Override
