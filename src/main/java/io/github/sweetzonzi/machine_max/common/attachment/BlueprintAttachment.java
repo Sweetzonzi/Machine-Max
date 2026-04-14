@@ -317,7 +317,7 @@ public class BlueprintAttachment {
     }
 
     public void setRp(Player player, int freeResearchPoint) {
-        this.freeResearchPoint = freeResearchPoint;
+        this.freeResearchPoint = Math.max(0, freeResearchPoint);
         this.markDirty(player);
         if (player instanceof ServerPlayer serverPlayer) {
             PacketDistributor.sendToPlayer(serverPlayer, new FreeRpSyncPayload(freeResearchPoint, new ArrayList<>(this.rpChangeRecords)));

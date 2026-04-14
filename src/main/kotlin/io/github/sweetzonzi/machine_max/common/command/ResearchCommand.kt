@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents
 import io.github.sweetzonzi.machine_max.common.registry.MMItems
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
+import io.github.sweetzonzi.machine_max.network.payload.research.ResearchAttachmentSyncPayload
 import net.minecraft.commands.CommandBuildContext
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
@@ -15,8 +16,10 @@ import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.commands.arguments.ResourceLocationArgument
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
+import net.neoforged.neoforge.network.PacketDistributor
 
 class ResearchCommand() : BaseCommand("research", 4) {
 
@@ -103,6 +106,7 @@ class ResearchCommand() : BaseCommand("research", 4) {
                 research.completedResearches.clear()
                 research.products.clear()
                 research.markDirty(player)
+                syncResearchAttachment(player)
             }
             source.sendSuccess({ Component.literal("已清除研发状态") }, true)
             1
@@ -128,6 +132,7 @@ class ResearchCommand() : BaseCommand("research", 4) {
                     }
                 }
                 research.markDirty(player)
+                syncResearchAttachment(player)
             }
             source.sendSuccess({ Component.literal("已解锁全部研发") }, true)
             1
@@ -147,6 +152,7 @@ class ResearchCommand() : BaseCommand("research", 4) {
                 research.completedResearches.remove(researchId)
                 research.products.remove(researchId)
                 research.markDirty(player)
+                syncResearchAttachment(player)
             }
             source.sendSuccess({ Component.literal("已移除研发: $researchId") }, true)
             1
@@ -174,6 +180,7 @@ class ResearchCommand() : BaseCommand("research", 4) {
                     }
                 }
                 research.markDirty(player)
+                syncResearchAttachment(player)
             }
             source.sendSuccess({ Component.literal("已更新研发状态: $researchId") }, true)
             1
@@ -204,6 +211,7 @@ class ResearchCommand() : BaseCommand("research", 4) {
                     research.products.remove(researchId)
                 }
                 research.markDirty(player)
+                syncResearchAttachment(player)
             }
             source.sendSuccess({ Component.literal("已设置研发状态: $researchId -> $target") }, true)
             1
@@ -260,5 +268,11 @@ class ResearchCommand() : BaseCommand("research", 4) {
 
     private fun makeBlueprint(research: BlueprintAttachment, researchId: ResourceLocation): ItemStack {
         return research.createBlueprintProduct(researchId)
+    }
+
+    private fun syncResearchAttachment(player: Player) {
+        if (player is ServerPlayer) {
+            PacketDistributor.sendToPlayer(player, ResearchAttachmentSyncPayload(player.getData(MMAttachments.BLUEPRINT)))
+        }
     }
 }

@@ -127,6 +127,12 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("gui.machine_max.fabricator.item_description", "Item Description:");
         this.add("gui.machine_max.research.no_preview", "No preview available");
         this.add("gui.machine_max.research.no_blueprint_product", "No unlocked product to preview");
+        this.add("gui.machine_max.research.status.can_research", "Can Research");
+        this.add("gui.machine_max.research.status.can_claim", "Can Claim");
+        this.add("gui.machine_max.research.status.can_reprint", "Can Reprint");
+        this.add("gui.machine_max.research.status.prereq_missing", "Prerequisite Missing x%1$s");
+        this.add("gui.machine_max.research.status.need_materials_rp", "Insufficient Materials / RP");
+        this.add("gui.machine_max.research.status.unavailable", "Unavailable");
         //Hud
         this.add("hud.warn.machine_max.subpart_destroying", "❌ DESTROYED, DESTRUCT IN: %1$ss");
         this.add("hud.warn.machine_max.subsystem_malfunction", "❌ %1$s MALFUNCTION");

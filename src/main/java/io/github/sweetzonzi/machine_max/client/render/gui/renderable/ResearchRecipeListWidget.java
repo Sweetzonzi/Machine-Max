@@ -98,36 +98,44 @@ public class ResearchRecipeListWidget extends AbstractScrollWidget {
             String rpText = state.currentFreeRp() + "/" + state.requiredRp();
             g.drawString(minecraft.font, rpText, getX() + 26, yPos + 16, TEXT_MUTED, false);
 
-            int btn1X = getX() + width - 2 * (BUTTON_WIDTH + 4);
-            int btn2X = getX() + width - BUTTON_WIDTH - 4;
+            int btnX = getX() + width - BUTTON_WIDTH - 4;
             int btnY = yPos + 3;
 
-            int btn1Color;
-            String btn1Text;
-            if (state.completed()) {
-                btn1Color = BTN_CLAIM;
-                btn1Text = "✓";
+            int btnColor = BTN_INACTIVE;
+            String btnText = "·";
+            Component actionHint = Component.translatable("gui.machine_max.research.status.unavailable");
+            if (!state.completed() && state.canComplete()) {
+                btnColor = BTN_ACTIVE;
+                btnText = "▶";
+                actionHint = Component.translatable("gui.machine_max.research.status.can_research");
+            } else if (state.completed() && state.hasProduct()) {
+                btnColor = BTN_CLAIM;
+                btnText = "↓";
+                actionHint = Component.translatable("gui.machine_max.research.status.can_claim");
+            } else if (state.completed() && state.canReclaim()) {
+                btnColor = BTN_RECLAIM;
+                btnText = "+";
+                actionHint = Component.translatable("gui.machine_max.research.status.can_reprint");
+            }
+            g.fill(btnX, btnY, btnX + BUTTON_WIDTH, btnY + BUTTON_HEIGHT, btnColor);
+            g.drawCenteredString(minecraft.font, btnText, btnX + BUTTON_WIDTH / 2, btnY + 1, 0xFFFFFF);
+
+            Component statusText = actionHint;
+            int hintColor = 0xAAFFAA;
+            if (!state.unlockable() && state.missingPrerequisites() > 0) {
+                statusText = Component.translatable("gui.machine_max.research.status.prereq_missing", state.missingPrerequisites());
+                hintColor = 0xFFAAAA;
+            } else if (!state.completed() && !state.canComplete()) {
+                statusText = Component.translatable("gui.machine_max.research.status.need_materials_rp");
+                hintColor = 0xFFAAAA;
+            } else if (!state.completed() && state.canComplete()) {
+                hintColor = 0xAAFFAA;
+            } else if (state.completed() && (state.hasProduct() || state.canReclaim())) {
+                hintColor = 0xAAFFAA;
             } else {
-                btn1Color = state.canComplete() ? BTN_ACTIVE : BTN_INACTIVE;
-                btn1Text = "▶";
+                hintColor = 0xFFAAAA;
             }
-            g.fill(btn1X, btnY, btn1X + BUTTON_WIDTH, btnY + BUTTON_HEIGHT, btn1Color);
-            g.drawCenteredString(minecraft.font, btn1Text, btn1X + BUTTON_WIDTH / 2, btnY + 1, 0xFFFFFF);
-
-            boolean canClaim = state.blueprintResearch() && (state.hasProduct() || state.canReclaim());
-            int btn2Color = state.hasProduct() ? BTN_CLAIM : state.canReclaim() ? BTN_RECLAIM : BTN_INACTIVE;
-            g.fill(btn2X, btnY, btn2X + BUTTON_WIDTH, btnY + BUTTON_HEIGHT, btn2Color);
-            g.drawCenteredString(minecraft.font, state.hasProduct() ? "↓" : "+", btn2X + BUTTON_WIDTH / 2, btnY + 1, 0xFFFFFF);
-
-            if (hoveredRow) {
-                if (!state.unlockable() && state.missingPrerequisites() > 0) {
-                    g.drawString(minecraft.font, "Prereq x" + state.missingPrerequisites(), getX() + 90, yPos + 16, 0xFFAAAA, false);
-                } else if (!state.completed() && !state.canComplete()) {
-                    g.drawString(minecraft.font, "Need materials / RP", getX() + 90, yPos + 16, 0xFFAAAA, false);
-                } else if (canClaim) {
-                    g.drawString(minecraft.font, state.hasProduct() ? "Claim" : "Reprint", getX() + 90, yPos + 16, 0xAAFFAA, false);
-                }
-            }
+            g.drawString(minecraft.font, statusText, getX() + 90, yPos + 16, hintColor, false);
         }
     }
 
@@ -136,24 +144,19 @@ public class ResearchRecipeListWidget extends AbstractScrollWidget {
         int index = (int) ((mouseY - getY() + scrollAmount()) / ENTRY_HEIGHT);
         if (index < 0 || index >= states.size()) return false;
 
-        int btn1X = getX() + width - 2 * (BUTTON_WIDTH + 4);
-        int btn2X = getX() + width - BUTTON_WIDTH - 4;
+        int btnX = getX() + width - BUTTON_WIDTH - 4;
 
         if (withinContentAreaPoint(mouseX, mouseY)) {
             selectedIndex = index;
             ResearchState state = states.get(index);
             callbacks.onSelect(state);
 
-            if (mouseX >= btn1X && mouseX < btn1X + BUTTON_WIDTH) {
-                if (!state.completed() && state.unlockable()) {
+            if (mouseX >= btnX && mouseX < btnX + BUTTON_WIDTH) {
+                if (!state.completed() && state.canComplete()) {
                     callbacks.onComplete(state);
-                }
-            }
-
-            if (mouseX >= btn2X && mouseX < btn2X + BUTTON_WIDTH) {
-                if (state.hasProduct()) {
+                } else if (state.completed() && state.hasProduct()) {
                     callbacks.onClaim(state);
-                } else if (state.canReclaim()) {
+                } else if (state.completed() && state.canReclaim()) {
                     callbacks.onReclaim(state);
                 }
             }
