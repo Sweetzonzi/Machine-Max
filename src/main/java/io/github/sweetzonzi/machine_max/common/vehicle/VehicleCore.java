@@ -221,6 +221,9 @@ public class VehicleCore implements SyncedDataHolder {
         for (Part part : partMap.values()) {
             result += Math.max(0f, part.getVehicleDurabilityContribution());
         }
+        if (result <= 0){ // 回退取第一个部件的最大耐久度
+            result += partMap.values().stream().toList().getFirst().getSharedMaxDurability();
+        }
         return Math.max(0f, result);
     }
 
@@ -247,6 +250,7 @@ public class VehicleCore implements SyncedDataHolder {
     public void refreshMaxHp() {
         recalculateMaxHp(HpRecalcMode.CLAMP_ONLY);
     }
+
     private void markDestroyed() {
         this.synchedData.set(DATA_DESTROYED_ID, true);
         setHp(0f);
@@ -475,7 +479,7 @@ public class VehicleCore implements SyncedDataHolder {
     public void attachConnector(AbstractConnector connector1, AbstractConnector connector2, @Nullable Part newPart) {
         VehicleCore connectorVehicle1 = connector1.subPart.part.vehicle;
         VehicleCore connectorVehicle2 = connector2.subPart.part.vehicle;
-        if (connectorVehicle1 == null || connectorVehicle2 == null) {
+        if (connectorVehicle1 == null && connectorVehicle2 == null) {
             MachineMax.LOGGER.error("连接失败：连接点所属部件未绑定载具");
             return;
         }
@@ -498,27 +502,21 @@ public class VehicleCore implements SyncedDataHolder {
 
         VehicleCore advancedVehicle = advancedConnector.subPart.part.vehicle;
         VehicleCore simpleVehicle = simpleConnector.subPart.part.vehicle;
-        if (advancedVehicle == null || simpleVehicle == null) {
-            MachineMax.LOGGER.error("连接失败：连接点所属部件未绑定载具");
-            return;
-        }
-        if (advancedVehicle.level != simpleVehicle.level || this.level != advancedVehicle.level) {
-            MachineMax.LOGGER.error("连接失败：跨维度载具不可连接");
-            return;
-        }
 
-        if (advancedVehicle == simpleVehicle) {
+        if (advancedVehicle == simpleVehicle || (advancedVehicle == null || simpleVehicle == null)) {
             attachConnectorInSameVehicle(advancedConnector, simpleConnector, newPart);
-            return;
+        } else {
+            if (advancedVehicle.level != simpleVehicle.level || this.level != advancedVehicle.level) {
+                MachineMax.LOGGER.error("连接失败：跨维度载具不可连接");
+                return;
+            }
+            if (newPart != null) {
+                MachineMax.LOGGER.error("连接失败：跨载具合并不支持newPart参数");
+                return;
+            }
+            VehicleCore donorVehicle = advancedVehicle == this ? simpleVehicle : advancedVehicle;
+            attachConnectorAcrossVehicles(advancedConnector, simpleConnector, donorVehicle);
         }
-
-        if (newPart != null) {
-            MachineMax.LOGGER.error("连接失败：跨载具合并不支持newPart参数");
-            return;
-        }
-
-        VehicleCore donorVehicle = advancedVehicle == this ? simpleVehicle : advancedVehicle;
-        attachConnectorAcrossVehicles(advancedConnector, simpleConnector, donorVehicle);
     }
 
     private void attachConnectorInSameVehicle(AbstractConnector advancedConnector, SimpleConnector simpleConnector, @Nullable Part newPart) {

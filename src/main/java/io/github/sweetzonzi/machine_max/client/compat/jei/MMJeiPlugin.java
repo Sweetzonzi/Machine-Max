@@ -1,19 +1,36 @@
 package io.github.sweetzonzi.machine_max.client.compat.jei;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.compat.jei.category.BlueprintResearchRecipeCategory;
+import io.github.sweetzonzi.machine_max.client.compat.jei.category.FabricatingRecipeCategory;
+import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.registry.MMBlocks;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
+import io.github.sweetzonzi.machine_max.common.registry.MMResources;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
 import mezz.jei.api.ingredients.subtypes.UidContext;
+import mezz.jei.api.registration.IRecipeCatalystRegistration;
+import mezz.jei.api.registration.IRecipeCategoryRegistration;
+import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @JeiPlugin
 public class MMJeiPlugin implements IModPlugin {
@@ -45,6 +62,57 @@ public class MMJeiPlugin implements IModPlugin {
                 MMItems.getVEHICLE_BLUEPRINT().get(),
                 interpreter(MMJeiPlugin::buildVehicleBlueprintSubtypeKey)
         );
+    }
+
+    @Override
+    public void registerCategories(IRecipeCategoryRegistration registration) {
+        var guiHelper = registration.getJeiHelpers().getGuiHelper();
+        registration.addRecipeCategories(
+                new FabricatingRecipeCategory(guiHelper),
+                new BlueprintResearchRecipeCategory(guiHelper)
+        );
+    }
+
+    @Override
+    public void registerRecipes(IRecipeRegistration registration) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            registration.addRecipes(
+                    MMJeiRecipeTypes.FABRICATING,
+                    new ArrayList<>(MMDynamicRes.ALL_FABRICATING_RECIPES.values())
+            );
+            registration.addRecipes(
+                    MMJeiRecipeTypes.BLUEPRINT_RESEARCH,
+                    new ArrayList<>(MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.values())
+            );
+            return;
+        }
+
+        RecipeManager recipeManager = minecraft.level.getRecipeManager();
+        List<RecipeHolder<FabricatingRecipe>> fabricatingRecipes =
+                recipeManager.getAllRecipesFor(MMResources.getFABRICATION_RECIPE_TYPE().get());
+        List<RecipeHolder<BlueprintResearchRecipe>> blueprintResearchRecipes =
+                recipeManager.getAllRecipesFor(MMResources.getBLUEPRINT_RESEARCH_RECIPE_TYPE().get());
+
+        registration.addRecipes(MMJeiRecipeTypes.FABRICATING, fabricatingRecipes);
+        registration.addRecipes(MMJeiRecipeTypes.BLUEPRINT_RESEARCH, blueprintResearchRecipes);
+    }
+
+    @Override
+    public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
+        ItemStack fabricatorCatalyst = new ItemStack(MMBlocks.getFABRICATOR_BLOCK().get());
+        if (isValidJeiIngredient(fabricatorCatalyst)) {
+            registration.addRecipeCatalyst(fabricatorCatalyst, MMJeiRecipeTypes.FABRICATING);
+        }
+
+        ItemStack researchCatalyst = new ItemStack(MMItems.getRESEARCH_TABLE_BLOCK_ITEM().get());
+        if (isValidJeiIngredient(researchCatalyst)) {
+            registration.addRecipeCatalyst(researchCatalyst, MMJeiRecipeTypes.BLUEPRINT_RESEARCH);
+        }
+    }
+
+    private static boolean isValidJeiIngredient(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() != Items.AIR;
     }
 
     private static Object buildPartSubtypeKey(ItemStack stack, UidContext context) {

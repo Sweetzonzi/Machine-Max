@@ -57,6 +57,7 @@
   "gui.machine_max.research.status.need_materials_rp": "Insufficient Materials / RP",
   "gui.machine_max.research.status.prereq_missing": "Prerequisite Missing x%1$s",
   "gui.machine_max.research.status.unavailable": "Unavailable",
+  "jei.machine_max.blueprint_research.rp_cost": "Research Point Cost: %1$s",
   "gui.machine_max.set_vehicle_name": "Set Vehicle Name",
   "hud.hint.machine_max.cannot_assemble": "Not researched or have no blueprint, cannot assemble",
   "hud.hint.machine_max.connector_integrity": "⚠ %1$s INTEGRITY: %2$s/%3$s",
