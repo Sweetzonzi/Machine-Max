@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 
-public record WorkingState(float rpm, float load, ResourceLocation sound) {
+public record WorkingState(float rpm, float load, SoundEvent sound) {
 
     @Override
     public boolean equals(Object other) {

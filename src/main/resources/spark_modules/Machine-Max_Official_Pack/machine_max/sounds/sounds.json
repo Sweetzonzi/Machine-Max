@@ -128,5 +128,65 @@
       "machine_max:subsystem/basic/glass_tail_2",
       "machine_max:subsystem/basic/glass_tail_3"
     ]
+  },
+  "subsystem.engine.i4_2000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4_2000"
+    ]
+  },
+  "subsystem.engine.i4_5000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4_5000"
+    ]
+  },
+  "subsystem.engine.i4_6000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4_6000"
+    ]
+  },
+  "subsystem.engine.i4_800": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4_800"
+    ]
+  },
+  "subsystem.engine.start": {
+    "sounds": [
+      "machine_max:subsystem/engine/start"
+    ]
+  },
+  "subsystem.engine.stop": {
+    "sounds": [
+      "machine_max:subsystem/engine/stop"
+    ]
+  },
+  "subsystem.engine.v6_1000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v6_1000"
+    ]
+  },
+  "subsystem.engine.v6_2000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v6_2000"
+    ]
+  },
+  "subsystem.engine.v6_3000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v6_3000"
+    ]
+  },
+  "subsystem.engine.v6_4000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v6_4000"
+    ]
+  },
+  "subsystem.engine.v6_5000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v6_5000"
+    ]
+  },
+  "subsystem.engine.v6_6000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v6_6000"
+    ]
   }
 }

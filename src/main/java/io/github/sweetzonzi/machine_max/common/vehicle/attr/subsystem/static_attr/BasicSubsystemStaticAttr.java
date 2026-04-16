@@ -66,16 +66,19 @@ public class BasicSubsystemStaticAttr extends AbstractSubsystemStaticAttr {
 
     public record BasicSoundAttr(
             SoundEvent onDestroyed,
-            SoundEvent onActivated
+            SoundEvent onActivated,
+            SoundEvent onDeactivated
     ) {
         public static final BasicSoundAttr DEFAULT = new BasicSoundAttr(
-                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty_sound"), 16),
-                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty_sound"), 16)
+                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty_sound"), 0),
+                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty_sound"), 0),
+                SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty_sound"), 0)
         );
 
         public static final MapCodec<BasicSoundAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("on_destroyed", DEFAULT.onDestroyed).forGetter(BasicSoundAttr::onDestroyed),
-                SoundEvent.DIRECT_CODEC.optionalFieldOf("on_activate", DEFAULT.onActivated).forGetter(BasicSoundAttr::onActivated)
+                SoundEvent.DIRECT_CODEC.optionalFieldOf("on_activate", DEFAULT.onActivated).forGetter(BasicSoundAttr::onActivated),
+                SoundEvent.DIRECT_CODEC.optionalFieldOf("on_deactivate", DEFAULT.onDeactivated).forGetter(BasicSoundAttr::onDeactivated)
         ).apply(instance, BasicSoundAttr::new));
 
         public static <T> RecordCodecBuilder<T, BasicSoundAttr> basicSounds(Function<T, BasicSoundAttr> getter) {

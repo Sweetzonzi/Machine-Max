@@ -100,6 +100,25 @@
             "sound_id": "machine_max:empty_sound",
             "range": 16
           }
+        },
+        "on_deactivate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "working_sounds": {
+          "type": "object",
+          "description": "Manual working sound map. Keys are RPM strings (e.g. \"800\", \"4500.0\"), values are sound events. Uses auto synthesis when empty.",
+          "patternProperties": {
+            "^-?[0-9]+(\\.[0-9]+)?$": {
+              "$ref": "../../base/sound_event.schema.json"
+            }
+          },
+          "default": {},
+          "additionalProperties": false
         }
       },
       "additionalProperties": false,
