@@ -8,7 +8,7 @@
     "model": "machine_max:r700_chassis.geo",
     "textures": "machine_max:textures/part/r700.png",
     "animations": "machine_max:r700",
-    "tags": ["chassis", "r700"],
+    "tags": ["machine_max:chassis", "machine_max:r700"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 120.0,

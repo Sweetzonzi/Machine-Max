@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchClaimPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCompleteRequestPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchReclaimPayload;
+import io.github.sweetzonzi.machine_max.util.PartTagTextUtil;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -107,15 +108,22 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
         return this.getFocused() != null && (button == 0 || button == 1) && this.getFocused().mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (searchBox != null && searchBox.isFocused() && minecraft != null
+                && minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+            // 搜索框输入状态下，背包键不应关闭研发菜单
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
     private void rebuildEntries() {
         BlueprintAttachment research = menu.getResearch();
-        String filter = searchBox != null ? searchBox.getValue().toLowerCase() : "";
+        String filter = PartTagTextUtil.normalize(searchBox != null ? searchBox.getValue() : "");
 
         this.states = research.getAllResearchable().values().stream()
-                .filter(holder -> {
-                    if (filter.isEmpty()) return true;
-                    return holder.id().toString().toLowerCase().contains(filter);
-                })
+                .filter(holder -> matchesSearchFilter(holder, filter))
                 .map(holder -> {
                     ResourceLocation researchId = holder.id();
                     boolean completed = research.isResearched(researchId);
@@ -158,6 +166,26 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                     );
                 })
                 .toList();
+    }
+
+    private boolean matchesSearchFilter(RecipeHolder<io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe> holder, String filter) {
+        if (filter.isEmpty()) return true;
+        if (PartTagTextUtil.normalize(holder.id().toString()).contains(filter)) return true;
+
+        RecipeHolder<BlueprintResearchRecipe> blueprintHolder = MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.get(holder.id());
+        if (blueprintHolder == null) return false;
+
+        ResourceLocation unlockRecipeId = blueprintHolder.value().getUnlockRecipe();
+        if (PartTagTextUtil.normalize(unlockRecipeId.toString()).contains(filter)) return true;
+
+        RecipeHolder<FabricatingRecipe> unlockedHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(unlockRecipeId);
+        if (unlockedHolder == null) return false;
+
+        var partType = PartTagTextUtil.resolvePartTypeForTooltip(unlockedHolder.value().getResult());
+        for (String text : PartTagTextUtil.collectSearchTexts(partType)) {
+            if (text.contains(filter)) return true;
+        }
+        return false;
     }
 
     @Override

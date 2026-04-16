@@ -46,21 +46,21 @@
     },
     "required_tags": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "$ref": "../../../base/resource_location.schema.json" },
       "default": [],
-      "description": "Tags that the connecting part must all have, leave empty to allow any tags. For example: [\"variant:left\"] means must include left variant tag."
+      "description": "Tags that the connecting part must all have, leave empty to allow any tags. For example: [\"machine_max:left\"] means must include left variant tag."
     },
     "acceptable_tags": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "$ref": "../../../base/resource_location.schema.json" },
       "default": [],
-      "description": "Tags that the connecting part must have at least one of, leave empty to allow any tags. For example: [\"door\", \"hatch\"] means must include one of door or hatch tags."
+      "description": "Tags that the connecting part must have at least one of, leave empty to allow any tags. For example: [\"machine_max:door\", \"machine_max:hatch\"] means must include one of door or hatch tags."
     },
     "forbidden_tags": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "$ref": "../../../base/resource_location.schema.json" },
       "default": [],
-      "description": "Tags that the connecting part must not contain, leave empty to allow any tags. For example: [\"explosive\"] means cannot include explosive tag."
+      "description": "Tags that the connecting part must not contain, leave empty to allow any tags. For example: [\"machine_max:explosive\"] means cannot include explosive tag."
     },
     "joint_attrs": {
       "type": "object",
@@ -83,7 +83,7 @@
     },
     {
       "type": "Advanced",
-      "required_tags": ["variant:left"],
+      "required_tags": ["machine_max:left"],
       "impact_absorption": 0.1,
       "impact_reduction": 3.0,
       "impact_multiplier": 0.5,

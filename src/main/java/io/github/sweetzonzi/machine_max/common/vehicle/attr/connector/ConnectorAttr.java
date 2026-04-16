@@ -75,9 +75,9 @@ public class ConnectorAttr {
             Optional<Float> impactReduction,
             Optional<Float> impactMultiplier,
             Optional<Boolean> collideBetweenParts,
-            Optional<List<String>> requiredTags,
-            Optional<List<String>> acceptableTags,
-            Optional<List<String>> forbiddenTags,
+            Optional<List<ResourceLocation>> requiredTags,
+            Optional<List<ResourceLocation>> acceptableTags,
+            Optional<List<ResourceLocation>> forbiddenTags,
             Optional<Map<String, JointAttr>> jointAttrs
     ) {
         public static final Codec<OverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -88,9 +88,9 @@ public class ConnectorAttr {
                 Codec.FLOAT.optionalFieldOf("impact_reduction").forGetter(OverwriteAttr::impactReduction),
                 Codec.FLOAT.optionalFieldOf("impact_multiplier").forGetter(OverwriteAttr::impactMultiplier),
                 Codec.BOOL.optionalFieldOf("collide_between_parts").forGetter(OverwriteAttr::collideBetweenParts),
-                Codec.STRING.listOf().optionalFieldOf("required_tags").forGetter(OverwriteAttr::requiredTags),
-                Codec.STRING.listOf().optionalFieldOf("acceptable_tags").forGetter(OverwriteAttr::acceptableTags),
-                Codec.STRING.listOf().optionalFieldOf("forbidden_tags").forGetter(OverwriteAttr::forbiddenTags),
+                ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags").forGetter(OverwriteAttr::requiredTags),
+                ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags").forGetter(OverwriteAttr::acceptableTags),
+                ResourceLocation.CODEC.listOf().optionalFieldOf("forbidden_tags").forGetter(OverwriteAttr::forbiddenTags),
                 JointAttr.MAP_CODEC.optionalFieldOf("joint_attrs").forGetter(OverwriteAttr::jointAttrs)
         ).apply(instance, OverwriteAttr::new));
     }
@@ -131,12 +131,12 @@ public class ConnectorAttr {
 
     public boolean conditionCheck(PartType partType, String variant) {
         if (MMServerConfig.ignoreAssemblyTagRequirements()) return true; // 检查服务端配置，视情况忽略配方要求
-        Set<String> tags = new HashSet<>(partType.getVariant(variant).getTags());
+        Set<ResourceLocation> tags = new HashSet<>(partType.getVariant(variant).getTags());
         var effectiveAttr = getEffectiveAttr();
         //检查必须拥有的tag情况(必须全都有)
         if (effectiveAttr.requiredTags().isEmpty() || tags.containsAll(effectiveAttr.requiredTags())) {
             boolean hasAcceptableTags = false;
-            for (String acceptableTag : effectiveAttr.acceptableTags()) {
+            for (ResourceLocation acceptableTag : effectiveAttr.acceptableTags()) {
                 if (tags.contains(acceptableTag)) {
                     hasAcceptableTags = true;
                     break;
@@ -145,7 +145,7 @@ public class ConnectorAttr {
             //检查可接受的tag情况(有一个符合要求即可)
             if (effectiveAttr.acceptableTags().isEmpty() || hasAcceptableTags) {
                 boolean hasForbiddenTags = false;
-                for (String forbiddenTag : effectiveAttr.forbiddenTags()) {
+                for (ResourceLocation forbiddenTag : effectiveAttr.forbiddenTags()) {
                     if (tags.contains(forbiddenTag)) {
                         hasForbiddenTags = true;
                         break;
@@ -213,15 +213,15 @@ public class ConnectorAttr {
         return attr.collideBetweenParts();
     }
 
-    List<String> getRequiredTags() {
+    List<ResourceLocation> getRequiredTags() {
         return attr.requiredTags();
     }
 
-    public List<String> acceptableTags() {
+    public List<ResourceLocation> acceptableTags() {
         return attr.acceptableTags();
     }
 
-    public List<String> forbiddenTags() {
+    public List<ResourceLocation> forbiddenTags() {
         return attr.forbiddenTags();
     }
 

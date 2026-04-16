@@ -3,8 +3,8 @@
   "type": "Advanced",
   "direction": "xn",
   "integrity": 60.0,
-  "required_tags": ["left", "back"],
-  "forbidden_tags": ["hull", "chassis"],
+  "required_tags": ["machine_max:left", "machine_max:back"],
+  "forbidden_tags": ["machine_max:hull", "machine_max:chassis"],
   "joint_attrs": {
     "y": {
       "lower_limit": -1.0,

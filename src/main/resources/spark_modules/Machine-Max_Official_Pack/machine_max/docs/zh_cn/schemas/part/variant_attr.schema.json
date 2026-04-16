@@ -8,7 +8,7 @@
     "tags": {
       "type": "array",
       "items": {
-        "type": "string"
+        "$ref": "../base/resource_location.schema.json"
       },
       "default": [],
       "description": "部件标签列表，用于连接点匹配和功能分类"
@@ -96,7 +96,7 @@
         "default": "machine_max:tank_turret_rotation",
         "broken": "machine_max:tank_turret_broken"
       },
-      "tags": ["turret", "rotatable"],
+      "tags": ["machine_max:turret", "machine_max:rotatable"],
       "sub_parts": {
         "turret_base": {
           "durability": 300.0,

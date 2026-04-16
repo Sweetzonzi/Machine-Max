@@ -10,7 +10,7 @@
       "model": "machine_max:wine_fox.geo",
       "textures": "machine_max:textures/part/wine_fox/wine_fox.png",
       "animations": "machine_max:wine_fox",
-      "tags": ["bumper", "wine_fox", "front"],//(可选)部件标签列表
+      "tags": ["machine_max:bumper", "machine_max:wine_fox", "machine_max:front"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
           "start_bone": "FrontBumper", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
@@ -76,7 +76,7 @@
       "model": "machine_max:wine_fox.geo",
       "textures": "machine_max:textures/part/wine_fox/wine_fox.png",
       "animations": "machine_max:wine_fox",
-      "tags": ["bumper", "wine_fox", "back"],//(可选)部件标签列表
+      "tags": ["machine_max:bumper", "machine_max:wine_fox", "machine_max:back"],//(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
           "start_bone": "RearBumper",

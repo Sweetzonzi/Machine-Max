@@ -11,7 +11,7 @@
       "print.machine_max.white": "machine_max:textures/part/jeep/jeep2.png"
     },
     "animations": "machine_max:jeep",
-    "tags": ["chassis"],
+    "tags": ["machine_max:jeep", "machine_max:chassis", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 550.0,

@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
   "icon": "machine_max:textures/icon/wine_fox/wine_fox_hull_icon.png",
   "vehicle_durability_rate": 0.6,
@@ -8,7 +8,7 @@
     "model": "machine_max:wine_fox.geo",
     "textures": "machine_max:textures/part/wine_fox/wine_fox.png",
     "animations": "machine_max:wine_fox",
-    "tags": ["hull", "wine_fox"],
+    "tags": ["machine_max:hull", "machine_max:wine_fox", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "start_bone": "AllHull", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型

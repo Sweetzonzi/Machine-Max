@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.attr.connector;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.List;
 import java.util.Map;
@@ -28,9 +29,9 @@ public record ConnectorStaticAttr(
         float impactReduction,
         float impactMultiplier,
         boolean collideBetweenParts,
-        List<String> requiredTags,
-        List<String> acceptableTags,
-        List<String> forbiddenTags,
+        List<ResourceLocation> requiredTags,
+        List<ResourceLocation> acceptableTags,
+        List<ResourceLocation> forbiddenTags,
         Map<String, JointAttr> jointAttrs
 ) {
     public static final Codec<ConnectorStaticAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -41,9 +42,9 @@ public record ConnectorStaticAttr(
             Codec.FLOAT.optionalFieldOf("impact_reduction", 2f).forGetter(ConnectorStaticAttr::impactReduction),
             Codec.FLOAT.optionalFieldOf("impact_multiplier", 1.5f).forGetter(ConnectorStaticAttr::impactMultiplier),
             Codec.BOOL.optionalFieldOf("collide_between_parts", false).forGetter(ConnectorStaticAttr::collideBetweenParts),
-            Codec.STRING.listOf().optionalFieldOf("required_tags", List.of()).forGetter(ConnectorStaticAttr::requiredTags),
-            Codec.STRING.listOf().optionalFieldOf("acceptable_tags", List.of()).forGetter(ConnectorStaticAttr::requiredTags),
-            Codec.STRING.listOf().optionalFieldOf("forbidden_tags", List.of()).forGetter(ConnectorStaticAttr::requiredTags),
+            ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags", List.of()).forGetter(ConnectorStaticAttr::requiredTags),
+            ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags", List.of()).forGetter(ConnectorStaticAttr::acceptableTags),
+            ResourceLocation.CODEC.listOf().optionalFieldOf("forbidden_tags", List.of()).forGetter(ConnectorStaticAttr::forbiddenTags),
             JointAttr.MAP_CODEC.optionalFieldOf("joint_attrs", Map.of()).forGetter(ConnectorStaticAttr::jointAttrs)
     ).apply(instance, ConnectorStaticAttr::new));
 }

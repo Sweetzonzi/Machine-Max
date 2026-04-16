@@ -12,7 +12,7 @@
       "print.machine_max.dayun.4": "machine_max:textures/part/dayun/dayun4.png",
       "print.machine_max.dayun.6": "machine_max:textures/part/dayun/dayun6.png"
     },
-    "tags": ["dayun", "chassis"],
+    "tags": ["machine_max:dayun", "machine_max:chassis"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 3000.0,

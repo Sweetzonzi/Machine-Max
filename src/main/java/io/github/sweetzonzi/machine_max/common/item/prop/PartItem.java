@@ -22,6 +22,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.util.MMMath;
+import io.github.sweetzonzi.machine_max.util.PartTagTextUtil;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -170,6 +172,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        appendPartTags(stack, context, tooltipComponents, tooltipFlag);
     }
 
     /**

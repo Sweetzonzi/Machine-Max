@@ -90,7 +90,7 @@ public class FabricatingRecipeCategory implements IRecipeCategory<RecipeHolder<F
     public void draw(RecipeHolder<FabricatingRecipe> recipeHolder, mezz.jei.api.gui.ingredient.IRecipeSlotsView recipeSlotsView, GuiGraphics graphics, double mouseX, double mouseY) {
         String time = FabricatingScreen.formatTime(recipeHolder.value().getProcessingTime());
         Component timeText = Component.translatable("gui.machine_max.fabricator.actual_time", time);
-        graphics.drawString(Minecraft.getInstance().font, timeText, TIME_X, TIME_Y, 0x909090, false);
+        graphics.drawString(Minecraft.getInstance().font, timeText, TIME_X, TIME_Y, 0xFFFFFF, true);
     }
 
     private static List<ItemStack> toDisplayStacks(IngredientCountPair pair) {

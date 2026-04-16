@@ -8,7 +8,7 @@
     "model": "machine_max:kluo_hull.geo",
     "textures": "machine_max:textures/part/kluo_hull.png",
     "animations": "machine_max:kluo",
-    "tags": ["hull", "kluo"],
+    "tags": ["machine_max:hull", "machine_max:kluo", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 120.0,

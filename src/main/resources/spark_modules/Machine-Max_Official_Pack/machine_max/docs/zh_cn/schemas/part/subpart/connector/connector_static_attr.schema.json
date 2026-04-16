@@ -46,21 +46,21 @@
     },
     "required_tags": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "$ref": "../../../base/resource_location.schema.json" },
       "default": [],
-      "description": "连接部件必须全部拥有的标签，留空以允许任意标签。例如：[\"left\"]表示必须包含左变体标签。"
+      "description": "连接部件必须全部拥有的标签，留空以允许任意标签。例如：[\"machine_max:left\"]表示必须包含左变体标签。"
     },
     "acceptable_tags": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "$ref": "../../../base/resource_location.schema.json" },
       "default": [],
-      "description": "连接部件必须至少拥有其中一个的标签，留空以允许任意标签。例如：[\"door\", \"hatch\"]表示必须包含门或舱口标签之一。"
+      "description": "连接部件必须至少拥有其中一个的标签，留空以允许任意标签。例如：[\"machine_max:door\", \"machine_max:hatch\"]表示必须包含门或舱口标签之一。"
     },
     "forbidden_tags": {
       "type": "array",
-      "items": { "type": "string" },
+      "items": { "$ref": "../../../base/resource_location.schema.json" },
       "default": [],
-      "description": "连接部件不可包含的标签，留空以允许任意标签。例如：[\"explosive\"]表示不能包含爆炸物标签。"
+      "description": "连接部件不可包含的标签，留空以允许任意标签。例如：[\"machine_max:explosive\"]表示不能包含爆炸物标签。"
     },
     "joint_attrs": {
       "type": "object",
@@ -83,7 +83,7 @@
     },
     {
       "type": "Advanced",
-      "required_tags": ["variant:left"],
+      "required_tags": ["machine_max:left"],
       "impact_absorption": 0.1,
       "impact_reduction": 3.0,
       "impact_multiplier": 0.5,

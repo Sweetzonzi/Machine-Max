@@ -105,7 +105,7 @@ public class BlueprintResearchRecipeCategory implements IRecipeCategory<RecipeHo
                 "jei.machine_max.blueprint_research.rp_cost",
                 recipeHolder.value().getResearchCost()
         );
-        graphics.drawString(Minecraft.getInstance().font, rpText, RP_TEXT_X, RP_TEXT_Y, 0x909090, false);
+        graphics.drawString(Minecraft.getInstance().font, rpText, RP_TEXT_X, RP_TEXT_Y, 0xFFFFFF, true);
     }
 
     private static ItemStack buildFabricatingBlueprint(ResourceLocation unlockRecipe) {

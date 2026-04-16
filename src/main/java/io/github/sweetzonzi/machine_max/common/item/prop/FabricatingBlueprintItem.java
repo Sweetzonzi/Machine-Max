@@ -20,7 +20,9 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
+import io.github.sweetzonzi.machine_max.util.PartTagTextUtil;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -33,6 +35,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -42,6 +45,7 @@ import org.joml.Quaternionf;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 public class FabricatingBlueprintItem extends Item implements ICustomModelItem, PartAssemblyItem {
@@ -150,19 +154,23 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
         }
     }
 
-@Override
-public @NotNull Component getName(@NotNull ItemStack stack) {
-    try {
-        ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
-        RecipeHolder<FabricatingRecipe> recipeHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(type);
-        return recipeHolder.value().getResult().getHoverName().copy()
-                .append(Component.translatable("item.machine_max.fabricating_blueprint"));
-    } catch (Exception e) {
-        return super.getName(stack);
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        appendPartTags(stack, context, tooltipComponents, tooltipFlag);
     }
-}
 
-
+    @Override
+    public @NotNull Component getName(@NotNull ItemStack stack) {
+        try {
+            ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
+            RecipeHolder<FabricatingRecipe> recipeHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(type);
+            return recipeHolder.value().getResult().getHoverName().copy()
+                    .append(Component.translatable("item.machine_max.fabricating_blueprint"));
+        } catch (Exception e) {
+            return super.getName(stack);
+        }
+    }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);

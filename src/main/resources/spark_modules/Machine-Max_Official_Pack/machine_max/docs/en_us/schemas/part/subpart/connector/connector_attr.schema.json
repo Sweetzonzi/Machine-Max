@@ -52,17 +52,17 @@
         },
         "required_tags": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": { "$ref": "../../../base/resource_location.schema.json" },
           "description": "Required tags overwrite."
         },
         "acceptable_tags": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": { "$ref": "../../../base/resource_location.schema.json" },
           "description": "Acceptable tags overwrite."
         },
         "forbidden_tags": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": { "$ref": "../../../base/resource_location.schema.json" },
           "description": "Forbidden tags overwrite."
         },
         "joint_attrs": {
@@ -112,9 +112,9 @@
         "impact_reduction": 3.0,
         "impact_multiplier": 0.8,
         "collide_between_parts": false,
-        "required_tags": ["variant:left"],
-        "acceptable_tags": ["wheel", "suspension"],
-        "forbidden_tags": ["broken_only"],
+        "required_tags": ["machine_max:left"],
+        "acceptable_tags": ["machine_max:wheel", "machine_max:suspension"],
+        "forbidden_tags": ["machine_max:broken_only"],
         "joint_attrs": {
           "y": {
             "lower_limit": -0.2,

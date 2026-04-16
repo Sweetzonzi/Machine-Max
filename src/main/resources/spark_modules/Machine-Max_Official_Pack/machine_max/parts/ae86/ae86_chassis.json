@@ -16,7 +16,7 @@
       "print.machine_max.gray": "machine_max:textures/part/ae86/ae86_9.png"
     },
     "animations": "machine_max:ae86", //(可选, 留空则不播放动画)动画路径
-    "tags": ["chassis"],//(可选, 默认[])部件标签列表
+    "tags": ["machine_max:ae86", "machine_max:chassis"],//(可选, 默认[])部件标签列表
     "sub_parts": {//零件(子部件)列表, 这是部件运动的最小单元, 部件的每个可动部分都应当是一个零件(子部件)
       "sub_part.machine_max.main": {//零件(子部件)名称
         "durability": 350.0,
@@ -36,15 +36,6 @@
             "subsystem": "connector.machine_max.engine",
             "material": "machine_max:structural_steel",
             "thickness": 2
-          }
-        },
-        "interact_boxes": { //交互判定区列表
-          "interact.machine_max.glove_box": { //键:交互判定区名称
-            "bone": "GloveBoxInteractZone", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
-            "signal_targets": {
-              "interact": ["subsystem.machine_max.glove_box"] //将交互信号转发给储物子系统
-            },
-            "interact_mode": "accurate" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
           }
         },
         "subsystems": {
