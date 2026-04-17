@@ -293,9 +293,10 @@ public class AssemblyItem extends Item implements ICustomModelItem {
             // GUI中无图标：使用VehicleAnimatable显示3D载具模型（配合蓝底背景）
             VehicleData vehicleData = getVehicleData(itemStack);
             if (vehicleData != null) {
-                // 传递AssemblyData中的scale属性（默认为35.0f）
-                VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, assemblyData.getScale());
-                // 将载具质心变换设为原点，确保居中显示
+                float size = (float) vehicleData.max.subtract(vehicleData.min).length();
+                // 创建VehicleAnimatable，根据载具尺寸缩放模型
+                VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, 1f / size);
+                // 将载具质心变换设为原点，确保载具在GUI中居中显示
                 vehicleAnimatable.setTransform(new Transform());
                 cacheAnimatable(itemStack, context, vehicleAnimatable);
                 return vehicleAnimatable;

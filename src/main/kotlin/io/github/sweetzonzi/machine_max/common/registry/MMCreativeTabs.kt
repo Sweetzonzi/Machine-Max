@@ -31,6 +31,8 @@ object MMCreativeTabs {
                     output.accept(MMItems.WELDING_TORCH_ITEM.get())
                     output.accept(MMItems.SPRAY_CAN_ITEM.get())
                     output.accept(MMItems.EMPTY_BLUEPRINT.get())
+                    output.accept(MMItems.VEHICLE_ASSEMBLY_CAPTURE_SINGLE.get())
+                    output.accept(MMItems.VEHICLE_ASSEMBLY_CAPTURE_TOOL.get())
                     //材料
                     output.accept(MMItems.STRUCTURAL_COMPONENT_1_ITEM.get())
                     output.accept(MMItems.MECHANIC_COMPONENT_1_ITEM.get())
