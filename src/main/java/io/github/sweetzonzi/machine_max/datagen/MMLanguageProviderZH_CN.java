@@ -92,6 +92,9 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "初级电子元件");
         this.add("item.machine_max.power_component_1", "初级能源组件");
         this.add("item.machine_max.energetic_component_1", "初级含能材料");
+        this.add("subtitles.item.welding_torch.start", "焊枪启动");
+        this.add("subtitles.item.welding_torch.loop", "焊接中");
+        this.add("subtitles.item.welding_torch.end", "焊枪关闭");
         // 菜单
         this.add("gui.machine_max.confirm", "确认");
         this.add("gui.machine_max.cancel", "取消");

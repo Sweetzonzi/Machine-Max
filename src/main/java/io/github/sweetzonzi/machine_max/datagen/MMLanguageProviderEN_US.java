@@ -92,6 +92,9 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "Basic Electronic Component");
         this.add("item.machine_max.power_component_1", "Basic Power Component");
         this.add("item.machine_max.energetic_component_1", "Basic Energetic Material");
+        this.add("subtitles.item.welding_torch.start", "Welding torch starts");
+        this.add("subtitles.item.welding_torch.loop", "Welding torch running");
+        this.add("subtitles.item.welding_torch.end", "Welding torch stops");
         //Menu & Screen
         this.add("gui.machine_max.set_vehicle_name", "Set Vehicle Name");
         this.add("gui.machine_max.confirm", "Confirm");
