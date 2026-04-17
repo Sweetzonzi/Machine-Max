@@ -13,11 +13,11 @@
   "damping_factors": [2.0, 0.03, 0.00002], //(可选, 默认[20.0, 0.1, 0.00005])发动机各阶阻力系数, 分别为常数项, 一次项, 二次项, …递增(N·m/(rad/s)^n)
   "sounds": {
     "on_activate": {
-      "sound_id": "machine_max:subsystem.engine.start",
+      "sound_id": "machine_max:subsystem.engine.i4_start",
       "range": 64
     },
     "on_deactivate": {
-      "sound_id": "machine_max:subsystem.engine.stop",
+      "sound_id": "machine_max:subsystem.engine.i4_stop",
       "range": 64
     },
     "working_sounds": {
@@ -29,12 +29,24 @@
         "sound_id": "machine_max:subsystem.engine.i4_2000",
         "range": 64
       },
+      "3000.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_3000",
+        "range": 64
+      },
+      "4000.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_4000",
+        "range": 64
+      },
       "5000.0": {
         "sound_id": "machine_max:subsystem.engine.i4_5000",
         "range": 64
       },
       "6000.0": {
         "sound_id": "machine_max:subsystem.engine.i4_6000",
+        "range": 64
+      },
+      "7000.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_7000",
         "range": 64
       }
     }
