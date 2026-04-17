@@ -221,7 +221,7 @@ public class VehicleCore implements SyncedDataHolder {
         for (Part part : partMap.values()) {
             result += Math.max(0f, part.getVehicleDurabilityContribution());
         }
-        if (result <= 0){ // 回退取第一个部件的最大耐久度
+        if (result <= 0 && !partMap.isEmpty()){ // 回退取第一个部件的最大耐久度
             result += partMap.values().stream().toList().getFirst().getSharedMaxDurability();
         }
         return Math.max(0f, result);

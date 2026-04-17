@@ -136,6 +136,9 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             else if (yaw < -180) yaw += 360;
             // 设置实体旋转
             this.setRot(yaw, pitch);
+            // 更新实体速度
+            var vel = subPart.getLinearVelocity().mult(0.05f);
+            this.setDeltaMovement(vel.x, vel.y, vel.z);
         }
     }
 

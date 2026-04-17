@@ -1349,7 +1349,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     @Override
     public void setPosition(Vector3f position) {
-        if (entity != null && !entity.isRemoved() && !updateLock) entity.setPos(position.x, position.y, position.z);
+        if (entity != null && !entity.isRemoved() && !updateLock) {
+            entity.setPos(position.x, position.y, position.z);
+        }
         super.setPosition(position);
     }
 

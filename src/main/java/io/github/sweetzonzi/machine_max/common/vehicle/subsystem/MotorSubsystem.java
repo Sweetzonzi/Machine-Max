@@ -313,6 +313,11 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
     }
 
     @Override
+    public @NotNull Vec3 getSpeed(UUID uuid, SoundEvent event) {
+        return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
+    }
+
+    @Override
     public float getMasterVolume(UUID uuid, SoundEvent event) {
         if (getSubPart().isRemoved() || !isActive()) return 0f;
         float throttleFactor = 0.3f + 0.7f * (float) Math.clamp(Math.abs(throttleInput), 0, 1);
