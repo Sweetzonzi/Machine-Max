@@ -681,6 +681,51 @@ public class Part {
     }
 
     /**
+     * <p>根据子部件耐久度重新计算部件组装进度和材料进度上限。</p>
+     * <p>有手动配方时，材料进度仅会被下调；无手动配方时，不限制材料进度。</p>
+     *
+     * @return 是否发生变化
+     */
+    public boolean recomputeAssemblyFromDurability() {
+        if (level.isClientSide()) return false;
+        float oldProgress = this.assemblingProgress;
+        int oldMaterialProgress = this.materialProgress;
+
+        float durabilityRatio = 0f;
+        for (SubPart subPart : subParts.values()) {
+            float maxDurability = subPart.getMaxDurability();
+            if (maxDurability <= 0f) continue;
+            float ratio = Math.clamp(subPart.getDurabilityRaw() / maxDurability, 0f, 1f);
+            durabilityRatio = Math.max(durabilityRatio, ratio);
+        }
+
+        FabricatingRecipe recipe = getRecipe();
+        boolean hasManualRecipe = recipe != null && recipe.isManualAssemblablePart();
+        int totalMaterials = hasManualRecipe ? recipe.getManualAssembleIngredientList().size() : 0;
+
+        if (!hasManualRecipe || totalMaterials <= 0) {
+            setAssemblingProgress(durabilityRatio);
+        } else {
+            materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
+            int durabilityTier = getMaterialTierByDurabilityRatio(durabilityRatio, totalMaterials);
+            materialProgress = Math.min(materialProgress, durabilityTier);
+            float materialCap = (float) materialProgress / totalMaterials;
+            setAssemblingProgress(Math.min(durabilityRatio, materialCap));
+        }
+
+        if (oldMaterialProgress != materialProgress && oldProgress == this.assemblingProgress) {
+            syncAssemblyProgressToClient();
+        }
+        return oldProgress != this.assemblingProgress || oldMaterialProgress != this.materialProgress;
+    }
+
+    private static int getMaterialTierByDurabilityRatio(float ratio, int totalMaterials) {
+        if (totalMaterials <= 0) return 0;
+        if (ratio <= 0f) return 0;
+        return Math.min(totalMaterials, (int) Math.floor(Math.clamp(ratio, 0f, 1f) * totalMaterials) + 1);
+    }
+
+    /**
      * <p>设置部件的组装进度，并影响零件的最大耐久、重力和实际质量</p>
      * <p>Sets the assembling progress of the part, which affects the maximum durability, gravity, and actual mass of the part.</p>
      *
@@ -703,14 +748,18 @@ public class Part {
                 updateMass();
                 return null;
             });
-            if (!level.isClientSide() && vehicle != null && vehicle.inLevel) {
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
-                        vehicle.uuid,
-                        uuid,
-                        assemblingProgress,
-                        materialProgress
-                ));
-            }
+            syncAssemblyProgressToClient();
+        }
+    }
+
+    private void syncAssemblyProgressToClient() {
+        if (!level.isClientSide() && vehicle != null && vehicle.inLevel) {
+            PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
+                    vehicle.uuid,
+                    uuid,
+                    assemblingProgress,
+                    materialProgress
+            ));
         }
     }
 

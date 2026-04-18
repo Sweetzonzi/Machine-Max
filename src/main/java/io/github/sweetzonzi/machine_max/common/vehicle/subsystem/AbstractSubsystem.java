@@ -172,7 +172,10 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public boolean isActive() {
-        return active && !this.isDestroyed() && !getOwner().getSubPart().isDestroyed() && getSubPart().part.getAssemblingProgress() >= 1;
+        return active
+                && !this.isDestroyed()
+                && !getOwner().getSubPart().isDestroyed()
+                && getSubPart().part.getAssemblingProgress() >= getSubPart().attr.getFunctionalThreshold();
     }
 
     public void setActive(boolean active) {

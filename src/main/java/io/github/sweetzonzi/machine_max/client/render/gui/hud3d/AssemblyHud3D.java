@@ -59,7 +59,7 @@ public class AssemblyHud3D implements IHud3DElement {
     private static final int HEADER_HEIGHT = 25;
     private static final int PROJECTION_HEIGHT = 75;
     private static final int TEXT_LINE_HEIGHT = 13;
-    private static final int MATERIAL_LINE_HEIGHT = 18;
+    private static final int MATERIAL_LINE_HEIGHT = 22;
     private static final int PADDING = 8;
     // 3D 缩放比例：将像素映射到世界单位 (调节此值改变 HUD 在世界中的物理大小)
     private static final float PIXEL_SCALE = 0.5f;
@@ -73,8 +73,10 @@ public class AssemblyHud3D implements IHud3DElement {
     private static final int ROW_BG_DARK = 0x66222222;
     private static final int ROW_BG_LIGHT = 0x555A5A5A;
     //    private static final int ROW_BG_ACTIVE = new Color(150, 200, 255, 155).getRGB();
-    private static final int ROW_BG_ACTIVE = new Color(255, 100, 0, 155).getRGB();
+    private static final int ROW_BG_ASSEMBLY = new Color(255, 100, 0, 155).getRGB();
+    private static final int ROW_BG_ACTIVE = new Color(255, 100, 0, 64).getRGB();
     private static final int ROW_BG_LACK = new Color(150, 32, 32, 128).getRGB();
+    private static final int BAR_THRESHOLD = new Color(255, 0, 0, 255).getRGB();
 
     private static final int TEXT_MAIN = new Color(255, 255, 255, 255).getRGB();
     private static final int TEXT_SUB = new Color(200, 200, 200, 255).getRGB();
@@ -300,7 +302,7 @@ public class AssemblyHud3D implements IHud3DElement {
 
         if (!materials.isEmpty()) {
             // 材料列表
-            for (MaterialStatus m : materials.reversed()) {
+            for (MaterialStatus m : materials) {
                 drawMaterialRow(ctx, startX, startY, m);
                 startY += MATERIAL_LINE_HEIGHT;
                 if (startY > startY + animatedHudHeight.get()) break;
@@ -316,7 +318,8 @@ public class AssemblyHud3D implements IHud3DElement {
                     Math.max(animatedHudWidth.get() - PADDING * 2, 0),
                     10f,
                     subPart != null ? subPart.part.getAssemblingProgress() : 0f,
-                    ROW_BG_ACTIVE,
+                    ROW_BG_ASSEMBLY,
+                    subPart != null ? subPart.attr.getFunctionalThreshold() : -1f,
                     currentTime,
                     false
             );
@@ -553,7 +556,7 @@ public class AssemblyHud3D implements IHud3DElement {
             animatedDurabilityFloat.animateTo(targetProgress, 0.5f, currentTime);
         animatedDurabilityFloat.update(currentTime);
         // 绘制进度条
-        drawProgressBar(ctx, x, y, width, height, animatedDurabilityFloat.get(), color, false);
+        drawProgressBar(ctx, x, y, width, height, animatedDurabilityFloat.get(), color, -1f, false);
     }
 
     private void drawAnimatedProgressBar(
@@ -564,6 +567,7 @@ public class AssemblyHud3D implements IHud3DElement {
             float height,
             float targetProgress,
             int color,
+            float threshold,
             float currentTime,
             boolean additive
     ) {
@@ -572,7 +576,7 @@ public class AssemblyHud3D implements IHud3DElement {
             animatedProgressFloat.animateTo(targetProgress, 0.5f, currentTime);
         animatedProgressFloat.update(currentTime);
         // 绘制进度条
-        drawProgressBar(ctx, x, y, width, height, animatedProgressFloat.get(), color, additive);
+        drawProgressBar(ctx, x, y, width, height, animatedProgressFloat.get(), color, threshold, additive);
     }
 
     private void drawProgressBar(
@@ -583,12 +587,19 @@ public class AssemblyHud3D implements IHud3DElement {
             float height,
             float progress,
             int color,
+            float threshold,
             boolean additive
     ) {
+        var renderType = additive ? MMRenderTypes.additiveSolidDepth() : MMRenderTypes.alwaysVisibleSolid();
         // 进度条背景
-        ctx.fill(x, y, x + width, y + height, BAR_BG, 0.002f, additive ? MMRenderTypes.additiveSolidDepth() : MMRenderTypes.alwaysVisibleSolid());
+        ctx.fill(x, y, x + width, y + height, BAR_BG, 0.002f, renderType);
         // 进度条前景
-        ctx.fill(x, y, x + progress * width, y + height, color, 0.001f, additive ? MMRenderTypes.additiveSolidDepth() : MMRenderTypes.alwaysVisibleSolid());
+        ctx.fill(x, y, x + progress * width, y + height, color, 0.001f, renderType);
+        // 子系统可用阈值标记
+        if (threshold >= 0f && width > 0f) {
+            float markerX = x + Math.clamp(threshold, 0f, 1f) * Math.max(width - 1f, 0f);
+            ctx.fill(markerX, y, markerX + 1f, y + height, BAR_THRESHOLD, 0.0005f, renderType);
+        }
     }
 
     private void drawMaterialRow(
@@ -629,7 +640,7 @@ public class AssemblyHud3D implements IHud3DElement {
         /* 物品图标 */
         ItemStack icon = m.pair.ingredient().getItems()[0];
         // 3D HUD 中绘制物品需传入 scale。16.0f 对应 GUI 中的 16x16 像素大小
-        ctx.drawItem(icon, rowX + rowH / 2 + 1, y + rowH / 2, 16.0f);
+        ctx.drawItem(icon, rowX + rowH / 2 + 1, y + rowH / 2 + 1, 16.0f);
         /* 文本信息 */
         int textColor = m.completed() ?
                 Easing.lerpColorFromTransparent(TEXT_MAIN, animatedHudWidth.get() / HUD_WIDTH) :
@@ -638,29 +649,27 @@ public class AssemblyHud3D implements IHud3DElement {
         ctx.drawText(
                 icon.getHoverName(),
                 rowX + 22,
-                y + 5,
+                y + 2,
                 textColor
         );
-
+        String leftDetail = m.provided() + "/" + m.required();
+        String rightDetail = "\uD83D\uDCBC " + m.inventoryText() + " " + (m.backpackSatisfied() ? "✔" : "\u00D7");
+        int detailColor = m.backpackSatisfied()
+                ? Easing.lerpColorFromTransparent(TEXT_SUB, animatedHudWidth.get() / HUD_WIDTH)
+                : Easing.lerpColorFromTransparent(TEXT_WARN, animatedHudWidth.get() / HUD_WIDTH);
+        int rightDetailWidth = ctx.font.width(rightDetail);
         ctx.drawText(
-                Component.literal(String.valueOf(m.required())),
-                rowX + rowW - 46,
-                y + 5,
-                Easing.lerpColorFromTransparent(TEXT_SUB, animatedHudWidth.get() / HUD_WIDTH)
+                Component.literal(leftDetail),
+                rowX + 22,
+                y + 11,
+                detailColor
         );
-
-        if (m.completed()) {
-            ctx.drawText(Component.literal("✔"),
-                    rowX + rowW - 30,
-                    y + 5,
-                    Easing.lerpColorFromTransparent(TEXT_MAIN, animatedHudWidth.get() / HUD_WIDTH));
-        }
-
-        String inv = m.inventory == Integer.MAX_VALUE ? "∞" : String.valueOf(m.inventory);
-        ctx.drawText(Component.literal(inv),
-                rowX + rowW - 16,
-                y + 5,
-                Easing.lerpColorFromTransparent(TEXT_SUB, animatedHudWidth.get() / HUD_WIDTH));
+        ctx.drawText(
+                Component.literal(rightDetail),
+                rowX + rowW - rightDetailWidth - 4,
+                y + 11,
+                detailColor
+        );
     }
 
     private record MaterialStatus(
@@ -673,12 +682,28 @@ public class AssemblyHud3D implements IHud3DElement {
             return pair.count();
         }
 
+        int provided() {
+            return consumed;
+        }
+
+        int remainingNeeded() {
+            return Math.max(required() - consumed, 0);
+        }
+
+        boolean backpackSatisfied() {
+            return inventory >= remainingNeeded();
+        }
+
+        String inventoryText() {
+            return inventory == Integer.MAX_VALUE ? "∞" : String.valueOf(inventory);
+        }
+
         boolean completed() {
             return consumed >= required();
         }
 
         boolean lacking() {
-            return inventory < (required() - consumed);
+            return !backpackSatisfied();
         }
 
         float progress() {

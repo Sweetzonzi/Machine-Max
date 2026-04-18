@@ -42,6 +42,7 @@ public class SubPartAttr {
     public final BlockCollisionType blockCollision;
     public final float stepHeight;
     public final boolean climbAssist;
+    public final float functionalThreshold;
 
     // 功能属性
     public final float durability;
@@ -80,6 +81,7 @@ public class SubPartAttr {
             Codec.STRING.optionalFieldOf("block_collision", "true").forGetter(SubPartAttr::getBlockCollision),
             Codec.FLOAT.optionalFieldOf("collision_height", -1.0f).forGetter(SubPartAttr::getStepHeight),
             Codec.BOOL.optionalFieldOf("climb_assist", false).forGetter(SubPartAttr::isClimbAssist),
+            Codec.FLOAT.optionalFieldOf("functional_threshold", 0.3f).forGetter(SubPartAttr::getFunctionalThreshold),
             HitBoxAttr.MAP_CODEC.fieldOf("hit_boxes").forGetter(SubPartAttr::getHitBoxes),
             InteractBoxAttr.MAP_CODEC.optionalFieldOf("interact_boxes", Map.of()).forGetter(SubPartAttr::getInteractBoxes),
             ConnectorAttr.MAP_CODEC.optionalFieldOf("connectors", Map.of()).forGetter(SubPartAttr::getConnectors),
@@ -103,6 +105,7 @@ public class SubPartAttr {
             String blockCollision,
             float stepHeight,
             boolean climbAssist,
+            float functionalThreshold,
             Map<String, HitBoxAttr> hitBoxes,
             Map<String, InteractBoxAttr> interactBoxes,
             Map<String, ConnectorAttr> connectors,
@@ -120,6 +123,7 @@ public class SubPartAttr {
         this.blockCollision = BlockCollisionType.valueOf(blockCollision.toUpperCase());
         this.stepHeight = stepHeight;
         this.climbAssist = climbAssist;
+        this.functionalThreshold = Math.clamp(functionalThreshold, 0f, 1f);
 
         if (hitBoxes.isEmpty()) throw new IllegalArgumentException("error.machine_max.subpart.empty_hit_boxes");
         this.hitBoxes = hitBoxes;

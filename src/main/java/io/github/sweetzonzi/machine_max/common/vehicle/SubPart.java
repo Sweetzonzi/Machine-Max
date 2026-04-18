@@ -33,6 +33,7 @@ import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
@@ -1053,10 +1054,33 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         if (!level.isClientSide) {
             // 修理零件
             //TODO: 传递修复至载具
-            float repairAmount = Math.min(Math.max(amount, 0), getMaxDurability() - getDurability());
+            float repairAmount = 0f;
+            float requestedRepairAmount = Math.max(amount, 0f);
+            float maxDurability = getMaxDurability();
+            float currentDurability = getDurability();
+            if (requestedRepairAmount > 0f && maxDurability > 0f && currentDurability < maxDurability) {
+                float maxRepairRatio = 1f;
+                FabricatingRecipe recipe = part.getRecipe();
+                if (recipe != null && recipe.isManualAssemblablePart()) {
+                    int totalMaterials = recipe.getManualAssembleIngredientList().size();
+                    if (totalMaterials > 0) {
+                        maxRepairRatio = Math.clamp((float) part.getMaterialProgress() / totalMaterials, 0f, 1f);
+                    }
+                }
+                float currentRatio = Math.clamp(currentDurability / maxDurability, 0f, 1f);
+                float repairDeltaRatio = requestedRepairAmount / maxDurability;
+                float targetRatio = Math.min(currentRatio + repairDeltaRatio, maxRepairRatio);
+                float targetDurability = targetRatio * maxDurability;
+                repairAmount = Math.min(
+                        Math.max(0f, targetDurability - currentDurability),
+                        maxDurability - currentDurability
+                );
+            }
             float subsystemsRepairAmount = Math.max(subSystemAmount, 0);
             float connectorsRepairAmount = Math.max(connectorAmount, 0);
-            setDurability(getDurability() + repairAmount);
+            if (repairAmount > 0f) {
+                setDurability(currentDurability + repairAmount);
+            }
             // 修理子系统
             for (AbstractSubsystem subsystem : subsystems.values()) {
                 if (subsystemsRepairAmount <= 0) break;
@@ -1081,6 +1105,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     connectorsRepairAmount -= connectorRepairAmount;
                 }
             }
+            part.recomputeAssemblyFromDurability();
             syncToClient();
             return !(repairAmount == 0 && subSystemAmount == subsystemsRepairAmount && connectorAmount == connectorsRepairAmount);
         } else return false;
@@ -1112,6 +1137,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             }
             if (totalDamage > 0) {
                 setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
+                part.recomputeAssemblyFromDurability();
                 if (part.vehicle != null) {
                     float rate = isDestroyed() ? part.type.vehicleDamageRateDestroyed : part.type.vehicleDamageRate;
                     part.vehicle.applyVehicleDamage(Math.max(0f, totalDamage * rate));
@@ -1363,7 +1389,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      */
     @Override
     public float getDurability() {
-        return getDurabilityRaw() * (0.05f + 0.95f * part.getAssemblingProgress());
+        return getDurabilityRaw();
     }
 
     public float getDurabilityRaw() {

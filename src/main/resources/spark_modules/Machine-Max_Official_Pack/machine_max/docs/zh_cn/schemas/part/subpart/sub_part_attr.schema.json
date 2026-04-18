@@ -56,6 +56,13 @@
       "default": false,
       "description": "攀爬辅助，是否启用攀爬辅助功能"
     },
+    "functional_threshold": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.3,
+      "description": "该子部件内子系统生效所需的最小组装进度。1.0 表示必须完全组装。"
+    },
     "hit_boxes": {
       "type": "object",
       "additionalProperties": {
@@ -130,6 +137,7 @@
       "block_collision": "ground",
       "collision_height": 2.5,
       "climb_assist": true,
+      "functional_threshold": 0.6,
       "hit_boxes": {
         "mmCollision_Box_Chassis": {
           "name": "chassis",

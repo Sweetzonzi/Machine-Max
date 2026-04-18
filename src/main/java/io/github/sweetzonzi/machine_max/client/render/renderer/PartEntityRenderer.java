@@ -61,6 +61,9 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         ModelController modelController = entity.subPart.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         if (modelInstance == null) return;
+        float assemblingProgress = entity.subPart.part.getAssemblingProgress();
+        float functionalThreshold = entity.subPart.attr.getFunctionalThreshold();
+        boolean renderAllCubes = assemblingProgress >= functionalThreshold;
         var worldMatrix = entity.subPart.getRenderWorldPositionMatrix(partialTick);
         int color = Color.WHITE.getRGB();
         var pos = entity.subPart.transform.getTranslation();
@@ -82,7 +85,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             }
             int light = LightTexture.pack(blockLight, skyLight);
             var bones = entity.subPart.getBones();
-            if (entity.subPart.part.getAssemblingProgress() >= 1.0f) {
+            if (renderAllCubes) {
                 // 整体渲染
                 for (OBone bone : bones.values()) {
                     boolean ysmGlow = bone.getName().toLowerCase().startsWith("ysmglow");
@@ -104,7 +107,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             false
                     );
                 }
-            } else { // 未组装完成的部分渲染为线框
+            } else { // 未达到功能阈值时，未完成部分渲染为线框
                 int cubeCount = 0;
                 for (OBone bone : bones.values()) {
                     cubeCount += bone.getCubes().size();
@@ -116,7 +119,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                     poseStack.pushPose();
                     poseStack.mulPose(transform);
                     for (OCube cube : bone.getCubes()) {
-                        if (i / cubeCount >= entity.subPart.part.getAssemblingProgress()) {
+                        if (i / cubeCount >= assemblingProgress) {
                             cube.renderVertexes(
                                     poseStack,
                                     bufferSource.getBuffer(RenderType.lines()),
@@ -178,7 +181,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 poseStack.pushPose();
                 poseStack.mulPose(transform);
                 for (OCube cube : bone.getCubes()) {
-                    if (entity.subPart.part.getAssemblingProgress() >= 1.0f || i / cubeCount < entity.subPart.part.getAssemblingProgress()) {
+                    if (renderAllCubes || i / cubeCount < assemblingProgress) {
                         // 将 HSB 转换为 RGB
                         Color rgb = new Color(Color.HSBtoRGB((float) Math.random(), 1 - progress * progress, 1));
                         // 创建新的颜色对象，包含 alpha 值
