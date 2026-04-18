@@ -1052,6 +1052,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      */
     public boolean repair(float amount, float subSystemAmount, float connectorAmount) {
         if (!level.isClientSide) {
+            part.setRenderWireframe(true); // 尝试维修时重置为线框模式
             // 修理零件
             //TODO: 传递修复至载具
             float repairAmount = 0f;
@@ -1389,16 +1390,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
      */
     @Override
     public float getDurability() {
-        return getDurabilityRaw();
-    }
-
-    public float getDurabilityRaw() {
         return (part.type.shareDurability ? part.getSharedDurability() : super.getDurability());
     }
 
     @Override
     public void setDurability(float durability) {
-        this.syncedData.set(DATA_DURABILITY_ID, Math.clamp(durability, 0.0F, this.getMaxDurability()));
+        float durabilityCap = this.getMaxDurability() * Math.max(part.getAssemblingProgress(), 0.05f);
+        this.syncedData.set(DATA_DURABILITY_ID, Math.clamp(durability, 0.0F, durabilityCap));
     }
 
     /**

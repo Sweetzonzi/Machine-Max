@@ -42,6 +42,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
     public static final float SUBPART_REPAIR_PER_TICK = 1f;
     public static final float SUBSYSTEM_REPAIR_PER_TICK = 1f;
     public static final float CONNECTOR_REPAIR_PER_TICK = 1f;
+    public static final float VEHICLE_REPAIR_PER_TICK = 1f;
     private static final SoundEvent WELDING_START_SOUND = SoundEvent.createFixedRangeEvent(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.welding_torch.start"), 32f);
     private static final SoundEvent WELDING_LOOP_SOUND = SoundEvent.createFixedRangeEvent(
@@ -78,21 +79,19 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                         return;
                     Part part = subPart.part;
                     if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下组装部件并尝试维修
-                        var research = player.getData(MMAttachments.getBLUEPRINT());
                         float repairStep = 5;
                         boolean repaired = subPart.repair(
                                 repairStep * SUBPART_REPAIR_PER_TICK,
                                 repairStep * SUBSYSTEM_REPAIR_PER_TICK,
-                                repairStep * CONNECTOR_REPAIR_PER_TICK);
-                        // 若配方已解锁或持有蓝图，则尝试同时组装部件
-                        if (player.isCreative() || research.canAssemble(player, part)) {
-                            float assembleStep = 5;
-                            boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
-                            if (assembled && remainingUseDuration % 10 == 0)
-                                BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
-                            if (repaired && remainingUseDuration % 10 == 0)
-                                BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
-                        }
+                                repairStep * CONNECTOR_REPAIR_PER_TICK)
+                                || subPart.getPart().getVehicle().repair(repairStep * VEHICLE_REPAIR_PER_TICK);
+                        // 尝试同时组装部件
+                        float assembleStep = 5;
+                        boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
+                        if (assembled && remainingUseDuration % 10 == 0)
+                            BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                        if (repaired && remainingUseDuration % 10 == 0)
+                            BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
                     } else { // 潜行时拆解部件为原材料
                         if (part.getAssemblingProgress() > 0) {
                             part.disassemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);
@@ -185,7 +184,10 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
     }
 
     private boolean shouldPlayEffect(SubPart subPart) {
-        boolean shouldPlayEffect = subPart.getDurability() < subPart.getMaxDurability();
+        boolean shouldPlayEffect = subPart.getPart().getVehicle().getHp() < subPart.getPart().getVehicle().getMaxHp();
+        if (!shouldPlayEffect) {
+            shouldPlayEffect = subPart.getDurability() < subPart.getMaxDurability();
+        }
         if (!shouldPlayEffect)
             for (AbstractSubsystem subsystem : subPart.getSubsystems().values()) {
                 if (subsystem.getDurability() < subsystem.getMaxDurability()) {

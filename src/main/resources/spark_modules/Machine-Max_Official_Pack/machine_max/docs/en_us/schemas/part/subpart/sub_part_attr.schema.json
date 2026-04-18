@@ -56,13 +56,6 @@
       "default": false,
       "description": "Climbing assistance, whether to enable climbing assistance function"
     },
-    "functional_threshold": {
-      "type": "number",
-      "minimum": 0.0,
-      "maximum": 1.0,
-      "default": 0.3,
-      "description": "Minimum assembling progress required for subsystems in this sub-part to be active. 1.0 means fully assembled is required."
-    },
     "hit_boxes": {
       "type": "object",
       "additionalProperties": {
@@ -137,7 +130,6 @@
       "block_collision": "ground",
       "collision_height": 2.5,
       "climb_assist": true,
-      "functional_threshold": 0.6,
       "hit_boxes": {
         "mmCollision_Box_Chassis": {
           "name": "chassis",

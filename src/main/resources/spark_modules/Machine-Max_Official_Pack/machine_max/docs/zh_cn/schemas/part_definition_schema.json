@@ -34,6 +34,13 @@
       "default": 0.1,
       "description": "部件被摧毁后的载具伤害传导系数，部件被摧毁后受到伤害时按此比例传导给载具。通常设置较低以防止鞭尸"
     },
+    "functional_threshold": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.3,
+      "description": "部件功能阈值。当组装进度达到该值后，子系统可工作，且线框组装渲染可自动关闭。"
+    },
     "share_durability": {
       "type": "boolean",
       "default": true,
@@ -73,6 +80,7 @@
       "vehicle_durability_rate": 1.0,
       "vehicle_damage_rate": 1.0,
       "vehicle_damage_rate_destroyed": 0.1,
+      "functional_threshold": 0.6,
       "share_durability": true,
       "variants": {
         "models": "machine_max:ae86_chassis_all_terrain.geo",

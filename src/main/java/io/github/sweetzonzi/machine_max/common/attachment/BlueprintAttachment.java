@@ -386,15 +386,6 @@ public class BlueprintAttachment {
         player.setData(MMAttachments.getBLUEPRINT(), this);
     }
 
-    public boolean canAssemble(Player player, Part part) {
-        if (player.isCreative()) return true; // 创造模式直接返回true
-        var recipe = part.getRecipe();
-        for (RecipeHolder<FabricatingRecipe> holder : getAvailablePartRecipeFor(player, part.type.getRegistryKey())) {
-            if (holder.value().equals(recipe)) return true;
-        }
-        return false;
-    }
-
     /**
      * 统计玩家库存，获取所有可用于制造指定部件的配方，不包括已研发但未持有的配方，创造模式无视库存直接展示所有配方
      *

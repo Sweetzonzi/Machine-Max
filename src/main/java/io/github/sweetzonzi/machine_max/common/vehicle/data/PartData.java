@@ -26,6 +26,7 @@ public class PartData {
     public final ResourceLocation customRecipe;//部件的自定义配方
     public final float assemblingProgress;//部件的组装进度
     public final int materialAssemblingProgress;//部件的材料供给进度
+    public final boolean renderWireframe;//部件是否渲染线框
     public final Map<String, SubPartData> subParts;//尚存的零件数据
 
     public static final Codec<PartData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -36,6 +37,7 @@ public class PartData {
             ResourceLocation.CODEC.optionalFieldOf("custom_recipe", FabricatingRecipe.EMPTY).forGetter(PartData::getCustomRecipe),
             Codec.FLOAT.optionalFieldOf("assembling_progress", 1f).forGetter(PartData::getAssemblingProgress),
             Codec.INT.optionalFieldOf("material_assembling_progress", 99999).forGetter(PartData::getMaterialAssemblingProgress),
+            Codec.BOOL.optionalFieldOf("render_wireframe", true).forGetter(PartData::isRenderWireframe),
             SubPartData.MAP_CODEC.fieldOf("sub_parts").forGetter(PartData::getSubParts)
     ).apply(instance, PartData::new));
 
@@ -52,8 +54,9 @@ public class PartData {
             ResourceLocation customRecipe = buffer.readResourceLocation();
             float assemblingProgress = buffer.readFloat();
             int materialAssemblingProgress = buffer.readInt();
+            boolean renderWireframe = buffer.readBoolean();
             var subParts = SubPartData.MAP_STREAM_CODEC.decode(buffer);
-            return new PartData(registryKey, name, uuid, variant, customRecipe, assemblingProgress, materialAssemblingProgress, subParts);
+            return new PartData(registryKey, name, uuid, variant, customRecipe, assemblingProgress, materialAssemblingProgress, renderWireframe, subParts);
         }
 
         @Override
@@ -65,6 +68,7 @@ public class PartData {
             buffer.writeResourceLocation(value.customRecipe);
             buffer.writeFloat(value.assemblingProgress);
             buffer.writeInt(value.materialAssemblingProgress);
+            buffer.writeBoolean(value.renderWireframe);
             SubPartData.MAP_STREAM_CODEC.encode(buffer, value.subParts);
         }
     };
@@ -102,6 +106,7 @@ public class PartData {
             ResourceLocation customRecipe,
             float assemblingProgress,
             int materialAssemblingProgress,
+            boolean renderWireframe,
             Map<String, SubPartData> subParts) {
         this.registryKey = registryKey;
         this.name = name;
@@ -110,6 +115,7 @@ public class PartData {
         this.customRecipe = customRecipe;
         this.assemblingProgress = assemblingProgress;
         this.materialAssemblingProgress = materialAssemblingProgress;
+        this.renderWireframe = renderWireframe;
         this.subParts = subParts;
     }
 
@@ -126,6 +132,7 @@ public class PartData {
         this.customRecipe = part.customRecipe;
         this.assemblingProgress = part.assemblingProgress;
         this.materialAssemblingProgress = part.materialProgress;
+        this.renderWireframe = part.renderWireframe;
         this.subParts = new HashMap<>();
         for (Map.Entry<String, SubPart> entry : part.subParts.entrySet()) {
             subParts.put(entry.getKey(), new SubPartData(entry.getValue()));

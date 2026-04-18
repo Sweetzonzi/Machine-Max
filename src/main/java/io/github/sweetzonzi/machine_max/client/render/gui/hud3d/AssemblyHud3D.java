@@ -200,9 +200,6 @@ public class AssemblyHud3D implements IHud3DElement {
                                 decimalFormat.format(connector.getBasicIntegrity())));
                 }
             }
-            if (!research.canAssemble(ctx.player, subPart.part)) {
-                hintMessages.add(Component.translatable("hud.hint.machine_max.cannot_assemble"));
-            }
         }
         int hudHeight = HEADER_HEIGHT + PROJECTION_HEIGHT + materials.size() * MATERIAL_LINE_HEIGHT + PADDING;
         if (!materials.isEmpty()) hudHeight += TEXT_LINE_HEIGHT * 2;
@@ -319,7 +316,7 @@ public class AssemblyHud3D implements IHud3DElement {
                     10f,
                     subPart != null ? subPart.part.getAssemblingProgress() : 0f,
                     ROW_BG_ASSEMBLY,
-                    subPart != null ? subPart.attr.getFunctionalThreshold() : -1f,
+                    subPart != null ? subPart.part.type.getFunctionalThreshold() : -1f,
                     currentTime,
                     false
             );
@@ -341,19 +338,11 @@ public class AssemblyHud3D implements IHud3DElement {
             boolean crouching = ctx.mc.player.isCrouching();
             if (ctx.mc.player.getMainHandItem().getItem() instanceof WeldingTorchItem) {
                 var availableRecipes = research.getAvailablePartRecipeFor(ctx.player, subPart.part.type.getRegistryKey());
-                if (research.canAssemble(ctx.player, subPart.part)) {
-                    ctx.drawText(
-                            Component.translatable("hud.key.machine_max.assemble",
-                                    ctx.mc.options.keyUse.getKey().getDisplayName()),
-                            startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
-                    );
-                } else {
-                    ctx.drawText(
-                            Component.translatable("hud.key.machine_max.repair_without_assemble",
-                                    ctx.mc.options.keyUse.getKey().getDisplayName()),
-                            startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
-                    );
-                }
+                ctx.drawText(
+                        Component.translatable("hud.key.machine_max.assemble",
+                                ctx.mc.options.keyUse.getKey().getDisplayName()),
+                        startX + PADDING / 2f, startY, Easing.lerpColorFromTransparent(!crouching ? TEXT_HINT : TEXT_DIM, animatedHudWidth.get() / HUD_WIDTH)
+                );
                 startY += TEXT_LINE_HEIGHT + 2;
                 ctx.drawText(Component.translatable("hud.key.machine_max.disassemble",
                                 ctx.mc.options.keyShift.getKey().getDisplayName(),

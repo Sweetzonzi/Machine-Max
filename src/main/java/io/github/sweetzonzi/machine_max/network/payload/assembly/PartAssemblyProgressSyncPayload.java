@@ -17,7 +17,8 @@ public record PartAssemblyProgressSyncPayload(
         UUID vehicleUUID,
         UUID partUUID,
         float assemblingProgress,
-        int materialProgress
+        int materialProgress,
+        boolean renderWireframe
 ) implements CustomPacketPayload {
     public static final Type<PartAssemblyProgressSyncPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part_assembly_progress_sync_payload")
@@ -29,7 +30,8 @@ public record PartAssemblyProgressSyncPayload(
             UUID partUUID = buffer.readUUID();
             float assemblingProgress = buffer.readFloat();
             int materialProgress = buffer.readInt();
-            return new PartAssemblyProgressSyncPayload(vehicleUUID, partUUID, assemblingProgress, materialProgress);
+            boolean renderWireframe = buffer.readBoolean();
+            return new PartAssemblyProgressSyncPayload(vehicleUUID, partUUID, assemblingProgress, materialProgress, renderWireframe);
         }
 
         @Override
@@ -38,6 +40,7 @@ public record PartAssemblyProgressSyncPayload(
             buffer.writeUUID(value.partUUID);
             buffer.writeFloat(value.assemblingProgress);
             buffer.writeInt(value.materialProgress);
+            buffer.writeBoolean(value.renderWireframe);
         }
     };
 
@@ -54,6 +57,7 @@ public record PartAssemblyProgressSyncPayload(
                 context.enqueueWork(()->{
                    part.setAssemblingProgress(payload.assemblingProgress);
                    part.setMaterialProgress(payload.materialProgress);
+                   part.setRenderWireframe(payload.renderWireframe);
                 });
             } else MachineMax.LOGGER.error("{}中未找到部件{}，无法切换涂装。", vehicle, payload.partUUID);
         } else MachineMax.LOGGER.error("未找到载具{}，无法切换涂装。", payload.partUUID);

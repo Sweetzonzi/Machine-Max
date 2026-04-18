@@ -62,8 +62,8 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         ModelInstance modelInstance = modelController.getModel();
         if (modelInstance == null) return;
         float assemblingProgress = entity.subPart.part.getAssemblingProgress();
-        float functionalThreshold = entity.subPart.attr.getFunctionalThreshold();
-        boolean renderAllCubes = assemblingProgress >= functionalThreshold;
+        float functionalThreshold = entity.subPart.part.type.getFunctionalThreshold();
+        boolean useWireframe = entity.subPart.part.shouldRenderWireframe() && assemblingProgress < functionalThreshold;
         var worldMatrix = entity.subPart.getRenderWorldPositionMatrix(partialTick);
         int color = Color.WHITE.getRGB();
         var pos = entity.subPart.transform.getTranslation();
@@ -85,7 +85,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
             }
             int light = LightTexture.pack(blockLight, skyLight);
             var bones = entity.subPart.getBones();
-            if (renderAllCubes) {
+            if (!useWireframe) {
                 // 整体渲染
                 for (OBone bone : bones.values()) {
                     boolean ysmGlow = bone.getName().toLowerCase().startsWith("ysmglow");
@@ -107,7 +107,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             false
                     );
                 }
-            } else { // 未达到功能阈值时，未完成部分渲染为线框
+            } else { // 线框模式：按组装进度渲染，未完成部分显示线框
                 int cubeCount = 0;
                 for (OBone bone : bones.values()) {
                     cubeCount += bone.getCubes().size();
@@ -181,7 +181,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 poseStack.pushPose();
                 poseStack.mulPose(transform);
                 for (OCube cube : bone.getCubes()) {
-                    if (renderAllCubes || i / cubeCount < assemblingProgress) {
+                    if (!useWireframe || i / cubeCount < assemblingProgress) {
                         // 将 HSB 转换为 RGB
                         Color rgb = new Color(Color.HSBtoRGB((float) Math.random(), 1 - progress * progress, 1));
                         // 创建新的颜色对象，包含 alpha 值

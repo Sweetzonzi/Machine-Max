@@ -63,6 +63,7 @@ public class Part {
     public ResourceLocation customRecipe = FabricatingRecipe.EMPTY;
     public volatile float assemblingProgress = 1f; //组装进度(0~1)，控制最大耐久和质量
     public int materialProgress = Integer.MAX_VALUE; //材料供给进度，控制最大组装进度，上限取决于配方
+    public boolean renderWireframe = true; // 是否渲染线框（用于维修可视化状态机）
     public final SubPart rootSubPart;
     public float totalMass;
     public boolean destroyed = false;
@@ -118,6 +119,7 @@ public class Part {
         this.variant = type.getVariants().get(variantName);
         this.customRecipe = data.customRecipe == FabricatingRecipe.EMPTY ? FabricatingRecipe.EMPTY : data.customRecipe;
         this.uuid = UUID.fromString(data.uuid);
+        this.renderWireframe = readAdditionalData ? data.renderWireframe : true;
         this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : 0);
         this.setAssemblingProgress(readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f);
         this.rootSubPart = createSubParts(type.getVariants().get(variantName).getSubParts());//重建子部件并指定根子部件
@@ -171,6 +173,9 @@ public class Part {
     }
 
     public void onTick() {
+        if (shouldRenderWireframe() && getAssemblingProgress() > type.getFunctionalThreshold()) {
+            setRenderWireframe(false);
+        }
         boolean shouldDestroy = true;
         for (SubPart subPart : subParts.values()) {
             if (subPart.getDestroyTime() > 0) shouldDestroy = false;
@@ -438,8 +443,8 @@ public class Part {
                 float radius = wheelParam.y / 2;
                 float width = wheelParam.x;
                 float Ix = 0.5f * mass * radius * radius;
-                float Iyz = (1.0f / 12.0f) * mass * (3 * radius* radius + width * width);
-                subPart.body.setInverseInertiaLocal(new Vector3f(1.0f/Ix, 1.0f/Iyz, 1.0f/Iyz));
+                float Iyz = (1.0f / 12.0f) * mass * (3 * radius * radius + width * width);
+                subPart.body.setInverseInertiaLocal(new Vector3f(1.0f / Ix, 1.0f / Iyz, 1.0f / Iyz));
             }
         }
         autoAttachInternalConnectors();
@@ -695,7 +700,7 @@ public class Part {
         for (SubPart subPart : subParts.values()) {
             float maxDurability = subPart.getMaxDurability();
             if (maxDurability <= 0f) continue;
-            float ratio = Math.clamp(subPart.getDurabilityRaw() / maxDurability, 0f, 1f);
+            float ratio = Math.clamp(subPart.getDurability() / maxDurability, 0f, 1f);
             durabilityRatio = Math.max(durabilityRatio, ratio);
         }
 
@@ -734,6 +739,7 @@ public class Part {
     public void setAssemblingProgress(float progress) {
         progress = Math.clamp(progress, 0f, 1f);
         if (progress != this.assemblingProgress) {
+            float oldProgress = this.assemblingProgress;
             this.assemblingProgress = progress;
             float finalProgress = progress;
             SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
@@ -748,6 +754,23 @@ public class Part {
                 updateMass();
                 return null;
             });
+            float functionalThreshold = type.getFunctionalThreshold();
+            if (!level.isClientSide() && renderWireframe
+                    && oldProgress < functionalThreshold
+                    && progress >= functionalThreshold) {
+                renderWireframe = false;
+            }
+            syncAssemblyProgressToClient();
+        }
+    }
+
+    public boolean shouldRenderWireframe() {
+        return renderWireframe;
+    }
+
+    public void setRenderWireframe(boolean renderWireframe) {
+        if (this.renderWireframe != renderWireframe) {
+            this.renderWireframe = renderWireframe;
             syncAssemblyProgressToClient();
         }
     }
@@ -758,7 +781,8 @@ public class Part {
                     vehicle.uuid,
                     uuid,
                     assemblingProgress,
-                    materialProgress
+                    materialProgress,
+                    renderWireframe
             ));
         }
     }

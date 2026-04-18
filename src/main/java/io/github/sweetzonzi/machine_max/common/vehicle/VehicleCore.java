@@ -212,6 +212,12 @@ public class VehicleCore implements SyncedDataHolder {
         this.synchedData.set(DATA_HP_ID, Math.clamp(hp, 0f, this.maxHp));
     }
 
+    public boolean repair(float amount) {
+        float oldHp = getHp();
+        setHp(oldHp + amount);
+        return oldHp != getHp();
+    }
+
     public boolean isDestroyed() {
         return this.synchedData.get(DATA_DESTROYED_ID);
     }
@@ -221,7 +227,7 @@ public class VehicleCore implements SyncedDataHolder {
         for (Part part : partMap.values()) {
             result += Math.max(0f, part.getVehicleDurabilityContribution());
         }
-        if (result <= 0 && !partMap.isEmpty()){ // 回退取第一个部件的最大耐久度
+        if (result <= 0 && !partMap.isEmpty()) { // 回退取第一个部件的最大耐久度
             result += partMap.values().stream().toList().getFirst().getSharedMaxDurability();
         }
         return Math.max(0f, result);
