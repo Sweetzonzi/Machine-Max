@@ -144,6 +144,8 @@
   "machine_max.configuration.pose_preference.tooltip": "Whether to automatically rotate camera view to follow vehicle orientation. Default: FOLLOW_VEHICLE",
   "machine_max.configuration.render_destroy_blackening": "Part Destruction Visual Effect",
   "machine_max.configuration.render_destroy_blackening.tooltip": "Whether to enable visual effect when parts are destroyed. Default: true",
+  "machine_max.configuration.render_force_translucent_parts": "Part Translucent Rendering",
+  "machine_max.configuration.render_force_translucent_parts.tooltip": "Whether to replace Cutout part rendering with translucent entity rendering. Default: false",
   "machine_max.configuration.render_hit_whitening": "Part Hit Visual Effect",
   "machine_max.configuration.render_hit_whitening.tooltip": "Whether to enable visual effect when parts are hit. Default: true",
   "machine_max.configuration.section.machine.max.client.toml": "Client Configuration",

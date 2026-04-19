@@ -190,6 +190,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.configuration.render_hit_whitening.tooltip", "Whether to enable visual effect when parts are hit. Default: true");
         this.add("machine_max.configuration.render_destroy_blackening", "Part Destruction Visual Effect");
         this.add("machine_max.configuration.render_destroy_blackening.tooltip", "Whether to enable visual effect when parts are destroyed. Default: true");
+        this.add("machine_max.configuration.render_force_translucent_parts", "Part Translucent Rendering");
+        this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "Whether to replace Cutout part rendering with translucent entity rendering. Default: false");
         // Ship Configuration
         this.add("machine_max.configuration.ship", "Ship");
         this.add("machine_max.configuration.ship.button", "Ship");

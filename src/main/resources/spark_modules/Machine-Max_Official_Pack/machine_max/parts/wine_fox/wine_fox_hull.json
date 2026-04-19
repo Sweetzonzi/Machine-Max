@@ -219,8 +219,8 @@
             "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
             "definition": "machine_max:wine_fox_transmission", //子系统型号, 需要与子系统类型相匹配
             "power_outputs": { //动力输出目标及减速比
-              "subsystem.machine_max.left_front_wheel_driver": 1,
-              "subsystem.machine_max.right_front_wheel_driver": 1
+              "subsystem.machine_max.left_back_wheel_driver": 1,
+              "subsystem.machine_max.right_back_wheel_driver": 1
             }
           },
           "subsystem.machine_max.glove_box": {

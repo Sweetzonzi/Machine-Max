@@ -214,6 +214,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.configuration.render_hit_whitening.tooltip", "是否启用部件在受击时的视觉效果。默认值：true");
         this.add("machine_max.configuration.render_destroy_blackening", "部件损毁视觉效果");
         this.add("machine_max.configuration.render_destroy_blackening.tooltip", "是否启用部件在损毁状态下的视觉效果。默认值：true");
+        this.add("machine_max.configuration.render_force_translucent_parts", "部件半透明渲染");
+        this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "是否将使用 Cutout 渲染的部件改为半透明实体渲染。默认值：false");
         // 舰艇配置
         this.add("machine_max.configuration.ship", "舰艇");
         this.add("machine_max.configuration.ship.button", "舰艇");

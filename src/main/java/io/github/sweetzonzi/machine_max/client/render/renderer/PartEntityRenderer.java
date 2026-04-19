@@ -104,7 +104,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             ysmGlow && ! entity.subPart.isDestroyed()
                                     ? bufferSource.getBuffer(RenderType.eyes(getTextureLocation(entity)))
                                     : entity.subPart.getDestroyTime() >= 20
-                                    ? bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity)))
+                                    ? bufferSource.getBuffer(getCutoutOrTranslucentType(getTextureLocation(entity)))
                                     : bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
                             ysmGlow && ! entity.subPart.isDestroyed()
                                     ? Brightness.FULL_BRIGHT.pack()
@@ -139,7 +139,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                         } else {
                             cube.renderVertexes(
                                     poseStack,
-                                    bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity))),
+                                    bufferSource.getBuffer(getCutoutOrTranslucentType(getTextureLocation(entity))),
                                     light,
                                     overlay,
                                     color,
@@ -221,4 +221,9 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         poseStack.popPose();//结束渲染
     }
 
+    private static RenderType getCutoutOrTranslucentType(ResourceLocation texture) {
+        return MMClientConfig.getRenderForceTranslucentParts()
+                ? RenderType.entityTranslucent(texture)
+                : RenderType.entityCutout(texture);
+    }
 }
