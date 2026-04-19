@@ -210,6 +210,10 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.configuration.pose_preference.tooltip", "自动旋转摄像机视角以跟随载具方向。默认值：FOLLOW_VEHICLE");
         this.add("machine_max.configuration.speed_turning_limit", "高速转向限制");
         this.add("machine_max.configuration.speed_turning_limit.tooltip", "高速行驶时限制转向时的侧向加速度，防止失控或侧翻。默认值：true");
+        this.add("machine_max.configuration.render_hit_whitening", "部件受击视觉效果");
+        this.add("machine_max.configuration.render_hit_whitening.tooltip", "是否启用部件在受击时的视觉效果。默认值：true");
+        this.add("machine_max.configuration.render_destroy_blackening", "部件损毁视觉效果");
+        this.add("machine_max.configuration.render_destroy_blackening.tooltip", "是否启用部件在损毁状态下的视觉效果。默认值：true");
         // 舰艇配置
         this.add("machine_max.configuration.ship", "舰艇");
         this.add("machine_max.configuration.ship.button", "舰艇");

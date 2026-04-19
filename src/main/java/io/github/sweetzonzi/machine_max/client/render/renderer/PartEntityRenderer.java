@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.RenderTypeUtil;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
+import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import net.minecraft.client.Minecraft;
@@ -77,11 +78,18 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         poseStack.mulPose(worldMatrix);
         int overlay = OverlayTexture.NO_OVERLAY;
         // 受击闪烁效果
-        if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);
+        if (MMClientConfig.getRenderHitWhitening() && entity.subPart.hurtTime > 0) {
+            overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);
+        }
         // 常规渲染
         if (entity.subPart.tickCount >= 15) {
             if (entity.subPart.isDestroyed()) {
-                color = new Color(64, 64, 64, entity.subPart.getDestroyTime() < 20 ? 255 * entity.subPart.getDestroyTime() / 20 : 255).getRGB();
+                int alpha = entity.subPart.getDestroyTime() < 20 ? 255 * entity.subPart.getDestroyTime() / 20 : 255;
+                if (MMClientConfig.getRenderDestroyBlackening()) {
+                    color = new Color(64, 64, 64, alpha).getRGB();
+                } else {
+                    color = new Color(255, 255, 255, alpha).getRGB();
+                }
             }
             int light = LightTexture.pack(blockLight, skyLight);
             var bones = entity.subPart.getBones();

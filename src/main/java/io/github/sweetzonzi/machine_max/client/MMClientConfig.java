@@ -24,6 +24,8 @@ public class MMClientConfig {
     private static final ModConfigSpec.EnumValue<ControlPreference> GROUND_DRIFT_ASSIST;
     private static final ModConfigSpec.EnumValue<ControlPreference> GROUND_POSE_PREFERENCE;
     private static final ModConfigSpec.BooleanValue GROUND_SPEED_TURNING_LIMIT;
+    private static final ModConfigSpec.BooleanValue RENDER_HIT_WHITENING;
+    private static final ModConfigSpec.BooleanValue RENDER_DESTROY_BLACKENING;
     public static final ModConfigSpec.DoubleValue SHIP_FULL_STEERING_TIME;
     public static final ModConfigSpec.DoubleValue PLANE_FULL_POWER_TIME;
     public static final ModConfigSpec.DoubleValue PLANE_FULL_PITCH_TIME;
@@ -62,6 +64,14 @@ public class MMClientConfig {
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+
+        RENDER_HIT_WHITENING = builder
+                .comment("Whether to enable part hit visual effect")
+                .define("render_hit_whitening", true);
+
+        RENDER_DESTROY_BLACKENING = builder
+                .comment("Whether to enable part destruction visual effect")
+                .define("render_destroy_blackening", true);
 
         builder.push("ground_vehicle");
 
@@ -232,5 +242,23 @@ public class MMClientConfig {
      */
     public static boolean getGroundSpeedTurningLimit() {
         return GROUND_SPEED_TURNING_LIMIT.get();
+    }
+
+    /**
+     * 获取是否启用部件受击视觉效果
+     *
+     * @return true 表示启用部件受击视觉效果
+     */
+    public static boolean getRenderHitWhitening() {
+        return RENDER_HIT_WHITENING.get();
+    }
+
+    /**
+     * 获取是否启用部件损毁视觉效果
+     *
+     * @return true 表示启用部件损毁视觉效果
+     */
+    public static boolean getRenderDestroyBlackening() {
+        return RENDER_DESTROY_BLACKENING.get();
     }
 }

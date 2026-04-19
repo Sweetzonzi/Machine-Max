@@ -186,6 +186,10 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.configuration.pose_preference.tooltip", "Whether to automatically rotate camera view to follow vehicle orientation. Default: FOLLOW_VEHICLE");
         this.add("machine_max.configuration.speed_turning_limit", "Speed Turning Limit");
         this.add("machine_max.configuration.speed_turning_limit.tooltip", "Whether to limit lateral acceleration during high-speed turning to prevent loss of control or rollover. Default: true");
+        this.add("machine_max.configuration.render_hit_whitening", "Part Hit Visual Effect");
+        this.add("machine_max.configuration.render_hit_whitening.tooltip", "Whether to enable visual effect when parts are hit. Default: true");
+        this.add("machine_max.configuration.render_destroy_blackening", "Part Destruction Visual Effect");
+        this.add("machine_max.configuration.render_destroy_blackening.tooltip", "Whether to enable visual effect when parts are destroyed. Default: true");
         // Ship Configuration
         this.add("machine_max.configuration.ship", "Ship");
         this.add("machine_max.configuration.ship.button", "Ship");
