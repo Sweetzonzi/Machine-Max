@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
@@ -10,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_at
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.control.PIDController;
+import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import lombok.Getter;
 
 @Getter
@@ -27,7 +29,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
         this.attr = attr;
         this.rollController = new PIDController(0.1f, 0.0f, 0.1f, 1.0 / getPhysicsLevel().getTps(), -2, 2);
         this.omegaController = new PIDController(500.0f, 5.0f, 50.0f, 1.0 / getPhysicsLevel().getTps(), -2000, 2000);
-        this.lowSpeedRollController = new PIDController(5.0f, 0f, 0.1f, 1.0 / getPhysicsLevel().getTps(), -2000, 2000);
+        this.lowSpeedRollController = new PIDController(15.0f, 0.2f, 3.0f, 1.0 / getPhysicsLevel().getTps(), -2000, 2000);
     }
 
     @Override
@@ -81,7 +83,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
                 // 计算倾覆力矩
                 rollControl += (float) (force * massCenterHeight * Math.cos(Math.toRadians(targetRoll)));
             }
-            getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, rollControl), getOwner().getSubPart().body));
+            getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, rollControl), getSubPart().body));
         } else if ( // 无人控制车辆，且已停稳，姿态合适时应用修正力
                 Math.abs(speed) < 0.5
                         && Math.abs(roll) < 10 + 1.5 * getAttr().getStaticAttribute().getParkingAngle()) {
@@ -94,12 +96,12 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
             if (wheelCount > 1) { // 未连接轮胎的部件不尝试应用修正力
                 float targetRoll = getAttr().getStaticAttribute().getParkingAngle() * (1 - Math.abs(speed));
                 // 倒立摆使用单级PID更稳定
-                float rollControl = (float) lowSpeedRollController.step(targetRoll, roll, omegaRoll);
+                float rollControl = (float) lowSpeedRollController.step(targetRoll, roll);
                 // 应用修正力倍率
                 rollControl *= correctionForceMultiplier;
                 // 额外补偿理论平衡所需重力矩
-                rollControl -= (float) (1.0 * getSubPart().body.getMass() * gravity * massCenterHeight * Math.sin(Math.toRadians(roll)));
-                getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, rollControl), getOwner().getSubPart().body));
+                rollControl -= (float) (0.5 * getSubPart().body.getMass() * gravity * massCenterHeight * Math.sin(Math.toRadians(roll)));
+                getSubPart().body.applyTorque(MMMath.localVectorToWorldVector(new Vector3f(0, 0, rollControl), getSubPart().body));
             }
         }
     }
