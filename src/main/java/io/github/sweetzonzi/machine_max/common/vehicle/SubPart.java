@@ -100,7 +100,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil.calculateSlipScale;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber
 @Getter
 public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPart>, ISubsystemHost, ISignalReceiver {
     //模型、动画与渲染
@@ -1489,3 +1489,4 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     }
 
 }
+

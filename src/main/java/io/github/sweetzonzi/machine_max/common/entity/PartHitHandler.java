@@ -19,7 +19,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 import java.util.List;
 
-@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class PartHitHandler {
     @SubscribeEvent
     private static void onProjectileHit(ProjectileImpactEvent event) {

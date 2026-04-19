@@ -21,7 +21,7 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import static io.github.sweetzonzi.machine_max.common.registry.MMMenus.*;
 
 @OnlyIn(Dist.CLIENT)
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class MMGuis {
     @SubscribeEvent
     public static void registerHud(RegisterGuiLayersEvent event){
@@ -44,3 +44,4 @@ public class MMGuis {
         event.register(ITEM_STORAGE_SUBSYSTEM_MENU.get(), ItemStorageSubsystemScreen::new);
     }
 }
+

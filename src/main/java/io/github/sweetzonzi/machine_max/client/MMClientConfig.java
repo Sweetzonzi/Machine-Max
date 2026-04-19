@@ -12,7 +12,7 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.network.PacketDistributor;
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class MMClientConfig {
 
     public static final ModConfigSpec CLIENT_SPEC;
@@ -276,3 +276,4 @@ public class MMClientConfig {
         return RENDER_FORCE_TRANSLUCENT_PARTS.get();
     }
 }
+

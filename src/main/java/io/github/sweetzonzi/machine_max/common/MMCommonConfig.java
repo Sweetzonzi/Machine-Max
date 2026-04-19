@@ -8,7 +8,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class MMCommonConfig {
     public static final ModConfigSpec COMMON_SPEC;
     private static final ModConfigSpec.BooleanValue AUTO_OVERRIDE_OFFICIAL_PACK;

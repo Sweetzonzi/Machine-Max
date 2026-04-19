@@ -15,7 +15,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
 import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
-@EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = MOD_ID)
 public class ItemInteractHandler {
     /**
      * 命名牌与载具互动可修改载具名称

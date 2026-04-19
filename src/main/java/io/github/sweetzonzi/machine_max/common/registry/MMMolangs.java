@@ -7,7 +7,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.molang.VehicleBinding;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 
-@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class MMMolangs {
     @SubscribeEvent
     private static void registerMolangBinding(MolangRegisterEvent event) {

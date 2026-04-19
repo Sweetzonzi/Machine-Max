@@ -73,7 +73,7 @@ public class MMDynamicRes {
         errorMessages.clear();
     }
 
-    @EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
+ @EventBusSubscriber
     public static class DataPackReloader extends SimplePreparableReloadListener<Set<FabricatingRecipe>> {
         private static ReloadableServerResources serverResources = null;
         @Override
@@ -157,3 +157,4 @@ public class MMDynamicRes {
         }
     }
 }
+
