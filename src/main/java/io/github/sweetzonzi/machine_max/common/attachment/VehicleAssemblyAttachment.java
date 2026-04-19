@@ -360,7 +360,7 @@ public class VehicleAssemblyAttachment {
             var locators = model.getLocators();
             OLocator partConnectorLocator = locators.get(getConnector().locatorName);
             if (partConnectorLocator != null) {
-                Transform transform = getVariant().getSubParts().get(getConnectorName().getFirst()).getLocatorTransforms().get(getConnector().locatorName);
+                Transform transform = getVariant().getSubParts().get(getConnectorName().getFirst()).getLocatorTransforms().getOrDefault(getConnector().locatorName, new Transform());
                 this.offset = SparkMathKt.toVector3f(transform.getTranslation());
                 this.quaternion = SparkMathKt.toQuaternionf(transform.getRotation());
             } else {

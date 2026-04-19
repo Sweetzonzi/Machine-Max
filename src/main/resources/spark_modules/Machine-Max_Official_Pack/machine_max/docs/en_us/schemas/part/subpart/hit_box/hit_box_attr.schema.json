@@ -36,6 +36,120 @@
       "default": 1.0,
       "description": "Armor thickness, unit mm, reduces damage and controls energy distribution during collisions."
     },
+    "overwrite": {
+      "type": "object",
+      "description": "Hit box material override. Any provided fields override the referenced material fields.",
+      "properties": {
+        "friction": {
+          "$ref": "../../../base/vector_3d.schema.json"
+        },
+        "slip_adaptation": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "slip_curve": {
+          "type": "object",
+          "description": "Slip curve override. Supports partial override, unspecified fields inherit from material.",
+          "properties": {
+            "longitudinal": {
+              "type": "object",
+              "properties": {
+                "peak_slip_ratio": {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                "base_scale": {
+                  "type": "number"
+                },
+                "peak_scale": {
+                  "type": "number"
+                },
+                "kinetic_scale": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            },
+            "lateral": {
+              "type": "object",
+              "properties": {
+                "peak_angle_deg": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "Slip-angle peak in degrees."
+                },
+                "kinetic_angle_deg": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "Kinetic-region slip angle endpoint in degrees."
+                },
+                "base_scale": {
+                  "type": "number"
+                },
+                "peak_scale": {
+                  "type": "number"
+                },
+                "kinetic_scale": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "rolling_friction": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "spinning_friction": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "restitution": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "block_damage_factor": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "rha": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "angle_effect": {
+          "type": "boolean"
+        },
+        "impact_modifiers": {
+          "$ref": "modifier/damage_modifier.schema.json"
+        },
+        "piercing_modifiers": {
+          "$ref": "modifier/damage_modifier.schema.json"
+        },
+        "damage_modifiers": {
+          "$ref": "modifier/damage_modifier.schema.json"
+        },
+        "un_penetrate_damage_factor": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "sounds": {
+          "type": "object",
+          "properties": {
+            "hit_un_pen": {
+              "$ref": "../../../base/sound_event.schema.json"
+            },
+            "hit_pen": {
+              "$ref": "../../../base/sound_event.schema.json"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "impact_modifiers": {
       "$ref": "modifier/damage_modifier.schema.json",
       "description": "Impact modifiers, convert received damage into impact values applied to connection points according to certain rules. Default is empty list, apply as much impact as the damage caused to connection points."
@@ -118,6 +232,13 @@
       "type": "box",
       "material": "machine_max:heavy_armor",
       "thickness": 10.0,
+      "overwrite": {
+        "slip_curve": {
+          "lateral": {
+            "peak_angle_deg": 9.0
+          }
+        }
+      },
       "angle_effect": true,
       "damage_modifiers": [
         {

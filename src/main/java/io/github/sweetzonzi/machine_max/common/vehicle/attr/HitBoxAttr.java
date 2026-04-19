@@ -86,6 +86,7 @@ public class HitBoxAttr {
     /**
      * @param friction                摩擦系数
      * @param slipAdaptation          滑移适应系数
+     * @param slipCurve              滑移曲线参数
      * @param rollingFriction         滚动摩擦系数
      * @param spinningFriction        旋转摩擦系数
      * @param restitution             弹性系数
@@ -101,6 +102,7 @@ public class HitBoxAttr {
     public record OverwriteAttr(
             Optional<Vec3> friction,
             Optional<Float> slipAdaptation,
+            Optional<SlipCurveOverwriteAttr> slipCurve,
             Optional<Float> rollingFriction,
             Optional<Float> spinningFriction,
             Optional<Float> restitution,
@@ -116,6 +118,7 @@ public class HitBoxAttr {
         public static final Codec<OverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Vec3.CODEC.optionalFieldOf("friction").forGetter(OverwriteAttr::friction),
                 Codec.FLOAT.optionalFieldOf("slip_adaptation").forGetter(OverwriteAttr::slipAdaptation),
+                SlipCurveOverwriteAttr.CODEC.optionalFieldOf("slip_curve").forGetter(OverwriteAttr::slipCurve),
                 Codec.FLOAT.optionalFieldOf("rolling_friction").forGetter(OverwriteAttr::rollingFriction),
                 Codec.FLOAT.optionalFieldOf("spinning_friction").forGetter(OverwriteAttr::spinningFriction),
                 Codec.FLOAT.optionalFieldOf("restitution").forGetter(OverwriteAttr::restitution),
@@ -130,6 +133,46 @@ public class HitBoxAttr {
         ).apply(instance, OverwriteAttr::new));
     }
 
+    public record SlipCurveOverwriteAttr(
+            Optional<LongitudinalSlipCurveOverwriteAttr> longitudinal,
+            Optional<LateralSlipCurveOverwriteAttr> lateral
+    ) {
+        public static final Codec<SlipCurveOverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                LongitudinalSlipCurveOverwriteAttr.CODEC.optionalFieldOf("longitudinal").forGetter(SlipCurveOverwriteAttr::longitudinal),
+                LateralSlipCurveOverwriteAttr.CODEC.optionalFieldOf("lateral").forGetter(SlipCurveOverwriteAttr::lateral)
+        ).apply(instance, SlipCurveOverwriteAttr::new));
+    }
+
+    public record LongitudinalSlipCurveOverwriteAttr(
+            Optional<Float> peakSlipRatio,
+            Optional<Float> baseScale,
+            Optional<Float> peakScale,
+            Optional<Float> kineticScale
+    ) {
+        public static final Codec<LongitudinalSlipCurveOverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.FLOAT.optionalFieldOf("peak_slip_ratio").forGetter(LongitudinalSlipCurveOverwriteAttr::peakSlipRatio),
+                Codec.FLOAT.optionalFieldOf("base_scale").forGetter(LongitudinalSlipCurveOverwriteAttr::baseScale),
+                Codec.FLOAT.optionalFieldOf("peak_scale").forGetter(LongitudinalSlipCurveOverwriteAttr::peakScale),
+                Codec.FLOAT.optionalFieldOf("kinetic_scale").forGetter(LongitudinalSlipCurveOverwriteAttr::kineticScale)
+        ).apply(instance, LongitudinalSlipCurveOverwriteAttr::new));
+    }
+
+    public record LateralSlipCurveOverwriteAttr(
+            Optional<Float> peakAngleDeg,
+            Optional<Float> kineticAngleDeg,
+            Optional<Float> baseScale,
+            Optional<Float> peakScale,
+            Optional<Float> kineticScale
+    ) {
+        public static final Codec<LateralSlipCurveOverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.FLOAT.optionalFieldOf("peak_angle_deg").forGetter(LateralSlipCurveOverwriteAttr::peakAngleDeg),
+                Codec.FLOAT.optionalFieldOf("kinetic_angle_deg").forGetter(LateralSlipCurveOverwriteAttr::kineticAngleDeg),
+                Codec.FLOAT.optionalFieldOf("base_scale").forGetter(LateralSlipCurveOverwriteAttr::baseScale),
+                Codec.FLOAT.optionalFieldOf("peak_scale").forGetter(LateralSlipCurveOverwriteAttr::peakScale),
+                Codec.FLOAT.optionalFieldOf("kinetic_scale").forGetter(LateralSlipCurveOverwriteAttr::kineticScale)
+        ).apply(instance, LateralSlipCurveOverwriteAttr::new));
+    }
+
     /**
      * 获取有效的材质属性，合并基础材质和覆写属性
      *
@@ -140,9 +183,11 @@ public class HitBoxAttr {
         if (overwrite == null) {
             return baseMaterial;
         }
+        MaterialAttr.SlipCurveAttr effectiveSlipCurve = mergeSlipCurve(baseMaterial.slipCurve(), overwrite.slipCurve().orElse(null));
         return new MaterialAttr(
                 overwrite.friction().isPresent() ? overwrite.friction().get() : baseMaterial.friction(),
                 overwrite.slipAdaptation().isPresent() ? overwrite.slipAdaptation().get() : baseMaterial.slipAdaptation(),
+                effectiveSlipCurve,
                 overwrite.rollingFriction().isPresent() ? overwrite.rollingFriction().get() : baseMaterial.rollingFriction(),
                 overwrite.spinningFriction().isPresent() ? overwrite.spinningFriction().get() : baseMaterial.spinningFriction(),
                 overwrite.restitution().isPresent() ? overwrite.restitution().get() : baseMaterial.restitution(),
@@ -155,6 +200,38 @@ public class HitBoxAttr {
                 overwrite.unPenetrateDamageFactor().isPresent() ? overwrite.unPenetrateDamageFactor().get() : baseMaterial.unPenetrateDamageFactor(),
                 overwrite.sounds().isPresent() ? overwrite.sounds().get() : baseMaterial.sounds()
         );
+    }
+
+    private static MaterialAttr.SlipCurveAttr mergeSlipCurve(
+            MaterialAttr.SlipCurveAttr base,
+            @Nullable SlipCurveOverwriteAttr overwrite
+    ) {
+        if (overwrite == null) {
+            return base;
+        }
+        MaterialAttr.LongitudinalSlipCurveAttr baseLongitudinal = base.longitudinal();
+        MaterialAttr.LateralSlipCurveAttr baseLateral = base.lateral();
+
+        MaterialAttr.LongitudinalSlipCurveAttr longitudinal = overwrite.longitudinal()
+                .map(o -> new MaterialAttr.LongitudinalSlipCurveAttr(
+                        o.peakSlipRatio().orElse(baseLongitudinal.peakSlipRatio()),
+                        o.baseScale().orElse(baseLongitudinal.baseScale()),
+                        o.peakScale().orElse(baseLongitudinal.peakScale()),
+                        o.kineticScale().orElse(baseLongitudinal.kineticScale())
+                ))
+                .orElse(baseLongitudinal);
+
+        MaterialAttr.LateralSlipCurveAttr lateral = overwrite.lateral()
+                .map(o -> new MaterialAttr.LateralSlipCurveAttr(
+                        o.peakAngleDeg().orElse(baseLateral.peakAngleDeg()),
+                        o.kineticAngleDeg().orElse(baseLateral.kineticAngleDeg()),
+                        o.baseScale().orElse(baseLateral.baseScale()),
+                        o.peakScale().orElse(baseLateral.peakScale()),
+                        o.kineticScale().orElse(baseLateral.kineticScale())
+                ))
+                .orElse(baseLateral);
+
+        return new MaterialAttr.SlipCurveAttr(longitudinal, lateral);
     }
 
     public static MaterialAttr getMaterial(ResourceLocation materialId) {

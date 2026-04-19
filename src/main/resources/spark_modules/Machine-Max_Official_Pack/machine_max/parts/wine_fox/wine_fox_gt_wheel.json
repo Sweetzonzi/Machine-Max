@@ -22,7 +22,7 @@
           "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
             "LeftGtWheelCollision": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
               "type": "wheel",//碰撞形状类型, 支持box、sphere、cylinder、wheel
-              "material": "machine_max:racing_tire"
+              "material": "machine_max:drifting_tire"
             }
           },
           "connectors": {//子部件用于与其他零件连接的连接点列表
@@ -61,7 +61,7 @@
           "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
             "RightGtWheelCollision": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
               "type": "wheel",//碰撞形状类型, 支持box、sphere、cylinder、wheel
-              "material": "machine_max:racing_tire"
+              "material": "machine_max:drifting_tire"
             }
           },
           "connectors": {//子部件用于与其他零件连接的连接点列表

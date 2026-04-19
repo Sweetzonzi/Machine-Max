@@ -82,6 +82,18 @@
             "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_light')",
             "material": "machine_max:glass",
             "thickness": 1
+          },
+          "ysmGlowLeftFogLight": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.left_front_fog_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_front_fog_light')",
+            "material": "machine_max:glass"
+          },
+          "ysmGlowRightFogLight": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.right_front_fog_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_front_fog_light')",
+            "material": "machine_max:glass"
           }
         },
         "interact_boxes": { //交互判定区列表
@@ -266,6 +278,14 @@
           "subsystem.machine_max.right_back_light": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
             "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.left_front_fog_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.right_front_fog_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
           }
         },
         "connectors": {
@@ -292,6 +312,14 @@
           "connector.machine_max.front_bumper_right": {
             "locator": "hull_front_bumper_right",
             "definition": "machine_max:wine_fox_front_bumper_right"
+          },
+          "connector.machine_max.front_light_left": {
+            "locator": "hull_front_light_left",
+            "definition": "machine_max:wine_fox_front_light_left"
+          },
+          "connector.machine_max.front_light_right": {
+            "locator": "hull_front_light_right",
+            "definition": "machine_max:wine_fox_front_light_right"
           },
           "connector.machine_max.back_bumper_left": {
             "locator": "hull_back_bumper_left",

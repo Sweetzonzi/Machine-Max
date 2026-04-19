@@ -22,6 +22,75 @@
       "default": 0.5,
       "description": "滑移适应系数，用于调整在滑动时的摩擦行为。"
     },
+    "slip_curve": {
+      "type": "object",
+      "description": "轮胎滑移摩擦曲线参数。用于控制纵向滑移率与侧向滑移角变化时的摩擦缩放。",
+      "properties": {
+        "longitudinal": {
+          "type": "object",
+          "description": "纵向滑移率曲线参数。",
+          "properties": {
+            "peak_slip_ratio": {
+              "type": "number",
+              "minimum": 0.0,
+              "default": 0.2,
+              "description": "峰值滑移率（无量纲），达到该值时摩擦缩放为peak_scale。"
+            },
+            "base_scale": {
+              "type": "number",
+              "default": 1.0,
+              "description": "滑移率为0时的摩擦缩放。"
+            },
+            "peak_scale": {
+              "type": "number",
+              "default": 1.4,
+              "description": "峰值滑移率处的摩擦缩放。"
+            },
+            "kinetic_scale": {
+              "type": "number",
+              "default": 0.9,
+              "description": "高滑移状态下（动摩擦段）的摩擦缩放。"
+            }
+          },
+          "additionalProperties": false
+        },
+        "lateral": {
+          "type": "object",
+          "description": "侧向滑移角曲线参数（角度单位为度）。",
+          "properties": {
+            "peak_angle_deg": {
+              "type": "number",
+              "minimum": 0.0,
+              "default": 12.0,
+              "description": "峰值侧偏角（度）。"
+            },
+            "kinetic_angle_deg": {
+              "type": "number",
+              "minimum": 0.0,
+              "default": 90.0,
+              "description": "进入动摩擦平台的侧偏角（度）。"
+            },
+            "base_scale": {
+              "type": "number",
+              "default": 1.0,
+              "description": "侧偏角为0度时的摩擦缩放。"
+            },
+            "peak_scale": {
+              "type": "number",
+              "default": 1.2,
+              "description": "峰值侧偏角处的摩擦缩放。"
+            },
+            "kinetic_scale": {
+              "type": "number",
+              "default": 0.7,
+              "description": "高侧偏角状态下（动摩擦段）的摩擦缩放。"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "rolling_friction": {
       "type": "number",
       "minimum": 0.0,
@@ -153,6 +222,21 @@
     {
       "friction": [0.8, 0.8, 0.8],
       "slip_adaptation": 0.3,
+      "slip_curve": {
+        "longitudinal": {
+          "peak_slip_ratio": 0.18,
+          "base_scale": 1.0,
+          "peak_scale": 1.5,
+          "kinetic_scale": 0.85
+        },
+        "lateral": {
+          "peak_angle_deg": 10.0,
+          "kinetic_angle_deg": 75.0,
+          "base_scale": 1.0,
+          "peak_scale": 1.25,
+          "kinetic_scale": 0.65
+        }
+      },
       "rolling_friction": 0.1,
       "spinning_friction": 0.01,
       "restitution": 0.05,

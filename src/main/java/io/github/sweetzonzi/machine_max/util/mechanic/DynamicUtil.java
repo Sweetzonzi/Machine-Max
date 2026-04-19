@@ -30,20 +30,44 @@ public class DynamicUtil {
             float peakScale,
             float kineticScale
     ) {
-        float s = Math.max(0f, slipRatio);
+        return calculateSlipScale(slipRatio, peakSlip, 1.0f, baseScale, peakScale, kineticScale);
+    }
 
-        if (s < peakSlip) {
+    /**
+     * 通用滑移率摩擦缩放函数 (C¹ 连续分段曲线，支持自定义动摩擦终点)
+     *
+     * @param slipRatio     当前滑移率/角度（非负）
+     * @param peakSlip      峰值点
+     * @param kineticSlip   动摩擦终点（达到后保持 kineticScale）
+     * @param baseScale     初始摩擦系数缩放
+     * @param peakScale     峰值摩擦系数缩放
+     * @param kineticScale  动摩擦缩放
+     * @return 最终摩擦缩放因子
+     */
+    public static float calculateSlipScale(
+            float slipRatio,
+            float peakSlip,
+            float kineticSlip,
+            float baseScale,
+            float peakScale,
+            float kineticScale
+    ) {
+        float s = Math.max(0f, slipRatio);
+        float peak = Math.max(1e-5f, peakSlip);
+        float kinetic = Math.max(peak + 1e-5f, kineticSlip);
+
+        if (s < peak) {
             // --- 上升段：从 baseScale 到 peakScale ---
             // 归一化插值因子 [0, 1]
-            float t = s / Math.max(1e-5f, peakSlip);
+            float t = s / peak;
             // Smoothstep 插值: 3t^2 - 2t^3
             float smooth = t * t * (3f - 2f * t);
             return baseScale + (peakScale - baseScale) * smooth;
 
         } else {
             // --- 下降段：从 peakScale 到 kineticScale ---
-            // 归一化插值因子 [0, 1]，超过 1.0 的部分会被 clamp
-            float t = (s - peakSlip) / Math.max(1e-5f, 1f - peakSlip);
+            // 归一化插值因子 [0, 1]，超过 kineticSlip 的部分会被 clamp
+            float t = (s - peak) / Math.max(1e-5f, kinetic - peak);
             t = Math.min(t, 1f);
             // Smoothstep 插值
             float smooth = t * t * (3f - 2f * t);

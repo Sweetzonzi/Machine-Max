@@ -402,12 +402,27 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation()); // 有效湿滑强度
                 float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * Math.abs(slipRatio) * 0.7f); // 湿滑衰减
                 if (isWheel(hitBoxIndex) && isWheelSurface(hitBoxIndex)) { // 轮胎特殊处理
+                    var slipCurve = hitBox.attr.getEffectiveMaterial().slipCurve();
+                    var longitudinalCurve = slipCurve.longitudinal();
+                    var lateralCurve = slipCurve.lateral();
                     float angleDeg = (float) Math.toDegrees(Math.abs(slipAngle));
-                    float s_angle = angleDeg / 90.0f; // 归一化到 [0, 1]
-                    double muFront = hitBox.getMuFront() // 滑移率20%时摩擦系数达到峰值
-                            * calculateSlipScale(Math.abs(slipRatio), 0.20f, 1.0f, 1.4f, 0.9f);
-                    double muSide = hitBox.getMuSide() // 设定侧向在 12度达到峰值，且动摩擦衰减更剧烈(0.5f)
-                            * calculateSlipScale(s_angle, 0.133f, 1.0f, 1.2f, 0.7f);
+                    double muFront = hitBox.getMuFront()
+                            * calculateSlipScale(
+                            Math.abs(slipRatio),
+                            longitudinalCurve.peakSlipRatio(),
+                            longitudinalCurve.baseScale(),
+                            longitudinalCurve.peakScale(),
+                            longitudinalCurve.kineticScale()
+                    );
+                    double muSide = hitBox.getMuSide()
+                            * calculateSlipScale(
+                            angleDeg / 90,
+                            lateralCurve.peakAngleDeg(),
+                            lateralCurve.kineticAngleDeg(),
+                            lateralCurve.baseScale(),
+                            lateralCurve.peakScale(),
+                            lateralCurve.kineticScale()
+                    );
                     // 根据摩擦方向调整摩擦系数和方向
                     var vx = slipVel.dot(tmpFront);
                     var vy = slipVel.dot(tmpSide);

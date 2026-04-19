@@ -22,6 +22,75 @@
       "default": 0.5,
       "description": "Slip adaptation coefficient, used to adjust friction behavior during sliding."
     },
+    "slip_curve": {
+      "type": "object",
+      "description": "Tire slip friction curve parameters for longitudinal slip ratio and lateral slip angle.",
+      "properties": {
+        "longitudinal": {
+          "type": "object",
+          "description": "Longitudinal slip-ratio curve parameters.",
+          "properties": {
+            "peak_slip_ratio": {
+              "type": "number",
+              "minimum": 0.0,
+              "default": 0.2,
+              "description": "Slip ratio at the peak friction scale."
+            },
+            "base_scale": {
+              "type": "number",
+              "default": 1.0,
+              "description": "Friction scale at zero slip."
+            },
+            "peak_scale": {
+              "type": "number",
+              "default": 1.4,
+              "description": "Friction scale at peak_slip_ratio."
+            },
+            "kinetic_scale": {
+              "type": "number",
+              "default": 0.9,
+              "description": "Friction scale in the high-slip kinetic region."
+            }
+          },
+          "additionalProperties": false
+        },
+        "lateral": {
+          "type": "object",
+          "description": "Lateral slip-angle curve parameters. All angle fields use degrees.",
+          "properties": {
+            "peak_angle_deg": {
+              "type": "number",
+              "minimum": 0.0,
+              "default": 12.0,
+              "description": "Slip angle (degrees) at peak friction scale."
+            },
+            "kinetic_angle_deg": {
+              "type": "number",
+              "minimum": 0.0,
+              "default": 90.0,
+              "description": "Slip angle (degrees) where kinetic scale is reached."
+            },
+            "base_scale": {
+              "type": "number",
+              "default": 1.0,
+              "description": "Friction scale at zero slip angle."
+            },
+            "peak_scale": {
+              "type": "number",
+              "default": 1.2,
+              "description": "Friction scale at peak_angle_deg."
+            },
+            "kinetic_scale": {
+              "type": "number",
+              "default": 0.7,
+              "description": "Friction scale in the high-angle kinetic region."
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "rolling_friction": {
       "type": "number",
       "minimum": 0.0,
@@ -155,6 +224,21 @@
     {
       "friction": [0.8, 0.8, 0.8],
       "slip_adaptation": 0.3,
+      "slip_curve": {
+        "longitudinal": {
+          "peak_slip_ratio": 0.18,
+          "base_scale": 1.0,
+          "peak_scale": 1.5,
+          "kinetic_scale": 0.85
+        },
+        "lateral": {
+          "peak_angle_deg": 10.0,
+          "kinetic_angle_deg": 75.0,
+          "base_scale": 1.0,
+          "peak_scale": 1.25,
+          "kinetic_scale": 0.65
+        }
+      },
       "rolling_friction": 0.1,
       "spinning_friction": 0.01,
       "restitution": 0.05,

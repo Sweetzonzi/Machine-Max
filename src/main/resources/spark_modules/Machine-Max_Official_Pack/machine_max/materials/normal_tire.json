@@ -1,7 +1,21 @@
 {
   "$schema": "../docs/zh_cn/schemas/base/material_attr.schema.json",
-  "friction": [1.2, 1.5, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 无实际效果]
+  "friction": [1.4, 1.5, 1.0],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 无实际效果]
   "slip_adaptation": 0.4,//(可选, 默认0.5)滑动适应性系数(0~1), 该属性可削弱打滑时的摩擦系数降低效果, 提升抓地力
+  "slip_curve": {
+    "longitudinal": {
+      "peak_slip_ratio": 0.20,
+      "base_scale": 1.0,
+      "peak_scale": 1.4,
+      "kinetic_scale": 0.9
+    },
+    "lateral": {
+      "peak_angle_deg": 12.0,
+      "base_scale": 1.0,
+      "peak_scale": 1.3,
+      "kinetic_scale": 0.8
+    }
+  },
   "rolling_friction": 0.01,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力
   "spinning_friction": 0.8,
   "restitution": 0.65,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数

@@ -44,6 +44,57 @@
           "minimum": 0.0,
           "description": "滑移适应系数覆写。"
         },
+        "slip_curve": {
+          "type": "object",
+          "description": "滑移曲线覆写。可只覆写部分字段，其余继承材质定义。",
+          "properties": {
+            "longitudinal": {
+              "type": "object",
+              "properties": {
+                "peak_slip_ratio": {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                "base_scale": {
+                  "type": "number"
+                },
+                "peak_scale": {
+                  "type": "number"
+                },
+                "kinetic_scale": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            },
+            "lateral": {
+              "type": "object",
+              "properties": {
+                "peak_angle_deg": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "侧偏角峰值，单位：度。"
+                },
+                "kinetic_angle_deg": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "动摩擦终点侧偏角，单位：度。"
+                },
+                "base_scale": {
+                  "type": "number"
+                },
+                "peak_scale": {
+                  "type": "number"
+                },
+                "kinetic_scale": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
         "rolling_friction": {
           "type": "number",
           "minimum": 0.0,
@@ -128,6 +179,11 @@
       "overwrite": {
         "rha": 1.35,
         "angle_effect": true,
+        "slip_curve": {
+          "lateral": {
+            "peak_angle_deg": 9.0
+          }
+        },
         "impact_modifiers": [
           {
             "operation": "multiply",
