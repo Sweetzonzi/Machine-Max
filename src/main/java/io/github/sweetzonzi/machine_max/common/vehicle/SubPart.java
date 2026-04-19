@@ -10,8 +10,10 @@ import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.compat.create.CreateContraptionPhysicsHost;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.CollisionObjectEntity;
 import cn.solarmoon.spark_core.physics.body.ManifoldPoint;
@@ -19,6 +21,7 @@ import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
 import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.util.BlockCollisionUtil;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
@@ -31,6 +34,8 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.compat.create.CreateCollisionResolver;
+import io.github.sweetzonzi.machine_max.compat.create.CreateCompat;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
@@ -84,6 +89,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -282,6 +288,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     return true;
                 } else return !(result.penetration() <= 0) || !Float.isFinite(result.penetration());
             } else return true;
+        } else if (CreateCompat.isLoaded() && CreateCollisionResolver.isCreateOwner(otherOwner)) {
+            // Create 装置全部视为有效碰撞
+            return true;
         } else return false;
     }
 
@@ -485,9 +494,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 }
             }
             //根据碰撞速度、碰撞角、方块硬度和爆炸抗性，摧毁碰撞的方块，同时对自身造成伤害
-            if (MMServerConfig.shouldDestroyBlocks() && hitBox.attr.blockDamageFactor() > 0 && blockState.getDestroySpeed(part.level, blockPos) >= 0) {
+            if (MMServerConfig.shouldDestroyBlocks() && hitBox.attr.blockDamageFactor() > 0 && blockState.getDestroySpeed(part.level, BlockPos.ZERO) >= 0) {
                 //计算碰撞法线方向上的速度(考虑冲量影响)
-                float blockArmor = ArmorUtil.getBlockArmor(part.level, blockState, blockPos);
+                float blockArmor = ArmorUtil.getBlockArmor(part.level, blockState, BlockPos.ZERO);
                 float subPartArmor = hitBox.getRHA(this);
                 double contactNormalSpeed = Math.abs(contactVel.dot(normal)) + ManifoldPoints.getAppliedImpulse(manifoldPointId) / body.getMass();
                 float restitution = Math.clamp(body.getRestitution() * blockRestitution, 0f, 1f);//TODO:考虑二者护甲差距调整此系数，决定相加还是相乘
@@ -574,6 +583,108 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 //                    }
                 });
             }
+        } else if (CreateCompat.isLoaded() && CreateCollisionResolver.isCreateOwner(otherOwner)) {
+            this.onCollideWithCreateTerrain(other, otherOwner, normal, worldContactPoint, localContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
+        }
+    }
+
+    private void onCollideWithCreateTerrain(
+            PhysicsRigidBody other,
+            PhysicsHost otherOwner,
+            Vector3f normal,
+            Vector3f worldContactPoint,
+            Vector3f localContactPoint,
+            Vector3f contactVel,
+            int hitBoxIndex,
+            int otherHitBoxIndex,
+            float impactAngle,
+            long manifoldPointId
+    ) {
+        var info = CreateCollisionResolver.resolve(otherOwner, otherHitBoxIndex);
+        BlockState blockState = info.blockState();
+        if (!info.create() || blockState == null) return;
+
+        other.shouldShowDebugBoxWhenNonColldeWith = true;
+        var hitBox = this.getHitBox(hitBoxIndex);
+        var vel = this.getLinearVelocity();
+        // Create 返回的是装置局部坐标，世界逻辑统一使用当前接触点的世界方块坐标
+        BlockPos worldBlockPos = BlockPos.containing(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z);
+        float blockFriction = BlockCollisionUtil.getBlockFriction(blockState);
+        float blockRollingFriction = BlockCollisionUtil.getBlockRollingFriction(blockState);
+        ChunkAccess chunk = level.getChunkAt(worldBlockPos);
+        float blockSlip = BlockCollisionUtil.getSlip(chunk, blockState, worldBlockPos);
+
+        float normalContactVel = contactVel.dot(normal);
+        Vector3f slipVel = contactVel.subtract(normal.mult(normalContactVel));
+        Vector3f wheelVel = MMMath.relPointExtraVelFromAngularVel(localContactPoint, body.getPhysicsRotation(null), body.getAngularVelocity(null));
+        normal.cross(getRightVector(), tmpFront);
+        tmpFront.cross(normal, tmpSide);
+        float slipAngle = (float) Math.atan2(tmpSide.dot(slipVel), tmpFront.dot(slipVel));
+        float moveVelLen = body.getLinearVelocity(null).length();
+        float wheelVelLen = Math.abs(wheelVel.dot(tmpFront));
+        float slipRatio = Math.abs(moveVelLen - wheelVelLen) / (Math.max(moveVelLen, wheelVelLen) + 0.1f);
+        float slipVelLen = Math.max(slipVel.length(), 0.001f);
+        if (!level.isClientSide()) {
+            float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation());
+            float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * Math.abs(slipRatio) * 0.7f);
+            if (isWheel(hitBoxIndex) && isWheelSurface(hitBoxIndex)) {
+                var slipCurve = hitBox.attr.getEffectiveMaterial().slipCurve();
+                var longitudinalCurve = slipCurve.longitudinal();
+                var lateralCurve = slipCurve.lateral();
+                float angleDeg = (float) Math.toDegrees(Math.abs(slipAngle));
+                double muFront = hitBox.getMuFront()
+                        * calculateSlipScale(
+                        Math.abs(slipRatio),
+                        longitudinalCurve.peakSlipRatio(),
+                        longitudinalCurve.baseScale(),
+                        longitudinalCurve.peakScale(),
+                        longitudinalCurve.kineticScale()
+                );
+                double muSide = hitBox.getMuSide()
+                        * calculateSlipScale(
+                        angleDeg / 90,
+                        lateralCurve.peakAngleDeg(),
+                        lateralCurve.kineticAngleDeg(),
+                        lateralCurve.baseScale(),
+                        lateralCurve.peakScale(),
+                        lateralCurve.kineticScale()
+                );
+                var vx = slipVel.dot(tmpFront);
+                var vy = slipVel.dot(tmpSide);
+                var forceVecX = tmpFront.mult((float) (muFront * (vx / slipVelLen)));
+                var forceVecY = tmpSide.mult((float) (muSide * (vy / slipVelLen)));
+                var totalFrictionVec = forceVecX.add(forceVecY);
+                var muEff = totalFrictionVec.length();
+                var finalDir = totalFrictionVec.mult(1 / muEff);
+                ManifoldPoints.setLateralFrictionDir1(manifoldPointId, finalDir);
+                ManifoldPoints.setLateralFrictionDir2(manifoldPointId, normal.cross(finalDir));
+                ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * muEff * blockFriction * wetFactor));
+            } else {
+                ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * blockFriction * wetFactor));
+            }
+            ManifoldPoints.setCombinedRollingFriction(manifoldPointId, Math.max(0f, body.getRollingFriction() * blockRollingFriction));
+        }
+
+        if (hitBox.subsystem != null) {
+            hitBox.subsystem.onCollideWithBlock(
+                    this.body, other, worldBlockPos, blockState, contactVel, normal, worldContactPoint, impactAngle, hitBox, manifoldPointId
+            );
+        }
+
+        if (level.isClientSide()) {
+            float speed = vel.length();
+            SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
+                if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
+                    if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SAND) || blockState.is(BlockTags.SNOW)) {
+                        if (Math.random() < Math.max(1f, 0.05f * speed))
+                            level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockState),
+                                    worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
+                                    contactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
+                                    contactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
+                                    contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
+                    }
+                }
+            });
         }
     }
 
