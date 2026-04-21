@@ -65,6 +65,8 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
     @Unique
     private final Transform machine_Max$sweepTestEnd = new Transform();
     @Unique
+    private Vec3 machine_Max$inheritedMovement = new Vec3(0, 0, 0);
+    @Unique
     private final Vec3 AXIS_YP = new Vec3(0, 1, 0);
     @Unique
     private boolean machine_Max$groundedByPhysicsBody = false;
@@ -85,6 +87,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
     private Vec3 modifyMovePosBeforeEdgeBackoff(Vec3 originalPos, MoverType moverType) {
         // 获取原版碰撞结果
         if (originalPos.lengthSqr() < 1e-6f) {
+            machine_Max$inheritedMovement = Vec3.ZERO;
             return originalPos; // 无运动时直接返回
         }
         Entity entity = (Entity) (Object) this;
@@ -95,6 +98,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
                 || (aabb.maxX - aabb.minX) * (aabb.maxY - aabb.minY) * (aabb.maxZ - aabb.minZ) < 0.001
                 || (entity instanceof Player player && !player.isAffectedByFluids()) // 飞行模式无碰撞
                 || ((IEntityMixin) entity).machine_Max$getControllingSubsystem() != null) {
+            machine_Max$inheritedMovement = Vec3.ZERO;
             return originalPos;
         }
         // 调用物理引擎进行碰撞检测
@@ -106,12 +110,14 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             machine_Max$collideTestShape = new CapsuleCollisionShape(radius, height > 0 ? height : 0.01f);
         }
         List<PhysicsSweepTestResult> results = new ArrayList<>();
+        originalPos.subtract(machine_Max$inheritedMovement);
         Vec3 delta = new Vec3(originalPos.x, originalPos.y, originalPos.z);
         Vec3 center = aabb.getCenter();
         double len = delta.length();
         if (len > 1e-6 && len < 0.5)
             delta = delta.normalize();
         else if (len < 1e-6) { // 无运动直接返回
+            machine_Max$inheritedMovement = Vec3.ZERO;
             return originalPos;
         }
         machine_Max$sweepTestStart.setTranslation(PhysicsHelperKt.toBVector3f(center));
@@ -121,6 +127,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
                 machine_Max$sweepTestStart,
                 machine_Max$sweepTestEnd, results, 0.05f);
         if (results.isEmpty()) {
+            machine_Max$inheritedMovement = Vec3.ZERO;
             return originalPos;// 无碰撞结果时直接返回
         }
         // === 多刚体顺序约束处理 ===
@@ -170,6 +177,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
 
         // === 无有效约束，直接返回原始运动 ===
         if (finalVec == originalPos) {
+            machine_Max$inheritedMovement = Vec3.ZERO;
             return originalPos;
         }
 
@@ -190,9 +198,11 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         }
 
         // === 叠加刚体运动（使用最近约束的刚体） ===
-        movement = movement.scale(0.05); // 速度转为单 tick 位移
-        Vec3 deltaWithPart = finalVec.subtract(movement);
-        finalVec = finalVec.subtract(deltaWithPart.scale(machine_Max$groundedByPhysicsBody ? 0.1 : 0.05)); // 摩擦使得双方接近同速
+        machine_Max$inheritedMovement = movement;
+        finalVec.add(machine_Max$inheritedMovement);
+//        movement = movement.scale(0.05); // 速度转为单 tick 位移
+//        Vec3 deltaWithPart = movement.subtract(finalVec);
+//        finalVec = finalVec.add(deltaWithPart.scale(machine_Max$groundedByPhysicsBody ? 0.1 : 0.05)); // 摩擦使得双方接近同速
         entity.setDeltaMovement(finalVec); // 防止速度无限积累
         return finalVec;
     }

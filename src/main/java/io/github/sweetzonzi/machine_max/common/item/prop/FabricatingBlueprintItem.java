@@ -13,15 +13,16 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
+import io.github.sweetzonzi.machine_max.util.PartTagTextUtil;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
-import jme3utilities.math.MyMath;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -34,16 +35,17 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import java.awt.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 public class FabricatingBlueprintItem extends Item implements ICustomModelItem, PartAssemblyItem {
@@ -109,7 +111,7 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
                                 VisualEffectHelper.partToPlace.updateTransform(
                                         targetConnector.mergeTransform(
                                                 targetConnector.calculateExtraTransform(
-                                                        connectorAttr.direction(),
+                                                        connectorAttr.getDirection(),
                                                         PhysicsHelperKt.toBVector3f(cache.getOffset()),
                                                         SparkMathKt.toBQuaternion(cache.getQuaternion()),
                                                         cache.getAttachRotation()).invert()
@@ -152,21 +154,23 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
         }
     }
 
-@Override
-public @NotNull Component getName(@NotNull ItemStack stack) {
-    try {
-        ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
-        RecipeHolder<FabricatingRecipe> recipeHolder = MMDynamicRes.ALL_RECIPES.get(type);
-        int researchLevel = stack.getOrDefault(MMDataComponents.getRESEARCH_LEVEL(), 0);
-        return recipeHolder.value().getResult().getHoverName().copy()
-                .append(Component.translatable("item.machine_max.fabricating_blueprint"))
-                .append(buildVersion(researchLevel));
-    } catch (Exception e) {
-        return super.getName(stack);
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        appendPartTags(stack, context, tooltipComponents, tooltipFlag);
     }
-}
 
-
+    @Override
+    public @NotNull Component getName(@NotNull ItemStack stack) {
+        try {
+            ResourceLocation type = stack.get(MMDataComponents.getRECIPE_TYPE());
+            RecipeHolder<FabricatingRecipe> recipeHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(type);
+            return recipeHolder.value().getResult().getHoverName().copy()
+                    .append(Component.translatable("item.machine_max.fabricating_blueprint"));
+        } catch (Exception e) {
+            return super.getName(stack);
+        }
+    }
 
     public ItemAnimatable createItemAnimatable(ItemStack itemStack, Level level, ItemDisplayContext context) {
         var animatable = new ItemAnimatable(itemStack, level);
@@ -197,14 +201,4 @@ public @NotNull Component getName(@NotNull ItemStack stack) {
         return displayContext == ItemDisplayContext.GUI ? COLOR : Color.WHITE;
     }
 
-    /**
-     * 根据研发等级生成版本号文本：
-     * 研发等级 5  -> V1.05
-     * 研发等级 200 -> V2.00
-     */
-    public static Component buildVersion(int researchLevel) {
-        int majorVersion = 1 + researchLevel / 100;
-        int subVersion = researchLevel - (majorVersion - 1) * 100;
-        return Component.literal(String.format(" V%d.%02d", majorVersion, subVersion));
-    }
 }

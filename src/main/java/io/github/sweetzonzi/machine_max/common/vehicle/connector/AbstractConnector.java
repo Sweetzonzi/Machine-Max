@@ -21,12 +21,11 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.JointAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.JointAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorAttachEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorDetachEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorTickEvent;
@@ -87,12 +86,12 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.subPart = subPart;
         this.offsetFromMassCenter = offsetFromMassCenter;
         this.actualTransform = offsetFromMassCenter.clone();
-        this.signalPort = new SignalPort(this, attr.signalTargets(), attr.signalTranslations());
-        this.collideBetweenParts = attr.collideBetweenParts();
-        this.internal = !attr.connectedTo().isEmpty();
+        this.signalPort = new SignalPort(this, attr.getSignalTargets(), attr.getSignalTranslations());
+        this.collideBetweenParts = attr.hasCollideBetweenParts();
+        this.internal = attr.isInternal();
         this.attr = attr;
         SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
-        syncheddata$builder.define(DATA_INTEGRITY_ID, attr.integrity());
+        syncheddata$builder.define(DATA_INTEGRITY_ID, attr.getIntegrity());
         this.defineSyncedData(syncheddata$builder);
         this.synchedData = syncheddata$builder.build();
         createAttachPointBody(
@@ -185,17 +184,17 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     protected void handleAccumulatedImpact() {
         if (!subPart.level.isClientSide() && !this.isInternal()) {
             float totalImpact = 0;
-            if (attr.impactMultiplier() >= 0 && !accumulatedImpact.isEmpty()) {
+            if (attr.getImpactMultiplier() >= 0 && !accumulatedImpact.isEmpty()) {
                 while (!accumulatedImpact.isEmpty()) {
                     totalImpact += accumulatedImpact.poll();
                 }
-                totalImpact -= attr.impactReduction();
-                totalImpact *= attr.impactMultiplier();
+                totalImpact -= attr.getImpactReduction();
+                totalImpact *= attr.getImpactMultiplier();
                 if (totalImpact > 0) {
                     if (totalImpact >= getIntegrity() && hasPart()) {
                         //强冲击，立即击落部件
                         subPart.part.vehicle.detachConnector(this);
-                        float finalImpact = (subPart.isDestroyed() ? totalImpact : attr.impactAbsorption() * totalImpact);
+                        float finalImpact = (subPart.isDestroyed() ? totalImpact : attr.getImpactAbsorption() * totalImpact);
                         SparkLevel.submitImmediateTask(subPart.level, PPhase.ALL, () -> {
                             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"), 64f);
                             SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO,
@@ -281,7 +280,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         joint.set(MotorParam.UpperLimit, 3, 0);
         joint.set(MotorParam.UpperLimit, 4, 0);
         joint.set(MotorParam.UpperLimit, 5, 0);
-        for (Map.Entry<String, JointAttr> entry : attr.jointAttrs().entrySet()) {//设置各轴关节属性(0~2为XYZ轴平动，3~5为XYZ轴转动)
+        for (Map.Entry<String, JointAttr> entry : attr.getJointAttrs().entrySet()) {//设置各轴关节属性(0~2为XYZ轴平动，3~5为XYZ轴转动)
             int i = Axis.getValue(entry.getKey());//获取轴序号
             JointAttr jointAttr = entry.getValue();//获取轴属性
             if (this instanceof AdvancedConnector) {
@@ -304,37 +303,42 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     if (jointAttr.equilibrium() != null)
                         joint.set(MotorParam.Equilibrium, i, (float) (jointAttr.equilibrium() * (i <= 2 ? 1 : Math.PI / 180)));
                     if (jointAttr.stiffness() != null) {
-                        float maxStiffness = safe * 4 * m_eff / (1f / getPhysicsLevel().getTps() / getPhysicsLevel().getTps());  // 稳定性条件: k_max = 4·m_eff/Δt²
-                        if (jointAttr.stiffness() > maxStiffness)
-                            MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的刚度值过大:{}，已自动限制为{}！",
-                                    Component.translatable(this.getName()).getString(),
-                                    Component.translatable(this.subPart.part.name).getString(),
-                                    Component.translatable(attachedConnector.getName()).getString(),
-                                    Component.translatable(attachedConnector.subPart.part.name).getString(),
-                                    i, jointAttr.stiffness(), maxStiffness);
+                        float maxStiffness = jointAttr.stiffness();
+                        if (!getPhysicsLevel().getMcLevel().isClientSide()) {
+                            maxStiffness = safe * 4 * m_eff / (1f / getPhysicsLevel().getTps() / getPhysicsLevel().getTps());  // 稳定性条件: k_max = 4·m_eff/Δt²
+                            if (jointAttr.stiffness() > maxStiffness)
+                                MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的刚度值过大:{}，已自动限制为{}！",
+                                        Component.translatable(this.getName()).getString(),
+                                        Component.translatable(this.subPart.part.name).getString(),
+                                        Component.translatable(attachedConnector.getName()).getString(),
+                                        Component.translatable(attachedConnector.subPart.part.name).getString(),
+                                        i, jointAttr.stiffness(), maxStiffness);
+                        }
                         joint.set(MotorParam.Stiffness, i, Math.min(jointAttr.stiffness(), maxStiffness));
                         joint.enableSpring(i, true);
                     }
                     if (jointAttr.damping() != null) {
                         //限制最大阻尼以确保稳定性
-                        float maxDamping;
-                        float stiffness = joint.get(MotorParam.Stiffness, i) / getPhysicsLevel().getTps() / getPhysicsLevel().getTps() / m_eff;
-                        if (stiffness >= 4f - 1e-6f) {
-                            maxDamping = 0f; // 刚度已达上限，阻尼只能为0
-                        } else {
-                            float C_max = (4f - stiffness) / 2f;
-                            maxDamping = C_max * m_eff * getPhysicsLevel().getTps();
-                        }
-                        maxDamping *= safe; // 安全系数
-                        if (jointAttr.damping() > maxDamping) {
-                            joint.set(MotorParam.MotorErp, i, 0.5f);
-                            joint.set(MotorParam.StopErp, i, 0.2f);
-                            MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！",
-                                    Component.translatable(this.getName()).getString(),
-                                    Component.translatable(this.subPart.part.name).getString(),
-                                    Component.translatable(attachedConnector.getName()).getString(),
-                                    Component.translatable(attachedConnector.subPart.part.name).getString(),
-                                    i, jointAttr.damping(), maxDamping);
+                        float maxDamping = jointAttr.damping();
+                        if (!getPhysicsLevel().getMcLevel().isClientSide()) {
+                            float stiffness = joint.get(MotorParam.Stiffness, i) / getPhysicsLevel().getTps() / getPhysicsLevel().getTps() / m_eff;
+                            if (stiffness >= 4f - 1e-6f) {
+                                maxDamping = 0f; // 刚度已达上限，阻尼只能为0
+                            } else {
+                                float C_max = (4f - stiffness) / 2f;
+                                maxDamping = C_max * m_eff * getPhysicsLevel().getTps();
+                            }
+                            maxDamping *= safe; // 安全系数
+                            if (jointAttr.damping() > maxDamping) {
+                                joint.set(MotorParam.MotorErp, i, 0.5f);
+                                joint.set(MotorParam.StopErp, i, 0.2f);
+                                MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！",
+                                        Component.translatable(this.getName()).getString(),
+                                        Component.translatable(this.subPart.part.name).getString(),
+                                        Component.translatable(attachedConnector.getName()).getString(),
+                                        Component.translatable(attachedConnector.subPart.part.name).getString(),
+                                        i, jointAttr.damping(), maxDamping);
+                            }
                         }
                         joint.set(MotorParam.Damping, i, Math.min(jointAttr.damping(), maxDamping));
                         joint.set(MotorParam.MotorCfm, i, 1e-5f);
@@ -396,7 +400,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             float attachRotation
     ) {
         return calculateExtraTransform(
-                partConnector.attr.direction(),
+                partConnector.attr.getDirection(),
                 partConnector.offsetFromMassCenter.getTranslation(),
                 partConnector.offsetFromMassCenter.getRotation(),
                 attachRotation);
@@ -418,7 +422,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             float attachRotation
     ) {
         // --- 1. 获取双方连接点的装配法线（局部空间） ---
-        Axis targetNormalAxis = this.attr.direction();
+        Axis targetNormalAxis = this.attr.getDirection();
 
         var partNormal = SparkMathKt.toVector3f(Axis.axisToVector(partConnectorDirection));
         var targetNormal = SparkMathKt.toVector3f(Axis.axisToVector(targetNormalAxis));
@@ -447,8 +451,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         // 将相对刚体的局部变换与刚体的姿态合并
         Transform targetTransform = mergeTransform(partConnector.actualTransform.invert());
 
-        Transform rootTransform =
-                partConnector.subPart.body.getTransform(null).invert();
+        Transform rootTransform = partConnector.subPart.body.getTransform(null).invert();
 
         // 设置根 SubPart 的物理变换
         partConnector.subPart.body.setPhysicsTransform(targetTransform);
@@ -461,6 +464,30 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
             MyMath.combine(transform, targetTransform, transform);
             subPart.body.setPhysicsTransform(transform);
         }
+    }
+
+    private Transform getConnectorWorldTransform() {
+        Vector3f worldPos = MMMath.relPointWorldPos(this.offsetFromMassCenter.getTranslation(), this.subPart.body);
+        Quaternion worldRotation = this.subPart.body.getPhysicsRotation(null).mult(this.offsetFromMassCenter.getRotation());
+        return new Transform(worldPos, worldRotation);
+    }
+
+    private Transform worldTransformToConnectorLocal(Transform worldTransform) {
+        Vector3f localPos = MMMath.worldPointLocalPos(worldTransform.getTranslation(), this.subPart.body);
+        Quaternion localRotation = this.subPart.body.getPhysicsRotation(null).inverse().mult(worldTransform.getRotation());
+        return new Transform(localPos, localRotation);
+    }
+
+    /**
+     * 在不移动刚体的前提下，将两个连接点的 actualTransform 对齐到同一世界关节参考系
+     * 用于已放置完成后的补连场景（如 ComboAttach），避免关节创建时出现过大的初始内力。
+     *
+     * @param targetConnector 目标连接点
+     */
+    public void alignActualTransformForJoint(AbstractConnector targetConnector) {
+        Transform jointWorldFrame = this.getConnectorWorldTransform();
+        this.actualTransform = this.worldTransformToConnectorLocal(jointWorldFrame);
+        targetConnector.actualTransform = targetConnector.worldTransformToConnectorLocal(jointWorldFrame);
     }
 
 
@@ -592,7 +619,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     }
 
     public float getBasicIntegrity() {
-        return attr.integrity();
+        return attr.getIntegrity();
     }
 
     @NotNull

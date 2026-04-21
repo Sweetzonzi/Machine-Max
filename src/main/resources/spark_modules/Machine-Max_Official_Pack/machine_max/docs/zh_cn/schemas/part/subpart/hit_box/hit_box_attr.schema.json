@@ -20,145 +20,148 @@
       "default": "",
       "description": "子系统名称，用于将此碰撞箱与特定子系统关联，当此碰撞箱受到伤害时，关联的子系统会受到等量伤害。"
     },
-    "friction": {
-      "$ref": "../../../base/vector_3d.schema.json",
-      "description": "摩擦系数向量，分别对应x、y、z轴。"
+    "material": {
+      "$ref": "../../../base/resource_location.schema.json",
+      "default": "machine_max:default",
+      "description": "材料注册id，用于获取摩擦系数、减伤属性、音效等物理属性。"
     },
-    "slip_adaptation": {
-      "type": "number",
-      "minimum": 0.0,
-      "maximum": 1.0,
-      "default": 0.5,
-      "description": "滑移适应系数，用于调整在滑动时的摩擦行为。"
-    },
-    "rolling_friction": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.2,
-      "description": "滚动摩擦系数。"
-    },
-    "spinning_friction": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.0,
-      "description": "旋转摩擦系数。"
-    },
-    "restitution": {
-      "type": "number",
-      "minimum": 0.0,
-      "maximum": 1.0,
-      "default": 0.1,
-      "description": "恢复系数（弹性），0为完全非弹性碰撞，1为完全弹性碰撞。"
-    },
-    "block_damage_factor": {
+    "thickness": {
       "type": "number",
       "minimum": 0.0,
       "default": 1.0,
-      "description": "方块破坏系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力。"
+      "description": "护甲厚度，单位mm，减免伤害并控制碰撞时的能量分配情况。"
     },
-    "angle_effect": {
-      "type": "boolean",
-      "default": true,
-      "description": "等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度。"
-    },
-    "rha": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 1.0,
-      "description": "等效护甲厚度，单位mm，减免伤害并控制碰撞时的能量分配情况。"
-    },
-    "impact_modifiers": {
-      "$ref": "modifier/damage_modifier.schema.json",
-      "description": "冲击修正器，将受到的伤害按照一定规则转换为冲击数值施加到各连接点。默认为空列表，造成多少伤害就对连接点施加多少冲击。"
-    },
-    "penetration_modifiers": {
-      "$ref": "modifier/damage_modifier.schema.json",
-      "default": [
-        {
-          "operation": "multiply",
-          "value": 0.5,
-          "condition": {
-            "type": "not",
-            "condition": {
-              "type": "damage_tag",
-              "tag": "machine_max:has_pen_depth"
+    "overwrite": {
+      "type": "object",
+      "description": "命中箱材质属性覆写。可按需覆写material引用材质中的任意字段。",
+      "properties": {
+        "friction": {
+          "$ref": "../../../base/vector_3d.schema.json",
+          "description": "摩擦系数覆写。"
+        },
+        "slip_adaptation": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "滑移适应系数覆写。"
+        },
+        "slip_curve": {
+          "type": "object",
+          "description": "滑移曲线覆写。可只覆写部分字段，其余继承材质定义。",
+          "properties": {
+            "longitudinal": {
+              "type": "object",
+              "properties": {
+                "peak_slip_ratio": {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                "base_scale": {
+                  "type": "number"
+                },
+                "peak_scale": {
+                  "type": "number"
+                },
+                "kinetic_scale": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            },
+            "lateral": {
+              "type": "object",
+              "properties": {
+                "peak_angle_deg": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "侧偏角峰值，单位：度。"
+                },
+                "kinetic_angle_deg": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "动摩擦终点侧偏角，单位：度。"
+                },
+                "base_scale": {
+                  "type": "number"
+                },
+                "peak_scale": {
+                  "type": "number"
+                },
+                "kinetic_scale": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
             }
-          }
+          },
+          "additionalProperties": false
+        },
+        "rolling_friction": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "滚动摩擦系数覆写。"
+        },
+        "spinning_friction": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "旋转摩擦系数覆写。"
+        },
+        "restitution": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "恢复系数覆写。"
+        },
+        "block_damage_factor": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "方块伤害系数覆写。"
+        },
+        "rha": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "相对RHA抗穿系数覆写。1.0表示等效RHA，0.5表示同厚度下仅50%抗穿，1.5表示1.5倍抗穿。"
+        },
+        "angle_effect": {
+          "type": "boolean",
+          "description": "角度效应覆写。"
+        },
+        "impact_modifiers": {
+          "$ref": "modifier/damage_modifier.schema.json",
+          "description": "冲击修正覆写。"
+        },
+        "piercing_modifiers": {
+          "$ref": "modifier/damage_modifier.schema.json",
+          "description": "穿深修正覆写。"
+        },
+        "damage_modifiers": {
+          "$ref": "modifier/damage_modifier.schema.json",
+          "description": "伤害修正覆写。"
+        },
+        "un_penetrate_damage_factor": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "未击穿伤害系数覆写。"
+        },
+        "sounds": {
+          "type": "object",
+          "properties": {
+            "hit_un_pen": {
+              "$ref": "../../../base/sound_event.schema.json"
+            },
+            "hit_pen": {
+              "$ref": "../../../base/sound_event.schema.json"
+            }
+          },
+          "additionalProperties": false,
+          "description": "材质音效覆写。"
         }
-      ],
-      "description": "穿深修正器，根据受到的伤害调整其穿深。若伤害不带穿深数据，则传入伤害值，否则传入穿深。默认在传入的伤害不包含穿深时，以伤害的0.5倍作为穿深。"
-    },
-    "damage_modifiers": {
-      "$ref": "modifier/damage_modifier.schema.json",
-      "default": [
-        {
-          "operation": "add",
-          "value": -5.0,
-          "condition": {
-            "type": "damage_type",
-            "id": "minecraft:fly_into_wall"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.05,
-          "condition": {
-            "type": "damage_type",
-            "id": "minecraft:sweet_berry_bush"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.05,
-          "condition": {
-            "type": "entity_type",
-            "id": "minecraft:slime"
-          }
-        },
-        {
-          "operation": "multiply",
-          "value": 0.1,
-          "condition": {
-            "type": "entity_type",
-            "id": "minecraft:magma_cube"
-          }
-        }
-      ],
-      "description": "伤害修正器，将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据，则传入伤害值，否则传入伤害数据。默认忽视5以下的撞击伤害，大幅减弱史莱姆等每帧造成的伤害。"
-    },
-    "un_penetrate_damage_factor": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.0,
-      "description": "攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害。"
+      },
+      "additionalProperties": false
     },
     "condition": {
       "type": "string",
       "default": "true",
       "description": "生效条件，使用molang表达式控制碰撞箱是否生效。可用于实现玻璃被击碎后不再有命中判定、拖车撑脚等功能。"
-    },
-    "sounds": {
-      "type": "object",
-      "properties": {
-        "hit_un_pen": {
-          "$ref": "../../../base/sound_event.schema.json",
-          "description": "碰撞箱被命中但未穿透时的音效事件。",
-          "default": {
-            "sound_id": "machine_max:hit_box.hit.up_pen.metal",
-            "range": 64
-          }
-        },
-        "hit_pen": {
-          "$ref": "../../../base/sound_event.schema.json",
-          "description": "碰撞箱被命中且穿透时的音效事件。",
-          "default": {
-            "sound_id": "machine_max:hit_box.hit.pen.metal",
-            "range": 64
-          }
-        }
-      },
-      "additionalProperties": false,
-      "description": "碰撞箱命中音效配置。"
     }
   },
   "required": ["type"],
@@ -170,18 +173,56 @@
     {
       "id": "chassis",
       "type": "box",
-      "rha": 10.0,
-      "block_damage_factor": 1.5,
-      "angle_effect": true,
-      "damage_modifiers": [
-        {
-          "operation": "add",
-          "value": -1.0,
-          "condition": {
-            "type": "always"
+      "subsystem": "sub_part.machine_max.main",
+      "material": "machine_max:heavy_armor",
+      "thickness": 10.0,
+      "overwrite": {
+        "rha": 1.35,
+        "angle_effect": true,
+        "slip_curve": {
+          "lateral": {
+            "peak_angle_deg": 9.0
+          }
+        },
+        "impact_modifiers": [
+          {
+            "operation": "multiply",
+            "value": 0.8,
+            "condition": {
+              "type": "always"
+            }
+          }
+        ],
+        "piercing_modifiers": [
+          {
+            "operation": "multiply",
+            "value": 0.9,
+            "condition": {
+              "type": "always"
+            }
+          }
+        ],
+        "damage_modifiers": [
+          {
+            "operation": "add",
+            "value": -1.0,
+            "condition": {
+              "type": "always"
+            }
+          }
+        ],
+        "un_penetrate_damage_factor": 0.15,
+        "sounds": {
+          "hit_un_pen": {
+            "sound_id": "machine_max:hit_box.hit.up_pen.metal",
+            "range": 64
+          },
+          "hit_pen": {
+            "sound_id": "machine_max:hit_box.hit.pen.metal",
+            "range": 64
           }
         }
-      ],
+      },
       "condition": "!subpart.has_connector('connector.machine_max.chassis_connection')"
     }
   ]

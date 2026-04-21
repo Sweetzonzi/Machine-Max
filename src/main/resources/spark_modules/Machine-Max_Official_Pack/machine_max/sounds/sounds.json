@@ -128,5 +128,240 @@
       "machine_max:subsystem/basic/glass_tail_2",
       "machine_max:subsystem/basic/glass_tail_3"
     ]
+  },
+  "subsystem.engine.start": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_start"
+    ]
+  },
+  "subsystem.engine.stop": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_stop"
+    ]
+  },
+  "subsystem.engine.h6_1000": {
+    "sounds": [
+      "machine_max:subsystem/engine/h6/h6_1000"
+    ]
+  },
+  "subsystem.engine.h6_2000": {
+    "sounds": [
+      "machine_max:subsystem/engine/h6/h6_2000"
+    ]
+  },
+  "subsystem.engine.h6_3000": {
+    "sounds": [
+      "machine_max:subsystem/engine/h6/h6_3000"
+    ]
+  },
+  "subsystem.engine.h6_4000": {
+    "sounds": [
+      "machine_max:subsystem/engine/h6/h6_4000"
+    ]
+  },
+  "subsystem.engine.h6_5000": {
+    "sounds": [
+      "machine_max:subsystem/engine/h6/h6_5000"
+    ]
+  },
+  "subsystem.engine.h6_6000": {
+    "sounds": [
+      "machine_max:subsystem/engine/h6/h6_6000"
+    ]
+  },
+  "subsystem.engine.h6_power": {
+    "sounds": [
+      "machine_max:subsystem/engine/h6/h6_power"
+    ]
+  },
+  "subsystem.engine.h6_start": {
+    "sounds": [
+      "machine_max:subsystem/engine/h6/h6_start"
+    ]
+  },
+  "subsystem.engine.h6_stop": {
+    "sounds": [
+      "machine_max:subsystem/engine/h6/h6_stop"
+    ]
+  },
+  "subsystem.engine.i2_800": {
+    "sounds": [
+      "machine_max:subsystem/engine/i2/i2_800"
+    ]
+  },
+  "subsystem.engine.i2_2000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i2/i2_2000"
+    ]
+  },
+  "subsystem.engine.i2_3000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i2/i2_3000"
+    ]
+  },
+  "subsystem.engine.i2_4000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i2/i2_4000"
+    ]
+  },
+  "subsystem.engine.i2_5000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i2/i2_5000"
+    ]
+  },
+  "subsystem.engine.i2_6000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i2/i2_6000"
+    ]
+  },
+  "subsystem.engine.i2_power": {
+    "sounds": [
+      "machine_max:subsystem/engine/i2/i2_power"
+    ]
+  },
+  "subsystem.engine.i2_start": {
+    "sounds": [
+      "machine_max:subsystem/engine/i2/i2_start"
+    ]
+  },
+  "subsystem.engine.i2_stop": {
+    "sounds": [
+      "machine_max:subsystem/engine/i2/i2_stop"
+    ]
+  },
+  "subsystem.engine.i4_800": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_800"
+    ]
+  },
+  "subsystem.engine.i4_2000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_2000"
+    ]
+  },
+  "subsystem.engine.i4_3000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_3000"
+    ]
+  },
+  "subsystem.engine.i4_4000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_4000"
+    ]
+  },
+  "subsystem.engine.i4_5000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_5000"
+    ]
+  },
+  "subsystem.engine.i4_6000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_6000"
+    ]
+  },
+  "subsystem.engine.i4_7000": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_7000"
+    ]
+  },
+  "subsystem.engine.i4_power": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_power"
+    ]
+  },
+  "subsystem.engine.i4_start": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_start"
+    ]
+  },
+  "subsystem.engine.i4_stop": {
+    "sounds": [
+      "machine_max:subsystem/engine/i4/i4_stop"
+    ]
+  },
+  "subsystem.engine.v8_800": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8/v8_800"
+    ]
+  },
+  "subsystem.engine.v8_2000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8/v8_2000"
+    ]
+  },
+  "subsystem.engine.v8_3000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8/v8_3000"
+    ]
+  },
+  "subsystem.engine.v8_4000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8/v8_4000"
+    ]
+  },
+  "subsystem.engine.v8_5000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8/v8_5000"
+    ]
+  },
+  "subsystem.engine.v8_6000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8/v8_6000"
+    ]
+  },
+  "subsystem.engine.v8_power": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8/v8_power"
+    ]
+  },
+  "subsystem.engine.v8_start": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8/v8_start"
+    ]
+  },
+  "subsystem.engine.v8_stop": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8/v8_stop"
+    ]
+  },
+  "subsystem.engine.v8d_500": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8d/v8d_500"
+    ]
+  },
+  "subsystem.engine.v8d_1000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8d/v8d_1000"
+    ]
+  },
+  "subsystem.engine.v8d_1500": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8d/v8d_1500"
+    ]
+  },
+  "subsystem.engine.v8d_2000": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8d/v8d_2000"
+    ]
+  },
+  "subsystem.engine.v8d_power": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8d/v8d_power"
+    ]
+  },
+  "subsystem.engine.v8d_start": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8d/v8d_start"
+    ]
+  },
+  "subsystem.engine.v8d_stop": {
+    "sounds": [
+      "machine_max:subsystem/engine/v8d/v8d_stop"
+    ]
+  },
+  "subsystem.motor.elec_3000": {
+    "sounds": [
+      "machine_max:subsystem/motor/elec_3000"
+    ]
   }
 }

@@ -7,6 +7,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import lombok.Getter;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -16,7 +17,7 @@ import java.util.*;
 
 @Getter
 public class VariantAttr {
-    public final List<String> tags; //部件标签
+    public final List<ResourceLocation> tags; //部件标签
     @Getter
     public final ResourceLocation model; // 模型路径
     public final Map<String, ResourceLocation> textures; // 纹理名 -> 纹理
@@ -44,14 +45,14 @@ public class VariantAttr {
     );
 
     public static final Codec<VariantAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.listOf().optionalFieldOf("tags", List.of()).forGetter(VariantAttr::getTags),
+            ResourceLocation.CODEC.listOf().optionalFieldOf("tags", List.of()).forGetter(VariantAttr::getTags),
             ResourceLocation.CODEC.fieldOf("model").forGetter(VariantAttr::getModel),
             TEXTURES_CODEC.optionalFieldOf("textures", Map.of("default", EMPTY_TEXTURE)).forGetter(VariantAttr::getTextures),
             ResourceLocation.CODEC.optionalFieldOf("animations", EMPTY_ANIM).forGetter(VariantAttr::getAnimations),
             SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(VariantAttr::getSubParts)
     ).apply(instance, VariantAttr::new));
 
-    public VariantAttr(List<String> tags, ResourceLocation model, Map<String, ResourceLocation> textures, ResourceLocation animations, Map<String, SubPartAttr> subParts) {
+    public VariantAttr(List<ResourceLocation> tags, ResourceLocation model, Map<String, ResourceLocation> textures, ResourceLocation animations, Map<String, SubPartAttr> subParts) {
         this.tags = tags;
         this.model = model;
         this.textures = textures;
@@ -91,7 +92,7 @@ public class VariantAttr {
             String subPartName = subParts.getKey();
             SubPartAttr subPart = subParts.getValue();
             for (Map.Entry<String, ConnectorAttr> connector : subPart.connectors.entrySet()) {//遍历零件的接口
-                if (connector.getValue().connectedTo().isEmpty())
+                if (!connector.getValue().isInternal())
                     connectors.add(Pair.of(subPartName, connector.getKey()));//外部接口加入可用接口集合
             }
         }
@@ -108,7 +109,7 @@ public class VariantAttr {
             String subPartName = entry.getKey();
             SubPartAttr subPart = entry.getValue();
             for (Map.Entry<String, ConnectorAttr> entry1 : subPart.connectors.entrySet()) {
-                if (entry1.getValue().connectedTo().isEmpty())//外部零件连接点
+                if (!entry1.getValue().isInternal())//外部零件连接点
                     connectors.put(Pair.of(subPartName, entry1.getKey()), entry1.getValue());
             }
         }

@@ -11,5 +11,41 @@
   "red_line_torque_ratio": 0.95,
   "inertia": 20,
   "cylinder": 8,
-  "damping_factors": [2.0, 0.001, 0.000001]
+  "damping_factors": [2.0, 0.001, 0.000001],
+  "sounds": {
+    "on_activate": {
+      "sound_id": "machine_max:subsystem.engine.v8_start",
+      "range": 64
+    },
+    "on_deactivate": {
+      "sound_id": "machine_max:subsystem.engine.v8_stop",
+      "range": 64
+    },
+    "working_sounds": {
+      "800.0": {
+        "sound_id": "machine_max:subsystem.engine.v8_800",
+        "range": 64
+      },
+      "2000.0": {
+        "sound_id": "machine_max:subsystem.engine.v8_2000",
+        "range": 64
+      },
+      "3000.0": {
+        "sound_id": "machine_max:subsystem.engine.v8_3000",
+        "range": 64
+      },
+      "4000.0": {
+        "sound_id": "machine_max:subsystem.engine.v8_4000",
+        "range": 64
+      },
+      "5000.0": {
+        "sound_id": "machine_max:subsystem.engine.v8_5000",
+        "range": 64
+      },
+      "6000.0": {
+        "sound_id": "machine_max:subsystem.engine.v8_6000",
+        "range": 64
+      }
+    }
+  }
 }

@@ -1,0 +1,28 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 110,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 5
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:electronic_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/ae86/ae86_hull_icon.png",
+  "description": "research.machine_max.ae86_hull_blueprint.desc",
+  "unlock_recipe": "machine_max:ae86_hull"
+}

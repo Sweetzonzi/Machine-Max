@@ -30,11 +30,11 @@ public class CarControllerSubsystemAttr extends BasicSubsystemDynamicAttr {
             SIGNAL_TARGETS_CODEC.fieldOf("engine_outputs").forGetter(CarControllerSubsystemAttr::getEngineControlOutputTargets),
             SIGNAL_TARGETS_CODEC.fieldOf("wheel_outputs").forGetter(CarControllerSubsystemAttr::getWheelControlOutputTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("gearbox_outputs", Map.of()).forGetter(CarControllerSubsystemAttr::getGearboxControlOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSpeedOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("throttle_outputs", Map.of("throttle", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getThrottleOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("steering_outputs", Map.of("steering", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSteeringOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("brake_outputs", Map.of("brake", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getBrakeOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("handbrake_outputs", Map.of("handbrake", List.of("part", "vehicle"))).forGetter(CarControllerSubsystemAttr::getHandbrakeOutputTargets)
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSpeedOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("throttle_outputs", Map.of("throttle", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getThrottleOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("steering_outputs", Map.of("steering", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSteeringOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("brake_outputs", Map.of("brake", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getBrakeOutputTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("handbrake_outputs", Map.of("handbrake", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getHandbrakeOutputTargets)
     ).apply(instance, CarControllerSubsystemAttr::new));
 
     public CarControllerSubsystemAttr(

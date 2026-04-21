@@ -42,6 +42,13 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
     public static final float SUBPART_REPAIR_PER_TICK = 1f;
     public static final float SUBSYSTEM_REPAIR_PER_TICK = 1f;
     public static final float CONNECTOR_REPAIR_PER_TICK = 1f;
+    public static final float VEHICLE_REPAIR_PER_TICK = 1f;
+    private static final SoundEvent WELDING_START_SOUND = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.welding_torch.start"), 32f);
+    private static final SoundEvent WELDING_LOOP_SOUND = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.welding_torch.loop"), 32f);
+    private static final SoundEvent WELDING_END_SOUND = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.welding_torch.end"), 32f);
 
     public WeldingTorchItem() {
         super(new Properties()
@@ -52,6 +59,9 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         player.startUsingItem(usedHand);
+        if (level.isClientSide()) {
+            playWeldingStartSound(level, player);
+        }
         return InteractionResultHolder.consume(player.getItemInHand(usedHand));
     }
 
@@ -69,21 +79,19 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                         return;
                     Part part = subPart.part;
                     if (!livingEntity.isCrouching() && !subPart.isDestroyed()) { // 一般状态下组装部件并尝试维修
-                        var research = player.getData(MMAttachments.getBLUEPRINT());
-                        float repairStep = 5 * (1 + research.calculateRepairBuff(part, player));
+                        float repairStep = 5;
                         boolean repaired = subPart.repair(
                                 repairStep * SUBPART_REPAIR_PER_TICK,
                                 repairStep * SUBSYSTEM_REPAIR_PER_TICK,
-                                repairStep * CONNECTOR_REPAIR_PER_TICK);
-                        // 若配方已解锁或持有蓝图，则尝试同时组装部件
-                        if (player.isCreative() || research.canAssemble(player, part)) {
-                            float assembleStep = 5 * (1 + research.calculateAssemblyBuff(part, player));
-                            boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
-                            if (assembled && remainingUseDuration % 10 == 0)
-                                BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
-                            if (repaired && remainingUseDuration % 10 == 0)
-                                BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
-                        }
+                                repairStep * CONNECTOR_REPAIR_PER_TICK)
+                                || subPart.getPart().getVehicle().repair(repairStep * VEHICLE_REPAIR_PER_TICK);
+                        // 尝试同时组装部件
+                        float assembleStep = 5;
+                        boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
+                        if (assembled && remainingUseDuration % 10 == 0)
+                            BlueprintAttachment.giveRp(player, (int) assembleStep, RpAddReason.ASSEMBLY);
+                        if (repaired && remainingUseDuration % 10 == 0)
+                            BlueprintAttachment.giveRp(player, (int) repairStep, RpAddReason.REPAIR);
                     } else { // 潜行时拆解部件为原材料
                         if (part.getAssemblingProgress() > 0) {
                             part.disassemble(player.getInventory(), 5 * ASSEMBLY_PER_TICK);
@@ -112,7 +120,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                     normal.z + 0.2 * (Math.random() - 0.5)
                             );
                         }
-                        playWeldingSound(level, player, 1.0f, 1.0f);
+                        playWeldingLoopSound(level, player, 1.0f, 1.0f);
                     } else {
                         if (Math.random() < 0.1) {
                             level.addParticle(
@@ -125,7 +133,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                     0.2 * (Math.random() - 0.5)
                             );
                         }
-                        playWeldingSound(level, player, 1.5f, 0.3f);
+                        playWeldingLoopSound(level, player, 1.5f, 0.3f);
                     }
                 }
             } else if (entity != null) {
@@ -148,7 +156,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                 1.5 * (Math.random() - 0.5)
                         );
                     }
-                    playWeldingSound(level, player, 1.0f, 1.0f);
+                    playWeldingLoopSound(level, player, 1.0f, 1.0f);
                 }
             } else if (level.isClientSide()) {
                 if (Math.random() < 0.1) {
@@ -162,13 +170,24 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                             0.2 * (Math.random() - 0.5)
                     );
                 }
-                playWeldingSound(level, player, 1.5f, 0.3f);
+                playWeldingLoopSound(level, player, 1.5f, 0.3f);
             }
         }
     }
 
+    @Override
+    public void releaseUsing(ItemStack stack, Level level, LivingEntity livingEntity, int timeCharged) {
+        super.releaseUsing(stack, level, livingEntity, timeCharged);
+        if (level.isClientSide() && livingEntity instanceof Player player) {
+            playWeldingEndSound(level, player);
+        }
+    }
+
     private boolean shouldPlayEffect(SubPart subPart) {
-        boolean shouldPlayEffect = subPart.getDurability() < subPart.getMaxDurability();
+        boolean shouldPlayEffect = subPart.getPart().getVehicle().getHp() < subPart.getPart().getVehicle().getMaxHp();
+        if (!shouldPlayEffect) {
+            shouldPlayEffect = subPart.getDurability() < subPart.getMaxDurability();
+        }
         if (!shouldPlayEffect)
             for (AbstractSubsystem subsystem : subPart.getSubsystems().values()) {
                 if (subsystem.getDurability() < subsystem.getMaxDurability()) {
@@ -188,9 +207,17 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
         return shouldPlayEffect;
     }
 
-    private void playWeldingSound(Level level, Player player, float pitch, float volume) {
+    private void playWeldingStartSound(Level level, Player player) {
+        SpreadingSoundHelper.playSpreadingSound(level, WELDING_START_SOUND, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1.0f + 0.2f * (Math.random() - 0.5f)), 1.0f);
+    }
+
+    private void playWeldingLoopSound(Level level, Player player, float pitch, float volume) {
         SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.painted"), 32f);
         SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (pitch + 0.2f * (Math.random() - 0.5f)), volume);
+    }
+
+    private void playWeldingEndSound(Level level, Player player) {
+        SpreadingSoundHelper.playSpreadingSound(level, WELDING_END_SOUND, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1.0f + 0.2f * (Math.random() - 0.5f)), 1.0f);
     }
 
     @Override

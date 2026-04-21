@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 public class Hud3DRenderer {
 
     /**

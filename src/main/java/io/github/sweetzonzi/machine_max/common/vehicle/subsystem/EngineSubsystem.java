@@ -1,11 +1,11 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
-import cn.solarmoon.spark_core.sound.ISoundSpreader;
+import cn.solarmoon.spark_core.sound.IMultiChannelSoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.EngineSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.EngineSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.control.PDController;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -18,11 +18,12 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class EngineSubsystem extends BasicSubsystem implements ISoundSpreader {
+public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader {
     public final EngineSubsystemAttr attr;
     public final double RED_LINE_SPEED;//红线转速(rad/s)
     public final double MAX_TORQUE_SPEED;//最大扭矩转速(rad/s)
@@ -31,9 +32,18 @@ public class EngineSubsystem extends BasicSubsystem implements ISoundSpreader {
     public final double MIN_IDLE_THROTTLE;//怠速转速下的最小油门
     protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(EngineSubsystem.class, EntityDataSerializers.FLOAT);
     public double throttleInput;//当前油门输入（0~1）
-    private WorkingState currentState = null;//当前引擎工况及对应音效
-    private UUID currentSoundUUID = UUID.randomUUID();
-    private int sinceLastSoundUpdate = 0;
+    private static final int RETRIGGER_TICKS = 20;
+
+    /**
+     * 声音通道缓存：每个转速档位一个通道。
+     */
+    private final Map<String, SoundChannel> soundChannels = new LinkedHashMap<>();
+
+    /**
+     * 通道键到工况状态的映射，用于按通道计算音高。
+     */
+    private final Map<String, WorkingState> channelStates = new LinkedHashMap<>();
+
     private final PDController coupleTorquePD;
 
     //TODO: 引擎输出功率随曲轴转角周期性变化，气缸数越多输出扭矩越平稳
@@ -53,33 +63,31 @@ public class EngineSubsystem extends BasicSubsystem implements ISoundSpreader {
                 0.5 * attr.getStaticAttribute().getInertia(), //kd
                 1.0 / getPhysicsLevel().getTps() //step
         );
-        if (attr.getStaticAttribute().workingStates.isEmpty() && getLevel().isClientSide())
+        if (attr.getStaticAttribute().workingStates.isEmpty() && getLevel().isClientSide()) {
             attr.getStaticAttribute().createSounds();
+        }
     }
 
     @Override
     public void onTick() {
         super.onTick();
-        //根据转速和油门播放声音
+        // 根据转速和油门播放声音
         Level level = getSubPart().getLevel();
         if (level.isClientSide() && this.isActive()) {
-            double rotSpeed = getRotSpeed();
-            sinceLastSoundUpdate++;
-            WorkingState bestState = attr.getBestMatchWorkingState(
-                    Math.abs(30 * rotSpeed / Math.PI), Math.abs(throttleInput));
-            if (bestState != null) {
-                if ((bestState != currentState && sinceLastSoundUpdate > 8) || sinceLastSoundUpdate > 30) {
-                    currentState = bestState;
-                    sinceLastSoundUpdate = 0;
-                    currentSoundUUID = transitionSound(level, currentSoundUUID,
-                            SoundEvent.createFixedRangeEvent(bestState.sound(), 64f),
-                            SoundSource.PLAYERS, 8, 8);
-                }
-            } else {
-                MachineMax.LOGGER.debug("No working state found for rpm: {}, throttleInput: {}", rotSpeed * Math.PI / 30, throttleInput);
-                currentState = null;
+            if (soundChannels.isEmpty()) {
+                initSoundChannels();
             }
-        } else currentState = null;
+            double rpm = Math.abs(30 * getRotSpeed() / Math.PI);
+            EngineSubsystemStaticAttr.RpmWorkingStates candidates = attr.getStaticAttribute().getAdjacentWorkingStates(rpm);
+            if (candidates.center() != EngineSubsystemStaticAttr.EMPTY_WORKING_STATE) {
+                updateTwoChannelWeightsByRpm(rpm, candidates);
+                tickSoundChannels(level, SoundSource.PLAYERS, tickCount, 8, 8);
+            } else {
+                clearChannelWeights();
+            }
+        } else {
+            clearChannelWeights();
+        }
     }
 
     @Override
@@ -148,6 +156,97 @@ public class EngineSubsystem extends BasicSubsystem implements ISoundSpreader {
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
         sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);//发送握手信号建立转速反馈链接
+    }
+
+    /**
+     * 根据当前 workingStates 重建多声音通道。
+     */
+    private void initSoundChannels() {
+        soundChannels.clear();
+        channelStates.clear();
+        for (int i = 0; i < attr.getStaticAttribute().workingStates.size(); i++) {
+            List<WorkingState> states = attr.getStaticAttribute().workingStates.get(i);
+            if (states == null || states.isEmpty()) continue;
+            WorkingState state = states.getFirst();
+            String key = "rpm_" + i;
+            soundChannels.put(key, new SoundChannel(key, state.sound(), RETRIGGER_TICKS));
+            channelStates.put(key, state);
+        }
+    }
+
+    /**
+     * 左右两通道平方插值（等功率思路）：
+     * 1. 只给 center 和邻近方向通道分配权重；
+     * 2. 其它通道权重强制为 0。
+     */
+    private void updateTwoChannelWeightsByRpm(double rpm, EngineSubsystemStaticAttr.RpmWorkingStates candidates) {
+        // 先清零，确保“除左右两通道外全部为0”。
+        clearChannelWeights();
+
+        WorkingState center = candidates.center();
+        if (center == EngineSubsystemStaticAttr.EMPTY_WORKING_STATE) return;
+
+        WorkingState left = candidates.left();
+        WorkingState right = candidates.right();
+        WorkingState neighbor = rpm >= center.rpm() ? right : left;
+
+        String centerKey = findChannelKeyByState(center);
+        if (centerKey == null) return;
+
+        if (neighbor == EngineSubsystemStaticAttr.EMPTY_WORKING_STATE) {
+            // 无邻近通道时，中心通道独占。
+            setChannelWeight(centerKey, 1.0f);
+            return;
+        }
+
+        String neighborKey = findChannelKeyByState(neighbor);
+        if (neighborKey == null) {
+            setChannelWeight(centerKey, 1.0f);
+            return;
+        }
+
+        double minRpm = Math.min(center.rpm(), neighbor.rpm());
+        double maxRpm = Math.max(center.rpm(), neighbor.rpm());
+        if (maxRpm - minRpm < 1e-4) {
+            setChannelWeight(centerKey, 1.0f);
+            return;
+        }
+
+        double t = Math.clamp((rpm - minRpm) / (maxRpm - minRpm), 0, 1);
+
+        // 平方插值：center 与 neighbor 仅两者有权重。
+        float centerWeight;
+        float neighborWeight;
+        if (neighbor.rpm() > center.rpm()) {
+            centerWeight = (float) ((1 - t) * (1 - t));
+            neighborWeight = (float) (t * t);
+        } else {
+            centerWeight = (float) (t * t);
+            neighborWeight = (float) ((1 - t) * (1 - t));
+        }
+
+        setChannelWeight(centerKey, centerWeight);
+        setChannelWeight(neighborKey, neighborWeight);
+    }
+
+    private void setChannelWeight(String channelKey, float weight) {
+        SoundChannel channel = soundChannels.get(channelKey);
+        if (channel != null) {
+            channel.setWeight(weight);
+        }
+    }
+
+    private String findChannelKeyByState(WorkingState target) {
+        for (Map.Entry<String, WorkingState> entry : channelStates.entrySet()) {
+            if (entry.getValue().equals(target)) return entry.getKey();
+        }
+        return null;
+    }
+
+    private void clearChannelWeights() {
+        for (SoundChannel channel : soundChannels.values()) {
+            channel.setWeight(0.0f);
+        }
     }
 
     /**
@@ -233,43 +332,34 @@ public class EngineSubsystem extends BasicSubsystem implements ISoundSpreader {
         return result;
     }
 
-    /**
-     * 获取声源的实时位置
-     *
-     * <p>此方法在每个游戏tick都会被调用，用于更新声音波面的发射源位置。
-     * 返回的位置将作为声音传播的起点，声音会从此位置以音速向外传播。</p>
-     *
-     * <p>实现注意事项：</p>
-     * <ul>
-     *   <li>应返回当前帧声源在世界中的精确位置</li>
-     *   <li>位置变化应平滑，避免剧烈跳跃</li>
-     *   <li>对于移动声源，建议返回质心或主要发声部位的位置</li>
-     * </ul>
-     *
-     * @param uuid  声源的UUID
-     * @param event 当前播放的声音事件
-     * @return 声源在当前游戏刻的三维世界坐标，单位：方块
-     */
     @Override
     public @NotNull Vec3 getPosition(UUID uuid, SoundEvent event) {
         return SparkMathKt.toVec3(getSubPart().getPosition());
     }
 
     @Override
-    public float getVolume(UUID uuid, SoundEvent event) {
-        if (currentState != null && !getSubPart().isRemoved()) {
-            return 1f;
-        } else return 0f;
+    public @NotNull Vec3 getSpeed(UUID uuid, SoundEvent event) {
+        return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
+    }
+
+    @Override
+    public float getMasterVolume(UUID uuid, SoundEvent event) {
+        if (getSubPart().isRemoved() || !isActive()) return 0f;
+        return 0.3f + 0.7f * (float) Math.clamp(Math.abs(throttleInput), 0, 1);
     }
 
     @Override
     public float getPitch(UUID uuid, SoundEvent event) {
-        if (currentState != null) {
-            double rpm = Math.max(Math.abs(30 * getRotSpeed() / Math.PI), 0.5 * attr.getStaticAttribute().getIdleRpm());
-            double rpmRatio = rpm / currentState.rpm();
-            return (float) Math.clamp(rpmRatio, 0.5, 2);
-        } else return 1f;
-//        return 1f;
+        SoundChannel channel = getChannel(uuid);
+        if (channel == null) return 1f;
+        WorkingState state = channelStates.get(channel.getChannelKey());
+        if (state == null) return 1f;
+        double rpm = Math.max(Math.abs(30 * getRotSpeed() / Math.PI), 0.5 * attr.getStaticAttribute().getIdleRpm());
+        return (float) Math.clamp(rpm / state.rpm(), 0.5, 2);
     }
 
+    @Override
+    public @NotNull Map<String, SoundChannel> getSoundChannels() {
+        return soundChannels;
+    }
 }

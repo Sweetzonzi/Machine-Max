@@ -15,7 +15,7 @@ import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
-@EventBusSubscriber(modid = MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = MOD_ID)
 public class PartInteractHandler {
     @SubscribeEvent
     private static void join(EntityJoinLevelEvent event) {

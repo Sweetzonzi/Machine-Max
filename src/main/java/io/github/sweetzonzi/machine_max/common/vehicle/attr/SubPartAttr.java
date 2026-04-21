@@ -15,6 +15,7 @@ import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import jme3utilities.math.MyMath;
 import lombok.AccessLevel;
@@ -152,7 +153,7 @@ public class SubPartAttr {
                     OBone bone = bones.get(hitBoxEntry.getKey());
                     Matrix4f pose = new Matrix4f();
                     bone.applyTransformToLocal(pose, bones.get(startBone));
-                    switch (hitBoxEntry.getValue().shapeType()) {
+                    switch (hitBoxEntry.getValue().shapeType) {
                         case "box":
                             for (OCube cube : bone.getCubes()) {
                                 org.joml.Vector3f size = cube.getSize().scale(0.5f).toVector3f();

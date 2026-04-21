@@ -1,6 +1,6 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
-  "icon": "machine_max:textures/icon/ae86_armor_icon.png",
+  "icon": "machine_max:textures/icon/ae86/ae86_armor_icon.png",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
@@ -9,6 +9,7 @@
     "textures": {
       "default": "machine_max:textures/part/ae86/ae86_armor.png"
     },
+    "tags": ["machine_max:ae86"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 1200.0,
@@ -18,61 +19,14 @@
         "hit_boxes": {
           "collision_armor": {
             "type": "box",
-            "restitution": 0.1,
-            "rolling_friction": 0.5,
-            "slip_adaptation": 0.5,
-            "block_damage_factor": 0.1,
-            "damage_modifiers": [
-              {
-                "operation": "add",
-                "value": -10.0,
-                "condition": {
-                  "type": "damage_tag",
-                  "id": "c:is_impact"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.0,
-                "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:sweet_berry_bush"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.001,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:slime"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.001,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:magma_cube"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.6,
-                "condition": {
-                  "type": "always"
-                }
-              }
-            ]
+            "material": "machine_max:structural_steel",
+            "thickness": 5
           }
         },
         "connectors": {
           "connector.machine_max.front_armor": {
             "locator": "front_armor",
-            "type": "Simple",
-            "direction": "yn",
-            "integrity": 1200.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_down"
           }
         }
       }

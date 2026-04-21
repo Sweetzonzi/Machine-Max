@@ -1,14 +1,57 @@
 {
   "max": [
-    2.0336812337239394,
-    0.878465016682938,
-    0.6447550455729143
+    0.5430933634440152,
+    1.0531005859375,
+    1.842789967854813
   ],
-  "hp": 20.0,
+  "hp": 380.0,
   "parts": {
-    "847cc88a-37cc-4742-800f-a99d51cce5d7": {
-      "custom_recipe": "machine_max:vn_chassis",
+    "b36c0361-82ca-4793-894b-9886c5b0ef8f": {
       "material_assembling_progress": 2147483647,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.chassis_connection": {
+              "integrity": 40.0
+            }
+          },
+          "id": 19,
+          "durability": 100.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              85.49336,
+              -59.60203,
+              -50.1111
+            ],
+            "rotation": [
+              -0.019343697,
+              0.0028375,
+              -5.938329E-4,
+              0.9998087
+            ],
+            "linear_vel": [
+              -3.530923E-5,
+              4.1924417E-5,
+              9.051055E-5
+            ],
+            "angular_vel": [
+              -2.0406921E-7,
+              1.9866473E-9,
+              6.1897605E-12
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:vn_wheel",
+      "registry_key": "machine_max:vn_wheel",
+      "name": "machine_max.vn_wheel",
+      "uuid": "b36c0361-82ca-4793-894b-9886c5b0ef8f",
+      "variant": "default"
+    },
+    "e3ec5a28-5fe1-4675-a536-4ff72fd98b64": {
+      "material_assembling_progress": 2147483647,
+      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -39,41 +82,42 @@
               "durability": 100.0
             }
           },
-          "id": 23,
+          "id": 15,
           "durability": 300.0,
           "pos_rot_vel_vel": {
             "position": [
-              -150.09232,
-              -59.204952,
-              -54.820663
+              85.4854,
+              -59.737488,
+              -51.4931
             ],
             "rotation": [
-              -0.0100178765,
-              -0.6832068,
-              -0.015207857,
-              0.7299979
+              -0.017997198,
+              0.0028301694,
+              -5.9836335E-4,
+              0.9998339
             ],
             "linear_vel": [
-              1.2010494E-6,
-              -3.8161874E-5,
-              6.166515E-5
+              -4.2052234E-5,
+              -1.5512109E-5,
+              1.5648044E-4
             ],
             "angular_vel": [
-              -1.1938391E-5,
-              4.843496E-6,
-              1.2478849E-6
+              -1.7247035E-6,
+              7.981947E-6,
+              -1.6880222E-9
             ]
           }
         }
       },
+      "custom_recipe": "machine_max:vn_chassis",
       "registry_key": "machine_max:vn_chassis",
       "name": "machine_max.vn_chassis",
-      "uuid": "847cc88a-37cc-4742-800f-a99d51cce5d7",
+      "uuid": "e3ec5a28-5fe1-4675-a536-4ff72fd98b64",
       "variant": "default"
     },
-    "dd9a9ae7-93ed-4f13-ac1b-e315746b556b": {
-      "custom_recipe": "machine_max:vn_wheel",
+    "3a333bd0-d7af-4ffc-92fe-6292e9909c5d": {
       "material_assembling_progress": 2147483647,
+      "render_wireframe": false,
       "sub_parts": {
         "sub_part.machine_max.main": {
           "connector_data": {
@@ -81,84 +125,43 @@
               "integrity": 40.0
             }
           },
-          "id": 25,
+          "id": 17,
           "durability": 100.0,
           "pos_rot_vel_vel": {
             "position": [
-              -148.66914,
-              -59.60202,
-              -54.918182
+              85.47772,
+              -59.602028,
+              -52.884853
             ],
             "rotation": [
-              0.21778966,
-              -0.65398383,
-              0.19826227,
-              0.6968249
+              0.1077527,
+              0.0027143066,
+              -9.4915414E-4,
+              0.9941736
             ],
             "linear_vel": [
-              -1.8920626E-4,
-              5.8196485E-5,
-              6.119363E-5
+              -2.0177986E-5,
+              1.103431E-5,
+              1.07150685E-4
             ],
             "angular_vel": [
-              -9.3407456E-5,
-              2.8451295E-6,
-              2.2508408E-11
+              -1.1558771E-7,
+              -5.9826955E-10,
+              1.469231E-12
             ]
           }
         }
       },
-      "registry_key": "machine_max:vn_wheel",
-      "name": "machine_max.vn_wheel",
-      "uuid": "dd9a9ae7-93ed-4f13-ac1b-e315746b556b",
-      "variant": "default"
-    },
-    "d5a02ab9-87bc-47a9-a519-8be4d22b9871": {
       "custom_recipe": "machine_max:vn_wheel",
-      "material_assembling_progress": 2147483647,
-      "sub_parts": {
-        "sub_part.machine_max.main": {
-          "connector_data": {
-            "connector.machine_max.chassis_connection": {
-              "integrity": 40.0
-            }
-          },
-          "id": 27,
-          "durability": 100.0,
-          "pos_rot_vel_vel": {
-            "position": [
-              -151.43686,
-              -59.60204,
-              -54.735123
-            ],
-            "rotation": [
-              0.5105891,
-              -0.4924916,
-              0.47376674,
-              0.52181995
-            ],
-            "linear_vel": [
-              2.1040978E-4,
-              -4.5523047E-6,
-              1.2395596E-4
-            ],
-            "angular_vel": [
-              -2.3030534E-5,
-              6.164057E-6,
-              -4.5450588E-12
-            ]
-          }
-        }
-      },
       "registry_key": "machine_max:vn_wheel",
       "name": "machine_max.vn_wheel",
-      "uuid": "d5a02ab9-87bc-47a9-a519-8be4d22b9871",
+      "uuid": "3a333bd0-d7af-4ffc-92fe-6292e9909c5d",
       "variant": "default"
     }
   },
   "connections": [
     {
-      "partUuidS": "dd9a9ae7-93ed-4f13-ac1b-e315746b556b",
+      "partUuidS": "3a333bd0-d7af-4ffc-92fe-6292e9909c5d",
       "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
@@ -168,20 +171,20 @@
           0.0
         ],
         "rotation": [
-          -0.70710677,
           0.0,
           0.0,
-          0.70710677
+          0.0,
+          1.0
         ]
       },
-      "partUuidA": "847cc88a-37cc-4742-800f-a99d51cce5d7",
+      "partUuidA": "e3ec5a28-5fe1-4675-a536-4ff72fd98b64",
       "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.machine_max.front_wheel",
       "posRotA": {
         "position": [
-          9.934108E-10,
-          -0.37484905,
-          -1.4396641
+          0.0,
+          0.1561375,
+          -1.386
         ],
         "rotation": [
           0.0,
@@ -192,7 +195,7 @@
       }
     },
     {
-      "partUuidS": "d5a02ab9-87bc-47a9-a519-8be4d22b9871",
+      "partUuidS": "b36c0361-82ca-4793-894b-9886c5b0ef8f",
       "subPartNameS": "sub_part.machine_max.main",
       "simplePointConnectorName": "connector.machine_max.chassis_connection",
       "posRotS": {
@@ -202,20 +205,20 @@
           0.0
         ],
         "rotation": [
-          -0.70710677,
           0.0,
           0.0,
-          0.70710677
+          0.0,
+          1.0
         ]
       },
-      "partUuidA": "847cc88a-37cc-4742-800f-a99d51cce5d7",
+      "partUuidA": "e3ec5a28-5fe1-4675-a536-4ff72fd98b64",
       "subPartNameA": "sub_part.machine_max.main",
       "advConnectorName": "connector.machine_max.back_wheel",
       "posRotA": {
         "position": [
-          9.934108E-10,
-          -0.37484905,
-          1.332336
+          0.0,
+          0.1561375,
+          1.386
         ],
         "rotation": [
           0.0,
@@ -227,15 +230,15 @@
     }
   ],
   "name": "purge",
-  "uuid": "847cc88a-37cc-4742-800f-a99d51cce5d7",
+  "uuid": "e3ec5a28-5fe1-4675-a536-4ff72fd98b64",
   "pos": [
-    -150.06610616048175,
-    -59.469670613606766,
-    -54.82465616861979
+    85.48549397786458,
+    -59.64718246459961,
+    -51.49635060628255
   ],
   "min": [
-    -1.8501993815104356,
-    -0.7452494303385464,
-    -0.6298116048177107
+    -0.5409978230794223,
+    -0.47760772705078125,
+    -1.913141886393234
   ]
 }

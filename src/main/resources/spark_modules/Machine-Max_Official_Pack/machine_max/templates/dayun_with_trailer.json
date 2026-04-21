@@ -4,7 +4,7 @@
     4.172783795525042,
     3.1183319091796875
   ],
-  "hp": 20.0,
+  "hp": 100000000.0,
   "parts": {
     "cf3ead5c-b4ab-4707-94db-281d63ec4c70": {
       "custom_recipe": "machine_max:dayun_wheelx2",

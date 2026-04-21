@@ -1,0 +1,22 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 120,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 6
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/ae86/ae86_chassis_icon.png",
+  "description": "research.machine_max.ae86_chassis_blueprint.desc",
+  "unlock_recipe": "machine_max:ae86_chassis"
+}

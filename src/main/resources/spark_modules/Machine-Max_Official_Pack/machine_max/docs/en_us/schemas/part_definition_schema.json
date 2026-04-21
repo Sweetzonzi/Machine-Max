@@ -34,6 +34,13 @@
       "default": 0.1,
       "description": "Vehicle damage transmission coefficient after part is destroyed, when the destroyed part takes damage, it transmits to the vehicle at this ratio. Usually set to a lower value to prevent corpse punishment"
     },
+    "functional_threshold": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.3,
+      "description": "Part functional threshold. Subsystems can work and assembly wireframe mode can auto-close after assembling progress reaches this value."
+    },
     "share_durability": {
       "type": "boolean",
       "default": true,
@@ -73,6 +80,7 @@
       "vehicle_durability_rate": 1.0,
       "vehicle_damage_rate": 1.0,
       "vehicle_damage_rate_destroyed": 0.1,
+      "functional_threshold": 0.6,
       "share_durability": true,
       "variants": {
         "models": "machine_max:ae86_chassis_all_terrain.geo",
@@ -90,7 +98,7 @@
               "mmCollision_Box_Chassis": {
                 "name": "chassis",
                 "type": "box",
-                "rha": 10
+                "thickness": 10
               }
             }
           }
@@ -112,7 +120,7 @@
               "hit_boxes": {
                 "collision_box": {
                   "type": "box",
-                  "rha": 8
+                  "thickness": 8
                 }
               }
             }
@@ -128,7 +136,7 @@
               "hit_boxes": {
                 "collision_box": {
                   "type": "box",
-                  "rha": 8
+                  "thickness": 8
                 }
               }
             }

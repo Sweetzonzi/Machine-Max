@@ -4,7 +4,7 @@
     1.9811722891671266,
     2.121470860072545
   ],
-  "hp": 20.0,
+  "hp": 100000000.0,
   "parts": {
     "1ff8ca5b-27f9-40ae-8eef-b89484630626": {
       "custom_recipe": "machine_max:jeep_wheel",

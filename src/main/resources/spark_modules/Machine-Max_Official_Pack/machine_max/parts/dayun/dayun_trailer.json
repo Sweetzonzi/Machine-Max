@@ -1,18 +1,18 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
-  "icon": "machine_max:textures/icon/dayun_trailer_icon.png",
+  "icon": "machine_max:textures/icon/dayun/dayun_trailer_icon.png",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
     "model": "machine_max:dayun_trailer.geo",
-    "textures": { //贴图路径列表
+    "textures": {
       "print.machine_max.dayun.1": "machine_max:textures/part/dayun/dayun.png",
       "print.machine_max.dayun.2": "machine_max:textures/part/dayun/dayun2.png",
       "print.machine_max.dayun.4": "machine_max:textures/part/dayun/dayun4.png",
       "print.machine_max.dayun.6": "machine_max:textures/part/dayun/dayun6.png"
     },
-    "tags": ["dayun", "chassis"],
+    "tags": ["machine_max:dayun", "machine_max:chassis"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 3000.0,
@@ -22,416 +22,103 @@
         "hit_boxes": {
           "collision": {
             "type": "box",
-            "restitution": 0.1,
-            "rolling_friction": 0.5,
-            "slip_adaptation": 0.5,
-            "block_damage_factor": 0.1,
-            "damage_modifiers": [
-              {
-                "operation": "add",
-                "value": -10.0,
-                "condition": {
-                  "type": "damage_tag",
-                  "id": "c:is_impact"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.0,
-                "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:sweet_berry_bush"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.001,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:slime"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.001,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:magma_cube"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.6,
-                "condition": {
-                  "type": "always"
-                }
-              }
-            ]
+            "material": "machine_max:structural_steel",
+            "thickness": 10
           },
           "support_collision": {
             "type": "box",
-            "restitution": 0.1,
-            "rolling_friction": 0.5,
-            "slip_adaptation": 0.5,
-            "block_damage_factor": 0.1,
+            "material": "machine_max:structural_steel",
             "condition": "!subpart.has_connector('connector.machine_max.chassis_connection')"
           }
         },
         "connectors": {
           "connector.machine_max.chassis_connection": {
             "locator": "chassis_locator",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_down"
           },
           "connector.machine_max.left_wheel_1": {
             "locator": "wheel_left_1",
-            "type": "Advanced",
-            "direction": "xn",
-            "integrity": 1500.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.8,
-            "required_tags": [
-              "left"
-            ],
-            "forbidden_tags": ["chassis", "hull"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
-                "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
-                "equilibrium": -0.15,
-                "stiffness": 180000,
-                "damping": 3500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "zr": {
-                "lower_limit": -15.0,
-                "upper_limit": -1.0,
-                "equilibrium": -1.0,
-                "stiffness": 180000,
-                "damping": 3500
-              }
-            }
+            "definition": "machine_max:dayun_left_wheel"
           },
           "connector.machine_max.left_wheel_2": {
-            //连接点名称
             "locator": "wheel_left_2",
-            //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Advanced",
-            //连接点类型, 支持Simple和Advanced
-            "direction": "xn",
-            // 左前轮连接点方向应向左即x负方向
-            "integrity": 1500.0,
-            //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
-            "impact_reduction": 3.0,
-            //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
-            "impact_multiplier": 0.8,
-            //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
-            "required_tags": [
-              "left"
-            ],
-            "forbidden_tags": ["chassis", "hull"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
-                "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
-                "equilibrium": -0.15,
-                "stiffness": 180000,
-                "damping": 3500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "zr": {
-                "lower_limit": -15.0,
-                "upper_limit": -1.0,
-                "equilibrium": -1.0,
-                "stiffness": 180000,
-                "damping": 3500
-              }
-            }
+            "definition": "machine_max:dayun_left_wheel"
           },
           "connector.machine_max.left_wheel_3": {
-            //连接点名称
             "locator": "wheel_left_3",
-            //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Advanced",
-            //连接点类型, 支持Simple和Advanced
-            "direction": "xn",
-            // 左前轮连接点方向应向左即x负方向
-            "integrity": 1500.0,
-            //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
-            "impact_reduction": 3.0,
-            //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
-            "impact_multiplier": 0.8,
-            //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
-            "required_tags": [
-              "left"
-            ],
-            "forbidden_tags": ["chassis", "hull"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
-                "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
-                "equilibrium": -0.15,
-                "stiffness": 180000,
-                "damping": 3500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "zr": {
-                "lower_limit": -15.0,
-                "upper_limit": -1.0,
-                "equilibrium": -1.0,
-                "stiffness": 180000,
-                "damping": 3500
-              }
-            }
+            "definition": "machine_max:dayun_left_wheel"
           },
           "connector.machine_max.right_wheel_1": {
-            //连接点名称
             "locator": "wheel_right_1",
-            //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Advanced",
-            //连接点类型, 支持Simple和Advanced
-            "direction": "xp",
-            // 左前轮连接点方向应向左即x负方向
-            "integrity": 1500.0,
-            //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
-            "impact_reduction": 3.0,
-            //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
-            "impact_multiplier": 0.8,
-            //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
-            "required_tags": [
-              "right"
-            ],
-            "forbidden_tags": ["chassis", "hull"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
-                "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
-                "equilibrium": -0.15,
-                "stiffness": 180000,
-                "damping": 3500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "zr": {
-                "lower_limit": -15.0,
-                "upper_limit": -1.0,
-                "equilibrium": -1.0,
-                "stiffness": 180000,
-                "damping": 3500
-              }
-            }
+            "definition": "machine_max:dayun_right_wheel"
           },
           "connector.machine_max.right_wheel_2": {
-            //连接点名称
             "locator": "wheel_right_2",
-            //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Advanced",
-            //连接点类型, 支持Simple和Advanced
-            "direction": "xp",
-            // 左前轮连接点方向应向左即x负方向
-            "integrity": 1500.0,
-            //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
-            "impact_reduction": 3.0,
-            //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
-            "impact_multiplier": 0.8,
-            //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
-            "required_tags": [
-              "right"
-            ],
-            "forbidden_tags": ["chassis", "hull"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
-                "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
-                "equilibrium": -0.15,
-                "stiffness": 180000,
-                "damping": 3500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "zr": {
-                "lower_limit": -15.0,
-                "upper_limit": -1.0,
-                "equilibrium": -1.0,
-                "stiffness": 180000,
-                "damping": 3500
-              }
-            }
+            "definition": "machine_max:dayun_right_wheel"
           },
           "connector.machine_max.right_wheel_3": {
-            //连接点名称
             "locator": "wheel_right_3",
-            //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Advanced",
-            //连接点类型, 支持Simple和Advanced
-            "direction": "xp",
-            // 左前轮连接点方向应向左即x负方向
-            "integrity": 1500.0,
-            //(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
-            "impact_reduction": 3.0,
-            //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
-            "impact_multiplier": 0.8,
-            //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
-            "required_tags": [
-              "right"
-            ],
-            "forbidden_tags": ["chassis", "hull"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -0.5, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
-                "upper_limit": 1.0, //关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
-                "equilibrium": -0.15,
-                "stiffness": 180000,
-                "damping": 3500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "zr": {
-                "lower_limit": -15.0,
-                "upper_limit": -1.0,
-                "equilibrium": -1.0,
-                "stiffness": 180000,
-                "damping": 3500
-              }
-            }
+            "definition": "machine_max:dayun_right_wheel"
           },
           "connector.machine_max.left_1": {
             "locator": "left1",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.mid_1": {
             "locator": "mid1",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.right_1": {
             "locator": "right1",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.left_2": {
             "locator": "left2",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.mid_2": {
             "locator": "mid2",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.right_2": {
             "locator": "right2",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.left_3": {
             "locator": "left3",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.mid_3": {
             "locator": "mid3",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.right_3": {
             "locator": "right3",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.left_4": {
             "locator": "left4",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.mid_4": {
             "locator": "mid4",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.right_4": {
             "locator": "right4",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.left_5": {
             "locator": "left5",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.mid_5": {
             "locator": "mid5",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.right_5": {
             "locator": "right5",
-            "type": "Simple",
-            "direction": "yp",
-            "integrity": 3000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_up"
           }
         }
       }

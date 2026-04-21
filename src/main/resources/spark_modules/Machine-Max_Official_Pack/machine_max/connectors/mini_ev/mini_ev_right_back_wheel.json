@@ -1,0 +1,31 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced",
+  "direction": "xp",
+  "integrity": 40.0,
+  "impact_reduction": 3.0,
+  "impact_multiplier": 0.8,
+  "required_tags": ["machine_max:right"],
+  "acceptable_tags": [],
+  "forbidden_tags": ["machine_max:hull", "machine_max:chassis"],
+  "joint_attrs": {
+    "y": {
+      "lower_limit": -1.0,
+      "upper_limit": 1.0,
+      "equilibrium": -0.1,
+      "stiffness": 20000,
+      "damping": 1000
+    },
+    "xr": {
+      "lower_limit": 1.0,
+      "upper_limit": -1.0
+    },
+    "zr": {
+      "lower_limit": -15.0,
+      "upper_limit": -1.0,
+      "equilibrium": -1.0,
+      "stiffness": 25000,
+      "damping": 1000
+    }
+  }
+}

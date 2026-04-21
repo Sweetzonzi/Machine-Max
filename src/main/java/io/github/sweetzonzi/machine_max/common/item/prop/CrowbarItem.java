@@ -92,17 +92,24 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                 } else {
                     part.vehicle.removePart(part);
                     if (!player.isCreative()) {//非创造模式，则尝试获取为物品
-                        if (part.assemblingProgress >= 1f) { // 仅完成组装的部件可作为物品掉落
-                            ItemStack itemStack = new ItemStack(MMItems.getPART_ITEM());
-                            itemStack.set(MMDataComponents.getPART_TYPE(), partType.getRegistryKey());
-                            itemStack.set(MMDataComponents.getRECIPE_TYPE(), part.getCustomRecipe());
-                            itemStack.set(DataComponents.MAX_STACK_SIZE, partType.getMaxStackSize());
-                            if (!player.addItem(itemStack)) {//尝试直接放入物品栏，失败则掉落为实体
-                                Entity itemStackEntity = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), itemStack);
-                                level.addFreshEntity(itemStackEntity);
+                        ItemStack itemStack = null;
+                        float assemblingProgress = part.getAssemblingProgress();
+                        FabricatingRecipe recipe = part.getRecipe();
+                        if (assemblingProgress >= 1f) {
+                            itemStack = createPartItemStack(part, partType);
+                        } else if (recipe != null) {
+                            int materialCap = recipe.isManualAssemblablePart() ? recipe.getManualAssembleIngredientList().size() : 0;
+                            if (materialCap > 0) {
+                                int materialProvided = Math.clamp(part.getMaterialProgress(), 0, materialCap);
+                                int materialGap = materialCap - materialProvided;
+                                itemStack = createDamagedPartItemStack(part, partType, materialCap, materialGap);
+                            } else {
+                                itemStack = createPartItemStack(part, partType);
                             }
-                        } else if (part.getRecipe() instanceof FabricatingRecipe) {
-                            part.disassemble(player.getInventory(), Float.MAX_VALUE);
+                        }
+                        if (itemStack != null && !player.addItem(itemStack)) {//尝试直接放入物品栏，失败则掉落为实体
+                            Entity itemStackEntity = new ItemEntity(level, player.getX(), player.getY(), player.getZ(), itemStack);
+                            level.addFreshEntity(itemStackEntity);
                         }
                     }
                     SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.removed"), 32f);
@@ -206,5 +213,25 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                 || displayContext == ItemDisplayContext.GROUND)
             return new Vector3f(0, -85f, -45f).mul((float) (Math.PI / 180));
         return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
+    }
+
+    private static ItemStack createPartItemStack(Part part, PartType partType) {
+        ItemStack stack = new ItemStack(MMItems.getPART_ITEM());
+        stack.set(MMDataComponents.getPART_TYPE(), partType.getRegistryKey());
+        stack.set(MMDataComponents.getRECIPE_TYPE(), part.getCustomRecipe());
+        stack.set(DataComponents.MAX_STACK_SIZE, partType.getMaxStackSize());
+        return stack;
+    }
+
+    private static ItemStack createDamagedPartItemStack(Part part, PartType partType, int materialCap, int materialGap) {
+        ItemStack stack = createPartItemStack(part, partType);
+        int clampedCap = Math.max(materialCap, 0);
+        int clampedGap = Math.clamp(materialGap, 0, clampedCap);
+        if (clampedGap > 0) {
+            stack.set(DataComponents.MAX_STACK_SIZE, 1);
+            stack.set(DataComponents.MAX_DAMAGE, clampedCap);
+            stack.setDamageValue(clampedGap);
+        }
+        return stack;
     }
 }

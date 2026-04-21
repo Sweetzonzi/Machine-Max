@@ -11,9 +11,11 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemT
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
@@ -29,6 +31,18 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
     public final int cylinderCount; // 气缸数
     public final List<Double> dampingFactors; //发动机各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
     public final List<String> throttleInputKeys; //优先级从高至低
+    public final EngineSoundAttr sounds;
+
+    public record EngineSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds) {
+        public static final EngineSoundAttr DEFAULT = new EngineSoundAttr(BasicSoundAttr.DEFAULT, Map.of());
+
+        public static final Codec<EngineSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                BasicSoundAttr.basicSounds(EngineSoundAttr::basicSounds),
+                Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
+                        .optionalFieldOf("working_sounds", Map.of())
+                        .forGetter(EngineSoundAttr::workingSounds)
+        ).apply(instance, EngineSoundAttr::new));
+    }
 
     public static final MapCodec<EngineSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
@@ -44,14 +58,19 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
             Codec.INT.optionalFieldOf("cylinder", 4).forGetter(EngineSubsystemStaticAttr::getCylinderCount),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(20.0, 0.1, 0.00005)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys),
-            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
+            EngineSoundAttr.CODEC.optionalFieldOf("sounds", EngineSoundAttr.DEFAULT).forGetter(EngineSubsystemStaticAttr::getSounds)
     ).apply(instance, EngineSubsystemStaticAttr::new));
     public static final int LOAD_STATE_COUNT = 4;
     public static final double RPM_INCREASE_RATIO = 1.4; // 40% 增加，即 1.4 倍
 
     public final ArrayList<ArrayList<WorkingState>> workingStates = new ArrayList<>();//工况-音效列表，外层转速，内层负载，对应音效文件名
 
-    public static final WorkingState EMPTY_WORKING_STATE = new WorkingState(0.0f, 0.0f, ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
+    public static final WorkingState EMPTY_WORKING_STATE = new WorkingState(
+            0.0f,
+            0.0f,
+            SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty_sound"), 0f)
+    );
+    public record RpmWorkingStates(WorkingState left, WorkingState center, WorkingState right) {}
 
 
     public EngineSubsystemStaticAttr(
@@ -68,8 +87,8 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
             int cylinderCount,
             List<Double> dampingFactors,
             List<String> throttleInputKeys,
-            BasicSoundAttr sounds) {
-        super(basicAttr, sounds);
+            EngineSoundAttr sounds) {
+        super(basicAttr, sounds.basicSounds());
         this.maxPower = maxPower;
         this.maxTorque = maxTorque;
         this.idleRpm = idleRpm;
@@ -82,83 +101,97 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
         this.cylinderCount = cylinderCount;
         this.dampingFactors = dampingFactors;
         this.throttleInputKeys = throttleInputKeys;
-    }
-
-    public boolean shouldCreateSounds() {
-        return true;
+        this.sounds = sounds;
     }
 
     public void createSounds() {
         workingStates.clear();
-        // 确定转速区间数量，按照 1.5 倍递增
+        if (!sounds.workingSounds().isEmpty()) {
+            sounds.workingSounds().entrySet().stream()
+                    .sorted((a, b) -> Float.compare(parseRpm(a.getKey()), parseRpm(b.getKey())))
+                    .forEach(entry -> {
+                        float rpm = parseRpm(entry.getKey());
+                        if (!Float.isFinite(rpm)) {
+                            MachineMax.LOGGER.warn("Invalid engine working_sounds rpm key '{}', skipped.", entry.getKey());
+                            return;
+                        }
+                        ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
+                        loadWorkingStates.add(new WorkingState(rpm, 1.0f, entry.getValue()));
+                        workingStates.add(loadWorkingStates);
+                    });
+            return;
+        }
+        // 确定转速区间数量，按照 1.4 倍递增
         int rpmCount = getRpmStateIndex(getRedLineRpm() * 2);
         // 外层循环：转速区间
         for (int i = 0; i < rpmCount + 1; i++) {
-            // 内层循环：负载区间
             ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
-            for (int j = 0; j < LOAD_STATE_COUNT; j++) {
-                // 创建工况
-                float rpm = getIdleRpm() * (float) Math.pow(RPM_INCREASE_RATIO, i);
-                float load = 0.25f * j;
-                PistonEngineSoundSynthesizer synthesizer = new PistonEngineSoundSynthesizer();
-                List<Double> firingAngles = new ArrayList<>(cylinderCount);
-                List<Double> exhaustLengths = new ArrayList<>(cylinderCount);
-                for (int k = 0; k < cylinderCount; k++) {
-                    firingAngles.add((fourStroke ? 720.0 : 360.0) / cylinderCount * k);
-                    exhaustLengths.add(0.6); // 固定排气歧管长度0.6m
-                }
-                var param = new PistonEngineSoundSynthesizer.EngineParams(
-                        cylinderCount, fourStroke,
-                        500.0,
-                        redLineRpm, idleRpm,
-                        firingAngles, exhaustLengths
-                );
-                synthesizer.setEngineParams(param);
-                ResourceLocation sound = createStateSound(synthesizer, rpm, load);
-                loadWorkingStates.add(new WorkingState(rpm, load, sound));
+            float rpm = getIdleRpm() * (float) Math.pow(RPM_INCREASE_RATIO, i);
+            float load = 1.0f;
+            PistonEngineSoundSynthesizer synthesizer = new PistonEngineSoundSynthesizer();
+            List<Double> firingAngles = new ArrayList<>(cylinderCount);
+            List<Double> exhaustLengths = new ArrayList<>(cylinderCount);
+            for (int k = 0; k < cylinderCount; k++) {
+                firingAngles.add((fourStroke ? 720.0 : 360.0) / cylinderCount * k);
+                exhaustLengths.add(0.6); // 固定排气歧管长度0.6m
             }
+            var param = new PistonEngineSoundSynthesizer.EngineParams(
+                    cylinderCount, fourStroke,
+                    500.0,
+                    redLineRpm, idleRpm,
+                    firingAngles, exhaustLengths
+            );
+            synthesizer.setEngineParams(param);
+            SoundEvent sound = createStateSound(synthesizer, rpm);
+            loadWorkingStates.add(new WorkingState(rpm, load, sound));
             workingStates.add(loadWorkingStates);
         }
     }
 
-    private ResourceLocation createStateSound(PistonEngineSoundSynthesizer synthesizer, float rpm, float load) {
+    private SoundEvent createStateSound(PistonEngineSoundSynthesizer synthesizer, float rpm) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(
                 MachineMax.MOD_ID,
-                "subsystem/engine/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(load));
+                "subsystem/engine/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(1.0f));
 //        MachineMax.LOGGER.debug("Creating engine sound: {}", id);
         SoundData ignition = SoundModule.getSound(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "ignite"));
         if (ignition != null) {
-            synthesizer.updateEngineState(rpm, load);
+            synthesizer.updateEngineState(rpm, 1.0f);
             synthesizer.synthesizeEngineSound(3f).register(id);
             MachineMax.LOGGER.debug("Engine sound created: {}", id);
         } else {
             MachineMax.LOGGER.warn("Failed to synthesize engine sound because ignition sound is missing: {}", id);
         }
-        return id;
+        return SoundEvent.createFixedRangeEvent(id, 64f);
     }
 
     public WorkingState getBestMatchWorkingState(double rpm, double load) {
         int rpmIndex = (int) Math.round(getRPMCoordinate(rpm));
-        int loadIndex = (int) Math.round(getLoadCoordinate(load));
         WorkingState result = null;
         if (rpmIndex >= 0 && rpmIndex < workingStates.size()) {
-            if (loadIndex >= 0 && loadIndex < workingStates.get(rpmIndex).size()) {
-                result = workingStates.get(rpmIndex).get(loadIndex);
+            if (!workingStates.get(rpmIndex).isEmpty()) {
+                result = workingStates.get(rpmIndex).getFirst();
             }
         }
         return result;
     }
 
-    public double distanceSqr(WorkingState state1, WorkingState state2) {
-        double rpm1Coordinate = getRPMCoordinate(state1.rpm());
-        double rpm2Coordinate = getRPMCoordinate(state2.rpm());
-        double load1Coordinate = getLoadCoordinate(state1.load());
-        double load2Coordinate = getLoadCoordinate(state2.load());
-        return (rpm1Coordinate - rpm2Coordinate) * (rpm1Coordinate - rpm2Coordinate) + (load1Coordinate - load2Coordinate) * (load1Coordinate - load2Coordinate);
+    public RpmWorkingStates getAdjacentWorkingStates(double rpm) {
+        if (workingStates.isEmpty()) {
+            return new RpmWorkingStates(EMPTY_WORKING_STATE, EMPTY_WORKING_STATE, EMPTY_WORKING_STATE);
+        }
+        int centerIndex = Math.clamp((int) Math.round(getRPMCoordinate(rpm)), 0, workingStates.size() - 1);
+        int leftIndex = centerIndex - 1;
+        int rightIndex = centerIndex + 1;
+        WorkingState left = leftIndex >= 0 ? getRpmOnlyState(leftIndex) : EMPTY_WORKING_STATE;
+        WorkingState center = getRpmOnlyState(centerIndex);
+        WorkingState right = rightIndex < workingStates.size() ? getRpmOnlyState(rightIndex) : EMPTY_WORKING_STATE;
+        return new RpmWorkingStates(left, center, right);
     }
 
-    public double distance(WorkingState state1, WorkingState state2) {
-        return Math.sqrt(distanceSqr(state1, state2));
+    private WorkingState getRpmOnlyState(int rpmIndex) {
+        if (rpmIndex < 0 || rpmIndex >= workingStates.size()) return EMPTY_WORKING_STATE;
+        if (workingStates.get(rpmIndex).isEmpty()) return EMPTY_WORKING_STATE;
+        return workingStates.get(rpmIndex).getFirst();
     }
 
     public int getRpmStateIndex(double rpm) {
@@ -177,6 +210,14 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
 
     public double getLoadCoordinate(double load) {
         return load * (LOAD_STATE_COUNT - 1);
+    }
+
+    private static float parseRpm(String rpm) {
+        try {
+            return Float.parseFloat(rpm);
+        } catch (NumberFormatException e) {
+            return Float.NaN;
+        }
     }
 
 

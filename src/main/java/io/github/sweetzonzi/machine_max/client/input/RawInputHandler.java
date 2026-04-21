@@ -36,7 +36,7 @@ import static io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks.Combina
  *
  * @author 甜粽子
  */
-@EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 @OnlyIn(Dist.CLIENT)
 public class RawInputHandler {
 

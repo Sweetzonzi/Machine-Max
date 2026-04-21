@@ -18,7 +18,7 @@ public class HitBox {
     public HitBox(SubPart subPart, HitBoxAttr attr) {
         this.subPart = subPart;
         this.attr = attr;
-        this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem(), null);
+        this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem, null);
     }
 
     /**
@@ -26,7 +26,7 @@ public class HitBox {
      * 应在每物理刻（prePhysicsTick）调用
      */
     public void updateActive() {
-        String condition = attr.condition();
+        String condition = attr.condition;
         if (condition == null || condition.isEmpty()) {
             active = true;
             return;
@@ -36,7 +36,7 @@ public class HitBox {
         } catch (Exception e) {
             io.github.sweetzonzi.machine_max.MachineMax.LOGGER.warn(
                     "Failed to evaluate condition for HitBox '{}' in part '{}-{}': {}",
-                    attr.id(), subPart.part.name, subPart.name, e.getMessage()
+                    attr.id, subPart.part.name, subPart.name, e.getMessage()
             );
         }
     }
@@ -54,7 +54,7 @@ public class HitBox {
     }
 
     public float getRHA(SubPart subPart) {
-        return attr.RHA() * (subPart.isDestroyed() ? 0.5f : 1.0f);
+        return attr.thickness * attr.rha() * (subPart.isDestroyed() ? 0.5f : 1.0f);
     }
 
     public boolean hasAngleEffect() {

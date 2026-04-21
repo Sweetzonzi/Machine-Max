@@ -33,7 +33,7 @@ public class GearboxSubsystemAttr extends BasicSubsystemDynamicAttr {
     public static final MapCodec<GearboxSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.fieldOf("power_output").forGetter(GearboxSubsystemAttr::getPowerOutputTarget),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("gear_outputs", Map.of("gear", List.of("part", "vehicle"))).forGetter(GearboxSubsystemAttr::getGearOutputTargets)
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("gear_outputs", Map.of("gear", List.of("subpart", "vehicle"))).forGetter(GearboxSubsystemAttr::getGearOutputTargets)
     ).apply(instance, GearboxSubsystemAttr::new));
 
     @Override

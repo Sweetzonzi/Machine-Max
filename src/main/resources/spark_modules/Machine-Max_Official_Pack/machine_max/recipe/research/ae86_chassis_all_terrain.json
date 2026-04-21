@@ -1,0 +1,33 @@
+﻿{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 100,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "type": "neoforge:components",
+        "items": ["machine_max:part"],
+        "components": {
+          "machine_max:part_type": "machine_max:ae86_chassis"
+        },
+        "strict": false
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/ae86/ae86_chassis_all_terrain_icon.png",
+  "description": "research.machine_max.ae86_chassis_all_terrain_blueprint.desc",
+  "unlock_recipe": "machine_max:ae86_chassis_all_terrain"
+}

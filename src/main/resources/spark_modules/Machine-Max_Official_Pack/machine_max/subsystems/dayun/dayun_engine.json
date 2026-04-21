@@ -11,5 +11,33 @@
   "red_line_torque_ratio": 0.95, //(可选, 默认0.9)红线扭矩系数, 引擎转速处于红线转速时, 最大扭矩衰减至最大扭矩乘以此系数
   "inertia": 50, //(可选, 默认10)转动惯量(kg·m^2), 此值越大, 引擎加速越慢, 存速越好
   "cylinder": 6, //(可选, 默认4)气缸数，影响发动机音效
-  "damping_factors": [2.0, 0.03, 0.00002] //(可选, 默认[20.0, 0.1, 0.00005])发动机各阶阻力系数, 分别为常数项, 一次项, 二次项, …递增(N·m/(rad/s)^n)
+  "damping_factors": [2.0, 0.03, 0.00002], //(可选, 默认[20.0, 0.1, 0.00005])发动机各阶阻力系数, 分别为常数项, 一次项, 二次项, …递增(N·m/(rad/s)^n)
+  "sounds": {
+    "on_activate": {
+      "sound_id": "machine_max:subsystem.engine.v8d_start",
+      "range": 64
+    },
+    "on_deactivate": {
+      "sound_id": "machine_max:subsystem.engine.v8d_stop",
+      "range": 64
+    },
+    "working_sounds": {
+      "500.0": {
+        "sound_id": "machine_max:subsystem.engine.v8d_500",
+        "range": 64
+      },
+      "1000.0": {
+        "sound_id": "machine_max:subsystem.engine.v8d_1000",
+        "range": 64
+      },
+      "1500.0": {
+        "sound_id": "machine_max:subsystem.engine.v8d_1500",
+        "range": 64
+      },
+      "2000.0": {
+        "sound_id": "machine_max:subsystem.engine.v8d_2000",
+        "range": 64
+      }
+    }
+  }
 }

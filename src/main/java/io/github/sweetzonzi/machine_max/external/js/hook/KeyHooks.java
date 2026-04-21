@@ -24,7 +24,7 @@ import static io.github.sweetzonzi.machine_max.external.js.hook.Hook.HOOK_SIGNAL
  * 支持高级按键事件，支持按键组合、按键长按、按键连续长按、游戏手柄按键、游戏手柄轴量等
  * @author ArcherLee
  * */
-@EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 @OnlyIn(Dist.CLIENT)
 public class KeyHooks {
     public final static String INVERSE_NAME = "_inv";

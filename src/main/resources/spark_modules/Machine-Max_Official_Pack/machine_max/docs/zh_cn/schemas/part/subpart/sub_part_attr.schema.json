@@ -136,7 +136,7 @@
           "type": "box",
           "block_damage_factor": 1.5,
           "angle_effect": true,
-          "rha": 10
+          "thickness": 10
         },
         "mmCollision_Box_Engine": {
           "name": "engine",
@@ -144,7 +144,7 @@
           "subsystem": "engine",
           "block_damage_factor": 0.95,
           "angle_effect": true,
-          "rha": 3
+          "thickness": 3
         }
       },
       "interact_boxes": {

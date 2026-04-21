@@ -8,7 +8,7 @@
     "model": "machine_max:container_16x16x8.geo", //模型路径
     "textures": "machine_max:textures/part/container_16x16x8.png",
     "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
-    "tags": ["storage"],//(可选)部件标签列表
+    "tags": ["machine_max:storage"],//(可选)部件标签列表
     "sub_parts": {//零件(子部件)列表
       "sub_part.machine_max.main": {//零件(子部件)名称
         "durability": 100.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
@@ -17,13 +17,9 @@
         "collision_height": 0,//(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
         "climb_assist": false,//(可选, 默认false)是否开启自动攀爬辅助, 开启后会在自动攀爬时提供额外的速度
         "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
-          "Shape": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
-            "type": "box",//碰撞形状类型, 支持box、sphere、cylinder
-            "friction": [2.5, 2.5, 2.5],//(可选, 默认[0.5, 0.5, 0.5])各向异性摩擦系数[侧向, 前向, 疑似无用]
-            "slip_adaptation": 0,//(可选, 默认0.5)滑动适应性系数(0~1), 该属性可削弱打滑时的摩擦系数降低效果, 提升抓地力
-            "rolling_friction": 0.5,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力
-            "restitution": 0.2,//(可选, 默认0.1)弹性系数, 0为完全非弹性碰撞, 1为完全弹性碰撞, 碰撞时以此系数和相碰物体的弹性系数之积作为最终弹性系数
-            "block_damage_factor": 1.0 //(可选, 默认1.0)方块破坏系数, 0为无法破坏方块, 1为造成全额伤害, 调整此系数以改变对方块的破坏能力
+          "Shape": {
+            "type": "box",
+            "material": "machine_max:structural_steel"
           }
         },
         "interact_boxes": {//交互判定区列表
@@ -44,16 +40,11 @@
         "connectors": {//子部件用于与其他零件连接的连接点列表
           "connector.machine_max.up": {//连接点名称
             "locator": "up",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Simple", //连接点类型, 支持Simple和Advanced
-            "direction": "yp",
-            "integrity": 40.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
-            "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
-            "impact_multiplier": 0.8 //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.down": {//连接点名称
             "locator": "down", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "type": "Simple", //连接点类型, 支持Simple和Advanced
-            "direction": "yn"
+            "definition": "machine_max:fixed_down"
           }
         }
       }

@@ -7,7 +7,9 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem;
+import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
@@ -16,7 +18,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDama
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
-import lombok.AccessLevel;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -43,67 +44,42 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-//TODO:
-// 加点，可自定义维修与组装速度加成，耐久度加成，根据加点数决定蓝图版本号和claim所需自由研发点
-// 随身蓝图库，类似于末影箱，检查条件时同样检查这里
 @EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class BlueprintAttachment {
     @Getter
     public int freeResearchPoint;
-    @Getter(value = AccessLevel.PRIVATE)
-    private int pendingResearchPoint;
     private final List<Pair<RpAddReason, Integer>> rpChangeRecords = new ArrayList<>();
     @Getter
-    public ResourceLocation researchingRecipe;
-    @Getter
-    public final Map<ResourceLocation, Float> researchedRecipes; // 所有研发过的配方及其研究层数
+    public final Set<ResourceLocation> completedResearches;
     private final Map<ResourceLocation, LinkedHashSet<RecipeHolder<FabricatingRecipe>>> availableRecipes = new HashMap<>();
     @Getter
-    public final Map<ResourceLocation, ItemStack> products; // 所有待领取的蓝图物品
+    // 研发产物缓存：key 永远是 researchId，value 是可领取的制造蓝图物品（其内部 RECIPE_TYPE 才是制造配方ID）
+    public final Map<ResourceLocation, ItemStack> products;
     @Getter
     private boolean dirty = true;
     private int inventoryHash = Integer.MIN_VALUE;
     private static final int HIT_RP_COOLDOWN = 5;
     private int hitRpCooldown = 0;
-    /**
-     * 每级研究等级的组装速度加成
-     */
-    public static final float ASSEMBLY_BUFF_PER_LEVEL = 0.05f;
-    /**
-     * 持有蓝图时的组装速度加成
-     */
-    public static final float ASSEMBLY_BUFF_WITH_BLUEPRINT = 0.5f;
-    /**
-     * 每级研究等级的维修速度加成
-     */
-    public static final float REPAIR_BUFF_PER_LEVEL = 0.05f;
-    /**
-     * 持有蓝图时的维修速度加成
-     */
-    public static final float REPAIR_BUFF_WITH_BLUEPRINT = 0.3f;
 
-    public static final Codec<Map<ResourceLocation, Float>> RESEARCHED_RECIPES_CODEC = Codec.unboundedMap(ResourceLocation.CODEC, Codec.FLOAT);
-
+    public static final Codec<Set<ResourceLocation>> COMPLETED_RESEARCHES_CODEC = ResourceLocation.CODEC.listOf().xmap(HashSet::new, ArrayList::new);
     public static final Codec<Map<ResourceLocation, ItemStack>> PRODUCTS_CODEC = Codec.unboundedMap(ResourceLocation.CODEC, ItemStack.CODEC);
 
     public static final Codec<BlueprintAttachment> CODEC = RecordCodecBuilder.create(instance ->
             instance.group(
                     Codec.INT.optionalFieldOf("research_point", 0).forGetter(BlueprintAttachment::getFreeResearchPoint),
-                    Codec.INT.optionalFieldOf("pending_research_point", 0).forGetter(BlueprintAttachment::getPendingResearchPoint),
-                    ResourceLocation.CODEC.optionalFieldOf("researching_recipe", FabricatingRecipe.EMPTY).forGetter(BlueprintAttachment::getResearchingRecipe),
-                    RESEARCHED_RECIPES_CODEC.fieldOf("researched_recipes").forGetter(BlueprintAttachment::getResearchedRecipes),
+                    COMPLETED_RESEARCHES_CODEC.optionalFieldOf("completed_researches", Set.of()).forGetter(BlueprintAttachment::getCompletedResearches),
                     PRODUCTS_CODEC.fieldOf("products").forGetter(BlueprintAttachment::getProducts)
             ).apply(instance, BlueprintAttachment::new)
     );
 
     public static final StreamCodec<FriendlyByteBuf, Pair<RpAddReason, Integer>> RP_CHANGE_STREAM_CODEC = new StreamCodec<>() {
         @Override
-        public @NotNull Pair<RpAddReason, Integer> decode(FriendlyByteBuf buffer) {
+        public @NotNull Pair<RpAddReason, Integer> decode(@NotNull FriendlyByteBuf buffer) {
             return new Pair<>(RpAddReason.STREAM_CODEC.decode(buffer), buffer.readInt());
         }
 
         @Override
-        public void encode(FriendlyByteBuf buffer, Pair<RpAddReason, Integer> pair) {
+        public void encode(@NotNull FriendlyByteBuf buffer, Pair<RpAddReason, Integer> pair) {
             RpAddReason.STREAM_CODEC.encode(buffer, pair.getFirst());
             buffer.writeInt(pair.getSecond());
         }
@@ -129,27 +105,23 @@ public class BlueprintAttachment {
         }
     };
 
-    public static final StreamCodec<FriendlyByteBuf, Map<ResourceLocation, Float>> RESEARCHED_RECIPES_STREAM_CODEC = new StreamCodec<>() {
+    public static final StreamCodec<FriendlyByteBuf, Set<ResourceLocation>> COMPLETED_RESEARCHES_STREAM_CODEC = new StreamCodec<>() {
         @Override
-        public @NotNull Map<ResourceLocation, Float> decode(FriendlyByteBuf buffer) {
+        public @NotNull Set<ResourceLocation> decode(FriendlyByteBuf buffer) {
             int size = buffer.readInt();
-            Map<ResourceLocation, Float> products = new LinkedHashMap<>(size);
-
+            Set<ResourceLocation> completed = new HashSet<>(size);
             for (int i = 0; i < size; i++) {
-                ResourceLocation key = ResourceLocation.STREAM_CODEC.decode(buffer);
-                Float progress = ByteBufCodecs.FLOAT.decode(buffer);
-                products.put(key, progress);
+                completed.add(ResourceLocation.STREAM_CODEC.decode(buffer));
             }
-            return products;
+            return completed;
         }
 
         @Override
-        public void encode(FriendlyByteBuf buffer, Map<ResourceLocation, Float> products) {
-            buffer.writeInt(products.size());
-            products.forEach((key, value) -> {
-                ResourceLocation.STREAM_CODEC.encode(buffer, key);
-                ByteBufCodecs.FLOAT.encode(buffer, value);
-            });
+        public void encode(FriendlyByteBuf buffer, Set<ResourceLocation> completed) {
+            buffer.writeInt(completed.size());
+            for (ResourceLocation id : completed) {
+                ResourceLocation.STREAM_CODEC.encode(buffer, id);
+            }
         }
     };
 
@@ -179,71 +151,145 @@ public class BlueprintAttachment {
 
     public static final StreamCodec<RegistryFriendlyByteBuf, BlueprintAttachment> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.INT, BlueprintAttachment::getFreeResearchPoint,
-            ByteBufCodecs.INT, BlueprintAttachment::getPendingResearchPoint,
-            ResourceLocation.STREAM_CODEC, BlueprintAttachment::getResearchingRecipe,
-            RESEARCHED_RECIPES_STREAM_CODEC, BlueprintAttachment::getResearchedRecipes,
+            COMPLETED_RESEARCHES_STREAM_CODEC, BlueprintAttachment::getCompletedResearches,
             PRODUCTS_STREAM_CODEC, BlueprintAttachment::getProducts,
             BlueprintAttachment::new
     );
 
-    public BlueprintAttachment(int freeResearchPoint, int pendingResearchPoint, ResourceLocation researchingRecipe, Map<ResourceLocation, Float> researchedRecipes, Map<ResourceLocation, ItemStack> products) {
+    public BlueprintAttachment(int freeResearchPoint, Set<ResourceLocation> completedResearches, Map<ResourceLocation, ItemStack> products) {
         this.freeResearchPoint = freeResearchPoint;
-        this.pendingResearchPoint = pendingResearchPoint;
-        this.researchingRecipe = researchingRecipe;
-        this.researchedRecipes = new HashMap<>(researchedRecipes);
+        this.completedResearches = new HashSet<>(completedResearches);
         this.products = new HashMap<>(products);
     }
 
     public BlueprintAttachment(int freeResearchPoint) {
-        this(freeResearchPoint, 0, FabricatingRecipe.EMPTY, new HashMap<>(), new HashMap<>());
+        this(freeResearchPoint, new HashSet<>(), new HashMap<>());
+    }
+
+    /**
+     * 检查指定研发配方的前置研究是否已完成
+     *
+     * @param researchRecipe 研发配方ID
+     * @return 是否已满足前置研究条件
+     */
+    public boolean hasSatisfiedPrerequisites(Player player, ResourceLocation researchRecipe) {
+        if (player.isCreative()) return true;
+        RecipeHolder<ResearchRecipe> holder = getResearch(researchRecipe);
+        if (holder == null) {
+            return false;
+        }
+        return holder.value().isCompletedBy(completedResearches);
+    }
+
+    public boolean canCompleteResearch(Player player, ResourceLocation researchRecipe) {
+        RecipeHolder<ResearchRecipe> holder = getResearch(researchRecipe);
+        if (holder == null) {
+            return false;
+        }
+        if (isResearched(researchRecipe)) {
+            return false;
+        }
+        if (player.isCreative()) return true;
+        ResearchRecipe recipe = holder.value();
+        return recipe.isCompletedBy(completedResearches)
+                && recipe.hasRequiredIngredients(player)
+                && freeResearchPoint >= recipe.getResearchCost();
+    }
+
+    public List<ResourceLocation> getMissingPrerequisites(ResourceLocation researchRecipe) {
+        RecipeHolder<ResearchRecipe> holder = getResearch(researchRecipe);
+        if (holder == null) {
+            return List.of();
+        }
+        List<ResourceLocation> missing = new ArrayList<>();
+        for (ResourceLocation prerequisite : holder.value().getPrerequisites()) {
+            if (!completedResearches.contains(prerequisite)) {
+                missing.add(prerequisite);
+            }
+        }
+        return missing;
+    }
+
+    public boolean completeResearch(Player player, ResourceLocation researchRecipe) {
+        RecipeHolder<ResearchRecipe> holder = getResearch(researchRecipe);
+        if (holder == null || !canCompleteResearch(player, researchRecipe)) {
+            return false;
+        }
+        ResourceLocation researchId = holder.id();
+        ResearchRecipe recipe = holder.value();
+        recipe.consumeIngredients(player);
+        setRp(player, freeResearchPoint - recipe.getResearchCost());
+        completedResearches.add(researchRecipe);
+        markDirty(player);
+
+        ItemStack product = ItemStack.EMPTY;
+        if (holder instanceof RecipeHolder<?> rawHolder && rawHolder.value() instanceof BlueprintResearchRecipe blueprintResearch) {
+            product = createBlueprintProduct(researchId);
+            products.put(researchId, product);
+        }
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchRecipe, product));
+            rpChangeRecords.clear();
+        }
+        return true;
+    }
+
+    /**
+     * 获取指定蓝图研发配方的产物蓝图
+     *
+     * @param researchRecipe 研发配方ID（researchId）
+     * @return 制造蓝图（蓝图内部携带 unlockRecipe/fabricatingRecipeId）
+     */
+    public ItemStack createBlueprintProduct(ResourceLocation researchRecipe) {
+        ItemStack stack = ItemStack.EMPTY;
+        if (getBlueprintResearchResult(researchRecipe) instanceof RecipeHolder<FabricatingRecipe> fabricatingRecipe) {
+            stack = new ItemStack(MMItems.getFABRICATING_BLUEPRINT());
+            stack.set(MMDataComponents.getRECIPE_TYPE(), fabricatingRecipe.id());
+            return stack;
+        }
+        return stack;
     }
 
     /**
      * 检查是否满足重新获取蓝图的条件
      *
-     * @param recipe 配方ID
+     * @param researchRecipe 研发配方ID
      * @return 是否可获取
      */
-    public boolean canReclaim(ResourceLocation recipe) {
-        int level = getResearchLevel(recipe);
-        if (level >= 1 && getProducts().getOrDefault(recipe, ItemStack.EMPTY) == ItemStack.EMPTY) {
-            RecipeHolder<FabricatingRecipe> recipeHolder = getAllResearchable().get(recipe);
-            if (recipeHolder != null) {
-                int requiredResearchPoint = getReclaimRpCost(recipe);
-                return freeResearchPoint >= requiredResearchPoint;
-            } else return false;
-        } else return false;
+    public boolean canReclaim(ResourceLocation researchRecipe) {
+        RecipeHolder<BlueprintResearchRecipe> blueprintResearch = getBlueprintResearch(researchRecipe);
+        if (blueprintResearch == null) {
+            return false;
+        }
+        return isResearched(blueprintResearch.id()) && products.getOrDefault(researchRecipe, ItemStack.EMPTY) == ItemStack.EMPTY;
     }
 
 
     /**
-     * 消耗自由研发点重新获取某个已经研发过的蓝图
+     * 重新获取某个已经研发过的蓝图，存入产物缓存
      *
-     * @param player 玩家
-     * @param recipe 配方ID
+     * @param player         玩家
+     * @param researchRecipe 研发配方ID
      */
-    public void reclaim(Player player, ResourceLocation recipe) {
-        if (canReclaim(recipe)) {
-            int rpCost = getReclaimRpCost(recipe);
-            setFreeResearchPoint(player, freeResearchPoint - rpCost);
-            ItemStack stack = new ItemStack(MMItems.getFABRICATING_BLUEPRINT());
-            stack.set(MMDataComponents.getRECIPE_TYPE(), recipe);
-            stack.set(MMDataComponents.getRESEARCH_LEVEL(), getResearchLevel(recipe) - 1);
-            getProducts().put(recipe, stack);
+    public void reclaim(Player player, ResourceLocation researchRecipe) {
+        if (canReclaim(researchRecipe)) {
+            products.put(researchRecipe, createBlueprintProduct(researchRecipe));
             this.markDirty(player);
-            if (player instanceof ServerPlayer serverPlayer)
-                PacketDistributor.sendToPlayer(serverPlayer, new ResearchProductSyncPayload(getProducts()));
+            if (player instanceof ServerPlayer serverPlayer) {
+                PacketDistributor.sendToPlayer(serverPlayer, new ResearchProductSyncPayload(products));
+            }
         }
     }
 
     /**
-     * 获取指定配方的蓝图物品，需要先完成研发或消耗自由研发点重新绘制蓝图物品
+     * 获取指定研发配方的蓝图物品，需要先完成研发
      *
-     * @param player 玩家
-     * @param recipe 配方ID
+     * @param player         玩家
+     * @param researchRecipe 研发配方ID
      */
-    public void claim(Player player, ResourceLocation recipe) {
-        ItemStack product = getProducts().getOrDefault(recipe, ItemStack.EMPTY);
+    public void claim(Player player, ResourceLocation researchRecipe) {
+        ItemStack product = getProducts().getOrDefault(researchRecipe, ItemStack.EMPTY);
         if (product != ItemStack.EMPTY) {
             boolean success = player.getInventory().add(product); // 首先尝试放入背包
             Entity itemEntity = product.getEntityRepresentation();
@@ -251,146 +297,27 @@ public class BlueprintAttachment {
                 itemEntity.setPos(player.getPosition(1));
                 player.level().addFreshEntity(itemEntity);
             }
-            getProducts().remove(recipe); // 清空暂存
+            getProducts().remove(researchRecipe); // 清空暂存
             this.markDirty(player);
             if (player instanceof ServerPlayer serverPlayer)
                 PacketDistributor.sendToPlayer(serverPlayer, new ResearchProductSyncPayload(getProducts()));
         }
     }
 
-    /**
-     * 推进当前正在研究的配方的研发进度
-     *
-     * @param basicRp 基础研发点数，受到研究的配方的已研究等级影响
-     */
-    private void research(Player player, int basicRp) {
-        int freeRp = 0;
-        if (researchingRecipe != FabricatingRecipe.EMPTY) {
-            if (!hasStartedResearching(researchingRecipe))
-                throw new IllegalStateException("Cannot research recipe before starting researching it");
-            RecipeHolder<FabricatingRecipe> recipeHolder = getResearching();
-            // 当前配方已研发进度
-            float currentResearchProgress = researchedRecipes.getOrDefault(researchingRecipe, 0f);
-            if (recipeHolder != null && currentResearchProgress >= 0f) { // 仅提交材料并开始了的研究可推进研究进度
-                FabricatingRecipe recipe = recipeHolder.value();
-                // 当前研发等级
-                int currentResearchLevel = getResearchLevel(researchingRecipe);
-                // 需求研发点数
-                int requiredResearchPoint = getRpCost(recipeHolder.id());
-                // 当前等级研发进度
-                float currentLevelResearchProgress = currentResearchProgress - currentResearchLevel;
-                // 计算当前轮次已有的研发点数
-                int currentLevelResearchPoint = (int) (currentLevelResearchProgress * requiredResearchPoint);
-                int rpToAdd = calculateRpToAdd(basicRp);
-                if (currentLevelResearchPoint + rpToAdd < requiredResearchPoint) { // 未达到下一级研发点数则全部用于研发
-                    researchedRecipes.put(researchingRecipe, currentLevelResearchProgress + (rpToAdd / (float) requiredResearchPoint));
-                    if (player instanceof ServerPlayer serverPlayer) { // 发包同步
-                        PacketDistributor.sendToPlayer(serverPlayer, new ResearchPushPayload(researchingRecipe, researchedRecipes.get(researchingRecipe), new ArrayList<>(rpChangeRecords)));
-                        rpChangeRecords.clear();
-                    }
-                } else { // 溢出部分作为自由研发点
-                    if (products.getOrDefault(researchingRecipe, ItemStack.EMPTY).isEmpty()) {
-                        researchedRecipes.put(researchingRecipe, currentResearchLevel + 1f);
-                        freeRp = rpToAdd - (requiredResearchPoint - currentLevelResearchPoint);
-                        // 暂存蓝图物品
-                        ItemStack stack = new ItemStack(MMItems.getFABRICATING_BLUEPRINT());
-                        stack.set(MMDataComponents.getRECIPE_TYPE(), researchingRecipe); // 设置配方ID
-                        stack.set(MMDataComponents.getRESEARCH_LEVEL(), currentResearchLevel); // 设置研发等级
-                        this.products.put(researchingRecipe, stack); // 保存蓝图物品
-                        markDirty(player); // 标记可用配方列表需要更新
-                        if (player instanceof ServerPlayer serverPlayer) { // 发包同步
-                            PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchingRecipe, currentResearchLevel + 1, stack, new ArrayList<>(rpChangeRecords)));
-                            rpChangeRecords.clear();
-                        }
-                        researchingRecipe = FabricatingRecipe.EMPTY; // 研发完成，清空目标
-                    } else freeRp = rpToAdd; // 蓝图物品已满，研发进度直接转化为自由研发点
-                }
-            } else clearResearching(player); // 清除非法研究目标
-        } else { // 无研发目标则全部成为自由研发点
-            freeRp = basicRp;
+    public void givRp(Player player, int rp, RpAddReason reason) {
+        if (rp > 0) {
+            this.rpChangeRecords.add(Pair.of(reason, rp));
+            setRp(player, this.freeResearchPoint + rp);
         }
-        // 将溢出的研发点作为自由研发点储存
-        setFreeResearchPoint(player, getFreeResearchPoint() + freeRp);
-    }
-
-    public void applyFreeRp(Player player) {
-        if (researchingRecipe != FabricatingRecipe.EMPTY) {
-            if (!hasStartedResearching(researchingRecipe))
-                throw new IllegalStateException("Cannot research recipe before starting researching it");
-            RecipeHolder<FabricatingRecipe> recipeHolder = getResearching();
-            if (recipeHolder != null && canStartResearching(player, researchingRecipe)) {
-                FabricatingRecipe recipe = recipeHolder.value();
-                // 当前配方已研发进度
-                float currentResearchProgress = researchedRecipes.computeIfAbsent(researchingRecipe, k -> 0f);
-                // 当前研发等级
-                int currentResearchLevel = getResearchLevel(researchingRecipe);
-                // 需求研发点数
-                int requiredResearchPoint = getRpCost(recipeHolder.id());
-                // 当前等级研发进度
-                float currentLevelResearchProgress = currentResearchProgress - currentResearchLevel;
-                // 计算当前轮次已有的研发点数
-                int currentLevelResearchPoint = (int) (currentLevelResearchProgress * requiredResearchPoint);
-                if (currentLevelResearchPoint + freeResearchPoint < requiredResearchPoint) { // 未达到下一级研发点数则全部用于研发
-                    researchedRecipes.put(researchingRecipe, currentLevelResearchProgress + (freeResearchPoint / (float) requiredResearchPoint));
-                    setFreeResearchPoint(player, 0);
-                } else { // 溢出部分作为自由研发点
-                    researchedRecipes.put(researchingRecipe, currentResearchLevel + 1f);
-                    setFreeResearchPoint(player, freeResearchPoint - (requiredResearchPoint - currentLevelResearchPoint));
-                    // 暂存蓝图物品
-                    ItemStack stack = new ItemStack(MMItems.getFABRICATING_BLUEPRINT());
-                    stack.set(MMDataComponents.getRECIPE_TYPE(), researchingRecipe); // 设置配方ID
-                    stack.set(MMDataComponents.getRESEARCH_LEVEL(), getResearchLevel(researchingRecipe) - 1); // 设置研发等级
-                    markDirty(player); // 标记可用配方列表需要更新
-                    this.products.put(researchingRecipe, stack); // 保存蓝图物品
-                    if (player instanceof ServerPlayer serverPlayer) { // 发包同步
-                        PacketDistributor.sendToPlayer(serverPlayer, new ResearchCompletePayload(researchingRecipe, currentResearchLevel + 1, stack, new ArrayList<>(rpChangeRecords)));
-                        rpChangeRecords.clear();
-                    }
-                    researchingRecipe = FabricatingRecipe.EMPTY; // 研发完成，清空目标
-                }
-            } else clearResearching(player); // 清除非法研究目标
-        }
-    }
-
-    public void addRp(int rp, RpAddReason reason) {
-        this.pendingResearchPoint += rp;
-        this.rpChangeRecords.add(Pair.of(reason, rp));
     }
 
     public static void giveRp(Player player, int rp, RpAddReason reason) {
         var research = player.getData(MMAttachments.getBLUEPRINT());
-        research.addRp(rp, reason);
+        research.givRp(player, rp, reason);
     }
 
-    public int getResearchLevel(ResourceLocation recipe) {
-        return (int) Math.floor(getResearchedRecipes().getOrDefault(recipe, 0f));
-    }
-
-    public int getRpCost(ResourceLocation recipe) {
-        RecipeHolder<FabricatingRecipe> recipeHolder = getAllResearchable().get(recipe);
-        if (recipeHolder != null) {
-            int researchLevel = getResearchLevel(recipe);
-            return researchLevel == 0 ? recipeHolder.value().getResearchCost() : recipeHolder.value().getUpgradeCost();
-        } else return 0;
-    }
-
-    /**
-     * 计算重新获取蓝图所需的研发点
-     *
-     * @param recipe 配方ID
-     * @return 研发点消耗
-     */
-    public int getReclaimRpCost(ResourceLocation recipe) {
-        RecipeHolder<FabricatingRecipe> recipeHolder = getAllResearchable().get(recipe);
-        if (recipeHolder != null) {
-            int level = getResearchLevel(recipe);
-            if (level == 0) return recipeHolder.value().getResearchCost();
-            return (int) (recipeHolder.value().getResearchCost() + recipeHolder.value().getUpgradeCost() * (level - 1) * 0.5f);
-        } else return 0;
-    }
-
-    public void setFreeResearchPoint(Player player, int freeResearchPoint) {
-        this.freeResearchPoint = freeResearchPoint;
+    public void setRp(Player player, int freeResearchPoint) {
+        this.freeResearchPoint = Math.max(0, freeResearchPoint);
         this.markDirty(player);
         if (player instanceof ServerPlayer serverPlayer) {
             PacketDistributor.sendToPlayer(serverPlayer, new FreeRpSyncPayload(freeResearchPoint, new ArrayList<>(this.rpChangeRecords)));
@@ -399,153 +326,64 @@ public class BlueprintAttachment {
     }
 
     /**
-     * 检查玩家背包，确认是否满足配方的研发条件
-     *
-     * @param player 玩家
-     * @param recipe 配方ID
-     * @return 是否可研发
-     */
-    public boolean canStartResearching(Player player, ResourceLocation recipe) {
-        boolean result = false;
-        if (hasStartedResearching(recipe)) return true; // 已开始研发则直接返回
-        var allRecipes = getAllResearchable();
-        RecipeHolder<FabricatingRecipe> recipeHolder = allRecipes.get(recipe);
-        if (recipeHolder != null) {
-            result = recipeHolder.value().hasRequiredIngredients(player, true);
-        }
-        return result;
-    }
-
-    /**
-     * 开始研究某个配方，消耗材料并设置当前正在研究的配方
-     *
-     * @param player 玩家
-     * @param recipe 配方ID
-     */
-    public void startResearching(Player player, ResourceLocation recipe) {
-        if (hasStartedResearching(recipe)) {
-            setResearching(player, recipe);
-        } else if (canStartResearching(player, recipe)) {
-            var recipeHolder = getAllResearchable().get(recipe);
-            if (recipeHolder != null) {
-                recipeHolder.value().consumeIngredients(player, true);
-                setResearching(player, recipe);
-            }
-        }
-    }
-
-    /**
-     * 设置当前正在研究的配方，将会跳过材料检查，消耗材料的开始研究应使用{@link #startResearching(Player, ResourceLocation)}
-     *
-     * @param recipe 配方ID
-     */
-    public void setResearching(Player player, ResourceLocation recipe) {
-        this.researchingRecipe = recipe;
-        if (recipe != FabricatingRecipe.EMPTY) researchedRecipes.putIfAbsent(recipe, 0f);
-        if (player instanceof ServerPlayer serverPlayer) {
-            PacketDistributor.sendToPlayer(serverPlayer, new ResearchSetPayload(recipe));
-        }
-    }
-
-    public void clearResearching(Player player) {
-        this.researchingRecipe = FabricatingRecipe.EMPTY;
-        this.markDirty(player);
-        if (player instanceof ServerPlayer serverPlayer)
-            PacketDistributor.sendToPlayer(serverPlayer, new ResearchCancelPayload());
-    }
-
-    public boolean hasStartedResearching(ResourceLocation recipe) {
-        return getResearchedRecipes().getOrDefault(recipe, Float.MIN_VALUE) >= 0f;
-    }
-
-    /**
-     * 获取当前正在研究的配方
-     *
-     * @return 当前正在研究的配方
-     */
-    @Nullable
-    public RecipeHolder<FabricatingRecipe> getResearching() {
-        if (researchingRecipe != FabricatingRecipe.EMPTY) {
-            return MMDynamicRes.ALL_RECIPES.get(researchingRecipe);
-        }
-        return null;
-    }
-
-    /**
      * 获取所有可研发的配方
      *
      * @return 所有可研发的配方
      */
-    public Map<ResourceLocation, RecipeHolder<FabricatingRecipe>> getAllResearchable() {
-        return MMDynamicRes.ALL_RECIPES;
-    }
-
-    public int calculateRpToAdd(int basicRp) {
-        if (researchingRecipe != FabricatingRecipe.EMPTY) {
-            // 当前配方已研发进度
-            float currentResearchProgress = researchedRecipes.getOrDefault(researchingRecipe, 0f);
-            // 当前研发等级
-            int currentResearchLevel = (int) Math.floor(currentResearchProgress);
-            return basicRp;
-        } else return 0;
+    public Map<ResourceLocation, RecipeHolder<ResearchRecipe>> getAllResearchable() {
+        return MMDynamicRes.ALL_RESEARCH_RECIPES;
     }
 
     /**
-     * 根据部件的研究进度和玩家的可用蓝图，计算装配速度增益
+     * 检查指定研发配方是否已研究
      *
-     * @param part   要装配的部件
-     * @param player 玩家
-     * @return 装配速度增益
+     * @param researchRecipe 研发配方
+     * @return 是否已研究
      */
-    public float calculateAssemblyBuff(Part part, Player player) {
-        float modifier = 0f;
-        // 研发等级加成
-        float researchProgress = getResearchedRecipes().getOrDefault(part.getCustomRecipe(), 0f);
-        modifier += (float) (Math.floor(researchProgress) * ASSEMBLY_BUFF_PER_LEVEL);
-        // 蓝图加成
-        RecipeHolder<FabricatingRecipe> recipe = getAllResearchable().get(part.getCustomRecipe());
-        if (recipe != null && getAvailablePartRecipeFor(player, part.type.getRegistryKey()).contains(recipe)) {
-            modifier += ASSEMBLY_BUFF_WITH_BLUEPRINT;
-        }
-        return modifier;
+    public boolean isResearched(ResourceLocation researchRecipe) {
+        return completedResearches.contains(researchRecipe);
     }
 
     /**
-     * 根据部件的研究进度和玩家的可用蓝图，计算维修速度增益
+     * 获取指定研发配方的ID与对象
      *
-     * @param part   要装配的部件
-     * @param player 玩家
-     * @return 维修速度增益
+     * @param researchRecipe 研发配方
+     * @return 研发配方ID与对象容器
      */
-    public float calculateRepairBuff(Part part, Player player) {
-        float modifier = 0f;
-        // 研发等级加成
-        float researchProgress = getResearchedRecipes().getOrDefault(part.getCustomRecipe(), 0f);
-        modifier += (float) (Math.floor(researchProgress) * REPAIR_BUFF_PER_LEVEL);
-        // 蓝图加成
-        RecipeHolder<FabricatingRecipe> recipe = getAllResearchable().get(part.getCustomRecipe());
-        if (recipe != null && getAvailablePartRecipeFor(player, part.type.getRegistryKey()).contains(recipe)) {
-            modifier += REPAIR_BUFF_WITH_BLUEPRINT;
-        }
-        return modifier;
+    @Nullable
+    public RecipeHolder<ResearchRecipe> getResearch(ResourceLocation researchRecipe) {
+        return MMDynamicRes.ALL_RESEARCH_RECIPES.get(researchRecipe);
     }
 
+    /**
+     * 获取指定研发配方的蓝图配方ID与对象
+     *
+     * @param researchRecipe 研发配方
+     * @return 研发配方蓝图ID与对象容器
+     */
+    @Nullable
+    public RecipeHolder<BlueprintResearchRecipe> getBlueprintResearch(ResourceLocation researchRecipe) {
+        return MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.get(researchRecipe);
+    }
 
     /**
-     * 标记可用配方列表需要更新
+     * 获取蓝图研发配方解锁的制造配方ID与对象
+     *
+     * @param researchRecipe 研发配方
+     * @return 制造配方ID与对象容器
      */
+    @Nullable
+    public RecipeHolder<FabricatingRecipe> getBlueprintResearchResult(ResourceLocation researchRecipe) {
+        RecipeHolder<BlueprintResearchRecipe> blueprintResearch = getBlueprintResearch(researchRecipe);
+        if (blueprintResearch == null) {
+            return null;
+        }
+        return MMDynamicRes.ALL_FABRICATING_RECIPES.get(blueprintResearch.value().getUnlockRecipe());
+    }
+
     public void markDirty(Player player) {
         dirty = true;
         player.setData(MMAttachments.getBLUEPRINT(), this);
-    }
-
-    public boolean canAssemble(Player player, Part part) {
-        if (player.isCreative()) return true; // 创造模式直接返回true
-        var recipe = part.getRecipe();
-        for (RecipeHolder<FabricatingRecipe> holder : getAvailablePartRecipeFor(player, part.type.getRegistryKey())) {
-            if (holder.value().equals(recipe)) return true;
-        }
-        return false;
     }
 
     /**
@@ -578,10 +416,7 @@ public class BlueprintAttachment {
                 // 检查已研发但未持有的配方
                 for (RecipeHolder<FabricatingRecipe> holder : MMDynamicRes.PART_RECIPES.get(partType)) {
                     if (result.contains(holder)) continue; // 已在可用列表中则跳过
-                    ResourceLocation id = holder.id();
-                    if (getResearchLevel(id) >= 1) {
-                        result.add(holder);
-                    }
+                    result.add(holder);
                 }
             }
             return result;
@@ -613,6 +448,7 @@ public class BlueprintAttachment {
      * @param stack  物品
      * @param player 玩家，用于查询注册表
      */
+    @SuppressWarnings("unchecked")
     private void checkAndRecord(ItemStack stack, Player player) {
         if (stack.getItem() instanceof FabricatingBlueprintItem) {
             RecipeHolder<?> recipeHolder = PartAssemblyItem.getRecipeHolder(stack, player.level());
@@ -649,12 +485,6 @@ public class BlueprintAttachment {
         if (event.getEntity() instanceof Player player) {
             var research = player.getData(MMAttachments.getBLUEPRINT());
             if (research.hitRpCooldown > 0) research.hitRpCooldown--;
-            if (player.tickCount % 5 == 0) {
-                if (research.getPendingResearchPoint() > 0) {
-                    research.research(player, research.getPendingResearchPoint());
-                    research.pendingResearchPoint = 0;
-                }
-            }
             if (player.tickCount % 100 == 0) { // 定时更新可用配方列表
                 if (research.hashInventory(player) != research.inventoryHash) {
                     research.rebuildAvailableRecipes(player);
@@ -674,7 +504,7 @@ public class BlueprintAttachment {
         if (event.getData().source().getEntity() instanceof ServerPlayer player) {
             var research = player.getData(MMAttachments.getBLUEPRINT());
             if (research.hitRpCooldown <= 0) {
-                research.addRp(1, RpAddReason.HIT);
+                research.givRp(player, 1, RpAddReason.HIT);
                 research.hitRpCooldown = BlueprintAttachment.HIT_RP_COOLDOWN;
             }
         }
@@ -684,7 +514,7 @@ public class BlueprintAttachment {
     public static void onSubPartDamage(SubPartDamageEvent.Post event) {
         if (event.getData().source().getEntity() instanceof ServerPlayer player) {
             var research = player.getData(MMAttachments.getBLUEPRINT());
-            research.addRp((int) event.getDamageAmount(), RpAddReason.PART_DAMAGE);
+            research.givRp(player, (int) event.getDamageAmount(), RpAddReason.PART_DAMAGE);
         }
     }
 
@@ -707,6 +537,4 @@ public class BlueprintAttachment {
     public static void onItemToss(ItemTossEvent event) {
         event.getPlayer().getData(MMAttachments.getBLUEPRINT()).markDirty(event.getPlayer());
     }
-
-
 }

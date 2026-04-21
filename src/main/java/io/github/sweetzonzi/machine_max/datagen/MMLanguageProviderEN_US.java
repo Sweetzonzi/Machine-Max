@@ -67,6 +67,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("tooltip.machine_max.wrench.cant_repair", "%1$s has been destroyed, cannot repair. Crouch and interact to unbolt the part");
         this.add("tooltip.machine_max.wrench.no_need_to_repair", "%1$s is no need to repair");
         this.add("tooltip.machine_max.spray_can.interact", "Interact to paint:");
+        this.add("tooltip.machine_max.jade.subpart_durability", "SubPart: %1$s");
+        this.add("tooltip.machine_max.jade.vehicle_durability", "Vehicle: %1$s");
         this.add("message.machine_max.blueprint_saved", "Blueprint has been saved to %1$s");
         this.add("message.machine_max.blueprint_error", "Failed to save blueprint: %1$s");
         this.add("message.machine_max.blueprint_pass", "No vehicle selected, skipping blueprint save");
@@ -90,6 +92,9 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "Basic Electronic Component");
         this.add("item.machine_max.power_component_1", "Basic Power Component");
         this.add("item.machine_max.energetic_component_1", "Basic Energetic Material");
+        this.add("subtitles.item.welding_torch.start", "Welding torch starts");
+        this.add("subtitles.item.welding_torch.loop", "Welding torch running");
+        this.add("subtitles.item.welding_torch.end", "Welding torch stops");
         //Menu & Screen
         this.add("gui.machine_max.set_vehicle_name", "Set Vehicle Name");
         this.add("gui.machine_max.confirm", "Confirm");
@@ -123,6 +128,15 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("gui.machine_max.fabricator.output_count", "Output Count: %s");
         this.add("gui.machine_max.fabricator.recipe_description", "Recipe Description:");
         this.add("gui.machine_max.fabricator.item_description", "Item Description:");
+        this.add("gui.machine_max.research.no_preview", "No preview available");
+        this.add("gui.machine_max.research.no_blueprint_product", "No unlocked product to preview");
+        this.add("gui.machine_max.research.status.can_research", "Can Research");
+        this.add("gui.machine_max.research.status.can_claim", "Can Claim");
+        this.add("gui.machine_max.research.status.can_reprint", "Can Reprint");
+        this.add("gui.machine_max.research.status.prereq_missing", "Prerequisite Missing x%1$s");
+        this.add("gui.machine_max.research.status.need_materials_rp", "Insufficient Materials / RP");
+        this.add("gui.machine_max.research.status.unavailable", "Unavailable");
+        this.add("jei.machine_max.blueprint_research.rp_cost", "Research Point Cost: %1$s");
         //Hud
         this.add("hud.warn.machine_max.subpart_destroying", "❌ DESTROYED, DESTRUCT IN: %1$ss");
         this.add("hud.warn.machine_max.subsystem_malfunction", "❌ %1$s MALFUNCTION");
@@ -151,25 +165,33 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.configuration.title", "Machine Max Configuration");
         this.add("machine_max.configuration.section.machine.max.client.toml.title", "Client Configuration");
         this.add("machine_max.configuration.section.machine.max.client.toml", "Client Configuration");
+        this.add("machine_max.configuration.section.machine.max.common.toml", "Common Configuration");
         this.add("machine_max.configuration.section.machine.max.server.toml", "Server Configuration");
+        this.add("config.jade.plugin_machine_max.mm_part_entity_status", "Machine Max Part Durability");
         // Ground Vehicle Configuration
         this.add("machine_max.configuration.ground_vehicle", "Ground Vehicle");
         this.add("machine_max.configuration.ground_vehicle.button", "Ground Vehicle");
         this.add("machine_max.configuration.ground_vehicle.tooltip", "Ground vehicle related settings");
         this.add("machine_max.configuration.full_power_time", "Full Power Time");
-        this.add("machine_max.configuration.full_power_time.tooltip", "Time (in seconds) to reach full throttle when holding key");
+        this.add("machine_max.configuration.full_power_time.tooltip", "Time (in seconds) to reach full throttle when holding key. Default: 1.2 (ground), 2.5 (plane). Range: 0.05 ~ 99999.0");
         this.add("machine_max.configuration.full_steering_time", "Full Steering Time");
-        this.add("machine_max.configuration.full_steering_time.tooltip", "Time (in seconds) to reach full steering when holding key");
+        this.add("machine_max.configuration.full_steering_time.tooltip", "Time (in seconds) to reach full steering when holding key. Default: 0.4 (ground), 0.25 (ship). Range: 0.05 ~ 99999.0");
         this.add("machine_max.configuration.auto_switch_gear", "Auto Switch Gear");
-        this.add("machine_max.configuration.auto_switch_gear.tooltip", "Whether to automatically shift gears based on input, vehicle speed and engine RPM");
+        this.add("machine_max.configuration.auto_switch_gear.tooltip", "Whether to automatically shift gears based on input, vehicle speed and engine RPM. Default: FOLLOW_VEHICLE");
         this.add("machine_max.configuration.auto_handbrake", "Auto Handbrake");
-        this.add("machine_max.configuration.auto_handbrake.tooltip", "Whether to automatically apply handbrake when vehicle stops and release it when starting");
+        this.add("machine_max.configuration.auto_handbrake.tooltip", "Whether to automatically apply handbrake when vehicle stops and release it when starting. Default: FOLLOW_VEHICLE");
         this.add("machine_max.configuration.drift_assist", "Drift Assist");
-        this.add("machine_max.configuration.drift_assist.tooltip", "Whether to automatically counter-steer during drifting to maintain control");
+        this.add("machine_max.configuration.drift_assist.tooltip", "Whether to automatically counter-steer during drifting to maintain control. Default: FOLLOW_VEHICLE");
         this.add("machine_max.configuration.pose_preference", "Pose Preference");
-        this.add("machine_max.configuration.pose_preference.tooltip", "Whether to automatically rotate camera view to follow vehicle orientation");
+        this.add("machine_max.configuration.pose_preference.tooltip", "Whether to automatically rotate camera view to follow vehicle orientation. Default: FOLLOW_VEHICLE");
         this.add("machine_max.configuration.speed_turning_limit", "Speed Turning Limit");
-        this.add("machine_max.configuration.speed_turning_limit.tooltip", "Whether to limit lateral acceleration during high-speed turning to prevent loss of control or rollover");
+        this.add("machine_max.configuration.speed_turning_limit.tooltip", "Whether to limit lateral acceleration during high-speed turning to prevent loss of control or rollover. Default: true");
+        this.add("machine_max.configuration.render_hit_whitening", "Part Hit Visual Effect");
+        this.add("machine_max.configuration.render_hit_whitening.tooltip", "Whether to enable visual effect when parts are hit. Default: true");
+        this.add("machine_max.configuration.render_destroy_blackening", "Part Destruction Visual Effect");
+        this.add("machine_max.configuration.render_destroy_blackening.tooltip", "Whether to enable visual effect when parts are destroyed. Default: true");
+        this.add("machine_max.configuration.render_force_translucent_parts", "Part Translucent Rendering");
+        this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "Whether to replace Cutout part rendering with translucent entity rendering. Default: false");
         // Ship Configuration
         this.add("machine_max.configuration.ship", "Ship");
         this.add("machine_max.configuration.ship.button", "Ship");
@@ -180,8 +202,16 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.configuration.plane.tooltip", "Plane related settings");
         // Server Configuration
         this.add("machine_max.configuration.should_destroy_blocks", "Allow Collision Destroy Blocks");
-        this.add("machine_max.configuration.should_destroy_blocks.tooltip", "Whether or not the parts should destroy blocks when the impact is big enough");
+        this.add("machine_max.configuration.should_destroy_blocks.tooltip", "Whether or not the parts should destroy blocks when the impact is big enough. Default: true");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements", "Ignore Assembly Tag Requirements");
-        this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "Whether to ignore connector tag requirements when assembling vehicles");
+        this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "Whether to ignore connector tag requirements when assembling vehicles. Default: false");
+        this.add("machine_max.configuration.auto_override_official_pack", "Auto Override Official Pack");
+        this.add("machine_max.configuration.auto_override_official_pack.tooltip", "Whether to auto-pack and override machine_max:official content pack on startup/reload. Default: true");
+        this.add("machine_max.configuration.subpart_destroy_ticks_per_durability", "SubPart Destroy Ticks Per Durability");
+        this.add("machine_max.configuration.subpart_destroy_ticks_per_durability.tooltip", "Destroy timer ticks per 1 max durability point for destroyed sub-parts. Default: 10. Range: 0 ~ 100000");
+        this.add("machine_max.configuration.subpart_destroy_min_ticks", "SubPart Destroy Minimum Ticks");
+        this.add("machine_max.configuration.subpart_destroy_min_ticks.tooltip", "Minimum destroy timer ticks for destroyed sub-parts. Default: 200. Range: 0 ~ 1000000");
+        this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage", "SubPart Destroy Advance Ticks Per Damage");
+        this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage.tooltip", "Additional destroy timer advance ticks per 1 damage applied to already destroyed sub-parts. Default: 20. Range: 0 ~ 100000");
     }
 }

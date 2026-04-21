@@ -8,7 +8,7 @@
     "model": "machine_max:senna_gtr_chassis.geo",
     "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
     "animations": "machine_max:senna_gtr",
-    "tags": ["chassis", "senna_gtr"],
+    "tags": ["machine_max:chassis", "machine_max:senna_gtr", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 120.0,
@@ -19,15 +19,15 @@
           "Collision": {
             "id": "part",
             "type": "box",
-            "un_penetrate_damage_factor": 0.5,
-            "rha": 3
+            "material": "machine_max:7035_aluminum_alloy",
+            "thickness": 3
           },
           "EngineCollision": {
             "id": "engine",
             "type": "box",
             "subsystem": "subsystem.machine_max.engine",
-            "un_penetrate_damage_factor": 0.5,
-            "rha": 1
+            "material": "machine_max:structural_steel",
+            "thickness": 1
           }
         },
         "interact_boxes": {
@@ -157,204 +157,43 @@
         "connectors": {
           "connector.machine_max.left_front_wheel": {
             "locator": "left_front_wheel",
-            "type": "Advanced",
-            "direction": "xn",
-            "integrity": 50.0,
-            "required_tags": ["left", "front"],
-            "forbidden_tags": ["hull", "chassis"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -1.0,
-                "upper_limit": 0.5,
-                "equilibrium": -0.1,
-                "stiffness": 65000,
-                "damping": 1500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "yr": {
-                "lower_limit": -45.0,
-                "upper_limit": 45.0,
-                "stiffness": 1000,
-                "damping": 200
-              },
-              "zr": {
-                "lower_limit": 1.0,
-                "upper_limit": 3.0,
-                "equilibrium": 1.0,
-                "stiffness": 25000,
-                "damping": 350
-              }
-            }
+            "definition": "machine_max:senna_gtr_left_steering_wheel"
           },
           "connector.machine_max.left_back_wheel": {
             "locator": "left_back_wheel",
-            "type": "Advanced",
-            "direction": "xn",
-            "integrity": 60.0,
-            "required_tags": ["left", "back"],
-            "forbidden_tags": ["hull", "chassis"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -1.0,
-                "upper_limit": 0.5,
-                "equilibrium": -0.1,
-                "stiffness": 65000,
-                "damping": 1500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "zr": {
-                "lower_limit": 1.0,
-                "upper_limit": 3.0,
-                "equilibrium": 1.0,
-                "stiffness": 25000,
-                "damping": 350
-              }
-            }
+            "definition": "machine_max:senna_gtr_left_wheel"
           },
           "connector.machine_max.right_front_wheel": {
             "locator": "right_front_wheel",
-            "type": "Advanced",
-            "direction": "xp",
-            "integrity": 60.0,
-            "required_tags": ["right", "front"],
-            "forbidden_tags": ["hull", "chassis"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -1.0,
-                "upper_limit": 0.5,
-                "equilibrium": -0.1,
-                "stiffness": 65000,
-                "damping": 1500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "yr": {
-                "lower_limit": -45.0,
-                "upper_limit": 45.0,
-                "stiffness": 1000,
-                "damping": 200
-              },
-              "zr": {
-                "lower_limit": -3.0,
-                "upper_limit": -1.0,
-                "equilibrium": -1.0,
-                "stiffness": 25000,
-                "damping": 350
-              }
-            }
+            "definition": "machine_max:senna_gtr_right_steering_wheel"
           },
           "connector.machine_max.right_back_wheel": {
             "locator": "right_back_wheel",
-            "type": "Advanced",
-            "direction": "xp",
-            "integrity": 60.0,
-            "required_tags": ["right", "back"],
-            "acceptable_tags": [],
-            "forbidden_tags": ["hull", "chassis"],
-            "joint_attrs": {
-              "y": {
-                "lower_limit": -1.0,
-                "upper_limit": 0.5,
-                "equilibrium": -0.1,
-                "stiffness": 65000,
-                "damping": 1500
-              },
-              "xr": {
-                "lower_limit": 1.0,
-                "upper_limit": -1.0
-              },
-              "zr": {
-                "lower_limit": -3.0,
-                "upper_limit": -1.0,
-                "equilibrium": -1.0,
-                "stiffness": 25000,
-                "damping": 350
-              }
-            }
+            "definition": "machine_max:senna_gtr_right_wheel"
           },
           "connector.machine_max.front_bumper_left": {
             "locator": "chassis_front_bumper_left",
-            "type": "Advanced",
-            "direction": "zn",
-            "required_tags": ["front", "bumper"],
-            "integrity": 30.0,
-            "joint_attrs": {
-              "zr": {
-                "lower_limit": -30.0,
-                "upper_limit": 30.0,
-                "equilibrium": 0.0,
-                "stiffness": 5000,
-                "damping": 100
-              }
-            }
+            "definition": "machine_max:senna_gtr_front_bumper_left"
           },
           "connector.machine_max.front_bumper_right": {
             "locator": "chassis_front_bumper_right",
-            "type": "Advanced",
-            "direction": "zn",
-            "required_tags": ["front", "bumper"],
-            "integrity": 30.0,
-            "joint_attrs": {
-              "zr": {
-                "lower_limit": -30.0,
-                "upper_limit": 30.0,
-                "equilibrium": 0.0,
-                "stiffness": 5000,
-                "damping": 100
-              }
-            }
+            "definition": "machine_max:senna_gtr_front_bumper_right"
           },
           "connector.machine_max.back_bumper_left": {
             "locator": "chassis_back_bumper_left",
-            "type": "Advanced",
-            "direction": "zp",
-            "required_tags": ["back", "bumper"],
-            "integrity": 30.0,
-            "joint_attrs": {
-              "zr": {
-                "lower_limit": -30.0,
-                "upper_limit": 30.0,
-                "equilibrium": 0.0,
-                "stiffness": 5000,
-                "damping": 100
-              }
-            }
+            "definition": "machine_max:senna_gtr_back_bumper_left"
           },
           "connector.machine_max.back_bumper_right": {
             "locator": "chassis_back_bumper_right",
-            "type": "Advanced",
-            "direction": "zp",
-            "required_tags": ["back", "bumper"],
-            "integrity": 30.0,
-            "joint_attrs": {
-              "zr": {
-                "lower_limit": -30.0,
-                "upper_limit": 30.0,
-                "equilibrium": 0.0,
-                "stiffness": 5000,
-                "damping": 100
-              }
-            }
+            "definition": "machine_max:senna_gtr_back_bumper_right"
           },
           "connector.machine_max.hull_front": {
             "locator": "chassis_hull_front",
-            "type": "Simple",
-            "required_tags": ["hull"],
-            "integrity": 50.0
+            "definition": "machine_max:fixed_up"
           },
           "connector.machine_max.hull_back": {
             "locator": "chassis_hull_back",
-            "type": "Simple",
-            "required_tags": ["hull"],
-            "integrity": 50.0
+            "definition": "machine_max:fixed_up"
           }
         },
         "projected_area": [4.8, 10.25, 2.46],

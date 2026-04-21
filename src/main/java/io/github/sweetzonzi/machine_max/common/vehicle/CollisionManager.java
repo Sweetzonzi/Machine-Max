@@ -10,7 +10,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber
 public class CollisionManager {
 
     public static Map<Entity, Vec3> impulse = new ConcurrentHashMap<>();
@@ -39,3 +39,4 @@ public class CollisionManager {
         return impulse.getOrDefault(entity, Vec3.ZERO);
     }
 }
+

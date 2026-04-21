@@ -1,14 +1,12 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import cn.solarmoon.spark_core.animation.IAnimatable
-import cn.solarmoon.spark_core.animation.ItemAnimatable
 import cn.solarmoon.spark_core.entry_builder.dataComponentBuilder
 import com.mojang.serialization.Codec
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
-import io.netty.buffer.ByteBuf
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemDisplayContext
@@ -27,19 +25,6 @@ object MMDataComponents {
         factory = dataComponentBuilder {
             persistent(ResourceLocation.CODEC)
             networkSynchronized(ResourceLocation.STREAM_CODEC)
-            cacheEncoding()
-        }
-    }
-
-    /**
-     * 蓝图研发等级
-     */
-    @JvmStatic
-    val RESEARCH_LEVEL = MachineMax.REGISTER.dataComponentType<Int> {
-        id = "research_level"
-        factory = dataComponentBuilder {
-            persistent(Codec.INT)
-            networkSynchronized(ByteBufCodecs.INT)
             cacheEncoding()
         }
     }

@@ -1,0 +1,22 @@
+﻿{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 5900,
+  "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
+    {
+      "ingredient": {
+        "item": "minecraft:gold_ingot"
+      },
+      "count": 64
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/golden_closestool_icon.png",
+  "description": "research.machine_max.golden_closestool_blueprint.desc",
+  "unlock_recipe": "machine_max:golden_closestool"
+}

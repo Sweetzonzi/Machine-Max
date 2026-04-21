@@ -31,6 +31,8 @@ public class ItemModelWidget extends AbstractWidget {
     private float scale = 30.0f; // 默认缩放值
     @Setter
     private boolean autoRotate = true;
+    @Setter
+    private Component emptyText = Component.translatable("gui.machine_max.fabricator.no_item");
 
     // 鼠标交互相关变量
     private boolean isDragging = false;
@@ -75,8 +77,8 @@ public class ItemModelWidget extends AbstractWidget {
             graphics.renderOutline(getX(), getY(), width, height, 0xFF555555);
             if (itemStack.isEmpty()) {
                 // 显示占位文本
-                graphics.drawString(minecraft.font, Component.translatable("gui.machine_max.fabricator.no_item"),
-                        getX() + width / 2 - minecraft.font.width(Component.translatable("gui.machine_max.fabricator.no_item")) / 2,
+                graphics.drawString(minecraft.font, emptyText,
+                        getX() + width / 2 - minecraft.font.width(emptyText) / 2,
                         getY() + height / 2 - 4, 0xAAAAAA, false);
                 return;
             }

@@ -1,0 +1,32 @@
+{
+  "$schema": "../docs/zh_cn/schemas/recipe/fabricating_recipe.schema.json",
+  "type": "machine_max:fabricating",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "machine_max:structural_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "machine_max:mechanic_component_1"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:leather"
+      },
+      "count": 6
+    }
+  ],
+  "result": {
+    "id": "machine_max:part",
+    "count": 2,
+    "components": {
+      "machine_max:part_type": "machine_max:wine_fox_gt_wheel"
+    }
+  },
+  "time": 100
+}

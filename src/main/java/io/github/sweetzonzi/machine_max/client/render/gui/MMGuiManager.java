@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 @OnlyIn(Dist.CLIENT)
-@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 public class MMGuiManager {
     public static Set<WeakReference<ITickableRenderable>> animatableWidgets = new CopyOnWriteArraySet<>();
     public static ReferenceQueue<ITickableRenderable> referenceQueue = new ReferenceQueue<>();

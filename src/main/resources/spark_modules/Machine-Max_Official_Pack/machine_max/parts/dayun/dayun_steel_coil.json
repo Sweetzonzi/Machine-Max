@@ -1,6 +1,6 @@
 {
   "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
-  "icon": "machine_max:textures/icon/dayun_steel_coil_icon.png",
+  "icon": "machine_max:textures/icon/dayun/dayun_steel_coil_icon.png",
   "vehicle_durability_rate": 1.0,
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
@@ -17,62 +17,14 @@
         "hit_boxes": {
           "collision": {
             "type": "box",
-            "restitution": 0.1,
-            "rolling_friction": 0.5,
-            "slip_adaptation": 0.5,
-            "block_damage_factor": 0.1,
-            "rha": 1000.0,
-            "damage_modifiers": [
-              {
-                "operation": "add",
-                "value": -10.0,
-                "condition": {
-                  "type": "damage_tag",
-                  "id": "c:is_impact"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.0,
-                "condition": {
-                  "type": "damage_type",
-                  "id": "minecraft:sweet_berry_bush"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.0,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:slime"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.0,
-                "condition": {
-                  "type": "entity_type",
-                  "id": "minecraft:magma_cube"
-                }
-              },
-              {
-                "operation": "multiply",
-                "value": 0.1,
-                "condition": {
-                  "type": "always"
-                }
-              }
-            ]
+            "material": "machine_max:structural_steel",
+            "thickness": 1000.0
           }
         },
         "connectors": {
           "connector.machine_max.bottom": {
             "locator": "locator",
-            "type": "Simple",
-            "direction": "yn",
-            "integrity": 100000.0,
-            "impact_reduction": 3.0,
-            "impact_multiplier": 0.5
+            "definition": "machine_max:fixed_down"
           }
         }
       }

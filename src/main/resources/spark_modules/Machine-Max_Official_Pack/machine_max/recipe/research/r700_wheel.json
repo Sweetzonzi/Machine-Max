@@ -1,0 +1,22 @@
+﻿{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 60,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:dried_kelp"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/r700/r700_wheel_icon.png",
+  "description": "research.machine_max.r700_wheel_blueprint.desc",
+  "unlock_recipe": "machine_max:r700_wheel"
+}

@@ -10,7 +10,7 @@ public class FreeRpSyncHandler {
     public static void handler(final FreeRpSyncPayload payload, final IPayloadContext context) {
         Player player = context.player();
         context.enqueueWork(() -> {
-            player.getData(MMAttachments.getBLUEPRINT()).setFreeResearchPoint(context.player(), payload.freeRp());
+            player.getData(MMAttachments.getBLUEPRINT()).setRp(context.player(), payload.freeRp());
             ClientResearchHandler.handleFreeRpChange(payload);
         });
     }

@@ -5,7 +5,6 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -15,17 +14,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public record ResearchCompletePayload(
-        ResourceLocation recipe,
-        int level,
-        ItemStack product,
-        List<Pair<RpAddReason, Integer>> rpChanges
+        ResourceLocation researchId,
+        ItemStack product
 ) implements CustomPacketPayload {
     public static final Type<ResearchCompletePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "research_complete_payload"));
     public static final StreamCodec<RegistryFriendlyByteBuf, ResearchCompletePayload> STREAM_CODEC = StreamCodec.composite(
-            ResourceLocation.STREAM_CODEC, ResearchCompletePayload::recipe,
-            ByteBufCodecs.INT, ResearchCompletePayload::level,
-            ItemStack.STREAM_CODEC, ResearchCompletePayload::product,
-            BlueprintAttachment.RP_CHANGE_LIST_STREAM_CODEC, ResearchCompletePayload::rpChanges,
+            ResourceLocation.STREAM_CODEC, ResearchCompletePayload::researchId,
+            ItemStack.OPTIONAL_STREAM_CODEC, ResearchCompletePayload::product,
             ResearchCompletePayload::new
     );
 

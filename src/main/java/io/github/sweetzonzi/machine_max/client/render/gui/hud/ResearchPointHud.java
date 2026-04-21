@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class ResearchPointHud implements LayeredDraw.Layer {
     private static final int ITEM_HEIGHT = 11;
     private static final int WIDTH = 64;
@@ -119,3 +119,4 @@ public class ResearchPointHud implements LayeredDraw.Layer {
         }
     }
 }
+

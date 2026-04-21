@@ -63,11 +63,10 @@ public class VehicleBinding implements IMolangContext {
     private static Double getMaxDurability(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                //TODO:修改为总血量
-                return (double) seat.getOwner().getSubPart().getPart().getVehicle().getHp();
+                return (double) seat.getOwner().getSubPart().getPart().getVehicle().getMaxHp();
             } else return 0.0;
         } else if (ctx.getAnimatable() instanceof SubPart subPart)
-            return (double) subPart.part.getVehicle().getHp();
+            return (double) subPart.part.getVehicle().getMaxHp();
         else return 0.0;
     }
 

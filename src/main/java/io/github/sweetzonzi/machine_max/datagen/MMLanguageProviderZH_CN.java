@@ -67,6 +67,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("tooltip.machine_max.wrench.cant_repair", "%1$s已被摧毁，无法修复，潜行互动以解除固定便于拆除");
         this.add("tooltip.machine_max.wrench.no_need_to_repair", "%1$s无需修复或固定");
         this.add("tooltip.machine_max.spray_can.interact", "互动以喷涂：");
+        this.add("tooltip.machine_max.jade.subpart_durability", "零件耐久: %1$s");
+        this.add("tooltip.machine_max.jade.vehicle_durability", "载具耐久: %1$s");
         this.add("message.machine_max.blueprint_saved", "蓝图已保存至%1$s");
         this.add("message.machine_max.blueprint_error", "保存蓝图失败:%1$s");
         this.add("message.machine_max.blueprint_pass", "未选中任何载具，取消保存蓝图");
@@ -90,6 +92,9 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "初级电子元件");
         this.add("item.machine_max.power_component_1", "初级能源组件");
         this.add("item.machine_max.energetic_component_1", "初级含能材料");
+        this.add("subtitles.item.welding_torch.start", "焊枪启动");
+        this.add("subtitles.item.welding_torch.loop", "焊接中");
+        this.add("subtitles.item.welding_torch.end", "焊枪关闭");
         // 菜单
         this.add("gui.machine_max.confirm", "确认");
         this.add("gui.machine_max.cancel", "取消");
@@ -147,6 +152,15 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.research.recipe.insufficient_free_rp_2", "需要自由研发点: %1$s");
         this.add("gui.machine_max.research.recipe.research_unfinished_1", "⚠ 无法获取成果");
         this.add("gui.machine_max.research.recipe.research_unfinished_2", "研发未完成");
+        this.add("gui.machine_max.research.no_preview", "无可预览产物");
+        this.add("gui.machine_max.research.no_blueprint_product", "未找到可预览产物");
+        this.add("gui.machine_max.research.status.can_research", "可研发");
+        this.add("gui.machine_max.research.status.can_claim", "可领取");
+        this.add("gui.machine_max.research.status.can_reprint", "可重获");
+        this.add("gui.machine_max.research.status.prereq_missing", "前置缺失 x%1$s");
+        this.add("gui.machine_max.research.status.need_materials_rp", "材料或研发点不足");
+        this.add("gui.machine_max.research.status.unavailable", "不可用");
+        this.add("jei.machine_max.blueprint_research.rp_cost", "研发点需求: %1$s");
         // 组装HUD
         this.add("hud.warn.machine_max.subpart_destroying", "❌ 零件已损毁，销毁倒计时: %1$s秒");
         this.add("hud.warn.machine_max.subsystem_malfunction", "❌ %1$s瘫痪");
@@ -175,25 +189,33 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.configuration.title", "Machine Max 配置");
         this.add("machine_max.configuration.section.machine.max.client.toml.title", "客户端配置");
         this.add("machine_max.configuration.section.machine.max.client.toml", "客户端配置");
+        this.add("machine_max.configuration.section.machine.max.common.toml", "通用配置");
         this.add("machine_max.configuration.section.machine.max.server.toml", "服务器配置");
+        this.add("config.jade.plugin_machine_max.mm_part_entity_status", "Machine Max 部件耐久显示");
         // 地面载具配置
         this.add("machine_max.configuration.ground_vehicle", "地面载具");
         this.add("machine_max.configuration.ground_vehicle.button", "地面载具");
         this.add("machine_max.configuration.ground_vehicle.tooltip", "地面载具相关设置");
         this.add("machine_max.configuration.full_power_time", "满动力时间");
-        this.add("machine_max.configuration.full_power_time.tooltip", "按住按键达到满动力所需的时间（秒）");
+        this.add("machine_max.configuration.full_power_time.tooltip", "按住按键达到满动力所需的时间（秒）。默认值：1.2（地面载具）、2.5（飞行器）。范围：0.05 ~ 99999.0");
         this.add("machine_max.configuration.full_steering_time", "满转向时间");
-        this.add("machine_max.configuration.full_steering_time.tooltip", "按住按键达到满转向所需的时间（秒）");
+        this.add("machine_max.configuration.full_steering_time.tooltip", "按住按键达到满转向所需的时间（秒）。默认值：0.4（地面载具）、0.25（舰艇）。范围：0.05 ~ 99999.0");
         this.add("machine_max.configuration.auto_switch_gear", "自动换挡");
-        this.add("machine_max.configuration.auto_switch_gear.tooltip", "根据输入、车速和发动机转速自动换挡");
+        this.add("machine_max.configuration.auto_switch_gear.tooltip", "根据输入、车速和发动机转速自动换挡。默认值：FOLLOW_VEHICLE");
         this.add("machine_max.configuration.auto_handbrake", "自动手刹");
-        this.add("machine_max.configuration.auto_handbrake.tooltip", "车辆停止时自动拉手刹，启动时自动释放");
+        this.add("machine_max.configuration.auto_handbrake.tooltip", "车辆停止时自动拉手刹，启动时自动释放。默认值：FOLLOW_VEHICLE");
         this.add("machine_max.configuration.drift_assist", "漂移辅助");
-        this.add("machine_max.configuration.drift_assist.tooltip", "漂移时自动反打方向以保持控制");
+        this.add("machine_max.configuration.drift_assist.tooltip", "漂移时自动反打方向以保持控制。默认值：FOLLOW_VEHICLE");
         this.add("machine_max.configuration.pose_preference", "视角跟随");
-        this.add("machine_max.configuration.pose_preference.tooltip", "自动旋转摄像机视角以跟随载具方向");
+        this.add("machine_max.configuration.pose_preference.tooltip", "自动旋转摄像机视角以跟随载具方向。默认值：FOLLOW_VEHICLE");
         this.add("machine_max.configuration.speed_turning_limit", "高速转向限制");
-        this.add("machine_max.configuration.speed_turning_limit.tooltip", "高速行驶时限制转向时的侧向加速度，防止失控或侧翻");
+        this.add("machine_max.configuration.speed_turning_limit.tooltip", "高速行驶时限制转向时的侧向加速度，防止失控或侧翻。默认值：true");
+        this.add("machine_max.configuration.render_hit_whitening", "部件受击视觉效果");
+        this.add("machine_max.configuration.render_hit_whitening.tooltip", "是否启用部件在受击时的视觉效果。默认值：true");
+        this.add("machine_max.configuration.render_destroy_blackening", "部件损毁视觉效果");
+        this.add("machine_max.configuration.render_destroy_blackening.tooltip", "是否启用部件在损毁状态下的视觉效果。默认值：true");
+        this.add("machine_max.configuration.render_force_translucent_parts", "部件半透明渲染");
+        this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "是否将使用 Cutout 渲染的部件改为半透明实体渲染。默认值：false");
         // 舰艇配置
         this.add("machine_max.configuration.ship", "舰艇");
         this.add("machine_max.configuration.ship.button", "舰艇");
@@ -204,8 +226,16 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.configuration.plane.tooltip", "飞行器相关设置");
         // 服务器配置
         this.add("machine_max.configuration.should_destroy_blocks", "允许碰撞破坏方块");
-        this.add("machine_max.configuration.should_destroy_blocks.tooltip", "是否允许部件在冲击力足够大时破坏方块");
+        this.add("machine_max.configuration.should_destroy_blocks.tooltip", "是否允许部件在冲击力足够大时破坏方块。默认值：true");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements", "忽略组装Tag要求");
-        this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "使用零件组装载具时是否忽视连接点的Tag要求");
+        this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "使用零件组装载具时是否忽视连接点的Tag要求。默认值：false");
+        this.add("machine_max.configuration.auto_override_official_pack", "自动覆盖官方内容包");
+        this.add("machine_max.configuration.auto_override_official_pack.tooltip", "是否在启动和重载时自动打包并覆盖 machine_max:official 官方内容包。默认值：true");
+        this.add("machine_max.configuration.subpart_destroy_ticks_per_durability", "零件销毁每耐久Tick");
+        this.add("machine_max.configuration.subpart_destroy_ticks_per_durability.tooltip", "零件损毁后，每1点最大耐久对应的销毁倒计时Tick数。默认值：10。范围：0 ~ 100000");
+        this.add("machine_max.configuration.subpart_destroy_min_ticks", "零件销毁最小Tick");
+        this.add("machine_max.configuration.subpart_destroy_min_ticks.tooltip", "零件损毁后的最小销毁倒计时Tick数。默认值：200。范围：0 ~ 1000000");
+        this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage", "零件受伤加速销毁Tick");
+        this.add("machine_max.configuration.subpart_destroy_advance_ticks_per_damage.tooltip", "零件已损毁时，每1点伤害额外推进的销毁倒计时Tick数。默认值：20。范围：0 ~ 100000");
     }
 }

@@ -15,14 +15,14 @@ import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.util.MMMath;
-import jme3utilities.math.MyMath;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -75,6 +75,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                     if (recipeHolder != null && recipeHolder.value() instanceof FabricatingRecipe) {
                         part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE()); // 设置配方为物品对应的配方
                     }
+                    restoreAssemblyStateFromDamage(stack, part);
                     var result = cache.assembly(level, player, stack, part); // 放出部件
                     if (result.getResult() == InteractionResult.CONSUME) { // 若成功则播放音效
                         stack.consume(1, player);
@@ -130,7 +131,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                                 VisualEffectHelper.partToPlace.updateTransform(
                                         targetConnector.mergeTransform(
                                                 targetConnector.calculateExtraTransform(
-                                                        connectorAttr.direction(),
+                                                        connectorAttr.getDirection(),
                                                         PhysicsHelperKt.toBVector3f(cache.getOffset()),
                                                         SparkMathKt.toBQuaternion(cache.getQuaternion()),
                                                         cache.getAttachRotation()).invert()
@@ -171,6 +172,7 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
+        appendPartTags(stack, context, tooltipComponents, tooltipFlag);
     }
 
     /**
@@ -242,5 +244,23 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
     public Vector3f getRenderScale(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
         if (displayContext == ItemDisplayContext.GUI) return MMMath.ONE;
         else return new Vector3f(0.3f);
+    }
+
+    private static void restoreAssemblyStateFromDamage(ItemStack stack, Part part) {
+        if (!stack.has(DataComponents.MAX_DAMAGE)) return;
+        int cap = stack.getMaxDamage();
+        if (cap <= 0) return;
+
+        FabricatingRecipe recipe = part.getRecipe();
+        if (recipe == null || !recipe.isManualAssemblablePart()) return;
+        if (recipe.getManualAssembleIngredientList().isEmpty()) return;
+
+        int gap = Math.clamp(stack.getDamageValue(), 0, cap);
+        int provided = Math.clamp(cap - gap, 0, cap);
+        part.setMaterialProgress(provided);
+        part.setAssemblingProgress((float) provided / cap);
+        for (SubPart subPart : part.subParts.values()) {
+            subPart.setDurability(subPart.getMaxDurability());
+        }
     }
 }

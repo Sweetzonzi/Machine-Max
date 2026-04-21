@@ -1,9 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
-import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
-import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -14,14 +12,16 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.ConnectorAlignmentHelper;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
@@ -44,8 +44,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 
 import java.util.*;
 
@@ -65,6 +63,7 @@ public class Part {
     public ResourceLocation customRecipe = FabricatingRecipe.EMPTY;
     public volatile float assemblingProgress = 1f; //组装进度(0~1)，控制最大耐久和质量
     public int materialProgress = Integer.MAX_VALUE; //材料供给进度，控制最大组装进度，上限取决于配方
+    public boolean renderWireframe = true; // 是否渲染线框（用于维修可视化状态机）
     public final SubPart rootSubPart;
     public float totalMass;
     public boolean destroyed = false;
@@ -120,6 +119,7 @@ public class Part {
         this.variant = type.getVariants().get(variantName);
         this.customRecipe = data.customRecipe == FabricatingRecipe.EMPTY ? FabricatingRecipe.EMPTY : data.customRecipe;
         this.uuid = UUID.fromString(data.uuid);
+        this.renderWireframe = readAdditionalData ? data.renderWireframe : true;
         this.setMaterialProgress(readAdditionalData ? data.materialAssemblingProgress : 0);
         this.setAssemblingProgress(readAdditionalData ? Math.clamp(data.assemblingProgress, 0f, 1f) : 0f);
         this.rootSubPart = createSubParts(type.getVariants().get(variantName).getSubParts());//重建子部件并指定根子部件
@@ -173,6 +173,9 @@ public class Part {
     }
 
     public void onTick() {
+        if (shouldRenderWireframe() && getAssemblingProgress() > type.getFunctionalThreshold()) {
+            setRenderWireframe(false);
+        }
         boolean shouldDestroy = true;
         for (SubPart subPart : subParts.values()) {
             if (subPart.getDestroyTime() > 0) shouldDestroy = false;
@@ -222,6 +225,10 @@ public class Part {
         return result;
     }
 
+    public float getVehicleDurabilityContribution() {
+        return getSharedMaxDurability() * Math.max(0f, this.type.vehicleDurabilityRate);
+    }
+
     private void createSubsystems(
             SubPart subPart,
             Map<String, AbstractSubsystemAttr> subSystemAttrMap
@@ -241,28 +248,28 @@ public class Part {
         for (Map.Entry<String, ConnectorAttr> connectorEntry : subPartAttr.connectors.entrySet()) {
             String connectorName = connectorEntry.getKey();
             ConnectorAttr connectorAttr = connectorEntry.getValue();
-            if (subPartAttr.getLocatorTransforms().containsKey(connectorAttr.locatorName())) {//若找到了对应的零件连接点Locator
+            if (subPartAttr.getLocatorTransforms().containsKey(connectorAttr.locatorName)) {//若找到了对应的零件连接点Locator
                 AbstractConnector connector;
                 if (connectorAttr.isSimpleConnector()) {
                     connector = new SimpleConnector(
                             connectorName,
                             connectorAttr,
                             subPart,
-                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName())
+                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName)
                     );
                 } else {
                     connector = new AdvancedConnector(
                             connectorName,
                             connectorAttr,
                             subPart,
-                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName())
+                            subPartAttr.getLocatorTransforms().get(connectorAttr.locatorName)
                     );
                 }
                 subPart.connectors.put(connectorName, connector);
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
-                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey().toLanguageKey(), connectorName, connectorAttr.locatorName()).getString());
+                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey().toLanguageKey(), connectorName, connectorAttr.locatorName).getString());
         }
     }
 
@@ -291,6 +298,116 @@ public class Part {
         return new Vec3(xArea, yArea, zArea);
     }
 
+    private static String toConnectorKey(AbstractConnector connector) {
+        return connector.subPart.name + "." + connector.name;
+    }
+
+    private void autoAttachInternalConnectors() {
+        List<AbstractConnector> internalConnectors = new ArrayList<>();
+        for (SubPart subPart : subParts.values()) {
+            for (AbstractConnector connector : subPart.connectors.values()) {
+                if (connector.internal && !connector.hasPart()) {
+                    internalConnectors.add(connector);
+                }
+            }
+        }
+        if (internalConnectors.isEmpty()) return;
+
+        Map<AbstractConnector, Integer> matchCount = new HashMap<>();
+        for (AbstractConnector connector : internalConnectors) {
+            matchCount.put(connector, 0);
+        }
+        List<Pair<AbstractConnector, SimpleConnector>> feasiblePairs = new ArrayList<>();
+
+        for (int i = 0; i < internalConnectors.size(); i++) {
+            AbstractConnector connector1 = internalConnectors.get(i);
+            for (int j = i + 1; j < internalConnectors.size(); j++) {
+                AbstractConnector connector2 = internalConnectors.get(j);
+                AbstractConnector advancedConnector;
+                SimpleConnector simpleConnector;
+                if (connector1 instanceof AdvancedConnector && connector2 instanceof SimpleConnector) {
+                    advancedConnector = connector1;
+                    simpleConnector = (SimpleConnector) connector2;
+                } else if (connector2 instanceof AdvancedConnector && connector1 instanceof SimpleConnector) {
+                    advancedConnector = connector2;
+                    simpleConnector = (SimpleConnector) connector1;
+                } else {
+                    continue;
+                }
+
+                if (!advancedConnector.conditionCheck(simpleConnector.subPart.part)
+                        || !simpleConnector.conditionCheck(advancedConnector.subPart.part)) {
+                    continue;
+                }
+
+                if (!ConnectorAlignmentHelper.isAlignedForAttach(
+                        advancedConnector,
+                        simpleConnector,
+                        ConnectorAlignmentHelper.DEFAULT_MAX_POS_ERROR,
+                        ConnectorAlignmentHelper.DEFAULT_MAX_DIRECTION_ERROR
+                )) {
+                    continue;
+                }
+
+                feasiblePairs.add(Pair.of(advancedConnector, simpleConnector));
+                matchCount.put(advancedConnector, matchCount.get(advancedConnector) + 1);
+                matchCount.put(simpleConnector, matchCount.get(simpleConnector) + 1);
+            }
+        }
+
+        Set<AbstractConnector> conflictedConnectors = new HashSet<>();
+        List<String> conflictNames = new ArrayList<>();
+        List<String> unmatchedNames = new ArrayList<>();
+        for (AbstractConnector connector : internalConnectors) {
+            int count = matchCount.getOrDefault(connector, 0);
+            if (count > 1) {
+                conflictedConnectors.add(connector);
+                conflictNames.add(toConnectorKey(connector) + "(" + count + ")");
+            } else if (count == 0) {
+                unmatchedNames.add(toConnectorKey(connector));
+            }
+        }
+
+        if (!conflictNames.isEmpty()) {
+            MachineMax.LOGGER.warn(
+                    "部件{}({})内部连接点存在多个可行候选，已跳过冲突连接点: {}",
+                    this.name,
+                    this.uuid,
+                    String.join(", ", conflictNames)
+            );
+        }
+        if (!unmatchedNames.isEmpty()) {
+            MachineMax.LOGGER.warn(
+                    "部件{}({})内部连接点未找到可行候选: {}",
+                    this.name,
+                    this.uuid,
+                    String.join(", ", unmatchedNames)
+            );
+        }
+
+        for (Pair<AbstractConnector, SimpleConnector> pair : feasiblePairs) {
+            AbstractConnector advancedConnector = pair.getFirst();
+            SimpleConnector simpleConnector = pair.getSecond();
+            if (conflictedConnectors.contains(advancedConnector) || conflictedConnectors.contains(simpleConnector)) {
+                continue;
+            }
+            if (advancedConnector.hasPart() || simpleConnector.hasPart()) {
+                continue;
+            }
+            advancedConnector.alignActualTransformForJoint(simpleConnector);
+            boolean attached = advancedConnector.attach(simpleConnector);
+            if (!attached) {
+                MachineMax.LOGGER.warn(
+                        "部件{}({})内部连接点连接失败: {} <-> {}",
+                        this.name,
+                        this.uuid,
+                        toConnectorKey(advancedConnector),
+                        toConnectorKey(simpleConnector)
+                );
+            }
+        }
+    }
+
     private SubPart createSubParts(Map<String, SubPartAttr> subPartAttrMap) {
         //创建零件
         for (Map.Entry<String, SubPartAttr> subPartEntry : subPartAttrMap.entrySet()) {//遍历部件的零件属性
@@ -317,7 +434,7 @@ public class Part {
                 String boneName = entry.getKey();
                 HitBoxAttr hitBoxAttr = entry.getValue();
                 subPart.hitBoxes.put(boneName, new HitBox(subPart, hitBoxAttr));
-                if (hitBoxAttr.shapeType().equals("wheel") && bones.containsKey(boneName)) {
+                if (hitBoxAttr.shapeType.equals("wheel") && bones.containsKey(boneName)) {
                     wheelParam = PhysicsHelperKt.toBVector3f(bones.get(boneName).getCubes().getFirst().getSize().toVector3f());
                 }
             }
@@ -326,11 +443,11 @@ public class Part {
                 float radius = wheelParam.y / 2;
                 float width = wheelParam.x;
                 float Ix = 0.5f * mass * radius * radius;
-                float Iyz = (1.0f / 12.0f) * mass * (3 * radius* radius + width * width);
-                subPart.body.setInverseInertiaLocal(new Vector3f(1.0f/Ix, 1.0f/Iyz, 1.0f/Iyz));
+                float Iyz = (1.0f / 12.0f) * mass * (3 * radius * radius + width * width);
+                subPart.body.setInverseInertiaLocal(new Vector3f(1.0f / Ix, 1.0f / Iyz, 1.0f / Iyz));
             }
         }
-        //TODO: 连接内部连接器
+        autoAttachInternalConnectors();
         //设置默认根零件，取质量最大的
         float maxMass = -100;
         SubPart rootSubPart = null;
@@ -358,14 +475,23 @@ public class Part {
             ignoreMaterial = inventory.player.hasInfiniteMaterials();
         }
         FabricatingRecipe recipe = getRecipe();
-        // 未找到配方则不改变组装进度
-        if (recipe != null) {
+        // 未找到配方或非手动部件配方则不改变组装进度
+        if (recipe != null && recipe.isManualAssemblablePart()) {
             int totalTime = recipe.getProcessingTime();
             float step = progress / totalTime;
             float newProgress = Math.clamp(assemblingProgress + step, 0f, 1f);
 
             // 计算新的组装进度对应的材料需求
-            int totalMaterials = recipe.getIngredientList().size(); // 总材料数量
+            List<Ingredient> manualAssembleList = recipe.getManualAssembleIngredientList();
+            int totalMaterials = manualAssembleList.size(); // 手动组装总材料数量（ceil折算后）
+            if (totalMaterials <= 0) {
+                if (newProgress != assemblingProgress) {
+                    setAssemblingProgress(newProgress);
+                    return true;
+                }
+                return false;
+            }
+            materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
             int targetMaterialProgress = (int) Math.ceil(newProgress * totalMaterials);
 
             // 尝试提升材料进度
@@ -373,11 +499,10 @@ public class Part {
                 if (ignoreMaterial) { // 创造模式无视材料需求
                     materialProgress = Math.clamp(targetMaterialProgress, 0, totalMaterials);
                 } else { // 检查材料是否足够，如果不够则组装进度最多提升至材料供给进度的值
-                    materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
                     for (int i = materialProgress; i < targetMaterialProgress; i++) {
                         // 获取下一个需要消耗的材料
                         if (i < totalMaterials) {
-                            Ingredient requiredIngredient = recipe.getIngredientList().get(i);
+                            Ingredient requiredIngredient = manualAssembleList.get(i);
 
                             // 在容器中查找匹配的物品
                             boolean found = false;
@@ -428,14 +553,24 @@ public class Part {
             ignoreMaterial = inventory.player.hasInfiniteMaterials();
         }
         FabricatingRecipe recipe = getRecipe();
-        // 未找到配方则不改变组装进度
-        if (recipe != null) {
+        // 未找到配方或非手动部件配方则不改变组装进度
+        if (recipe != null && recipe.isManualAssemblablePart()) {
             int totalTime = recipe.getProcessingTime();
             float step = progress / totalTime;
             float newProgress = Math.clamp(assemblingProgress - step, 0f, 1f);
 
             // 计算新的组装进度对应的材料需求
-            int totalMaterials = recipe.getIngredientList().size(); // 总材料数量
+            List<Ingredient> manualDisassembleList = recipe.getManualDisassembleIngredientList();
+            int totalMaterials = manualDisassembleList.size(); // 手动拆除总返还材料数量（floor折算后）
+            if (totalMaterials <= 0) {
+                materialProgress = 0;
+                if (newProgress != assemblingProgress) {
+                    setAssemblingProgress(newProgress);
+                    return true;
+                }
+                return false;
+            }
+            materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
             int targetMaterialProgress = (int) Math.floor(newProgress * totalMaterials);
 
             // 检查是否需要返还材料
@@ -449,7 +584,7 @@ public class Part {
                     for (int i = 0; i < materialsToReturn; i++) {
                         if (materialProgress > 0) {
                             materialProgress--;
-                            Ingredient ingredientToReturn = recipe.getIngredientList().get(materialProgress);
+                            Ingredient ingredientToReturn = manualDisassembleList.get(materialProgress);
 
                             // 创建要返还的物品（取第一个匹配项）
                             ItemStack[] matchingStacks = ingredientToReturn.getItems();
@@ -533,7 +668,11 @@ public class Part {
      */
     public void setMaterialProgress(int progress) {
         if (getRecipe() instanceof FabricatingRecipe recipe) {
-            materialProgress = Math.clamp(progress, 0, recipe.getIngredientList().size());
+            if (recipe.isManualAssemblablePart()) {
+                materialProgress = Math.clamp(progress, 0, recipe.getManualAssembleIngredientList().size());
+            } else {
+                materialProgress = 0;
+            }
         } else materialProgress = Math.max(0, progress);
     }
 
@@ -547,6 +686,51 @@ public class Part {
     }
 
     /**
+     * <p>根据子部件耐久度重新计算部件组装进度和材料进度上限。</p>
+     * <p>有手动配方时，材料进度仅会被下调；无手动配方时，不限制材料进度。</p>
+     *
+     * @return 是否发生变化
+     */
+    public boolean recomputeAssemblyFromDurability() {
+        if (level.isClientSide()) return false;
+        float oldProgress = this.assemblingProgress;
+        int oldMaterialProgress = this.materialProgress;
+
+        float durabilityRatio = 0f;
+        for (SubPart subPart : subParts.values()) {
+            float maxDurability = subPart.getMaxDurability();
+            if (maxDurability <= 0f) continue;
+            float ratio = Math.clamp(subPart.getDurability() / maxDurability, 0f, 1f);
+            durabilityRatio = Math.max(durabilityRatio, ratio);
+        }
+
+        FabricatingRecipe recipe = getRecipe();
+        boolean hasManualRecipe = recipe != null && recipe.isManualAssemblablePart();
+        int totalMaterials = hasManualRecipe ? recipe.getManualAssembleIngredientList().size() : 0;
+
+        if (!hasManualRecipe || totalMaterials <= 0) {
+            setAssemblingProgress(durabilityRatio);
+        } else {
+            materialProgress = Math.clamp(materialProgress, 0, totalMaterials);
+            int durabilityTier = getMaterialTierByDurabilityRatio(durabilityRatio, totalMaterials);
+            materialProgress = Math.min(materialProgress, durabilityTier);
+            float materialCap = (float) materialProgress / totalMaterials;
+            setAssemblingProgress(Math.min(durabilityRatio, materialCap));
+        }
+
+        if (oldMaterialProgress != materialProgress && oldProgress == this.assemblingProgress) {
+            syncAssemblyProgressToClient();
+        }
+        return oldProgress != this.assemblingProgress || oldMaterialProgress != this.materialProgress;
+    }
+
+    private static int getMaterialTierByDurabilityRatio(float ratio, int totalMaterials) {
+        if (totalMaterials <= 0) return 0;
+        if (ratio <= 0f) return 0;
+        return Math.min(totalMaterials, (int) Math.floor(Math.clamp(ratio, 0f, 1f) * totalMaterials) + 1);
+    }
+
+    /**
      * <p>设置部件的组装进度，并影响零件的最大耐久、重力和实际质量</p>
      * <p>Sets the assembling progress of the part, which affects the maximum durability, gravity, and actual mass of the part.</p>
      *
@@ -555,6 +739,7 @@ public class Part {
     public void setAssemblingProgress(float progress) {
         progress = Math.clamp(progress, 0f, 1f);
         if (progress != this.assemblingProgress) {
+            float oldProgress = this.assemblingProgress;
             this.assemblingProgress = progress;
             float finalProgress = progress;
             SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
@@ -569,14 +754,36 @@ public class Part {
                 updateMass();
                 return null;
             });
-            if (!level.isClientSide() && vehicle != null && vehicle.inLevel) {
-                PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
-                        vehicle.uuid,
-                        uuid,
-                        assemblingProgress,
-                        materialProgress
-                ));
+            float functionalThreshold = type.getFunctionalThreshold();
+            if (!level.isClientSide() && renderWireframe
+                    && oldProgress < functionalThreshold
+                    && progress >= functionalThreshold) {
+                renderWireframe = false;
             }
+            syncAssemblyProgressToClient();
+        }
+    }
+
+    public boolean shouldRenderWireframe() {
+        return renderWireframe;
+    }
+
+    public void setRenderWireframe(boolean renderWireframe) {
+        if (this.renderWireframe != renderWireframe) {
+            this.renderWireframe = renderWireframe;
+            syncAssemblyProgressToClient();
+        }
+    }
+
+    private void syncAssemblyProgressToClient() {
+        if (!level.isClientSide() && vehicle != null && vehicle.inLevel) {
+            PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
+                    vehicle.uuid,
+                    uuid,
+                    assemblingProgress,
+                    materialProgress,
+                    renderWireframe
+            ));
         }
     }
 

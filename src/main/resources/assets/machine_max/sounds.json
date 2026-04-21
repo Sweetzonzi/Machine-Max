@@ -17,6 +17,24 @@
     ],
     "subtitle": "subtitles.item.part.placed"
   },
+  "item.welding_torch.start": {
+    "sounds": [
+      "machine_max:item/weld_start"
+    ],
+    "subtitle": "subtitles.item.welding_torch.start"
+  },
+  "item.welding_torch.loop": {
+    "sounds": [
+      "machine_max:item/weldin"
+    ],
+    "subtitle": "subtitles.item.welding_torch.loop"
+  },
+  "item.welding_torch.end": {
+    "sounds": [
+      "machine_max:item/weld_end"
+    ],
+    "subtitle": "subtitles.item.welding_torch.end"
+  },
   "part.no_pen": {
     "sounds": [
       "machine_max:part/part_no_pen"

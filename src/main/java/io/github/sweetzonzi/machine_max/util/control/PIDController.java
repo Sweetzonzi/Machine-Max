@@ -86,7 +86,7 @@ public class PIDController {
     public double step(double target, double actual) {
         this.error = target - actual;//更新记录的误差
         this.errorSpeed = (this.error - this.errorLastFrame) / this.STEP;
-        return internalStep(target, actual, this.errorSpeed);
+        return internalStep();
     }
 
     /**
@@ -102,10 +102,10 @@ public class PIDController {
     public double step(double target, double actual, double speed) {
         this.error = target - actual;//更新记录的误差
         this.errorSpeed = speed;
-        return internalStep(target, actual, this.errorSpeed);
+        return internalStep();
     }
 
-    private double internalStep(double target, double actual, double speed) {
+    private double internalStep() {
         if (lastOutput < outputMax && lastOutput > outputMin)
             this.errorAccumulated = this.errorAccumulated + this.error * this.STEP;
         //P

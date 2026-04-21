@@ -17,13 +17,13 @@ import net.neoforged.neoforge.network.handling.DirectionalPayloadHandler;
 import net.neoforged.neoforge.network.handling.MainThreadPayloadHandler;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = MachineMax.MOD_ID)
 public class MMPayloadRegistry {
     @SubscribeEvent
     public static void register(final RegisterPayloadHandlersEvent event) {
         final PayloadRegistrar input = event.registrar("input:1.0.0");
         final PayloadRegistrar sync = event.registrar("sync:1.0.0");
-        final PayloadRegistrar research = event.registrar("research:1.0.0");
+        final PayloadRegistrar research = event.registrar("research:2.0.0");
         final PayloadRegistrar misc = event.registrar("misc:1.0.0");
         //注册网络包及其处理
         input.playToServer(//玩家配置
@@ -78,6 +78,11 @@ public class MMPayloadRegistry {
                 ConnectorAttachPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ConnectorAttachPayload::handle)
         );
+        sync.playToClient(//通知客户端合并载具并建立连接
+                VehicleMergePayload.TYPE,
+                VehicleMergePayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(VehicleMergePayload::handle)
+        );
         sync.playToClient(//通知客户端移除连接
                 ConnectorDetachPayload.TYPE,
                 ConnectorDetachPayload.STREAM_CODEC,
@@ -118,6 +123,11 @@ public class MMPayloadRegistry {
                 LevelVehicleDataPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(LevelVehicleDataPayload::handle)
         );
+        sync.playToClient(//同步载具耐久状态
+                VehicleStatusSyncPayload.TYPE,
+                VehicleStatusSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(VehicleStatusSyncPayload::handle)
+        );
         sync.playToClient(//运动体的同步数据
                 SubPartSyncPayload.TYPE,
                 SubPartSyncPayload.STREAM_CODEC,
@@ -139,23 +149,10 @@ public class MMPayloadRegistry {
                 FreeRpSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(FreeRpSyncHandler::handler)
         );
-        research.playToServer(//玩家应用自由研发点
-                ResearchApplyFreeRpPayload.TYPE,
-                ResearchApplyFreeRpPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchApplyFreeRpHandler::handler)
-        );
-        research.playToClient(//玩家推进蓝图研发进度
-                ResearchPushPayload.TYPE,
-                ResearchPushPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ResearchPushHandler::handler)
-        );
-        research.playBidirectional(//玩家改变蓝图研发目标
-                ResearchSetPayload.TYPE,
-                ResearchSetPayload.STREAM_CODEC,
-                new DirectionalPayloadHandler<>(
-                        ResearchSetClientHandler::clientHandler,
-                        ResearchSetServerHandler::serverHandler
-                )
+        research.playToServer(//玩家请求完成一个研发项目
+                ResearchCompleteRequestPayload.TYPE,
+                ResearchCompleteRequestPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ResearchCompleteRequestHandler::handler)
         );
         research.playToServer(//玩家获取研发产物
                 ResearchClaimPayload.TYPE,
@@ -166,14 +163,6 @@ public class MMPayloadRegistry {
                 ResearchReclaimPayload.TYPE,
                 ResearchReclaimPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ResearchReclaimHandler::handler)
-        );
-        research.playBidirectional(//玩家取消蓝图研发
-                ResearchCancelPayload.TYPE,
-                ResearchCancelPayload.STREAM_CODEC,
-                new DirectionalPayloadHandler<>(
-                        ResearchCancelHandler::clientHandler,
-                        ResearchCancelHandler::serverHandler
-                )
         );
         research.playToClient(//通知客户端蓝图研发完成
                 ResearchCompletePayload.TYPE,

@@ -1,0 +1,16 @@
+﻿{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 100,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/ae86/ae86_back_seat_icon.png",
+  "description": "research.machine_max.ae86_back_seat_blueprint.desc",
+  "unlock_recipe": "machine_max:ae86_back_seat"
+}

@@ -57,6 +57,7 @@ This is the main Schema for defining vehicle parts, containing the following key
 
 - `vehicle_durability_rate`: Vehicle durability contribution coefficient (number, between 0-1)
 - `vehicle_damage_rate`: Normal vehicle damage transmission coefficient (number)
+- `functional_threshold`: Part functional threshold (number, between 0-1, default `0.5`)
 - `share_durability`: Whether parts within the component share durability (boolean)
 - `variants`: List of part variants (object)
 

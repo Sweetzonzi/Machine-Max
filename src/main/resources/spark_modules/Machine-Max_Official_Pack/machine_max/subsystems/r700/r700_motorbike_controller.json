@@ -7,6 +7,6 @@
   "lateral_acceleration": 10.0,
   "max_drift_angular_velocity": 1.8,
   "control_inputs": ["move_control"],
-  "max_angle": 55.0,
+  "max_angle": 35.0,
   "parking_angle": 5.0
 }

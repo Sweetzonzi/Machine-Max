@@ -9,9 +9,11 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemT
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implements ICustomSoundSubsystemAttr {
@@ -23,6 +25,18 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
     public final List<Double> dampingFactors;//电机系统各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
     public final float generatorEfficiency; // 发电效率（0-1）
     public final List<String> throttleInputKeys;//优先级从高至低
+    public final MotorSoundAttr sounds;
+
+    public record MotorSoundAttr(BasicSoundAttr basicSounds, Map<String, SoundEvent> workingSounds) {
+        public static final MotorSoundAttr DEFAULT = new MotorSoundAttr(BasicSoundAttr.DEFAULT, Map.of());
+
+        public static final Codec<MotorSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                BasicSoundAttr.basicSounds(MotorSoundAttr::basicSounds),
+                Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
+                        .optionalFieldOf("working_sounds", Map.of())
+                        .forGetter(MotorSoundAttr::workingSounds)
+        ).apply(instance, MotorSoundAttr::new));
+    }
 
     public static final MapCodec<MotorSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
@@ -34,7 +48,7 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(10.0, 0.1, 0.00005)).forGetter(MotorSubsystemStaticAttr::getDampingFactors),
             Codec.FLOAT.optionalFieldOf("generator_efficiency", 0.85f).forGetter(MotorSubsystemStaticAttr::getGeneratorEfficiency),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("motor_control", "move_control")).forGetter(MotorSubsystemStaticAttr::getThrottleInputKeys),
-            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
+            MotorSoundAttr.CODEC.optionalFieldOf("sounds", MotorSoundAttr.DEFAULT).forGetter(MotorSubsystemStaticAttr::getSounds)
     ).apply(instance, MotorSubsystemStaticAttr::new));
     public static final float baseRPM = 400.0f;
     public static final int LOAD_STATE_COUNT = 4;
@@ -42,7 +56,12 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
 
     public final ArrayList<ArrayList<WorkingState>> workingStates = new ArrayList<>();//工况-音效列表，外层转速，内层负载，对应音效文件名
 
-    public static final WorkingState EMPTY_WORKING_STATE = new WorkingState(0.0f, 0.0f, ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty"));
+    public static final WorkingState EMPTY_WORKING_STATE = new WorkingState(
+            0.0f,
+            0.0f,
+            SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty_sound"), 0f)
+    );
+    public record RpmWorkingStates(WorkingState left, WorkingState center, WorkingState right) {}
 
     public MotorSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr,
@@ -54,9 +73,9 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
             List<Double> dampingFactors,
             float generatorEfficiency,
             List<String> throttleInputKeys,
-            BasicSoundAttr sounds
+            MotorSoundAttr sounds
     ) {
-        super(basicAttr, sounds);
+        super(basicAttr, sounds.basicSounds());
         this.particleLocator = particleLocator;
         this.maxPower = maxPower;
         this.maxTorque = maxTorque;
@@ -65,49 +84,79 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
         this.dampingFactors = dampingFactors;
         this.generatorEfficiency = generatorEfficiency;
         this.throttleInputKeys = throttleInputKeys;
+        this.sounds = sounds;
     }
 
     @Override
     public void createSounds() {
         workingStates.clear();
+        if (!sounds.workingSounds().isEmpty()) {
+            sounds.workingSounds().entrySet().stream()
+                    .sorted((a, b) -> Float.compare(parseRpm(a.getKey()), parseRpm(b.getKey())))
+                    .forEach(entry -> {
+                        float rpm = parseRpm(entry.getKey());
+                        if (!Float.isFinite(rpm)) {
+                            MachineMax.LOGGER.warn("Invalid motor working_sounds rpm key '{}', skipped.", entry.getKey());
+                            return;
+                        }
+                        ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
+                        loadWorkingStates.add(new WorkingState(rpm, 1.0f, entry.getValue()));
+                        workingStates.add(loadWorkingStates);
+                    });
+            return;
+        }
         //确定转速区间数量
         int rpmCount = getRpmStateIndex(redLineRpm * 2);
         //外层循环：转速区间
         for (int i = 1; i < rpmCount + 1; i++) {
-            //内层循环：负载区间
             ArrayList<WorkingState> loadWorkingStates = new ArrayList<>();
-            for (int j = 0; j < LOAD_STATE_COUNT; j++) {
-                //创建工况
-                float rpm = baseRPM * (float) Math.pow(RPM_INCREASE_RATIO, i);
-                float load = 0.25f * j;
-                ResourceLocation sound = createStateSound(rpm, load);
-                loadWorkingStates.add(new WorkingState(rpm, load, sound));
-            }
+            float rpm = baseRPM * (float) Math.pow(RPM_INCREASE_RATIO, i);
+            float load = 1.0f;
+            SoundEvent sound = createStateSound(rpm);
+            loadWorkingStates.add(new WorkingState(rpm, load, sound));
             workingStates.add(loadWorkingStates);
         }
     }
 
-    private ResourceLocation createStateSound(float rpm, float load){
+    private SoundEvent createStateSound(float rpm){
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath(
                 MachineMax.MOD_ID,
-                "subsystem/motor/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(load));
+                "subsystem/motor/" + this.hashCode() + "/" + rpm + "rpm_" + getLoadStateIndex(1.0f));
 //        MachineMax.LOGGER.debug("Creating motor sound: {}", id);
-        MotorSoundSynthesizer.synthesizeBrushlessMotor(3f, rpm, load,
+        MotorSoundSynthesizer.synthesizeBrushlessMotor(3f, rpm, 1.0f,
                 new MotorSoundSynthesizer.MotorConfig(6, 8000, this.redLineRpm, 1200)).register(id);
         MachineMax.LOGGER.debug("Motor sound created: {}", id);
-        return id;
+        return SoundEvent.createFixedRangeEvent(id, 64f);
     }
 
     public WorkingState getBestMatchWorkingState(double rpm, double load) {
         int rpmIndex = (int) Math.round(getRPMCoordinate(rpm));
-        int loadIndex = (int) Math.round(getLoadCoordinate(load));
         WorkingState result = MotorSubsystemStaticAttr.EMPTY_WORKING_STATE;
         if(rpmIndex >=0 && rpmIndex < workingStates.size()){
-            if (loadIndex >= 0 && loadIndex < workingStates.get(rpmIndex).size()){
-                result = workingStates.get(rpmIndex).get(loadIndex);
+            if (!workingStates.get(rpmIndex).isEmpty()){
+                result = workingStates.get(rpmIndex).getFirst();
             }
         }
         return result;
+    }
+
+    public RpmWorkingStates getAdjacentWorkingStates(double rpm) {
+        if (workingStates.isEmpty()) {
+            return new RpmWorkingStates(EMPTY_WORKING_STATE, EMPTY_WORKING_STATE, EMPTY_WORKING_STATE);
+        }
+        int centerIndex = Math.clamp((int) Math.round(getRPMCoordinate(rpm)), 0, workingStates.size() - 1);
+        int leftIndex = centerIndex - 1;
+        int rightIndex = centerIndex + 1;
+        WorkingState left = leftIndex >= 0 ? getRpmOnlyState(leftIndex) : EMPTY_WORKING_STATE;
+        WorkingState center = getRpmOnlyState(centerIndex);
+        WorkingState right = rightIndex < workingStates.size() ? getRpmOnlyState(rightIndex) : EMPTY_WORKING_STATE;
+        return new RpmWorkingStates(left, center, right);
+    }
+
+    private WorkingState getRpmOnlyState(int rpmIndex) {
+        if (rpmIndex < 0 || rpmIndex >= workingStates.size()) return EMPTY_WORKING_STATE;
+        if (workingStates.get(rpmIndex).isEmpty()) return EMPTY_WORKING_STATE;
+        return workingStates.get(rpmIndex).getFirst();
     }
 
     public double distanceSqr(WorkingState state1, WorkingState state2) {
@@ -140,6 +189,14 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
         return load * (LOAD_STATE_COUNT - 1);
     }
 
+    private static float parseRpm(String rpm) {
+        try {
+            return Float.parseFloat(rpm);
+        } catch (NumberFormatException e) {
+            return Float.NaN;
+        }
+    }
+
     @Override
     public MapCodec<? extends AbstractSubsystemStaticAttr> codec() {
         return CODEC;
@@ -150,8 +207,4 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
         return SubsystemTypes.MOTOR;
     }
 
-    @Override
-    public boolean shouldCreateSounds() {
-        return true;
-    }
 }

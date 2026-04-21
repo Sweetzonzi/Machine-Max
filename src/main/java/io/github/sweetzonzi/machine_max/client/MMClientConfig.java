@@ -12,7 +12,7 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.network.PacketDistributor;
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class MMClientConfig {
 
     public static final ModConfigSpec CLIENT_SPEC;
@@ -24,6 +24,9 @@ public class MMClientConfig {
     private static final ModConfigSpec.EnumValue<ControlPreference> GROUND_DRIFT_ASSIST;
     private static final ModConfigSpec.EnumValue<ControlPreference> GROUND_POSE_PREFERENCE;
     private static final ModConfigSpec.BooleanValue GROUND_SPEED_TURNING_LIMIT;
+    private static final ModConfigSpec.BooleanValue RENDER_HIT_WHITENING;
+    private static final ModConfigSpec.BooleanValue RENDER_DESTROY_BLACKENING;
+    private static final ModConfigSpec.BooleanValue RENDER_FORCE_TRANSLUCENT_PARTS;
     public static final ModConfigSpec.DoubleValue SHIP_FULL_STEERING_TIME;
     public static final ModConfigSpec.DoubleValue PLANE_FULL_POWER_TIME;
     public static final ModConfigSpec.DoubleValue PLANE_FULL_PITCH_TIME;
@@ -62,6 +65,18 @@ public class MMClientConfig {
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+
+        RENDER_HIT_WHITENING = builder
+                .comment("Whether to enable part hit visual effect")
+                .define("render_hit_whitening", true);
+
+        RENDER_DESTROY_BLACKENING = builder
+                .comment("Whether to enable part destruction visual effect")
+                .define("render_destroy_blackening", true);
+
+        RENDER_FORCE_TRANSLUCENT_PARTS = builder
+                .comment("Whether to replace cutout part rendering with translucent entity rendering")
+                .define("render_force_translucent_parts", false);
 
         builder.push("ground_vehicle");
 
@@ -233,4 +248,32 @@ public class MMClientConfig {
     public static boolean getGroundSpeedTurningLimit() {
         return GROUND_SPEED_TURNING_LIMIT.get();
     }
+
+    /**
+     * 获取是否启用部件受击视觉效果
+     *
+     * @return true 表示启用部件受击视觉效果
+     */
+    public static boolean getRenderHitWhitening() {
+        return RENDER_HIT_WHITENING.get();
+    }
+
+    /**
+     * 获取是否启用部件损毁视觉效果
+     *
+     * @return true 表示启用部件损毁视觉效果
+     */
+    public static boolean getRenderDestroyBlackening() {
+        return RENDER_DESTROY_BLACKENING.get();
+    }
+
+    /**
+     * 获取是否启用部件半透明渲染
+     *
+     * @return true 表示将Cutout部件渲染替换为半透明实体渲染
+     */
+    public static boolean getRenderForceTranslucentParts() {
+        return RENDER_FORCE_TRANSLUCENT_PARTS.get();
+    }
 }
+

@@ -1,0 +1,37 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced",//连接点类型, 支持Simple和Advanced
+  "direction": "xn", // 左前轮连接点方向应向左即x负方向
+  "integrity": 40.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+  "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
+  "impact_multiplier": 0.8, //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
+  "required_tags": ["machine_max:left"],//连接部件必须全部拥有的标签, 留空以允许任意标签
+  "acceptable_tags": [],//连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+  "forbidden_tags": [],//连接部件不可包含的标签, 留空以允许任意标签
+  "joint_attrs": {//关节属性, 目前仅在关节类型为Advanced时生效
+    "y": {
+      "lower_limit": -0.5,//关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
+      "upper_limit": 1.0,//关节位置上限, 当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
+      "equilibrium": -0.15,//(可选, 默认0)弹簧阻尼关节的平衡位置, 当关节处于此位置时, 关节受到的刚度力(力矩)等于0
+      "stiffness": 18000,//刚度系数(N/m)
+      "damping": 1000 //阻尼系数(N/(m/s))
+    },
+    "xr": {//控制的轴, x、y、z分别对应x、y、z轴的平动, xr、yr、zr分别对应x、y、z轴的旋转
+      "lower_limit": 1.0, //关节位置下限, 对于平动轴单位为m, 对于旋转轴单位为度
+      "upper_limit": -1.0 //当下限高于上限时, 指定的轴自由活动, 下限低于上限时, 指定的轴被限定于区间内活动, 下线等于上限时, 指定的轴被固定死
+    },
+    "yr": {
+      "lower_limit": -45.0,
+      "upper_limit": 45.0,
+      "stiffness": 4000,
+      "damping": 20
+    },
+    "zr": {//允许一定轮胎外倾角, 防止翻车
+      "lower_limit": 1.0,
+      "upper_limit": 15.0,
+      "equilibrium": 1.0,
+      "stiffness": 50000,
+      "damping": 1000
+    }
+  }
+}

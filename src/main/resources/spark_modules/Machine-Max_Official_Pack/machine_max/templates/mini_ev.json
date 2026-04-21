@@ -4,7 +4,7 @@
     1.853459167480473,
     1.314585494995118
   ],
-  "hp": 20.0,
+  "hp": 100000000.0,
   "parts": {
     "17dab68d-74b7-4bf2-aafe-757ffdfd953a": {
       "custom_recipe": "machine_max:mini_ev_wheel",

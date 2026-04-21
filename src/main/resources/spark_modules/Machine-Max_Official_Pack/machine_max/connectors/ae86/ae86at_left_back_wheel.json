@@ -1,0 +1,30 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced",
+  "direction": "xn",
+  "integrity": 40.0,//(可选, 默认20.0)连接点结构完整度, 连接点可承受不高于此数值的冲击力而不脱落, 冲击力来自伤害(已实装)或关节应力(暂未实装)
+  "impact_reduction": 3.0, //(可选, 默认2.0)连接点的冲击减免值, 在计算部件击落前应用, 可将冲击削减至0以完全避免对结构完整性的影响
+  "impact_multiplier": 0.8, //(可选, 默认1.0)连接点的冲击吸收率, 在计算部件击落前, 应用冲击减免后应用, 大于1将使连接点更容易断开
+  "required_tags": ["machine_max:left"],//(可选, 默认[])连接部件必须全部拥有的标签, 留空以允许任意标签
+  "acceptable_tags": [],//(可选, 默认[])连接部件必须至少拥有其中一个的标签, 留空以允许任意标签
+  "forbidden_tags": ["machine_max:chassis", "machine_max:hull"],//(可选, 默认[])连接部件不可包含的标签, 留空以允许任意标签
+  "joint_attrs": {
+    "y": {
+      "lower_limit": -0.5,
+      "upper_limit": 1.0,
+      "stiffness": 28000,
+      "damping": 1500
+    },
+    "xr": {
+      "lower_limit": 1.0,
+      "upper_limit": -1.0
+    },
+    "zr": {
+      "lower_limit": 1.0,
+      "upper_limit": 15.0,
+      "equilibrium": 1.0,
+      "stiffness": 50000,
+      "damping": 1000
+    }
+  }
+}

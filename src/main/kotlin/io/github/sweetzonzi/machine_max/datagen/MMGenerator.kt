@@ -5,7 +5,7 @@ import net.minecraft.data.DataProvider
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.data.event.GatherDataEvent
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, modid = MachineMax.MOD_ID)
+@EventBusSubscriber(modid = MachineMax.MOD_ID)
 object MMGenerator {
     @SubscribeEvent
     private fun gather(event: GatherDataEvent) {

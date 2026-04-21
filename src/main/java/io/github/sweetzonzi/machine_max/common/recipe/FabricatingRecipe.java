@@ -4,8 +4,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
-import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import lombok.Getter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -24,26 +24,21 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO: 材料需求检查与消耗仍然可能存在一个物品对应多个需求的问题
 @Getter
 public class FabricatingRecipe implements Recipe<FabricatingInput> {
     public static final ResourceLocation EMPTY = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty");
-    private final int researchCost;
-    private final int upgradeCost;
-    private final List<IngredientCountPair> researchIngredientPairs;
-    private final List<IngredientCountPair> ingredientPairs;
-    private final List<Ingredient> ingredientList = new ArrayList<>(); // 列表形式的原料，方便分步推进合成
+    private final List<IngredientCountPair> ingredientPairs;//材料-数量对列表
+    private final List<Ingredient> ingredientList = new ArrayList<>();//扁平化材料需求列表，每个材料为一个元素
+    private final List<IngredientCountPair> manualAssembleIngredientPairs = new ArrayList<>();
+    private final List<IngredientCountPair> manualDisassembleIngredientPairs = new ArrayList<>();
+    private final List<Ingredient> manualAssembleIngredientList = new ArrayList<>();
+    private final List<Ingredient> manualDisassembleIngredientList = new ArrayList<>();
     private final ItemStack result;
     private final int processingTime;
     private final String tooltip;
 
     public static final MapCodec<FabricatingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance ->
             instance.group(
-                    Codec.INT.optionalFieldOf("research_cost", 1).forGetter(FabricatingRecipe::getResearchCost),
-                    Codec.INT.optionalFieldOf("upgrade_cost", 1).forGetter(FabricatingRecipe::getResearchCost),
-                    IngredientCountPair.CODEC.listOf().optionalFieldOf("research_ingredients", List.of(
-                            new IngredientCountPair(Ingredient.of(MMTags.EMPTY_BLUEPRINT), 1)
-                    )).forGetter(FabricatingRecipe::getResearchIngredientPairs),
                     IngredientCountPair.CODEC.listOf().fieldOf("ingredients").forGetter(FabricatingRecipe::getIngredientPairs),
                     ItemStack.CODEC.fieldOf("result").forGetter(FabricatingRecipe::getResult),
                     Codec.INT.optionalFieldOf("time", 100).forGetter(FabricatingRecipe::getProcessingTime),
@@ -54,17 +49,6 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
     public static final StreamCodec<RegistryFriendlyByteBuf, FabricatingRecipe> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull FabricatingRecipe decode(@NotNull RegistryFriendlyByteBuf buffer) {
-            // 读取研究点要求
-            int researchPointCost = buffer.readVarInt();
-            int upgradePointCost = buffer.readVarInt();
-            // 读取研究原料列表
-            int researchIngredientCount = buffer.readVarInt();
-            List<IngredientCountPair> researchIngredients = new ArrayList<>(researchIngredientCount);
-            for (int i = 0; i < researchIngredientCount; i++) {
-                Ingredient ingredient = Ingredient.CONTENTS_STREAM_CODEC.decode(buffer);
-                int count = buffer.readVarInt();
-                researchIngredients.add(new IngredientCountPair(ingredient, count));
-            }
             // 读取原料列表
             int ingredientCount = buffer.readVarInt();
             List<IngredientCountPair> ingredients = new ArrayList<>(ingredientCount);
@@ -78,23 +62,11 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
             // 读取处理时间
             int processingTime = buffer.readVarInt();
             String descriptionId = buffer.readUtf();
-            return new FabricatingRecipe(researchPointCost, upgradePointCost, researchIngredients, ingredients, result, processingTime, descriptionId);
+            return new FabricatingRecipe(ingredients, result, processingTime, descriptionId);
         }
 
         @Override
         public void encode(@NotNull RegistryFriendlyByteBuf buffer, FabricatingRecipe recipe) {
-            // 写入研究点数
-            buffer.writeVarInt(recipe.getResearchCost());
-            // 写入升级点数
-            buffer.writeVarInt(recipe.getUpgradeCost());
-            // 写入研究原料列表
-            List<IngredientCountPair> researchIngredients = recipe.getResearchIngredientPairs();
-            buffer.writeVarInt(researchIngredients.size());
-            for (IngredientCountPair pair : researchIngredients) {
-                // 使用 Ingredient.CONTENTS_STREAM_CODEC 写入 Ingredient
-                Ingredient.CONTENTS_STREAM_CODEC.encode(buffer, pair.ingredient());
-                buffer.writeVarInt(pair.count());
-            }
             // 写入原料列表
             List<IngredientCountPair> ingredients = recipe.getIngredientPairs();
             buffer.writeVarInt(ingredients.size());
@@ -113,27 +85,17 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
     };
 
     public FabricatingRecipe(
-            int researchCost,
-            int upgradeCost,
-            List<IngredientCountPair> researchIngredientPairs,
             List<IngredientCountPair> ingredientPairs,
             ItemStack result,
             int processingTime,
             String tooltip) {
-        // 验证数据合法性
         if (result.getCount() <= 0 || result.getCount() > 99) {
             throw new IllegalArgumentException("Output count must be between 1 and 99, got: " + result.getCount());
         }
-        if (researchCost < 0)
-            throw new IllegalArgumentException("Research point cost must be non-negative, got: " + researchCost);
-        if (upgradeCost < 0)
-            throw new IllegalArgumentException("Upgrade point cost must be non-negative, got: " + upgradeCost);
-        if (processingTime <= 0)
+        if (processingTime <= 0) {
             throw new IllegalArgumentException("Processing time must be positive, got: " + processingTime);
+        }
 
-        this.researchCost = researchCost;
-        this.upgradeCost = upgradeCost;
-        this.researchIngredientPairs = researchIngredientPairs;
         this.ingredientPairs = ingredientPairs;
         this.result = result;
         this.processingTime = processingTime;
@@ -143,48 +105,65 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
                 ingredientList.add(pair.ingredient());
             }
         }
+        int resultCount = Math.max(result.getCount(), 1);
+        for (IngredientCountPair pair : ingredientPairs) {
+            int assembleCount = Math.ceilDiv(pair.count(), resultCount);
+            int disassembleCount = pair.count() / resultCount;
+            manualAssembleIngredientPairs.add(new IngredientCountPair(pair.ingredient(), assembleCount));
+            manualDisassembleIngredientPairs.add(new IngredientCountPair(pair.ingredient(), disassembleCount));
+            for (int i = 0; i < assembleCount; i++) {
+                manualAssembleIngredientList.add(pair.ingredient());
+            }
+            for (int i = 0; i < disassembleCount; i++) {
+                manualDisassembleIngredientList.add(pair.ingredient());
+            }
+        }
+    }
+
+    public boolean isManualAssemblablePart() {
+        return result.has(MMDataComponents.getPART_TYPE());
     }
 
     /**
      * 检查指定物品容器是否包含配方所需的所有原料或研究原料（考虑数量）
      */
-    public boolean hasRequiredIngredients(Container container, boolean research) {
-        return IngredientCountPair.hasRequiredIngredients(container, research ? researchIngredientPairs : ingredientPairs);
+    public boolean hasRequiredIngredients(Container container) {
+        return IngredientCountPair.hasRequiredIngredients(container, ingredientPairs);
     }
 
     /**
      * 检查指定物品列表是否包含配方所需的所有原料或研究原料（考虑数量）
      */
-    public boolean hasRequiredIngredients(List<ItemStack> itemStacks, boolean research) {
-        return IngredientCountPair.hasRequiredIngredients(itemStacks, research ? researchIngredientPairs : ingredientPairs);
+    public boolean hasRequiredIngredients(List<ItemStack> itemStacks) {
+        return IngredientCountPair.hasRequiredIngredients(itemStacks, ingredientPairs);
     }
 
     /**
      * 检查指定玩家是否包含配方所需的所有原料或研究原料（考虑数量）
      */
-    public boolean hasRequiredIngredients(Player player, boolean research) {
-        return hasRequiredIngredients(player.getInventory(), research);
+    public boolean hasRequiredIngredients(Player player) {
+        return hasRequiredIngredients(player.getInventory());
     }
 
     /**
      * 从指定容器中消耗配方所需的原料或研究原料
      */
-    public void consumeIngredients(Container container, boolean research) {
-        IngredientCountPair.consumeIngredients(container, research ? researchIngredientPairs : ingredientPairs);
+    public void consumeIngredients(Container container) {
+        IngredientCountPair.consumeIngredients(container, ingredientPairs);
     }
 
     /**
      * 从指定物品列表中消耗配方所需的原料或研究原料（返回消耗后的新列表）
      */
-    public List<ItemStack> consumeIngredients(List<ItemStack> itemStacks, boolean research) {
-        return IngredientCountPair.consumeIngredients(itemStacks, research ? researchIngredientPairs : ingredientPairs);
+    public List<ItemStack> consumeIngredients(List<ItemStack> itemStacks) {
+        return IngredientCountPair.consumeIngredients(itemStacks, ingredientPairs);
     }
 
     /**
      * 从指定玩家的物品栏中消耗配方所需的原料或研究原料
      */
-    public void consumeIngredients(Player player, boolean research) {
-        consumeIngredients(player.getInventory(), research);
+    public void consumeIngredients(Player player) {
+        consumeIngredients(player.getInventory());
     }
 
     /**
@@ -201,7 +180,7 @@ public class FabricatingRecipe implements Recipe<FabricatingInput> {
         for (int i = 0; i < input.size(); i++) {
             inputStacks.add(input.getItem(i));
         }
-        return hasRequiredIngredients(inputStacks, false);
+        return hasRequiredIngredients(inputStacks);
     }
 
     @Override

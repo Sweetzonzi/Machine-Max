@@ -13,7 +13,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 /**
  * 在此注册所有Renderer和Layer
  */
-@EventBusSubscriber(value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class MMRenderHandler {
     @SubscribeEvent//注册每个实体渲染器
     public static void onEntityRendererRegistry(EntityRenderersEvent.RegisterRenderers event){

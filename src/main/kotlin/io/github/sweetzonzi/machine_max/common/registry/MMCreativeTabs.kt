@@ -10,7 +10,7 @@ import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent
 
-@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = MachineMax.MOD_ID)
 object MMCreativeTabs {
     @JvmStatic
     fun register() {
@@ -32,6 +32,8 @@ object MMCreativeTabs {
                     output.accept(MMItems.WELDING_TORCH_ITEM.get())
                     output.accept(MMItems.SPRAY_CAN_ITEM.get())
                     output.accept(MMItems.EMPTY_BLUEPRINT.get())
+                    output.accept(MMItems.VEHICLE_ASSEMBLY_CAPTURE_SINGLE.get())
+                    output.accept(MMItems.VEHICLE_ASSEMBLY_CAPTURE_TOOL.get())
                     //材料
                     output.accept(MMItems.STRUCTURAL_COMPONENT_1_ITEM.get())
                     output.accept(MMItems.MECHANIC_COMPONENT_1_ITEM.get())
@@ -162,7 +164,6 @@ object MMCreativeTabs {
                 MMDynamicRes.PART_TYPES.forEach { (loc, _) ->
                     val itemStack = ItemStack(MMItems.FABRICATING_BLUEPRINT)
                     itemStack.set(MMDataComponents.RECIPE_TYPE, loc)
-                    itemStack.set(MMDataComponents.RESEARCH_LEVEL, 0)
                     itemStack.set(MMDataComponents.PART_TYPE, loc)
                     externalBlueprints.add(itemStack)
                 }

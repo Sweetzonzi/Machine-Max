@@ -15,9 +15,9 @@ public class AssemblyData {
     public final ResourceLocation icon; // 图标路径
     public final float scale; // 模型缩尺比 1:scale
 
-    public static final AssemblyData DEFAULT = new AssemblyData();
-
     public static final ResourceLocation EMPTY = ResourceLocation.withDefaultNamespace("missingno");
+
+    public static final AssemblyData DEFAULT = new AssemblyData();
 
     public static final Codec<AssemblyData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("template").forGetter(AssemblyData::getTemplate),

@@ -1,7 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.attachment;
 
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
-import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.animation.model.origin.OLocator;
 import cn.solarmoon.spark_core.animation.model.origin.OModel;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
@@ -15,11 +14,10 @@ import io.github.sweetzonzi.machine_max.common.item.prop.PartItem;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.vehicle.*;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.ConnectorAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
-import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartChangeRecipePayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PlayerPartAssemblyCacheSyncPayload;
 import lombok.Getter;
@@ -42,7 +40,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -361,9 +358,9 @@ public class VehicleAssemblyAttachment {
         } else {
             OModel model = OModel.getOrEmpty(new ModelIndex("part", getVariant().getModel()));
             var locators = model.getLocators();
-            OLocator partConnectorLocator = locators.get(getConnector().locatorName());
+            OLocator partConnectorLocator = locators.get(getConnector().locatorName);
             if (partConnectorLocator != null) {
-                Transform transform = getVariant().getSubParts().get(getConnectorName().getFirst()).getLocatorTransforms().get(getConnector().locatorName());
+                Transform transform = getVariant().getSubParts().get(getConnectorName().getFirst()).getLocatorTransforms().getOrDefault(getConnector().locatorName, new Transform());
                 this.offset = SparkMathKt.toVector3f(transform.getTranslation());
                 this.quaternion = SparkMathKt.toQuaternionf(transform.getRotation());
             } else {

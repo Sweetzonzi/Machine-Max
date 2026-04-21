@@ -26,7 +26,7 @@ public class EngineSubsystemAttr extends BasicSubsystemDynamicAttr {
     public static final MapCodec<EngineSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.fieldOf("power_output").forGetter(EngineSubsystemAttr::getPowerOutputTarget),
-            RPM_OUTPUT_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("engine_speed", List.of("vehicle", "part"))).forGetter(EngineSubsystemAttr::getRpmOutputTargets)
+            RPM_OUTPUT_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("engine_speed", List.of("vehicle", "subpart"))).forGetter(EngineSubsystemAttr::getRpmOutputTargets)
     ).apply(instance, EngineSubsystemAttr::new));
 
     public EngineSubsystemAttr(

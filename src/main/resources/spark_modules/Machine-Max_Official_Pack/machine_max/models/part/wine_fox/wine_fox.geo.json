@@ -2662,6 +2662,44 @@
 					]
 				},
 				{
+					"name": "ysmGlowLeftFogLight",
+					"parent": "FrontHeadlights",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [5, 7.25, -35],
+							"size": [3, 3, 2],
+							"uv": {
+								"north": {"uv": [102, 261], "uv_size": [3, 3]},
+								"east": {"uv": [73, 126], "uv_size": [2, 3]},
+								"south": {"uv": [106, 261], "uv_size": [3, 3]},
+								"west": {"uv": [77, 145], "uv_size": [2, 3]},
+								"up": {"uv": [116, 264], "uv_size": [3, 2]},
+								"down": {"uv": [120, 266], "uv_size": [3, -2]}
+							}
+						}
+					]
+				},
+				{
+					"name": "ysmGlowRightFogLight",
+					"parent": "FrontHeadlights",
+					"pivot": [0, 0, 0],
+					"cubes": [
+						{
+							"origin": [-8, 7.25, -35],
+							"size": [3, 3, 2],
+							"uv": {
+								"north": {"uv": [261, 106], "uv_size": [3, 3]},
+								"east": {"uv": [196, 165], "uv_size": [2, 3]},
+								"south": {"uv": [261, 134], "uv_size": [3, 3]},
+								"west": {"uv": [132, 263], "uv_size": [2, 3]},
+								"up": {"uv": [264, 131], "uv_size": [3, 2]},
+								"down": {"uv": [137, 266], "uv_size": [3, -2]}
+							}
+						}
+					]
+				},
+				{
 					"name": "RearLights",
 					"parent": "Hull",
 					"pivot": [1, 12.97074, 3.51525]
@@ -4614,7 +4652,9 @@
 						"hull_top_left_back": [14, 33, 21.5],
 						"hull_top_right_back": [-14, 33, 21.5],
 						"hull_top_left_front": [14, 33, 9.5],
-						"hull_top_right_front": [-14, 33, 9.5]
+						"hull_top_right_front": [-14, 33, 9.5],
+						"hull_front_light_right": [-6.5, 8.75, -34.5],
+						"hull_front_light_left": [6.5, 8.75, -34.5]
 					}
 				},
 				{
@@ -6121,49 +6161,6 @@
 					]
 				},
 				{
-					"name": "FogLights",
-					"parent": "FrontBumper",
-					"pivot": [7, 9.25, -34]
-				},
-				{
-					"name": "ysmGlowLeftFogLight",
-					"parent": "FogLights",
-					"pivot": [0, 0, 0],
-					"cubes": [
-						{
-							"origin": [5, 7.25, -35],
-							"size": [3, 3, 2],
-							"uv": {
-								"north": {"uv": [102, 261], "uv_size": [3, 3]},
-								"east": {"uv": [73, 126], "uv_size": [2, 3]},
-								"south": {"uv": [106, 261], "uv_size": [3, 3]},
-								"west": {"uv": [77, 145], "uv_size": [2, 3]},
-								"up": {"uv": [116, 264], "uv_size": [3, 2]},
-								"down": {"uv": [120, 266], "uv_size": [3, -2]}
-							}
-						}
-					]
-				},
-				{
-					"name": "ysmGlowRightFogLight",
-					"parent": "FogLights",
-					"pivot": [0, 0, 0],
-					"cubes": [
-						{
-							"origin": [-8, 7.25, -35],
-							"size": [3, 3, 2],
-							"uv": {
-								"north": {"uv": [261, 106], "uv_size": [3, 3]},
-								"east": {"uv": [196, 165], "uv_size": [2, 3]},
-								"south": {"uv": [261, 134], "uv_size": [3, 3]},
-								"west": {"uv": [132, 263], "uv_size": [2, 3]},
-								"up": {"uv": [264, 131], "uv_size": [3, 2]},
-								"down": {"uv": [137, 266], "uv_size": [3, -2]}
-							}
-						}
-					]
-				},
-				{
 					"name": "RearBumper",
 					"parent": "Car",
 					"pivot": [0, 12.97074, 5.01525],
@@ -6458,6 +6455,117 @@
 								"down": {"uv": [235, 52], "uv_size": [7, -2]}
 							}
 						}
+					],
+					"locators": {
+						"front_gt_bumper_hull_left": [16, 6.75, -31],
+						"front_gt_bumper_hull_right": [-16, 6.75, -31]
+					}
+				},
+				{
+					"name": "GtFrontBumperHitBox",
+					"parent": "GtFrontBumper",
+					"pivot": [0, 3.5, -39],
+					"cubes": [
+						{
+							"origin": [-22, 3.5, -40],
+							"size": [44, 2, 11],
+							"inflate": 0.01,
+							"uv": {}
+						},
+						{
+							"origin": [15, 8.05221, -32.83032],
+							"size": [7, 2, 4.25],
+							"inflate": 0.003,
+							"pivot": [-2, 8.80221, -30.60532],
+							"rotation": [67.5, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [15, 2.9, -31],
+							"size": [7, 8.2, 2],
+							"inflate": 0.005,
+							"pivot": [-2, 7, -21],
+							"rotation": [-45, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [15, 2.9, -31],
+							"size": [7, 8.2, 2],
+							"inflate": 0.002,
+							"pivot": [-2, 7, -21],
+							"rotation": [-90, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [15, 13, -15.5],
+							"size": [7, 4, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [15, 9.5, -13],
+							"size": [7, 7.5, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [-22, 8.05221, -32.83032],
+							"size": [7, 2, 4.25],
+							"inflate": 0.003,
+							"pivot": [2, 8.80221, -30.60532],
+							"rotation": [67.5, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-22, 2.9, -31],
+							"size": [7, 8.2, 2],
+							"inflate": 0.005,
+							"pivot": [2, 7, -21],
+							"rotation": [-45, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-22, 2.9, -31],
+							"size": [7, 8.2, 2],
+							"inflate": 0.002,
+							"pivot": [2, 7, -21],
+							"rotation": [-90, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-22, 2.9, -31],
+							"size": [7, 8.2, 2],
+							"inflate": 0.005,
+							"pivot": [2, 7, -21],
+							"rotation": [-135, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-22, 9.5, -13],
+							"size": [7, 7.5, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [-22, 13, -15.5],
+							"size": [7, 4, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [-22, 5.5, -31],
+							"size": [7, 5.75, 2],
+							"uv": {}
+						},
+						{
+							"origin": [15, 5.5, -31],
+							"size": [7, 5.75, 2],
+							"uv": {}
+						},
+						{
+							"origin": [15, 2.9, -31],
+							"size": [7, 8.2, 2],
+							"inflate": 0.005,
+							"pivot": [-2, 7, -21],
+							"rotation": [-135, 0, 0],
+							"uv": {}
+						}
 					]
 				},
 				{
@@ -6492,7 +6600,11 @@
 								"down": {"uv": [275, 132], "uv_size": [44, -5]}
 							}
 						}
-					]
+					],
+					"locators": {
+						"back_gt_bumper_hull_right": [-16, 6.75, 30],
+						"back_gt_bumper_hull_left": [16, 6.75, 30]
+					}
 				},
 				{
 					"name": "GtRightSideSkirt",
@@ -6803,6 +6915,160 @@
 								"up": {"uv": [189, 297], "uv_size": [6, 3]},
 								"down": {"uv": [195, 300], "uv_size": [6, -3]}
 							}
+						}
+					]
+				},
+				{
+					"name": "GtRearBumperHitBox",
+					"parent": "GtRearBumper",
+					"pivot": [-22, 4.25, 32],
+					"cubes": [
+						{
+							"origin": [-21, 3.5, -13],
+							"size": [6, 2, 25],
+							"inflate": 0.01,
+							"uv": {}
+						},
+						{
+							"origin": [-21, 4.5, 3.25],
+							"size": [6, 2, 7.75],
+							"inflate": -0.005,
+							"pivot": [3, 5.5, 6.5],
+							"rotation": [17.5, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-21, 5.5, 10],
+							"size": [6, 5.75, 2],
+							"inflate": -0.001,
+							"uv": {}
+						},
+						{
+							"origin": [-21, 2.9, 10],
+							"size": [6, 8.2, 2],
+							"inflate": 0.005,
+							"pivot": [3, 7, 20],
+							"rotation": [-45, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-21, 2.9, 10],
+							"size": [6, 8.2, 2],
+							"inflate": 0.003,
+							"pivot": [3, 7, 20],
+							"rotation": [-90, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-21, 8.05221, 8.16968],
+							"size": [6, 2, 4.25],
+							"inflate": 0.003,
+							"pivot": [3, 8.80221, 10.39468],
+							"rotation": [67.5, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-21, 2.9, 10],
+							"size": [6, 8.2, 2],
+							"inflate": 0.005,
+							"pivot": [3, 7, 20],
+							"rotation": [-135, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [-21, 13, 25.5],
+							"size": [6, 4, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [-21, 9.5, 28],
+							"size": [6, 7.5, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [-21, 15.5, 23],
+							"size": [6, 1.5, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [15, 9.5, 28],
+							"size": [6, 7.5, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [15, 13, 25.5],
+							"size": [6, 4, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [15, 2.9, 10],
+							"size": [6, 8.2, 2],
+							"inflate": 0.005,
+							"pivot": [-3, 7, 20],
+							"rotation": [-135, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [15, 2.9, 10],
+							"size": [6, 8.2, 2],
+							"inflate": 0.003,
+							"pivot": [-3, 7, 20],
+							"rotation": [-90, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [15, 2.9, 10],
+							"size": [6, 8.2, 2],
+							"inflate": 0.005,
+							"pivot": [-3, 7, 20],
+							"rotation": [-45, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [15, 15.5, 23],
+							"size": [6, 1.5, 2.5],
+							"uv": {}
+						},
+						{
+							"origin": [15, 8.05221, 8.16968],
+							"size": [6, 2, 4.25],
+							"inflate": 0.003,
+							"pivot": [-3, 8.80221, 10.39468],
+							"rotation": [67.5, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [15, 4.5, 3.25],
+							"size": [6, 2, 7.75],
+							"inflate": -0.005,
+							"pivot": [-3, 5.5, 6.5],
+							"rotation": [17.5, 0, 0],
+							"uv": {}
+						},
+						{
+							"origin": [15, 3.5, -13],
+							"size": [6, 2, 25],
+							"inflate": 0.01,
+							"uv": {}
+						},
+						{
+							"origin": [15, 5.5, 10],
+							"size": [6, 5.75, 2],
+							"inflate": -0.001,
+							"uv": {}
+						},
+						{
+							"origin": [-22, 4.25, 27.5],
+							"size": [44, 8.25, 4.5],
+							"uv": {}
+						},
+						{
+							"origin": [-22, 5.5, 32.225],
+							"size": [44, 7, 2.25],
+							"inflate": 0.005,
+							"pivot": [-22, 4.25, 32.225],
+							"rotation": [10, 0, 0],
+							"uv": {}
 						}
 					]
 				},
@@ -7835,7 +8101,11 @@
 								"down": {"uv": [244, 228], "uv_size": [7, -2]}
 							}
 						}
-					]
+					],
+					"locators": {
+						"front_light_hull_left": [6.5, 8.75, -34.5],
+						"front_light_hull_right": [-6.5, 8.75, -34.5]
+					}
 				},
 				{
 					"name": "GlowGtLight",
@@ -8088,18 +8358,8 @@
 							"uv": {}
 						},
 						{
-							"origin": [3.5, 13.5, -36.25],
-							"size": [5, 5, 2.25],
-							"uv": {}
-						},
-						{
-							"origin": [-2.5, 13.5, -36.25],
-							"size": [5, 5, 2.25],
-							"uv": {}
-						},
-						{
 							"origin": [-8.5, 13.5, -36.25],
-							"size": [5, 5, 2.25],
+							"size": [17, 5, 2.25],
 							"uv": {}
 						},
 						{

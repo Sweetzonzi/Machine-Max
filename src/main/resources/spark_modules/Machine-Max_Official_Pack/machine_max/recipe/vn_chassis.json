@@ -1,21 +1,6 @@
-{
+﻿{
+  "$schema": "../docs/zh_cn/schemas/recipe/fabricating_recipe.schema.json",
   "type": "machine_max:fabricating",
-  "research_cost": 150,
-  "upgrade_cost": 75,
-  "research_ingredients": [
-    {
-      "ingredient": {
-        "item": "minecraft:netherite_ingot"
-      },
-      "count": 1
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
   "ingredients": [
     {
       "ingredient": {
@@ -51,3 +36,4 @@
   },
   "time": 200
 }
+

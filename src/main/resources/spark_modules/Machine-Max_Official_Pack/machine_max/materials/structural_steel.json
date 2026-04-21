@@ -1,0 +1,69 @@
+{
+  "$schema": "../docs/zh_cn/schemas/base/material_attr.schema.json",
+  "friction": [0.45, 0.45, 0.5],
+  "slip_adaptation": 0.55,
+  "rolling_friction": 0.22,
+  "spinning_friction": 0.0,
+  "restitution": 0.12,
+  "block_damage_factor": 1.1,
+  "angle_effect": true,
+  "impact_modifiers": [
+    {
+      "operation": "multiply",
+      "value": 0.7,
+      "condition": {
+        "type": "always"
+      }
+    }
+  ],
+  "penetration_modifiers": [
+    {
+      "operation": "multiply",
+      "value": 0.5,
+      "condition": {
+        "type": "not",
+        "condition": {
+          "type": "damage_tag",
+          "id": "minecraft:bypasses_armor"
+        }
+      }
+    }
+  ],
+  "damage_modifiers": [
+    {
+      "operation": "add",
+      "value": -6.0,
+      "condition": {
+        "type": "damage_type",
+        "id": "minecraft:fly_into_wall"
+      }
+    },
+    {
+      "operation": "multiply",
+      "value": 0.06,
+      "condition": {
+        "type": "damage_type",
+        "id": "minecraft:sweet_berry_bush"
+      }
+    },
+    {
+      "operation": "multiply",
+      "value": 0.06,
+      "condition": {
+        "type": "entity_type",
+        "id": "minecraft:slime"
+      }
+    }
+  ],
+  "un_penetrate_damage_factor": 0.0,
+  "sounds": {
+    "hit_un_pen": {
+      "sound_id": "machine_max:hit_box.hit.up_pen.metal",
+      "range": 64
+    },
+    "hit_pen": {
+      "sound_id": "machine_max:hit_box.hit.pen.metal",
+      "range": 64
+    }
+  }
+}

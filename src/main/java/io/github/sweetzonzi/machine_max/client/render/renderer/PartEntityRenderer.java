@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.util.RenderTypeUtil;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
+import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
 import net.minecraft.client.Minecraft;
@@ -61,6 +62,9 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         ModelController modelController = entity.subPart.getModelController();
         ModelInstance modelInstance = modelController.getModel();
         if (modelInstance == null) return;
+        float assemblingProgress = entity.subPart.part.getAssemblingProgress();
+        float functionalThreshold = entity.subPart.part.type.getFunctionalThreshold();
+        boolean useWireframe = entity.subPart.part.shouldRenderWireframe() && assemblingProgress < functionalThreshold;
         var worldMatrix = entity.subPart.getRenderWorldPositionMatrix(partialTick);
         int color = Color.WHITE.getRGB();
         var pos = entity.subPart.transform.getTranslation();
@@ -74,15 +78,22 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         poseStack.mulPose(worldMatrix);
         int overlay = OverlayTexture.NO_OVERLAY;
         // 受击闪烁效果
-        if (entity.subPart.hurtTime > 0) overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);
+        if (MMClientConfig.getRenderHitWhitening() && entity.subPart.hurtTime > 0) {
+            overlay = OverlayTexture.pack(Math.min(entity.subPart.hurtTime, 15), 10);
+        }
         // 常规渲染
         if (entity.subPart.tickCount >= 15) {
             if (entity.subPart.isDestroyed()) {
-                color = new Color(64, 64, 64, entity.subPart.getDestroyTime() < 20 ? 255 * entity.subPart.getDestroyTime() / 20 : 255).getRGB();
+                int alpha = entity.subPart.getDestroyTime() < 20 ? 255 * entity.subPart.getDestroyTime() / 20 : 255;
+                if (MMClientConfig.getRenderDestroyBlackening()) {
+                    color = new Color(64, 64, 64, alpha).getRGB();
+                } else {
+                    color = new Color(255, 255, 255, alpha).getRGB();
+                }
             }
             int light = LightTexture.pack(blockLight, skyLight);
             var bones = entity.subPart.getBones();
-            if (entity.subPart.part.getAssemblingProgress() >= 1.0f) {
+            if (!useWireframe) {
                 // 整体渲染
                 for (OBone bone : bones.values()) {
                     boolean ysmGlow = bone.getName().toLowerCase().startsWith("ysmglow");
@@ -93,7 +104,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             ysmGlow && ! entity.subPart.isDestroyed()
                                     ? bufferSource.getBuffer(RenderType.eyes(getTextureLocation(entity)))
                                     : entity.subPart.getDestroyTime() >= 20
-                                    ? bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity)))
+                                    ? bufferSource.getBuffer(getCutoutOrTranslucentType(getTextureLocation(entity)))
                                     : bufferSource.getBuffer(RenderType.entityTranslucent(getTextureLocation(entity))),
                             ysmGlow && ! entity.subPart.isDestroyed()
                                     ? Brightness.FULL_BRIGHT.pack()
@@ -104,7 +115,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                             false
                     );
                 }
-            } else { // 未组装完成的部分渲染为线框
+            } else { // 线框模式：按组装进度渲染，未完成部分显示线框
                 int cubeCount = 0;
                 for (OBone bone : bones.values()) {
                     cubeCount += bone.getCubes().size();
@@ -116,7 +127,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                     poseStack.pushPose();
                     poseStack.mulPose(transform);
                     for (OCube cube : bone.getCubes()) {
-                        if (i / cubeCount >= entity.subPart.part.getAssemblingProgress()) {
+                        if (i / cubeCount >= assemblingProgress) {
                             cube.renderVertexes(
                                     poseStack,
                                     bufferSource.getBuffer(RenderType.lines()),
@@ -128,7 +139,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                         } else {
                             cube.renderVertexes(
                                     poseStack,
-                                    bufferSource.getBuffer(RenderType.entityCutout(getTextureLocation(entity))),
+                                    bufferSource.getBuffer(getCutoutOrTranslucentType(getTextureLocation(entity))),
                                     light,
                                     overlay,
                                     color,
@@ -178,7 +189,7 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
                 poseStack.pushPose();
                 poseStack.mulPose(transform);
                 for (OCube cube : bone.getCubes()) {
-                    if (entity.subPart.part.getAssemblingProgress() >= 1.0f || i / cubeCount < entity.subPart.part.getAssemblingProgress()) {
+                    if (!useWireframe || i / cubeCount < assemblingProgress) {
                         // 将 HSB 转换为 RGB
                         Color rgb = new Color(Color.HSBtoRGB((float) Math.random(), 1 - progress * progress, 1));
                         // 创建新的颜色对象，包含 alpha 值
@@ -210,4 +221,9 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         poseStack.popPose();//结束渲染
     }
 
+    private static RenderType getCutoutOrTranslucentType(ResourceLocation texture) {
+        return MMClientConfig.getRenderForceTranslucentParts()
+                ? RenderType.entityTranslucent(texture)
+                : RenderType.entityCutout(texture);
+    }
 }

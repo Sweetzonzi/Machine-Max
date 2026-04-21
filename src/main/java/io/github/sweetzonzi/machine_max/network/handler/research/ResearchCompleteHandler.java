@@ -11,9 +11,10 @@ public class ResearchCompleteHandler {
         Player player = context.player();
         context.enqueueWork(() -> {
             var research = player.getData(MMAttachments.getBLUEPRINT());
-            research.clearResearching(context.player());
-            research.getProducts().put(payload.recipe(), payload.product());
-            research.getResearchedRecipes().put(payload.recipe(), (float) payload.level());
+            if (!payload.product().isEmpty()) {
+                research.getProducts().put(payload.researchId(), payload.product());
+            }
+            research.getCompletedResearches().add(payload.researchId());
             research.markDirty(player);
             ClientResearchHandler.handleComplete(payload);
         });

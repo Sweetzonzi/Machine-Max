@@ -1,0 +1,22 @@
+﻿{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 200,
+  "research_ingredients": [ // 首次研发时的材料消耗(默认为空蓝图*1)
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/jeep/jeep_hull_icon.png",
+  "description": "research.machine_max.jeep_hull_blueprint.desc",
+  "unlock_recipe": "machine_max:jeep_hull"
+}

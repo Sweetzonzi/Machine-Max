@@ -1,21 +1,6 @@
-{
+﻿{
+  "$schema": "../docs/zh_cn/schemas/recipe/fabricating_recipe.schema.json",
   "type": "machine_max:fabricating",
-  "research_cost": 80,
-  "upgrade_cost": 40,
-  "research_ingredients": [
-    {
-      "ingredient": {
-        "item": "minecraft:iron_ingot"
-      },
-      "count": 1
-    },
-    {
-      "ingredient": {
-        "tag": "c:empty_blueprint"
-      },
-      "count": 1
-    }
-  ],
   "ingredients": [
     {
       "ingredient": {

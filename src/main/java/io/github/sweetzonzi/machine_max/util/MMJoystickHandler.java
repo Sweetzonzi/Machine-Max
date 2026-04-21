@@ -10,7 +10,7 @@ import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-@EventBusSubscriber(bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class MMJoystickHandler {
 
     // 用于存储每个手柄的按钮状态
@@ -136,3 +136,4 @@ public class MMJoystickHandler {
 
 
 }
+
