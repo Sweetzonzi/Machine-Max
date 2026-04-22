@@ -304,14 +304,21 @@ public class VehicleAssemblyAttachment {
             if (this.partType == null || !this.partType.equals(newPartType)) {
                 this.partType = newPartType;
                 this.variantIterator = null;
+                this.variantName = null;
                 this.connectorIterator = null;
+                this.connectorName = null;
                 this.getNextVariant();
                 this.getNextConnector();
+                this.reCalculateOffset();
             }
         } else {
             this.partType = null;
             this.variantIterator = null;
+            this.variantName = null;
             this.connectorIterator = null;
+            this.connectorName = null;
+            this.offset = new Vector3f();
+            this.quaternion = new Quaternionf();
         }
     }
 
@@ -342,11 +349,20 @@ public class VehicleAssemblyAttachment {
     @Nullable
     public ConnectorAttr getNextConnector() {
         VariantAttr variant = getVariant();
-        if (variant == null) return null;
-        if (variant.getPartOutwardConnectors().isEmpty()) return null;
+        if (variant == null) {
+            this.connectorName = null;
+            return null;
+        }
+        if (variant.getPartOutwardConnectors().isEmpty()) {
+            this.connectorName = null;
+            return null;
+        }
         if (connectorIterator == null || !connectorIterator.hasNext())
             this.connectorIterator = variant.getConnectorIterator();
-        if (connectorIterator == null) return null;
+        if (connectorIterator == null) {
+            this.connectorName = null;
+            return null;
+        }
         this.connectorName = connectorIterator.next();
         return variant.getPartOutwardConnectors().get(connectorName);
     }
