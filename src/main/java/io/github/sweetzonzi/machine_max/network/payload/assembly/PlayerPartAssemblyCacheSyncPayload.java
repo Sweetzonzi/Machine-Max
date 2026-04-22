@@ -32,29 +32,34 @@ public record PlayerPartAssemblyCacheSyncPayload(
         @Override
         public void encode(RegistryFriendlyByteBuf buffer, PlayerPartAssemblyCacheSyncPayload payload) {
             buffer.writeResourceLocation(payload.registryKey);
-            if (payload.subPart.isEmpty() || payload.connector.isEmpty()) {
-                buffer.writeBoolean(false);
-            } else {
-                buffer.writeBoolean(true);
+            boolean hasVariant = payload.variant != null && !payload.variant.isEmpty();
+            boolean hasConnector = payload.subPart != null && !payload.subPart.isEmpty()
+                    && payload.connector != null && !payload.connector.isEmpty();
+            buffer.writeBoolean(hasVariant);
+            if (hasVariant) {
                 buffer.writeUtf(payload.variant);
+            }
+            buffer.writeBoolean(hasConnector);
+            if (hasConnector) {
                 buffer.writeUtf(payload.subPart);
                 buffer.writeUtf(payload.connector);
-                buffer.writeFloat(payload.attachRotation);
-                buffer.writeQuaternion(payload.rotation);
-                buffer.writeVector3f(payload.offset);
             }
+            buffer.writeFloat(payload.attachRotation);
+            buffer.writeQuaternion(payload.rotation);
+            buffer.writeVector3f(payload.offset);
         }
 
         @Override
         public @NotNull PlayerPartAssemblyCacheSyncPayload decode(RegistryFriendlyByteBuf buffer) {
             ResourceLocation registryKey = buffer.readResourceLocation();
-            boolean valid = buffer.readBoolean();
-            String variant = valid ? buffer.readUtf() : null;
-            String subPart = valid ? buffer.readUtf() : null;
-            String connector = valid ? buffer.readUtf() : null;
-            float attachRotation = valid ? buffer.readFloat() : 0;
-            Quaternionf quaternion = valid ? buffer.readQuaternion() : new Quaternionf();
-            Vector3f offset = valid ? buffer.readVector3f() : new Vector3f();
+            boolean hasVariant = buffer.readBoolean();
+            String variant = hasVariant ? buffer.readUtf() : null;
+            boolean hasConnector = buffer.readBoolean();
+            String subPart = hasConnector ? buffer.readUtf() : null;
+            String connector = hasConnector ? buffer.readUtf() : null;
+            float attachRotation = buffer.readFloat();
+            Quaternionf quaternion = buffer.readQuaternion();
+            Vector3f offset = buffer.readVector3f();
             return new PlayerPartAssemblyCacheSyncPayload(registryKey, variant, subPart, connector, attachRotation, quaternion, offset);
         }
     };
@@ -73,13 +78,17 @@ public record PlayerPartAssemblyCacheSyncPayload(
             }
             var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
             cache.setPartType(PartType.get(level, payload.registryKey));
-            if (cache.getPartType() != null && payload.variant != null && payload.connector != null) {
-                while (!payload.variant.equals(cache.getVariantName())) {
-                    cache.getNextVariant();
+            if (cache.getPartType() != null) {
+                if (payload.variant != null) {
+                    while (!payload.variant.equals(cache.getVariantName())) {
+                        if (cache.getNextVariant() == null) break;
+                    }
                 }
-                Pair<String, String> connectorName = Pair.of(payload.subPart, payload.connector);
-                while (!connectorName.equals(cache.getConnectorName())) {
-                    cache.getNextConnector();
+                if (payload.subPart != null && payload.connector != null) {
+                    Pair<String, String> connectorName = Pair.of(payload.subPart, payload.connector);
+                    while (!connectorName.equals(cache.getConnectorName())) {
+                        if (cache.getNextConnector() == null) break;
+                    }
                 }
                 cache.setAttachRotation(payload.attachRotation);
                 cache.setQuaternion(payload.rotation);
