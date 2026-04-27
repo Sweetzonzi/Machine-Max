@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyProducer;
+import cn.solarmoon.spark_core.api.SparkLevel;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.EnergyGrid;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
@@ -20,6 +22,7 @@ public class SubsystemController implements ISignalReceiver {
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
     public final ConcurrentMap<String, Object> resources = new ConcurrentHashMap<>();//可查可改
     public final Set<AbstractSubsystem> allSubsystems = new CopyOnWriteArraySet<>();
+    public final EnergyGrid energyGrid = new EnergyGrid();
 
     public SubsystemController(VehicleCore core) {
         CORE = core;
@@ -39,6 +42,7 @@ public class SubsystemController implements ISignalReceiver {
                 subsystem.onPrePhysicsTick();
             }
         }
+        energyGrid.prePhysicsTick(getPhysicsTps());
     }
 
     public void postPhysicsTick() {
@@ -101,12 +105,13 @@ public class SubsystemController implements ISignalReceiver {
     public void onVehicleStructureChanged() {
         allSubsystems.forEach(AbstractSubsystem::onVehicleStructureChanged);
         rebuildAllEnergyPaths();
+        energyGrid.rebuildFrom(allSubsystems);
     }
 
     public void rebuildAllEnergyPaths() {
         for (AbstractSubsystem sub : allSubsystems) {
-            if (sub instanceof IMechEnergyProducer producer) {
-                producer.rebuildEnergyTargets();
+            if (sub instanceof IMechPowerProducer producer) {
+                producer.rebuildMechPowerTargets();
             }
         }
     }
@@ -121,5 +126,9 @@ public class SubsystemController implements ISignalReceiver {
         allSubsystems.clear();
         channels.clear();
         resources.clear();
+    }
+
+    private float getPhysicsTps() {
+        return SparkLevel.getPhysicsLevel(CORE.level).getTps();
     }
 }

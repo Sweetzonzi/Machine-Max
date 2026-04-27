@@ -4,8 +4,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.TransmissionSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.TransmissionSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyProducer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import lombok.Getter;
@@ -13,11 +13,11 @@ import lombok.Getter;
 import java.util.*;
 
 @Getter
-public class TransmissionSubsystem extends BasicSubsystem implements IMechEnergyConsumer, IMechEnergyProducer {
+public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerConsumer, IMechPowerProducer {
     public final TransmissionSubsystemAttr attr;
     private MechPower receivedPower = MechPower.ZERO;
     private float feedbackSpeed = 0;
-    private final Map<String, IMechEnergyConsumer> energyTargets = new HashMap<>();
+    private final Map<String, IMechPowerConsumer> energyTargets = new HashMap<>();
 
     private boolean diffLock = false;
     private float avgFeedBackSpeed = 0f;
@@ -87,7 +87,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechEnergy
     }
 
     @Override
-    public void onMechEnergyReceived(String producerName, MechPower power) {
+    public void onMechPowerReceived(String producerName, MechPower power) {
         this.receivedPower = power;
     }
 
@@ -102,25 +102,25 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechEnergy
     }
 
     @Override
-    public Map<String, IMechEnergyConsumer> getEnergyTargets() {
+    public Map<String, IMechPowerConsumer> getMechPowerTargets() {
         return energyTargets;
     }
 
     @Override
-    public void rebuildEnergyTargets() {
+    public void rebuildMechPowerTargets() {
         energyTargets.clear();
         for (String targetName : attr.getPowerOutputs().keySet()) {
-            IMechEnergyConsumer consumer = resolveEnergyTarget(targetName);
+            IMechPowerConsumer consumer = resolveEnergyTarget(targetName);
             if (consumer != null) {
                 energyTargets.put(targetName, consumer);
             }
         }
     }
 
-    private IMechEnergyConsumer resolveEnergyTarget(String targetName) {
+    private IMechPowerConsumer resolveEnergyTarget(String targetName) {
         if (getSubPart().subsystems.containsKey(targetName)) {
             var sub = getSubPart().subsystems.get(targetName);
-            if (sub instanceof IMechEnergyConsumer consumer) return consumer;
+            if (sub instanceof IMechPowerConsumer consumer) return consumer;
         }
         if (getSubPart().connectors.containsKey(targetName)) {
             AbstractConnector conn = getSubPart().connectors.get(targetName);
@@ -132,14 +132,14 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechEnergy
     private void distributePower() {
         var feedbacks = collectFeedbackSpeeds();
         if (feedbacks.isEmpty() || !isActive()) {
-            pushMechEnergy(MechPower.EMPTY);
+            pushMechPower(MechPower.EMPTY);
             return; //无输出目标则不发出功率信号
         }
 
         float totalPower = receivedPower.power();
         float inputSpeed = receivedPower.speed();
         if (Float.isNaN(totalPower) || Float.isNaN(inputSpeed)) {
-            pushMechEnergy(MechPower.EMPTY);
+            pushMechPower(MechPower.EMPTY);
             return;
         }
 //        totalPower *= Math.signum(inputSpeed);//根据速度方向调整总功率正负
@@ -168,7 +168,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechEnergy
             totalWeight += Math.abs(weight);
         }
         if (totalWeight == 0) {
-            pushMechEnergy(MechPower.EMPTY);
+            pushMechPower(MechPower.EMPTY);
             return;
         }
         Map<String, MechPower> outputs = new HashMap<>();
@@ -182,12 +182,12 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechEnergy
             if (speed == 0f) speed = 0.005f * inputSpeed;
             outputs.put(name, new MechPower(power, speed / gearRatio));
         }
-        pushMechEnergy(outputs);
+        pushMechPower(outputs);
     }
 
     private void distributeOpenDiff(float totalPower, float inputSpeed, Map<String, Float> feedbacks) {
         if (totalPower == 0f) {
-            pushMechEnergy(MechPower.EMPTY);
+            pushMechPower(MechPower.EMPTY);
             return;
         }
         float receiverTotalSpeed = 0.0F;
@@ -207,7 +207,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechEnergy
             float power = torque * receiverSpeed;
             outputs.put(name, new MechPower(power, receiverSpeed / gearRatio));
         }
-        pushMechEnergy(outputs);
+        pushMechPower(outputs);
     }
 
     @Override

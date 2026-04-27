@@ -7,7 +7,9 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IEnergyProducer;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IEnergyConsumer;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalSender;
@@ -129,9 +131,19 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void onAttach() {
+        var grid = owner.getEnergyGrid();
+        if (grid != null) {
+            if (this instanceof IEnergyProducer p) grid.registerProducer(p);
+            if (this instanceof IEnergyConsumer c) grid.registerConsumer(c);
+        }
     }
 
     public void onDetach() {
+        var grid = owner.getEnergyGrid();
+        if (grid != null) {
+            if (this instanceof IEnergyProducer p) grid.unregisterProducer(p);
+            if (this instanceof IEnergyConsumer c) grid.unregisterConsumer(c);
+        }
     }
 
     public void onDisabled() {

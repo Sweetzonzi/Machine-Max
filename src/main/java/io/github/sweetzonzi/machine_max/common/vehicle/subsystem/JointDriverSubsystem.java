@@ -12,7 +12,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.MotorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.JointDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JointDriverSubsystem extends BasicSubsystem implements IMechEnergyConsumer {
+public class JointDriverSubsystem extends BasicSubsystem implements IMechPowerConsumer {
     public final JointDriverSubsystemAttr attr;
     public final AdvancedConnector connector;
     private final Float[] powerAllocation = new Float[6];
@@ -237,7 +237,7 @@ public class JointDriverSubsystem extends BasicSubsystem implements IMechEnergyC
     }
 
     @Override
-    public void onMechEnergyReceived(String producerName, MechPower power) {
+    public void onMechPowerReceived(String producerName, MechPower power) {
         this.receivedPower = power;
     }
 

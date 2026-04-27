@@ -26,7 +26,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.JointAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechEnergyPort;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPowerPort;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorAttachEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorDetachEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorTickEvent;
@@ -71,7 +71,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     public New6Dof joint;//在两个连接点间共享的关节
     public final SignalPort signalPort;//连接点资源/信号传输端口
     @Nullable
-    public final MechEnergyPort mechanicalEnergyPort;//连接点机械能传输端口
+    public final MechPowerPort mechanicalEnergyPort;//连接点机械能传输端口
     protected static final EntityDataAccessor<Float> DATA_INTEGRITY_ID = SynchedEntityData.defineId(AbstractConnector.class, EntityDataSerializers.FLOAT);
     protected final SynchedEntityData synchedData;
     protected final ConcurrentLinkedQueue<Float> accumulatedImpact = new ConcurrentLinkedQueue<>();
@@ -93,7 +93,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.signalPort = new SignalPort(this, attr.getSignalTargets(), attr.getSignalTranslations());
         String powerTarget = attr.getPowerTarget();
         this.mechanicalEnergyPort = (powerTarget != null && !powerTarget.isEmpty())
-                ? new MechEnergyPort(this, powerTarget)
+                ? new MechPowerPort(this, powerTarget)
                 : null;
         this.collideBetweenParts = attr.hasCollideBetweenParts();
         this.internal = attr.isInternal();

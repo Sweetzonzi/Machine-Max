@@ -10,7 +10,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.WheelDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import jme3utilities.math.MyQuaternion;
@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class WheelDriverSubsystem extends BasicSubsystem implements IMechEnergyConsumer {
+public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerConsumer {
     @Getter
     public final WheelDriverSubsystemAttr attr;
     @Getter
@@ -158,7 +158,7 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechEnergyC
     }
 
     @Override
-    public void onMechEnergyReceived(String producerName, MechPower power) {
+    public void onMechPowerReceived(String producerName, MechPower power) {
         this.receivedPower = power;
     }
 

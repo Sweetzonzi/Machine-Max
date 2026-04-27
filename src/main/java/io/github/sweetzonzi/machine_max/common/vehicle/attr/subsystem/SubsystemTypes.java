@@ -17,4 +17,5 @@ public enum SubsystemTypes {
     SIGNAL_CONVERT,//信号转换器子系统，可将指定名称的输入信号转换为其他名称，此外可将收到的信号进行延迟处理
     CAMERA,//摄像头子系统，可提供视角
     JAVASCRIPT,//自定义脚本子系统
+    BATTERY,//电池子系统，储存电力，可充放电
 }

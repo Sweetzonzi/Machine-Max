@@ -6,8 +6,8 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.GearboxSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyProducer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 @Getter
-public class GearboxSubsystem extends BasicSubsystem implements IMechEnergyConsumer, IMechEnergyProducer {
+public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsumer, IMechPowerProducer {
     public final GearboxSubsystemAttr attr;
     public final double[] gearRatios;//各级实际传动比率 Actual transmission ratio of each gear
     public final int minPositiveGear;
@@ -32,7 +32,7 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechEnergyConsu
 
     private MechPower receivedPower = MechPower.ZERO;
     private float feedbackSpeed = 0;
-    private final Map<String, IMechEnergyConsumer> energyTargets = new HashMap<>();
+    private final Map<String, IMechPowerConsumer> energyTargets = new HashMap<>();
 
     public GearboxSubsystem(ISubsystemHost owner, String name, GearboxSubsystemAttr attr) {
         super(owner, name, attr);
@@ -95,7 +95,7 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechEnergyConsu
     }
 
     @Override
-    public void onMechEnergyReceived(String producerName, MechPower power) {
+    public void onMechPowerReceived(String producerName, MechPower power) {
         this.receivedPower = power;
     }
 
@@ -110,28 +110,28 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechEnergyConsu
     }
 
     @Override
-    public boolean isEnergyPathConnected(String producerName) {
+    public boolean isPowerPathConnected(String producerName) {
         return isClutched() && remainingSwitchTime <= 0.0f;
     }
 
     @Override
-    public Map<String, IMechEnergyConsumer> getEnergyTargets() {
+    public Map<String, IMechPowerConsumer> getMechPowerTargets() {
         return energyTargets;
     }
 
     @Override
-    public void rebuildEnergyTargets() {
+    public void rebuildMechPowerTargets() {
         energyTargets.clear();
         String target = attr.getPowerOutputTarget();
         if (target == null || target.isEmpty()) return;
-        IMechEnergyConsumer consumer = resolveEnergyTarget(target);
+        IMechPowerConsumer consumer = resolveEnergyTarget(target);
         if (consumer != null) energyTargets.put(target, consumer);
     }
 
-    private IMechEnergyConsumer resolveEnergyTarget(String targetName) {
+    private IMechPowerConsumer resolveEnergyTarget(String targetName) {
         if (getSubPart().subsystems.containsKey(targetName)) {
             var sub = getSubPart().subsystems.get(targetName);
-            if (sub instanceof IMechEnergyConsumer consumer) return consumer;
+            if (sub instanceof IMechPowerConsumer consumer) return consumer;
         }
         if (getSubPart().connectors.containsKey(targetName)) {
             AbstractConnector conn = getSubPart().connectors.get(targetName);
@@ -179,18 +179,18 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechEnergyConsu
 
     private void distributePower() {
         if (!isClutched() || remainingSwitchTime > 0.0f) {
-            pushMechEnergy(MechPower.EMPTY);
+            pushMechPower(MechPower.EMPTY);
             return;
         }
         float totalPower = receivedPower.power();
         float avgSpeed = receivedPower.speed();
         if (Float.isNaN(totalPower) || Float.isNaN(avgSpeed)) {
-            pushMechEnergy(MechPower.EMPTY);
+            pushMechPower(MechPower.EMPTY);
             return;
         }
         MechPower output = new MechPower(totalPower, avgSpeed / (float) gearRatios[getCurrentGear()]);
-        if (isActive()) pushMechEnergy(output);
-        else pushMechEnergy(MechPower.EMPTY);
+        if (isActive()) pushMechPower(output);
+        else pushMechPower(MechPower.EMPTY);
     }
 
     @Override

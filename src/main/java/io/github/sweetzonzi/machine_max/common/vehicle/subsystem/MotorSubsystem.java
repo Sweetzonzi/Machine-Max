@@ -7,8 +7,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingSta
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
-import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyProducer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.control.PDController;
@@ -25,7 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 @Getter
-public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader, IMechEnergyProducer {
+public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader, IMechPowerProducer {
     public final double RED_LINE_SPEED;//红线转速(rad/s)
     public final MotorSubsystemAttr attr;
     protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(MotorSubsystem.class, EntityDataSerializers.FLOAT);
@@ -44,7 +44,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
 
     private final PDController coupleTorquePD;
 
-    private final Map<String, IMechEnergyConsumer> energyTargets = new HashMap<>();
+    private final Map<String, IMechPowerConsumer> energyTargets = new HashMap<>();
 
     public MotorSubsystem(ISubsystemHost owner, String name, MotorSubsystemAttr attr) {
         super(owner, name, attr);
@@ -103,7 +103,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
                 setRotSpeed((float) rotSpeed);
             }
             this.coupleTorquePD.resetError();
-            pushMechEnergy(MechPower.EMPTY);
+            pushMechPower(MechPower.EMPTY);
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));
         } else {
             float avgFeedback = 0;
@@ -130,31 +130,31 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
                 rotSpeed = 0.95 * Math.clamp(rotSpeed, RED_LINE_SPEED * -1.05, RED_LINE_SPEED * 1.05) + 0.05 * avgFeedback; // 额外修正
                 setRotSpeed((float) rotSpeed);
             }
-            pushMechEnergy(new MechPower((float) ((netTorque - coupleTorque) * rotSpeed), (float) rotSpeed));
+            pushMechPower(new MechPower((float) ((netTorque - coupleTorque) * rotSpeed), (float) rotSpeed));
             attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));
         }
     }
 
     @Override
-    public Map<String, IMechEnergyConsumer> getEnergyTargets() {
+    public Map<String, IMechPowerConsumer> getMechPowerTargets() {
         return energyTargets;
     }
 
     @Override
-    public void rebuildEnergyTargets() {
+    public void rebuildMechPowerTargets() {
         energyTargets.clear();
         String target = attr.getPowerOutputTarget();
         if (target == null || target.isEmpty()) return;
-        IMechEnergyConsumer consumer = resolveEnergyTarget(target);
+        IMechPowerConsumer consumer = resolveEnergyTarget(target);
         if (consumer != null) {
             energyTargets.put(target, consumer);
         }
     }
 
-    private IMechEnergyConsumer resolveEnergyTarget(String targetName) {
+    private IMechPowerConsumer resolveEnergyTarget(String targetName) {
         if (getSubPart().subsystems.containsKey(targetName)) {
             var sub = getSubPart().subsystems.get(targetName);
-            if (sub instanceof IMechEnergyConsumer consumer) return consumer;
+            if (sub instanceof IMechPowerConsumer consumer) return consumer;
         }
         if (getSubPart().connectors.containsKey(targetName)) {
             AbstractConnector conn = getSubPart().connectors.get(targetName);

@@ -10,7 +10,6 @@ import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.compat.create.CreateContraptionPhysicsHost;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHost;
@@ -28,7 +27,6 @@ import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.*;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
-import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -45,6 +43,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
@@ -53,7 +52,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.BasicSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
@@ -1565,6 +1563,13 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @Override
     public SubPart getSubPart() {
         return this;
+    }
+
+    @Override
+    public EnergyGrid getEnergyGrid() {
+        return part.vehicle != null
+                ? part.vehicle.subSystemController.getEnergyGrid()
+                : null;
     }
 
     @NotNull
