@@ -4,16 +4,15 @@
   "slip_adaptation": 0.4,//(可选, 默认0.5)滑动适应性系数(0~1), 该属性可削弱打滑时的摩擦系数降低效果, 提升抓地力
   "slip_curve": {//(可选)轮胎滑移曲线，调整为更容易漂移
     "longitudinal": {
-      "peak_slip_ratio": 0.16,//更早进入峰值
-      "base_scale": 1.0,
-      "peak_scale": 1.2,//保留一定前向牵引，避免完全无力
-      "kinetic_scale": 0.6
+      "peak_slip_ratio": 0.16,//峰值滑移率
+      "peak_scale": 1.2, //峰值摩擦系数缩放倍率
+      "kinetic_scale": 0.6 //完全打滑后摩擦系数的缩放倍率
     },
     "lateral": {
-      "peak_angle_deg": 7.0,//较小侧偏角就达到峰值，随后更快掉抓地
-      "base_scale": 1.0,
-      "peak_scale": 1.2,
-      "kinetic_scale": 0.48 //降低大角度侧向抓地，便于持续漂移
+      "peak_angle_deg": 7.0, //较小侧偏角就达到峰值，随后更快掉抓地
+      "kinetic_angle_deg": 90.0, //极快衰减
+      "peak_scale": 1.3,
+      "kinetic_scale": 0.1 //降低大角度侧向抓地，便于持续漂移
     }
   },
   "rolling_friction": 0.01,//(可选, 默认0.2)滚动摩擦系数, 影响滚动阻力

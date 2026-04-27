@@ -5,13 +5,11 @@
   "slip_curve": {
     "longitudinal": {
       "peak_slip_ratio": 0.20,
-      "base_scale": 1.0,
       "peak_scale": 1.4,
       "kinetic_scale": 0.9
     },
     "lateral": {
       "peak_angle_deg": 12.0,
-      "base_scale": 1.0,
       "peak_scale": 1.3,
       "kinetic_scale": 0.8
     }
