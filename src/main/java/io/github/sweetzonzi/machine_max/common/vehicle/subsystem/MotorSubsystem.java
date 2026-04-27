@@ -6,6 +6,10 @@ import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyProducer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.control.PDController;
 import lombok.Getter;
@@ -18,14 +22,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Getter
-public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader {
+public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader, IMechEnergyProducer {
     public final double RED_LINE_SPEED;//红线转速(rad/s)
     public final MotorSubsystemAttr attr;
     protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(MotorSubsystem.class, EntityDataSerializers.FLOAT);
@@ -43,6 +43,8 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
     private final Map<String, WorkingState> channelStates = new LinkedHashMap<>();
 
     private final PDController coupleTorquePD;
+
+    private final Map<String, IMechEnergyConsumer> energyTargets = new HashMap<>();
 
     public MotorSubsystem(ISubsystemHost owner, String name, MotorSubsystemAttr attr) {
         super(owner, name, attr);
@@ -83,32 +85,36 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
 
     @Override
     public void onPrePhysicsTick() {
-        updateThrottleInput();
+        Map<String, Float> feedbacks = collectFeedbackSpeeds();
+        if (feedbacks.isEmpty()) {
+            throttleInput = 0;
+        } else {
+            updateThrottleInput();
+        }
         double rotSpeed = getRotSpeed();
         //TODO:电门输入与转速方向相反时，发电模式
         double engineTorque = throttleInput * calculateMaxTorque(rotSpeed);//输出扭矩
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
-        Object speedFeedback = null;
-        for (Map.Entry<ISignalSender, Object> entry : getSignalChannel("speed_feedback").entrySet()) {
-            if (entry.getValue() instanceof EmptySignal || entry.getValue() instanceof Float) {
-                speedFeedback = entry.getValue();
-            }
-            break;
-        }
-        if (speedFeedback instanceof EmptySignal) {
-            //挂空挡时，全部输出用于改变发动机转速
-            if (!getSubPart().level.isClientSide()) { //与转动惯量属性挂钩的转速改变量，客户端计算结果不精确，不应用
+        if (feedbacks.isEmpty()) {
+            if (!getSubPart().level.isClientSide()) {
                 rotSpeed += netTorque / attr.staticAttribute.inertia / getPhysicsLevel().getTps();
                 rotSpeed = 0.99 * rotSpeed;//额外修正
                 setRotSpeed((float) rotSpeed);
             }
             this.coupleTorquePD.resetError();
-            sendSignalToAllTargets("power", EmptySignal.INSTANCE);//空挡不输出功率
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
-        } else if (speedFeedback instanceof Float feedback) {
-            feedback = -feedback; // 修正方向
-            double speedDiff = rotSpeed - feedback;
+            pushMechEnergy(MechPower.EMPTY);
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));
+        } else {
+            float avgFeedback = 0;
+            int count = 0;
+            for (float speed : feedbacks.values()) {
+                avgFeedback += speed;
+                count++;
+            }
+            if (count > 0) avgFeedback /= count;
+            avgFeedback = avgFeedback;
+            double speedDiff = rotSpeed + avgFeedback;
             double coupleTorque = Math.abs(speedDiff) < 5 ? Math.clamp(
                     this.isActive() ? this.coupleTorquePD.step(0, Math.abs(speedDiff) < 10 ? speedDiff * speedDiff / 10 : speedDiff) : 0,
                     -0.25 * attr.getStaticAttribute().maxTorque,
@@ -121,30 +127,40 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
                 rotSpeed = Math.clamp(rotSpeed,
                         -1.1 * attr.staticAttribute.redLineRpm * Math.PI / 30,
                         1.1 * attr.staticAttribute.redLineRpm * Math.PI / 30);
-                rotSpeed = 0.95 * Math.clamp(rotSpeed, RED_LINE_SPEED * -1.05, RED_LINE_SPEED * 1.05) + 0.05 * feedback; // 额外修正
+                rotSpeed = 0.95 * Math.clamp(rotSpeed, RED_LINE_SPEED * -1.05, RED_LINE_SPEED * 1.05) + 0.05 * avgFeedback; // 额外修正
                 setRotSpeed((float) rotSpeed);
             }
-            sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) ((netTorque - coupleTorque) * rotSpeed), (float) rotSpeed));//输出功率
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
-        } else {
-            //没有转速反馈信号时，直接取用引擎转速
-            rotSpeed += netTorque / (7 * attr.staticAttribute.inertia) / getPhysicsLevel().getTps();
-            sendSignalToTarget("power", attr.getPowerOutputTarget(), new MechPowerSignal((float) (netTorque * rotSpeed), (float) rotSpeed));
-            setRotSpeed((float) rotSpeed);
-            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));//输出转速
+            pushMechEnergy(new MechPower((float) ((netTorque - coupleTorque) * rotSpeed), (float) rotSpeed));
+            attr.rpmOutputTargets.keySet().forEach(target -> sendSignalToAllTargets(target, getRotSpeed()));
         }
     }
 
     @Override
-    public void onAttach() {
-        super.onAttach();
-        sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);//发送握手信号建立转速反馈链接
+    public Map<String, IMechEnergyConsumer> getEnergyTargets() {
+        return energyTargets;
     }
 
     @Override
-    public void onVehicleStructureChanged() {
-        super.onVehicleStructureChanged();
-        sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);//发送握手信号建立转速反馈链接
+    public void rebuildEnergyTargets() {
+        energyTargets.clear();
+        String target = attr.getPowerOutputTarget();
+        if (target == null || target.isEmpty()) return;
+        IMechEnergyConsumer consumer = resolveEnergyTarget(target);
+        if (consumer != null) {
+            energyTargets.put(target, consumer);
+        }
+    }
+
+    private IMechEnergyConsumer resolveEnergyTarget(String targetName) {
+        if (getSubPart().subsystems.containsKey(targetName)) {
+            var sub = getSubPart().subsystems.get(targetName);
+            if (sub instanceof IMechEnergyConsumer consumer) return consumer;
+        }
+        if (getSubPart().connectors.containsKey(targetName)) {
+            AbstractConnector conn = getSubPart().connectors.get(targetName);
+            if (conn.mechanicalEnergyPort != null) return conn.mechanicalEnergyPort;
+        }
+        return null;
     }
 
     /**
@@ -302,7 +318,6 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
     @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(2);
-        result.put("power", List.of(attr.powerOutputTarget));
         result.putAll(attr.rpmOutputTargets);
         return result;
     }

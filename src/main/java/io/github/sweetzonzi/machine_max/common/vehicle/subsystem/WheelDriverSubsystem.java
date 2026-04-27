@@ -10,6 +10,8 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.WheelDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
@@ -18,7 +20,8 @@ import net.minecraft.sounds.SoundSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-public class WheelDriverSubsystem extends BasicSubsystem {
+
+public class WheelDriverSubsystem extends BasicSubsystem implements IMechEnergyConsumer {
     @Getter
     public final WheelDriverSubsystemAttr attr;
     @Getter
@@ -31,6 +34,9 @@ public class WheelDriverSubsystem extends BasicSubsystem {
     private final float MAX_STEERING_FORCE;
     private volatile boolean isBraking = false;
     private boolean wasBraking = false;
+
+    private MechPower receivedPower = MechPower.ZERO;
+    private float feedbackSpeed = 0;
 
     public WheelDriverSubsystem(ISubsystemHost owner, String name, WheelDriverSubsystemAttr attr) {
         super(owner, name, attr);
@@ -89,24 +95,12 @@ public class WheelDriverSubsystem extends BasicSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        //计算收到功率 Calculate received power
-        float totalPower = 0f;
-        float speed = 0f;
-        SignalChannel powers = getSignalChannel("power");
-        for (Map.Entry<ISignalSender, Object> entry : powers.entrySet()) {
-            if (entry.getValue() instanceof MechPowerSignal power) {
-                totalPower += power.getPower();//计算收到的总功率，正功率代表加速，负功率代表减速 Calculate total power, positive power means acceleration, negative power means deceleration
-                speed += power.getSpeed();
-                ISignalSender sender = entry.getKey();
-                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者 If sender is also receiver, send speed back to sender
-                    addCallbackTarget("speed_feedback", receiver);
-                }
-            }
-        }
+        //计算收到的机械功率 Calculate received mechanical power
+        float totalPower = receivedPower.power();//计算收到的总功率，正功率代表加速，负功率代表减速 Calculate total power, positive power means acceleration, negative power means deceleration
+        float speed = receivedPower.speed();
         if (Float.isNaN(totalPower) || Float.isNaN(speed)) {
             totalPower = 0f;
             speed = 0f;
-            MachineMax.LOGGER.error("{}收到机械功率信号不正确，{}", this.getName(), powers);
         }
         if (this.connector != null && this.connector.joint instanceof New6Dof joint) {
             Signal<?> controlSignal = getControlInput();
@@ -129,7 +123,7 @@ public class WheelDriverSubsystem extends BasicSubsystem {
                 torque -= brakeTorque + handBrakeTorque;//施加刹车力矩 Apply braking torque
                 rollingMotor.set(MotorParam.MaxMotorForce, Math.abs(torque));
                 if (torque > 0) {//加速过程 Accelerating
-                    rollingMotor.set(MotorParam.TargetVelocity, Math.signum(speed) * Math.min(10 + Math.abs(speed), MAX_SPEED));
+                    rollingMotor.set(MotorParam.TargetVelocity, Math.signum(speed) * Math.min(30 + Math.abs(speed), MAX_SPEED));
                 } else {//减速过程 Decelerating
                     rollingMotor.set(MotorParam.TargetVelocity, 0);
                 }
@@ -159,8 +153,23 @@ public class WheelDriverSubsystem extends BasicSubsystem {
                 sendSignalToAllTargets(signalKey, relativeAngularVel.get(1));
             for (String signalKey : attr.steeringAngleOutputs.keySet())//转向位置信号
                 sendSignalToAllTargets(signalKey, -relativeAngle.get(1));
-            sendCallbackToAllListeners("speed_feedback", relativeAngularVel.get(0));//反馈转动速度信号
+            feedbackSpeed = relativeAngularVel.get(0);//反馈转动速度信号
         }
+    }
+
+    @Override
+    public void onMechEnergyReceived(String producerName, MechPower power) {
+        this.receivedPower = power;
+    }
+
+    @Override
+    public float getFeedbackSpeed() {
+        return feedbackSpeed;
+    }
+
+    @Override
+    public void setFeedbackSpeed(float speed) {
+        this.feedbackSpeed = speed;
     }
 
     private Signal<?> getControlInput() {

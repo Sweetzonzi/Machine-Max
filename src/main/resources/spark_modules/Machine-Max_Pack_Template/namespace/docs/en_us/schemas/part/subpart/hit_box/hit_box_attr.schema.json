@@ -20,52 +20,135 @@
       "default": "",
       "description": "Subsystem name, used to associate this hit box with a specific subsystem, when this hit box takes damage, the associated subsystem will take equivalent damage."
     },
-    "friction": {
-      "$ref": "../../../base/vector_3d.schema.json",
-      "description": "Friction coefficient vector, corresponding to x, y, z axes respectively."
-    },
-    "slip_adaptation": {
-      "type": "number",
-      "minimum": 0.0,
-      "maximum": 1.0,
-      "default": 0.5,
-      "description": "Slip adaptation coefficient, used to adjust friction behavior during sliding."
-    },
-    "rolling_friction": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.2,
-      "description": "Rolling friction coefficient."
-    },
-    "spinning_friction": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 0.0,
-      "description": "Spinning friction coefficient."
-    },
-    "restitution": {
-      "type": "number",
-      "minimum": 0.0,
-      "maximum": 1.0,
-      "default": 0.1,
-      "description": "Restitution coefficient (elasticity), 0 for completely inelastic collision, 1 for completely elastic collision."
-    },
-    "block_damage_factor": {
-      "type": "number",
-      "minimum": 0.0,
-      "default": 1.0,
-      "description": "Block damage coefficient, 0 means unable to break blocks, 1 means full damage, adjust this coefficient to change block breaking capability."
+    "material": {
+      "$ref": "../../../base/resource_location.schema.json",
+      "default": "machine_max:default",
+      "description": "Material registry id, used to obtain friction coefficients, damage reduction properties, sound effects, and other physical properties."
     },
     "angle_effect": {
       "type": "boolean",
       "default": true,
       "description": "Whether equivalent armor thickness is affected by impact angle, if false, impact angle is not considered when calculating thickness."
     },
-    "rha": {
+    "thickness": {
       "type": "number",
       "minimum": 0.0,
       "default": 1.0,
-      "description": "Equivalent armor thickness, unit mm, reduces damage and controls energy distribution during collisions."
+      "description": "Armor thickness, unit mm, reduces damage and controls energy distribution during collisions."
+    },
+    "overwrite": {
+      "type": "object",
+      "description": "Hit box material override. Any provided fields override the referenced material fields.",
+      "properties": {
+        "friction": {
+          "$ref": "../../../base/vector_3d.schema.json"
+        },
+        "slip_adaptation": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "slip_curve": {
+          "type": "object",
+          "description": "Slip curve override. Supports partial override, unspecified fields inherit from material.",
+          "properties": {
+            "longitudinal": {
+              "type": "object",
+              "properties": {
+                "peak_slip_ratio": {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                "base_scale": {
+                  "type": "number"
+                },
+                "peak_scale": {
+                  "type": "number"
+                },
+                "kinetic_scale": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            },
+            "lateral": {
+              "type": "object",
+              "properties": {
+                "peak_angle_deg": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "Slip-angle peak in degrees."
+                },
+                "kinetic_angle_deg": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "description": "Kinetic-region slip angle endpoint in degrees."
+                },
+                "base_scale": {
+                  "type": "number"
+                },
+                "peak_scale": {
+                  "type": "number"
+                },
+                "kinetic_scale": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "rolling_friction": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "spinning_friction": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "restitution": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "block_damage_factor": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "rha": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "angle_effect": {
+          "type": "boolean"
+        },
+        "impact_modifiers": {
+          "$ref": "modifier/damage_modifier.schema.json"
+        },
+        "piercing_modifiers": {
+          "$ref": "modifier/damage_modifier.schema.json"
+        },
+        "damage_modifiers": {
+          "$ref": "modifier/damage_modifier.schema.json"
+        },
+        "un_penetrate_damage_factor": {
+          "type": "number",
+          "minimum": 0.0
+        },
+        "sounds": {
+          "type": "object",
+          "properties": {
+            "hit_un_pen": {
+              "$ref": "../../../base/sound_event.schema.json"
+            },
+            "hit_pen": {
+              "$ref": "../../../base/sound_event.schema.json"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     },
     "impact_modifiers": {
       "$ref": "modifier/damage_modifier.schema.json",
@@ -136,29 +219,6 @@
       "type": "string",
       "default": "true",
       "description": "Activation condition, uses molang expression to control whether the hit box is active. Can be used to implement features like glass losing hit detection after being broken, trailer supports, etc."
-    },
-    "sounds": {
-      "type": "object",
-      "properties": {
-        "hit_un_pen": {
-          "$ref": "../../../base/sound_event.schema.json",
-          "description": "Sound event when hit box is hit but not penetrated.",
-          "default": {
-            "sound_id": "machine_max:hit_box.hit.up_pen.metal",
-            "range": 64
-          }
-        },
-        "hit_pen": {
-          "$ref": "../../../base/sound_event.schema.json",
-          "description": "Sound event when hit box is hit and penetrated.",
-          "default": {
-            "sound_id": "machine_max:hit_box.hit.pen.metal",
-            "range": 64
-          }
-        }
-      },
-      "additionalProperties": false,
-      "description": "Sound configuration for hit box impacts."
     }
   },
   "required": ["type"],
@@ -170,8 +230,15 @@
     {
       "id": "chassis",
       "type": "box",
-      "rha": 10.0,
-      "block_damage_factor": 1.5,
+      "material": "machine_max:heavy_armor",
+      "thickness": 10.0,
+      "overwrite": {
+        "slip_curve": {
+          "lateral": {
+            "peak_angle_deg": 9.0
+          }
+        }
+      },
       "angle_effect": true,
       "damage_modifiers": [
         {

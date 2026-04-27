@@ -3,21 +3,21 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.TransmissionSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.TransmissionSubsystemStaticAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyProducer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import lombok.Getter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-//TODO:测试负传动比的情形
 @Getter
-public class TransmissionSubsystem extends BasicSubsystem {
+public class TransmissionSubsystem extends BasicSubsystem implements IMechEnergyConsumer, IMechEnergyProducer {
     public final TransmissionSubsystemAttr attr;
-    private final Map<ISignalReceiver, Float> powerReceivers = new HashMap<>();//功率接收者及其反馈转速列表
-    private final Map<ISignalReceiver, Float> powerReceiverGearRatios = new HashMap<>();//功率输出目标及其信号通道列表
-    private final Map<ISignalReceiver, Float> powerReceiverWeights = new HashMap<>();//差速锁启用时的功率输出目标及其功率分配权重
+    private MechPower receivedPower = MechPower.ZERO;
+    private float feedbackSpeed = 0;
+    private final Map<String, IMechEnergyConsumer> energyTargets = new HashMap<>();
 
     private boolean diffLock = false;
     private float avgFeedBackSpeed = 0f;
@@ -31,17 +31,37 @@ public class TransmissionSubsystem extends BasicSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
+        //差速锁控制 Differential Lock Control
+        updateDiffLock();
+        //分配功率到所有已连接的功率传输目标 Distribute power to all connected power transfer targets
+        distributePower();
+    }
+
+    @Override
+    public void onPostPhysicsTick() {
+        super.onPostPhysicsTick();
         //更新信号输出目标的平均反馈速度 Update the average feedback speed of the output targets
+        updateAvgFeedbackSpeed();
+        feedbackSpeed = avgFeedBackSpeed;
+    }
+
+    private void updateAvgFeedbackSpeed() {
         avgFeedBackSpeed = 0f;
-        for (float speed : powerReceivers.values()) {
+        var feedbacks = collectFeedbackSpeeds();
+        if (feedbacks.isEmpty()) return;
+        for (float speed : feedbacks.values()) {
             avgFeedBackSpeed -= speed;
         }
-        if (!powerReceivers.isEmpty()) avgFeedBackSpeed /= powerReceivers.size();
-        //差速锁控制 Differential Lock Control
+        avgFeedBackSpeed /= feedbacks.size();
+    }
+
+    private void updateDiffLock() {
         if (attr.staticAttribute.diffLock == TransmissionSubsystemStaticAttr.diffLockMode.AUTO) {
             //视情况更新自动差速锁状态 Update differential lock status automatically
             diffLock = false;
-            for (float speed : powerReceivers.values()) {
+            var feedbacks = collectFeedbackSpeeds();
+            if (feedbacks.size() < 2 || avgFeedBackSpeed == 0) return;
+            for (float speed : feedbacks.values()) {
                 if (Math.abs((avgFeedBackSpeed + speed) / avgFeedBackSpeed) > attr.staticAttribute.autoDiffLockThreshold / 100f) {
                     diffLock = true;
                     break;
@@ -51,10 +71,10 @@ public class TransmissionSubsystem extends BasicSubsystem {
             //根据信号进行的手动差速锁控制 Manually control the differential lock according to the input signals
             Boolean targetDiffLockStatus = null;
             if (!attr.staticAttribute.manualDiffLockInputChannels.isEmpty()) {
-                for (String diffLockChannelName : attr.staticAttribute.manualDiffLockInputChannels) {
-                    SignalChannel diffLockChannel = getSignalChannel(diffLockChannelName);
-                    for (Object signalValue : diffLockChannel.values()) {
-                        if (signalValue instanceof Boolean b) {
+                for (String channelName : attr.staticAttribute.manualDiffLockInputChannels) {
+                    SignalChannel channel = getSignalChannel(channelName);
+                    for (Object value : channel.values()) {
+                        if (value instanceof Boolean b) {
                             targetDiffLockStatus = b;
                             break;
                         }
@@ -62,177 +82,136 @@ public class TransmissionSubsystem extends BasicSubsystem {
                     if (targetDiffLockStatus != null) break;
                 }
             }
-            if (targetDiffLockStatus != null) diffLock = targetDiffLockStatus;//更新差速锁状态 Update differential lock status
-        }
-        //分配功率到所有已连接的功率传输目标 Distribute power to all connected power transfer targets
-        distributePower();
-    }
-
-    @Override
-    public void onPostPhysicsTick() {
-        super.onPostPhysicsTick();
-        updateFeedback();
-    }
-
-    @Override
-    public void onAttach() {
-        super.onAttach();
-        //初始化握手功率信号
-        handShakeWithTargets();
-    }
-
-    /**
-     * <p>初始化功率信号并发送握手功率信号到输出目标</p>
-     * <p>Initialize power signals and send handshaking power signals to output targets.</p>
-     */
-    @Override
-    public void onVehicleStructureChanged() {
-        super.onVehicleStructureChanged();
-        powerReceivers.clear();//清空功率接收者列表
-        powerReceiverGearRatios.clear();//清空功率输出通道列表
-        //初始化握手功率信号
-        handShakeWithTargets();
-    }
-
-    /**
-     * 初始化握手功率信号
-     */
-    private void handShakeWithTargets(){
-        //初始化握手功率信号
-        for (Map.Entry<String, Float> entry : attr.powerOutputs.entrySet()) {
-            String targetName = entry.getKey();
-            float gearRatio = entry.getValue();
-            sendSignalToTargetWithCallback("power", targetName, gearRatio, true);//发送对应的减速比等待回传
-            sendSignalToTarget("power", targetName, MechPowerSignal.ZERO);//发送空功率信号
+            if (targetDiffLockStatus != null) diffLock = targetDiffLockStatus;
         }
     }
 
-    /**
-     * <p>接收功率接收者的速度反馈信号并更新反馈速度</p>
-     * <p>Receive the speed feedback signal from the power receivers and update the feedback speed.</p>
-     */
-    public void onSignalUpdated(String channelName, ISignalSender sender) {
-        super.onSignalUpdated(channelName, sender);
-        Object signalValue = getSignalChannel(channelName).get(sender);
-        if (channelName.equals("power") && signalValue instanceof MechPowerSignal) {
-            if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
-                addCallbackTarget("speed_feedback", receiver);
+    @Override
+    public void onMechEnergyReceived(String producerName, MechPower power) {
+        this.receivedPower = power;
+    }
+
+    @Override
+    public float getFeedbackSpeed() {
+        return feedbackSpeed;
+    }
+
+    @Override
+    public void setFeedbackSpeed(float speed) {
+        this.feedbackSpeed = speed;
+    }
+
+    @Override
+    public Map<String, IMechEnergyConsumer> getEnergyTargets() {
+        return energyTargets;
+    }
+
+    @Override
+    public void rebuildEnergyTargets() {
+        energyTargets.clear();
+        for (String targetName : attr.getPowerOutputs().keySet()) {
+            IMechEnergyConsumer consumer = resolveEnergyTarget(targetName);
+            if (consumer != null) {
+                energyTargets.put(targetName, consumer);
             }
-        } else if (channelName.equals("speed_feedback") && signalValue instanceof Float speedFeedback) {
-            if (sender instanceof ISignalReceiver receiver) {
-                if (powerReceiverGearRatios.get(receiver) != null)//存在减速比时视为一般反馈
-                    powerReceivers.put(receiver, speedFeedback * powerReceiverGearRatios.get(receiver));//更新功率接收者的速度反馈信号
-                else powerReceivers.put(receiver, 0f);//否则视为握手尝试
-            }
-        } else if (channelName.equals("callback") && signalValue instanceof Float gearRatio) {
-            powerReceiverGearRatios.put((ISignalReceiver) sender, gearRatio);
         }
+    }
+
+    private IMechEnergyConsumer resolveEnergyTarget(String targetName) {
+        if (getSubPart().subsystems.containsKey(targetName)) {
+            var sub = getSubPart().subsystems.get(targetName);
+            if (sub instanceof IMechEnergyConsumer consumer) return consumer;
+        }
+        if (getSubPart().connectors.containsKey(targetName)) {
+            AbstractConnector conn = getSubPart().connectors.get(targetName);
+            if (conn.mechanicalEnergyPort != null) return conn.mechanicalEnergyPort;
+        }
+        return null;
     }
 
     private void distributePower() {
-        //接收功率并合并 Merge power from all spreadDistances
-        double totalPower = 0.0;
-        float inputSpeed = 0.0F;
-        SignalChannel powerSignal = getSignalChannel("power");
-        for (Map.Entry<ISignalSender, Object> entry : powerSignal.entrySet()) {
-            if (entry.getValue() instanceof MechPowerSignal power) {
-                totalPower += Math.signum(power.getSpeed()) * power.getPower();//计算收到的总功率
-                inputSpeed += power.getSpeed();
-                ISignalSender sender = entry.getKey();
-                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
-                    addCallbackTarget("speed_feedback", receiver);
-                }
-            }
-        }
-        totalPower *= Math.signum(inputSpeed);//根据速度方向调整总功率正负
-        //计算并分配输出功率 Calculate and distribute output power
-        if (powerReceivers.isEmpty() || !isActive()) {
-            for (ISignalReceiver receiver : powerReceivers.keySet()) {
-                sendCallbackToListener("power", receiver, EmptySignal.INSTANCE);
-            }
+        var feedbacks = collectFeedbackSpeeds();
+        if (feedbacks.isEmpty() || !isActive()) {
+            pushMechEnergy(MechPower.EMPTY);
             return; //无输出目标则不发出功率信号
         }
+
+        float totalPower = receivedPower.power();
+        float inputSpeed = receivedPower.speed();
+        if (Float.isNaN(totalPower) || Float.isNaN(inputSpeed)) {
+            pushMechEnergy(MechPower.EMPTY);
+            return;
+        }
+//        totalPower *= Math.signum(inputSpeed);//根据速度方向调整总功率正负
+
         if (diffLock) {//差速锁模式，限制输出端转速相等
-            //TODO:无功率输入时，单个输出端带动其他输出端旋转
-            float totalWeight = 0f;
-            float weight;
-            float speed;
-            powerReceiverWeights.clear();
-            //根据转速与输入转速的差距决定功率分配权重
-            for (Map.Entry<ISignalReceiver, Float> target : powerReceivers.entrySet()) {
-                ISignalReceiver receiver = target.getKey();
-                speed = -target.getValue();
-                if (Math.signum(speed * inputSpeed) >= 0) {//同向旋转正常分配功率
-                    weight = 1f;
-                } else {//与动力源旋转方向不同则额外分配功率
-                    weight = -3f;
-                }
-                weight /= (float) Math.pow(Math.max(1f, Math.abs(speed) + 1f), attr.staticAttribute.diffLockSensitivity);
-                powerReceiverWeights.put(receiver, weight);
-                totalWeight += Math.abs(weight);
-            }
-            for (Map.Entry<ISignalReceiver, Float> target : powerReceivers.entrySet()) {
-                ISignalReceiver receiver = target.getKey();
-                Float receiverGearRatio = powerReceiverGearRatios.get(receiver);
-                if (receiverGearRatio == null || receiverGearRatio == 0f) continue;//跳过减速比非法的功率输出目标
-                weight = powerReceiverWeights.get(receiver);
-                float power = (float) (totalPower * weight / totalWeight);
-                speed = -0.995f * powerReceivers.get(receiver) + 0.005f * inputSpeed;
-                if (speed == 0f) speed = 0.005f * inputSpeed;
-                MechPowerSignal powerSignalToSend = new MechPowerSignal(power, speed / receiverGearRatio);
-                sendCallbackToListener("power", receiver, powerSignalToSend);//发送功率信号
-            }
+            distributeDiffLock(totalPower, inputSpeed, feedbacks);
         } else {//差速器模式，不限制输出端转速，各输出端扭矩相等
-            //TODO:无功率输入时，一边带动另一边旋转？
-            if (totalPower == 0f) return;//如果没有收到功率信号，则不发出功率信号
-            float receiverTotalSpeed = 0.0F;//统计接收者的总速度用于扭矩计算进而计算输出功率
-            for (Map.Entry<ISignalReceiver, Float> target : powerReceivers.entrySet()) {
-                receiverTotalSpeed -= target.getValue();
-            }
-            receiverTotalSpeed += 0.005f * inputSpeed;
-            if (receiverTotalSpeed == 0f) receiverTotalSpeed = 0.005f * inputSpeed;//避免反推出的功率过大
-            float torque = (float) (totalPower / receiverTotalSpeed);//计算输出端扭矩
-            for (Map.Entry<ISignalReceiver, Float> target : powerReceivers.entrySet()) {
-                ISignalReceiver receiver = target.getKey();
-                Float receiverGearRatio = powerReceiverGearRatios.get(receiver);
-                if (receiverGearRatio == null || receiverGearRatio == 0f) continue;//跳过减速比非法的功率输出目标
-                float receiverSpeed = -0.99f * target.getValue() + 0.01f * inputSpeed;//避免接收者转速为0时无法起步
-                if (receiverSpeed == 0f) receiverSpeed = 0.01f * inputSpeed;
-                float power = torque * receiverSpeed;
-                MechPowerSignal powerSignalToSend = new MechPowerSignal(power, receiverSpeed / receiverGearRatio);
-                sendCallbackToListener("power", receiver, powerSignalToSend);//发送功率信号
-            }
+            distributeOpenDiff(totalPower, inputSpeed, feedbacks);
         }
     }
 
-    /**
-     * <p>为提供功率输入的动力源更新反馈速度</p>
-     * <p>Update the feedback speed for the power spreadDistances.</p>
-     */
-    private void updateFeedback() {
-        float speed = 0;
-        int count = 0;
-        if (!powerReceivers.isEmpty()) {
-            for (Object value : powerReceivers.values()) {
-                if (value instanceof Float f) {
-                    speed += f;
-                    count++;
-                }
+    private void distributeDiffLock(float totalPower, float inputSpeed, Map<String, Float> feedbacks) {
+        float totalWeight = 0f;
+        Map<String, Float> weights = new HashMap<>();
+        for (var entry : feedbacks.entrySet()) {
+            String name = entry.getKey();
+            float speed = -entry.getValue();
+            float weight;
+            if (Math.signum(speed * inputSpeed) >= 0) {
+                weight = 1f;
+            } else {
+                weight = -3f;
             }
-            if (count > 0) speed /= count;
-            sendCallbackToAllListeners("speed_feedback", speed);
-        } else
-            sendCallbackToAllListeners("speed_feedback", EmptySignal.INSTANCE);
+            weight /= (float) Math.pow(Math.max(1f, Math.abs(speed) + 1f), attr.staticAttribute.diffLockSensitivity);
+            weights.put(name, weight);
+            totalWeight += Math.abs(weight);
+        }
+        if (totalWeight == 0) {
+            pushMechEnergy(MechPower.EMPTY);
+            return;
+        }
+        Map<String, MechPower> outputs = new HashMap<>();
+        for (var entry : feedbacks.entrySet()) {
+            String name = entry.getKey();
+            Float gearRatio = attr.getPowerOutputs().get(name);
+            if (gearRatio == null || gearRatio == 0f) continue;
+            float weight = weights.get(name);
+            float power = totalPower * weight / totalWeight;
+            float speed = -0.995f * entry.getValue() + 0.005f * inputSpeed;
+            if (speed == 0f) speed = 0.005f * inputSpeed;
+            outputs.put(name, new MechPower(power, speed / gearRatio));
+        }
+        pushMechEnergy(outputs);
+    }
+
+    private void distributeOpenDiff(float totalPower, float inputSpeed, Map<String, Float> feedbacks) {
+        if (totalPower == 0f) {
+            pushMechEnergy(MechPower.EMPTY);
+            return;
+        }
+        float receiverTotalSpeed = 0.0F;
+        for (float speed : feedbacks.values()) {
+            receiverTotalSpeed -= speed;
+        }
+        receiverTotalSpeed += 0.005f * inputSpeed;
+        if (receiverTotalSpeed == 0f) receiverTotalSpeed = 0.005f * inputSpeed;
+        float torque = totalPower / receiverTotalSpeed;
+        Map<String, MechPower> outputs = new HashMap<>();
+        for (var entry : feedbacks.entrySet()) {
+            String name = entry.getKey();
+            Float gearRatio = attr.getPowerOutputs().get(name);
+            if (gearRatio == null || gearRatio == 0f) continue;
+            float receiverSpeed = -0.99f * entry.getValue() + 0.01f * inputSpeed;
+            if (receiverSpeed == 0f) receiverSpeed = 0.01f * inputSpeed;
+            float power = torque * receiverSpeed;
+            outputs.put(name, new MechPower(power, receiverSpeed / gearRatio));
+        }
+        pushMechEnergy(outputs);
     }
 
     @Override
     public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> targetNames = new HashMap<>(4);
-        //添加功率输出目标
-        for (String targetName : attr.powerOutputs.keySet()) {
-            String signalChannel = "power";
-            targetNames.computeIfAbsent(signalChannel, k -> new ArrayList<>()).add(targetName);
-        }
-        return targetNames;
+        return Map.of();
     }
 }

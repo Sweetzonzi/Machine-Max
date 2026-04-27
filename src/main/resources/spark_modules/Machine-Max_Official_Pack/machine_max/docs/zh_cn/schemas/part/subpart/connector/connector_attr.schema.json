@@ -13,6 +13,10 @@
       "type": "string",
       "description": "连接点定义ID，引用预定义的连接点静态属性。例如：\"machine_max:simple_connector\"。"
     },
+    "power_target": {
+      "type": "string",
+      "description": "对侧连接器传入的机械能在本零件内的接收目标（子系统名或连接点名）。设置后该连接点可作为机械能传输通道，将对侧传入的机械能转发至本零件内的目标。例如：\"subsystem.machine_max.engine\"。"
+    },
     "overwrite": {
       "type": "object",
       "description": "连接点属性覆写。可按需覆写definition指向的静态连接点属性。",

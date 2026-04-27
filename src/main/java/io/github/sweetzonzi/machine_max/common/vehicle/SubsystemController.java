@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle;
 
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyProducer;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
@@ -99,6 +100,15 @@ public class SubsystemController implements ISignalReceiver {
 
     public void onVehicleStructureChanged() {
         allSubsystems.forEach(AbstractSubsystem::onVehicleStructureChanged);
+        rebuildAllEnergyPaths();
+    }
+
+    public void rebuildAllEnergyPaths() {
+        for (AbstractSubsystem sub : allSubsystems) {
+            if (sub instanceof IMechEnergyProducer producer) {
+                producer.rebuildEnergyTargets();
+            }
+        }
     }
 
     @Override

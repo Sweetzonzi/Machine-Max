@@ -415,6 +415,7 @@ public class VehicleCore implements SyncedDataHolder {
         partMap.put(part.uuid, part);
         partNet.addNode(part);
         subSystemController.addSubsystems(part.getAllSubsystems());
+        subSystemController.rebuildAllEnergyPaths();
     }
 
     public void removePart(Part part) {

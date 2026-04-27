@@ -98,7 +98,7 @@
               "mmCollision_Box_Chassis": {
                 "name": "chassis",
                 "type": "box",
-                "rha": 10
+                "thickness": 10
               }
             }
           }
@@ -120,7 +120,7 @@
               "hit_boxes": {
                 "collision_box": {
                   "type": "box",
-                  "rha": 8
+                  "thickness": 8
                 }
               }
             }
@@ -136,7 +136,7 @@
               "hit_boxes": {
                 "collision_box": {
                   "type": "box",
-                  "rha": 8
+                  "thickness": 8
                 }
               }
             }

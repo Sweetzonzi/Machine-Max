@@ -371,7 +371,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
             float avgEngineSpeed;
             byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
-                if (moveInput[2] * speed > 0 || (Math.abs(speed) <= 1f)) {//加速行驶 Accelerate
+                if (moveInput[2] * speed > 0) {//加速行驶 Accelerate
                     actualThrottle = actualThrottle * 0.9f + moveInput[2] * 0.1f;
                     actualBrake = actualBrake * 0.8f + 0 * 0.2f;
                     avgEngineSpeed = calculateAvgSpeedAndControl();
@@ -527,11 +527,9 @@ public class CarControllerSubsystem extends BasicSubsystem {
             double downGearUpShiftIndex = (engineSpeed * downGearRatio / ratio - avgEngineMaxTorqueSpeed) / Math.max(0.1f, avgEngineMaxSpeed - avgEngineMaxTorqueSpeed);
             if (direction < 0 && overrideCountDown.get(gearbox) <= 0 && speed < 3f) {
                 result = gearbox.minNegativeGear; //最低负挡 Lowest negative gear
-                gearbox.setClutched(false);//停止传输动力 Stop transmission power
             } else if (engineSpeed * ratio < 0) {
                 //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
                 result = gearbox.minPositiveGear; //最低正挡 Lowest positive gear
-                gearbox.setClutched(true);
             } else if (upShiftIndex > upShiftThreshold && upGearDownShiftIndex > downShiftThreshold) result = upGear;
             else if (downShiftIndex < downShiftThreshold && downGearUpShiftIndex < upShiftThreshold && downGear != gearbox.minNegativeGear) {
                 //减速且降档后转速低于最大引擎转速时，降挡 Shift down when braking and the speed is low after gear downshift
@@ -544,11 +542,9 @@ public class CarControllerSubsystem extends BasicSubsystem {
             double downGearDownShiftIndex = (engineSpeed * downGearRatio / ratio - avgEngineMinSpeed) / Math.max(0.1f, avgEngineMaxTorqueSpeed - avgEngineMinSpeed);
             if (direction > 0 && overrideCountDown.get(gearbox) <= 0 && speed > -3f) {
                 result = gearbox.minPositiveGear;//最低正挡 Lowest positive gear
-                gearbox.setClutched(false);//停止传输动力 Stop transmission power
             } else if (engineSpeed * ratio > 0) {
                 //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
                 result = gearbox.minNegativeGear;//最低负挡 Lowest negative gear
-                gearbox.setClutched(true);
             } else if (upShiftIndex > upShiftThreshold && downGearDownShiftIndex > downShiftThreshold)
                 result = downGear;
             else if (downShiftIndex < downShiftThreshold && upGearUpShiftIndex < upShiftThreshold && upGear != gearbox.minPositiveGear) {

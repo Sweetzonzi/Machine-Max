@@ -26,6 +26,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.ConnectorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.connector.JointAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechEnergyPort;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorAttachEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorDetachEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorTickEvent;
@@ -37,6 +38,7 @@ import io.github.sweetzonzi.machine_max.util.data.Axis;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -68,6 +70,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     public final ConnectorAttr attr;//连接点属性
     public New6Dof joint;//在两个连接点间共享的关节
     public final SignalPort signalPort;//连接点资源/信号传输端口
+    @Nullable
+    public final MechEnergyPort mechanicalEnergyPort;//连接点机械能传输端口
     protected static final EntityDataAccessor<Float> DATA_INTEGRITY_ID = SynchedEntityData.defineId(AbstractConnector.class, EntityDataSerializers.FLOAT);
     protected final SynchedEntityData synchedData;
     protected final ConcurrentLinkedQueue<Float> accumulatedImpact = new ConcurrentLinkedQueue<>();
@@ -87,6 +91,10 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.offsetFromMassCenter = offsetFromMassCenter;
         this.actualTransform = offsetFromMassCenter.clone();
         this.signalPort = new SignalPort(this, attr.getSignalTargets(), attr.getSignalTranslations());
+        String powerTarget = attr.getPowerTarget();
+        this.mechanicalEnergyPort = (powerTarget != null && !powerTarget.isEmpty())
+                ? new MechEnergyPort(this, powerTarget)
+                : null;
         this.collideBetweenParts = attr.hasCollideBetweenParts();
         this.internal = attr.isInternal();
         this.attr = attr;
@@ -239,6 +247,12 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     this.signalPort.onConnectorAttach();
                     attachedConnector.signalPort.onConnectorAttach();
                 }
+                if (this.mechanicalEnergyPort != null) {
+                    this.mechanicalEnergyPort.onConnectorAttach();
+                }
+                if (targetConnector.mechanicalEnergyPort != null) {
+                    targetConnector.mechanicalEnergyPort.onConnectorAttach();
+                }
                 NeoForge.EVENT_BUS.post(new ConnectorAttachEvent.Post(this, targetConnector));
                 return true;
             } else return false;
@@ -365,6 +379,12 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                 if (this.signalPort != null && attachedConnector.signalPort != null) {
                     this.signalPort.onConnectorDetach();
                     attachedConnector.signalPort.onConnectorDetach();
+                }
+                if (this.mechanicalEnergyPort != null) {
+                    this.mechanicalEnergyPort.onConnectorDetach();
+                }
+                if (attachedConnector != null && attachedConnector.mechanicalEnergyPort != null) {
+                    attachedConnector.mechanicalEnergyPort.onConnectorDetach();
                 }
                 detachJoint();
                 //重置安装姿态变换

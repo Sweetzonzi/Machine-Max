@@ -13,6 +13,10 @@
       "type": "string",
       "description": "Connection point definition ID, references predefined connection point static attributes. For example: \"machine_max:simple_connector\"."
     },
+    "power_target": {
+      "type": "string",
+      "description": "Local target (subsystem or connector name) that receives mechanical energy from the opposite side's connector. When set, this connector acts as a mechanical energy transmission channel, forwarding incoming power to the specified local target. For example: \"subsystem.machine_max.engine\"."
+    },
     "overwrite": {
       "type": "object",
       "description": "Connection point attribute overwrite. Can overwrite static connection point attributes pointed to by definition as needed.",

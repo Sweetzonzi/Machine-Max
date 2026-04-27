@@ -100,6 +100,25 @@
             "sound_id": "machine_max:empty_sound",
             "range": 16
           }
+        },
+        "on_deactivate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被关闭时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "working_sounds": {
+          "type": "object",
+          "description": "手动工况音效映射，键为RPM字符串（如\"800\"、\"4500.0\"），值为音效事件。为空时使用自动合成。",
+          "patternProperties": {
+            "^-?[0-9]+(\\.[0-9]+)?$": {
+              "$ref": "../../base/sound_event.schema.json"
+            }
+          },
+          "default": {},
+          "additionalProperties": false
         }
       },
       "additionalProperties": false,

@@ -5,7 +5,10 @@ import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.GearboxSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
+import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyProducer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -13,13 +16,10 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundSource;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Getter
-public class GearboxSubsystem extends BasicSubsystem {
+public class GearboxSubsystem extends BasicSubsystem implements IMechEnergyConsumer, IMechEnergyProducer {
     public final GearboxSubsystemAttr attr;
     public final double[] gearRatios;//各级实际传动比率 Actual transmission ratio of each gear
     public final int minPositiveGear;
@@ -29,6 +29,10 @@ public class GearboxSubsystem extends BasicSubsystem {
     protected static final EntityDataAccessor<Boolean> CLUTCHED_ID = SynchedEntityData.defineId(GearboxSubsystem.class, EntityDataSerializers.BOOLEAN);
     private int lastGear = 0;//上一次的挡位，仅用于客户端控制音效 Last gear position, only used for client control of sound effects
     private float remainingSwitchTime = 0.0f;//剩余换挡无动力时间 Remaining no-power time caused by switching gears
+
+    private MechPower receivedPower = MechPower.ZERO;
+    private float feedbackSpeed = 0;
+    private final Map<String, IMechEnergyConsumer> energyTargets = new HashMap<>();
 
     public GearboxSubsystem(ISubsystemHost owner, String name, GearboxSubsystemAttr attr) {
         super(owner, name, attr);
@@ -56,7 +60,6 @@ public class GearboxSubsystem extends BasicSubsystem {
     public void onTick() {
         super.onTick();
         String gear = this.gearNames.get(this.getCurrentGear());
-//        if (!this.isClutched() || this.getRemainingSwitchTime() > 0.0f) gear = "N";
         for (Map.Entry<String, List<String>> entry : attr.gearOutputTargets.entrySet()) {
             String signalChannel = entry.getKey();
             List<String> targets = entry.getValue();
@@ -68,7 +71,7 @@ public class GearboxSubsystem extends BasicSubsystem {
     public void onPrePhysicsTick() {
         distributePower();
         if (remainingSwitchTime > 0.0f) {
-            remainingSwitchTime -= 1 / 60.0f;
+            remainingSwitchTime -= (float) 1 / getPhysicsLevel().getTps();
             if (remainingSwitchTime <= 0.0f) {
                 if (!isClutched()) setClutched(true);
             }
@@ -78,32 +81,63 @@ public class GearboxSubsystem extends BasicSubsystem {
     @Override
     public void onPostPhysicsTick() {
         super.onPostPhysicsTick();
-        updateFeedback();//更新反馈信号
+        feedbackSpeed = calculateFeedbackSpeed();//更新反馈信号
+    }
+
+    private float calculateFeedbackSpeed() {
+        if (!isClutched() || remainingSwitchTime > 0.0f) return 0;
+        var feedbacks = collectFeedbackSpeeds();
+        if (feedbacks.isEmpty()) return 0;
+        float avg = 0;
+        for (float s : feedbacks.values()) avg += s;
+        avg /= feedbacks.size();
+        return (float) (avg * gearRatios[getCurrentGear()]);
     }
 
     @Override
-    public void onAttach() {
-        super.onAttach();
-        sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);
+    public void onMechEnergyReceived(String producerName, MechPower power) {
+        this.receivedPower = power;
     }
 
     @Override
-    public void onVehicleStructureChanged() {
-        super.onVehicleStructureChanged();
-        sendSignalToTarget("power", attr.getPowerOutputTarget(), MechPowerSignal.ZERO);
+    public float getFeedbackSpeed() {
+        return feedbackSpeed;
     }
 
     @Override
-    public void onSignalUpdated(String channelName, ISignalSender sender) {
-        super.onSignalUpdated(channelName, sender);
-        SignalChannel channel = getSignalChannel(channelName);
-        for (Map.Entry<ISignalSender, Object> entry : channel.entrySet()) {
-            if (entry.getValue() instanceof MechPowerSignal) {
-                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
-                    addCallbackTarget("speed_feedback", receiver);
-                }
-            }
+    public void setFeedbackSpeed(float speed) {
+        this.feedbackSpeed = speed;
+    }
+
+    @Override
+    public boolean isEnergyPathConnected(String producerName) {
+        return isClutched() && remainingSwitchTime <= 0.0f;
+    }
+
+    @Override
+    public Map<String, IMechEnergyConsumer> getEnergyTargets() {
+        return energyTargets;
+    }
+
+    @Override
+    public void rebuildEnergyTargets() {
+        energyTargets.clear();
+        String target = attr.getPowerOutputTarget();
+        if (target == null || target.isEmpty()) return;
+        IMechEnergyConsumer consumer = resolveEnergyTarget(target);
+        if (consumer != null) energyTargets.put(target, consumer);
+    }
+
+    private IMechEnergyConsumer resolveEnergyTarget(String targetName) {
+        if (getSubPart().subsystems.containsKey(targetName)) {
+            var sub = getSubPart().subsystems.get(targetName);
+            if (sub instanceof IMechEnergyConsumer consumer) return consumer;
         }
+        if (getSubPart().connectors.containsKey(targetName)) {
+            AbstractConnector conn = getSubPart().connectors.get(targetName);
+            if (conn.mechanicalEnergyPort != null) return conn.mechanicalEnergyPort;
+        }
+        return null;
     }
 
     public void switchGear(int gear) {
@@ -145,47 +179,18 @@ public class GearboxSubsystem extends BasicSubsystem {
 
     private void distributePower() {
         if (!isClutched() || remainingSwitchTime > 0.0f) {
-            sendSignalToTarget("power", attr.powerOutputTarget, MechPowerSignal.ZERO);
+            pushMechEnergy(MechPower.EMPTY);
             return;
         }
-        double totalPower = 0.0;
-        double averageSpeed = 0.0;
-        int count = 0;
-        SignalChannel powerSignal = getSignalChannel("power");
-        for (Map.Entry<ISignalSender, Object> entry : powerSignal.entrySet()) {
-            if (entry.getValue() instanceof MechPowerSignal power) {
-                totalPower += power.getPower();//计算收到的总功率
-                averageSpeed += power.getSpeed();
-                count++;
-                ISignalSender sender = entry.getKey();
-                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
-                    addCallbackTarget("speed_feedback", receiver);
-                }
-            }
-        }
-        if (count > 0) averageSpeed /= count;//计算转速平均值
-        MechPowerSignal powerSignalToSend = new MechPowerSignal((float) totalPower, (float) (averageSpeed / gearRatios[getCurrentGear()]));
-        if (isActive()) sendSignalToTarget("power", attr.powerOutputTarget, powerSignalToSend);//发送功率信号
-        else resetSignalOutputs();
-    }
-
-    private void updateFeedback() {
-        if (!isClutched() || remainingSwitchTime > 0.0f) {//空挡时或正在换挡时，不反馈速度信号
-            sendCallbackToAllListeners("speed_feedback", EmptySignal.INSTANCE);
+        float totalPower = receivedPower.power();
+        float avgSpeed = receivedPower.speed();
+        if (Float.isNaN(totalPower) || Float.isNaN(avgSpeed)) {
+            pushMechEnergy(MechPower.EMPTY);
             return;
         }
-        float speed;
-        SignalChannel speedSignal = getSignalChannel("speed_feedback");
-        if (!speedSignal.isEmpty()) {
-            for (Object value : speedSignal.values()) {
-                if (value instanceof Float f) {
-                    speed = f;//发送第一个反馈转速 TODO:发送平均值？
-                    sendCallbackToAllListeners("speed_feedback", (float) (speed * gearRatios[getCurrentGear()]));
-                    return;
-                }
-            }
-            sendCallbackToAllListeners("speed_feedback", EmptySignal.INSTANCE);//没有收到反馈速度信号时，发送空信号
-        }
+        MechPower output = new MechPower(totalPower, avgSpeed / (float) gearRatios[getCurrentGear()]);
+        if (isActive()) pushMechEnergy(output);
+        else pushMechEnergy(MechPower.EMPTY);
     }
 
     @Override
@@ -281,8 +286,8 @@ public class GearboxSubsystem extends BasicSubsystem {
      */
     @Override
     public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> result = new HashMap<>(attr.gearOutputTargets);
-        result.put("power", List.of(attr.powerOutputTarget));
+        Map<String, List<String>> result = new HashMap<>(2);
+        result.putAll(attr.gearOutputTargets);
         return result;
     }
 

@@ -10,6 +10,7 @@
       "enum": [
         "machine_max:basic",
         "machine_max:car_controller",
+        "machine_max:motorbike_controller",
         "machine_max:engine",
         "machine_max:gearbox",
         "machine_max:item_storage",

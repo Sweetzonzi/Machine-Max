@@ -14,40 +14,31 @@ import java.util.*;
 
 @Getter
 public class ConnectorAttr {
-    /**
-     * 连接点对应的Locator名称
-     */
+    /** 连接点对应的Locator名称 */
     public final String locatorName;
-    /**
-     * 连接点属性定义
-     */
+    /** 连接点属性定义 */
     public final ResourceLocation definition;
-    /**
-     * 连接点属性覆写
-     */
+    /** 连接点属性覆写 */
     @Nullable
     public final OverwriteAttr overwrite;
-    /**
-     * 从对侧连接点接收到的信号频道转译规则(channel_a->channel_c; channel_b->channel_c)
-     */
+    /** 从对侧连接点接收到的信号频道转译规则(channel_a->channel_c; channel_b->channel_c) */
     public final Map<String, String> signalTranslations;
-    /**
-     * 连接点在本零件内的控制信号传输目标(子系统/连接点名/subpart/vehicle)
-     */
+    /** 连接点在本零件内的控制信号传输目标(子系统/连接点名/subpart/vehicle) */
     public final Map<String, List<String>> signalTargets;
-    /**
-     * 是否为部件内部连接点（不参与对外拼装）
-     */
+    /** 是否为部件内部连接点（不参与对外拼装） */
     public final boolean internal;
-    /**
-     * 连接点最终属性，考虑用户自定义覆写
-     */
+    /** 连接点的机械能输出目标（子系统名） */
+    public final String powerTarget;
+    /** 连接点最终属性，考虑用户自定义覆写 */
     private final ConnectorStaticAttr attr;
 
-    public ConnectorAttr(String locatorName, ResourceLocation definition, @Nullable OverwriteAttr overwrite, Map<String, String> signalTranslations, Map<String, List<String>> signalTargets, boolean internal) {
+    public ConnectorAttr(String locatorName, ResourceLocation definition, @Nullable OverwriteAttr overwrite,
+                         String powerTarget, Map<String, String> signalTranslations,
+                         Map<String, List<String>> signalTargets, boolean internal) {
         this.locatorName = locatorName;
         this.definition = definition;
         this.overwrite = overwrite;
+        this.powerTarget = powerTarget;
         this.signalTranslations = signalTranslations;
         this.signalTargets = signalTargets;
         this.internal = internal;
@@ -58,7 +49,7 @@ public class ConnectorAttr {
      * @param type                连接点类型
      * @param direction           连接点的法线方向
      * @param integrity           连接点结构完整性，受到大于此数值的伤害时会断开连接的关节
-     * @param impactAbsorption    连接点受到冲击，但未超过剩余结构完整性即未能断开连接时，冲击转化为结构完整性损耗的比例，例如0.2表示20%的冲击会转化为结构完整性的损耗
+     * @param impactAbsorption    连接点受到冲击，但未超过剩余结构完整性即未能断开连接时，冲击转化为结构完整性损耗的比例
      * @param impactReduction     连接点受到冲击时减少的冲击量
      * @param impactMultiplier    连接点受到冲击时的伤害倍率(与内部零件相连接的连接点恒定不可破坏，不受此影响)
      * @param collideBetweenParts 连接点是否允许部件间碰撞
@@ -66,6 +57,7 @@ public class ConnectorAttr {
      * @param acceptableTags      连接点的可接受标签
      * @param forbiddenTags       连接点的禁止标签
      * @param jointAttrs          连接点的关节属性(限制，刚性与阻尼)
+     * @param powerTarget         连接点的机械能输出目标（子系统名）
      */
     public record OverwriteAttr(
             Optional<String> type,
@@ -78,7 +70,8 @@ public class ConnectorAttr {
             Optional<List<ResourceLocation>> requiredTags,
             Optional<List<ResourceLocation>> acceptableTags,
             Optional<List<ResourceLocation>> forbiddenTags,
-            Optional<Map<String, JointAttr>> jointAttrs
+            Optional<Map<String, JointAttr>> jointAttrs,
+            Optional<String> powerTarget
     ) {
         public static final Codec<OverwriteAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.optionalFieldOf("type").forGetter(OverwriteAttr::type),
@@ -91,7 +84,8 @@ public class ConnectorAttr {
                 ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags").forGetter(OverwriteAttr::requiredTags),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags").forGetter(OverwriteAttr::acceptableTags),
                 ResourceLocation.CODEC.listOf().optionalFieldOf("forbidden_tags").forGetter(OverwriteAttr::forbiddenTags),
-                JointAttr.MAP_CODEC.optionalFieldOf("joint_attrs").forGetter(OverwriteAttr::jointAttrs)
+                JointAttr.MAP_CODEC.optionalFieldOf("joint_attrs").forGetter(OverwriteAttr::jointAttrs),
+                Codec.STRING.optionalFieldOf("power_target").forGetter(OverwriteAttr::powerTarget)
         ).apply(instance, OverwriteAttr::new));
     }
 
@@ -104,6 +98,7 @@ public class ConnectorAttr {
             Codec.STRING.fieldOf("locator").forGetter(ConnectorAttr::getLocatorName),
             ResourceLocation.CODEC.fieldOf("definition").forGetter(ConnectorAttr::getDefinition),
             OverwriteAttr.CODEC.optionalFieldOf("overwrite").forGetter(attr -> Optional.ofNullable(attr.getOverwrite())),
+            Codec.STRING.optionalFieldOf("power_target", "").forGetter(ConnectorAttr::getPowerTarget),
             Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("signal_translations", Map.of()).forGetter(ConnectorAttr::getSignalTranslations),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("signal_targets", Map.of()).forGetter(ConnectorAttr::getSignalTargets),
             Codec.BOOL.optionalFieldOf("internal", false).forGetter(ConnectorAttr::isInternal)
@@ -111,10 +106,11 @@ public class ConnectorAttr {
             locator,
             definition,
             overwrite,
+            powerTarget,
             signalTranslations,
             signalTargets,
             internal
-    ) -> new ConnectorAttr(locator, definition, overwrite.orElse(null), signalTranslations, signalTargets, internal)));
+    ) -> new ConnectorAttr(locator, definition, overwrite.orElse(null), powerTarget, signalTranslations, signalTargets, internal)));
 
     public static final Codec<Map<String, ConnectorAttr>> MAP_CODEC = Codec.unboundedMap(
             Codec.STRING,//连接点名称

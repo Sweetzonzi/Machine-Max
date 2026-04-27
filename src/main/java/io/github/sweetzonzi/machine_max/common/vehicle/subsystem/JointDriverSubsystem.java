@@ -12,6 +12,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.MotorAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.JointDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AdvancedConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechEnergyConsumer;
+import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import jme3utilities.math.MyQuaternion;
@@ -20,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class JointDriverSubsystem extends BasicSubsystem {
+public class JointDriverSubsystem extends BasicSubsystem implements IMechEnergyConsumer {
     public final JointDriverSubsystemAttr attr;
     public final AdvancedConnector connector;
     private final Float[] powerAllocation = new Float[6];
@@ -29,6 +31,9 @@ public class JointDriverSubsystem extends BasicSubsystem {
     private final Float[] MAX_SPEED = new Float[6];
     private final float TOTAL_POWER_WEIGHT;
     private boolean connected = false;
+
+    private MechPower receivedPower = MechPower.ZERO;
+    private float feedbackSpeed = 0;
 
     public JointDriverSubsystem(ISubsystemHost owner, String name, JointDriverSubsystemAttr attr) {
         super(owner, name, attr);
@@ -169,14 +174,19 @@ public class JointDriverSubsystem extends BasicSubsystem {
                     for (String signalKey : axisAttr.positionSignalOutputs().keySet())//一般转动位置信号
                         sendSignalToAllTargets(signalKey, -relativeAngle.get(axis.getValue() - 3));
                 }
-                if (!axisAttr.needsPower()) continue;
-                if (axis.getValue() <= 2) {//反馈平动速度信号
-                    sendCallbackToAllListeners("speed_feedback", relativeLinearVel.get(axis.getValue()));
-                } else {//反馈转动速度信号
-                    sendCallbackToAllListeners("speed_feedback", relativeAngularVel.get(axis.getValue() - 3));
-                }
             }
+            feedbackSpeed = getPrimaryFeedbackSpeed(relativeAngularVel, relativeLinearVel);
         }
+    }
+
+    private float getPrimaryFeedbackSpeed(Vector3f relativeAngularVel, Vector3f relativeLinearVel) {
+        for (Axis axis : attr.axisParams.keySet()) {
+            var axisAttr = attr.axisParams.get(axis);
+            if (!axisAttr.needsPower()) continue;
+            if (axis.getValue() <= 2) return relativeLinearVel.get(axis.getValue());
+            else return relativeAngularVel.get(axis.getValue() - 3);
+        }
+        return 0;
     }
 
     private MotorControlSignal getControlInput() {
@@ -216,23 +226,29 @@ public class JointDriverSubsystem extends BasicSubsystem {
     }
 
     private void distributePower() {
-        double totalPower = 0.0;
-        SignalChannel powers = getSignalChannel("power");
-        for (Map.Entry<ISignalSender, Object> entry : powers.entrySet()) {
-            if (entry.getValue() instanceof MechPowerSignal power) {
-                totalPower += (Math.signum(power.getSpeed())) * power.getPower();//计算收到的总功率(考虑转速方向)
-                ISignalSender sender = entry.getKey();
-                if (sender instanceof ISignalReceiver receiver) {//当发送者同时也是接收者时，自动反馈速度到发送者
-                    addCallbackTarget("speed_feedback", receiver);
-                }
-            }
-        }
+        float totalPower = receivedPower.power();
+        if (Float.isNaN(totalPower)) totalPower = 0;
         for (Axis axis : attr.axisParams.keySet()) {
             MotorAttr axisAttr = attr.axisParams.get(axis);
             if (axisAttr.needsPower() && axisAttr.maxForce() > 0.0)
-                powerAllocation[axis.getValue()] = (float) (totalPower * axisAttr.maxForce() / TOTAL_POWER_WEIGHT);//根据权重分配功率
+                powerAllocation[axis.getValue()] = totalPower * axisAttr.maxForce() / TOTAL_POWER_WEIGHT;//根据权重分配功率
             else powerAllocation[axis.getValue()] = null;//不需要功率输入或最大值非法则不分配功率
         }
+    }
+
+    @Override
+    public void onMechEnergyReceived(String producerName, MechPower power) {
+        this.receivedPower = power;
+    }
+
+    @Override
+    public float getFeedbackSpeed() {
+        return feedbackSpeed;
+    }
+
+    @Override
+    public void setFeedbackSpeed(float speed) {
+        this.feedbackSpeed = speed;
     }
 
     private Vector3f getRelativeAngle() {
