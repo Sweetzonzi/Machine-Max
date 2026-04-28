@@ -17,7 +17,8 @@
         "machine_max:motor",
         "machine_max:seat",
         "machine_max:transmission",
-        "machine_max:wheel_driver"
+        "machine_max:wheel_driver",
+        "machine_max:lighting"
       ],
       "description": "Subsystem type, determines which specific subsystem schema to use."
     }
@@ -133,6 +134,18 @@
       },
       "then": {
         "$ref": "dynamic/wheel_driver_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:lighting"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/lighting_dynamic_attr.schema.json"
       }
     }
   ],

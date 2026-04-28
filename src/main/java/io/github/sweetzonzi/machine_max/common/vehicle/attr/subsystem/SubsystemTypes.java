@@ -18,4 +18,5 @@ public enum SubsystemTypes {
     CAMERA,//摄像头子系统，可提供视角
     JAVASCRIPT,//自定义脚本子系统
     BATTERY,//电池子系统，储存电力，可充放电
+    LIGHTING,//照明子系统，提供客户端体积光视觉效果
 }

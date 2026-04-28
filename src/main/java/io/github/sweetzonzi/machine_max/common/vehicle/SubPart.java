@@ -1574,6 +1574,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     @NotNull
     @Override
+    public SubsystemController getSubsystemController() {
+        return part.vehicle.subSystemController;
+    }
+
+    @NotNull
+    @Override
     public ModelIndex getDefaultModelIndex() {
         return new ModelIndex("part", part.variant.getModel());
     }

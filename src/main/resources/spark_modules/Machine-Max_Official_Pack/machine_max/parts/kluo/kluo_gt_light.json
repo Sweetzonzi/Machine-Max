@@ -34,22 +34,28 @@
             "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_main_light')",
             "material": "machine_max:glass"
           },
-          "ysmGlowGtLeft": {
+          "ysmGlowGt4": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.left_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.left_light')",
+            "subsystem": "subsystem.machine_max.light4",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.light4')",
             "material": "machine_max:glass"
           },
-          "ysmGlowGtMiddle": {
+          "ysmGlowGt3": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.middle_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.middle_light')",
+            "subsystem": "subsystem.machine_max.light3",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.light3')",
             "material": "machine_max:glass"
           },
-          "ysmGlowGtRight": {
+          "ysmGlowGt2": {
             "type": "box",
-            "subsystem": "subsystem.machine_max.right_light",
-            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.right_light')",
+            "subsystem": "subsystem.machine_max.light2",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.light2')",
+            "material": "machine_max:glass"
+          },
+          "ysmGlowGt1": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.light1",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.light1')",
             "material": "machine_max:glass"
           },
           "ysmGlowGtLeftFog": {
@@ -74,15 +80,19 @@
             "type": "machine_max:basic",
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.left_light": {
+          "subsystem.machine_max.light1": {
             "type": "machine_max:basic",
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.middle_light": {
+          "subsystem.machine_max.light2": {
             "type": "machine_max:basic",
             "definition": "machine_max:default_glass"
           },
-          "subsystem.machine_max.right_light": {
+          "subsystem.machine_max.light3": {
+            "type": "machine_max:basic",
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.light4": {
             "type": "machine_max:basic",
             "definition": "machine_max:default_glass"
           },

@@ -29,7 +29,7 @@
           },
           "connector.machine_max.lock": {//连接点名称
             "locator": "hood_hull_lock",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
-            "definition": "machine_max:fixed_right",
+            "definition": "machine_max:fixed_down",
             "overwrite": {
               "integrity": 5
             }

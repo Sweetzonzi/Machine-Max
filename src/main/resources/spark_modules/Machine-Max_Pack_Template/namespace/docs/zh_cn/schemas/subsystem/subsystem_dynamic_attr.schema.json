@@ -18,7 +18,8 @@
         "machine_max:motor_controller",
         "machine_max:seat",
         "machine_max:transmission",
-        "machine_max:wheel_driver"
+        "machine_max:wheel_driver",
+        "machine_max:lighting"
       ],
       "description": "子系统类型，决定使用哪个具体的子系统架构。"
     }
@@ -134,6 +135,18 @@
       },
       "then": {
         "$ref": "dynamic/wheel_driver_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:lighting"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/lighting_dynamic_attr.schema.json"
       }
     }
   ],

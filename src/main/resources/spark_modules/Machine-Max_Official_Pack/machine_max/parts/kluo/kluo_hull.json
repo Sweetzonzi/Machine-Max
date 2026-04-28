@@ -12,24 +12,29 @@
     "sub_parts": {
       "sub_part.machine_max.main": {
         "start_bone": "AllHull", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
-        "end_bones": [], // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
+        "end_bones": [ // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
+          "GtLeftBackWheel",
+          "GtRightBackWheel",
+          "LeftBackWheel",
+          "RightBackWheel"
+        ],
         "mass_center": "hull_mass_center",
         "durability": 120.0,
-        "mass": 400.0,
+        "mass": 500.0,
         "block_collision": "ground",
         "collision_height": 1.5,
         "hit_boxes": { //键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
-          "HullCollision": { //值:碰撞形状属性
+          "HullHitBox": { //值:碰撞形状属性
             "type": "box", //碰撞形状类型, 支持box、sphere、cylinder
             "material": "machine_max:structural_steel",
             "thickness": 3 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
           },
-          "EngineCollision": { // 挡风玻璃
+          "EngineHitBox": { // 挡风玻璃
             "id": "engine",
             "type": "box",
             "material": "machine_max:structural_steel",
             "thickness": 1,
-            "subsystem": "subsystem.machine_max.engine"
+            "subsystem": "subsystem.machine_max.motor"
           },
           "FrontGlass": { // 挡风玻璃
             "id": "front_glass",
@@ -170,7 +175,7 @@
             "type": "machine_max:car_controller", //子系统类型
             "definition": "machine_max:kluo_car_controller",//子系统型号, 需要与子系统类型相匹配
             "engine_outputs": {
-              "engine_control": ["subsystem.machine_max.engine"]
+              "engine_control": ["subsystem.machine_max.motor"]
             },
             "wheel_outputs": {
               "wheel_control": [
@@ -199,9 +204,9 @@
               "handbrake": ["subpart", "vehicle"]
             }
           },
-          "subsystem.machine_max.engine": {
-            "type": "machine_max:engine", //电动机子系统, 低速下恒扭矩, 高速下恒功率
-            "definition": "machine_max:kluo_engine",//子系统型号, 需要与子系统类型相匹配
+          "subsystem.machine_max.motor": {
+            "type": "machine_max:motor", //电动机子系统, 低速下恒扭矩, 高速下恒功率
+            "definition": "machine_max:kluo_motor",//子系统型号, 需要与子系统类型相匹配
             "power_output": "subsystem.machine_max.gearbox", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
             "speed_outputs": { //(可选, 默认将引擎转速(rad/s)发至部件和载具的engine_speed频道)引擎转速信号输出频道及目标
               "engine_speed": ["subpart", "vehicle"]
@@ -219,8 +224,10 @@
             "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
             "definition": "machine_max:kluo_transmission", //子系统型号, 需要与子系统类型相匹配
             "power_outputs": { //动力输出目标及减速比
-              "subsystem.machine_max.left_back_wheel_driver": 1,
-              "subsystem.machine_max.right_back_wheel_driver": 1
+              "subsystem.machine_max.left_front_wheel_driver": 12,
+              "subsystem.machine_max.right_front_wheel_driver": 12,
+              "subsystem.machine_max.left_back_wheel_driver": 12,
+              "subsystem.machine_max.right_back_wheel_driver": 12
             }
           },
           "subsystem.machine_max.glove_box": {
@@ -264,12 +271,14 @@
             "definition": "machine_max:default_glass"
           },
           "subsystem.machine_max.left_front_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:beam_light",
+            "locator": "left_main_light"
           },
           "subsystem.machine_max.right_front_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:beam_light",
+            "locator": "right_main_light"
           },
           "subsystem.machine_max.left_back_light": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁

@@ -21,6 +21,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("key.machine_max.general.free_cam", "Free Camera");
         this.add("key.machine_max.general.interact", "Interact with Vehicle");
         this.add("key.machine_max.general.leave_vehicle", "Leave Vehicle");
+        this.add("key.machine_max.general.toggle_light", "Toggle Light");
         //Key names-Ground
         this.add("key.machine_max.ground.forward", "Forward");
         this.add("key.machine_max.ground.backward", "Backward");
