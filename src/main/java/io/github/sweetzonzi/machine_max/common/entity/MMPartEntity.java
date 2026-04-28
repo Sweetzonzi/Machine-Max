@@ -64,7 +64,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     public String subPartName;
     public AtomicReference<BoundingBox> boundingBox = new AtomicReference<>();
     public AtomicReference<Vector3f> bodyCenter = new AtomicReference<>();
-    private final Map<Entity, Vector3f> onBoardPositions = HashMap.newHashMap(1);
     private PhysicsGhostObject testGhost;
     @Getter
     private final Map<String, Object> variables = HashMap.newHashMap(1);
@@ -287,7 +286,6 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         super.addPassenger(passenger);
         if (subPart != null) {
             Vector3f relPos = MMMath.worldPointLocalPos(PhysicsHelperKt.toBVector3f(passenger.position()), subPart.body);
-            onBoardPositions.put(passenger, relPos); //记录登车位置（相对刚体）
         }
     }
 
@@ -350,23 +348,13 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         xzPositions.add(new Vec3(originalPos.x, 0, originalPos.z)); // 原始XZ位置
 
         // 邻位偏移（XZ平面）
-        double[] offsets = {0.5, 1.0, -0.5, -1.0};
-        for (double dx : offsets) {
-            for (double dz : offsets) {
-                if (dx == 0 && dz == 0) continue;
-                xzPositions.add(new Vec3(originalPos.x + dx, 0, originalPos.z + dz));
-            }
-        }
-
-        // 刚体周围位置（从刚体位置向外搜索）
-        if (subPart != null) {
-            Vec3 bodyPos = SparkMathKt.toVec3(subPart.getPosition());
-            double radius = 1.5;
-            int samples = 8;
+        double[] radius = {0.5, 1.0, 1.5, 2.0};
+        int samples = 8;
+        for (double r : radius) {
             for (int i = 0; i < samples; i++) {
                 double angle = 2 * Math.PI * i / samples;
-                double x = bodyPos.x + radius * Math.cos(angle);
-                double z = bodyPos.z + radius * Math.sin(angle);
+                double x = originalPos.x + r * Math.cos(angle);
+                double z = originalPos.z + r * Math.sin(angle);
                 xzPositions.add(new Vec3(x, 0, z));
             }
         }
@@ -391,10 +379,9 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
     @Override
     public @NotNull Vec3 getDismountLocationForPassenger(@NotNull LivingEntity passenger) {
-        if (subPart != null && onBoardPositions.containsKey(passenger)) { //优先使用记录的登车位置
-            Vec3 originalPos = SparkMathKt.toVec3(MMMath.relPointWorldPos(onBoardPositions.get(passenger), subPart.body));
+        if (subPart != null) {
+            Vec3 originalPos = passenger.getPosition(1);
             originalPos = originalPos.add(0, 0.1, 0); //防止陷地
-            onBoardPositions.remove(passenger); //移除登车位置记录
 
             // 1. 首先尝试原始位置，所有姿势
             for (Pose pose : passenger.getDismountPoses()) {

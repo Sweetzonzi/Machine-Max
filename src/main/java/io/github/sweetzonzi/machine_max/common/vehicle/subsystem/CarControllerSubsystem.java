@@ -371,7 +371,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
             float avgEngineSpeed;
             byte[] moveInput = this.moveInput;
             if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
-                if (moveInput[2] * speed > 0) {//加速行驶 Accelerate
+                if (moveInput[2] * speed > 0 || Math.abs(speed) < 1) {//加速行驶 Accelerate
                     actualThrottle = actualThrottle * 0.9f + moveInput[2] * 0.1f;
                     actualBrake = actualBrake * 0.8f + 0 * 0.2f;
                     avgEngineSpeed = calculateAvgSpeedAndControl();
@@ -624,7 +624,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
     protected float calculateEffectiveBrake(WheelDriverSubsystem wheel, float rawBrake) {
         float vehicleSpeed = Math.abs(this.speed);
         // 使用轮驱系统的ABS配置
-        if (!wheel.attr.staticAttribute.isAbsEnabled() || rawBrake <= 0 || vehicleSpeed < 0.5f) {
+        if (!wheel.attr.staticAttribute.isAbsEnabled() || rawBrake <= 0 || vehicleSpeed < 2f) {
             // 不使用ABS或刹车力为0或车速小于2m/s时，直接返回原始刹车力
             return rawBrake;
         }
