@@ -47,7 +47,7 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
             Codec.DOUBLE.optionalFieldOf("inertia", 10.0).forGetter(MotorSubsystemStaticAttr::getInertia),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(10.0, 0.1, 0.00005)).forGetter(MotorSubsystemStaticAttr::getDampingFactors),
             Codec.FLOAT.optionalFieldOf("generator_efficiency", 0.85f).forGetter(MotorSubsystemStaticAttr::getGeneratorEfficiency),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("motor_control", "move_control")).forGetter(MotorSubsystemStaticAttr::getThrottleInputKeys),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("motor_control", "engine_control", "move_control")).forGetter(MotorSubsystemStaticAttr::getThrottleInputKeys),
             MotorSoundAttr.CODEC.optionalFieldOf("sounds", MotorSoundAttr.DEFAULT).forGetter(MotorSubsystemStaticAttr::getSounds)
     ).apply(instance, MotorSubsystemStaticAttr::new));
     public static final float baseRPM = 400.0f;

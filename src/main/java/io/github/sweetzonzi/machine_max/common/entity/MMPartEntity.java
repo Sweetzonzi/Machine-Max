@@ -327,7 +327,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     private boolean isDismountLocationValid(Vec3 position, LivingEntity passenger, Pose pose) {
         // 1. 检查地形可通过性
         AABB aabb = passenger.getLocalBoundsForPose(pose);
-        if (!DismountHelper.canDismountTo(this.level(), passenger, aabb.move(position.subtract(passenger.position())))) {
+        if (!DismountHelper.canDismountTo(this.level(), passenger, aabb.move(position))) {
             return false;
         }
         // 2. 检查刚体碰撞

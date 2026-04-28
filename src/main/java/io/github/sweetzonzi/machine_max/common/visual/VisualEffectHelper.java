@@ -2,7 +2,9 @@ package io.github.sweetzonzi.machine_max.common.visual;
 
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.LightingSubsystem;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -14,6 +16,7 @@ public class VisualEffectHelper {
     public static PartAnimatable partToPlace = null;
     public static RenderableBoundingBox boundingBox = null;
     public static ConcurrentMap<AbstractConnector, PhysicsRigidBody> attachPoints = new ConcurrentHashMap<>();
+    public static Set<LightingSubsystem> lightingSubsystems = ConcurrentHashMap.newKeySet();
     /**
      * 载具蓝图/装配体放置预览的3D投影动画体，用于显示即将放置的载具模型。
      * <p>与{@link #boundingBox}配合使用，提供更直观的放置预览。</p>

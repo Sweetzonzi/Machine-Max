@@ -51,10 +51,10 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public final ConcurrentMap<String, Float> resourceOutputs = new ConcurrentHashMap<>();
 
     protected static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(AbstractSubsystem.class, EntityDataSerializers.FLOAT);
+    protected static final EntityDataAccessor<Boolean> DATA_ACTIVE_ID = SynchedEntityData.defineId(AbstractSubsystem.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Boolean> DATA_DESTROYED_ID = SynchedEntityData.defineId(AbstractSubsystem.class, EntityDataSerializers.BOOLEAN);
     protected final SynchedEntityData synchedData;
 
-    public volatile boolean active = true;
-    public volatile boolean destroyed = false;
     public int tickCount = 0;
     public int physicsTickCount = 0;
 
@@ -64,6 +64,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
         this.name = name;
         SynchedEntityData.Builder syncheddata$builder = new SynchedEntityData.Builder(this);
         syncheddata$builder.define(DATA_DURABILITY_ID, attr.getBasicDurability());
+        syncheddata$builder.define(DATA_ACTIVE_ID, true);
+        syncheddata$builder.define(DATA_DESTROYED_ID, false);
         this.defineSynchedData(syncheddata$builder);
         this.synchedData = syncheddata$builder.build();
         this.resetSignalOutputs();
@@ -71,12 +73,14 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     public void onTick() {
         tickCount++;
-        if (!this.isDestroyed() && this.getDurability() <= 0) {
-            //摧毁耐久度归零的子系统
-            this.onDestroyed();
-        } else if (this.isDestroyed() && !getOwner().getSubPart().isDestroyed() && this.getDurability() >= 0.3 * getMaxDurability()) {
-            //重新激活修复到一定程度的子系统
-            this.destroyed = false;
+        if (!getLevel().isClientSide()) {
+            if (!this.isDestroyed() && this.getDurability() <= 0) {
+                //摧毁耐久度归零的子系统
+                this.onDestroyed();
+            } else if (this.isDestroyed() && !getOwner().getSubPart().isDestroyed() && this.getDurability() >= 0.3 * getMaxDurability()) {
+                //重新激活修复到一定程度的子系统
+                synchedData.set(DATA_DESTROYED_ID, false);
+            }
         }
         if(!getSubPart().getLevel().isClientSide()) syncToClient();
     }
@@ -157,7 +161,11 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public void onDestroyed() {
-        this.destroyed = true;
+        synchedData.set(DATA_DESTROYED_ID, true);
+    }
+
+    public boolean isDestroyed() {
+        return synchedData.get(DATA_DESTROYED_ID);
     }
 
     @Override
@@ -184,19 +192,19 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     public boolean isActive() {
-        return active
+        return synchedData.get(DATA_ACTIVE_ID)
                 && !this.isDestroyed()
                 && !getOwner().getSubPart().isDestroyed()
                 && getSubPart().part.getAssemblingProgress() >= getSubPart().part.type.getFunctionalThreshold();
     }
 
     public void setActive(boolean active) {
-        if (active && !this.active) {
-            this.active = true;
-            this.onActive();
-        } else if (!active && this.active) {
-            this.active = false;
-            this.onDisabled();
+        if (active && !synchedData.get(DATA_ACTIVE_ID)) {
+            synchedData.set(DATA_ACTIVE_ID, true);
+            if (!getLevel().isClientSide()) this.onActive();
+        } else if (!active && synchedData.get(DATA_ACTIVE_ID)) {
+            synchedData.set(DATA_ACTIVE_ID, false);
+            if (!getLevel().isClientSide()) this.onDisabled();
         }
     }
 
@@ -220,7 +228,16 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     public void onSyncedDataUpdated(@NotNull List<SynchedEntityData.DataValue<?>> newData) {}
 
     @Override
-    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {}
+    public void onSyncedDataUpdated(@NotNull EntityDataAccessor<?> dataAccessor) {
+        if (getLevel().isClientSide()) {
+            if (dataAccessor.equals(DATA_ACTIVE_ID)) {
+                if (synchedData.get(DATA_ACTIVE_ID)) this.onActive();
+                else this.onDisabled();
+            } else if (dataAccessor.equals(DATA_DESTROYED_ID)) {
+                if (synchedData.get(DATA_DESTROYED_ID)) this.onDestroyed();
+            }
+        }
+    }
 
     protected void defineSynchedData(SynchedEntityData.Builder builder){}
 

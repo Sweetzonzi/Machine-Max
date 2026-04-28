@@ -21,6 +21,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.machine_max.general.free_cam", "自由视角");
         this.add("key.machine_max.general.interact", "交互");
         this.add("key.machine_max.general.leave_vehicle", "离开载具");
+        this.add("key.machine_max.general.toggle_light", "灯光开关");
         // 按键名称-地面载具
         this.add("key.machine_max.ground.forward", "前进");
         this.add("key.machine_max.ground.backward", "后退");

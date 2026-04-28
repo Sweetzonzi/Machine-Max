@@ -7,6 +7,7 @@ public enum KeyInputMapping {
     FREE_CAM(0),
     INTERACT(1),
     LEAVE_VEHICLE(2),
+    TOGGLE_LIGHT(3),
 
     CLUTCH(101),
     UP_SHIFT(102),

@@ -14,19 +14,91 @@
 					"position": [0, 0, "-1.0*vehicle.get('brake')"]
 				},
 				"PointerArmor": {
-					"rotation": {
-						"0.0": [0, 0, "-225*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
-					}
+					"rotation": [0, 0, "-225*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]
 				},
 				"PointerFuel": {
-					"rotation": {
-						"0.0": [0, 0, 180]
-					}
+					"rotation": [0, 0, 180]
 				},
 				"PointerSpeed": {
-					"rotation": {
-						"0.0": [0, 0, "-225*(math.abs(vehicle.get('vehicle_speed')??0)/33)"]
-					}
+					"rotation": [0, 0, "-225*(math.abs(vehicle.get('vehicle_speed')??0)/33)"]
+				},
+				"FrontGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.front_glass')"
+				},
+				"ysmGlowTrunkRightLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_light')"
+				},
+				"ysmGlowTrunkLeftLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_back_light')"
+				},
+				"LeftBackGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_back_glass')"
+				},
+				"RightBackGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_glass')"
+				},
+				"ysmGlowLeftRearLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_back_light')"
+				},
+				"ysmGlowRightRearLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_back_light')"
+				},
+				"ysmGlowLeftFrontHeadLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_front_light') && !subpart.has_connector('connector.machine_max.front_light_left')"
+				},
+				"ysmGlowRightFrontHeadLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_front_light') && !subpart.has_connector('connector.machine_max.front_light_right')"
+				},
+				"LeftFrontHeadLight": {
+					"scale": "!subpart.has_connector('connector.machine_max.front_light_left')"
+				},
+				"RightFrontHeadLight": {
+					"scale": "!subpart.has_connector('connector.machine_max.front_light_right')"
+				},
+				"LeftFrontGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glass')"
+				},
+				"RightFrontGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glass')"
+				},
+				"BackGlass": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glass')"
+				},
+				"ysmGlowLeftFogLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_front_fog_light')"
+				},
+				"ysmGlowRightFogLight": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_front_fog_light')"
+				},
+				"RightDoorMirror": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')"
+				},
+				"LeftDoorMirror": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')"
+				},
+				"ysmGlowGtRightMain": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_main_light')"
+				},
+				"ysmGlowGtLeftMain": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_main_light')"
+				},
+				"ysmGlowGt1": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.light_1')"
+				},
+				"ysmGlowGt2": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.light_2')"
+				},
+				"ysmGlowGt3": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.light_3')"
+				},
+				"ysmGlowGt4": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.light_4')"
+				},
+				"ysmGlowGtLeftFog": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.left_fog_light')"
+				},
+				"ysmGlowGtRightFog": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.right_fog_light')"
 				}
 			}
 		}

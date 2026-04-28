@@ -54,7 +54,7 @@ public class ItemStorageSubsystem extends BasicSubsystem implements MenuProvider
     @Override
     public void onInteract(LivingEntity entity) {
         super.onInteract(entity);
-        if (entity instanceof ServerPlayer player && this.active) {
+        if (entity instanceof ServerPlayer player && isActive()) {
             player.openMenu(this, (buf) -> {
                 buf.writeInt(container.getContainerSize());
                 buf.writeInt(attr.staticAttribute.rows);

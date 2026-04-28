@@ -45,6 +45,7 @@ public class RawInputHandler {
     static byte[] moveInputs = new byte[6];//x,y,z方向的平移和绕x,y,z轴的旋转输入
     static byte[] moveInputConflicts = new byte[6];//相应轴向上的输入冲突
     public static boolean freeCam = false;//自由视角是否激活
+    public static boolean vehicleLightsOn = false;//灯光是否开启
 
     static int trans_x_input = 0;
     static int trans_y_input = 0;
@@ -256,6 +257,13 @@ public class RawInputHandler {
                     .OnKeyUp(() -> {
                         if (Minecraft.getInstance().player instanceof Player player && player.getVehicle() != null)
                             player.displayClientMessage(Component.empty(), true);
+                    });
+
+            //灯光开关
+            new KeyHooks.EVENT(KeyBinding.generalToggleLightKey)
+                    .OnKeyDown(() -> {
+                        vehicleLightsOn = !vehicleLightsOn;
+                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_LIGHT.getValue(), vehicleLightsOn ? 1 : 0));
                     });
 
         /*

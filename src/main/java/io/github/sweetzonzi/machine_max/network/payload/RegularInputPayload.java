@@ -4,7 +4,11 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
+import io.github.sweetzonzi.machine_max.common.vehicle.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.LightingSubsystem;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
@@ -69,6 +73,11 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                     } else player.stopRiding();//一般载具实体的处理方式
                 }
                 break;
+            case TOGGLE_LIGHT://灯光开关
+                if (!level.isClientSide()) {
+                    handleToggleLight(player, payload.tick_count() == 1);
+                }
+                break;
             /*
              * 地面载具
              */
@@ -116,6 +125,21 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
             AbstractControllableSubsystem subsystem = ((IEntityMixin) player).machine_Max$getControllingSubsystem();
             if (subsystem != null) {
                 subsystem.setRegularInputSignal(key, tickCount);
+            }
+        }
+    }
+
+    private static void handleToggleLight(Player player, boolean on) {
+        if (player.getVehicle() instanceof MMPartEntity) {
+            AbstractControllableSubsystem subsystem = ((IEntityMixin) player).machine_Max$getControllingSubsystem();
+            if (subsystem != null) {
+                ISubsystemHost host = subsystem.getOwner();
+                SubsystemController controller = host.getSubsystemController();
+                for (AbstractSubsystem sub : controller.getAllSubsystems()) {
+                    if (sub instanceof LightingSubsystem light) {
+                        light.setActive(on);
+                    }
+                }
             }
         }
     }
