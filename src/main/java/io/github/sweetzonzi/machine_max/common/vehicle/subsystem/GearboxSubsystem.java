@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.GearboxSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
@@ -91,7 +92,7 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
         float avg = 0;
         for (float s : feedbacks.values()) avg += s;
         avg /= feedbacks.size();
-        return (float) (avg * gearRatios[getCurrentGear()]);
+        return (float) (avg * gearRatios[getCurrentGear()]); // 减速比
     }
 
     @Override
@@ -129,7 +130,7 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
     }
 
     private IMechPowerConsumer resolveEnergyTarget(String targetName) {
-        if (getSubPart().subsystems.containsKey(targetName)) {
+        if (getOwner().getSubsystems().containsKey(targetName)) {
             var sub = getSubPart().subsystems.get(targetName);
             if (sub instanceof IMechPowerConsumer consumer) return consumer;
         }

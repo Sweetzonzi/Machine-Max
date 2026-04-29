@@ -44,7 +44,8 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
 
     private final PDController coupleTorquePD;
 
-    private final Map<String, IMechPowerConsumer> energyTargets = new HashMap<>();
+    @Getter
+    private final Map<String, IMechPowerConsumer> mechPowerTargets = new HashMap<>();
 
     public MotorSubsystem(ISubsystemHost owner, String name, MotorSubsystemAttr attr) {
         super(owner, name, attr);
@@ -113,7 +114,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
                 count++;
             }
             if (count > 0) avgFeedback /= count;
-            avgFeedback = avgFeedback;
+            avgFeedback = -avgFeedback;
             double speedDiff = rotSpeed + avgFeedback;
             double coupleTorque = Math.abs(speedDiff) < 5 ? Math.clamp(
                     this.isActive() ? this.coupleTorquePD.step(0, Math.abs(speedDiff) < 10 ? speedDiff * speedDiff / 10 : speedDiff) : 0,
@@ -136,24 +137,19 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
     }
 
     @Override
-    public Map<String, IMechPowerConsumer> getMechPowerTargets() {
-        return energyTargets;
-    }
-
-    @Override
     public void rebuildMechPowerTargets() {
-        energyTargets.clear();
+        mechPowerTargets.clear();
         String target = attr.getPowerOutputTarget();
         if (target == null || target.isEmpty()) return;
         IMechPowerConsumer consumer = resolveEnergyTarget(target);
         if (consumer != null) {
-            energyTargets.put(target, consumer);
+            mechPowerTargets.put(target, consumer);
         }
     }
 
     private IMechPowerConsumer resolveEnergyTarget(String targetName) {
-        if (getSubPart().subsystems.containsKey(targetName)) {
-            var sub = getSubPart().subsystems.get(targetName);
+        if (getOwner().getSubsystems().containsKey(targetName)) {
+            var sub = getOwner().getSubsystems().get(targetName);
             if (sub instanceof IMechPowerConsumer consumer) return consumer;
         }
         if (getSubPart().connectors.containsKey(targetName)) {

@@ -150,7 +150,7 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
             Vector3f relativeAngle = getRelativeAngle();
             Vector3f relativeAngularVel = getRelativeAngularVel();
             for (String signalKey : attr.rollingSpeedOutputs.keySet())//转动速度信号
-                sendSignalToAllTargets(signalKey, relativeAngularVel.get(1));
+                sendSignalToAllTargets(signalKey, relativeAngularVel.get(0));
             for (String signalKey : attr.steeringAngleOutputs.keySet())//转向位置信号
                 sendSignalToAllTargets(signalKey, -relativeAngle.get(1));
             feedbackSpeed = relativeAngularVel.get(0);//反馈转动速度信号

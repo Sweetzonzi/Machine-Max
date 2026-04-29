@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.TransmissionSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.TransmissionSubsystemStaticAttr;
@@ -50,7 +51,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
         var feedbacks = collectFeedbackSpeeds();
         if (feedbacks.isEmpty()) return;
         for (float speed : feedbacks.values()) {
-            avgFeedBackSpeed -= speed;
+            avgFeedBackSpeed += speed;
         }
         avgFeedBackSpeed /= feedbacks.size();
     }
@@ -118,8 +119,8 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
     }
 
     private IMechPowerConsumer resolveEnergyTarget(String targetName) {
-        if (getSubPart().subsystems.containsKey(targetName)) {
-            var sub = getSubPart().subsystems.get(targetName);
+        if (getOwner().getSubsystems().containsKey(targetName)) {
+            var sub = getOwner().getSubsystems().get(targetName);
             if (sub instanceof IMechPowerConsumer consumer) return consumer;
         }
         if (getSubPart().connectors.containsKey(targetName)) {
@@ -142,7 +143,6 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
             pushMechPower(MechPower.EMPTY);
             return;
         }
-//        totalPower *= Math.signum(inputSpeed);//根据速度方向调整总功率正负
 
         if (diffLock) {//差速锁模式，限制输出端转速相等
             distributeDiffLock(totalPower, inputSpeed, feedbacks);
@@ -151,6 +151,12 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
         }
     }
 
+    /**
+     * 差速锁保证输出端转速相同，按转速差异分配功率
+     * @param totalPower 输入功率
+     * @param inputSpeed 输入转速
+     * @param feedbacks 输出端反馈转速
+     */
     private void distributeDiffLock(float totalPower, float inputSpeed, Map<String, Float> feedbacks) {
         float totalWeight = 0f;
         Map<String, Float> weights = new HashMap<>();
@@ -185,6 +191,12 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
         pushMechPower(outputs);
     }
 
+    /**
+     * 差速器保证输出端扭矩相同，总功率和等于输入功率
+     * @param totalPower 输入功率
+     * @param inputSpeed 输入转速
+     * @param feedbacks 输出端反馈转速
+     */
     private void distributeOpenDiff(float totalPower, float inputSpeed, Map<String, Float> feedbacks) {
         if (totalPower == 0f) {
             pushMechPower(MechPower.EMPTY);
@@ -208,6 +220,22 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
             outputs.put(name, new MechPower(power, receiverSpeed / gearRatio));
         }
         pushMechPower(outputs);
+    }
+
+    /**
+     * 收集所有输出端反馈转速，应用输出端减速比，使其能够直接与输入端比较
+     * @return 输出端反馈转速
+     */
+    @Override
+    public Map<String, Float> collectFeedbackSpeeds() {
+        Map<String, Float> result = new HashMap<>();
+        for (var entry : getMechPowerTargets().entrySet()) {
+            var consumer = entry.getValue();
+            if (consumer != null && consumer.isPowerPathConnected(getName())) {
+                result.put(entry.getKey(), consumer.getFeedbackSpeed() * attr.getPowerOutputs().get(entry.getKey()));
+            }
+        }
+        return result;
     }
 
     @Override

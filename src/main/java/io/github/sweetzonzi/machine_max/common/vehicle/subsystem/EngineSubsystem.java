@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import cn.solarmoon.spark_core.sound.IMultiChannelSoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.EngineSubsystemAttr;
@@ -122,6 +123,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
                 count++;
             }
             if (count > 0) avgFeedback /= count;
+            avgFeedback = -avgFeedback;
             double speedDiff = rotSpeed + avgFeedback;
             double coupleTorque = Math.abs(speedDiff) < 5 ? Math.clamp(
                     this.isActive() ? this.coupleTorquePD.step(0, Math.abs(speedDiff) < 10 ? speedDiff * speedDiff / 10 : speedDiff) : 0,
@@ -156,8 +158,8 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     }
 
     private IMechPowerConsumer resolveEnergyTarget(String targetName) {
-        if (getSubPart().subsystems.containsKey(targetName)) {
-            var sub = getSubPart().subsystems.get(targetName);
+        if (getOwner().getSubsystems().containsKey(targetName)) {
+            var sub = getOwner().getSubsystems().get(targetName);
             if (sub instanceof IMechPowerConsumer consumer) return consumer;
         }
         if (getSubPart().connectors.containsKey(targetName)) {
