@@ -41,6 +41,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
+import io.github.sweetzonzi.machine_max.common.vehicle.collision.CollisionHandler;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.EnergyGrid;
@@ -129,8 +130,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final float stepHeight;
     public Vec3 projectedArea = null;
     public float bodyMinY = -99999;
-    private final HashSet<BlockPos> climbableBlocks = new HashSet<>();
-    private final LocalHeightField heightField = new LocalHeightField(2);//爬坡辅助用高度场
+    public final HashSet<BlockPos> climbableBlocks = new HashSet<>();
+    public final LocalHeightField heightField = new LocalHeightField(2);//爬坡辅助用高度场
+    public final CollisionHandler collisionHandler;
 
     public SubPart(String name, Part part, SubPartAttr attr) {
         super(part.level, attr.getCollisionShape(part.variant), attr.mass);
@@ -169,22 +171,17 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
         this.stepHeight = attr.stepHeight;
         this.projectedArea = attr.projectedArea;
+        this.collisionHandler = new CollisionHandler(this);
         //各类回调
-        PhysicsBodyExtensionKt.onCollidePre(this.body, event -> {
-            var o1 = event.getO1();
-            var o2 = event.getO2();
-            var point1 = event.getO1Point();
-            var point2 = event.getO2Point();
-            long manifoldPointId = point1.getId();
-            return this.onPreContact(o1, o2, point1, point2, manifoldPointId);
-        });
+        PhysicsBodyExtensionKt.onCollidePre(this.body, event -> this.collisionHandler.onPreContact(
+                event.getO1(), event.getO2(),
+                event.getO1Point(), event.getO2Point(),
+                event.getO1Point().getId()));
         PhysicsBodyExtensionKt.onCollideProcessed(this.body, event -> {
-            var o1 = event.getO1();
-            var o2 = event.getO2();
-            var point1 = event.getO1Point();
-            var point2 = event.getO2Point();
-            long manifoldPointId = point1.getId();
-            this.onContactProcessed(o1, o2, point1, point2, manifoldPointId);
+            this.collisionHandler.onContactProcessed(
+                    event.getO1(), event.getO2(),
+                    event.getO1Point(), event.getO2Point(),
+                    event.getO1Point().getId());
             return null;
         });
     }
@@ -200,6 +197,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     @Override
     public void destroy() {
+        collisionHandler.effectManager.stopAll();
         super.destroy();
         subsystems.forEach((name, subsystem) -> subsystem.onDetach());
         subsystems.clear();
@@ -236,553 +234,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public void refreshPartEntity() {
         this.entity = new MMPartEntity(getLevel(), this);
         getLevel().addFreshEntity(this.entity);
-    }
-
-    public boolean onPreContact(PhysicsCollisionObject o1, @NotNull PhysicsCollisionObject o2,
-                                ManifoldPoint point1, ManifoldPoint point2,
-                                long manifoldPointId) {
-        if (level.isClientSide() && !isActive()) return false; // 忽略非激活客户端刚体
-        PhysicsRigidBody other = (PhysicsRigidBody) o2;
-        Vector3f normal = new Vector3f();
-        int hitBoxIndex;
-        Vector3f worldContactPoint = new Vector3f();
-        hitBoxIndex = point1.getTriangleIndex();
-        point1.getPositionWorld(worldContactPoint);
-        if (!isEffectiveContact(hitBoxIndex, worldContactPoint, true)) {
-            ManifoldPoints.setAppliedImpulse(manifoldPointId, 0);
-            ManifoldPoints.setDistance1(manifoldPointId, 500);
-            return false; // 忽略无效碰撞
-        }
-        //获取世界坐标下的碰撞点法线，由另一物体指向自身
-        point2.getNormalWorld(normal);
-        if (other.getCollisionGroup() == CollisionGroups.TERRAIN) {
-            //与方块碰撞时
-            return this.onPreCollideWithTerrain(other, normal, worldContactPoint, hitBoxIndex);
-        } else return true;
-    }
-
-
-    protected boolean onPreCollideWithTerrain(
-            PhysicsRigidBody other,
-            Vector3f normal,
-            Vector3f worldContactPoint,
-            int hitBoxIndex) {
-        var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
-        if (otherOwner instanceof PhysicsChunkSection terrain) {
-            other.shouldShowDebugBoxWhenNonColldeWith = true;
-            //基本信息获取
-            BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, 0);
-            //若是需要攀爬辅助处理的方块
-            if (climbableBlocks.contains(blockPos)) {
-                Vector3f pos = body.getPhysicsLocation(null);
-                float radius = 0;
-                if (!attr.climbAssist)
-                    pos.set(worldContactPoint);
-                else if (isWheelSurface(hitBoxIndex))
-                    radius = getWheelRadius(hitBoxIndex);
-                var result = heightField.solveContact(pos, radius, worldContactPoint);
-                // 有限负穿透代表尚未接触高度场，无碰撞
-                if (result.penetration() > 0 && result.normal().y < 0.999f) { // 正穿透代表需要修正为虚拟高度场
-                    return true;
-                } else return !(result.penetration() <= 0) || !Float.isFinite(result.penetration());
-            } else return true;
-        } else if (CreateCompat.isLoaded() && CreateCollisionResolver.isCreateOwner(otherOwner)) {
-            // Create 装置全部视为有效碰撞
-            return true;
-        } else return false;
-    }
-
-    public void onContactProcessed(PhysicsCollisionObject o1, @NotNull PhysicsCollisionObject o2,
-                                   ManifoldPoint point1, ManifoldPoint point2,
-                                   long manifoldPointId) {
-        if (level.isClientSide() && !isActive()) return; // 忽略非激活客户端刚体
-        PhysicsRigidBody other = (PhysicsRigidBody) o2;
-        var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
-        Vector3f normal = new Vector3f();
-        int hitBoxIndex, otherHitBoxIndex;
-        Vector3f worldContactPoint = new Vector3f();
-        Vector3f localContactPoint = new Vector3f(), otherLocalContactPoint = new Vector3f();
-        hitBoxIndex = point1.getTriangleIndex();
-        otherHitBoxIndex = point2.getTriangleIndex();
-        point1.getPositionWorld(worldContactPoint);
-        point1.getLocalPoint(localContactPoint);
-        point2.getLocalPoint(otherLocalContactPoint);
-        if (!isEffectiveContact(hitBoxIndex, worldContactPoint, true)) {
-            ManifoldPoints.setAppliedImpulse(manifoldPointId, 0);
-            ManifoldPoints.setDistance1(manifoldPointId, 500);
-            return; // 忽略无效碰撞
-        }
-        //获取世界坐标下的碰撞点法线，由另一物体指向自身
-        point2.getNormalWorld(normal);
-        //计算相对接触速度
-        Vector3f contactVel = MMMath.relPointWorldVel(
-                localContactPoint,
-                body.getPhysicsRotation(null),
-                body.getLinearVelocity(null),
-                body.getAngularVelocity(null));
-        if (o2 instanceof PhysicsRigidBody && !other.isStatic())
-            contactVel.subtractLocal(MMMath.relPointWorldVel(otherLocalContactPoint, other));
-        //计算碰撞角度（法线与速度方向的夹角）
-        float impactAngle = (float) Math.toDegrees(Math.acos(normal.dot(contactVel.normalize())));
-        if (Float.isNaN(impactAngle)) impactAngle = 0; // 处理NaN情况
-        //获取参与碰撞的碰撞箱
-        HitBox hitBox = this.getHitBox(hitBoxIndex);
-        //根据实际接触部位重设摩擦系数
-        Vector3f friction = PhysicsHelperKt.toBVector3f(hitBox.attr.friction());
-        if (!isWheel(hitBoxIndex))
-            if (!friction.equals(body.getAnisotropicFriction(null)))
-                body.setAnisotropicFriction(friction, AfMode.basic); // 非轮子部件重设摩擦系数，轮胎另行处理逻辑
-            else if (!friction.equals(Vector3f.UNIT_XYZ))
-                body.setAnisotropicFriction(Vector3f.UNIT_XYZ, AfMode.none);
-        if (hitBox.attr.rollingFriction() != body.getRollingFriction())
-            body.setRollingFriction(hitBox.attr.rollingFriction());
-        if (hitBox.attr.rollingFriction() != body.getSpinningFriction())
-            body.setSpinningFriction(hitBox.attr.spinningFriction());
-        if (hitBox.attr.restitution() != body.getRestitution())
-            body.setRestitution(hitBox.attr.restitution());
-        if (other.getCollisionGroup() == CollisionGroups.TERRAIN) {
-            //与方块碰撞时
-            this.onCollideWithTerrain(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, point1, point2, manifoldPointId);
-        } else if (other.getCollisionGroup() == CollisionGroups.PHYSICS_BODY) {
-            //与另一刚体碰撞时
-            this.onCollideWithRigid(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
-        } else if (other.getCollisionGroup() == CollisionGroups.PAWN) {
-            //与实体碰撞时
-            if (otherOwner instanceof Entity contactEntity && !(contactEntity instanceof CollisionObjectEntity)) {
-                onCollideWithEntity(other, normal, worldContactPoint, localContactPoint, otherLocalContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
-            }
-        }
-    }
-
-    Vector3f tmpFront = new Vector3f();
-    Vector3f tmpSide = new Vector3f();
-
-    protected void onCollideWithTerrain(
-            PhysicsRigidBody other,
-            Vector3f normal,
-            Vector3f worldContactPoint,
-            Vector3f localContactPoint, Vector3f otherLocalContactPoint,
-            Vector3f contactVel,
-            int hitBoxIndex, int otherHitBoxIndex,
-            float impactAngle,
-            ManifoldPoint point1, ManifoldPoint point2,
-            long manifoldPointId) {
-        var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
-        if (otherOwner instanceof PhysicsChunkSection terrain) {
-            other.shouldShowDebugBoxWhenNonColldeWith = true;
-            //基本信息获取
-            var hitBox = this.getHitBox(hitBoxIndex);
-            var vel = this.getLinearVelocity();
-            BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, 0);
-            BlockPos relBlockPos = blockPos.subtract(terrain.getSectionPos().origin());
-            if (relBlockPos.getX() < 0 || relBlockPos.getY() < 0 || relBlockPos.getZ() < 0 ||
-                    relBlockPos.getX() > 15 || relBlockPos.getY() > 15 || relBlockPos.getZ() > 15) {
-                ManifoldPoints.setDistance1(manifoldPointId, 500);//阻止接触约束计算
-//                MachineMax.LOGGER.warn("接触点超出区块边界: {}", blockPos);
-                return;//若方块不属于本区块，则不处理碰撞
-            }
-            SectionSnapshot.BlockSnapshot block = terrain.getBlockSnapshot(blockPos);
-            if (block == null || terrain.isRemoved(blockPos)) {
-                ManifoldPoints.setDistance1(manifoldPointId, 500);//阻止接触约束计算
-                return;//若方块已被移除，则不处理碰撞
-            }
-            BlockState blockState = block.getState();
-            float blockFriction = block.getFriction();
-            float blockRollingFriction = block.getRollingFriction();
-            float blockRestitution = block.getRestitution();
-            float blockSlip = block.getSlip(); // 湿滑系数，0~1，0表示完全干燥，1表示完全湿滑
-            //等效质量计算，考虑连接部件的影响
-            float partMass = this.getEquivalentMass();
-            //摩擦力修正相关计算
-            float normalContactVel = contactVel.dot(normal); // 法线方向上的接触速度
-            Vector3f slipVel = contactVel.subtract(normal.mult(normalContactVel)); // 滑移速度
-            Vector3f wheelVel = MMMath.relPointExtraVelFromAngularVel(localContactPoint, body.getPhysicsRotation(null), body.getAngularVelocity(null));
-            //获取前向和侧向
-            normal.cross(getRightVector(), tmpFront);
-            tmpFront.cross(normal, tmpSide);
-            float slipAngle = (float) Math.atan2(tmpSide.dot(slipVel), tmpFront.dot(slipVel)); // 滑移角(rad)
-            float moveVelLen = body.getLinearVelocity(null).length();
-            float wheelVelLen = Math.abs(wheelVel.dot(tmpFront));
-            float slipRatio = Math.abs(moveVelLen - wheelVelLen) / (Math.max(moveVelLen, wheelVelLen) + 0.1f); // 滑移率
-            float slipVelLen = Math.max(slipVel.length(), 0.001f);
-            if (!level.isClientSide()) { // 服务端处理摩擦力修正
-                float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation()); // 有效湿滑强度
-                float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * Math.abs(slipRatio) * 0.7f); // 湿滑衰减
-                if (isWheel(hitBoxIndex) && isWheelSurface(hitBoxIndex)) { // 轮胎特殊处理
-                    var slipCurve = hitBox.attr.getEffectiveMaterial().slipCurve();
-                    var longitudinalCurve = slipCurve.longitudinal();
-                    var lateralCurve = slipCurve.lateral();
-                    float angleDeg = (float) Math.toDegrees(Math.abs(slipAngle));
-                    double muFront = hitBox.getMuFront()
-                            * calculateSlipScale(
-                            Math.abs(slipRatio),
-                            longitudinalCurve.peakSlipRatio(),
-                            longitudinalCurve.baseScale(),
-                            longitudinalCurve.peakScale(),
-                            longitudinalCurve.kineticScale()
-                    );
-                    double muSide = hitBox.getMuSide()
-                            * calculateSlipScale(
-                            angleDeg / 90,
-                            lateralCurve.peakAngleDeg(),
-                            lateralCurve.kineticAngleDeg(),
-                            lateralCurve.baseScale(),
-                            lateralCurve.peakScale(),
-                            lateralCurve.kineticScale()
-                    );
-                    // 根据摩擦方向调整摩擦系数和方向
-                    var vx = slipVel.dot(tmpFront);
-                    var vy = slipVel.dot(tmpSide);
-                    var forceVecX = tmpFront.mult((float) (muFront * (vx / slipVelLen)));
-                    var forceVecY = tmpSide.mult((float) (muSide * (vy / slipVelLen)));
-                    var totalFrictionVec = forceVecX.add(forceVecY);
-                    var muEff = totalFrictionVec.length();
-                    var finalDir = totalFrictionVec.mult(1 / muEff);
-                    // 重设摩擦方向
-                    ManifoldPoints.setLateralFrictionDir1(manifoldPointId, finalDir);
-                    ManifoldPoints.setLateralFrictionDir2(manifoldPointId, normal.cross(finalDir));
-                    // 重设摩擦系数
-                    ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * muEff * blockFriction * wetFactor));
-                } else { // 一般物体直接重设摩擦系数
-                    ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * blockFriction * wetFactor));
-                }
-                ManifoldPoints.setCombinedRollingFriction(manifoldPointId, Math.max(0f, body.getRollingFriction() * blockRollingFriction));
-            }
-            //若是需要攀爬辅助处理的方块
-            if (climbableBlocks.contains(blockPos)) {
-                ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);
-                ManifoldPoints.setAppliedImpulseLateral1(manifoldPointId, 0f);
-                ManifoldPoints.setAppliedImpulseLateral2(manifoldPointId, 0f);
-                //重设碰撞法线方向
-                normal = point1.getIndex() == 0 ? Vector3f.UNIT_Y : Vector3f.UNIT_Y.negate();
-                ManifoldPoints.setNormalWorldOnB(manifoldPointId, normal);
-                Vector3f pos = body.getPhysicsLocation(null);
-                float radius = 0;
-                if (!attr.climbAssist)
-                    pos.set(worldContactPoint);
-                else if (isWheelSurface(hitBoxIndex))
-                    radius = getWheelRadius(hitBoxIndex);
-                var result = heightField.solveContact(pos, radius, worldContactPoint);
-                if (result.penetration() > 0 && result.normal().y < 0.999f) { // 正穿透代表需要修正为虚拟高度场
-                    ManifoldPoints.setDistance1(manifoldPointId, Math.min(-result.penetration(), -0.01f));
-                    ManifoldPoints.setNormalWorldOnB(manifoldPointId, point1.getIndex() == 0 ? result.normal() : result.normal().negate());
-                    ManifoldPoints.setPositionWorldOnA(manifoldPointId, result.contact());
-                    ManifoldPoints.setPositionWorldOnB(manifoldPointId, result.contact());
-                    ManifoldPoints.setCombinedRestitution(manifoldPointId, 0f);
-                    // 重设摩擦方向，确保摩擦力能够帮助爬坡
-                    Vector3f slipVelNorm = slipVel.subtract(result.normal().mult(slipVel.dot(normal))).normalize();
-                    ManifoldPoints.setLateralFrictionDir1(manifoldPointId, slipVelNorm);
-                    ManifoldPoints.setLateralFrictionDir2(manifoldPointId, normal.cross(slipVelNorm));
-                    return;
-                } else if (result.penetration() <= 0 && Float.isFinite(result.penetration())) { // 有限负穿透代表尚未接触高度场，无碰撞
-                    ManifoldPoints.setDistance1(manifoldPointId, 5000f);
-                    ManifoldPoints.setCombinedRestitution(manifoldPointId, 0f);
-                    ManifoldPoints.setCombinedFriction(manifoldPointId, 0f);
-                    return;
-                }
-            }
-            //调用子系统碰撞回调
-            if (hitBox.subsystem != null) {
-                hitBox.subsystem.onCollideWithBlock(
-                        this.body, other, blockPos, blockState, contactVel, normal, worldContactPoint, impactAngle, hitBox, manifoldPointId
-                );
-                if (terrain.isRemoved(blockPos)) {
-                    ManifoldPoints.setDistance1(manifoldPointId, 500);//阻止接触约束计算
-                    return;//若方块已被移除，则不处理碰撞
-                }
-            }
-            //根据碰撞速度、碰撞角、方块硬度和爆炸抗性，摧毁碰撞的方块，同时对自身造成伤害
-            if (MMServerConfig.shouldDestroyBlocks() && hitBox.attr.blockDamageFactor() > 0 && blockState.getDestroySpeed(part.level, BlockPos.ZERO) >= 0) {
-                //计算碰撞法线方向上的速度(考虑冲量影响)
-                float blockArmor = ArmorUtil.getBlockArmor(part.level, blockState, BlockPos.ZERO);
-                float subPartArmor = hitBox.getRHA(this);
-                double contactNormalSpeed = Math.abs(contactVel.dot(normal)) + ManifoldPoints.getAppliedImpulse(manifoldPointId) / body.getMass();
-                float restitution = Math.clamp(body.getRestitution() * blockRestitution, 0f, 1f);//TODO:考虑二者护甲差距调整此系数，决定相加还是相乘
-                ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
-                double contactEnergy = 0.5 * partMass * contactNormalSpeed * contactNormalSpeed * (1 - restitution);//此次碰撞损失的能量
-                //TODO:根据硬度差距调整能量释放速度
-                double blockDurability = DamageUtil.getMaxBlockDurability(EmptyBlockGetter.INSTANCE, blockState, BlockPos.ZERO);
-                //方块有支撑时将强化其耐久度
-                Vec3i supportBlockPos = MMMath.getClosestAxisAlignedVector(SparkMathKt.toVec3(normal.mult(-1)));
-                SectionSnapshot.BlockSnapshot supportBlock = getPhysicsLevel().getTerrainManager().getBlockSnapshotAt(blockPos.offset(supportBlockPos));
-                if (supportBlock != null) {
-                    blockDurability += 0.5 * DamageUtil.getMaxBlockDurability(EmptyBlockGetter.INSTANCE, supportBlock.getState(), BlockPos.ZERO);
-                }
-                double blockEnergy = contactEnergy * subPartArmor / (subPartArmor + blockArmor);//方块吸收的碰撞能量
-                double partEnergy = contactEnergy - blockEnergy;//部件吸收的碰撞能量
-                if (hitBox.attr.blockDamageFactor() * blockEnergy > 250 * blockDurability) {
-                    //能量能够一次摧毁则摧毁,计算额外冲量使部件减速
-                    terrain.markRemoved(blockPos);
-                    //被摧毁的方块掉落为物品的概率，方块吸收的碰撞能量恰好与耐久度相同时必定掉落，掉落率随能量增加而递减
-                    double blockDropRate = Math.exp(1 - (hitBox.attr.blockDamageFactor() * blockEnergy / (250 * blockDurability)));
-                    if (!level.isClientSide) {
-                        SparkLevel.submitDeduplicatedTask(level, blockPos.toShortString(), PPhase.PRE, () -> level.destroyBlock(blockPos, Math.random() < blockDropRate));
-                    }
-                    //根据方块被破坏实际消耗的能量调整部件吸收的能量，但不全额作用为反冲量以提升操控流畅性
-                    double actualPartEnergy = 0.2 * partEnergy * ((250 * blockDurability) / blockEnergy);
-                    if (actualPartEnergy < 0 || Double.isNaN(actualPartEnergy)) actualPartEnergy = 0f;
-                    double finalActualPartEnergy = actualPartEnergy;
-                    //部件减速
-                    ManifoldPoints.setDistance1(manifoldPointId, 500f);//阻止接触约束计算
-                    ManifoldPoints.setAppliedImpulse(manifoldPointId, 0f);//重置默认冲量，采用计算结果
-                    Vector3f impulse = normal.mult((float) (Math.sqrt(2 * finalActualPartEnergy * body.getMass())));
-                    Vector3f offset = worldContactPoint.subtract(body.getPhysicsLocation(null));
-                    body.applyImpulse(impulse, offset);
-                    //对部件造成伤害
-                    float partDamage = (float) (finalActualPartEnergy / 250);
-                    DamageSource source = level.damageSources().flyIntoWall();
-                    if (hitBox.modifyDamage(source, partDamage) > 1) {
-                        PartDamageData data = new PartDamageData(source, null, normal, contactVel, worldContactPoint, hitBox);
-                        onHurt(data, partDamage);
-                    }
-                    return;
-                } else { //否则以三分之一的能量计算伤害，冲量交给物理引擎处理
-                    // 与一个物体发生碰撞时会创建3个(4个?)碰撞点，因此在单点处理计算时只取部分能量用于计算伤害
-                    //TODO:对方块累积伤害
-                    //对部件造成伤害
-                    float partDamage = (float) (0.2 * 0.33 * partEnergy / 250);
-                    DamageSource source = level.damageSources().flyIntoWall();
-                    if (hitBox.modifyDamage(source, partDamage) > 1) {
-                        PartDamageData data = new PartDamageData(source, null, normal, contactVel, worldContactPoint, hitBox);
-                        hitBox.modifyDamage(source, partDamage);
-                        onHurt(data, partDamage);
-                    }
-                }
-            }
-            //通常粒子效果
-            if (level.isClientSide()) {
-                float speed = vel.length();
-                Vector3f finalNormal = normal;
-                SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
-                    if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
-                        //飞溅草石
-                        if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SAND) || blockState.is(BlockTags.SNOW)) {
-                            if (Math.random() < Math.max(1f, 0.05f * speed))
-                                level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockState),
-                                        worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
-                                        contactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
-                                        contactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
-                                        contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
-                        }
-                    }
-//                    if (speed > 2 && slipRatio > 0.3 && finalNormal.y > 0.999f && worldContactPoint.y - blockPos.getY() + 1 > -0.01f) {
-//                        // 漂移烟雾与音效
-//                        if (Math.random() < 0.5 * slipRatio)
-//                            level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-//                                    worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
-//                                    contactVel.x * (0.03f + 0.02f * (Math.random() - 0.5f)),
-//                                    contactVel.y * (0.03f + 0.02f * (Math.random() - 0.5f)) + 0.01f,
-//                                    contactVel.z * (0.03f + 0.02f * (Math.random() - 0.5f)));
-//                        SparkLevel.submitDeduplicatedTask(level, part.uuid + "_" + name + "_slide_sound", PPhase.PRE, () -> {
-//                            level.playLocalSound(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
-//                                    blockState.getSoundType(part.level, blockPos, null).getStepSound(), SoundSource.BLOCKS,
-//                                    (float) (0.3f * (1f - Math.exp(-0.1 * (vel.length() - 2)))), 0.75f, false);
-//                        });
-//                    }
-                });
-            }
-        } else if (CreateCompat.isLoaded() && CreateCollisionResolver.isCreateOwner(otherOwner)) {
-            this.onCollideWithCreateTerrain(other, otherOwner, normal, worldContactPoint, localContactPoint, contactVel, hitBoxIndex, otherHitBoxIndex, impactAngle, manifoldPointId);
-        }
-    }
-
-    private void onCollideWithCreateTerrain(
-            PhysicsRigidBody other,
-            PhysicsHost otherOwner,
-            Vector3f normal,
-            Vector3f worldContactPoint,
-            Vector3f localContactPoint,
-            Vector3f contactVel,
-            int hitBoxIndex,
-            int otherHitBoxIndex,
-            float impactAngle,
-            long manifoldPointId
-    ) {
-        var info = CreateCollisionResolver.resolve(otherOwner, otherHitBoxIndex);
-        BlockState blockState = info.blockState();
-        if (!info.create() || blockState == null) return;
-
-        other.shouldShowDebugBoxWhenNonColldeWith = true;
-        var hitBox = this.getHitBox(hitBoxIndex);
-        var vel = this.getLinearVelocity();
-        // Create 返回的是装置局部坐标，世界逻辑统一使用当前接触点的世界方块坐标
-        BlockPos worldBlockPos = BlockPos.containing(worldContactPoint.x, worldContactPoint.y, worldContactPoint.z);
-        float blockFriction = BlockCollisionUtil.getBlockFriction(blockState);
-        float blockRollingFriction = BlockCollisionUtil.getBlockRollingFriction(blockState);
-        ChunkAccess chunk = level.getChunkAt(worldBlockPos);
-        float blockSlip = BlockCollisionUtil.getSlip(chunk, blockState, worldBlockPos);
-
-        float normalContactVel = contactVel.dot(normal);
-        Vector3f slipVel = contactVel.subtract(normal.mult(normalContactVel));
-        Vector3f wheelVel = MMMath.relPointExtraVelFromAngularVel(localContactPoint, body.getPhysicsRotation(null), body.getAngularVelocity(null));
-        normal.cross(getRightVector(), tmpFront);
-        tmpFront.cross(normal, tmpSide);
-        float slipAngle = (float) Math.atan2(tmpSide.dot(slipVel), tmpFront.dot(slipVel));
-        float moveVelLen = body.getLinearVelocity(null).length();
-        float wheelVelLen = Math.abs(wheelVel.dot(tmpFront));
-        float slipRatio = Math.abs(moveVelLen - wheelVelLen) / (Math.max(moveVelLen, wheelVelLen) + 0.1f);
-        float slipVelLen = Math.max(slipVel.length(), 0.001f);
-        if (!level.isClientSide()) {
-            float effectiveSlip = blockSlip * (1f - hitBox.attr.slipAdaptation());
-            float wetFactor = (1f - effectiveSlip) * (1f - effectiveSlip * Math.abs(slipRatio) * 0.7f);
-            if (isWheel(hitBoxIndex) && isWheelSurface(hitBoxIndex)) {
-                var slipCurve = hitBox.attr.getEffectiveMaterial().slipCurve();
-                var longitudinalCurve = slipCurve.longitudinal();
-                var lateralCurve = slipCurve.lateral();
-                float angleDeg = (float) Math.toDegrees(Math.abs(slipAngle));
-                double muFront = hitBox.getMuFront()
-                        * calculateSlipScale(
-                        Math.abs(slipRatio),
-                        longitudinalCurve.peakSlipRatio(),
-                        longitudinalCurve.baseScale(),
-                        longitudinalCurve.peakScale(),
-                        longitudinalCurve.kineticScale()
-                );
-                double muSide = hitBox.getMuSide()
-                        * calculateSlipScale(
-                        angleDeg / 90,
-                        lateralCurve.peakAngleDeg(),
-                        lateralCurve.kineticAngleDeg(),
-                        lateralCurve.baseScale(),
-                        lateralCurve.peakScale(),
-                        lateralCurve.kineticScale()
-                );
-                var vx = slipVel.dot(tmpFront);
-                var vy = slipVel.dot(tmpSide);
-                var forceVecX = tmpFront.mult((float) (muFront * (vx / slipVelLen)));
-                var forceVecY = tmpSide.mult((float) (muSide * (vy / slipVelLen)));
-                var totalFrictionVec = forceVecX.add(forceVecY);
-                var muEff = totalFrictionVec.length();
-                var finalDir = totalFrictionVec.mult(1 / muEff);
-                ManifoldPoints.setLateralFrictionDir1(manifoldPointId, finalDir);
-                ManifoldPoints.setLateralFrictionDir2(manifoldPointId, normal.cross(finalDir));
-                ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * muEff * blockFriction * wetFactor));
-            } else {
-                ManifoldPoints.setCombinedFriction(manifoldPointId, Math.max(0.001f, body.getFriction() * blockFriction * wetFactor));
-            }
-            ManifoldPoints.setCombinedRollingFriction(manifoldPointId, Math.max(0f, body.getRollingFriction() * blockRollingFriction));
-        }
-
-        if (hitBox.subsystem != null) {
-            hitBox.subsystem.onCollideWithBlock(
-                    this.body, other, worldBlockPos, blockState, contactVel, normal, worldContactPoint, impactAngle, hitBox, manifoldPointId
-            );
-        }
-
-        if (level.isClientSide()) {
-            float speed = vel.length();
-            SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
-                if (speed > 10 || Math.random() < 1 - Math.exp(-0.5 * speed)) {
-                    if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SAND) || blockState.is(BlockTags.SNOW)) {
-                        if (Math.random() < Math.max(1f, 0.05f * speed))
-                            level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, blockState),
-                                    worldContactPoint.x, worldContactPoint.y + 0.01f, worldContactPoint.z,
-                                    contactVel.x * (1f + 0.2f * (Math.random() - 0.5f)),
-                                    contactVel.y * (1f + 0.2f * (Math.random() - 0.5f)),
-                                    contactVel.z * (1f + 0.2f * (Math.random() - 0.5f)));
-                    }
-                }
-            });
-        }
-    }
-
-    protected void onCollideWithRigid(PhysicsRigidBody other, Vector3f normal, Vector3f worldContactPoint, Vector3f
-                                              localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel, int hitBoxIndex, int otherHitBoxIndex,
-                                      float impactAngle, long manifoldPointId) {
-        var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
-        if (otherOwner instanceof SubPart otherSubPart) {
-            var hitBox = this.getHitBox(hitBoxIndex);
-            //与零件碰撞时
-            HitBox otherHitBox = otherSubPart.getHitBox(otherHitBoxIndex);
-            //调用子系统碰撞回调
-            if (hitBox.subsystem != null) {
-                hitBox.subsystem.onCollideWithPart(
-                        this.body, other, contactVel, normal, worldContactPoint, impactAngle, hitBox, otherHitBox, manifoldPointId
-                );
-            }
-            //不处理速度过小的碰撞
-            if (contactVel.length() < 2f) {
-                return;
-            }
-            // 计算碰撞法线方向上的相对速度
-            float contactNormalVel = contactVel.dot(normal);
-            // 基于双方材质属性重设碰撞恢复系数
-            float restitution = (float) Math.sqrt(body.getRestitution() * other.getRestitution());
-            ManifoldPoints.setCombinedRestitution(manifoldPointId, restitution);
-            // 计算给对方施加的速度变化
-            float deltaVel = (1 + restitution) * contactNormalVel * this.getEquivalentMass() / (this.getEquivalentMass() + otherSubPart.getEquivalentMass());
-            //基于能量对对方部件造成伤害
-            float partDamage = 0.0005f * deltaVel * deltaVel * body.getMass();
-            DamageSource source = level.damageSources().source(MMDamageTypes.PART_COLLISION);
-            if (otherHitBox.modifyDamage(source, partDamage) > 1) {
-                PartDamageData data = new PartDamageData(level.damageSources().source(MMDamageTypes.PART_COLLISION), null, normal, contactVel, worldContactPoint, hitBox);
-                otherSubPart.onHurt(data, partDamage);
-            }
-        }
-    }
-
-    protected void onCollideWithEntity(PhysicsRigidBody other, Vector3f normal, Vector3f
-                                               worldContactPoint, Vector3f localContactPoint, Vector3f otherLocalContactPoint, Vector3f contactVel,
-                                       int hitBoxIndex, int otherHitBoxIndex, float impactAngle, long manifoldPointId) {
-        var otherOwner = PhysicsBodyExtensionKt.getOwner(other);
-        if (otherOwner instanceof LivingEntity livingEntity
-                && !livingEntity.isRemoved()
-                && !livingEntity.isDeadOrDying()
-                && !livingEntity.hasImpulse
-                && !(livingEntity.getVehicle() instanceof MMPartEntity)) {//不处理相对速度不足的碰撞
-            var hitBox = this.getHitBox(hitBoxIndex);
-            var vel = this.getLinearVelocity();
-            //调用子系统碰撞回调
-            if (hitBox.subsystem != null) {
-                hitBox.subsystem.onCollideWithEntity(
-                        this.body, other, contactVel, normal, worldContactPoint, impactAngle, hitBox, manifoldPointId
-                );
-            }
-            //不处理速度过小的碰撞
-            if (contactVel.subtract(PhysicsHelperKt.toBVector3f(livingEntity.getDeltaMovement().scale(20))).length() < 2f) {
-                return;
-            }
-            float contactNormalSpeed = vel.dot(normal);//直接取接触点碰撞速度似乎不准确
-            //计算并分配碰撞能量
-            double entityMass = MassUtil.getEntityMass(livingEntity);
-            double partMass = body.getMass();
-            for (AbstractConnector connector : this.connectors.values()) {
-                if (connector.hasPart())
-                    partMass += 0.3 * connector.attachedConnector.subPart.body.getMass();
-            }
-            partMass += 0.05 * (part.vehicle.totalMass - body.getMass());
-            float restitution = (float) Math.sqrt(body.getRestitution());
-            double miu = (entityMass * partMass / (partMass + entityMass));
-            double contactEnergy = 0.5 * miu * contactNormalSpeed * contactNormalSpeed * (1 - restitution * restitution);
-            float impulse = (float) miu * (1 + restitution) * contactNormalSpeed;
-            Vector3f impulseVec = normal.mult(impulse);
-            //部件伤害
-            float partDamage = (float) (0.2 * contactEnergy * miu / (250 * partMass));
-            DamageSource source = level.damageSources().flyIntoWall();
-            if (hitBox.modifyDamage(source, partDamage) > 1) {
-                PartDamageData data = new PartDamageData(level.damageSources().source(DamageTypes.FLY_INTO_WALL, livingEntity),
-                        null, normal, vel, worldContactPoint, hitBox);
-                onHurt(data, partDamage);
-            }
-            //部件减速
-            getPhysicsLevel().submitDeduplicatedTask(part.uuid + "_" + name + "_entity_impulse", PPhase.PRE, () -> {
-                body.applyImpulse(impulseVec.mult(-0.3f), worldContactPoint.subtract(body.getPhysicsLocation(null)));
-                return null;
-            });
-            //实体击退与伤害
-            other.setLinearVelocity(other.getLinearVelocity(null).add(impulseVec.mult((float) (1f / entityMass))));
-            SparkLevel.submitDeduplicatedTask(level, livingEntity.getUUID() + "_entity_knockback", PPhase.PRE, () -> {
-                float damage = (float) (contactEnergy * miu / (250 * entityMass));
-                if (damage > 1) {
-                    if (!level.isClientSide) {
-                        livingEntity.hurt(level.damageSources().source(DamageTypes.FLY_INTO_WALL, this.getEntity()), damage);
-                    }
-                    level.playSound(null, worldContactPoint.x, worldContactPoint.y, worldContactPoint.z,
-                            SoundEvents.PLAYER_ATTACK_KNOCKBACK, SoundSource.AMBIENT, 1f, 1f);
-                }
-                livingEntity.addDeltaMovement(SparkMathKt.toVec3(impulseVec.mult((float) (0.05 / entityMass)).add(0, 0.1f, 0)));
-            });
-        }
     }
 
     @SubscribeEvent
@@ -861,6 +312,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 }
             }
         }
+        collisionHandler.effectManager.tick();
     }
 
     // ===== 临时流体动力计算向量缓存，避免每 tick 分配 =====
@@ -875,11 +327,15 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @Override
     public void prePhysicsTick() {
         super.prePhysicsTick();
-        for (AbstractConnector connector : this.connectors.values()) connector.prePhysicsTick();
+        collisionHandler.effectManager.resetLatestStates();
         // 更新所有HitBox的生效状态
-        for (HitBox hitBox : hitBoxes.values()) {
-            hitBox.updateActive();
+        if (isActive() || (physicsTickCount % getPhysicsLevel().getTps() * 10 == 0)) {
+            for (HitBox hitBox : hitBoxes.values()) {
+                hitBox.updateActive();
+            }
         }
+        if (!isActive()) return;
+        for (AbstractConnector connector : this.connectors.values()) connector.prePhysicsTick();
         this.body.getLinearVelocity(tmpWorldVel);
         // 仅在服务端且有速度时应用流体动力
         if (!level.isClientSide() && tmpWorldVel.lengthSquared() > 0.01f) {
@@ -953,7 +409,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         }
         //攀爬辅助处理
         climbableBlocks.clear();
-        if (!level.isClientSide() && isActive() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
+        if (!level.isClientSide() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
             bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
             Vector3f pos = body.getPhysicsLocation(null);
             // 更新爬坡辅助用高度场
@@ -1004,6 +460,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 }
             }
         }
+
     }
 
     @Override

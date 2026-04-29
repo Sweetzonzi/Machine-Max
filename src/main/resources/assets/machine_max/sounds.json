@@ -59,6 +59,91 @@
     ],
     "subtitle": "subtitles.part.hit.torn_apart"
   },
+  "part.collision.terrain.hard_concrete": {
+    "sounds": [
+      "machine_max:part/collision/terrain/hard_concrete"
+    ]
+  },
+  "part.collision.terrain.hard_dirt": {
+    "sounds": [
+      "machine_max:part/collision/terrain/hard_dirt"
+    ]
+  },
+  "part.collision.terrain.hard_ice": {
+    "sounds": [
+      "machine_max:part/collision/terrain/hard_ice"
+    ]
+  },
+  "part.collision.terrain.hard_metal": {
+    "sounds": [
+      "machine_max:part/collision/terrain/hard_metal"
+    ]
+  },
+  "part.collision.terrain.hard_mud": {
+    "sounds": [
+      "machine_max:part/collision/terrain/hard_mud"
+    ]
+  },
+  "part.collision.terrain.hard_snow": {
+    "sounds": [
+      "machine_max:part/collision/terrain/hard_snow"
+    ]
+  },
+  "part.collision.terrain.hard_wood": {
+    "sounds": [
+      "machine_max:part/collision/terrain/hard_wood"
+    ]
+  },
+  "part.collision.terrain.tire_concrete": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_concrete"
+    ]
+  },
+  "part.collision.terrain.tire_dirt": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_dirt"
+    ]
+  },
+  "part.collision.terrain.tire_extra_slip": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_extra_slip"
+    ]
+  },
+  "part.collision.terrain.tire_extra_wet": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_extra_wet"
+    ]
+  },
+  "part.collision.terrain.tire_grass": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_grass"
+    ]
+  },
+  "part.collision.terrain.tire_metal": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_metal"
+    ]
+  },
+  "part.collision.terrain.tire_sand": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_sand"
+    ]
+  },
+  "part.collision.terrain.tire_sandstone": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_sandstone"
+    ]
+  },
+  "part.collision.terrain.tire_snow": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_snow"
+    ]
+  },
+  "part.collision.terrain.tire_wood": {
+    "sounds": [
+      "machine_max:part/collision/terrain/tire_wood"
+    ]
+  },
   "custom_sound": {
     "sounds": [
       {
