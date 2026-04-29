@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.registry.MMMenus;
 import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleDataSavedPayload;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -14,11 +15,9 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.IOException;
 import java.text.Normalizer;
 import java.util.regex.Pattern;
 
@@ -52,54 +51,39 @@ public class VehicleNamingMenu extends AbstractContainerMenu {
     }
 
     public static void saveVehicleWithName(ServerPlayer player, ItemStack emptyBlueprint, String vehicleName) {
-        try {
-            // 获取视线中的载具部件
-            var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
-            var subPart = eyesight.getSubPart();
+        // 获取视线中的载具部件
+        var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
+        var subPart = eyesight.getSubPart();
 
-            if (subPart != null && subPart.part.vehicle != null) {
-                VehicleData vehicleData = new VehicleData(subPart.part.vehicle);
+        if (subPart != null && subPart.part.vehicle != null) {
+            VehicleData vehicleData = new VehicleData(subPart.part.vehicle);
 
-                // 设置载具名称
-                vehicleData = vehicleData.withNewName(vehicleName);
-                //TODO: 配置是否保存为文件，否则仅保存为物品
-                // 生成安全的文件名
-                String safeFileName = makeSafeFileName(vehicleName);
-                if (safeFileName.isEmpty()) {
-                    safeFileName = "vehicle";
-                }
+            // 设置载具名称
+            vehicleData = vehicleData.withNewName(vehicleName);
 
-                // 保存到文件
-                var gameDir = FMLPaths.GAMEDIR.get().toFile();
-                var saveDir = new File(gameDir, "saved_blueprints");
-                if (!saveDir.exists()) {
-                    saveDir.mkdirs();
-                }
-
-                var saveFile = new File(saveDir, safeFileName + ".json");
-                int counter = 1;
-                while (saveFile.exists()) {
-                    saveFile = new File(saveDir, safeFileName + "_" + counter + ".json");
-                    counter++;
-                }
-
-                VehicleData.serializeVehicleDataToJson(vehicleData, saveFile);
-
-                // 消耗空蓝图并给予已保存的蓝图
-                emptyBlueprint.consume(1, player);
-                ItemStack savedBlueprint = new ItemStack(MMItems.getVEHICLE_BLUEPRINT().get());
-                savedBlueprint.set(MMDataComponents.getVEHICLE_DATA(), vehicleData);
-
-                player.addItem(savedBlueprint);
-
-                player.sendSystemMessage(Component.translatable(
-                        "message.machine_max.blueprint_saved",
-                        saveFile.getPath()
-                ));
+            // 生成安全的文件名
+            String safeFileName = makeSafeFileName(vehicleName);
+            if (safeFileName.isEmpty()) {
+                safeFileName = "vehicle";
             }
-        } catch (IOException e) {
-            MachineMax.LOGGER.error("Failed to save vehicle data!", e);
-            player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_error", e.getMessage()));
+
+            String fileName = safeFileName + ".json";
+
+            // 序列化为 JSON 字符串发送到客户端保存
+            String jsonData = VehicleData.serializeToJsonString(vehicleData);
+            PacketDistributor.sendToPlayer(player, new VehicleDataSavedPayload(jsonData, fileName));
+
+            // 消耗空蓝图并给予已保存的蓝图
+            emptyBlueprint.consume(1, player);
+            ItemStack savedBlueprint = new ItemStack(MMItems.getVEHICLE_BLUEPRINT().get());
+            savedBlueprint.set(MMDataComponents.getVEHICLE_DATA(), vehicleData);
+
+            player.addItem(savedBlueprint);
+
+            player.sendSystemMessage(Component.translatable(
+                    "message.machine_max.blueprint_saved",
+                    "saved_blueprints/" + fileName
+            ));
         }
     }
 

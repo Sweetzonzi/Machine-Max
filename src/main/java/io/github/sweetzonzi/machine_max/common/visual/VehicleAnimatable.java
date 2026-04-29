@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -159,6 +160,43 @@ public class VehicleAnimatable implements IAnimatable<VehicleAnimatable> {
             MyMath.combine(subPartTransform, delta, newSubPartTransform);
             subPart.updateTransform(newSubPartTransform);
         }
+    }
+
+    /**
+     * 以id最小的零件为基准，将整车旋转对齐到世界坐标轴。
+     *
+     * <p>该方法会保持各零件相对关系不变：对所有零件施加同一刚体旋转，
+     * 以基准零件位置作为旋转中心，并将基准零件旋转归零。</p>
+     */
+    public void alignToAxesByFirstSubPart() {
+        if (subParts.isEmpty()) return;
+        Map.Entry<Integer, SubPartAnimatable> firstEntry = subParts.entrySet().stream()
+                .min(Comparator.comparingInt(Map.Entry::getKey))
+                .orElse(null);
+        if (firstEntry == null) return;
+
+        SubPartAnimatable referenceSubPart = firstEntry.getValue();
+        Transform referenceTransform = referenceSubPart.getTransform();
+        Quaternion alignRotation = referenceTransform.getRotation().inverse();
+        com.jme3.math.Matrix3f alignRotationMatrix = alignRotation.toRotationMatrix();
+        com.jme3.math.Vector3f referencePosition = referenceTransform.getTranslation().clone();
+
+        for (SubPartAnimatable subPart : subParts.values()) {
+            Transform current = subPart.getTransform();
+            com.jme3.math.Vector3f currentPosition = current.getTranslation();
+            com.jme3.math.Vector3f relativePosition = currentPosition.subtract(referencePosition);
+            com.jme3.math.Vector3f rotatedRelative = alignRotationMatrix.mult(relativePosition, new com.jme3.math.Vector3f());
+            com.jme3.math.Vector3f newPosition = referencePosition.add(rotatedRelative);
+            Quaternion newRotation = alignRotation.mult(current.getRotation());
+            Transform aligned = new Transform(newPosition, newRotation, current.getScale().clone());
+            subPart.setTransform(aligned);
+        }
+
+        this.transform = new Transform(
+                this.transform.getTranslation().clone(),
+                Quaternion.IDENTITY.clone(),
+                this.transform.getScale().clone()
+        );
     }
 
     @Override

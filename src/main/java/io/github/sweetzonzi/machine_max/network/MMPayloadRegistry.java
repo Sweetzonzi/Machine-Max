@@ -143,6 +143,11 @@ public class MMPayloadRegistry {
                 ConnectorSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ConnectorSyncPayload::handler)
         );
+        sync.playToClient(//向客户端发送载具数据，由客户端保存到本地文件
+                VehicleDataSavedPayload.TYPE,
+                VehicleDataSavedPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(VehicleDataSavedPayload::handler)
+        );
 
         research.playToClient(//玩家蓝图的自由研发点同步
                 FreeRpSyncPayload.TYPE,

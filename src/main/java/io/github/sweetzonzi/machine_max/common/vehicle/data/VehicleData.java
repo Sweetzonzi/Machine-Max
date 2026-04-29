@@ -116,17 +116,20 @@ public class VehicleData {
         this.connections = vehicle.getConnectionData();
     }
 
-    public static void serializeVehicleDataToJson(VehicleData vehicleData, File filePath) throws IOException {
-        // 使用 codec 将 VehicleData 编码为 JsonElement
-        JsonElement encoded = VehicleData.CODEC.encodeStart(JsonOps.INSTANCE, vehicleData).getOrThrow(IllegalArgumentException::new);
-
-        // 使用 Gson 将 JsonElement 转换为 JSON 字符串
+    /**
+     * 将载具数据序列化为 JSON 字符串
+     */
+    public static String serializeToJsonString(VehicleData vehicleData) {
+        JsonElement encoded = VehicleData.CODEC.encodeStart(JsonOps.INSTANCE, vehicleData)
+                .getOrThrow(IllegalArgumentException::new);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        String jsonString = gson.toJson(encoded);
+        return gson.toJson(encoded);
+    }
 
+    public static void serializeVehicleDataToJson(VehicleData vehicleData, File filePath) throws IOException {
         // 将 JSON 字符串写入文件
         try (FileWriter fileWriter = new FileWriter(filePath)) {
-            fileWriter.write(jsonString);
+            fileWriter.write(serializeToJsonString(vehicleData));
         }
     }
 

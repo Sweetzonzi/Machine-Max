@@ -301,6 +301,7 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                 VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, 1f / size);
                 vehicleAnimatable.getModelController().setModel(ICON_MODEL);
                 vehicleAnimatable.getModelController().setTextureLocation(BG_TEXTURE);
+                vehicleAnimatable.alignToAxesByFirstSubPart();
                 // 将载具质心变换设为原点，确保载具在GUI中居中显示
                 vehicleAnimatable.setTransform(new Transform());
                 cacheAnimatable(itemStack, context, vehicleAnimatable);

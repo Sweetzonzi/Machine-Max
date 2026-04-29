@@ -296,6 +296,7 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                 float size = (float) vehicleData.max.subtract(vehicleData.min).length();
                 // 创建VehicleAnimatable，根据载具尺寸缩放模型
                 VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, 1f / size);
+                vehicleAnimatable.alignToAxesByFirstSubPart();
                 // 将载具质心变换设为原点，确保载具在GUI中居中显示
                 vehicleAnimatable.setTransform(new Transform());
                 cacheAnimatable(itemStack, context, vehicleAnimatable);
@@ -313,6 +314,7 @@ public class AssemblyItem extends Item implements ICustomModelItem {
             if (context.firstPerson()) scale *= 4f; // 第一人称视角下模型适当放大，避免完全看不见
             // 传递AssemblyData中的scale属性（默认为35.0f，代表1：35的缩尺比）
             VehicleAnimatable vehicleAnimatable = new VehicleAnimatable(level, vehicleData, scale);
+            vehicleAnimatable.alignToAxesByFirstSubPart();
             // 将载具质心变换设为原点，确保渲染位置正确
             vehicleAnimatable.setTransform(new Transform());
             cacheAnimatable(itemStack, context, vehicleAnimatable);
