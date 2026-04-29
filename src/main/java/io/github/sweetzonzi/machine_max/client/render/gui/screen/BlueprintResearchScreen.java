@@ -1,17 +1,19 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
 import io.github.sweetzonzi.machine_max.client.render.gui.renderable.ItemModelWidget;
-import io.github.sweetzonzi.machine_max.client.render.gui.renderable.MaterialRequirementsWidget;
+import io.github.sweetzonzi.machine_max.client.render.gui.renderable.TabbedMaterialWidget;
 import io.github.sweetzonzi.machine_max.client.render.gui.renderable.ResearchRecipeListWidget;
 import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment;
 import io.github.sweetzonzi.machine_max.common.menu.BlueprintResearchMenu;
 import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
+import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchClaimPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCompleteRequestPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchReclaimPayload;
 import io.github.sweetzonzi.machine_max.util.PartTagTextUtil;
+import lombok.Getter;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -27,10 +29,13 @@ import java.awt.*;
 import java.util.List;
 
 public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintResearchMenu> {
+    private static ResourceLocation LAST_SELECTED_RESEARCH_ID;
+
     private EditBox searchBox;
     private ItemModelWidget modelWidget;
     private ResearchRecipeListWidget recipeList;
-    private MaterialRequirementsWidget materialWidget;
+    @Getter
+    private TabbedMaterialWidget materialWidget;
 
     private static final int THEME = new Color(255, 100, 0, 128).getRGB();
 
@@ -60,16 +65,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
         recipeList.setCallbacks(new ResearchRecipeListWidget.Callbacks() {
             @Override
             public void onSelect(ResearchState state) {
-                selected = state;
-                if (materialWidget != null) {
-                    materialWidget.setResearchRecipe(state.recipe().value());
-                }
-                if (modelWidget != null) {
-                    modelWidget.setItemStack(state.previewItem());
-                    modelWidget.setEmptyText(state.blueprintResearch()
-                            ? Component.translatable("gui.machine_max.research.no_blueprint_product")
-                            : Component.translatable("gui.machine_max.research.no_preview"));
-                }
+                applySelection(state);
             }
 
             @Override
@@ -94,13 +90,30 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
         rebuildEntries();
         addRenderableWidget(recipeList);
 
-        this.materialWidget = new MaterialRequirementsWidget(leftPos + 175, topPos + 133, 220, 80, true);
+        this.materialWidget = new TabbedMaterialWidget(leftPos + 175, topPos + 135, 220, 78);
         this.addRenderableWidget(materialWidget);
 
-        this.modelWidget = new ItemModelWidget(leftPos + this.imageWidth - 120 - 5, topPos + 5, 120, 120);
+        this.modelWidget = new ItemModelWidget(leftPos + this.imageWidth - 125, topPos + 5, 120, 120);
         this.modelWidget.setScale(20.0f);
         this.modelWidget.setEmptyText(Component.translatable("gui.machine_max.research.no_preview"));
         this.addRenderableWidget(modelWidget);
+
+        restoreSelection();
+    }
+
+    /**
+     * 获取制造产物区域中指定鼠标位置的物品，用于 JEI 查询
+     */
+    public ItemStack getProductIngredientAt(double mouseX, double mouseY) {
+        if (selected != null && selected.blueprintResearch() && selected.fabricatingRecipe() != null
+                && minecraft != null && minecraft.level != null) {
+            int infoX = leftPos + 175;
+            int infoY = topPos + 8;
+            if (mouseX >= infoX && mouseX < infoX + 18 && mouseY >= infoY && mouseY < infoY + 18) {
+                return selected.fabricatingRecipe().value().getResultItem(minecraft.level.registryAccess());
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override
@@ -136,15 +149,16 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                     boolean hasProduct = false;
                     boolean canReclaim = false;
                     boolean blueprintResearch = false;
+                    RecipeHolder<FabricatingRecipe> fabHolder = null;
 
                     var blueprintHolder = MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.get(researchId);
                     if (blueprintHolder != null) {
                         blueprintResearch = true;
                         BlueprintResearchRecipe blueprintResearchRecipe = blueprintHolder.value();
                         unlockedRecipe = blueprintResearchRecipe.getUnlockRecipe();
-                        RecipeHolder<FabricatingRecipe> unlockedHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(unlockedRecipe);
-                        if (unlockedHolder != null && minecraft != null && minecraft.level != null) {
-                            previewItem = unlockedHolder.value().getResultItem(minecraft.level.registryAccess());
+                        fabHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(unlockedRecipe);
+                        if (fabHolder != null && minecraft != null && minecraft.level != null) {
+                            previewItem = fabHolder.value().getResultItem(minecraft.level.registryAccess());
                         }
                         hasProduct = research.getProducts().getOrDefault(researchId, ItemStack.EMPTY) != ItemStack.EMPTY;
                         canReclaim = research.canReclaim(researchId);
@@ -152,6 +166,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
 
                     return new ResearchState(
                             holder,
+                            fabHolder,
                             completed,
                             unlockable,
                             canComplete,
@@ -168,7 +183,46 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
                 .toList();
     }
 
-    private boolean matchesSearchFilter(RecipeHolder<io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe> holder, String filter) {
+    private void applySelection(ResearchState state) {
+        selected = state;
+        LAST_SELECTED_RESEARCH_ID = state.recipe().id();
+        if (materialWidget != null) {
+            ResearchRecipe researchRecipe = state.recipe().value();
+            FabricatingRecipe fabRecipe = state.fabricatingRecipe() != null
+                    ? state.fabricatingRecipe().value() : null;
+            materialWidget.setRecipes(researchRecipe, fabRecipe);
+        }
+        if (modelWidget != null) {
+            modelWidget.setItemStack(state.previewItem());
+            modelWidget.setEmptyText(state.blueprintResearch()
+                    ? Component.translatable("gui.machine_max.research.no_blueprint_product")
+                    : Component.translatable("gui.machine_max.research.no_preview"));
+        }
+    }
+
+    private void restoreSelection() {
+        if (recipeList == null || states == null || states.isEmpty()) {
+            selected = null;
+            return;
+        }
+
+        ResourceLocation targetId = LAST_SELECTED_RESEARCH_ID;
+        if (targetId == null && selected != null) {
+            targetId = selected.recipe().id();
+        }
+        if (targetId == null) {
+            return;
+        }
+
+        ResearchState restored = recipeList.selectByResearchId(targetId);
+        if (restored != null) {
+            applySelection(restored);
+        } else {
+            selected = null;
+        }
+    }
+
+    private boolean matchesSearchFilter(RecipeHolder<? extends ResearchRecipe> holder, String filter) {
         if (filter.isEmpty()) return true;
         if (PartTagTextUtil.normalize(holder.id().toString()).contains(filter)) return true;
 
@@ -193,7 +247,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
         super.containerTick();
         rebuildEntries();
         recipeList.setStates(this.states);
-        if (!states.contains(selected)) selected = null;
+        restoreSelection();
     }
 
     @Override
@@ -205,7 +259,6 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
     public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         renderBlurredBackground(partialTick);
         this.renderBg(guiGraphics, partialTick, mouseX, mouseY);
-        guiGraphics.drawCenteredString(font, "///WIP///", leftPos + 220, topPos + 58, 0xAAAAAA);
     }
 
     @Override
@@ -217,12 +270,38 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
         int lineColor = new Color(25, 25, 25, 128).getRGB();
         graphics.fill(leftPos + 170, topPos + 5, leftPos + 172, topPos + imageHeight - 5, lineColor);
         graphics.fill(leftPos + imageWidth - 130, topPos + 5, leftPos + imageWidth - 132, topPos + 128, lineColor);
-        graphics.fill(leftPos + 172, topPos + 128, leftPos + imageWidth - 5, topPos + 130, lineColor);
+        graphics.fill(leftPos + 172, topPos + 130, leftPos + imageWidth - 5, topPos + 132, lineColor);
         graphics.fill(leftPos, topPos, leftPos + 5, topPos + imageHeight, THEME);
 
-        Component freeRpText = Component.translatable("gui.machine_max.research.free_rp")
-                .append(Component.literal(String.valueOf(getMenu().getResearch().getFreeResearchPoint())));
-        graphics.fill(0, 0, font.width(freeRpText.getString()) + 2, 10, bgColor1);
-        graphics.drawString(font, freeRpText, 1, 1, Color.WHITE.getRGB());
+        /* 制造信息区：产物图标 + 制造时间 + 蓝图描述 */
+        if (selected != null && selected.blueprintResearch() && selected.fabricatingRecipe() != null) {
+            FabricatingRecipe recipe = selected.fabricatingRecipe().value();
+            int infoX = leftPos + 175;
+            int infoY = topPos + 8;
+
+            /* 产物图标 + 数量角标 */
+            ItemStack result = recipe.getResultItem(minecraft.level.registryAccess());
+            graphics.renderItem(result, infoX, infoY);
+            graphics.renderItemDecorations(font, result, infoX, infoY);
+
+            /* 制造时间 */
+            int seconds = recipe.getProcessingTime() / 20;
+            Component timeText = Component.translatable("gui.machine_max.research.fabrication_time",
+                    Component.literal(String.valueOf(seconds)));
+            graphics.drawString(font, timeText, infoX + 22, infoY + 2, Color.WHITE.getRGB(), false);
+
+            /* 蓝图描述（换行显示，最多4行） */
+            String desc = recipe.getTooltip();
+            if (desc != null && !desc.isEmpty()) {
+                int descX = infoX;
+                int descY = infoY + 20;
+                var lines = font.split(Component.literal(desc), 90);
+                int maxLines = Math.min(lines.size(), 4);
+                for (int i = 0; i < maxLines; i++) {
+                    graphics.drawString(font, lines.get(i), descX, descY + i * (font.lineHeight + 1),
+                            new Color(180, 180, 180).getRGB(), false);
+                }
+            }
+        }
     }
 }

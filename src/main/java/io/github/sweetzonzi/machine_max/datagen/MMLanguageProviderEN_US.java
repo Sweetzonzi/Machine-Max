@@ -137,6 +137,10 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("gui.machine_max.research.status.prereq_missing", "Prerequisite Missing x%1$s");
         this.add("gui.machine_max.research.status.need_materials_rp", "Insufficient Materials / RP");
         this.add("gui.machine_max.research.status.unavailable", "Unavailable");
+        this.add("gui.machine_max.research.tab.research_materials", "Research Materials");
+        this.add("gui.machine_max.research.tab.fabricating_materials", "Fabricating Materials");
+        this.add("gui.machine_max.research.no_materials", "No materials required");
+        this.add("gui.machine_max.research.fabrication_time", "Fabrication Time: %s sec");
         this.add("jei.machine_max.blueprint_research.rp_cost", "Research Point Cost: %1$s");
         //Hud
         this.add("hud.warn.machine_max.subpart_destroying", "❌ DESTROYED, DESTRUCT IN: %1$ss");

@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
+import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public record ResearchState(
         RecipeHolder<ResearchRecipe> recipe,
+        @Nullable RecipeHolder<FabricatingRecipe> fabricatingRecipe,
         boolean completed,
         boolean unlockable,
         boolean canComplete,

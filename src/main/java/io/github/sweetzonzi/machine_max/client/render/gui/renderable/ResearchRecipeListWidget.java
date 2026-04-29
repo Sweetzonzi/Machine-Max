@@ -67,10 +67,25 @@ public class ResearchRecipeListWidget extends AbstractScrollWidget {
     public void setStates(List<ResearchState> list) {
         states.clear();
         states.addAll(list);
+        if (selectedIndex >= states.size()) {
+            selectedIndex = -1;
+        }
     }
 
     public ResearchState getSelected() {
         return selectedIndex >= 0 && selectedIndex < states.size() ? states.get(selectedIndex) : null;
+    }
+
+    public ResearchState selectByResearchId(ResourceLocation researchId) {
+        for (int i = 0; i < states.size(); i++) {
+            ResearchState state = states.get(i);
+            if (state.recipe().id().equals(researchId)) {
+                selectedIndex = i;
+                return state;
+            }
+        }
+        selectedIndex = -1;
+        return null;
     }
 
     @Override
