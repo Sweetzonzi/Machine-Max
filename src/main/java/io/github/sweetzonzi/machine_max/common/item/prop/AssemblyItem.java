@@ -46,6 +46,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.awt.*;
 import java.util.*;
@@ -344,5 +345,14 @@ public class AssemblyItem extends Item implements ICustomModelItem {
             customModels.put(context, animatable);
             itemStack.set(MMDataComponents.getCUSTOM_ITEM_MODEL(), customModels);
         }
+    }
+
+    @Override
+    public Vector3f getRenderRotation(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        if (displayContext == ItemDisplayContext.GUI && !itemStack.has(MMDataComponents.getASSEMBLY_PATH())) {
+            // 统一车辆预览为“斜前上方”视角，避免车尾朝向观察者
+            return new Vector3f(10f, -150f, -20f).mul((float) (Math.PI / 180f));
+        }
+        return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
     }
 }

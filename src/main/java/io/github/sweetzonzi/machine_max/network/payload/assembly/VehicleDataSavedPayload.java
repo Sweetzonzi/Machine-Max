@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -16,19 +16,19 @@ import java.io.IOException;
 
 /**
  * 服务端→客户端的载具数据保存包
- * 将序列化后的载具 JSON 发送到客户端，由客户端保存到本地文件系统
+ * 使用 VehicleData.STREAM_CODEC 传输完整载具数据，由客户端序列化为 JSON 保存到本地文件系统
  */
 public record VehicleDataSavedPayload(
-        String jsonData,
+        VehicleData vehicleData,
         String fileName
 ) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<VehicleDataSavedPayload> TYPE = new CustomPacketPayload.Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "vehicle_data_saved")
     );
 
-    public static final StreamCodec<ByteBuf, VehicleDataSavedPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.STRING_UTF8, VehicleDataSavedPayload::jsonData,
-            ByteBufCodecs.STRING_UTF8, VehicleDataSavedPayload::fileName,
+    public static final StreamCodec<RegistryFriendlyByteBuf, VehicleDataSavedPayload> STREAM_CODEC = StreamCodec.composite(
+            VehicleData.STREAM_CODEC, VehicleDataSavedPayload::vehicleData,
+            net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8, VehicleDataSavedPayload::fileName,
             VehicleDataSavedPayload::new
     );
 
@@ -43,7 +43,7 @@ public record VehicleDataSavedPayload(
 
             var saveFile = new File(saveDir, packet.fileName());
             try (FileWriter writer = new FileWriter(saveFile)) {
-                writer.write(packet.jsonData());
+                writer.write(VehicleData.serializeToJsonString(packet.vehicleData));
                 MachineMax.LOGGER.info("已保存载具蓝图到客户端目录: {}", saveFile.getAbsolutePath());
             } catch (IOException e) {
                 MachineMax.LOGGER.error("客户端保存载具蓝图失败!", e);

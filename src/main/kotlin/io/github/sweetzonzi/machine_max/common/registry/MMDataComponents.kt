@@ -69,7 +69,7 @@ object MMDataComponents {
     }
 
     /**
-     * 保存在蓝图物品上的蓝图路径，用于重建载具
+     * 保存在蓝图物品上的蓝图数据，用于重建载具
      */
     @JvmStatic
     val BLUEPRINT_DATA = MachineMax.REGISTER.dataComponentType<BlueprintData> {
@@ -82,7 +82,7 @@ object MMDataComponents {
     }
 
     /**
-     * 保存在蓝图物品上的预装配结构体模板资源路径，用于重建载具
+     * 保存在蓝图物品上的预装配结构体模板，用于重建载具
      */
     @JvmStatic
     val VEHICLE_DATA = MachineMax.REGISTER.dataComponentType<VehicleData> {
@@ -109,7 +109,7 @@ object MMDataComponents {
     }
 
     /**
-     * 保存在蓝图物品上的蓝图或结构体资源路径，用于重建载具
+     * 保存在蓝图物品上的蓝图或结构体，用于重建载具
      */
     @JvmStatic
     val ASSEMBLY_DATA = MachineMax.REGISTER.dataComponentType<AssemblyData> {

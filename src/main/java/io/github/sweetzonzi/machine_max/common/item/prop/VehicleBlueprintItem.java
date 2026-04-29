@@ -340,6 +340,10 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
         if (!getRenderInstance(itemStack, level, displayContext).getModelController().getOriginModel().equals(
                 OModel.getOrEmpty(MODEL)
         )) {
+            if (!itemStack.has(MMDataComponents.getVEHICLE_BLUEPRINT_PATH())) {
+            // 统一车辆预览为“斜前上方”视角，避免车尾朝向观察者
+            return new Vector3f(10f, -150f, -20f).mul((float) (Math.PI / 180f));
+        }
             return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
         }
         if (displayContext == ItemDisplayContext.GUI

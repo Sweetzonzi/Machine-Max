@@ -69,9 +69,8 @@ public class VehicleNamingMenu extends AbstractContainerMenu {
 
             String fileName = safeFileName + ".json";
 
-            // 序列化为 JSON 字符串发送到客户端保存
-            String jsonData = VehicleData.serializeToJsonString(vehicleData);
-            PacketDistributor.sendToPlayer(player, new VehicleDataSavedPayload(jsonData, fileName));
+            // 发送 VehicleData 到客户端，由客户端序列化为 JSON 保存
+            PacketDistributor.sendToPlayer(player, new VehicleDataSavedPayload(vehicleData, fileName));
 
             // 消耗空蓝图并给予已保存的蓝图
             emptyBlueprint.consume(1, player);

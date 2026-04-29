@@ -6,8 +6,10 @@ import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import com.jme3.math.Matrix3f;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
+import com.jme3.math.Vector3f;
 import jme3utilities.math.MyMath;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
@@ -173,30 +175,20 @@ public class VehicleAnimatable implements IAnimatable<VehicleAnimatable> {
         Map.Entry<Integer, SubPartAnimatable> firstEntry = subParts.entrySet().stream()
                 .min(Comparator.comparingInt(Map.Entry::getKey))
                 .orElse(null);
-        if (firstEntry == null) return;
-
         SubPartAnimatable referenceSubPart = firstEntry.getValue();
         Transform referenceTransform = referenceSubPart.getTransform();
-        Quaternion alignRotation = referenceTransform.getRotation().inverse();
-        com.jme3.math.Matrix3f alignRotationMatrix = alignRotation.toRotationMatrix();
-        com.jme3.math.Vector3f referencePosition = referenceTransform.getTranslation().clone();
-
+        this.transform = Transform.IDENTITY.clone();
+        setTransform(referenceTransform.clone().invert());
+        this.transform = Transform.IDENTITY.clone();
+        Vector3f center = new Vector3f();
+        float totalMass = 0.0f;
         for (SubPartAnimatable subPart : subParts.values()) {
-            Transform current = subPart.getTransform();
-            com.jme3.math.Vector3f currentPosition = current.getTranslation();
-            com.jme3.math.Vector3f relativePosition = currentPosition.subtract(referencePosition);
-            com.jme3.math.Vector3f rotatedRelative = alignRotationMatrix.mult(relativePosition, new com.jme3.math.Vector3f());
-            com.jme3.math.Vector3f newPosition = referencePosition.add(rotatedRelative);
-            Quaternion newRotation = alignRotation.mult(current.getRotation());
-            Transform aligned = new Transform(newPosition, newRotation, current.getScale().clone());
-            subPart.setTransform(aligned);
+            float mass = subPart.attr.mass;
+            center.addLocal(subPart.getTransform().getTranslation().mult(mass));
+            totalMass += mass;
         }
-
-        this.transform = new Transform(
-                this.transform.getTranslation().clone(),
-                Quaternion.IDENTITY.clone(),
-                this.transform.getScale().clone()
-        );
+        center.multLocal(1.0f / totalMass);
+        this.transform.setTranslation(center);
     }
 
     @Override

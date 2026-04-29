@@ -234,7 +234,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
                 poseStack.pushPose();
                 poseStack.mulPose(new Quaternionf().rotateY((float) Math.PI));
                 poseStack.last().normal().rotateLocalY((float) Math.toRadians(-45.0));
-                poseStack.translate(0, 0, 10);
+                poseStack.translate(0, 0, 5);
                 ModelRenderHelperKt.render(
                         vehicleAnimatable.getModelController().getOriginModel(),
                         vehicleAnimatable.getModelController().getModel().getPose(),
@@ -253,12 +253,14 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
         float vehicleScale = vehicleAnimatable.getScale();
         poseStack.scale(vehicleScale, vehicleScale, vehicleScale);
 
-        poseStack.translate(offset.x, offset.y, offset.z);
-        poseStack.mulPose(new Quaternionf().rotateZYX(rotation.x, rotation.y, rotation.z));
-        poseStack.scale(scale.x, scale.y, scale.z);
 
         if (displayContext == ItemDisplayContext.GUI)
             poseStack.translate(0, 0, -10); // 确保模型渲染于背景前
+        poseStack.pushPose();
+
+        poseStack.translate(offset.x, offset.y, offset.z);
+        poseStack.mulPose(new Quaternionf().rotateZYX(rotation.x, rotation.y, rotation.z));
+        poseStack.scale(scale.x, scale.y, scale.z);
 
         // 遍历载具的所有零件
         for (SubPartAnimatable subPart : vehicleAnimatable.getSubParts().values()) {
@@ -282,6 +284,7 @@ public class CustomModelItemRenderer extends BlockEntityWithoutLevelRenderer imp
             }
             poseStack.popPose();
         }
+        poseStack.popPose();
         poseStack.popPose();
     }
 
