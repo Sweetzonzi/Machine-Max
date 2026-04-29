@@ -8,6 +8,7 @@
   "machine_max.wine_fox": "Wine Fox Car",
   "machine_max.wine_fox_gt": "Wine Fox Car (GT)",
   "machine_max.kluo": "KLUO Car",
+  "machine_max.kluo_gt": "KLUO Car (GT)",
   "machine_max.r700": "R700",
   "machine_max.senna_gtr": "Senna GTR",
 
@@ -39,6 +40,7 @@
   "title.machine_max.blueprint.wine_fox": "Wine Fox Car",
   "title.machine_max.blueprint.wine_fox_gt": "Wine Fox Car (GT)",
   "title.machine_max.blueprint.kluo": "KLUO Car",
+  "title.machine_max.blueprint.kluo_gt": "KLUO Car (GT)",
   "title.machine_max.blueprint.r700": "Pathfinder R700",
   "title.machine_max.blueprint.senna_gtr": "McLaren Senna GTR",
 
@@ -50,6 +52,7 @@
   "description.machine_max.blueprint.wine_fox": "The Wine Fox Car is a uniquely designed small urban commuter vehicle with a fashionable and cute appearance, suitable for short-distance travel in cities.",
   "description.machine_max.blueprint.wine_fox_gt": "The Wine Fox Car is a uniquely designed small urban commuter vehicle with a fashionable and cute appearance, with a better performance after upgrading.",
   "description.machine_max.blueprint.kluo": "KLUO Car is a classic-style compact oil-to-electric sedan. Despite its limited range, its acceleration capability and top speed should not be underestimated.",
+  "description.machine_max.blueprint.kluo_gt": "KLUO Car is a classic-style compact oil-to-electric sedan. With the GT upgrade package, handling and track capability are further improved.",
   "description.machine_max.blueprint.r700": "The Pathfinder R700 is a multi-functional off-road vehicle designed specifically for exploration and outdoor activities, featuring good passability and reliability.",
   "description.machine_max.blueprint.senna_gtr": "The McLaren Senna GTR is an extreme track-focused supercar featuring advanced aerodynamic design, including a large rear wing, diffuser, and front splitter. These elements generate enormous downforce at high speeds, ensuring exceptional stability and handling. Its lightweight construction and powerful powertrain make it a true king on the racetrack.",
 
@@ -62,6 +65,7 @@
   "author.machine_max.blueprint.dayun": "Model Author: Baozi725",
   "author.machine_max.blueprint.wine_fox": "Model Author: Maks",
   "author.machine_max.blueprint.kluo": "Model Author: Maks Copyright: KLuoNuoYa",
+  "author.machine_max.blueprint.kluo_gt": "Model Author: Maks Copyright: KLuoNuoYa",
   "author.machine_max.blueprint.r700": "Model Author: Baozi725",
   "author.machine_max.blueprint.senna_gtr": "Model Author: Maks",
 
@@ -102,6 +106,10 @@
   "machine_max.kluo_hood": "KLUO Car Hood",
   "machine_max.kluo_door": "KLUO Car Door",
   "machine_max.kluo_trunk_door": "KLUO Car Trunk Door",
+  "machine_max.kluo_gt_wheel": "KLUO Car GT Wheel",
+  "machine_max.kluo_gt_spoiler": "KLUO Car GT Spoiler",
+  "machine_max.kluo_gt_bumper": "KLUO Car GT Bumper",
+  "machine_max.kluo_gt_light": "KLUO Car GT Headlight",
   "machine_max.r700_chassis": "R700 Chassis",
   "machine_max.r700_wheel": "R700 Wheel",
   "machine_max.senna_gtr_chassis": "Senna GTR Chassis",

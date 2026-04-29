@@ -1,0 +1,33 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 100,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 2
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "type": "neoforge:components",
+        "items": ["machine_max:part"],
+        "components": {
+          "machine_max:part_type": "machine_max:kluo_gt_bumper"
+        },
+        "strict": false
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/kluo/kluo_gt_light_icon.png",
+  "description": "research.machine_max.kluo_gt_light_blueprint.desc",
+  "unlock_recipe": "machine_max:kluo_gt_light"
+}

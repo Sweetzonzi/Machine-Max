@@ -348,9 +348,15 @@ public class CollisionEffectManager implements ISoundSpreader {
      * 根据滑移程度更新漂移音效的音量和音高。
      */
     private void updateSlipSoundLevel(CollisionSnapshot snap) {
+        Vector3f normal = snap.normal();
+        Vector3f contactVel = snap.contactVel();
+        //接触平面上的滑移速度 = contactVel 减去法线分量
+        float normalContactVel = contactVel.dot(normal);
+        tmpSlip.set(contactVel).subtractLocal(normal.mult(normalContactVel));
+        float slipSpeed = tmpSlip.length();
         float slipRatio = snap.slipRatio();
-        //滑移率 0.3~1.0 映射到音量 0~1
-        float volume = Math.clamp((slipRatio - 0.3f) / 0.6f, 0f, 1f) * 0.3f;
+        //滑移率 0.3~1.0 映射到音量 0~1，仅一定接触速度时才有效
+        float volume = Math.clamp((slipRatio - 0.3f) / 0.6f, 0f, 1f) * Math.clamp(slipSpeed - 3f, 0f, 1f) * 0.3f;
         //滑移率越高音调越高
         float pitch = 0.8f + 0.6f * Math.clamp((slipRatio - 0.3f) / 0.6f, 0f, 1f);
         currentSlipVolume = volume;

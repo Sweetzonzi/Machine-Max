@@ -145,13 +145,20 @@ public class ResearchRecipeListWidget extends AbstractScrollWidget {
         if (index < 0 || index >= states.size()) return false;
 
         int btnX = getX() + width - BUTTON_WIDTH - 4;
+        int contentY = getY() + index * ENTRY_HEIGHT;
+        int btnTop = (int) Math.floor(contentY + 3 - scrollAmount());
+        int btnBottom = btnTop + BUTTON_HEIGHT;
 
         if (withinContentAreaPoint(mouseX, mouseY)) {
             selectedIndex = index;
             ResearchState state = states.get(index);
-            callbacks.onSelect(state);
+            if (callbacks != null) {
+                callbacks.onSelect(state);
+            }
 
-            if (mouseX >= btnX && mouseX < btnX + BUTTON_WIDTH) {
+            if (mouseX >= btnX && mouseX < btnX + BUTTON_WIDTH
+                    && mouseY >= btnTop && mouseY < btnBottom
+                    && callbacks != null) {
                 if (!state.completed() && state.canComplete()) {
                     callbacks.onComplete(state);
                 } else if (state.completed() && state.hasProduct()) {

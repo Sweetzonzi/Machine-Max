@@ -404,16 +404,13 @@ public class CollisionHandler {
                 lateralCurve.kineticScale()
         );
         //合成摩擦力方向向量
-        var vx = slipVel.dot(tmpFront);
-        var vy = slipVel.dot(tmpSide);
-        var forceVecX = tmpFront.mult((float) (muFront * (vx / slipVelLen)));
-        var forceVecY = tmpSide.mult((float) (muSide * (vy / slipVelLen)));
-        var totalFrictionVec = forceVecX.add(forceVecY);
-        var muEff = totalFrictionVec.length();
-        var finalDir = totalFrictionVec.mult(1 / muEff);
+        var vz = slipVel.dot(tmpFront);
+        var vx = slipVel.dot(tmpSide);
+        double theta = Math.atan2(vx, vz);
+        var muEff = (float) (muFront * muSide / Math.sqrt(muFront * muFront * Math.sin(theta) * Math.sin(theta) + muSide * muSide * Math.cos(theta) * Math.cos(theta)));
         //重设摩擦方向和系数
-        ManifoldPoints.setLateralFrictionDir1(manifoldPointId, finalDir);
-        ManifoldPoints.setLateralFrictionDir2(manifoldPointId, normal.cross(finalDir));
+        ManifoldPoints.setLateralFrictionDir1(manifoldPointId, normal.cross(slipVel)); // 横向
+        ManifoldPoints.setLateralFrictionDir2(manifoldPointId, slipVel); // 纵向
         ManifoldPoints.setCombinedFriction(manifoldPointId,
                 Math.max(0.001f, subPart.body.getFriction() * muEff * blockFriction * wetFactor));
     }
