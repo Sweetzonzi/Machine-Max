@@ -6,8 +6,8 @@ import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -153,22 +153,13 @@ public class TabbedMaterialWidget extends AbstractWidget {
             int y = startY + row * (SLOT_SIZE + SLOT_PADDING);
 
             MaterialEntry entry = entries.get(i);
+            if (x <= mouseX && mouseX < x + SLOT_SIZE && y <= mouseY && mouseY < y + SLOT_SIZE) {
+                graphics.renderTooltip(minecraft.font, entry.displayStack, mouseX, mouseY);
+            }
             int bg = entry.hasEnough ? COLOR_ENOUGH : COLOR_MISSING;
             graphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, bg);
             graphics.renderItem(entry.displayStack, x + 2, y + 2);
             graphics.renderItemDecorations(minecraft.font, entry.displayStack, x + 2, y + 2);
-
-            if (isMouseOver(mouseX, mouseY) && mouseX >= x && mouseX < x + SLOT_SIZE
-                    && mouseY >= y && mouseY < y + SLOT_SIZE) {
-                hovered = entry;
-            }
-        }
-
-        if (hovered != null) {
-            ItemStack stack = hovered.displayStack;
-            graphics.renderTooltip(minecraft.font,
-                    Screen.getTooltipFromItem(minecraft, stack),
-                    stack.getTooltipImage(), mouseX, mouseY);
         }
     }
 

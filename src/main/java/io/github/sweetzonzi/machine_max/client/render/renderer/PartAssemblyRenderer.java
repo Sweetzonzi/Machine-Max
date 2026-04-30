@@ -16,7 +16,6 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.sweetzonzi.machine_max.client.render.renderable.ModelAnimatable;
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;

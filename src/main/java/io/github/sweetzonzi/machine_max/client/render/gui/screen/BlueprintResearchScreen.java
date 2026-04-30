@@ -283,6 +283,9 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
             ItemStack result = recipe.getResultItem(minecraft.level.registryAccess());
             graphics.renderItem(result, infoX, infoY);
             graphics.renderItemDecorations(font, result, infoX, infoY);
+            if (infoX < mouseX && mouseX < infoX + 18 && infoY < mouseY && mouseY < infoY + 18){
+                graphics.renderTooltip(font, result, mouseX, mouseY);
+            }
 
             /* 制造时间 */
             int seconds = recipe.getProcessingTime() / 20;

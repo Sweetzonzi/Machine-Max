@@ -59,6 +59,9 @@ public class ItemModelWidget extends AbstractWidget {
     }
 
     public void setItemStack(ItemStack itemStack) {
+        if (ItemStack.isSameItemSameComponents(this.itemStack, itemStack)) {
+            return;
+        }
         this.itemStack = itemStack;
         // 重置旋转到默认视角
         resetView();

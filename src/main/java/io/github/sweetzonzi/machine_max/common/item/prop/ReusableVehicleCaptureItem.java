@@ -16,6 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.joml.Vector3f;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -23,7 +24,7 @@ public class ReusableVehicleCaptureItem extends Item implements ICustomModelItem
     private static final ModelIndex MODEL = new ModelIndex(
             "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"));
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png");
-
+    private static final Color COLOR = Color.GREEN;
     public ReusableVehicleCaptureItem() {
         super(new Properties());
     }
@@ -57,5 +58,10 @@ public class ReusableVehicleCaptureItem extends Item implements ICustomModelItem
             return new Vector3f(25, 30, 0).mul((float) (Math.PI / 180));
         }
         return ICustomModelItem.super.getRenderRotation(itemStack, level, displayContext);
+    }
+
+    @Override
+    public Color getColor(ItemStack itemStack, Level level, ItemDisplayContext displayContext) {
+        return COLOR;
     }
 }
