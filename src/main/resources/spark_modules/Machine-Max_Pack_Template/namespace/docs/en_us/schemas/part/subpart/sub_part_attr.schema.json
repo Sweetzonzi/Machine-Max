@@ -167,7 +167,7 @@
         "driver_seat": {
           "type": "machine_max:seat",
           "definition": "machine_max:default_seat",
-          "seat_point_locator": "driver_seat_point",
+          "locator": "driver_seat_point",
           "move_outputs": {
             "move_control": ["car_controller"]
           },
@@ -181,7 +181,7 @@
         "passenger_seat": {
           "type": "machine_max:seat",
           "definition": "machine_max:default_passenger_seat",
-          "seat_point_locator": "passenger_seat_point"
+          "locator": "passenger_seat_point"
         },
         "car_controller": {
           "type": "machine_max:car_controller",

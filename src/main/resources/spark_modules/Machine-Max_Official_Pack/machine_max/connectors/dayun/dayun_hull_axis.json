@@ -1,0 +1,17 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced",
+  "direction": "yp",
+  "integrity": 1500.0,
+  "impact_reduction": 3.0,
+  "impact_multiplier": 0.8,
+  "joint_attrs": {
+    "xr": {
+      "lower_limit": 55.0,
+      "upper_limit": 0.0,
+      "equilibrium": 45.0,
+      "stiffness": 20000,
+      "damping": 500
+    }
+  }
+}

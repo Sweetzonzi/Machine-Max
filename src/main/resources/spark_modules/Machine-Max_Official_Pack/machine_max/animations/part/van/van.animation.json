@@ -23,7 +23,7 @@
 					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')"
 				},
 				"FXP": {
-					"rotation": [0, 0, "vehicle.get('steering')*225"]
+					"rotation": [0, 0, "-(subpart.connector_rotation('connector.machine_max.left_front_wheel', 1) + subpart.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
 				}
 			}
 		}

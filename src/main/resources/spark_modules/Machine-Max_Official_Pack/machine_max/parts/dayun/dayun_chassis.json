@@ -14,121 +14,145 @@
     "animations": "machine_max:dayun", //(可选, 留空则不播放动画)动画路径
     "tags": ["machine_max:dayun", "machine_max:chassis"], //(可选, 默认[])部件标签列表
     "sub_parts": { //零件(子部件)列表, 这是部件运动的最小单元, 部件的每个可动部分都应当是一个零件(子部件)
-      "sub_part.machine_max.main": { //零件(子部件)名称
-        "durability": 1550.0,
-        "mass": 1500.0, //零件质量(kg)
-        "block_collision": "ground", //(可选)地形碰撞模式:true(默认, 与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
-        "collision_height": 2.5, //(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
-        "hit_boxes": { //键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
-          "collision": {
-            "type": "box",
-            "material": "machine_max:structural_steel",
-            "thickness": 10
+      "start_bone": "AllChassis",
+      "end_bones": ["LeftFrontWheel", "RightFrontWheel", "LeftBackWheel", "RightBackWheel", "LeftBackWheel2", "RightBackWheel2"],
+      "mass_center": "chassis_mass_center",
+      "durability": 1000.0,
+      "mass": 2000.0, //零件质量(kg)
+      "block_collision": "ground", //(可选)地形碰撞模式:true(默认, 与所有方块碰撞),ground(仅与部件之下的地面方块碰撞),false(不与任何方块碰撞)
+      "collision_height": 2.5, //(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
+      "hit_boxes": { //键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
+        "ChassisHitBox": {
+          "type": "box",
+          "material": "machine_max:structural_steel",
+          "thickness": 5
+        },
+        "EngineHitBox": {
+          "type": "box",
+          "material": "machine_max:structural_steel",
+          "subsystem": "subsystem.machine_max.engine",
+          "thickness": 1
+        }
+      },
+      "subsystems": {
+        "subsystem.machine_max.engine": {
+          "type": "machine_max:engine", //子系统类型
+          "definition": "machine_max:dayun_engine", //子系统型号, 需要与子系统类型相匹配
+          "power_output": "subsystem.machine_max.gearbox", //功率输出目标, 可填写任意本部件内其他子系统名称、部件连接点名称, 或“part”, 或“vehicle”
+          "speed_outputs": { //转速信号输出目标及信号名称, 同上, 但可以有多个
+            "engine_speed": [
+              "vehicle"
+            ]
           }
         },
-        "subsystems": {
-          "subsystem.machine_max.gearbox": {
-            "type": "machine_max:gearbox", //变速箱子系统, 改变收到的功率信号的扭矩和转速
-            "definition": "machine_max:dayun_gearbox", //子系统型号, 需要与子系统类型相匹配
-            "power_output": "subsystem.machine_max.transmission", //功率输出目标, 子系统或部件连接点名
-            "gear_outputs": { //(可选, 默认将当前挡位名称发至部件和载具的gear频道)挡位名称输出频道及目标
-              "gear": ["vehicle"]
-            }
-          },
-          "subsystem.machine_max.transmission": {
-            "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
-            "definition": "machine_max:dayun_transmission", //子系统型号, 需要与子系统类型相匹配
-            "power_outputs": { //动力输出目标及减速比
-              "subsystem.machine_max.left_back_wheel_1_driver": 1.0,
-              "subsystem.machine_max.left_back_wheel_2_driver": 1.0,
-              "subsystem.machine_max.right_back_wheel_1_driver": 1.0,
-              "subsystem.machine_max.right_back_wheel_2_driver": 1.0
-            }
-          },
-          "subsystem.machine_max.left_front_wheel_driver": {
-            "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
-            "definition": "machine_max:dayun_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.left_front_wheel" //控制的连接点名称
-          },
-          "subsystem.machine_max.right_front_wheel_driver": {
-            "type": "machine_max:wheel_driver",
-            "definition": "machine_max:dayun_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.right_front_wheel" //控制的连接点名称
-          },
-          "subsystem.machine_max.left_back_wheel_1_driver": {
-            "type": "machine_max:wheel_driver",
-            "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.left_back_wheel_1"
-          },
-          "subsystem.machine_max.left_back_wheel_2_driver": {
-            "type": "machine_max:wheel_driver",
-            "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.left_back_wheel_2"
-          },
-          "subsystem.machine_max.right_back_wheel_1_driver": {
-            "type": "machine_max:wheel_driver",
-            "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.right_back_wheel_1"
-          },
-          "subsystem.machine_max.right_back_wheel_2_driver": {
-            "type": "machine_max:wheel_driver",
-            "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
-            "connector": "connector.machine_max.right_back_wheel_2"
+        "subsystem.machine_max.gearbox": {
+          "type": "machine_max:gearbox", //变速箱子系统, 改变收到的功率信号的扭矩和转速
+          "definition": "machine_max:dayun_gearbox", //子系统型号, 需要与子系统类型相匹配
+          "power_output": "subsystem.machine_max.transmission", //功率输出目标, 子系统或部件连接点名
+          "gear_outputs": { //(可选, 默认将当前挡位名称发至部件和载具的gear频道)挡位名称输出频道及目标
+            "gear": ["vehicle"]
           }
         },
-        "connectors": { //子部件用于与其他零件连接的连接点列表
-          "connector.machine_max.left_front_wheel": {
-            "locator": "wheel_locator_left",
-            "definition": "machine_max:dayun_left_steering_wheel"
-          },
-          "connector.machine_max.left_back_wheel_1": {
-            "locator": "wheel_locator_back_left_1",
-            "definition": "machine_max:dayun_left_wheel"
-          },
-          "connector.machine_max.left_back_wheel_2": {
-            "locator": "wheel_locator_back_left_2",
-            "definition": "machine_max:dayun_left_wheel"
-          },
-          "connector.machine_max.right_front_wheel": {
-            "locator": "wheel_locator_right",
-            "definition": "machine_max:dayun_right_steering_wheel"
-          },
-          "connector.machine_max.right_back_wheel_1": {
-            "locator": "wheel_locator_back_right_1",
-            "definition": "machine_max:dayun_right_wheel"
-          },
-          "connector.machine_max.right_back_wheel_2": {
-            "locator": "wheel_locator_back_right_2",
-            "definition": "machine_max:dayun_right_wheel"
-          },
-          "connector.machine_max.hull_connection": {
-            "locator": "hull_locator",
-            "definition": "machine_max:fixed_up",
-            "signal_targets": {
-              "wheel_control": [
-                "subsystem.machine_max.left_front_wheel_driver",
-                "subsystem.machine_max.right_front_wheel_driver",
-                "subsystem.machine_max.left_back_wheel_1_driver",
-                "subsystem.machine_max.left_back_wheel_2_driver",
-                "subsystem.machine_max.right_back_wheel_1_driver",
-                "subsystem.machine_max.right_back_wheel_2_driver"
-              ],
-              "gearbox_control": [
-                "subsystem.machine_max.gearbox"
-              ]
-            },
-            "power_target": "subsystem.machine_max.gearbox" // 将来自车体的动力传输至变速箱
-          },
-          "connector.machine_max.trailer": {
-            "locator": "trailer_locator",
-            "definition": "machine_max:dayun_trailer"
+        "subsystem.machine_max.transmission": {
+          "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
+          "definition": "machine_max:dayun_transmission", //子系统型号, 需要与子系统类型相匹配
+          "power_outputs": { //动力输出目标及减速比
+            "subsystem.machine_max.left_back_wheel_1_driver": 1.0,
+            "subsystem.machine_max.left_back_wheel_2_driver": 1.0,
+            "subsystem.machine_max.right_back_wheel_1_driver": 1.0,
+            "subsystem.machine_max.right_back_wheel_2_driver": 1.0
           }
         },
-        "hydro_priority": 0, //(可选, 默认0)空气阻力计算优先级, 值越大优先级越高, 优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化
-        "hydrodynamics": { //(可选, 默认单点质心位置计算流体动力)流体动力计算定位点列表, 键值对的键名为空字符串时表示以质心位置计算
-          "AeroDynamicCenter": { //流体动力计算点定位器名, 空字符串代表质心
-            "effective_range": 5.0 //(可选, 默认1.0)有效计算范围, 单位为m, 当在来流方向上的此距离内检测到遮挡时将会降低部件的实际空气阻力系数, 以模拟如车壳遮挡整流带来的减阻效果
+        "subsystem.machine_max.left_front_wheel_driver": {
+          "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动连接点上的部件滚动和转向
+          "definition": "machine_max:dayun_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+          "connector": "connector.machine_max.left_front_wheel" //控制的连接点名称
+        },
+        "subsystem.machine_max.right_front_wheel_driver": {
+          "type": "machine_max:wheel_driver",
+          "definition": "machine_max:dayun_front_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+          "connector": "connector.machine_max.right_front_wheel" //控制的连接点名称
+        },
+        "subsystem.machine_max.left_back_wheel_1_driver": {
+          "type": "machine_max:wheel_driver",
+          "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+          "connector": "connector.machine_max.left_back_wheel_1"
+        },
+        "subsystem.machine_max.left_back_wheel_2_driver": {
+          "type": "machine_max:wheel_driver",
+          "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+          "connector": "connector.machine_max.left_back_wheel_2"
+        },
+        "subsystem.machine_max.right_back_wheel_1_driver": {
+          "type": "machine_max:wheel_driver",
+          "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+          "connector": "connector.machine_max.right_back_wheel_1"
+        },
+        "subsystem.machine_max.right_back_wheel_2_driver": {
+          "type": "machine_max:wheel_driver",
+          "definition": "machine_max:dayun_back_wheel_driver", //子系统型号, 需要与子系统类型相匹配
+          "connector": "connector.machine_max.right_back_wheel_2"
+        }
+      },
+      "connectors": { //子部件用于与其他零件连接的连接点列表
+        "connector.machine_max.left_front_wheel": {
+          "locator": "left_front_wheel",
+          "definition": "machine_max:dayun_left_steering_wheel"
+        },
+        "connector.machine_max.left_back_wheel_1": {
+          "locator": "left_back_wheel",
+          "definition": "machine_max:dayun_left_wheel"
+        },
+        "connector.machine_max.left_back_wheel_2": {
+          "locator": "left_back_wheel2",
+          "definition": "machine_max:dayun_left_wheel"
+        },
+        "connector.machine_max.right_front_wheel": {
+          "locator": "right_front_wheel",
+          "definition": "machine_max:dayun_right_steering_wheel"
+        },
+        "connector.machine_max.right_back_wheel_1": {
+          "locator": "right_back_wheel",
+          "definition": "machine_max:dayun_right_wheel"
+        },
+        "connector.machine_max.right_back_wheel_2": {
+          "locator": "right_back_wheel2",
+          "definition": "machine_max:dayun_right_wheel"
+        },
+        "connector.machine_max.hull_axis": {
+          "locator": "chassis_hull_axis",
+          "definition": "machine_max:dayun_hull_axis",
+          "signal_targets": {
+            "engine_control": ["subsystem.machine_max.engine"],
+            "wheel_control": [
+              "subsystem.machine_max.left_front_wheel_driver",
+              "subsystem.machine_max.right_front_wheel_driver",
+              "subsystem.machine_max.left_back_wheel_1_driver",
+              "subsystem.machine_max.left_back_wheel_2_driver",
+              "subsystem.machine_max.right_back_wheel_1_driver",
+              "subsystem.machine_max.right_back_wheel_2_driver"
+            ],
+            "gearbox_control": [
+              "subsystem.machine_max.gearbox"
+            ]
           }
+        },
+        "connector.machine_max.hull_lock": {
+          "locator": "chassis_hull_lock",
+          "definition": "machine_max:fixed_up",
+          "overwrite": {
+            "integrity": 10
+          }
+        },
+        "connector.machine_max.trailer": {
+          "locator": "chassis_trailer_axis",
+          "definition": "machine_max:dayun_trailer"
+        }
+      },
+      "hydro_priority": 0, //(可选, 默认0)空气阻力计算优先级, 值越大优先级越高, 优先级高的部件不会被优先级低的部件阻挡而导致阻力系数发生变化
+      "hydrodynamics": { //(可选, 默认单点质心位置计算流体动力)流体动力计算定位点列表, 键值对的键名为空字符串时表示以质心位置计算
+        "AeroDynamicCenter": { //流体动力计算点定位器名, 空字符串代表质心
+          "effective_range": 5.0 //(可选, 默认1.0)有效计算范围, 单位为m, 当在来流方向上的此距离内检测到遮挡时将会降低部件的实际空气阻力系数, 以模拟如车壳遮挡整流带来的减阻效果
         }
       }
     }

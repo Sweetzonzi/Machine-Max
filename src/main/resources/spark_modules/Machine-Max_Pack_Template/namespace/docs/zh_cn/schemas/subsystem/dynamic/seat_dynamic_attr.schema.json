@@ -13,7 +13,7 @@
       "type": "string",
       "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
     },
-    "seat_point_locator": {
+    "locator": {
       "type": "string",
       "default": "",
       "description": "座椅点定位器名称，模型中的骨骼将作为座椅位置。若为空，则使用子系统定义的默认定位器。"
@@ -44,7 +44,7 @@
     {
       "type": "machine_max:seat",
       "definition": "machine_max:driver_seat",
-      "seat_point_locator": "DriverSeat",
+      "locator": "DriverSeat",
       "move_outputs": {
         "move_control": [
           "car_controller",

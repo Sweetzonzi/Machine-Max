@@ -1,0 +1,44 @@
+{ 
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:dayun_hull"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:dayun_chassis"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:dayun_wheel"
+      },
+      "strict": false
+    },
+    {
+      "type": "neoforge:components",
+      "items": ["machine_max:fabricating_blueprint"],
+      "components": {
+        "machine_max:part_type": "machine_max:dayun_wheelx2"
+      },
+      "strict": false
+    }
+  ],
+  "result": { 
+    "id": "machine_max:vehicle_blueprint",
+    "count": 1, 
+    "components": { 
+      "machine_max:vehicle_blueprint_path": "machine_max:dayun"
+    }
+  }
+}

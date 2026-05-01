@@ -35,7 +35,7 @@
           "subsystem.machine_max.driver_seat": {
             "type": "machine_max:seat", //子系统类型
             "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
-            "seat_point_locator": "seat", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
+            "locator": "seat", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
             "move_outputs": { //(可选,默认为空)子系统移动控制输出列表
               "move_control": ["subsystem.machine_max.motorbike_controller"] //将控制信号转发给车辆控制系统
             },

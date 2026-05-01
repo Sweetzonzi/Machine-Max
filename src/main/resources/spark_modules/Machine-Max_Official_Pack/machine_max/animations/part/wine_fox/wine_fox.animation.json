@@ -5,7 +5,7 @@
 			"loop": true,
 			"bones": {
 				"FXP": {
-					"rotation": [0, 0, "vehicle.get('steering')*225"]
+					"rotation": [0, 0, "-(subpart.connector_rotation('connector.machine_max.left_front_wheel', 1) + subpart.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
 				},
 				"PointerArmor": {
 					"rotation": [0, 0, "-225*(math.abs(vehicle.get('engine_speed')??0)*30/math.pi)/9000"]

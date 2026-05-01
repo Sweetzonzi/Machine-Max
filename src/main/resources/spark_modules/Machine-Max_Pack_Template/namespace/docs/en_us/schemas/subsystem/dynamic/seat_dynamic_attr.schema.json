@@ -13,7 +13,7 @@
       "type": "string",
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
-    "seat_point_locator": {
+    "locator": {
       "type": "string",
       "default": "",
       "description": "Seat point locator name, bones in the model will serve as seat position. If empty, use the default locator defined by the subsystem."
@@ -44,7 +44,7 @@
     {
       "type": "machine_max:seat",
       "definition": "machine_max:driver_seat",
-      "seat_point_locator": "DriverSeat",
+      "locator": "DriverSeat",
       "move_outputs": {
         "move_control": [
           "car_controller",

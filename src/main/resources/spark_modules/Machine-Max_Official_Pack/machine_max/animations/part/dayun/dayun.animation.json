@@ -1,0 +1,16 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"parallel0": {
+			"loop": true,
+			"bones": {
+				"FXP": {
+					"rotation": [0, 0, "vehicle.get('steering')*225"]
+				},
+				"base": {
+					"scale": "subpart.has_connector('connector.machine_max.bottom')"
+				}
+			}
+		}
+	}
+}

@@ -7,7 +7,7 @@
   "variants": {
     "model": "machine_max:dayun_steel_coil.geo",
     "textures": "machine_max:textures/part/dayun/dayun.png",
-    "animations": "machine_max:dayun_steel_coil",
+    "animations": "machine_max:dayun", //(可选, 留空则不播放动画)动画路径
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 100000.0,

@@ -65,7 +65,7 @@
           "subsystem.machine_max.driver_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_seat",
-            "seat_point_locator": "seat_point_left",
+            "locator": "seat_point_left",
             "move_outputs": {
               "move_control": [
                 "subsystem.machine_max.car_controller"
@@ -88,7 +88,7 @@
           "subsystem.machine_max.copilot_seat": {
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
-            "seat_point_locator": "seat_point_right",
+            "locator": "seat_point_right",
             "passenger_num_outputs": {
               "copilot_occupied": ["interact.machine_max.right_seat", "connector.machine_max.hull_connection"]
             }

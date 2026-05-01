@@ -26,7 +26,7 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
 
     public static final MapCodec<SeatSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
-            Codec.STRING.optionalFieldOf("seat_point_locator", "").forGetter(SeatSubsystemAttr::getLocator),
+            Codec.STRING.optionalFieldOf("locator", "").forGetter(SeatSubsystemAttr::getLocator),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("move_outputs", Map.of()).forGetter(SeatSubsystemAttr::getMoveSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("aim_outputs", Map.of()).forGetter(SeatSubsystemAttr::getViewSignalTargets),
             SIGNAL_TARGETS_CODEC.optionalFieldOf("regular_outputs", Map.of()).forGetter(SeatSubsystemAttr::getRegularSignalTargets),
