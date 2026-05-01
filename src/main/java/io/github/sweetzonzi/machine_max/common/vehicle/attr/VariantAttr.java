@@ -44,12 +44,36 @@ public class VariantAttr {
             }
     );
 
+    /**
+     * 零件映射编解码器，支持两种格式：
+     * <ul>
+     *   <li><b>简写</b>（仅有一个零件时）：直接写 SubPartAttr 对象，自动使用默认零件名 {@code "sub_part.machine_max.main"}</li>
+     *   <li><b>完整</b>（多个零件时）：{@code Map<String, SubPartAttr>} 键值对形式</li>
+     * </ul>
+     */
+    public static final Codec<Map<String, SubPartAttr>> SUB_PART_MAP_CODEC = Codec.either(
+            SubPartAttr.CODEC,
+            SubPartAttr.MAP_CODEC
+    ).xmap(
+            either -> either.map(
+                    subPart -> Map.of("sub_part.machine_max.main", subPart),
+                    map -> map
+            ),
+            map -> {
+                if (map.size() == 1 && map.containsKey("sub_part.machine_max.main")) {
+                    return Either.left(map.get("sub_part.machine_max.main"));
+                } else {
+                    return Either.right(map);
+                }
+            }
+    );
+
     public static final Codec<VariantAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.listOf().optionalFieldOf("tags", List.of()).forGetter(VariantAttr::getTags),
             ResourceLocation.CODEC.fieldOf("model").forGetter(VariantAttr::getModel),
             TEXTURES_CODEC.optionalFieldOf("textures", Map.of("default", EMPTY_TEXTURE)).forGetter(VariantAttr::getTextures),
             ResourceLocation.CODEC.optionalFieldOf("animations", EMPTY_ANIM).forGetter(VariantAttr::getAnimations),
-            SubPartAttr.MAP_CODEC.fieldOf("sub_parts").forGetter(VariantAttr::getSubParts)
+            SUB_PART_MAP_CODEC.fieldOf("sub_parts").forGetter(VariantAttr::getSubParts)
     ).apply(instance, VariantAttr::new));
 
     public VariantAttr(List<ResourceLocation> tags, ResourceLocation model, Map<String, ResourceLocation> textures, ResourceLocation animations, Map<String, SubPartAttr> subParts) {

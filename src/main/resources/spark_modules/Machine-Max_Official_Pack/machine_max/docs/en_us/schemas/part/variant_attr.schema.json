@@ -44,12 +44,21 @@
       "description": "动画路径，无视内层文件夹架构，例如machine_max:ae86会在所有内容包的animations/machine_max/part/ae86中的所有动画json作为模型的可用动画"
     },
     "sub_parts": {
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "subpart/sub_part_attr.schema.json"
-      },
-      "minProperties": 1,
-      "description": "Sub-part (component) definition, key is sub-part name, value is detailed configuration of the sub-part. This is the smallest unit of part movement, each movable part of the part should be a sub-part"
+      "oneOf": [
+        {
+          "$ref": "subpart/sub_part_attr.schema.json",
+          "description": "Single sub-part definition, using default sub-part name (\"sub_part.machine_max.main\")"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "subpart/sub_part_attr.schema.json"
+          },
+          "minProperties": 1,
+          "description": "Multi sub-part definition, key is sub-part name, value is the sub-part configuration"
+        }
+      ],
+      "description": "Sub-part definition, supports either a single sub-part (shorthand) or multiple sub-parts (key-value pairs). This is the smallest unit of part movement, each movable part of the part should be a sub-part"
     }
   },
   "additionalProperties": false,

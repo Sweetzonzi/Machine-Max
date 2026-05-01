@@ -5,7 +5,7 @@
   "vehicle_damage_rate": 1.0, //(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
   "vehicle_damage_rate_destroyed": 0.1, //(可选, 默认0.1)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
   "variants": { //部件变体列表, 可有多个变体名和模型路径的键值对
-    "model": "machine_max:dayun_chassis.geo", //模型路径
+    "model": "machine_max:dayun.geo", //模型路径
     "textures": { //贴图路径列表
       "print.machine_max.dayun.1": "machine_max:textures/part/dayun/dayun.png",
       "print.machine_max.dayun.2": "machine_max:textures/part/dayun/dayun2.png",

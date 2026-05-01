@@ -44,12 +44,21 @@
       "description": "动画路径，无视内层文件夹架构，例如machine_max:ae86会在所有内容包的animations/machine_max/part/ae86中的所有动画json作为模型的可用动画"
     },
     "sub_parts": {
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "subpart/sub_part_attr.schema.json"
-      },
-      "minProperties": 1,
-      "description": "子部件（零件）定义，键为子部件名称，值是子部件的详细配置。这是部件运动的最小单元，部件的每个可动部分都应当是一个子部件"
+      "oneOf": [
+        {
+          "$ref": "subpart/sub_part_attr.schema.json",
+          "description": "单一零件定义，使用默认零件名（\"sub_part.machine_max.main\"）"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "subpart/sub_part_attr.schema.json"
+          },
+          "minProperties": 1,
+          "description": "多零件定义，键为零件名称，值为零件配置"
+        }
+      ],
+      "description": "子部件（零件）定义，支持单一零件（简写）或多个零件（键值对）两种写法。这是部件运动的最小单元，部件的每个可动部分都应当是一个子部件"
     }
   },
   "additionalProperties": false,
