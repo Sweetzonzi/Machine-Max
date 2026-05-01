@@ -12,7 +12,7 @@ import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchClaimPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchCompleteRequestPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.ResearchReclaimPayload;
-import io.github.sweetzonzi.machine_max.util.PartTagTextUtil;
+import io.github.sweetzonzi.machine_max.util.TextUtil;
 import lombok.Getter;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -133,7 +133,7 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
 
     private void rebuildEntries() {
         BlueprintAttachment research = menu.getResearch();
-        String filter = PartTagTextUtil.normalize(searchBox != null ? searchBox.getValue() : "");
+        String filter = TextUtil.normalize(searchBox != null ? searchBox.getValue() : "");
 
         this.states = research.getAllResearchable().values().stream()
                 .filter(holder -> matchesSearchFilter(holder, filter))
@@ -224,19 +224,19 @@ public class BlueprintResearchScreen extends AbstractContainerScreen<BlueprintRe
 
     private boolean matchesSearchFilter(RecipeHolder<? extends ResearchRecipe> holder, String filter) {
         if (filter.isEmpty()) return true;
-        if (PartTagTextUtil.normalize(holder.id().toString()).contains(filter)) return true;
+        if (TextUtil.normalize(holder.id().toString()).contains(filter)) return true;
 
         RecipeHolder<BlueprintResearchRecipe> blueprintHolder = MMDynamicRes.BLUEPRINT_RESEARCH_RECIPES.get(holder.id());
         if (blueprintHolder == null) return false;
 
         ResourceLocation unlockRecipeId = blueprintHolder.value().getUnlockRecipe();
-        if (PartTagTextUtil.normalize(unlockRecipeId.toString()).contains(filter)) return true;
+        if (TextUtil.normalize(unlockRecipeId.toString()).contains(filter)) return true;
 
         RecipeHolder<FabricatingRecipe> unlockedHolder = MMDynamicRes.ALL_FABRICATING_RECIPES.get(unlockRecipeId);
         if (unlockedHolder == null) return false;
 
-        var partType = PartTagTextUtil.resolvePartTypeForTooltip(unlockedHolder.value().getResult());
-        for (String text : PartTagTextUtil.collectSearchTexts(partType)) {
+        var partType = TextUtil.resolvePartTypeForTooltip(unlockedHolder.value().getResult());
+        for (String text : TextUtil.collectSearchTexts(partType)) {
             if (text.contains(filter)) return true;
         }
         return false;

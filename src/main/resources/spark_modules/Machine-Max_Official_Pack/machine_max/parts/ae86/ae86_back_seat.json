@@ -61,12 +61,12 @@
             "locator": "AttachPoint",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "definition": "machine_max:fixed_down",
             "signal_translations": {//将各个类型的频道的信号转换至interact频道，统一信号频道
-              "left_front_door_interact": "left_interact",
-              "right_front_door_interact": "right_interact",
-              "left_back_door_interact": "left_interact",
-              "right_back_door_interact": "right_interact",
-              "left_door_interact": "left_interact",
-              "right_door_interact": "right_interact"
+              "interact_left_front_door": "left_interact",
+              "interact_right_front_door": "right_interact",
+              "interact_left_back_door": "left_interact",
+              "interact_right_back_door": "right_interact",
+              "interact_left_door": "left_interact",
+              "interact_right_door": "right_interact"
             },
             "signal_targets": {//向座椅子系统传输来自车门的互动信号
               "left_interact": ["subsystem.machine_max.left_seat"],

@@ -16,9 +16,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-public final class PartTagTextUtil {
+public final class TextUtil {
 
-    private PartTagTextUtil() {
+    private TextUtil() {
+    }
+
+    public static String getTranslation(String key) {
+        return Component.translatable(key).getString();
+    }
+
+    public static String getTranslation(ResourceLocation key) {
+        return Component.translatable(key.toLanguageKey()).getString();
     }
 
     public static List<ResourceLocation> getDistinctSortedTags(@Nullable PartType partType) {

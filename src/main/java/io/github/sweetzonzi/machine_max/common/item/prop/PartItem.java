@@ -46,6 +46,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.awt.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -70,19 +71,27 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
             if (player.hasData(MMAttachments.getVEHICLE_ASSEMBLY())) {
                 var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                 if (cache.getPartType() != null && cache.getVariantName() != null) {
-                    Part part = new Part(cache.getPartType(), cache.getVariantName(), level);
-                    RecipeHolder<?> recipeHolder = PartAssemblyItem.getRecipeHolder(stack, level);
-                    if (recipeHolder != null && recipeHolder.value() instanceof FabricatingRecipe) {
-                        part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE()); // 设置配方为物品对应的配方
+                    try {
+                        Part part = new Part(cache.getPartType(), cache.getVariantName(), level);
+                        RecipeHolder<?> recipeHolder = PartAssemblyItem.getRecipeHolder(stack, level);
+                        if (recipeHolder != null && recipeHolder.value() instanceof FabricatingRecipe) {
+                            part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE()); // 设置配方为物品对应的配方
+                        }
+                        restoreAssemblyStateFromDamage(stack, part);
+                        var result = cache.assembly(level, player, stack, part); // 放出部件
+                        if (result.getResult() == InteractionResult.CONSUME) { // 若成功则播放音效
+                            stack.consume(1, player);
+                            SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
+                            SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
+                        }
+                        return result;
+                    } catch (Exception e) {
+                        MachineMax.LOGGER.error("Invalid data: {}", stack.getDisplayName(), e);
+                        player.sendSystemMessage(
+                                Component.translatable("message.machine_max.part.place_failed", e.getMessage())
+                                        .withColor(Color.RED.getRGB()));
+                        return InteractionResultHolder.fail(stack);
                     }
-                    restoreAssemblyStateFromDamage(stack, part);
-                    var result = cache.assembly(level, player, stack, part); // 放出部件
-                    if (result.getResult() == InteractionResult.CONSUME) { // 若成功则播放音效
-                        stack.consume(1, player);
-                        SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "item.part.placed"), 32f);
-                        SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.PLAYERS, player.getPosition(1), player.getDeltaMovement().scale(20), (float) (1f + 0.2f * (Math.random() - 0.5f)), 1.0f);
-                    }
-                    return result;
                 } else return InteractionResultHolder.pass(stack);
             } else return InteractionResultHolder.pass(stack);
         } else return InteractionResultHolder.success(stack);

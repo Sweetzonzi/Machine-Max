@@ -70,7 +70,6 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
     public final ConnectorAttr attr;//连接点属性
     public New6Dof joint;//在两个连接点间共享的关节
     public final SignalPort signalPort;//连接点资源/信号传输端口
-    @Nullable
     public final MechPowerPort mechanicalEnergyPort;//连接点机械能传输端口
     protected static final EntityDataAccessor<Float> DATA_INTEGRITY_ID = SynchedEntityData.defineId(AbstractConnector.class, EntityDataSerializers.FLOAT);
     protected final SynchedEntityData synchedData;
@@ -91,10 +90,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
         this.offsetFromMassCenter = offsetFromMassCenter;
         this.actualTransform = offsetFromMassCenter.clone();
         this.signalPort = new SignalPort(this, attr.getSignalTargets(), attr.getSignalTranslations());
-        String powerTarget = attr.getPowerTarget();
-        this.mechanicalEnergyPort = (powerTarget != null && !powerTarget.isEmpty())
-                ? new MechPowerPort(this, powerTarget)
-                : null;
+        this.mechanicalEnergyPort = new MechPowerPort(this, attr.getPowerTarget());
         this.collideBetweenParts = attr.hasCollideBetweenParts();
         this.internal = attr.isInternal();
         this.attr = attr;

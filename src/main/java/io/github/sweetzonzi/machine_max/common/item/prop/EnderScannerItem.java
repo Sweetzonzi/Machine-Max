@@ -20,12 +20,12 @@ import java.awt.*;
 import java.util.HashMap;
 import java.util.Objects;
 
-public class ReusableVehicleCaptureItem extends Item implements ICustomModelItem, VehicleCaptureItem {
+public class EnderScannerItem extends Item implements ICustomModelItem, VehicleCaptureItem {
     private static final ModelIndex MODEL = new ModelIndex(
             "item", ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "blueprint"));
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "textures/item/blueprint.png");
     private static final Color COLOR = Color.GREEN;
-    public ReusableVehicleCaptureItem() {
+    public EnderScannerItem() {
         super(new Properties());
     }
 

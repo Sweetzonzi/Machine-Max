@@ -243,7 +243,7 @@ public class CollisionEffectManager implements ISoundSpreader {
         boolean materialChanged = !blockKey.equals(currentKey);
 
         if (currentUuid == null) {
-            //首次播放，淡入4tick，后续准备淡出8tick
+            //首次播放，淡入4tick，后续准备淡出8tick，循环播放
             UUID uuid = playSpreadingSound(level, sound, SoundSource.BLOCKS, 4, 8, true);
             setActiveSoundState(isWheel, uuid, blockKey);
         } else if (materialChanged) {

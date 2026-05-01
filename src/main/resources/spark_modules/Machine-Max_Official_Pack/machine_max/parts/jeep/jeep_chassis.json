@@ -220,8 +220,8 @@
             "locator": "hull",
             "definition": "machine_max:fixed_up",
             "signal_targets": {
-              "left_door_interact": ["subsystem.machine_max.driver_seat"],
-              "right_door_interact": ["subsystem.machine_max.copilot_seat"]
+              "interact_left_door": ["subsystem.machine_max.driver_seat"],
+              "interact_right_door": ["subsystem.machine_max.copilot_seat"]
             }
           },
           "connector.machine_max.trunk": {

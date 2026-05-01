@@ -1,0 +1,154 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/van/van_hull_icon.png",
+  "vehicle_durability_rate": 0.6,
+  "vehicle_damage_rate": 1.0,
+  "vehicle_damage_rate_destroyed": 0.1,
+  "variants": {
+    "model": "machine_max:van.geo",
+    "textures": "machine_max:textures/part/van/van.png",
+    "animations": "machine_max:van",
+    "tags": ["machine_max:hull", "machine_max:van"],
+    "sub_parts": {
+      "sub_part.machine_max.main": {
+        "start_bone": "Hull", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
+        "end_bones": [], // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
+        "mass_center": "hull_mass_center", //  (可选，默认取碰撞体积形心)质心位置locator名称
+        "durability": 650.0,
+        "mass": 300.0,
+        "block_collision": "ground",
+        "collision_height": 1.5,
+        "hit_boxes": { //键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
+          "collision_hull": { //值:碰撞形状属性
+            "type": "box", //碰撞形状类型, 支持box、sphere、cylinder
+            "material": "machine_max:7035_aluminum_alloy",
+            "thickness": 3 //(可选, 默认1)等效护甲厚度, 单位mm, 减免伤害并控制碰撞时的能量分配情况
+          },
+          "ysmGlow_collision_front_left_main_light": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.glow_left_main_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_left_main_light')",
+            "material": "machine_max:glass"
+          },
+          "ysmGlow_collision_front_right_main_light": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.glow_right_main_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_right_main_light')",
+            "material": "machine_max:glass"
+          },
+          "ysmGlow_collision_back_left_light": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.glow_back_left_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')",
+            "material": "machine_max:glass"
+          },
+          "ysmGlow_collision_back_right_light": {
+            "type": "box",
+            "subsystem": "subsystem.machine_max.glow_back_right_light",
+            "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_back_right_light')",
+            "material": "machine_max:glass"
+          }
+        },
+        "subsystems": {
+          "subsystem.machine_max.glow_left_main_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.glow_right_main_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.glow_back_left_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.glow_back_right_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          }
+        },
+        "connectors": {
+          "connector.machine_max.right_front_door_axis": {
+            "locator": "right_front_door_axis_hull",
+            "definition": "machine_max:van_right_front_door_axis_hull",
+            "signal_targets": { //向各个座椅传输来自车门的互动信号
+              "interact_right_front_door": ["connector.machine_max.chassis_connection"]
+            }
+          },
+          "connector.machine_max.right_front_door_lock": {
+            "locator": "right_front_door_lock_hull",
+            "definition": "machine_max:fixed_up",
+            "overwrite": {
+              "integrity": 10
+            }
+          },
+          "connector.machine_max.left_front_door_axis": {
+            "locator": "left_front_door_axis_hull",
+            "definition": "machine_max:van_left_front_door_axis_hull",
+            "signal_targets": { //向各个座椅传输来自车门的互动信号
+              "interact_left_front_door": ["connector.machine_max.chassis_connection"]
+            }
+          },
+          "connector.machine_max.left_front_door_lock": {
+            "locator": "left_front_door_lock_hull",
+            "definition": "machine_max:fixed_up",
+            "overwrite": {
+              "integrity": 10
+            }
+          },
+          "connector.machine_max.right_back_door_axis": {
+            "locator": "right_back_door_axis_hull",
+            "definition": "machine_max:van_right_back_door_axis_hull",
+            "signal_targets": { //向各个座椅传输来自车门的互动信号
+              "interact_right_back_door": ["connector.machine_max.chassis_connection"]
+            }
+          },
+          "connector.machine_max.right_back_door_lock": {
+            "locator": "right_back_door_lock_hull",
+            "definition": "machine_max:fixed_up",
+            "overwrite": {
+              "integrity": 10
+            }
+          },
+          "connector.machine_max.left_back_door_axis": {
+            "locator": "left_back_door_axis_hull",
+            "definition": "machine_max:van_left_back_door_axis_hull",
+            "signal_targets": { //向各个座椅传输来自车门的互动信号
+              "interact_left_back_door": ["connector.machine_max.chassis_connection"]
+            }
+          },
+          "connector.machine_max.left_back_door_lock": {
+            "locator": "left_back_door_lock_hull",
+            "definition": "machine_max:fixed_up",
+            "overwrite": {
+              "integrity": 10
+            }
+          },
+          "connector.machine_max.trunk_door_axis": {
+            "locator": "back_door_axis_hull",
+            "definition": "machine_max:van_back_door_axis_hull"
+          },
+          "connector.machine_max.trunk_door_lock": {
+            "locator": "back_door_lock_hull",
+            "definition": "machine_max:fixed_up",
+            "overwrite": {
+              "integrity": 10
+            }
+          },
+          "connector.machine_max.chassis_connection": {
+            "locator": "chassis_locator_hull",
+            "definition": "machine_max:fixed_down"
+          }
+        },
+        "projected_area": [8.6, 13.9, 6.5],
+        "hydro_priority": 10,
+        "hydrodynamics": {
+          "": {
+            "front_drag": [0.0, 0.3],
+            "back_drag": [0.0, 0.5]
+          }
+        }
+      }
+    }
+  }
+}

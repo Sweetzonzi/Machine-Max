@@ -52,14 +52,14 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.item_storage_subsystem.invalid_column_num", "储物子系统储物空间列数必须大于1之间");
         // 组装异常处理
         this.add("error.machine_max.part.model_not_found", "未找到模型文件: %1$s");
-        this.add("error.machine_max.part.connector_locator_not_found", "部件%1$s的模型中未找到的连接点%2$s的定位器%3$s");
-        this.add("error.machine_max.part.invalid_connector_type", "部件%1$s的连接点%2$s的类型%3$s非法，必须为\"simple\"或\"advanced\"");
-        this.add("error.machine_max.part.invalid_internal_connector_connection", "部件%1$s中的内部接口%2$s与%3$s的类型不匹配，至多只能有一个接口的类型为\"Special\"");
+        this.add("error.machine_max.part.connector_locator_not_found", "部件 %1$s 的模型中未找到连接点 %2$s 的定位器 %3$s");
+        this.add("error.machine_max.part.invalid_connector_type", "部件 %1$s 的连接点 %2$s 的类型 %3$s 非法，必须为\"simple\"或\"advanced\"");
+        this.add("error.machine_max.part.invalid_internal_connector_connection", "部件 %1$s 中的内部接口 %2$s 与 %3$s 的类型不匹配，至多只能有一个接口的类型为\"advanced\"");
         // 提示信息
         this.add("toast.machine_max.research_complete", "研发完成！");
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
         this.add("message.machine_max.watch_interact_box_info", "[%1$s]");
-        this.add("error.machine_max.use_part_item", "尝试放置%1$s时出现错误：%2$s");
+        this.add("error.machine_max.use_part_item", "尝试放置 %1$s 时出现错误：%2$s");
         this.add("tooltip.machine_max.crowbar.safe_disassembly", "互动以安全拆除%1$s");
         this.add("tooltip.machine_max.crowbar.detach_connector", "互动以断开%1$s和%2$s的连接");
         this.add("tooltip.machine_max.crowbar.unsafe_disassembly", "互动以强行拆除%1$s (可能损坏部件)");
@@ -71,20 +71,24 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("tooltip.machine_max.jade.subpart_durability", "零件耐久: %1$s");
         this.add("tooltip.machine_max.jade.vehicle_durability", "载具耐久: %1$s");
         this.add("message.machine_max.blueprint_saved", "蓝图已保存至%1$s");
-        this.add("message.machine_max.blueprint_error", "保存蓝图失败:%1$s");
+        this.add("message.machine_max.blueprint_error", "保存蓝图失败: %1$s");
         this.add("message.machine_max.blueprint_pass", "未选中任何载具，取消保存蓝图");
         this.add("message.machine_max.blueprint.place_failed", "空间不足，无法部署载具");
-        // 物品
+        this.add("message.machine_max.vehicle.place_failed", "部署载具失败: %1$s");
+        this.add("message.machine_max.part.place_failed", "放置部件失败: %1$s");
+        // 创造模式物品栏
         this.add("itemGroup.machine_max.main", "MachineMax: 工具与材料");
         this.add("itemGroup.machine_max.part", "MachineMax: 零部件");
         this.add("itemGroup.machine_max.vehicle_blueprint", "MachineMax: 载具设计图");
         this.add("itemGroup.machine_max.fabricating_blueprint", "MachineMax: 制造蓝图");
         this.add("itemGroup.machine_max.assembly", "MachineMax: 装配体");
+        // 物品
         this.add("block.machine_max.fabricator", "制造器(WIP)");
         this.add("block.machine_max.research_table", "研究台");
         this.add("item.machine_max.crowbar", "撬棍");
         this.add("item.machine_max.welding_torch", "焊枪");
         this.add("item.machine_max.spray_can", "喷漆罐");
+        this.add("item.machine_max.ender_gk_resin", "末影GK树脂");
         this.add("item.machine_max.empty_blueprint", "空白载具蓝图");
         this.add("item.machine_max.fabricating_blueprint", "制造蓝图");
         this.add("item.machine_max.structural_component_1", "初级结构部件");
@@ -93,6 +97,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "初级电子元件");
         this.add("item.machine_max.power_component_1", "初级能源组件");
         this.add("item.machine_max.energetic_component_1", "初级含能材料");
+        // 物品音效
         this.add("subtitles.item.welding_torch.start", "焊枪启动");
         this.add("subtitles.item.welding_torch.loop", "焊接中");
         this.add("subtitles.item.welding_torch.end", "焊枪关闭");

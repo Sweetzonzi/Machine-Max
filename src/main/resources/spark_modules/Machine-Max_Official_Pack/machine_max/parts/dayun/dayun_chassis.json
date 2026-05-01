@@ -115,11 +115,9 @@
               ],
               "gearbox_control": [
                 "subsystem.machine_max.gearbox"
-              ],
-              "power": [
-                "subsystem.machine_max.gearbox"
               ]
-            }
+            },
+            "power_target": "subsystem.machine_max.gearbox" // 将来自车体的动力传输至变速箱
           },
           "connector.machine_max.trailer": {
             "locator": "trailer_locator",

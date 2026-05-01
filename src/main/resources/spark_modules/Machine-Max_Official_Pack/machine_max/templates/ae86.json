@@ -348,16 +348,16 @@
               "integrity": 40.0
             },
             "connector.machine_max.right_back_wheel": {
-              "integrity": 20.0
+              "integrity": 40.0
             },
             "connector.machine_max.left_back_wheel": {
-              "integrity": 20.0
+              "integrity": 40.0
             },
             "connector.machine_max.copilot_seat": {
               "integrity": 20.0
             },
             "connector.machine_max.right_front_wheel": {
-              "integrity": 20.0
+              "integrity": 40.0
             },
             "connector.machine_max.driver_seat": {
               "integrity": 20.0

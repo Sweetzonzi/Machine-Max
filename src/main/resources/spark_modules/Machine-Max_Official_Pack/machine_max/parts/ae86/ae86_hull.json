@@ -37,28 +37,28 @@
           "interact.machine_max.left_front_door": { //键:交互判定区名称
             "bone": "LeftFrontDoorInteractZone", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "left_front_door_interact": ["connector.machine_max.chassis_connection"] //将交互信号转发给车架连接点
+              "interact_left_front_door": ["connector.machine_max.chassis_connection"] //将交互信号转发给车架连接点
             },
             "interact_mode": "fast" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
           },
           "interact.machine_max.right_front_door": { //键:交互判定区名称
             "bone": "RightFrontDoorInteractZone", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "right_front_door_interact": ["connector.machine_max.chassis_connection"] //将交互信号转发给车架连接点
+              "interact_right_front_door": ["connector.machine_max.chassis_connection"] //将交互信号转发给车架连接点
             },
             "interact_mode": "fast" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
           },
           "interact.machine_max.left_back_door": { //键:交互判定区名称
             "bone": "LeftBackDoorInteractZone", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "left_back_door_interact": ["connector.machine_max.chassis_connection"] //将交互信号转发给车架连接点
+              "interact_left_back_door": ["connector.machine_max.chassis_connection"] //将交互信号转发给车架连接点
             },
             "interact_mode": "fast" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
           },
           "interact.machine_max.right_back_door": { //键:交互判定区名称
             "bone": "RightBackDoorInteractZone", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "right_back_door_interact": ["connector.machine_max.chassis_connection"] //将交互信号转发给车架连接点
+              "interact_right_back_door": ["connector.machine_max.chassis_connection"] //将交互信号转发给车架连接点
             },
             "interact_mode": "fast" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
           },

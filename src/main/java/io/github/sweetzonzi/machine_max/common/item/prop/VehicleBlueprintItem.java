@@ -87,21 +87,15 @@ public class VehicleBlueprintItem extends Item implements ICustomModelItem {
                 PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(shape));
                 testGhost.setPhysicsLocation(transform.getTranslation());
                 PhysicsLevel physicsLevel = SparkLevel.getPhysicsLevel(level);
-                physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_blueprint", PPhase.PRE, () -> {
-                    int contact = physicsLevel.getWorld().contactTest(testGhost, null);
-                    if (contact == 0) {
-                        SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
-                            VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), false);
-                            vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
-                            ObjectManager.addVehicle(vehicle);
-                        });
-                    } else
-                        SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
-                            player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
-                        });
-                    return null;
-                });
-            } catch (NullPointerException e) {
+                int contact = physicsLevel.getWorld().contactTest(testGhost, null);
+                if (contact == 0) {
+                    VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), false);
+                    vehicle.setPos(SparkMathKt.toVec3(transform.getTranslation()));
+                    ObjectManager.addVehicle(vehicle);
+                } else player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
+            } catch (Exception e) {
+                player.sendSystemMessage(Component.translatable("message.machine_max.vehicle.place_failed", e.getMessage())
+                        .withColor(Color.RED.getRGB()));
                 return InteractionResultHolder.fail(stack);
             }
         }

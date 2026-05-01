@@ -74,17 +74,21 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("message.machine_max.blueprint_error", "Failed to save blueprint: %1$s");
         this.add("message.machine_max.blueprint_pass", "No vehicle selected, skipping blueprint save");
         this.add("message.machine_max.blueprint.place_failed", "No enough space to deploy vehicle");
-        //Item
-        this.add("block.machine_max.fabricator", "Fabricator(WIP)");
-        this.add("block.machine_max.research_table", "Research Table");
+        this.add("message.machine_max.vehicle.place_failed", "Failed to deploy vehicle: %1$s");
+        this.add("message.machine_max.part.place_failed", "Failed to place part: %1$s");
+        //Item Group
         this.add("itemGroup.machine_max.main", "MachineMax: Materials and Tools");
         this.add("itemGroup.machine_max.part", "MachineMax: Parts");
         this.add("itemGroup.machine_max.vehicle_blueprint", "MachineMax: Vehicle Designs");
         this.add("itemGroup.machine_max.fabricating_blueprint", "MachineMax: Fabricating Blueprints");
         this.add("itemGroup.machine_max.assembly", "MachineMax: Assembly");
+        // Item
+        this.add("block.machine_max.fabricator", "Fabricator(WIP)");
+        this.add("block.machine_max.research_table", "Research Table");
         this.add("item.machine_max.crowbar", "Crowbar");
         this.add("item.machine_max.welding_torch", "Welding Torch");
         this.add("item.machine_max.spray_can", "Spray Can");
+        this.add("item.machine_max.ender_gk_resin", "Ender GK Resin");
         this.add("item.machine_max.empty_blueprint", "Empty Vehicle Blueprint");
         this.add("item.machine_max.fabricating_blueprint", "Fabricating Blueprint");
         this.add("item.machine_max.structural_component_1", "Basic Structural Component");
@@ -93,6 +97,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("item.machine_max.electronic_component_1", "Basic Electronic Component");
         this.add("item.machine_max.power_component_1", "Basic Power Component");
         this.add("item.machine_max.energetic_component_1", "Basic Energetic Material");
+        // Item sound effects
         this.add("subtitles.item.welding_torch.start", "Welding torch starts");
         this.add("subtitles.item.welding_torch.loop", "Welding torch running");
         this.add("subtitles.item.welding_torch.end", "Welding torch stops");

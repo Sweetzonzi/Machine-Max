@@ -1,0 +1,1452 @@
+{
+  "max": [
+    3.109739065170288,
+    1.7559349536895752,
+    1.8025898933410645
+  ],
+  "hp": 3790.0,
+  "parts": {
+    "5cba7c89-b3ee-4641-8f1b-b889df96b893": {
+      "material_assembling_progress": 4,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_door_axis": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.left_front_door_lock": {
+              "integrity": 10.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.rearview_mirror": {
+              "durability": 2.0
+            }
+          },
+          "id": 1,
+          "durability": 300.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              344.50815,
+              -58.611942,
+              380.70673
+            ],
+            "rotation": [
+              -0.0022472662,
+              -0.7063966,
+              -0.002330833,
+              0.7078089
+            ],
+            "linear_vel": [
+              -0.001271666,
+              0.007934399,
+              0.00503107
+            ],
+            "angular_vel": [
+              0.0032906223,
+              -9.5760835E-5,
+              7.473582E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_door",
+      "registry_key": "machine_max:van_door",
+      "name": "machine_max.van_door",
+      "uuid": "5cba7c89-b3ee-4641-8f1b-b889df96b893",
+      "variant": "left_door"
+    },
+    "60f4ebf1-c5b4-4c84-9b5d-c849e90f2a5e": {
+      "material_assembling_progress": 14,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_seat": {
+              "integrity": 20.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.seat": {
+              "durability": 20.0
+            }
+          },
+          "id": 2,
+          "durability": 100.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              342.65518,
+              -58.966934,
+              382.6965
+            ],
+            "rotation": [
+              -0.00224766,
+              -0.7063979,
+              -0.002331166,
+              0.70780754
+            ],
+            "linear_vel": [
+              -5.041898E-4,
+              -3.5703182E-5,
+              0.0043777917
+            ],
+            "angular_vel": [
+              0.0032809873,
+              -6.513206E-5,
+              7.3722133E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_seat",
+      "registry_key": "machine_max:van_seat",
+      "name": "machine_max.van_seat",
+      "uuid": "60f4ebf1-c5b4-4c84-9b5d-c849e90f2a5e",
+      "variant": "left_front_seat"
+    },
+    "202a4f12-7829-45fb-9b16-fa3cbdd46b5e": {
+      "material_assembling_progress": 2147483647,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_back_door_axis": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.left_back_door_lock": {
+              "integrity": 10.0
+            }
+          },
+          "id": 31,
+          "durability": 400.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              342.7874,
+              -58.132187,
+              380.75772
+            ],
+            "rotation": [
+              -0.0022467838,
+              -0.7063992,
+              -0.002329838,
+              0.7078063
+            ],
+            "linear_vel": [
+              -0.0010327604,
+              0.0065313056,
+              0.0071423403
+            ],
+            "angular_vel": [
+              0.00327877,
+              -4.5633373E-5,
+              6.974856E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_door_slide",
+      "registry_key": "machine_max:van_door_slide",
+      "name": "machine_max.van_door_slide",
+      "uuid": "202a4f12-7829-45fb-9b16-fa3cbdd46b5e",
+      "variant": "left_door_slide"
+    },
+    "20dacc22-7dd4-4b19-8ff4-193e5a202f80": {
+      "material_assembling_progress": 14,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_seat": {
+              "integrity": 20.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.seat": {
+              "durability": 20.0
+            }
+          },
+          "id": 3,
+          "durability": 100.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              344.09265,
+              -58.976242,
+              382.69363
+            ],
+            "rotation": [
+              -0.002247639,
+              -0.70639795,
+              -0.0023312662,
+              0.7078075
+            ],
+            "linear_vel": [
+              -5.04952E-4,
+              0.0011098683,
+              0.0038298718
+            ],
+            "angular_vel": [
+              0.0032814066,
+              -6.8677815E-5,
+              7.364971E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_seat",
+      "registry_key": "machine_max:van_seat",
+      "name": "machine_max.van_seat",
+      "uuid": "20dacc22-7dd4-4b19-8ff4-193e5a202f80",
+      "variant": "left_front_seat"
+    },
+    "5a80a1cd-567e-43cb-982b-e7a2a18512d3": {
+      "material_assembling_progress": 5,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right_front_wheel": {
+              "integrity": 20.0
+            }
+          },
+          "id": 4,
+          "durability": 180.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              341.36932,
+              -59.552654,
+              383.18918
+            ],
+            "rotation": [
+              -0.074775524,
+              -0.70350397,
+              -0.062139764,
+              0.70400953
+            ],
+            "linear_vel": [
+              6.455905E-4,
+              -1.4267862E-4,
+              0.0012116118
+            ],
+            "angular_vel": [
+              0.006561769,
+              -8.3748105E-8,
+              -0.0020700842
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_wheel",
+      "registry_key": "machine_max:van_wheel",
+      "name": "machine_max.van_wheel",
+      "uuid": "5a80a1cd-567e-43cb-982b-e7a2a18512d3",
+      "variant": "right_wheel"
+    },
+    "8eb2af35-91f8-45ae-b64b-8a5037efabab": {
+      "material_assembling_progress": 2147483647,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right_back_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.right_back_door_axis": {
+              "integrity": 20.0
+            }
+          },
+          "id": 29,
+          "durability": 400.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              342.7922,
+              -58.132484,
+              383.15158
+            ],
+            "rotation": [
+              -0.0022477657,
+              -0.7063973,
+              -0.0023309635,
+              0.70780814
+            ],
+            "linear_vel": [
+              -0.0012099196,
+              -0.0013988465,
+              0.007140967
+            ],
+            "angular_vel": [
+              0.0032902765,
+              -6.373094E-5,
+              7.6929526E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_door_slide",
+      "registry_key": "machine_max:van_door_slide",
+      "name": "machine_max.van_door_slide",
+      "uuid": "8eb2af35-91f8-45ae-b64b-8a5037efabab",
+      "variant": "right_door_slide"
+    },
+    "c165a1fa-86ef-4308-bd1b-ac7d806655b2": {
+      "material_assembling_progress": 14,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right_front_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.right_back_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.trunk_door_axis": {
+              "integrity": 80.0
+            },
+            "connector.machine_max.chassis_connection": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.right_back_door_axis": {
+              "integrity": 40.0
+            },
+            "connector.machine_max.left_back_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.left_front_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.trunk_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.left_front_door_axis": {
+              "integrity": 40.0
+            },
+            "connector.machine_max.left_back_door_axis": {
+              "integrity": 40.0
+            },
+            "connector.machine_max.right_front_door_axis": {
+              "integrity": 40.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.glow_left_main_light": {
+              "durability": 2.0
+            },
+            "subsystem.machine_max.glow_back_left_light": {
+              "durability": 2.0
+            },
+            "subsystem.machine_max.glow_right_main_light": {
+              "durability": 2.0
+            },
+            "subsystem.machine_max.glow_back_right_light": {
+              "durability": 2.0
+            }
+          },
+          "id": 5,
+          "durability": 650.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              343.41388,
+              -58.99742,
+              381.95334
+            ],
+            "rotation": [
+              -0.0022474793,
+              -0.706398,
+              -0.0023310937,
+              0.7078075
+            ],
+            "linear_vel": [
+              -0.0010942174,
+              0.0030444562,
+              0.0037221771
+            ],
+            "angular_vel": [
+              0.0032820483,
+              -5.8861933E-5,
+              7.3743396E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_hull",
+      "registry_key": "machine_max:van_hull",
+      "name": "machine_max.van_hull",
+      "uuid": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "variant": "default"
+    },
+    "1a2e44f1-f614-4736-b752-ce55f5e0b27f": {
+      "material_assembling_progress": 14,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_seat": {
+              "integrity": 20.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.seat": {
+              "durability": 20.0
+            }
+          },
+          "id": 6,
+          "durability": 100.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              344.08987,
+              -58.97607,
+              381.29364
+            ],
+            "rotation": [
+              -0.0022476814,
+              -0.706398,
+              -0.0023313256,
+              0.7078075
+            ],
+            "linear_vel": [
+              -4.0810366E-4,
+              0.0057021827,
+              0.0044441274
+            ],
+            "angular_vel": [
+              0.003281632,
+              -6.402451E-5,
+              7.3600747E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_seat",
+      "registry_key": "machine_max:van_seat",
+      "name": "machine_max.van_seat",
+      "uuid": "1a2e44f1-f614-4736-b752-ce55f5e0b27f",
+      "variant": "left_front_seat"
+    },
+    "1ad2ad84-e455-4e25-bddc-bfa7eb90b2fa": {
+      "material_assembling_progress": 3,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.trunk_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.trunk_door_axis": {
+              "integrity": 20.0
+            }
+          },
+          "id": 7,
+          "durability": 400.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              340.23544,
+              -58.06979,
+              381.95978
+            ],
+            "rotation": [
+              -0.0022491044,
+              -0.7063978,
+              -0.0023301828,
+              0.70780766
+            ],
+            "linear_vel": [
+              -0.001730813,
+              7.700771E-4,
+              0.0069560194
+            ],
+            "angular_vel": [
+              0.0035407743,
+              -7.033062E-5,
+              7.3204224E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_trunk_door",
+      "registry_key": "machine_max:van_trunk_door",
+      "name": "machine_max.van_trunk_door",
+      "uuid": "1ad2ad84-e455-4e25-bddc-bfa7eb90b2fa",
+      "variant": "default"
+    },
+    "79c8626c-6f68-4671-9b5e-058c6ed74100": {
+      "material_assembling_progress": 14,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_wheel": {
+              "integrity": 60.0
+            },
+            "connector.machine_max.right_back_wheel": {
+              "integrity": 60.0
+            },
+            "connector.machine_max.left_back_wheel": {
+              "integrity": 60.0
+            },
+            "connector.machine_max.left_front_seat": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.right_front_seat": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.hull_locator_chassis": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.right_front_wheel": {
+              "integrity": 60.0
+            },
+            "connector.machine_max.left_back_seat": {
+              "integrity": 20.0
+            },
+            "connector.machine_max.right_back_seat": {
+              "integrity": 20.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.glove_box": {
+              "Items": [],
+              "durability": 50.0
+            },
+            "subsystem.machine_max.left_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.engine": {
+              "durability": 50.0
+            },
+            "subsystem.machine_max.gearbox": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.car_controller": {
+              "durability": 80.0
+            },
+            "subsystem.machine_max.right_front_wheel_driver": {
+              "durability": 100.0
+            },
+            "subsystem.machine_max.transmission": {
+              "durability": 100.0
+            }
+          },
+          "id": 8,
+          "durability": 800.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              343.4106,
+              -59.49741,
+              381.95328
+            ],
+            "rotation": [
+              -0.002247587,
+              -0.70639795,
+              -0.002331189,
+              0.7078075
+            ],
+            "linear_vel": [
+              5.374341E-4,
+              0.0030389652,
+              0.0014662903
+            ],
+            "angular_vel": [
+              0.0032812268,
+              -6.4918444E-5,
+              7.364426E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_chassis",
+      "registry_key": "machine_max:van_chassis",
+      "name": "machine_max.van_chassis",
+      "uuid": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "variant": "default"
+    },
+    "16ccd4fd-381d-4d54-b6a0-f7a0041f0d34": {
+      "material_assembling_progress": 5,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_wheel_locator": {
+              "integrity": 20.0
+            }
+          },
+          "id": 9,
+          "durability": 180.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              345.39453,
+              -59.552578,
+              380.78778
+            ],
+            "rotation": [
+              -0.0043621752,
+              -0.70632166,
+              -0.016798532,
+              0.70767826
+            ],
+            "linear_vel": [
+              7.543159E-5,
+              6.93053E-5,
+              0.001449672
+            ],
+            "angular_vel": [
+              0.0029778024,
+              1.4422221E-8,
+              -1.956228E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_wheel",
+      "registry_key": "machine_max:van_wheel",
+      "name": "machine_max.van_wheel",
+      "uuid": "16ccd4fd-381d-4d54-b6a0-f7a0041f0d34",
+      "variant": "left_wheel"
+    },
+    "6f46b4fe-3bb5-4144-8256-e0cb598c4b76": {
+      "material_assembling_progress": 5,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_wheel_locator": {
+              "integrity": 20.0
+            }
+          },
+          "id": 10,
+          "durability": 180.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              341.36508,
+              -59.55265,
+              380.7255
+            ],
+            "rotation": [
+              -0.10185999,
+              -0.6978836,
+              -0.114146225,
+              0.69968116
+            ],
+            "linear_vel": [
+              6.8895135E-4,
+              -7.981062E-5,
+              0.0018015485
+            ],
+            "angular_vel": [
+              0.004014652,
+              -1.7677287E-8,
+              -0.005490779
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_wheel",
+      "registry_key": "machine_max:van_wheel",
+      "name": "machine_max.van_wheel",
+      "uuid": "6f46b4fe-3bb5-4144-8256-e0cb598c4b76",
+      "variant": "left_wheel"
+    },
+    "0ae11c34-a6a8-4046-b76e-87764b53696b": {
+      "material_assembling_progress": 5,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right_front_wheel": {
+              "integrity": 20.0
+            }
+          },
+          "id": 11,
+          "durability": 180.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              345.39932,
+              -59.552574,
+              383.11084
+            ],
+            "rotation": [
+              -0.0282108,
+              -0.7068722,
+              -0.015719218,
+              0.70660365
+            ],
+            "linear_vel": [
+              8.812526E-4,
+              -1.7096847E-4,
+              0.0014369991
+            ],
+            "angular_vel": [
+              0.0029522546,
+              -8.4429805E-9,
+              7.3599187E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_wheel",
+      "registry_key": "machine_max:van_wheel",
+      "name": "machine_max.van_wheel",
+      "uuid": "0ae11c34-a6a8-4046-b76e-87764b53696b",
+      "variant": "right_wheel"
+    },
+    "f3e4fb76-36c6-4284-8e09-6c1e62ccc227": {
+      "material_assembling_progress": 4,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.right_front_door_lock": {
+              "integrity": 10.0
+            },
+            "connector.machine_max.right_front_door_axis": {
+              "integrity": 20.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.rearview_mirror": {
+              "durability": 2.0
+            }
+          },
+          "id": 12,
+          "durability": 300.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              344.5131,
+              -58.612255,
+              383.19568
+            ],
+            "rotation": [
+              -0.002247429,
+              -0.7063986,
+              -0.0023311258,
+              0.7078069
+            ],
+            "linear_vel": [
+              -8.3963433E-4,
+              -2.3666769E-4,
+              0.0049477885
+            ],
+            "angular_vel": [
+              0.0032907974,
+              -1.9375757E-4,
+              7.2142505E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_door",
+      "registry_key": "machine_max:van_door",
+      "name": "machine_max.van_door",
+      "uuid": "f3e4fb76-36c6-4284-8e09-6c1e62ccc227",
+      "variant": "right_door"
+    },
+    "743932a2-e306-472f-a370-d9effdcad692": {
+      "material_assembling_progress": 14,
+      "render_wireframe": false,
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "connector_data": {
+            "connector.machine_max.left_front_seat": {
+              "integrity": 20.0
+            }
+          },
+          "subsystem_data": {
+            "subsystem.machine_max.seat": {
+              "durability": 20.0
+            }
+          },
+          "id": 13,
+          "durability": 100.0,
+          "pos_rot_vel_vel": {
+            "position": [
+              342.6524,
+              -58.96676,
+              381.2965
+            ],
+            "rotation": [
+              -0.0022477102,
+              -0.70639795,
+              -0.0023312443,
+              0.7078075
+            ],
+            "linear_vel": [
+              -4.2050876E-4,
+              0.004556991,
+              0.0037675486
+            ],
+            "angular_vel": [
+              0.0032795288,
+              -6.495066E-5,
+              7.347536E-4
+            ]
+          }
+        }
+      },
+      "custom_recipe": "machine_max:van_seat",
+      "registry_key": "machine_max:van_seat",
+      "name": "machine_max.van_seat",
+      "uuid": "743932a2-e306-472f-a370-d9effdcad692",
+      "variant": "left_front_seat"
+    }
+  },
+  "connections": [
+    {
+      "partUuidS": "16ccd4fd-381d-4d54-b6a0-f7a0041f0d34",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_front_wheel_locator",
+      "posRotS": {
+        "position": [
+          5.5873394E-4,
+          -0.005666256,
+          -0.002557993
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_wheel",
+      "posRotA": {
+        "position": [
+          -1.161075,
+          -0.060343742,
+          -1.9889562
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "0ae11c34-a6a8-4046-b76e-87764b53696b",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_front_wheel",
+      "posRotS": {
+        "position": [
+          -5.5873394E-4,
+          -0.005666256,
+          -0.002557993
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_wheel",
+      "posRotA": {
+        "position": [
+          1.161075,
+          -0.060343742,
+          -1.9889562
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "5a80a1cd-567e-43cb-982b-e7a2a18512d3",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_front_wheel",
+      "posRotS": {
+        "position": [
+          -5.5873394E-4,
+          -0.005666256,
+          -0.002557993
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_wheel",
+      "posRotA": {
+        "position": [
+          1.2313813,
+          -0.09400624,
+          2.0419064
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "6f46b4fe-3bb5-4144-8256-e0cb598c4b76",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_front_wheel_locator",
+      "posRotS": {
+        "position": [
+          5.5873394E-4,
+          -0.005666256,
+          -0.002557993
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_wheel",
+      "posRotA": {
+        "position": [
+          -1.2313813,
+          -0.09400624,
+          2.0419064
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "743932a2-e306-472f-a370-d9effdcad692",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_front_seat",
+      "posRotS": {
+        "position": [
+          -0.041666567,
+          -0.4889372,
+          -0.18382055
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_seat",
+      "posRotA": {
+        "position": [
+          -0.7,
+          0.03671938,
+          0.576525
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "1a2e44f1-f614-4736-b752-ce55f5e0b27f",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_front_seat",
+      "posRotS": {
+        "position": [
+          -0.041666567,
+          -0.4889372,
+          -0.18382055
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_seat",
+      "posRotA": {
+        "position": [
+          -0.7,
+          0.03671938,
+          -0.860975
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "20dacc22-7dd4-4b19-8ff4-193e5a202f80",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_front_seat",
+      "posRotS": {
+        "position": [
+          -0.041666567,
+          -0.4889372,
+          -0.18382055
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_seat",
+      "posRotA": {
+        "position": [
+          0.7,
+          0.03671938,
+          -0.860975
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "60f4ebf1-c5b4-4c84-9b5d-c849e90f2a5e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_front_seat",
+      "posRotS": {
+        "position": [
+          -0.041666567,
+          -0.4889372,
+          -0.18382055
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_seat",
+      "posRotA": {
+        "position": [
+          0.7,
+          0.03671938,
+          0.576525
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.chassis_connection",
+      "posRotS": {
+        "position": [
+          0.03181875,
+          0.2726562,
+          -0.504725
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.hull_locator_chassis",
+      "posRotA": {
+        "position": [
+          0.03181875,
+          0.7726562,
+          -0.504725
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "1ad2ad84-e455-4e25-bddc-bfa7eb90b2fa",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.trunk_door_lock",
+      "posRotS": {
+        "position": [
+          -0.02400625,
+          -1.2500001,
+          0.0
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.trunk_door_lock",
+      "posRotA": {
+        "position": [
+          -0.02400625,
+          -0.3429681,
+          3.1843376
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "1ad2ad84-e455-4e25-bddc-bfa7eb90b2fa",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.trunk_door_axis",
+      "posRotS": {
+        "position": [
+          6.145565E-6,
+          0.62499696,
+          0.018752195
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.trunk_door_axis",
+      "posRotA": {
+        "position": [
+          1.3247598E-5,
+          1.5320294,
+          3.2030923
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "5cba7c89-b3ee-4641-8f1b-b889df96b893",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_front_door_axis",
+      "posRotS": {
+        "position": [
+          -0.0211488,
+          0.031063795,
+          -0.4479946
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_door_axis",
+      "posRotA": {
+        "position": [
+          -1.265625,
+          0.42348123,
+          -1.5422562
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_front_door_lock",
+      "posRotS": {
+        "position": [
+          -1.2499934,
+          0.5250393,
+          -0.2453676
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "5cba7c89-b3ee-4641-8f1b-b889df96b893",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_front_door_lock",
+      "posRotA": {
+        "position": [
+          -0.0055155787,
+          0.13262403,
+          0.8488961
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "f3e4fb76-36c6-4284-8e09-6c1e62ccc227",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_front_door_axis",
+      "posRotS": {
+        "position": [
+          0.0211488,
+          0.031063795,
+          -0.4479946
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_door_axis",
+      "posRotA": {
+        "position": [
+          1.265625,
+          0.42348123,
+          -1.5422562
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_front_door_lock",
+      "posRotS": {
+        "position": [
+          1.249973,
+          0.52504003,
+          -0.24535885
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "f3e4fb76-36c6-4284-8e09-6c1e62ccc227",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_front_door_lock",
+      "posRotA": {
+        "position": [
+          0.0055136513,
+          0.13262334,
+          0.8488909
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "8eb2af35-91f8-45ae-b64b-8a5037efabab",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_back_door_lock",
+      "posRotS": {
+        "position": [
+          0.06870353,
+          -0.5625446,
+          -0.68750054
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_door_lock",
+      "posRotA": {
+        "position": [
+          1.265625,
+          0.29848123,
+          -0.05788125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "8eb2af35-91f8-45ae-b64b-8a5037efabab",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.right_back_door_axis",
+      "posRotS": {
+        "position": [
+          0.06869618,
+          -0.5625453,
+          0.7656404
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          -2.3283064E-10,
+          1.0
+        ]
+      },
+      "partUuidA": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.right_back_door_axis",
+      "posRotA": {
+        "position": [
+          1.2656212,
+          0.2984794,
+          1.3952506
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          -2.3283064E-10,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "202a4f12-7829-45fb-9b16-fa3cbdd46b5e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_back_door_lock",
+      "posRotS": {
+        "position": [
+          -0.06870353,
+          -0.5625446,
+          -0.68750054
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_door_lock",
+      "posRotA": {
+        "position": [
+          -1.265625,
+          0.29848123,
+          -0.05788125
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "partUuidS": "202a4f12-7829-45fb-9b16-fa3cbdd46b5e",
+      "subPartNameS": "sub_part.machine_max.main",
+      "simplePointConnectorName": "connector.machine_max.left_back_door_axis",
+      "posRotS": {
+        "position": [
+          -0.06872709,
+          -0.562546,
+          0.76560843
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "partUuidA": "c165a1fa-86ef-4308-bd1b-ac7d806655b2",
+      "subPartNameA": "sub_part.machine_max.main",
+      "advConnectorName": "connector.machine_max.left_back_door_axis",
+      "posRotA": {
+        "position": [
+          -1.2656319,
+          0.29848012,
+          1.395229
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "name": "van",
+  "uuid": "79c8626c-6f68-4671-9b5e-058c6ed74100",
+  "pos": [
+    343.2452697753906,
+    -58.943241119384766,
+    381.9649963378906
+  ],
+  "min": [
+    -3.242189645767212,
+    -1.2315566539764404,
+    -1.8291850090026855
+  ]
+}

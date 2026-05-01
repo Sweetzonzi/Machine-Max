@@ -11,6 +11,7 @@ import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsGhostObject;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
@@ -78,27 +79,20 @@ public class AssemblyItem extends Item implements ICustomModelItem {
                 com.jme3.math.Vector3f shape = new com.jme3.math.Vector3f((float) (max.x - min.x), (float) (max.y - min.y), (float) (max.z - min.z)).mult(0.5f);
                 PhysicsGhostObject testGhost = new PhysicsGhostObject(new BoxCollisionShape(shape));
                 testGhost.setPhysicsLocation(transform.getTranslation());
-                PhysicsLevel physicsLevel = SparkLevel.getPhysicsLevel(level);
-                physicsLevel.submitDeduplicatedTask(player.getId() + "_try_place_assembly", PPhase.PRE, () -> {
-                    int contact = physicsLevel.getWorld().contactTest(testGhost, null);
-                    if (contact == 0) {
-                        SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
-                            VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), true);
-                            var pos = transform.getTranslation();
-                            vehicle.setPos(SparkMathKt.toVec3(pos));
-                            ObjectManager.addVehicle(vehicle);
-                            if (!player.hasInfiniteMaterials()) VisualEffectHelper.boundingBox = null;
-                            stack.consume(1, player);
-                            ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, Math.max((int) shape.length(), 30),
-                                    shape.x / 1.5, shape.y / 1.5, shape.z / 1.5, 0.2f);
-                        });
-                    } else
-                        SparkLevel.submitImmediateTask(level, PPhase.PRE, () -> {
-                            player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
-                        });
-                    return null;
-                });
-            } catch (NullPointerException e) {
+                int contact = SparkLevel.getPhysicsLevel(level).getWorld().getWorldSnapshot().contactTest(testGhost, null);
+                if (contact == 0) {
+                    VehicleCore vehicle = new VehicleCore(level, vehicleData.withNewUUID(UUID.randomUUID()), true);
+                    var pos = transform.getTranslation();
+                    vehicle.setPos(SparkMathKt.toVec3(pos));
+                    ObjectManager.addVehicle(vehicle);
+                    if (!player.hasInfiniteMaterials()) VisualEffectHelper.boundingBox = null;
+                    stack.consume(1, player);
+                    ((ServerLevel) level).sendParticles(ParticleTypes.PORTAL, pos.x, pos.y, pos.z, Math.max((int) shape.length(), 30),
+                            shape.x / 1.5, shape.y / 1.5, shape.z / 1.5, 0.2f);
+                } else player.displayClientMessage(Component.translatable("message.machine_max.blueprint.place_failed"), true);
+            } catch (Exception e) {
+                player.sendSystemMessage(Component.translatable("message.machine_max.vehicle.place_failed", e.getMessage())
+                        .withColor(Color.RED.getRGB()));
                 return InteractionResultHolder.fail(stack);
             }
         }

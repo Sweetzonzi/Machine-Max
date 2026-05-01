@@ -1,0 +1,88 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/van/van_wheel_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
+  "vehicle_durability_rate": 1.0,//(可选, 默认1.0)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
+  "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
+  "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.5)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
+  "max_stack_size": 4,
+  "variants": {//部件变体列表, 支持单值或多键值对
+    "left_wheel": {//变体名称
+      "model": "machine_max:van.geo", //模型路径
+      "textures": "machine_max:textures/part/van/van.png",
+      "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
+      "tags": ["machine_max:wheel", "machine_max:van", "machine_max:left"],//(可选)部件标签列表
+      "sub_parts": {//零件(子部件)列表
+        "sub_part.machine_max.main": {//零件(子部件)名称
+          "start_bone": "LeftFrontWheel", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
+          "durability": 180.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
+          "mass": 18.0,//零件质量(kg)
+          "block_collision": "ground",//(可选, 默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
+          "collision_height": 1.5,//(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
+          "climb_assist": true,//(可选, 默认false)是否开启自动攀爬辅助, 开启后会在自动攀爬时提供额外的速度
+          "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
+            "collision_front_left_wheel": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
+              "type": "wheel",//碰撞形状类型, 支持box、sphere、cylinder、wheel
+              "material": "machine_max:normal_tire"
+            }
+          },
+          "connectors": {//子部件用于与其他零件连接的连接点列表
+            "connector.machine_max.left_front_wheel_locator": {//连接点名称
+              "locator": "left_front_wheel_locator",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+              "definition": "machine_max:fixed_right"
+            }
+          },
+          "projected_area": [0.82, 0.40, 0.40],
+          "hydrodynamics": {
+            "": {
+              "front_drag": [0.0, 0.25],
+              "back_drag": [0.0, 0.25],
+              "left_drag": [0.0, 0.25],
+              "right_drag": [0.0, 0.25],
+              "up_drag": [0.0, 0.25],
+              "down_drag": [0.0, 0.25]
+            }
+          }
+        }
+      }
+    },
+    "right_wheel": {//变体名称
+      "model": "machine_max:van.geo", //模型路径
+      "textures": "machine_max:textures/part/van/van.png",
+      "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
+      "tags": ["machine_max:wheel", "machine_max:van", "machine_max:right"],//(可选)部件标签列表
+      "sub_parts": {//零件(子部件)列表
+        "sub_part.machine_max.main": {//零件(子部件)名称
+          "start_bone": "RightFrontWheel", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
+          "durability": 180.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
+          "mass": 18.0,//零件质量(kg)
+          "block_collision": "ground",//(可选, 默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
+          "collision_height": 1.5,//(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
+          "climb_assist": true,//(可选, 默认false)是否开启自动攀爬辅助, 开启后会在自动攀爬时提供额外的速度
+          "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
+            "collision_front_right_wheel": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
+              "type": "wheel",//碰撞形状类型, 支持box、sphere、cylinder、wheel
+              "material": "machine_max:normal_tire"
+            }
+          },
+          "connectors": {//子部件用于与其他零件连接的连接点列表
+            "connector.machine_max.right_front_wheel": {//连接点名称
+              "locator": "right_front_wheel_locator",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+              "definition": "machine_max:fixed_left"
+            }
+          },
+          "projected_area": [0.82, 0.40, 0.40],
+          "hydrodynamics": {
+            "": {
+              "front_drag": [0.0, 0.25],
+              "back_drag": [0.0, 0.25],
+              "left_drag": [0.0, 0.25],
+              "right_drag": [0.0, 0.25],
+              "up_drag": [0.0, 0.25],
+              "down_drag": [0.0, 0.25]
+            }
+          }
+        }
+      }
+    }
+  }
+}

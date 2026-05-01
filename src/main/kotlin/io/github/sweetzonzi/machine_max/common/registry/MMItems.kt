@@ -7,11 +7,10 @@ import io.github.sweetzonzi.machine_max.common.item.MaterialItem
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem
 import io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem
 import io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem
+import io.github.sweetzonzi.machine_max.common.item.prop.EnderGkResinItem
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem
-import io.github.sweetzonzi.machine_max.common.item.prop.PadItem
 import io.github.sweetzonzi.machine_max.common.item.prop.PartItem
-import io.github.sweetzonzi.machine_max.common.item.prop.ReusableVehicleCaptureItem
-import io.github.sweetzonzi.machine_max.common.item.prop.SingleUseVehicleCaptureItem
+import io.github.sweetzonzi.machine_max.common.item.prop.EnderScannerItem
 import io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem
 import io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem
@@ -20,11 +19,10 @@ import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.EventBusSubscriber
-import net.neoforged.fml.common.EventBusSubscriber.Bus
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent
 
-@EventBusSubscriber(modid = MachineMax.MOD_ID, bus = Bus.MOD)
+@EventBusSubscriber(modid = MachineMax.MOD_ID)
 object MMItems {
     @JvmStatic
     fun register() {
@@ -95,16 +93,16 @@ object MMItems {
 
     //一次性载具封装器
     @JvmStatic
-    val VEHICLE_ASSEMBLY_CAPTURE_SINGLE = MachineMax.REGISTER.item{
-        id="vehicle_assembly_capture_single"
-        factory = { SingleUseVehicleCaptureItem() }
+    val ENDER_GK_RESIN_ITEM = MachineMax.REGISTER.item{
+        id="ender_gk_resin"
+        factory = { EnderGkResinItem() }
     }
 
     //可复用载具封装器
     @JvmStatic
-    val VEHICLE_ASSEMBLY_CAPTURE_TOOL = MachineMax.REGISTER.item{
-        id="vehicle_assembly_capture_tool"
-        factory = { ReusableVehicleCaptureItem() }
+    val ENDER_SCANNER_ITEM = MachineMax.REGISTER.item{
+        id="ender_scanner"
+        factory = { EnderScannerItem() }
     }
 
     //撬棍，用于拆卸载具部件，也可作为武器
@@ -189,8 +187,8 @@ object MMItems {
             FABRICATING_BLUEPRINT,
             VEHICLE_BLUEPRINT,
             EMPTY_BLUEPRINT,
-            VEHICLE_ASSEMBLY_CAPTURE_SINGLE,
-            VEHICLE_ASSEMBLY_CAPTURE_TOOL,
+            ENDER_SCANNER_ITEM,
+            ENDER_GK_RESIN_ITEM,
             ASSEMBLY_ITEM
         )
         event.registerItem(

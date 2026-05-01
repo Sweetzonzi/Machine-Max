@@ -1,0 +1,6 @@
+{
+  "template": "machine_max:van.json", // 蓝图对应的装配体模板资源路径
+  "tooltip": "machine_max:van.html", // (可选) 蓝图物品的文本描述内容路径
+  "icon": "machine_max:textures/icon/van/van_icon.png", // (可选) 蓝图物品图标资源路径
+  "render_background": true // (可选，默认true) 是否在图标后渲染背景
+}

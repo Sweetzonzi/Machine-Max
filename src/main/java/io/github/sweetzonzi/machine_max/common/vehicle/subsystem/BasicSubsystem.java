@@ -1,9 +1,14 @@
 package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.SparkMathKt;
+import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 
 import java.util.List;
@@ -31,16 +36,38 @@ public class BasicSubsystem extends AbstractSubsystem {
     @Override
     public void onDestroyed() {
         super.onDestroyed();
-        if (getLevel().isClientSide()) {
-            Vector3f pos = getSubPart().getPosition();
-            getLevel().playLocalSound(
-                    pos.x, pos.y, pos.z,
-                    attr.staticAttribute.getSoundAttr().onDestroyed(),
-                    SoundSource.NEUTRAL,
-                    0.5f,
-                    1.2f,
-                    false);
-        }
+        playLifecycleSound(attr.getStaticAttribute().getSoundAttr().onDestroyed());
+    }
+
+    @Override
+    public void onActive() {
+        super.onActive();
+        playLifecycleSound(attr.getStaticAttribute().getSoundAttr().onActivated());
+    }
+
+    @Override
+    public void onDisabled() {
+        super.onDisabled();
+        playLifecycleSound(attr.getStaticAttribute().getSoundAttr().onDeactivated());
+    }
+
+    protected void playLifecycleSound(SoundEvent soundEvent) {
+        if (!getLevel().isClientSide()) return;
+        ((TaskSubmitOffice) getLevel()).submitImmediateTask(
+                PPhase.ALL,
+                () -> {
+                    SpreadingSoundHelper.playSpreadingSound(
+                            getLevel(),
+                            soundEvent,
+                            SoundSource.NEUTRAL,
+                            SparkMathKt.toVec3(getSubPart().getPosition()),
+                            SparkMathKt.toVec3(getSubPart().getLinearVelocity()),
+                            (float) 1.0,
+                            (float) 1.0
+                    );
+                    return null;
+                }
+        );
     }
 
     public boolean isHidden() {

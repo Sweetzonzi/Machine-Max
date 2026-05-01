@@ -39,12 +39,6 @@ public class EngineSubsystemAttr extends BasicSubsystemDynamicAttr {
         this.rpmOutputTargets = rpmOutputTargets;
     }
 
-    public WorkingState getBestMatchWorkingState(double rpm, double load) {
-        var staticAttr = getStaticAttribute();
-        if (staticAttr instanceof EngineSubsystemStaticAttr staticEngineAttr) return staticEngineAttr.getBestMatchWorkingState(rpm, load);
-        else return EngineSubsystemStaticAttr.EMPTY_WORKING_STATE;
-    }
-
     @Override
     public MapCodec<? extends AbstractSubsystemAttr> codec() {
         return CODEC;

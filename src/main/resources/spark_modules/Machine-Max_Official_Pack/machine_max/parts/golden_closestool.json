@@ -55,12 +55,12 @@
             "locator": "golden_closestool_connect",
             "definition": "machine_max:fixed_down",
             "signal_translations": {
-              "left_front_door_interact": "interact",
-              "right_front_door_interact": "interact",
-              "left_back_door_interact": "interact",
-              "right_back_door_interact": "interact",
-              "left_door_interact": "interact",
-              "right_door_interact": "interact"
+              "interact_left_door": "interact",
+              "interact_right_door": "interact",
+              "interact_left_front_door": "interact",
+              "interact_right_front_door": "interact",
+              "interact_left_back_door": "interact",
+              "interact_right_back_door": "interact"
             },
             "signal_targets": {
               "interact": ["subsystem.machinemax.seat"]

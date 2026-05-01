@@ -33,7 +33,7 @@
           "mmCollision_Box_Engine": {
             "id": "engine",
             "type": "box",
-            "subsystem": "connector.machine_max.engine",
+            "subsystem": "subsystem.machine_max.engine",
             "material": "machine_max:structural_steel",
             "thickness": 2
           }
@@ -137,10 +137,10 @@
             "locator": "Hull",
             "definition": "machine_max:fixed_up",
             "signal_targets": { //向各个座椅传输来自车门的互动信号
-              "left_front_door_interact": ["connector.machine_max.copilot_seat"],
-              "right_front_door_interact": ["connector.machine_max.driver_seat"],
-              "left_back_door_interact": ["connector.machine_max.back_seat"],
-              "right_back_door_interact": ["connector.machine_max.back_seat"]
+              "interact_left_front_door": ["connector.machine_max.copilot_seat"],
+              "interact_right_front_door": ["connector.machine_max.driver_seat"],
+              "interact_left_back_door": ["connector.machine_max.back_seat"],
+              "interact_right_back_door": ["connector.machine_max.back_seat"]
             }
           },
           "connector.machine_max.driver_seat": {

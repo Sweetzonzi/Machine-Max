@@ -1,0 +1,8 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
+  "basic_durability": 100, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪
+  "diff_lock": "false", //(可选, 默认auto)是否开启差速锁, 差速锁模式(true)下各输出端会有相同的转速, 差速器模式(false)下各输出端会有相同的扭矩, 自动模式(auto)下根据输出端转速差距自动开关差速锁, 手动模式(manual)下根据信号开关差速锁
+  "diff_lock_sensitivity": 0.85, //(可选, 默认1.0)差速锁灵敏度, 值越大灵敏度越高, 统一输出端转速的能力越强
+  "auto_diff_lock_threshold": 10.0 //(可选, 默认10.0)自动差速锁启用的转速差距百分比阈值
+}

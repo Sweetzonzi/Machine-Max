@@ -1,0 +1,22 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced",
+  "required_tags": ["machine_max:left", "machine_max:door"],
+  "integrity": 40.0,
+  "joint_attrs": {
+    "x": {
+      "lower_limit": -0.1,
+      "upper_limit": 0.0,
+      "equilibrium": -0.1,
+      "stiffness": 1000,
+      "damping": 100
+    },
+    "z": {
+      "lower_limit": 0.0,
+      "upper_limit": 1.0,
+      "equilibrium": 1.0,
+      "stiffness": 1000,
+      "damping": 100
+    }
+  }
+}

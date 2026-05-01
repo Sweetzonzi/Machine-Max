@@ -115,8 +115,9 @@ public class VehicleCore implements SyncedDataHolder {
         ObjectManager.initVehicle(this);
         try {
             //重建部件
-            for (PartData partData : savedData.parts.values())
+            for (PartData partData : savedData.parts.values()) {
                 this.addPart(new Part(partData, level, readAdditionalData));
+            }
             //重建连接关系
             for (ConnectionData connectionData : savedData.connections) {
                 Part partA = partMap.get(UUID.fromString(connectionData.partUuidA));
@@ -415,7 +416,7 @@ public class VehicleCore implements SyncedDataHolder {
         partMap.put(part.uuid, part);
         partNet.addNode(part);
         subSystemController.addSubsystems(part.getAllSubsystems());
-        subSystemController.rebuildAllEnergyPaths();
+//        subSystemController.rebuildAllEnergyPaths();
     }
 
     public void removePart(Part part) {

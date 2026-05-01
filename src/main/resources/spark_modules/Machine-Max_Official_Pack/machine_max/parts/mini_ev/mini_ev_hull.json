@@ -40,63 +40,63 @@
           "interact.machine_max.left_front_door": { //键:交互判定区名称
             "bone": "LeftFrontDoorInteractZone", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "left_front_door_interact": ["subsystem.machine_max.driver_seat"] //将交互信号转发给驾驶座
+              "interact_left_front_door": ["subsystem.machine_max.driver_seat"] //将交互信号转发给驾驶座
             },
             "interact_mode": "fast" //(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
           },
           "interact.machine_max.right_front_door": {
             "bone": "RightFrontDoorInteractZone",
             "signal_targets": {
-              "left_back_door_interact": ["subsystem.machine_max.copilot_seat"]
+              "interact_left_back_door": ["subsystem.machine_max.copilot_seat"]
             },
             "interact_mode": "fast"
           },
           "interact.machine_max.left_back_door": {
             "bone": "LeftBackDoorInteractZone",
             "signal_targets": {
-              "right_front_door_interact": ["subsystem.machine_max.left_back_seat"]
+              "interact_right_front_door": ["subsystem.machine_max.left_back_seat"]
             },
             "interact_mode": "fast"
           },
           "interact.machine_max.right_back_door": {
             "bone": "RightBackDoorInteractZone",
             "signal_targets": {
-              "right_back_door_interact": ["subsystem.machine_max.right_back_seat"]
+              "interact_right_back_door": ["subsystem.machine_max.right_back_seat"]
             },
             "interact_mode": "fast"
           },
           "interact.machine_max.left_front_seat": {
             "bone": "LeftSeatInteractZone",
             "signal_targets": {
-              "left_front_door_interact": ["subsystem.machine_max.driver_seat"]
+              "interact_left_front_door": ["subsystem.machine_max.driver_seat"]
             },
             "interact_mode": "accurate"
           },
           "interact.machine_max.right_front_seat": {
             "bone": "RightSeatInteractZone",
             "signal_targets": {
-              "left_back_door_interact": ["subsystem.machine_max.copilot_seat"]
+              "interact_left_back_door": ["subsystem.machine_max.copilot_seat"]
             },
             "interact_mode": "accurate"
           },
           "interact.machine_max.left_back_seat": { //键:交互判定区名称
             "bone": "LeftBackSeatInteractZone", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "right_front_door_interact": ["subsystem.machine_max.left_back_seat"] //将交互信号转发给后排座椅
+              "interact_right_front_door": ["subsystem.machine_max.left_back_seat"] //将交互信号转发给后排座椅
             },
             "interact_mode": "accurate"
           },
           "interact.machine_max.right_back_seat": {
             "bone": "RightBackSeatInteractZone",
             "signal_targets": {
-              "right_back_door_interact": ["subsystem.machine_max.right_back_seat"]
+              "interact_right_back_door": ["subsystem.machine_max.right_back_seat"]
             },
             "interact_mode": "accurate"
           },
           "interact.machine_max.glove_box": {
             "bone": "GloveBoxInteractZone",
             "signal_targets": {
-              "right_back_door_interact": ["subsystem.machine_max.glove_box"]
+              "interact_right_back_door": ["subsystem.machine_max.glove_box"]
             },
             "interact_mode": "accurate"
           }

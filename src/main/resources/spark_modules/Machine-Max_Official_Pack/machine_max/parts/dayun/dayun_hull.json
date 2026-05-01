@@ -95,7 +95,7 @@
           "interact.machine_max.left_door": { //键:交互判定区名称
             "bone": "LeftDoor", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "left_door_interact": [
+              "interact_left_door": [
                 "connector.machine_max.left_seat"
               ] //将交互信号转发给与车体连接的连接点
             },
@@ -104,7 +104,7 @@
           "interact.machine_max.right_door": { //键:交互判定区名称
             "bone": "RightDoor", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
             "signal_targets": {
-              "right_door_interact": [
+              "interact_right_door": [
                 "connector.machine_max.right_seat"
               ] //将交互信号转发给与车体连接的连接点
             },

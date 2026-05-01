@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.util.PartTagTextUtil;
+import io.github.sweetzonzi.machine_max.util.TextUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -49,12 +49,12 @@ public interface PartAssemblyItem {
     }
 
     default void appendPartTags(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        PartType partType = PartTagTextUtil.resolvePartTypeForTooltip(stack);
+        PartType partType = TextUtil.resolvePartTypeForTooltip(stack);
         if (partType == null) return;
-        List<ResourceLocation> tags = PartTagTextUtil.getDistinctSortedTags(partType);
+        List<ResourceLocation> tags = TextUtil.getDistinctSortedTags(partType);
         if (tags.isEmpty()) return;
         for (ResourceLocation tag : tags) {
-            String display = PartTagTextUtil.getTranslatedOrRawTag(tag);
+            String display = TextUtil.getTranslatedOrRawTag(tag);
             tooltipComponents.add(Component.literal(" - " + display).withStyle(ChatFormatting.DARK_GRAY));
         }
     }

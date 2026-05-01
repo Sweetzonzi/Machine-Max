@@ -28,6 +28,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.data.SubPartData;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartAssemblyProgressSyncPayload;
+import io.github.sweetzonzi.machine_max.util.TextUtil;
 import io.github.sweetzonzi.machine_max.util.data.PosRotVelVel;
 import jme3utilities.math.MyMath;
 import lombok.Getter;
@@ -269,7 +270,11 @@ public class Part {
                 this.allConnectors.put(Pair.of(subPart.name, connectorName), connector);
                 if (!connector.internal) this.externalConnectors.put(Pair.of(subPart.name, connectorName), connector);
             } else
-                throw new IllegalArgumentException(Component.translatable("error.machine_max.part.connector_locator_not_found", type.getRegistryKey().toLanguageKey(), connectorName, connectorAttr.locatorName).getString());
+                throw new IllegalArgumentException(
+                        Component.translatable("error.machine_max.part.connector_locator_not_found",
+                                TextUtil.getTranslation(type.getRegistryKey()),
+                                TextUtil.getTranslation(connectorName),
+                                TextUtil.getTranslation(connectorAttr.locatorName)).getString());
         }
     }
 
@@ -466,7 +471,7 @@ public class Part {
      * <p>Attempts to increase assembling progress, and consumes materials.</p>
      *
      * @param container 消耗材料的容器 Material container
-     * @param progress  增加的进度 Progress to be increased
+     * @param progress  增加的进度 (tick) Progress to be increased
      * @return 是否成功改变进度 Whether the progress is successfully changed
      */
     public boolean assemble(Container container, float progress) {
@@ -475,7 +480,7 @@ public class Part {
             ignoreMaterial = inventory.player.hasInfiniteMaterials();
         }
         FabricatingRecipe recipe = getRecipe();
-        // 未找到配方或非手动部件配方则不改变组装进度
+        // 未找到配方或非手动部件配方则每progress对应0.01组装进度
         if (recipe != null && recipe.isManualAssemblablePart()) {
             int totalTime = recipe.getProcessingTime();
             float step = progress / totalTime;
@@ -534,6 +539,9 @@ public class Part {
                 setAssemblingProgress(newProgress);
                 return true;
             }
+        } else if (getAssemblingProgress() < 1f) {
+            setAssemblingProgress(getAssemblingProgress() + progress * 0.01f);
+            return true;
         }
         return false;
     }
@@ -708,7 +716,7 @@ public class Part {
         boolean hasManualRecipe = recipe != null && recipe.isManualAssemblablePart();
         int totalMaterials = hasManualRecipe ? recipe.getManualAssembleIngredientList().size() : 0;
 
-        if (!hasManualRecipe || totalMaterials <= 0) {
+        if (!hasManualRecipe || totalMaterials == 0) {
             setAssemblingProgress(durabilityRatio);
         } else {
             materialProgress = Math.clamp(materialProgress, 0, totalMaterials);

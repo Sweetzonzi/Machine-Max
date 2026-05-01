@@ -40,14 +40,14 @@
           "interact.machine_max.left_front_door": {
             "bone": "LeftDoorInteract",
             "signal_targets": {
-              "left_door_interact": ["connector.machine_max.chassis_connection"]
+              "interact_left_door": ["connector.machine_max.chassis_connection"]
             },
             "interact_mode": "fast"
           },
           "interact.machine_max.right_front_door": {
             "bone": "RightDoorInteract",
             "signal_targets": {
-              "right_door_interact": ["connector.machine_max.chassis_connection"]
+              "interact_right_door": ["connector.machine_max.chassis_connection"]
             },
             "interact_mode": "fast"
           }

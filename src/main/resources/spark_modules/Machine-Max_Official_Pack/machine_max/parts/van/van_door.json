@@ -1,0 +1,122 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "machine_max:textures/icon/van/van_door_icon.png",//(可选, 留空会使用紫黑格子)部件图标路径
+  "vehicle_durability_rate": 1.0,//(可选, 默认1.0)载具耐久贡献系数, 部件耐久度按此比例贡献给载具总耐久度
+  "vehicle_damage_rate": 0.5,//(可选, 默认1.0)常态载具伤害传导系数, 部件受到伤害时按此比例传导给载具
+  "vehicle_damage_rate_destroyed": 0.1,//(可选, 默认0.5)部件被摧毁后的载具伤害传导系数, 部件被摧毁后受到伤害时按此比例传导给载具
+  "max_stack_size": 2,
+  "variants": {//部件变体列表, 支持单值或多键值对
+    "left_door": {//变体名称
+      "model": "machine_max:van.geo", //模型路径
+      "textures": "machine_max:textures/part/van/van.png",
+      "animations": "machine_max:van",
+      "tags": ["machine_max:door", "machine_max:van", "machine_max:left","machine_max:front"],//(可选)部件标签列表
+      "sub_parts": {//零件(子部件)列表
+        "sub_part.machine_max.main": {//零件(子部件)名称
+          "start_bone": "LeftFrontDoor", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
+          "durability": 300.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
+          "mass": 28.0,//零件质量(kg)
+          "block_collision": "ground",//(可选, 默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
+          "collision_height": 1.5,//(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
+          "climb_assist": false,//(可选, 默认false)是否开启自动攀爬辅助, 开启后会在自动攀爬时提供额外的速度
+          "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
+            "collision_left_door": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
+              "type": "box",//碰撞形状类型, 支持box、sphere、cylinder、wheel
+              "material": "machine_max:7035_aluminum_alloy"
+            },
+            "collision_left_mirror": { // 后视镜
+              "type": "box",
+              "subsystem": "subsystem.machine_max.rearview_mirror",
+              "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
+              "material": "machine_max:glass"
+            }
+          },
+          "interact_boxes": {//交互判定区列表
+            "interact.machine_max.interact_left_door": {//键:交互判定区名称
+              "bone": "interact_left_door", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+              "signal_targets": {
+                "interact_left_front_door": ["connector.machine_max.left_front_door_axis"]//将交互信号转发给驾驶座
+              },
+              "interact_mode": "fast"//(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+            }
+          },
+          "subsystems": {
+            "subsystem.machine_max.rearview_mirror": {
+              "type": "machine_max:basic",
+              "definition": "machine_max:default_glass"
+            }
+          },
+          "connectors": {//子部件用于与其他零件连接的连接点列表
+            "connector.machine_max.left_front_door_axis": {//连接点名称
+              "locator": "left_front_door_axis",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+              "definition": "machine_max:fixed_down"
+            },
+            "connector.machine_max.left_front_door_lock": {//连接点名称
+              "locator": "left_front_door_lock",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+              "definition": "machine_max:fixed_down",
+              "overwrite": {
+                "integrity": 10
+              }
+            }
+          }
+        }
+      }
+    },
+    "right_door": {//变体名称
+      "model": "machine_max:van.geo", //模型路径
+      "textures": "machine_max:textures/part/van/van.png",
+      "animations": "machine_max:van",
+      "tags": ["machine_max:door", "machine_max:van", "machine_max:right","machine_max:front"],//(可选)部件标签列表
+      "sub_parts": {//零件(子部件)列表
+        "sub_part.machine_max.main": {//零件(子部件)名称
+          "start_bone": "RightFrontDoor", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
+          "durability": 300.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
+          "mass": 28.0,//零件质量(kg)
+          "block_collision": "ground",//(可选, 默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
+          "collision_height": 1.5,//(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
+          "climb_assist": false,//(可选, 默认false)是否开启自动攀爬辅助, 开启后会在自动攀爬时提供额外的速度
+          "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
+            "collision_right_door": {//骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体
+              "type": "box",//碰撞形状类型, 支持box、sphere、cylinder、wheel
+              "material": "machine_max:7035_aluminum_alloy"
+            },
+            "collision_right_mirror": { // 后视镜
+              "type": "box",
+              "subsystem": "subsystem.machine_max.rearview_mirror",
+              "condition": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')",
+              "material": "machine_max:glass"
+            }
+          },
+          "interact_boxes": {//交互判定区列表
+            "interact.machine_max.interact_right_door": {//键:交互判定区名称
+              "bone": "interact_right_door", //骨骼名称, 会寻找名称匹配的骨骼, 以其内部方块的位置与姿态作为交互判定区体积的位置和姿态
+              "signal_targets": {
+                "interact_right_front_door": ["connector.machine_max.right_front_door_axis"]//将交互信号转发给驾驶座
+              },
+              "interact_mode": "fast"//(可选, 默认fast)交互模式, fast为玩家碰撞箱与交互区碰撞时按下交互键触发, accurate为玩家瞄准交互区按下交互键触发
+            }
+          },
+          "subsystems": {
+            "subsystem.machine_max.rearview_mirror": {
+              "type": "machine_max:basic",
+              "definition": "machine_max:default_glass"
+            }
+          },
+          "connectors": {//子部件用于与其他零件连接的连接点列表
+            "connector.machine_max.right_front_door_axis": {//连接点名称
+              "locator": "right_front_door_axis",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+              "definition": "machine_max:fixed_down"
+            },
+            "connector.machine_max.right_front_door_lock": {//连接点名称
+              "locator": "right_front_door_lock",//Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+              "definition": "machine_max:fixed_down",
+              "overwrite": {
+                "integrity": 10
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

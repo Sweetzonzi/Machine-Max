@@ -1,0 +1,50 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:engine", //子系统类型
+  "basic_durability": 50, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪
+  "max_power": 79000, //最大功率(W), 引擎输出扭矩无论何时都不会超过(最大功率/实时转速(rad/s))
+  "max_torque": 146, //最大扭矩(N·m), 此值越大, 通常牵引力越大, 加速越猛, 受到最大功率和转速的制约
+  "idle_rpm": 800, //(可选, 默认500)怠速转速(rpm), 此转速下的满油门扭矩输出为最大扭矩乘以一个系数
+  "idle_rpm_torque_ratio": 0.333, //(可选, 默认0.333)怠速扭矩系数, 怠速下的最大扭矩输出为最大扭矩乘以此系数
+  "max_torque_rpm": 3800, //(可选, 默认5200)最大扭矩转速(rpm), 低于此转速时引擎最大扭矩随转速升高而升高, 高于此转速时最大扭矩缓慢衰减
+  "red_line_rpm": 6300, //(可选, 默认7500)最大转速(rpm), 此转速下的满油门扭矩输出为最大扭矩乘以一个系数, 超过此转速动力输出大幅衰减
+  "red_line_torque_ratio": 0.8, //(可选, 默认0.9)红线扭矩系数, 引擎转速处于红线转速时, 最大扭矩衰减至最大扭矩乘以此系数
+  "inertia": 10, //(可选, 默认10)转动惯量(kg·m^2), 此值越大, 引擎加速越慢, 存速越好
+  "damping_factors": [2.0, 0.03, 0.00002], //(可选, 默认[20.0, 0.1, 0.00005])发动机各阶阻力系数, 分别为常数项, 一次项, 二次项, …递增(N·m/(rad/s)^n)
+  "sounds": {
+    "on_activate": {
+      "sound_id": "machine_max:subsystem.engine.i4_start",
+      "range": 64
+    },
+    "on_deactivate": {
+      "sound_id": "machine_max:subsystem.engine.i4_stop",
+      "range": 64
+    },
+    "working_sounds": {
+      "800.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_800",
+        "range": 64
+      },
+      "2000.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_2000",
+        "range": 64
+      },
+      "3000.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_3000",
+        "range": 64
+      },
+      "4000.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_4000",
+        "range": 64
+      },
+      "5000.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_5000",
+        "range": 64
+      },
+      "6000.0": {
+        "sound_id": "machine_max:subsystem.engine.i4_6000",
+        "range": 64
+      }
+    }
+  }
+}

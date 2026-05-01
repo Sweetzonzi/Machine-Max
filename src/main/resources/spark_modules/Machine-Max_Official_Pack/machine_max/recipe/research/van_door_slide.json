@@ -1,0 +1,23 @@
+﻿{
+  "$schema": "../../docs/zh_cn/schemas/recipe/blueprint_research_recipe.schema.json",
+  "type": "machine_max:blueprint_research",
+  "research_cost": 150,
+  "research_ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:netherite_ingot"
+      },
+      "count": 1
+    },
+    {
+      "ingredient": {
+        "tag": "c:empty_blueprint"
+      },
+      "count": 1
+    }
+  ],
+  "icon": "machine_max:textures/icon/van/van_door_slide_icon.png",
+  "description": "research.machine_max.van_door_slide_blueprint.desc",
+  "unlock_recipe": "machine_max:van_door_slide"
+}
+

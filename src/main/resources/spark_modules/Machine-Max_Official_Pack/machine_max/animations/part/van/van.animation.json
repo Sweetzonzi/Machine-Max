@@ -1,0 +1,31 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"parallel0": {
+			"loop": true,
+			"bones": {
+				"ysmGlow_collision_front_left_main_light": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_left_main_light')"
+				},
+				"ysmGlow_collision_front_right_main_light": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_right_main_light')"
+				},
+				"ysmGlow_collision_back_left_light": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')"
+				},
+				"collision_left_mirror": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')"
+				},
+				"collision_right_mirror": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.rearview_mirror')"
+				},
+				"ysmGlow_collision_back_right_light": {
+					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')"
+				},
+				"FXP": {
+					"rotation": [0, 0, "vehicle.get('steering')*225"]
+				}
+			}
+		}
+	}
+}

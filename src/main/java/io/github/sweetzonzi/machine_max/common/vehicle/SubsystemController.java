@@ -54,26 +54,11 @@ public class SubsystemController implements ISignalReceiver {
     }
 
     /**
-     * 初始化子系统，调用{@link AbstractSubsystem#onAttach}方法
+     * 初始化子系统，连接机械功传递链路，调用{@link AbstractSubsystem#onAttach}方法
      */
     public void initAllSubsystems() {
+        rebuildAllEnergyPaths();
         allSubsystems.forEach(AbstractSubsystem::onAttach);
-    }
-
-    /**
-     * 初始化子系统，调用{@link AbstractSubsystem#onAttach}方法
-     * @param subsystems 子系统集合
-     */
-    public void initSubsystems(Collection<AbstractSubsystem> subsystems) {
-        subsystems.forEach(AbstractSubsystem::onAttach);
-    }
-
-    /**
-     * 初始化子系统，调用{@link AbstractSubsystem#onAttach}方法
-     * @param subsystem 子系统
-     */
-    public void initSubsystem(AbstractSubsystem subsystem){
-        subsystem.onAttach();
     }
 
     /**
@@ -84,13 +69,6 @@ public class SubsystemController implements ISignalReceiver {
         allSubsystems.addAll(subSystems);
     }
 
-    /**
-     * 将子系统加入控制器，等待初始化
-     * @param subSystem 子系统
-     */
-    public void addSubsystem(AbstractSubsystem subSystem) {
-        allSubsystems.add(subSystem);
-    }
 
     public void removeSubsystems(Collection<AbstractSubsystem> subSystems, boolean transferToAnotherVehicle) {
         for (AbstractSubsystem subSystem : subSystems) this.removeSubsystem(subSystem, transferToAnotherVehicle);

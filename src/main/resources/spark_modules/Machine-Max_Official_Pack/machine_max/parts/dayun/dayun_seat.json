@@ -63,12 +63,12 @@
             "locator": "seat_locator", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
             "definition": "machine_max:fixed_down",
             "signal_translations": {//将各个类型的频道的信号转换至interact频道，统一信号频道
-              "left_front_door_interact": "interact",
-              "right_front_door_interact": "interact",
-              "left_back_door_interact": "interact",
-              "right_back_door_interact": "interact",
-              "left_door_interact": "interact",
-              "right_door_interact": "interact"
+              "interact_left_front_door": "interact",
+              "interact_right_front_door": "interact",
+              "interact_left_back_door": "interact",
+              "interact_right_back_door": "interact",
+              "interact_left_door": "interact",
+              "interact_right_door": "interact"
             },
             "signal_targets": {//向座椅子系统传输直接的或来自车门的互动信号
               "interact": ["subsystem.machinemax.seat"]

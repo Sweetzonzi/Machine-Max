@@ -20,9 +20,7 @@ import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
-import io.github.sweetzonzi.machine_max.util.PartTagTextUtil;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -70,14 +68,22 @@ public class FabricatingBlueprintItem extends Item implements ICustomModelItem, 
             if (player.hasData(MMAttachments.getVEHICLE_ASSEMBLY())) {
                 var cache = player.getData(MMAttachments.getVEHICLE_ASSEMBLY());
                 if (cache.getPartType() != null && cache.getVariantName() != null) {
-                    Part part = new Part(cache.getPartType(), cache.getVariantName(), level);
-                    RecipeHolder<?> recipeHolder = PartAssemblyItem.getRecipeHolder(stack, level);
-                    if (recipeHolder != null && recipeHolder.value() instanceof FabricatingRecipe) {
-                        part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE());
+                    try {
+                        Part part = new Part(cache.getPartType(), cache.getVariantName(), level);
+                        RecipeHolder<?> recipeHolder = PartAssemblyItem.getRecipeHolder(stack, level);
+                        if (recipeHolder != null && recipeHolder.value() instanceof FabricatingRecipe) {
+                            part.customRecipe = stack.get(MMDataComponents.getRECIPE_TYPE());
+                        }
+                        part.setMaterialProgress(0);
+                        part.setAssemblingProgress(0);
+                        return cache.assembly(level, player, stack, part);
+                    } catch (Exception e) {
+                        MachineMax.LOGGER.error("Invalid data: {}", stack.getDisplayName(), e);
+                        player.sendSystemMessage(
+                                Component.translatable("message.machine_max.part.place_failed", e.getMessage())
+                                        .withColor(Color.RED.getRGB()));
+                        return InteractionResultHolder.fail(stack);
                     }
-                    part.setMaterialProgress(0);
-                    part.setAssemblingProgress(0);
-                    return cache.assembly(level, player, stack, part);
                 } else return InteractionResultHolder.pass(stack); //TODO:方块拼装和物品拼装？
             } else return InteractionResultHolder.pass(stack);
         } else return InteractionResultHolder.success(stack);

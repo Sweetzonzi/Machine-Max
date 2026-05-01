@@ -153,8 +153,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
             if (sub instanceof IMechPowerConsumer consumer) return consumer;
         }
         if (getSubPart().connectors.containsKey(targetName)) {
-            AbstractConnector conn = getSubPart().connectors.get(targetName);
-            if (conn.mechanicalEnergyPort != null) return conn.mechanicalEnergyPort;
+            return getSubPart().connectors.get(targetName).mechanicalEnergyPort;
         }
         return null;
     }
