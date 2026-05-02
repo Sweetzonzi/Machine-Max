@@ -9,8 +9,8 @@
     "xr": {
       "lower_limit": 55.0,
       "upper_limit": 0.0,
-      "equilibrium": 45.0,
-      "stiffness": 20000,
+      "equilibrium": 25.0,
+      "stiffness": 2000,
       "damping": 500
     }
   }

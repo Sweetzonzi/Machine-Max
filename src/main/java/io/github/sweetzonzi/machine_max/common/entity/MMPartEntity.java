@@ -345,7 +345,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
 
         // 生成XZ位置的偏移列表
         List<Vec3> xzPositions = new ArrayList<>();
-        xzPositions.add(new Vec3(originalPos.x, 0, originalPos.z)); // 原始XZ位置
+        xzPositions.add(new Vec3(originalPos.x, originalPos.y, originalPos.z)); // 原始XZ位置
 
         // 邻位偏移（XZ平面）
         double[] radius = {0.5, 1.0, 1.5, 2.0};
@@ -355,7 +355,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                 double angle = 2 * Math.PI * i / samples;
                 double x = originalPos.x + r * Math.cos(angle);
                 double z = originalPos.z + r * Math.sin(angle);
-                xzPositions.add(new Vec3(x, 0, z));
+                xzPositions.add(new Vec3(x, originalPos.y, z));
             }
         }
 

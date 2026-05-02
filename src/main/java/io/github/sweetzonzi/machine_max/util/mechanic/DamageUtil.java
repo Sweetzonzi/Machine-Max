@@ -35,7 +35,7 @@ public class DamageUtil {
         //软质吸能地面方块更不易被破坏，特殊处理沙土雪等软质地面方块的耐久度
         if (blockState.is(BlockTags.DIRT) || blockState.is(BlockTags.SNOW) || blockState.is(BlockTags.SAND)) {
             blockDurability = 200 * (0.01f + blockState.getDestroySpeed(level, blockPos));
-        } else if (blockState.is(BlockTags.WOOL)) {//吸能材料超高耐久度
+        } else if (blockState.is(BlockTags.WOOL) || blockState.is(BlockTags.WOOL_CARPETS)) {//吸能材料超高耐久度
             blockDurability = 200 * (0.01f + blockState.getDestroySpeed(level, blockPos));
         } else if (blockState.is(BlockTags.LEAVES)) {//脆弱
             blockDurability = 10 * (0.01f + blockState.getDestroySpeed(level, blockPos));

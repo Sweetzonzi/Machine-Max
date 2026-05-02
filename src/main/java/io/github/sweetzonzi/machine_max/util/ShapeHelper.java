@@ -24,19 +24,20 @@ public class ShapeHelper {
             try {
                 boundingBox = PhysicsBodyExtensionKt.stateOf(pco).getCachedBoundingBox();
                 height = boundingBox.getMin(null).y;
+                return height;
             } catch (Exception e) {
                 MachineMax.LOGGER.error("{}碰撞箱计算结果异常: ", pco.name, e);
-                return 9999;
+                return -9999;
             }
-            while (height < centerY) {
-                TEST_PCO.setPhysicsLocation(new Vector3f(0, height, 0));
-                var space = pco.getCollisionSpace();
-                if (space == null) return 0;
-                int count = space.pairTest(pco, TEST_PCO, null);
-                if (count > 0) break;
-                else height += resolution;
-            }
-            return height;
+//            while (height < centerY) {
+//                TEST_PCO.setPhysicsLocation(new Vector3f(0, height, 0));
+//                var space = pco.getCollisionSpace();
+//                if (space == null) return -9999;
+//                int count = space.pairTest(pco, TEST_PCO, null);
+//                if (count > 0) break;
+//                else height += resolution;
+//            }
+//            return height;
         }
     }
 }
