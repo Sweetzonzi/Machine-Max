@@ -15,6 +15,7 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.*;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.compat.create.CreateCollisionResolver;
 import io.github.sweetzonzi.machine_max.compat.create.CreateCompat;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
@@ -259,7 +260,7 @@ public class CollisionHandler {
         other.shouldShowDebugBoxWhenNonColldeWith = true;
 
         var hitBox = subPart.getHitBox(hitBoxIndex);
-        var vel = subPart.getLinearVelocity();
+        var vel = subPart.body.getLinearVelocity(null);
         BlockPos blockPos = terrain.getBlockPosFromContactPoint(worldContactPoint, normal, 0);
         //验证接触点是否在本区块范围内
         BlockPos relBlockPos = blockPos.subtract(terrain.getSectionPos().origin());
@@ -290,7 +291,7 @@ public class CollisionHandler {
         normal.cross(subPart.getRightVector(), tmpFront);
         tmpFront.cross(normal, tmpSide);
         float slipAngle = (float) Math.atan2(tmpSide.dot(slipVel), tmpFront.dot(slipVel)); // 滑移角
-        float moveVelLen = subPart.body.getLinearVelocity(null).length();
+        float moveVelLen = vel.length();
         float wheelVelLen = Math.abs(wheelVel.dot(tmpFront));
         float slipRatio = Math.abs(moveVelLen - wheelVelLen) / (Math.max(moveVelLen, wheelVelLen) + 0.1f); // 滑移率
         float slipVelLen = Math.max(slipVel.length(), 0.001f);
@@ -336,14 +337,12 @@ public class CollisionHandler {
                 Vector3f slipVelNorm = slipVel.subtract(result.normal().mult(slipVel.dot(normal))).normalize();
                 ManifoldPoints.setLateralFrictionDir1(manifoldPointId, slipVelNorm);
                 ManifoldPoints.setLateralFrictionDir2(manifoldPointId, normal.cross(slipVelNorm));
-                recordEffect(hitBoxIndex, blockState, contactVel, normal, worldContactPoint, slipRatio);
                 return;
             } else if (result.penetration() <= 0 && Float.isFinite(result.penetration())) {
                 //尚未接触高度场，跳过碰撞
                 ManifoldPoints.setDistance1(manifoldPointId, 5000f);
                 ManifoldPoints.setCombinedRestitution(manifoldPointId, 0f);
                 ManifoldPoints.setCombinedFriction(manifoldPointId, 0f);
-                recordEffect(hitBoxIndex, blockState, contactVel, normal, worldContactPoint, slipRatio);
                 return;
             }
         }

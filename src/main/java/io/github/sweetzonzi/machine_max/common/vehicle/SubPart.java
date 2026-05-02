@@ -131,7 +131,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public Vec3 projectedArea = null;
     public float bodyMinY = -99999;
     public final HashSet<BlockPos> climbableBlocks = new HashSet<>();
-    public final LocalHeightField heightField = new LocalHeightField(2);//爬坡辅助用高度场
+    public final LocalHeightField heightField = new LocalHeightField(3);//爬坡辅助用高度场
     public final CollisionHandler collisionHandler;
 
     public SubPart(String name, Part part, SubPartAttr attr) {
