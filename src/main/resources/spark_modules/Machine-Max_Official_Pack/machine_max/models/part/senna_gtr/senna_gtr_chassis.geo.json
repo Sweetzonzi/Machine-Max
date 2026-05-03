@@ -15,7 +15,7 @@
 					"name": "Root",
 					"pivot": [0, 0.58091, -0.83496],
 					"locators": {
-						"mass_center": [0, 0, 0]
+						"mass_center": [0, -5, 15]
 					}
 				},
 				{
@@ -4142,7 +4142,7 @@
 					],
 					"locators": {
 						"left_seat": {
-							"offset": [6.5, -2, -8],
+							"offset": [6.5, 2, -8],
 							"rotation": [-25, 0, 0]
 						}
 					}
@@ -4170,7 +4170,7 @@
 					],
 					"locators": {
 						"right_seat": {
-							"offset": [-6.5, -2, -8],
+							"offset": [-6.5, 2, -8],
 							"rotation": [-25, 0, 0]
 						}
 					}

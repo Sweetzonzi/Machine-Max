@@ -19,8 +19,8 @@
           "RightBackWheel"
         ],
         "mass_center": "hull_mass_center",
-        "durability": 120.0,
-        "mass": 500.0,
+        "durability": 250.0,
+        "mass": 400.0,
         "block_collision": "ground",
         "collision_height": 1.5,
         "hit_boxes": { //键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
@@ -224,10 +224,10 @@
             "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
             "definition": "machine_max:kluo_transmission", //子系统型号, 需要与子系统类型相匹配
             "power_outputs": { //动力输出目标及减速比
-              "subsystem.machine_max.left_front_wheel_driver": 12,
-              "subsystem.machine_max.right_front_wheel_driver": 12,
-              "subsystem.machine_max.left_back_wheel_driver": 12,
-              "subsystem.machine_max.right_back_wheel_driver": 12
+              "subsystem.machine_max.left_front_wheel_driver": 1,
+              "subsystem.machine_max.right_front_wheel_driver": 1,
+              "subsystem.machine_max.left_back_wheel_driver": 1,
+              "subsystem.machine_max.right_back_wheel_driver": 1
             }
           },
           "subsystem.machine_max.glove_box": {
@@ -281,12 +281,12 @@
             "locator": "right_main_light"
           },
           "subsystem.machine_max.left_back_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_back_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.left_front_fog_light": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁

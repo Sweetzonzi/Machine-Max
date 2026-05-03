@@ -5,7 +5,7 @@
   "manual_gear_shift": false, //(可选, 默认false)是否强制手动挡
   "auto_hand_brake": true, //(可选, 默认true)是否自动在停车和起步时切换手刹车状态
   "steering_center": [0,0,2.4036],//(可选, 默认[0, 0, 0])转向中心点(m), 对于前轮转向的四轮载具, 此位置应取后轮轴中点；对于全轮转向的载具, 此位置应取四轮位置的几何中心
-  "min_steering_radius": 7.0, //(可选, 默认5.0)最小转向半径，单位米。用于低速和手刹时的转向限制
+  "min_steering_radius": 6.0, //(可选, 默认5.0)最小转向半径，单位米。用于低速和手刹时的转向限制
   "lateral_acceleration": 16.0, //(可选, 默认8.0)侧向加速度限制，单位m/s²。用于根据速度实时计算转向半径（半径 = 速度² / 加速度）
   "max_drift_angular_velocity": 1.0, //(可选, 默认1.0)最大漂移角速度，单位rad/s。作为漂移时PD控制器的目标值
   "control_inputs": ["move_control"]

@@ -17,13 +17,6 @@
     "xr": {
       "lower_limit": 1.0,
       "upper_limit": -1.0
-    },
-    "zr": {
-      "lower_limit": -3.0,
-      "upper_limit": -1.0,
-      "equilibrium": -1.0,
-      "stiffness": 25000,
-      "damping": 350
     }
   }
 }

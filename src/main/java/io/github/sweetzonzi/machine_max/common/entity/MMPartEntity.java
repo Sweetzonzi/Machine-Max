@@ -294,7 +294,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         var subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
         if (entity instanceof LivingEntity && subsystem instanceof SeatSubsystem seat) {
             Vector3f rawRelPos = seat.getSeatPointLocalTransform().getTranslation();
-            Matrix3f pose = seat.getSeatPointWorldTransform().getRotation().toRotationMatrix();
+            Matrix3f pose = seat.getSubPart().getRotation().toRotationMatrix();
             Vector3f relPos = pose.mult(rawRelPos, null);
             return SparkMathKt.toVec3(relPos);
         } else return new Vec3(0, 0, 0);

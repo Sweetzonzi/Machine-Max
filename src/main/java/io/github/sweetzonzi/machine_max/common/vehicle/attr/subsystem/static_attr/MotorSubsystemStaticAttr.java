@@ -21,6 +21,14 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
     public final float maxPower;
     public final float maxTorque;
     public final float redLineRpm;
+    /**
+     * 红线转速处的功率占峰值功率的比例（0~1）。<p>
+     * 控制电机在高转速区的功率衰减程度。<br>
+     * 值越小衰减越快，档位选择效益越明显；<br>
+     * 值越接近 1 越接近理想恒功率，换挡效果越弱。<br>
+     * 真实永磁同步电机通常约 0.7~0.85。
+     */
+    public final float redLinePowerRatio;
     public final double inertia;//电机系统转动惯量(kg·m²)
     public final List<Double> dampingFactors;//电机系统各阶阻力系数，分别为常数项，一次项，二次项，…递增(N·m/(rad/s)^n)
     public final float generatorEfficiency; // 发电效率（0-1）
@@ -44,6 +52,7 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
             Codec.FLOAT.fieldOf("max_power").forGetter(MotorSubsystemStaticAttr::getMaxPower),
             Codec.FLOAT.optionalFieldOf("max_torque", 100f).forGetter(MotorSubsystemStaticAttr::getMaxTorque),
             Codec.FLOAT.optionalFieldOf("red_line_rpm", 10000f).forGetter(MotorSubsystemStaticAttr::getRedLineRpm),
+            Codec.FLOAT.optionalFieldOf("red_line_power_ratio", 0.8f).forGetter(MotorSubsystemStaticAttr::getRedLinePowerRatio),
             Codec.DOUBLE.optionalFieldOf("inertia", 10.0).forGetter(MotorSubsystemStaticAttr::getInertia),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(10.0, 0.1, 0.00005)).forGetter(MotorSubsystemStaticAttr::getDampingFactors),
             Codec.FLOAT.optionalFieldOf("generator_efficiency", 0.85f).forGetter(MotorSubsystemStaticAttr::getGeneratorEfficiency),
@@ -69,6 +78,7 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
             float maxPower,
             float maxTorque,
             float redLineRpm,
+            float redLinePowerRatio,
             double inertia,
             List<Double> dampingFactors,
             float generatorEfficiency,
@@ -80,6 +90,7 @@ public class MotorSubsystemStaticAttr extends BasicSubsystemStaticAttr implement
         this.maxPower = maxPower;
         this.maxTorque = maxTorque;
         this.redLineRpm = redLineRpm;
+        this.redLinePowerRatio = redLinePowerRatio;
         this.inertia = inertia;
         this.dampingFactors = dampingFactors;
         this.generatorEfficiency = generatorEfficiency;

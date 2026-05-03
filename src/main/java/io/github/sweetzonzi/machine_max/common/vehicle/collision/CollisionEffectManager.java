@@ -150,6 +150,34 @@ public class CollisionEffectManager implements ISoundSpreader {
     }
 
     /**
+     * 轮胎漂移烟雾粒子。
+     * <p>滑移率超过0.4时每tick生成，数量与接触速度成正比。
+     * 粒子水平速度取接触速度的50%，垂直速度恒定上升模拟热烟。
+     */
+    private void spawnDriftSmoke(Level level, CollisionSnapshot snap) {
+        Vector3f worldPos = snap.worldContactPoint();
+        Vector3f contactVel = snap.contactVel();
+        float speed = contactVel.length();
+        float slipRatio = snap.slipRatio();
+
+        //每 tick 粒子数量 = f(速度, 滑移率)，上限 8 个防刷
+        float normalizedSlip = (slipRatio - 0.4f) / 0.6f;
+        int count = (int) Math.ceil(speed * 0.3f * normalizedSlip);
+        count = Math.min(count, 4);
+
+        for (int i = 0; i < count; i++) {
+            level.addParticle(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    worldPos.x + (Math.random() - 0.5) * 0.6,
+                    worldPos.y + 0.05,
+                    worldPos.z + (Math.random() - 0.5) * 0.6,
+                    (float)(contactVel.x * 0.5f * (0.8 + 0.4 * Math.random()))*0.05f,
+                    (float) (0.1 + 0.2 * Math.random())*0.05f,
+                    (float)(contactVel.z * 0.5f* (0.8 + 0.4 * Math.random()))*0.05f
+            );
+        }
+    }
+
+    /**
      * 主线程 tick 入口，由 SubPart.postTick() 调用。
      * <p>执行流程：</p>
      * <ol>
@@ -174,6 +202,7 @@ public class CollisionEffectManager implements ISoundSpreader {
             //滑移率超过0.4时叠加额外漂移音效
             if (wheelSnap.slipRatio() > 0.4f) {
                 updateSlipSound(level, wheelSnap);
+                spawnDriftSmoke(level, wheelSnap);
             } else {
                 fadeOutSlipSoundIfNeeded(level);
             }

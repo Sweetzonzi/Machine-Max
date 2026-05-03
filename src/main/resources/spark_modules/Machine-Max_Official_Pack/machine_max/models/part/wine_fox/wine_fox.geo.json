@@ -2586,7 +2586,7 @@
 				{
 					"name": "ysmGlowLeftFrontHeadLight",
 					"parent": "FrontHeadlights",
-					"pivot": [13, 16, -32],
+					"pivot": [13, 15, -32],
 					"cubes": [
 						{
 							"origin": [10, 12, -33],
@@ -2606,7 +2606,7 @@
 				{
 					"name": "ysmGlowRightFrontHeadLight",
 					"parent": "FrontHeadlights",
-					"pivot": [13, 16, -32],
+					"pivot": [-13, 15, -32],
 					"cubes": [
 						{
 							"origin": [-16, 12, -33],
@@ -2626,7 +2626,7 @@
 				{
 					"name": "RightFrontHeadLight",
 					"parent": "FrontHeadlights",
-					"pivot": [13, 16, -32],
+					"pivot": [-13, 15, -32],
 					"cubes": [
 						{
 							"origin": [-16, 12, -33],
@@ -2645,7 +2645,7 @@
 				{
 					"name": "LeftFrontHeadLight",
 					"parent": "FrontHeadlights",
-					"pivot": [13, 16, -32],
+					"pivot": [13, 15, -32],
 					"cubes": [
 						{
 							"origin": [10, 12, -33],
@@ -2664,7 +2664,7 @@
 				{
 					"name": "ysmGlowLeftFogLight",
 					"parent": "FrontHeadlights",
-					"pivot": [0, 0, 0],
+					"pivot": [6.5, 8.75, -34],
 					"cubes": [
 						{
 							"origin": [5, 7.25, -35],
@@ -2683,7 +2683,7 @@
 				{
 					"name": "ysmGlowRightFogLight",
 					"parent": "FrontHeadlights",
-					"pivot": [0, 0, 0],
+					"pivot": [-6.5, 8.75, -34],
 					"cubes": [
 						{
 							"origin": [-8, 7.25, -35],
@@ -7168,7 +7168,7 @@
 				{
 					"name": "ysmGlowTrunkRightLight",
 					"parent": "TrunkLights",
-					"pivot": [30.01, 28.55783, 56.64087],
+					"pivot": [-14, 16.61608, 29.78129],
 					"cubes": [
 						{
 							"origin": [-15, 19.49053, 26.61568],
@@ -7190,7 +7190,7 @@
 				{
 					"name": "ysmGlowTrunkLeftLight",
 					"parent": "TrunkLights",
-					"pivot": [15.015, 20.76428, 29.57806],
+					"pivot": [14.01, 16.59464, 29.78507],
 					"cubes": [
 						{
 							"origin": [13.01, 14.62918, 27.55787],
@@ -7212,7 +7212,7 @@
 				{
 					"name": "TrunkLeftLight",
 					"parent": "TrunkLights",
-					"pivot": [15.015, 20.76428, 29.57806],
+					"pivot": [14.01, 16.59464, 29.78507],
 					"cubes": [
 						{
 							"origin": [13.01, 14.62918, 27.55787],
@@ -7233,7 +7233,7 @@
 				{
 					"name": "TrunkRightLight",
 					"parent": "TrunkLights",
-					"pivot": [30.01, 28.55783, 56.64087],
+					"pivot": [-14, 16.61608, 29.78129],
 					"cubes": [
 						{
 							"origin": [-15, 19.49053, 26.61568],
@@ -8115,7 +8115,7 @@
 				{
 					"name": "ysmGlowGtRightMain",
 					"parent": "GlowGtLight",
-					"pivot": [0, 0, 0],
+					"pivot": [-14, 18.5, -36.3],
 					"cubes": [
 						{
 							"origin": [-17, 15.5, -36.8],
@@ -8134,7 +8134,7 @@
 				{
 					"name": "ysmGlowGtLeftMain",
 					"parent": "GlowGtLight",
-					"pivot": [0, 0, 0],
+					"pivot": [14, 18.5, -36.3],
 					"cubes": [
 						{
 							"origin": [11, 15.5, -36.8],
@@ -8153,7 +8153,7 @@
 				{
 					"name": "ysmGlowGtRight",
 					"parent": "GlowGtLight",
-					"pivot": [0, 0, 0],
+					"pivot": [-6, 16, -36.55],
 					"cubes": [
 						{
 							"origin": [-8, 14, -37.05],
@@ -8172,7 +8172,7 @@
 				{
 					"name": "ysmGlowGtMiddle",
 					"parent": "GlowGtLight",
-					"pivot": [0, 0, 0],
+					"pivot": [0, 16, -36.55],
 					"cubes": [
 						{
 							"origin": [-2, 14, -37.05],
@@ -8191,7 +8191,7 @@
 				{
 					"name": "ysmGlowGtLeft",
 					"parent": "GlowGtLight",
-					"pivot": [0, 0, 0],
+					"pivot": [6, 16, -36.55],
 					"cubes": [
 						{
 							"origin": [4, 14, -37.05],
@@ -8210,7 +8210,7 @@
 				{
 					"name": "ysmGlowGtLeftFog",
 					"parent": "GlowGtLight",
-					"pivot": [0, 0, 0],
+					"pivot": [14.8, 9, -34.55],
 					"cubes": [
 						{
 							"origin": [12.8, 7, -35.05],
@@ -8229,7 +8229,7 @@
 				{
 					"name": "ysmGlowGtRightFog",
 					"parent": "GlowGtLight",
-					"pivot": [0, 0, 0],
+					"pivot": [-14.8, 9, -34.55],
 					"cubes": [
 						{
 							"origin": [-16.8, 7, -35.05],

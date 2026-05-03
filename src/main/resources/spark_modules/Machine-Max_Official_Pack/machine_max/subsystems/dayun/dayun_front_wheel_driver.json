@@ -9,8 +9,8 @@
     "max_speed": 3540.0 //(可选, 默认3140)最大转速(rad/s)
   },
   "steering": {//(可选)轮胎转向相关属性, 默认最大转向力矩2000N*m, 最大转速3.14rad/s, 不反馈转角值到任何频道的任何目标
-    "max_force": 3000,
-    "max_speed": 3.14
+    "max_force": 5000,
+    "max_speed": 1.2
   },
   "abs_enabled": true, //(可选, 默认false)是否启用ABS
   "abs_target_slip_ratio": 0.15, //(可选, 默认0.15)ABS目标滑移率

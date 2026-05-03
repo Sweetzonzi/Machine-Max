@@ -18,7 +18,7 @@ public class LightingSubsystemAttr extends BasicSubsystemDynamicAttr {
 
     public static final MapCodec<LightingSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
-            Codec.STRING.fieldOf("locator").forGetter(LightingSubsystemAttr::getLightLocator)
+            Codec.STRING.optionalFieldOf("locator", "").forGetter(LightingSubsystemAttr::getLightLocator)
     ).apply(instance, LightingSubsystemAttr::new));
 
     public LightingSubsystemAttr(ResourceLocation modelName, String lightLocator) {

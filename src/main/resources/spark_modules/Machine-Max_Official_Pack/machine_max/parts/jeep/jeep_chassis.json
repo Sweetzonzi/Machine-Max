@@ -14,8 +14,8 @@
     "tags": ["machine_max:jeep", "machine_max:chassis", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
-        "durability": 550.0,
-        "mass": 1400.0,
+        "durability": 900.0,
+        "mass": 950.0,
         "block_collision": "ground",
         "collision_height": 2.5,
         "hit_boxes": {

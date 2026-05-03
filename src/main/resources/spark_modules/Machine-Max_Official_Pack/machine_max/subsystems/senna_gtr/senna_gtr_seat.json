@@ -7,7 +7,7 @@
   "views": {
     "enable_first_person": true, //(可选,默认true)是否启用第一人称视角
     "first_person_hud": ["machine_max:example_hud"],//(可选,默认[])第一人称视角下的HUD组件
-    "first_person_offset": [0, 0.15, -0.1], //(可选,默认[0,0,0])第一人称视角下视角的偏移量
+    "first_person_offset": [0, -0.08, -0.15], //(可选,默认[0,0,0])第一人称视角下视角的偏移量
     "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
     "third_person_hud": ["machine_max:example_hud"],//(可选,默认[])第三人称视角下的HUD组件
     "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转

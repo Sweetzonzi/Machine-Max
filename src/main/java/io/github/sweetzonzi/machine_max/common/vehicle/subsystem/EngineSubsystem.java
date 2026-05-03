@@ -2,12 +2,10 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 
 import cn.solarmoon.spark_core.sound.IMultiChannelSoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.EngineSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.EngineSubsystemStaticAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
@@ -24,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader, IMechPowerProducer {
+public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader, IMechPowerProducer, ITorqueProvider {
     public final EngineSubsystemAttr attr;
     public final double RED_LINE_SPEED;//红线转速(rad/s)
     public final double MAX_TORQUE_SPEED;//最大扭矩转速(rad/s)
@@ -59,7 +57,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
         IDLE_SPEED = attr.staticAttribute.idleRpm * Math.PI / 30.0;//怠速转速(rad/s)
         MAX_TORQUE = attr.staticAttribute.maxTorque;
         setRotSpeed((float) (IDLE_SPEED + 1));
-        double minThrottle = 1.005 * calculateDampingTorque(IDLE_SPEED) / calculateMaxTorque(IDLE_SPEED);
+        double minThrottle = 1.005 * calculateDampingTorque(IDLE_SPEED) / getTorqueAtSpeed(IDLE_SPEED);
         MIN_IDLE_THROTTLE = Math.min(minThrottle, 1f);
         coupleTorquePD = new PDController(
                 1.5 * attr.getStaticAttribute().getInertia(),
@@ -103,7 +101,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
         double rotSpeed = getRotSpeed();
         if (rotSpeed / IDLE_SPEED < 1.05) throttleInput = Math.clamp(throttleInput, MIN_IDLE_THROTTLE, 1);
         else throttleInput = Math.clamp(throttleInput, 0, 1);
-        double engineTorque = throttleInput * calculateMaxTorque(rotSpeed);
+        double engineTorque = throttleInput * getTorqueAtSpeed(rotSpeed);
         if (!isActive()) engineTorque = 0.0;
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
@@ -245,13 +243,13 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
      * @param rotSpeed 转速(rad/s)
      * @return 当前转速下的最大扭矩(N · m)
      */
-    private double calculateMaxTorque(double rotSpeed) {
+    public double getTorqueAtSpeed(double rotSpeed) {
         double result = 0;
         if (rotSpeed <= 0) return result;
         else if (rotSpeed <= IDLE_SPEED) {
             result = rotSpeed / IDLE_SPEED * MAX_TORQUE * attr.getStaticAttribute().getIdleRpmTorqueRatio();
         } else if (rotSpeed <= MAX_TORQUE_SPEED) {//线性上升段：怠速 -> 最大扭矩转速，在怠速扭矩和最大扭矩之间线性插值
-            double k = (rotSpeed - IDLE_SPEED) / MAX_TORQUE_SPEED;
+            double k = (rotSpeed - IDLE_SPEED) / (MAX_TORQUE_SPEED - IDLE_SPEED);
             result = k * MAX_TORQUE + (1 - k) * MAX_TORQUE * attr.getStaticAttribute().getRedLineRpmTorqueRatio();
         } else if (rotSpeed <= RED_LINE_SPEED) {//平台段：最大扭矩转速 -> 红线转速，在最大扭矩和全功率扭矩之间线性插值
             double k = (rotSpeed - MAX_TORQUE_SPEED) / (RED_LINE_SPEED - MAX_TORQUE_SPEED);

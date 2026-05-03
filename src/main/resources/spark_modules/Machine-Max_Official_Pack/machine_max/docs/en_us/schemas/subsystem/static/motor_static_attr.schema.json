@@ -57,6 +57,13 @@
       "default": 10000.0,
       "description": "Redline speed, in revolutions per minute (RPM)."
     },
+    "red_line_power_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.8,
+      "description": "Ratio of power at redline to peak power (0~1). Controls power drop at high RPM. Lower values make gear selection more effective. Real PMSM motors are typically around 0.7~0.85."
+    },
     "inertia": {
       "type": "number",
       "minimum": 0,

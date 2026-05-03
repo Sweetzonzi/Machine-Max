@@ -13,7 +13,7 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 120.0,
-          "mass": 150.0,
+          "mass": 50.0,
           "block_collision": "ground",
           "collision_height": 1.5,
           "hit_boxes": {
@@ -56,7 +56,7 @@
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 120.0,
-          "mass": 150.0,
+          "mass": 50.0,
           "block_collision": "ground",
           "collision_height": 1.5,
           "hit_boxes": {

@@ -19,7 +19,7 @@
         "start_bone": "AllTrailer",
         "end_bones": ["SteelCoil", "HianQiaoGulu3", "HianQiaoGulu5", "HianQiaoGulu7"],
         "durability": 3000.0,
-        "mass": 1500.0,
+        "mass": 6000.0,
         "mass_center": "trailer_mass_center",
         "block_collision": "ground",
         "collision_height": 1.5,

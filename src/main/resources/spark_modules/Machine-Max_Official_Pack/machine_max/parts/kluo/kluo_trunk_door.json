@@ -13,7 +13,7 @@
       "sub_part.machine_max.main": {//零件(子部件)名称
         "start_bone": "Trunk", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
         "durability": 50.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
-        "mass": 35.0,//零件质量(kg)
+        "mass": 8.0,//零件质量(kg)
         "block_collision": "ground",//(可选, 默认true)地形碰撞模式:true(与所有方块碰撞),ground(仅与低于部件最低位置的地面方块碰撞),false(不与任何方块碰撞)
         "collision_height": 1.5,//(可选)碰撞检测高度(m), 遭遇的障碍小于此高度时不与障碍发生碰撞(方块碰撞模式需要为ground), 默认所有障碍均碰撞
         "hit_boxes": {//键:骨骼名称, 会寻找名称匹配的骨骼, 并根据其中的方块创建不同形状的碰撞体, 以及将此骨骼下的定位器储存起来供子系统等使用
@@ -50,12 +50,12 @@
             "definition": "machine_max:default_glass"
           },
           "subsystem.machine_max.left_back_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_back_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:dummy_light"
           }
         },
         "connectors": {//子部件用于与其他零件连接的连接点列表

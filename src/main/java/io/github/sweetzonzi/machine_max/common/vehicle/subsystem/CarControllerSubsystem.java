@@ -3,7 +3,6 @@ package io.github.sweetzonzi.machine_max.common.vehicle.subsystem;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
@@ -382,7 +381,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     }
                     for (GearboxSubsystem gearbox : gearboxes.keySet()) {//加速时延迟升档 Delay shifting up when accelerating
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, 0.4f, 0.75f, moveInput[2]));
+                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, moveInput[2]));
                             //起步时自动松离合 Auto engage clutch when starting
                             if (Math.abs(speed) <= 1f) {
                                 gearbox.setClutched(true);
@@ -395,7 +394,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     avgEngineSpeed = calculateAvgSpeedAndControl();
                     for (GearboxSubsystem gearbox : gearboxes.keySet()) {//减速时积极降档 Shift down early when braking
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, 0.4f, 1.0f, moveInput[2]));
+                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, moveInput[2]));
                         }
                     }
                 }
@@ -438,7 +437,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     for (GearboxSubsystem gearbox : gearboxes.keySet()) {
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
                             gearbox.setClutched(false);//停止传输动力 Stop transmission power
-                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, 0f, 0.5f, moveInput[2]));
+                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, moveInput[2]));
                         }
                     }
                 } else {//速度大于一定程度时，不刹车 Don't brake if the speed is high enough
@@ -454,7 +453,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     }
                     for (GearboxSubsystem gearbox : gearboxes.keySet()) {//溜车时适度降档 Shift down moderately when rolling
                         if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, 0.3f, 0.6f, moveInput[2]));
+                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, moveInput[2]));
                         }
                     }
                 }
@@ -498,69 +497,98 @@ public class CarControllerSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 自动变速箱换挡，调整阈值可调整换挡的早晚程度<p>
-     * Automatically switch gears of the gearbox, adjust the upShiftThreshold to adjust the timing of gear shifts.<p>
-     * 约定变速箱减速比按常规顺序排列，例如-1，-3，3，1，0.5，0.2 <p>
-     * Gearbox reduction ratio is arranged in the regular order, such as -1, -3, 3, 1, 0.5, 0.2
+     * 基于最大输出轴扭矩的自动换挡。<p>
+     * 以变速箱输出轴转速为基准，遍历所有可用档位，预测引擎/电动机转速，
+     * 查询扭矩曲线并乘以传动比得到输出轴扭矩，选择扭矩最大的档位。<p>
+     * 这等价于在每个车速下选择使发动机功率最大化的档位（P = T_output * ω_out）。
      *
-     * @param gearbox            变速箱对象 Gearbox object
-     * @param engineSpeed        引擎转速 Engine speed
-     * @param upShiftThreshold   升挡速度阈值 Gear up-shift speed upShiftThreshold
-     * @param downShiftThreshold 降挡速度阈值 Gear down-shift speed downShiftThreshold
-     * @param direction          期望运动方向，正向 > 0，反向 < 0 Expected motion direction, forward > 0, reverse < 0
-     * @return 换挡档位 Gear shift target
+     * @param gearbox     变速箱对象
+     * @param engineSpeed 当前引擎转速 (rad/s)
+     * @param direction   期望运动方向，正向 > 0，反向 < 0
+     * @return 最优档位
      */
-    protected int autoGearShift(GearboxSubsystem gearbox, float engineSpeed, float upShiftThreshold, float downShiftThreshold, byte direction) {
-        int gear = gearbox.getCurrentGear();
+    protected int autoGearShift(GearboxSubsystem gearbox, float engineSpeed, byte direction) {
+        int currentGear = gearbox.getCurrentGear();
         if (!ControlPreference.shouldAutoSwitchGear(this))
-            return gear;//手动变速箱时不自动换挡 Manual gearbox shifting is not automatic
-        int upGear = Math.min(gear + 1, gearbox.gearRatios.length - 1);
-        int downGear = Math.max(gear - 1, 0);
-        double ratio = gearbox.gearRatios[gear];
-        double upGearRatio = gearbox.gearRatios[upGear];
-        double downGearRatio = gearbox.gearRatios[downGear];
-        double upShiftIndex = (engineSpeed - avgEngineMaxTorqueSpeed) / Math.max(0.1f, avgEngineMaxSpeed - avgEngineMaxTorqueSpeed);
-        double downShiftIndex = (engineSpeed - avgEngineMinSpeed) / Math.max(0.1f, avgEngineMaxTorqueSpeed - avgEngineMinSpeed);
-        int result;
-        if (speed > 0.5f) {//前进时输出正转速，正挡 Forward output positive rotational speed, positive gear
-            double upGearDownShiftIndex = (engineSpeed * upGearRatio / ratio - avgEngineMinSpeed) / Math.max(0.1f, avgEngineMaxTorqueSpeed - avgEngineMinSpeed);
-            double downGearUpShiftIndex = (engineSpeed * downGearRatio / ratio - avgEngineMaxTorqueSpeed) / Math.max(0.1f, avgEngineMaxSpeed - avgEngineMaxTorqueSpeed);
-            if (direction < 0 && overrideCountDown.get(gearbox) <= 0 && speed < 3f) {
-                result = gearbox.minNegativeGear; //最低负挡 Lowest negative gear
-            } else if (engineSpeed * ratio < 0) {
-                //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
-                result = gearbox.minPositiveGear; //最低正挡 Lowest positive gear
-            } else if (upShiftIndex > upShiftThreshold && upGearDownShiftIndex > downShiftThreshold) result = upGear;
-            else if (downShiftIndex < downShiftThreshold && downGearUpShiftIndex < upShiftThreshold && downGear != gearbox.minNegativeGear) {
-                //减速且降档后转速低于最大引擎转速时，降挡 Shift down when braking and the speed is low after gear downshift
-                if (Math.abs(downGearRatio * engineSpeed / ratio) < avgEngineMaxSpeed)
-                    result = downGear;
-                else result = gear;
-            } else result = gear;
-        } else if (speed < -0.5f) {//后退时输出负转速，倒挡 Reverse output negative rotational speed, reverse gear
-            double upGearUpShiftIndex = (engineSpeed * upGearRatio / ratio - avgEngineMaxTorqueSpeed) / Math.max(0.1f, avgEngineMaxSpeed - avgEngineMaxTorqueSpeed);
-            double downGearDownShiftIndex = (engineSpeed * downGearRatio / ratio - avgEngineMinSpeed) / Math.max(0.1f, avgEngineMaxTorqueSpeed - avgEngineMinSpeed);
-            if (direction > 0 && overrideCountDown.get(gearbox) <= 0 && speed > -3f) {
-                result = gearbox.minPositiveGear;//最低正挡 Lowest positive gear
-            } else if (engineSpeed * ratio > 0) {
-                //当前引擎输出转速与期望运动方向不符时 Current engine output rotational speed does not match the expected motion direction
-                result = gearbox.minNegativeGear;//最低负挡 Lowest negative gear
-            } else if (upShiftIndex > upShiftThreshold && downGearDownShiftIndex > downShiftThreshold)
-                result = downGear;
-            else if (downShiftIndex < downShiftThreshold && upGearUpShiftIndex < upShiftThreshold && upGear != gearbox.minPositiveGear) {
-                //减速且降档后转速低于最大引擎转速时，降挡 Shift down when braking and the speed is low after gear downshift
-                if (Math.abs(upGearRatio * engineSpeed / ratio) < avgEngineMaxSpeed)
-                    result = upGear;
-                else result = gear;
-            } else result = gear;
-        } else {//静止时
-            if (direction >= 0)//前进起步，挂最低正挡 Forward start, set to the lowest positive gear
-                result = gearbox.minPositiveGear;
-            else result = gearbox.minNegativeGear;
+            return currentGear;
+
+        // 松油门（direction==0）时根据当前车速推断移动方向
+        byte actualDirection = direction;
+        if (actualDirection == 0 && Math.abs(speed) > 0.5f) {
+            actualDirection = (byte) (speed >= 0 ? 1 : -1);
         }
-        if (result != gear)
-            overrideCountDown.put(gearbox, Math.max(0.2f, gearbox.attr.staticAttribute.switchTime + 0.5f));//自动切换后一段时间内不自动切换 Cooldown after automatic gear shift
-        return result;
+
+        // 低速起步：直接挂最低档
+        if (Math.abs(speed) < 0.5f) {
+            return actualDirection >= 0 ? gearbox.minPositiveGear : gearbox.minNegativeGear;
+        }
+
+        // 计算变速箱输出轴转速: ω_out = ω_engine / R_current
+        double outputShaftSpeed = engineSpeed / gearbox.gearRatios[currentGear];
+
+        int bestGear = currentGear;
+        double bestOutputTorque = -1;
+        double currentRatio = gearbox.gearRatios[currentGear];
+
+        // 遍历所有可用档位，选择输出轴扭矩最大的档位
+        for (int i = 0; i < gearbox.gearRatios.length; i++) {
+            double ratio = gearbox.gearRatios[i];
+
+            // 方向过滤：正方向只看正档，反方向只看负档
+            if (ratio * actualDirection <= 0) continue;
+
+            // 预测挂入此档后的引擎转速
+            double predictedSpeed = outputShaftSpeed * ratio;
+
+            // 跳过过低转速（避免无效计算）
+            if (Math.abs(predictedSpeed) < 0.1) continue;
+
+            // 遍历所有引擎/电动机，累计全油门最大可用扭矩
+            // （不受当前油门开度影响，保证滑行时也能正常降档）
+            double totalTorque = 0;
+            for (EngineSubsystem engine : engines.keySet()) {
+                totalTorque += engine.getTorqueAtSpeed(predictedSpeed);
+            }
+            for (MotorSubsystem motor : motors.keySet()) {
+                totalTorque += motor.getTorqueAtSpeed(predictedSpeed);
+            }
+
+            // 输出轴扭矩 = 引擎扭矩 × 传动比（传动比放大扭矩）
+            double outputTorque = totalTorque * Math.abs(ratio);
+
+            if (outputTorque > bestOutputTorque) {
+                bestOutputTorque = outputTorque;
+                bestGear = i;
+            }
+        }
+
+        // 计算当前档位的输出轴扭矩，用于滞回比较
+        double currentOutputTorque = 0;
+        double curPredictedSpeed = outputShaftSpeed * currentRatio;
+        if (Math.abs(curPredictedSpeed) >= 0.1) {
+            double curTotalTorque = 0;
+            for (EngineSubsystem engine : engines.keySet()) {
+                curTotalTorque += engine.getTorqueAtSpeed(curPredictedSpeed);
+            }
+            for (MotorSubsystem motor : motors.keySet()) {
+                curTotalTorque += motor.getTorqueAtSpeed(curPredictedSpeed);
+            }
+            currentOutputTorque = curTotalTorque * Math.abs(currentRatio);
+        }
+
+        // 滞回：新档位扭矩优势小于 5% 则保持当前档位，避免频繁跳档
+        if (bestGear != currentGear && bestOutputTorque < currentOutputTorque * 1.05) {
+            bestGear = currentGear;
+        }
+
+        // 每次最多跳一档，防止换挡冲击
+        if (bestGear > currentGear + 1) bestGear = currentGear + 1;
+        if (bestGear < currentGear - 1) bestGear = currentGear - 1;
+
+        if (bestGear != currentGear) {
+            overrideCountDown.put(gearbox, Math.max(0.2f, gearbox.attr.staticAttribute.switchTime + 0.5f));
+        }
+        return bestGear;
     }
 
     protected float steering(float steeringInput, AdvancedConnector wheelDrive) {

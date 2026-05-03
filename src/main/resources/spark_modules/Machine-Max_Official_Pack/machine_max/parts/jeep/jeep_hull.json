@@ -16,7 +16,7 @@
       "sub_part.machine_max.main": {
         "end_bones": ["Back_Cover", "Back_Cover_dark"],
         "durability": 550.0,
-        "mass": 400.0,
+        "mass": 550.0,
         "block_collision": "ground",
         "collision_height": 2.5,
         "hit_boxes": {

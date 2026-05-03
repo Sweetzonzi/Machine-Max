@@ -14,7 +14,7 @@
         "start_bone": "AllHull", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
         "end_bones": [], // (可选，默认空)终止骨骼列表, 此骨骼及其包含的骨骼会被排除到渲染与定义用模型之外，配合start_bone选定零件对应的骨骼范围
         "mass_center": "hull_mass_center",
-        "durability": 120.0,
+        "durability": 250.0,
         "mass": 400.0,
         "block_collision": "ground",
         "collision_height": 1.5,
@@ -264,20 +264,20 @@
             "definition": "machine_max:default_glass"
           },
           "subsystem.machine_max.left_front_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_front_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.left_back_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.right_back_light": {
-            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
-            "definition": "machine_max:default_glass"
+            "type": "machine_max:lighting",
+            "definition": "machine_max:dummy_light"
           },
           "subsystem.machine_max.left_front_fog_light": {
             "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁

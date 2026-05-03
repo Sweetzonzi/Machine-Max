@@ -6,6 +6,7 @@
   "passenger_scale": [0.9, 0.9, 0.9],//(可选,默认[1,1,1])乘客渲染时的缩放比例
   "views": {
     "enable_first_person": true, //(可选,默认true)是否启用第一人称视角
+    "first_person_offset": [0, -0.08, -0.15], //(可选,默认[0,0,0])第一人称视角下视角的偏移量
     "enable_third_person": true, //(可选,默认true)是否启用第三人称视角
     "follow_vehicle": true, //(可选,默认true)第三人称视角是否跟随载具旋转
     "focus_on_center": true, //(可选,默认true)第三人称视角是否聚焦于载具中心

@@ -3,8 +3,8 @@
   "type": "machine_max:wheel_driver",
   "basic_durability": 100,
   "roll": {
-    "max_drive_force": 1400.0,
-    "max_brake_force": 1200.0,
+    "max_drive_force": 2500.0,
+    "max_brake_force": 1500.0,
     "max_hand_brake_force": 700.0,
     "max_speed": 3140.0
   },

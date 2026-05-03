@@ -30,15 +30,15 @@
               "definition": "machine_max:fixed_right"
             }
           },
-          "projected_area": [0.71, 0.40, 0.40],
+          "projected_area": [0.82, 0.0, 0.0],
           "hydrodynamics": {
             "": {
-              "front_drag": [0.0, 0.35],
-              "back_drag": [0.0, 0.35],
+              "front_drag": [0.0, 0.0],
+              "back_drag": [0.0, 0.0],
               "left_drag": [0.0, 0.35],
               "right_drag": [0.0, 0.35],
-              "up_drag": [0.0, 0.35],
-              "down_drag": [0.0, 0.35]
+              "up_drag": [0.0, 0.0],
+              "down_drag": [0.0, 0.0]
             }
           }
         }
@@ -68,15 +68,15 @@
               "definition": "machine_max:fixed_left"
             }
           },
-          "projected_area": [0.71, 0.40, 0.40],
+          "projected_area": [0.82, 0.0, 0.0],
           "hydrodynamics": {
             "": {
-              "front_drag": [0.0, 0.35],
-              "back_drag": [0.0, 0.35],
+              "front_drag": [0.0, 0.0],
+              "back_drag": [0.0, 0.0],
               "left_drag": [0.0, 0.35],
               "right_drag": [0.0, 0.35],
-              "up_drag": [0.0, 0.35],
-              "down_drag": [0.0, 0.35]
+              "up_drag": [0.0, 0.0],
+              "down_drag": [0.0, 0.0]
             }
           }
         }
@@ -106,15 +106,15 @@
               "definition": "machine_max:fixed_right"
             }
           },
-          "projected_area": [0.82, 0.45, 0.45],
+          "projected_area": [0.82, 0.0, 0.0],
           "hydrodynamics": {
             "": {
-              "front_drag": [0.0, 0.35],
-              "back_drag": [0.0, 0.35],
+              "front_drag": [0.0, 0.0],
+              "back_drag": [0.0, 0.0],
               "left_drag": [0.0, 0.35],
               "right_drag": [0.0, 0.35],
-              "up_drag": [0.0, 0.35],
-              "down_drag": [0.0, 0.35]
+              "up_drag": [0.0, 0.0],
+              "down_drag": [0.0, 0.0]
             }
           }
         }
@@ -144,15 +144,15 @@
               "definition": "machine_max:fixed_left"
             }
           },
-          "projected_area": [0.82, 0.45, 0.45],
+          "projected_area": [0.82, 0.0, 0.0],
           "hydrodynamics": {
             "": {
-              "front_drag": [0.0, 0.35],
-              "back_drag": [0.0, 0.35],
+              "front_drag": [0.0, 0.0],
+              "back_drag": [0.0, 0.0],
               "left_drag": [0.0, 0.35],
               "right_drag": [0.0, 0.35],
-              "up_drag": [0.0, 0.35],
-              "down_drag": [0.0, 0.35]
+              "up_drag": [0.0, 0.0],
+              "down_drag": [0.0, 0.0]
             }
           }
         }

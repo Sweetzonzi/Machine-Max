@@ -6,7 +6,6 @@ import io.github.sweetzonzi.machine_max.common.vehicle.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.WorkingState;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorSubsystemStaticAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.MechPower;
@@ -25,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 @Getter
-public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader, IMechPowerProducer {
+public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSoundSpreader, IMechPowerProducer, ITorqueProvider {
     public final double RED_LINE_SPEED;//红线转速(rad/s)
     public final MotorSubsystemAttr attr;
     protected static final EntityDataAccessor<Float> ROT_SPEED_ID = SynchedEntityData.defineId(MotorSubsystem.class, EntityDataSerializers.FLOAT);
@@ -94,7 +93,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
         }
         double rotSpeed = getRotSpeed();
         //TODO:电门输入与转速方向相反时，发电模式
-        double engineTorque = throttleInput * calculateMaxTorque(rotSpeed);//输出扭矩
+        double engineTorque = throttleInput * getTorqueAtSpeed(rotSpeed);//输出扭矩
         double dampingTorque = calculateDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
         if (feedbacks.isEmpty()) {
@@ -250,15 +249,35 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
     }
 
     /**
-     * 计算给定转速下的扭矩
+     * 计算给定转速下的扭矩（基于红线功率比模型）。<p>
+     * 1. 恒扭矩区（|转速| ≤ 基速）：受电流限制，输出 maxTorque。<br>
+     * 2. 功率衰减区（基速 < |转速| ≤ 红线）：功率从 maxPower 线性衰减到
+     *    redLinePowerRatio × maxPower，扭矩 = P(ω) / ω。<br>
+     * 3. 红线外：扭矩快速衰减。<br>
+     * 功率衰减使变速箱在高转速区仍有效益。
      *
      * @param rotSpeed 转速(rad/s)
      * @return 当前转速下的最大扭矩(N · m)
      */
-    private double calculateMaxTorque(double rotSpeed) {
+    public double getTorqueAtSpeed(double rotSpeed) {
         double result = 0;
         if (!isActive()) return result;
-        result = Math.min(attr.staticAttribute.maxPower / Math.max(Math.abs(rotSpeed), 0.1f), attr.staticAttribute.maxTorque);
+        double absSpeed = Math.abs(rotSpeed);
+        // 基速：恒扭矩区到功率衰减区的转折点 (rad/s)，P = T × ω
+        double baseSpeed = attr.staticAttribute.maxPower / Math.max(attr.staticAttribute.maxTorque, 0.01f);
+        if (absSpeed <= baseSpeed) {
+            // 恒扭矩区
+            result = attr.staticAttribute.maxTorque;
+        } else if (absSpeed <= RED_LINE_SPEED) {
+            // 功率衰减区：功率从 maxPower 线性衰减到 redLinePowerRatio × maxPower
+            double k = (absSpeed - baseSpeed) / (RED_LINE_SPEED - baseSpeed);
+            double power = attr.staticAttribute.maxPower * (1 - k * (1 - attr.staticAttribute.redLinePowerRatio));
+            result = power / absSpeed;
+        } else {
+            // 红线外：功率指数级快速衰减
+            double redLinePower = attr.staticAttribute.maxPower * attr.staticAttribute.redLinePowerRatio;
+            result = redLinePower / absSpeed * Math.pow(0.5, (absSpeed - RED_LINE_SPEED) / (RED_LINE_SPEED * 0.1));
+        }
         result *= 0.3 + 0.7 * Math.sqrt(getDurability() / getMaxDurability());
         return result;
     }
