@@ -1,6 +1,6 @@
 # 项目术语表
 
-> 生成时间：2026-04-29
+> 生成时间：2026-05-04
 > 项目：Machine-Max
 
 ## 概念列表
@@ -51,15 +51,23 @@
 ### Subsystem（子系统）
 
 - **职责**：为零件提供具体的功能行为
-- **描述**：子系统是零件功能的模块化实现，挂载在 `SubPart` 上。通过 `AbstractSubsystem` 抽象基类派生，种类丰富：引擎（`EngineSubsystem`）、电机（`MotorSubsystem`）、变速箱（`GearboxSubsystem`）、座舱（`SeatSubsystem`）、电池（`BatterySubsystem`）、照明（`LightingSubsystem`）、摄像头（`CameraSubsystem`）、脚本（`ScriptableSubsystem`）等。由 `SubsystemController` 统一管理生命周期。
+- **描述**：子系统是零件功能的模块化实现，挂载在 `SubPart` 上。通过 `AbstractSubsystem` 抽象基类派生，`BasicSubsystem` 提供基础实现，`AbstractControllableSubsystem` 扩展了可控能力。子系统种类丰富：引擎（`EngineSubsystem`）、电机（`MotorSubsystem`）、变速箱（`GearboxSubsystem`）、传动（`TransmissionSubsystem`）、座舱（`SeatSubsystem`）、电池（`BatterySubsystem`）、照明（`LightingSubsystem`）、摄像头（`CameraSubsystem`）、脚本（`ScriptableSubsystem`）、物品存储（`ItemStorageSubsystem`）、车辆控制（`CarControllerSubsystem`）、摩托车控制（`MotorbikeControllerSubsystem`）、轮毂电机驱动（`WheelDriverSubsystem`）、关节驱动（`JointDriverSubsystem`）等。由 `SubsystemController` 统一管理生命周期。
 - **关键类**：
   - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem` — 子系统抽象基类
+  - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.BasicSubsystem` — 基本子系统实现
+  - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem` — 可控子系统抽象
   - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.EngineSubsystem` — 发动机子系统
   - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.MotorSubsystem` — 电动机子系统
   - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.GearboxSubsystem` — 变速箱子系统
+  - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.TransmissionSubsystem` — 传动子系统
   - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem` — 座椅子系统
   - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.BatterySubsystem` — 电池子系统
   - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.CarControllerSubsystem` — 车辆控制子系统
+  - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.MotorbikeControllerSubsystem` — 摩托车控制子系统
+  - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.WheelDriverSubsystem` — 轮毂电机驱动子系统
+  - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.JointDriverSubsystem` — 关节驱动子系统
+  - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.LightingSubsystem` — 照明子系统
+  - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.CameraSubsystem` — 摄像头子系统
   - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.ScriptableSubsystem` — JavaScript 脚本子系统
   - `io.github.sweetzonzi.machine_max.common.vehicle.subsystem.ItemStorageSubsystem` — 物品存储子系统
   - `io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.SubsystemTypes` — 子系统类型枚举
@@ -151,15 +159,18 @@
 ### Item System（物品系统）
 
 - **职责**：玩家交互的核心物品
-- **描述**：一系列具有自定义模型和 3D 预览的特殊物品：`PartItem`（放置零件）、`PartAssemblyItem`（零件装配接口）、`AssemblyItem`（放置整个装配体）、`VehicleBlueprintItem`（载具蓝图，预览并生成载具）、`FabricatingBlueprintItem`（制造蓝图）、`EmptyBlueprintItem`（空白蓝图用于保存）、`VehicleCaptureItem`（载具封装器）、`CrowbarItem`（撬棍，拆卸部件）、`WeldingTorchItem`（焊枪，修复组装）、`SprayCanItem`（喷罐，切换贴图）、`MaterialItem`（合成材料）。
+- **描述**：一系列具有自定义模型和 3D 预览的特殊物品：`PartItem`（放置零件）、`PartAssemblyItem`（零件装配接口）、`AssemblyItem`（放置整个装配体）、`VehicleBlueprintItem`（载具蓝图，预览并生成载具）、`FabricatingBlueprintItem`（制造蓝图）、`EmptyBlueprintItem`（空白蓝图用于保存）、`VehicleCaptureItem`（载具封装接口，由具体物品实现）、`EnderGkResinItem`（末影树脂，封装载具为装配体）、`EnderScannerItem`（末影扫描仪，封装载具为装配体）、`CrowbarItem`（撬棍，拆卸部件）、`WeldingTorchItem`（焊枪，修复组装）、`SprayCanItem`（喷罐，切换贴图）、`MaterialItem`（合成材料）。
 - **关键类**：
   - `io.github.sweetzonzi.machine_max.common.item.prop.PartItem` — 零件物品，右键放置到世界
   - `io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem` — 装配体物品，放置预组装的零件组
   - `io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem` — 载具蓝图物品
   - `io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem` — 制造蓝图物品
+  - `io.github.sweetzonzi.machine_max.common.item.prop.EmptyBlueprintItem` — 空白蓝图
   - `io.github.sweetzonzi.machine_max.common.item.prop.CrowbarItem` — 撬棍
   - `io.github.sweetzonzi.machine_max.common.item.prop.WeldingTorchItem` — 焊枪
   - `io.github.sweetzonzi.machine_max.common.item.prop.SprayCanItem` — 油漆喷罐
+  - `io.github.sweetzonzi.machine_max.common.item.prop.EnderGkResinItem` — 末影树脂，实现载具封装
+  - `io.github.sweetzonzi.machine_max.common.item.prop.EnderScannerItem` — 末影扫描仪，实现载具封装
   - `io.github.sweetzonzi.machine_max.common.item.MaterialItem` — 基础材料物品
 
 ---
@@ -234,6 +245,7 @@
   - `io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorAttachEvent` — 连接点连接事件
   - `io.github.sweetzonzi.machine_max.common.vehicle.event.connector.ConnectorDetachEvent` — 连接点断开事件
   - `io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent` — 子零件伤害事件
+  - `io.github.sweetzonzi.machine_max.common.vehicle.event.VehicleEvent` — 载具事件基类
   - `io.github.sweetzonzi.machine_max.common.vehicle.event.VehicleSpiltEvent` — 载具分裂事件
 
 ---
