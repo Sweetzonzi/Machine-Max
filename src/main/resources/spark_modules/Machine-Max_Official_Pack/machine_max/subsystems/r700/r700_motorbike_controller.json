@@ -4,7 +4,7 @@
   "basic_durability": 40.0,
   "steering_center": [0, -0.6875, 0.85],
   "min_steering_radius": 3.5,
-  "lateral_acceleration": 10.0,
+  "lateral_acceleration": 20.0,
   "max_drift_angular_velocity": 1.8,
   "control_inputs": ["move_control"],
   "max_angle": 35.0,

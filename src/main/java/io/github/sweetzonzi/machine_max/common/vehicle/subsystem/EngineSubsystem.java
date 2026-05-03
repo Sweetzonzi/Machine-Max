@@ -57,7 +57,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
         IDLE_SPEED = attr.staticAttribute.idleRpm * Math.PI / 30.0;//怠速转速(rad/s)
         MAX_TORQUE = attr.staticAttribute.maxTorque;
         setRotSpeed((float) (IDLE_SPEED + 1));
-        double minThrottle = 1.005 * calculateDampingTorque(IDLE_SPEED) / getTorqueAtSpeed(IDLE_SPEED);
+        double minThrottle = 1.005 * getDampingTorque(IDLE_SPEED) / getTorqueAtSpeed(IDLE_SPEED);
         MIN_IDLE_THROTTLE = Math.min(minThrottle, 1f);
         coupleTorquePD = new PDController(
                 1.5 * attr.getStaticAttribute().getInertia(),
@@ -103,7 +103,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
         else throttleInput = Math.clamp(throttleInput, 0, 1);
         double engineTorque = throttleInput * getTorqueAtSpeed(rotSpeed);
         if (!isActive()) engineTorque = 0.0;
-        double dampingTorque = calculateDampingTorque(rotSpeed);
+        double dampingTorque = getDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
         if (feedbacks.isEmpty()) {
             if (!getSubPart().level.isClientSide()) {
@@ -255,7 +255,8 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
             double k = (rotSpeed - MAX_TORQUE_SPEED) / (RED_LINE_SPEED - MAX_TORQUE_SPEED);
             result = k * MAX_TORQUE * attr.getStaticAttribute().getRedLineRpmTorqueRatio() + (1 - k) * MAX_TORQUE;
         } else { //超速时动力大幅衰减
-            result = Math.pow(5, -10 * (rotSpeed - RED_LINE_SPEED) / RED_LINE_SPEED) * attr.staticAttribute.maxPower / rotSpeed;
+            result = Math.pow(5, -10 * (rotSpeed - RED_LINE_SPEED) / RED_LINE_SPEED)
+                    * Math.min(MAX_TORQUE * attr.getStaticAttribute().getRedLineRpmTorqueRatio(), attr.staticAttribute.maxPower / rotSpeed);
         }
         result = Math.min(result, attr.getStaticAttribute().getMaxPower() / rotSpeed);//限制最大输出功率
         result *= 0.3 + 0.7 * Math.sqrt(getDurability() / getMaxDurability());//耐久度影响
@@ -269,7 +270,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
      * @param rotSpeed 转速(rad/s)
      * @return 当前转速下的内部阻力矩(N · m)
      */
-    private double calculateDampingTorque(double rotSpeed) {
+    public double getDampingTorque(double rotSpeed) {
         double result = 0;
         if (Math.abs(rotSpeed) <= IDLE_SPEED) return result;
         for (int i = 0; i < attr.staticAttribute.dampingFactors.size(); i++) {

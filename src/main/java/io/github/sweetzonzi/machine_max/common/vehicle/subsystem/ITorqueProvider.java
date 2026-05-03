@@ -13,4 +13,13 @@ public interface ITorqueProvider {
      * @return 最大扭矩 (N·m)
      */
     double getTorqueAtSpeed(double rotSpeed);
+
+    /**
+     * 查询指定转速下该动力源的内部阻尼/阻力矩。
+     * 返回带符号的值，正值表示阻碍正方向旋转、负值表示阻碍负方向旋转。
+     *
+     * @param rotSpeed 转速 (rad/s)
+     * @return 内部阻力矩 (N·m)
+     */
+    double getDampingTorque(double rotSpeed);
 }

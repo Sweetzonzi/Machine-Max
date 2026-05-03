@@ -94,7 +94,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
         double rotSpeed = getRotSpeed();
         //TODO:电门输入与转速方向相反时，发电模式
         double engineTorque = throttleInput * getTorqueAtSpeed(rotSpeed);//输出扭矩
-        double dampingTorque = calculateDampingTorque(rotSpeed);
+        double dampingTorque = getDampingTorque(rotSpeed);
         double netTorque = engineTorque - dampingTorque;
         if (feedbacks.isEmpty()) {
             if (!getSubPart().level.isClientSide()) {
@@ -288,7 +288,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
      * @param rotSpeed 转速(rad/s)
      * @return 当前转速下的内部阻力矩(N · m)
      */
-    private double calculateDampingTorque(double rotSpeed) {
+    public double getDampingTorque(double rotSpeed) {
         double result = 0;
         if (Math.abs(rotSpeed) <= 0.5 * MotorSubsystemStaticAttr.baseRPM / Math.PI * 30) return result;
         for (int i = 0; i < attr.staticAttribute.dampingFactors.size(); i++) {

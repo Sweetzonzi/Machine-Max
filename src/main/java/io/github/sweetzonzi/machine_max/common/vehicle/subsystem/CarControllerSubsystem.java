@@ -545,14 +545,13 @@ public class CarControllerSubsystem extends BasicSubsystem {
             // 跳过过低转速（避免无效计算）
             if (Math.abs(predictedSpeed) < 0.1) continue;
 
-            // 遍历所有引擎/电动机，累计全油门最大可用扭矩
-            // （不受当前油门开度影响，保证滑行时也能正常降档）
+            // 遍历所有引擎/电动机，累计净扭矩（扣除内阻后的可用扭矩，保证滑行时也能正常降档）
             double totalTorque = 0;
             for (EngineSubsystem engine : engines.keySet()) {
-                totalTorque += engine.getTorqueAtSpeed(predictedSpeed);
+                totalTorque += engine.getTorqueAtSpeed(predictedSpeed) - Math.abs(engine.getDampingTorque(predictedSpeed));
             }
             for (MotorSubsystem motor : motors.keySet()) {
-                totalTorque += motor.getTorqueAtSpeed(predictedSpeed);
+                totalTorque += motor.getTorqueAtSpeed(predictedSpeed) - Math.abs(motor.getDampingTorque(predictedSpeed));
             }
 
             // 输出轴扭矩 = 引擎扭矩 × 传动比（传动比放大扭矩）
@@ -570,10 +569,10 @@ public class CarControllerSubsystem extends BasicSubsystem {
         if (Math.abs(curPredictedSpeed) >= 0.1) {
             double curTotalTorque = 0;
             for (EngineSubsystem engine : engines.keySet()) {
-                curTotalTorque += engine.getTorqueAtSpeed(curPredictedSpeed);
+                curTotalTorque += engine.getTorqueAtSpeed(curPredictedSpeed) - Math.abs(engine.getDampingTorque(curPredictedSpeed));
             }
             for (MotorSubsystem motor : motors.keySet()) {
-                curTotalTorque += motor.getTorqueAtSpeed(curPredictedSpeed);
+                curTotalTorque += motor.getTorqueAtSpeed(curPredictedSpeed) - Math.abs(motor.getDampingTorque(curPredictedSpeed));
             }
             currentOutputTorque = curTotalTorque * Math.abs(currentRatio);
         }

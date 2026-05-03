@@ -580,12 +580,12 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                     }
                 });
             }
-            if (!level.isClientSide() && source.getEntity() instanceof ServerPlayer player) {
-                player.sendSystemMessage(Component.literal(String.format(
-                        "RHA(基本/角度)=%.1f/%.1f, 入射角=%.1f°, 穿深=%.2f, 冲击=%.2f, 伤害=%.2f",
-                        baseArmor, armor, incidenceAngle, armorPenetration, impactDamage, finalDamage
-                )));
-            }
+//            if (!level.isClientSide() && source.getEntity() instanceof ServerPlayer player) {
+//                player.sendSystemMessage(Component.literal(String.format(
+//                        "RHA(基本/角度)=%.1f/%.1f, 入射角=%.1f°, 穿深=%.2f, 冲击=%.2f, 伤害=%.2f",
+//                        baseArmor, armor, incidenceAngle, armorPenetration, impactDamage, finalDamage
+//                )));
+//            }
             return true; //返回true表示命中，且伤害已被处理
         }
         return false; //返回false表示伤害已被取消
