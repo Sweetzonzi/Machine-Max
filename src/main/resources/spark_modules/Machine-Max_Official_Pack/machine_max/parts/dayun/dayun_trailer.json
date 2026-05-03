@@ -5,27 +5,31 @@
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
-    "model": "machine_max:dayun_trailer.geo",
+    "model": "machine_max:dayun.geo",
     "textures": {
       "print.machine_max.dayun.1": "machine_max:textures/part/dayun/dayun.png",
       "print.machine_max.dayun.2": "machine_max:textures/part/dayun/dayun2.png",
       "print.machine_max.dayun.4": "machine_max:textures/part/dayun/dayun4.png",
       "print.machine_max.dayun.6": "machine_max:textures/part/dayun/dayun6.png"
     },
-    "tags": ["machine_max:dayun", "machine_max:chassis"],
+    "animations": "machine_max:dayun",
+    "tags": ["machine_max:dayun", "machine_max:chassis", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
+        "start_bone": "AllTrailer",
+        "end_bones": ["SteelCoil", "HianQiaoGulu3", "HianQiaoGulu5", "HianQiaoGulu7"],
         "durability": 3000.0,
         "mass": 1500.0,
-        "block_collision": "true",
-        "collision_height": 0,
+        "mass_center": "trailer_mass_center",
+        "block_collision": "ground",
+        "collision_height": 1.5,
         "hit_boxes": {
-          "collision": {
+          "TrailerHitBox": {
             "type": "box",
             "material": "machine_max:structural_steel",
             "thickness": 10
           },
-          "support_collision": {
+          "TrailerSupportHitBox": {
             "type": "box",
             "material": "machine_max:structural_steel",
             "condition": "!subpart.has_connector('connector.machine_max.chassis_connection')"
@@ -33,7 +37,7 @@
         },
         "connectors": {
           "connector.machine_max.chassis_connection": {
-            "locator": "chassis_locator",
+            "locator": "trailer_hull_axis",
             "definition": "machine_max:fixed_down"
           },
           "connector.machine_max.left_wheel_1": {

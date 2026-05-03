@@ -5,17 +5,18 @@
   "vehicle_damage_rate": 0.1,
   "vehicle_damage_rate_destroyed": 0.1,
   "variants": {
-    "model": "machine_max:dayun_steel_coil.geo",
+    "model": "machine_max:dayun.geo",
     "textures": "machine_max:textures/part/dayun/dayun.png",
     "animations": "machine_max:dayun", //(可选, 留空则不播放动画)动画路径
     "sub_parts": {
       "sub_part.machine_max.main": {
-        "durability": 100000.0,
+        "start_bone": "SteelCoil",
+        "durability": 10000.0,
         "mass": 7500.0,
         "block_collision": "true",
         "collision_height": 0,
         "hit_boxes": {
-          "collision": {
+          "SteelCoilHitBox": {
             "type": "box",
             "material": "machine_max:structural_steel",
             "thickness": 1000.0
@@ -23,7 +24,7 @@
         },
         "connectors": {
           "connector.machine_max.bottom": {
-            "locator": "locator",
+            "locator": "steel_coil_trailer_lock",
             "definition": "machine_max:fixed_down"
           }
         }

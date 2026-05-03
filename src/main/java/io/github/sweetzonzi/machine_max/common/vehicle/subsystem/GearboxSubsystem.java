@@ -212,7 +212,7 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
         Vector3f pos = getSubPart().getPosition();
         if (dataAccessor == CURRENT_GEAR_ID) {
             if (getCurrentGear() > lastGear) {
-                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_gear_up", PPhase.ALL, () -> {
+                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_gear_up", PPhase.PRE, () -> {
                             getLevel().playLocalSound(
                                     pos.x, pos.y, pos.z,
                                     attr.staticAttribute.getGearUpSound(),
@@ -224,7 +224,7 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
                         }
                 );
             } else {
-                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_gear_down", PPhase.ALL, () -> {
+                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_gear_down", PPhase.PRE, () -> {
                             getLevel().playLocalSound(
                                     pos.x, pos.y, pos.z,
                                     attr.staticAttribute.getGearDownSound(),
@@ -239,7 +239,7 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
             lastGear = getCurrentGear();
         } else if (dataAccessor == CLUTCHED_ID) {
             if (isClutched()) {
-                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_clutch_in", PPhase.ALL, () -> {
+                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_clutch_in", PPhase.PRE, () -> {
                             getLevel().playLocalSound(
                                     pos.x, pos.y, pos.z,
                                     attr.staticAttribute.getClutchInSound(),
@@ -251,7 +251,7 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
                         }
                 );
             } else {
-                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_clutch_in", PPhase.ALL, () -> {
+                SparkLevel.submitDeduplicatedTask(getLevel(), getSubPart().getId() + "_" + this.name + "_clutch_in", PPhase.PRE, () -> {
                             getLevel().playLocalSound(
                                     pos.x, pos.y, pos.z,
                                     attr.staticAttribute.getClutchOutSound(),

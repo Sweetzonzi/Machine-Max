@@ -5,10 +5,15 @@ import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import com.jme3.math.Vector3f;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class LocalHeightField {
+
+    /** 表面类型：硬质（镐/斧可挖掘或基岩）、软质（锹可挖掘）、无（空气/树叶等） */
+    private enum SurfaceType { HARD, SOFT, NONE }
 
     /**
      * 高度场半径（单位：方块）
@@ -20,15 +25,16 @@ public class LocalHeightField {
      */
     private final int size;
 
-    /**
-     * 原始高度（方块柱采样）
-     */
-    private final float[][] rawHeight;
-
-    /**
-     * 平滑高度
-     */
-    private final float[][] smoothHeight;
+    /** 硬质表面原始高度（镐/斧可挖掘或基岩） */
+    private final float[][] hardRawHeight;
+    /** 软质表面原始高度（锹可挖掘） */
+    private final float[][] softRawHeight;
+    /** 硬质表面平滑高度 */
+    private final float[][] hardSmoothHeight;
+    /** 软质表面平滑高度 */
+    private final float[][] softSmoothHeight;
+    /** 每格表面类型，决定查询时使用哪张高度场 */
+    private final SurfaceType[][] surfaceType;
 
     /**
      * 高度场左下角世界坐标
@@ -39,12 +45,19 @@ public class LocalHeightField {
     public LocalHeightField(int radius) {
         this.radius = radius;
         this.size = radius * 2 + 1;
-        this.rawHeight = new float[size][size];
-        this.smoothHeight = new float[size][size];
+        this.hardRawHeight = new float[size][size];
+        this.softRawHeight = new float[size][size];
+        this.hardSmoothHeight = new float[size][size];
+        this.softSmoothHeight = new float[size][size];
+        this.surfaceType = new SurfaceType[size][size];
     }
 
     /**
      * 构建部件附近的局部高度场
+     * <p>
+     * 分别构建硬质场和软质场，各自独立平滑。
+     * 硬质表面（石材、木材、基岩等）的平滑不受相邻软质地面（泥土、沙子等）影响，
+     * 从而避免铺装路面被地面拉成拱形。
      *
      * @param level   物理世界
      * @param centerX 高度场中心方块X
@@ -58,46 +71,51 @@ public class LocalHeightField {
 
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
-
                 int wx = originX + x;
                 int wz = originZ + z;
-
-                float h = sampleColumn(level, wx, wz, baseY);
-
-                rawHeight[x][z] = h;
-                smoothHeight[x][z] = h;
+                sampleColumn(level, wx, wz, baseY, x, z);
             }
         }
 
-        smooth(3);
+        smoothField(hardRawHeight, hardSmoothHeight, 3);
+        smoothField(softRawHeight, softSmoothHeight, 3);
     }
 
     /**
-     * 采样某一方块柱的最高碰撞高度
+     * 采样某一方块柱的最高碰撞高度，并按方块类型分入硬质/软质高度场
      * <p>
-     * 说明：
-     * Minecraft 的碰撞形状可能不是完整方块（如半砖、雪层等），
-     * 因此需要读取 VoxelShape 并取其最高 Y。
-     * <p>
-     * 如果该列没有任何碰撞体（空气/断崖），返回负无穷，
-     * 用于在平滑阶段阻止跨越断崖。
+     * 分类规则：
+     * <ul>
+     *   <li>硬质：镐可挖掘、斧可挖掘或基岩 → 填入硬质场，软质场置 -∞</li>
+     *   <li>软质：锹可挖掘 → 填入软质场，硬质场置 -∞</li>
+     *   <li>其他（树叶、植株等非硬非软方块）：两场均置 -∞，不参与平滑</li>
+     * </ul>
+     * 两张高度场完全互补，确保平滑时各场只与同类型邻居交互。
+     *
+     * @param level 物理世界
+     * @param wx    世界X坐标
+     * @param wz    世界Z坐标
+     * @param baseY 部件底部参考高度
+     * @param gx    网格X索引
+     * @param gz    网格Z索引
      */
-    private float sampleColumn(PhysicsLevel level, int x, int z, float baseY) {
+    private void sampleColumn(PhysicsLevel level, int wx, int wz, float baseY, int gx, int gz) {
 
         int by = (int) Math.floor(baseY);
 
-        float highest = Float.NEGATIVE_INFINITY;
+        float highestHeight = Float.NEGATIVE_INFINITY;
+        SurfaceType highestType = SurfaceType.NONE;
 
         // 在车辆附近垂直范围内搜索碰撞体
         for (int dy = -2; dy <= 4; dy++) {
 
-            BlockPos pos = new BlockPos(x, by + dy, z);
+            BlockPos pos = new BlockPos(wx, by + dy, wz);
 
             SectionSnapshot.BlockSnapshot snap =
                     level.terrainManager.getBlockSnapshotAt(pos);
 
             if (snap == null) {
-                if (highest == Float.NEGATIVE_INFINITY)
+                if (highestType == SurfaceType.NONE)
                     continue;
                 else break;
             }
@@ -110,45 +128,72 @@ public class LocalHeightField {
             );
 
             if (shape.isEmpty()) {
-                if (highest == Float.NEGATIVE_INFINITY)
+                if (highestType == SurfaceType.NONE)
                     continue;
                 else break;
             }
 
             float height = (float) shape.max(Direction.Axis.Y);
-
             float worldHeight = pos.getY() + height;
 
-            if (worldHeight > highest) {
-                highest = worldHeight;
+            if (worldHeight <= highestHeight) continue;
+
+            // 判断方块表面类型
+            SurfaceType type;
+            if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)
+                    || state.is(BlockTags.MINEABLE_WITH_AXE)
+                    || state.is(Blocks.BEDROCK)) {
+                type = SurfaceType.HARD;
+            } else if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) {
+                type = SurfaceType.SOFT;
+            } else {
+                continue; // 树叶等非硬非软方块跳过，不参与高度场
             }
+
+            highestHeight = worldHeight;
+            highestType = type;
         }
 
-        return highest;
+        // 根据类型填入对应高度场，另一场置 -∞ 实现互补
+        surfaceType[gx][gz] = highestType;
+        if (highestType == SurfaceType.HARD) {
+            hardRawHeight[gx][gz] = highestHeight;
+            hardSmoothHeight[gx][gz] = highestHeight;
+            softRawHeight[gx][gz] = Float.NEGATIVE_INFINITY;
+            softSmoothHeight[gx][gz] = Float.NEGATIVE_INFINITY;
+        } else if (highestType == SurfaceType.SOFT) {
+            hardRawHeight[gx][gz] = Float.NEGATIVE_INFINITY;
+            hardSmoothHeight[gx][gz] = Float.NEGATIVE_INFINITY;
+            softRawHeight[gx][gz] = highestHeight;
+            softSmoothHeight[gx][gz] = highestHeight;
+        } else {
+            hardRawHeight[gx][gz] = Float.NEGATIVE_INFINITY;
+            hardSmoothHeight[gx][gz] = Float.NEGATIVE_INFINITY;
+            softRawHeight[gx][gz] = Float.NEGATIVE_INFINITY;
+            softSmoothHeight[gx][gz] = Float.NEGATIVE_INFINITY;
+        }
     }
 
     /**
-     * 对高度场进行平滑处理
+     * 对单张高度场进行平滑处理
      * <p>
      * 使用基于差值的 Gaussian 卷积（Laplacian smoothing）。
-     * <p>
-     * 与传统卷积高度不同，本方法只卷积高度差：
-     * <p>
-     * Δh = Σ w * (h_neighbor - h_center)
-     * <p>
-     * 这样可以避免在台阶处出现最大坡度的问题，
-     * 使坡度在空间上均匀分布。
      * <p>
      * 同时满足以下约束：
      * <p>
      * 1 不允许跨越断崖（高度为 -∞）
      * 2 不允许平滑结果超过原始高度
+     * <p>
+     * 参数化设计允许硬质场和软质场各自独立调用，
+     * 保证不同材质表面的平滑互不干扰。
      *
-     * @param iterations 卷积次数
+     * @param rawField    原始高度（同时作为上限约束）
+     * @param smoothField 输出平滑高度
+     * @param iterations  卷积次数
      */
-    private void smooth(int iterations) {
+    private void smoothField(float[][] rawField, float[][] smoothField, int iterations) {
 
-        float[][] src = rawHeight;
+        float[][] src = rawField;
         float[][] dst = new float[size][size];
 
         for (int iter = 0; iter < iterations; iter++) {
@@ -200,8 +245,8 @@ public class LocalHeightField {
                     float h = center + delta;
 
                     // 不允许超过原始高度
-                    if (h > rawHeight[x][z]) {
-                        h = rawHeight[x][z];
+                    if (h > rawField[x][z]) {
+                        h = rawField[x][z];
                     }
 
                     dst[x][z] = h;
@@ -214,18 +259,21 @@ public class LocalHeightField {
             dst = tmp;
         }
 
-        // 最终结果写入 smoothHeight
+        // 最终结果写入 smoothField
         for (int x = 0; x < size; x++) {
-            System.arraycopy(src[x], 0, smoothHeight[x], 0, size);
+            System.arraycopy(src[x], 0, smoothField[x], 0, size);
         }
     }
 
     /**
      * 双线性插值获取高度
+     * <p>
+     * 根据查询位置所在网格的表面类型，自动路由到硬质或软质高度场。
+     * 硬质路面与软质地面的平滑结果彼此隔离，互不干扰。
      *
      * @param worldX 世界X
      * @param worldZ 世界Z
-     * @return 高度
+     * @return 高度，若该位置无表面（空气）则返回负无穷
      */
     public float getHeight(float worldX, float worldZ) {
         // 将世界坐标映射到网格坐标（网格原点为左下角方块中心）
@@ -244,10 +292,21 @@ public class LocalHeightField {
         float fx = u - x0;   // 插值权重（范围 [0,1]）
         float fz = v - z0;
 
-        float h00 = smoothHeight[x0][z0];
-        float h10 = smoothHeight[x0 + 1][z0];
-        float h01 = smoothHeight[x0][z0 + 1];
-        float h11 = smoothHeight[x0 + 1][z0 + 1];
+        // 根据主格点表面类型选择对应高度场
+        SurfaceType type = surfaceType[x0][z0];
+        float[][] field;
+        if (type == SurfaceType.HARD) {
+            field = hardSmoothHeight;
+        } else if (type == SurfaceType.SOFT) {
+            field = softSmoothHeight;
+        } else {
+            return Float.NEGATIVE_INFINITY;
+        }
+
+        float h00 = field[x0][z0];
+        float h10 = field[x0 + 1][z0];
+        float h01 = field[x0][z0 + 1];
+        float h11 = field[x0 + 1][z0 + 1];
 
         // 若任一角为断崖，则整点无效
         if (h00 == Float.NEGATIVE_INFINITY ||

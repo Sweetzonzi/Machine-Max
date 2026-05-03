@@ -5,10 +5,13 @@
 			"loop": true,
 			"bones": {
 				"FXP": {
-					"rotation": [0, 0, "vehicle.get('steering')*225"]
+					"rotation": [0, 0, 0]
 				},
 				"base": {
 					"scale": "subpart.has_connector('connector.machine_max.bottom')"
+				},
+				"TrailerSupportHitBox": {
+					"position": [0, "11 * subpart.has_connector('connector.machine_max.chassis_connection')", 0]
 				}
 			}
 		}
