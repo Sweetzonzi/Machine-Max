@@ -535,7 +535,9 @@ public class CarControllerSubsystem extends BasicSubsystem {
             double ratio = gearbox.gearRatios[i];
 
             // 方向过滤：正方向只看正档，反方向只看负档
-            if (ratio * actualDirection <= 0) continue;
+            // 纯电动车（无引擎）跳过方向过滤——电动机反转即可倒车，无需负挡
+            boolean isPureElectric = engineCount == 0 && motorCount > 0;
+            if (!isPureElectric && ratio * actualDirection <= 0) continue;
 
             // 预测挂入此档后的引擎转速
             double predictedSpeed = outputShaftSpeed * ratio;
