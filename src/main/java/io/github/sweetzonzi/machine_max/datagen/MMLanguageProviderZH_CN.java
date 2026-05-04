@@ -102,6 +102,9 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("subtitles.item.welding_torch.loop", "焊接中");
         this.add("subtitles.item.welding_torch.end", "焊枪关闭");
         // 菜单
+        this.add("gui.machine_max.welcome.title", "欢迎参与 Machine Max Beta 公开测试!");
+        this.add("gui.machine_max.welcome.content", "这是一款以物理和载具组装为主题的 Minecraft模组。\n本模组仍处于早期版本，可能存在各类问题，不代表最终品质。\n使用旧有存档时请务必做好备份工作。\n\n祝游玩愉快！");
+        this.add("gui.machine_max.welcome.proceed", "确认");
         this.add("gui.machine_max.confirm", "确认");
         this.add("gui.machine_max.cancel", "取消");
         this.add("gui.machine_max.enter_vehicle_name", "设置载具名称");

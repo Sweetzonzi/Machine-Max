@@ -2,10 +2,11 @@ name: 部署 Wiki 到 GitHub Pages
 
 on:
   push:
-    branches: [main]
-    # 仅当 Markdown 源文件或 MkDocs 配置变更时触发
+    branches: [1.21.1]
+    # 当 Markdown 源文件、MkDocs 配置或 workflow 变更时触发
     paths:
       - 'docs/**'
+      - '.github/**'
   # 允许手动触发
   workflow_dispatch:
 

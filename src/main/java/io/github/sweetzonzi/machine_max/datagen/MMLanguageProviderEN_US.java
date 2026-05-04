@@ -102,6 +102,9 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("subtitles.item.welding_torch.loop", "Welding torch running");
         this.add("subtitles.item.welding_torch.end", "Welding torch stops");
         //Menu & Screen
+        this.add("gui.machine_max.welcome.title", "Welcome to Machine Max Beta!");
+        this.add("gui.machine_max.welcome.content", "This is a Minecraft mod themed around physics and vehicle assembly.\nThis mod is still in an early version, may have various issues, and does not represent final quality.\nPlease make sure to back up your old saves.\n\nHave fun!");
+        this.add("gui.machine_max.welcome.proceed", "Confirm");
         this.add("gui.machine_max.set_vehicle_name", "Set Vehicle Name");
         this.add("gui.machine_max.confirm", "Confirm");
         this.add("gui.machine_max.cancel", "Cancel");
