@@ -1,0 +1,56 @@
+name: 部署 Wiki 到 GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    # 仅当 Markdown 源文件或 MkDocs 配置变更时触发
+    paths:
+      - 'docs/**'
+  # 允许手动触发
+  workflow_dispatch:
+
+# 设置 Pages 所需的权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只允许一个部署运行
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 安装依赖
+        run: |
+          pip install mkdocs mkdocs-material
+
+      - name: 构建站点
+        run: mkdocs build --config-file docs/mkdocs.yml
+
+      - name: 上传 Pages 产物
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: 部署到 GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
