@@ -26,6 +26,6 @@ run-data
 repo
 /logs/
 
-# MkDocs 构建输出
+# MkDocs 本地构建输出（不是源码，是编译产物）
 docs/site/
 
