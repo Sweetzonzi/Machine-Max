@@ -1,0 +1,2904 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MachineMax 模组官方维基 — 载具拼装、物理驾驶、内容包制作">
+      
+      
+        <meta name="author" content="MachineMax Team">
+      
+      
+      
+        <link rel="prev" href="3.6-%E4%BF%A1%E5%8F%B7%E7%B3%BB%E7%BB%9F.html">
+      
+      
+        <link rel="next" href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.1-%E6%91%A9%E6%93%A6%E4%B8%8E%E6%8A%93%E5%9C%B0%E5%8A%9B.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>3.7 能量系统 - MachineMax Wiki</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#37" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="MachineMax Wiki" class="md-header__button md-logo" aria-label="MachineMax Wiki" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MachineMax Wiki
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              3.7 能量系统
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="amber"  aria-label="切换暗色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换暗色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="orange" data-md-color-accent="amber"  aria-label="切换亮色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换亮色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Sweetzonzi/Machine-Max" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Home.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.1-%E8%AE%A4%E8%AF%86MachineMax.html" class="md-tabs__link">
+          
+  
+  
+  快速上手
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.1-%E8%BD%BD%E5%85%B7%E6%A6%82%E5%BF%B5%E4%B8%8E%E5%B1%82%E7%BA%A7.html" class="md-tabs__link">
+          
+  
+  
+  系统指南
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="3.1-%E5%AD%90%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%BF%B0.html" class="md-tabs__link">
+          
+  
+  
+  子系统详解
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.1-%E6%91%A9%E6%93%A6%E4%B8%8E%E6%8A%93%E5%9C%B0%E5%8A%9B.html" class="md-tabs__link">
+          
+  
+  
+  机制详解
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.1-%E5%86%85%E5%AE%B9%E5%8C%85%E6%80%BB%E8%A7%88.html" class="md-tabs__link">
+          
+  
+  
+  内容包教程
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../%E9%99%84%E5%BD%95/A.1-%E6%A8%A1%E7%BB%84%E9%85%8D%E7%BD%AE.html" class="md-tabs__link">
+          
+  
+  
+  附录
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="MachineMax Wiki" class="md-nav__button md-logo" aria-label="MachineMax Wiki" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MachineMax Wiki
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Sweetzonzi/Machine-Max" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Home.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速上手
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    快速上手
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.1-%E8%AE%A4%E8%AF%86MachineMax.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.1 认识 MachineMax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.2-%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.2 安装与配置
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.3-%E5%88%9B%E9%80%A0%E6%A8%A1%E5%BC%8F%E9%80%A0%E8%BD%A6.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.3 创造模式造车
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.4-%E7%94%9F%E5%AD%98%E6%A8%A1%E5%BC%8F%E8%B5%B7%E6%AD%A5.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.4 生存模式起步
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.5-%E6%A0%B8%E5%BF%83%E7%89%A9%E5%93%81%E4%B8%80%E8%A7%88.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.5 核心物品一览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.6-%E5%AE%98%E6%96%B9%E5%86%85%E5%AE%B9%E5%8C%85%E8%BD%BD%E5%85%B7%E4%B8%80%E8%A7%88.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.6 官方内容包载具一览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    系统指南
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    系统指南
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.1-%E8%BD%BD%E5%85%B7%E6%A6%82%E5%BF%B5%E4%B8%8E%E5%B1%82%E7%BA%A7.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1 载具概念与层级
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.2-%E8%BD%BD%E5%85%B7%E6%8B%BC%E8%A3%85.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.2 载具拼装
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.3-%E7%BB%84%E8%A3%85%E4%BF%AE%E5%A4%8D.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.3 组装修复
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.4-%E9%9B%B6%E4%BB%B6%E5%8F%98%E4%BD%93.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.4 零件变体
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.5-%E6%B6%82%E8%A3%85%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.5 涂装系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.6-%E8%93%9D%E5%9B%BE%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.6 蓝图系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.7-%E8%BD%BD%E5%85%B7%E4%BF%9D%E5%AD%98%E4%B8%8E%E6%94%B6%E7%BA%B3.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.7 载具保存与收纳
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    子系统详解
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    子系统详解
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.1-%E5%AD%90%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%BF%B0.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.1 子系统概述
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.2-%E5%8A%A8%E5%8A%9B%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.2 动力系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.3-%E4%BC%A0%E5%8A%A8%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.3 传动系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.4-%E8%A1%8C%E9%A9%B6%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.4 行驶系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.5-%E5%8A%9F%E8%83%BD%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.5 功能系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.6-%E4%BF%A1%E5%8F%B7%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.6 信号系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.7 能量系统
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="3.7-%E8%83%BD%E9%87%8F%E7%B3%BB%E7%BB%9F.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.7 能量系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        能量系统解决什么
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        电力网络：全载具共享的总线
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="电力网络：全载具共享的总线">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三种角色
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tick" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        每 tick 结算流程
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        当前版本适用范围
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        脚本查询接口
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        机械能网络：逐级传递的动力链路
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="机械能网络：逐级传递的动力链路">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mechpower" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MechPower 数据
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        零件内的机械能传递
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        机械能端口：跨零件接力
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        转速反馈
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        典型机械能链路
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        双网对比
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        对深度玩家的观察点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ugc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UGC 设计建议
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="UGC 设计建议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        电力网络配置要点
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        机械能链路配置要点
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内容包中的连接点配置示例
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#molang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        能量相关的 Molang 查询
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    机制详解
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    机制详解
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.1-%E6%91%A9%E6%93%A6%E4%B8%8E%E6%8A%93%E5%9C%B0%E5%8A%9B.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.1 摩擦与抓地力
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.2-%E6%B5%81%E4%BD%93%E5%8A%A8%E5%8A%9B%E5%AD%A6%E4%B8%8E%E6%B0%94%E5%8A%A8.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.2 流体动力学与气动
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.3-%E8%A3%85%E7%94%B2%E4%B8%8E%E7%A9%BF%E7%94%B2.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.3 装甲与穿甲
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.4-%E4%BC%A4%E5%AE%B3%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.4 伤害系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.5-%E7%A2%B0%E6%92%9E%E6%95%88%E6%9E%9C.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.5 碰撞效果
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.6-%E5%9C%B0%E5%BD%A2%E5%B9%B3%E6%BB%91.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.6 地形平滑
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    内容包教程
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    内容包教程
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.1-%E5%86%85%E5%AE%B9%E5%8C%85%E6%80%BB%E8%A7%88.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.1 内容包总览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.2-%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%8A%A8%E7%94%BB.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.2 模型与动画
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.3-%E9%9B%B6%E4%BB%B6%E5%AE%9A%E4%B9%89.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.3 零件定义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.4-%E8%BF%9E%E6%8E%A5%E7%82%B9%E5%AE%9A%E4%B9%89.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.4 连接点定义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.5-%E5%AD%90%E7%B3%BB%E7%BB%9F%E5%AE%9A%E4%B9%89.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.5 子系统定义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.6-%E6%9D%90%E6%96%99%E5%AE%9A%E4%B9%89.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.6 材料定义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.7-%E6%A8%A1%E6%9D%BF%E3%80%81%E8%93%9D%E5%9B%BE%E4%B8%8E%E8%A3%85%E9%85%8D%E4%BD%93.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.7 模板、蓝图与装配体
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.8-%E7%A0%94%E5%8F%91%E4%B8%8E%E5%88%B6%E9%80%A0%E9%85%8D%E6%96%B9.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.8 研发与制造配方
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.9-%E8%BE%85%E5%8A%A9%E6%A8%A1%E5%9D%97.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.9 辅助模块
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.10-Molang%E8%A1%A8%E8%BE%BE%E5%BC%8F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.10 Molang 表达式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    附录
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    附录
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../%E9%99%84%E5%BD%95/A.1-%E6%A8%A1%E7%BB%84%E9%85%8D%E7%BD%AE.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A.1 模组配置
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../%E9%99%84%E5%BD%95/A.2-Create%E5%85%BC%E5%AE%B9%E6%80%A7.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A.2 Create 兼容性
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../%E9%99%84%E5%BD%95/A.3-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A.3 常见问题
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        能量系统解决什么
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        电力网络：全载具共享的总线
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="电力网络：全载具共享的总线">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        三种角色
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tick" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        每 tick 结算流程
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        当前版本适用范围
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        脚本查询接口
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        机械能网络：逐级传递的动力链路
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="机械能网络：逐级传递的动力链路">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mechpower" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MechPower 数据
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        零件内的机械能传递
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        机械能端口：跨零件接力
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        转速反馈
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        典型机械能链路
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        双网对比
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        对深度玩家的观察点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ugc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UGC 设计建议
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="UGC 设计建议">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        电力网络配置要点
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        机械能链路配置要点
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内容包中的连接点配置示例
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#molang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        能量相关的 Molang 查询
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="37">3.7 能量系统<a class="headerlink" href="#37" title="Permanent link">&para;</a></h1>
+<p>能量系统是载具内部两套相互独立的能量管理基础设施——电力网络（EnergyGrid）和机械能网络（MechPower）。它们与信号系统类似，不属于某一类具体的子系统 type，而是横跨所有子系统的共享基础设施。任何子系统都可以通过实现对应的接口来参与能量网络的供需。</p>
+<p>对深度玩家而言，理解能量系统有助于判断"为什么电动机突然没力了""电池为什么不充电""跨零件动力为什么传不过来"等问题；对 UGC 作者而言，能量系统的配置决定了载具的动力能否正确、高效地从源头传导到最终执行器。</p>
+<h2 id="_1">能量系统解决什么<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>在动力系统中，发动机输出扭矩、电动机消耗电力——这些行为在单个零件内部运作良好。但一辆完整的载具往往由多个零件拼装而成：发动机可能在底盘零件中，轮胎可能在悬架零件中，电池可能在后备箱零件中。如何让前车的电力传输到后车的电动机？如何让发动机的动力跨越连接点到达另一端的轮胎？</p>
+<p>能量系统提供了两套答案：</p>
+<ul>
+<li><strong>电力网络</strong>：全载具共享的总线架构，自动完成发电、用电和储能的供需平衡，UGC 作者无需手动配置任何传播路径。</li>
+<li><strong>机械能网络</strong>：逐级传递的点对点链路，通过 <code>power_output</code> 字段指定目标，配合连接点上的 <code>power_target</code> 实现跨零件接力。</li>
+</ul>
+<h2 id="_2">电力网络：全载具共享的总线<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>电力网络是一套"总线模式"的电力管理机制。所有挂载到载具上的电力相关子系统——无论是生产者、消费者还是储存者——都在同一张网上运行。每个物理 tick，电网自动结算一次供需平衡。</p>
+<h3 id="_3">三种角色<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>电力网络上的参与者分为三类：</p>
+<table>
+<thead>
+<tr>
+<th>角色</th>
+<th>接口</th>
+<th>行为</th>
+<th>典型子系统</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>生产者</strong></td>
+<td><code>IEnergyProducer</code></td>
+<td>向电网提供电力，声明自身产能</td>
+<td>电动机（再生发电时）</td>
+</tr>
+<tr>
+<td><strong>消费者</strong></td>
+<td><code>IEnergyConsumer</code></td>
+<td>从电网取电，声明自身电力需求，支持优先级</td>
+<td>电动机（驱动时）</td>
+</tr>
+<tr>
+<td><strong>储存者</strong></td>
+<td><code>IEnergyStorage</code></td>
+<td>同时是生产者和消费者，根据自身储能状态充放电</td>
+<td>电池</td>
+</tr>
+</tbody>
+</table>
+<p>储存者是一个特殊角色——它同时实现了 <code>IEnergyProducer</code> 和 <code>IEnergyConsumer</code> 两个接口，可以根据当前储能状态动态切换角色：</p>
+<ul>
+<li>当储能低于 99% 时，储存者以消费者身份向电网申报充电需求（需求功率 = <code>max_charge_rate</code>）；</li>
+<li>当储能高于 0 时，储存者以生产者身份向电网申报放电能力（产能功率 = <code>max_discharge_rate</code>）。</li>
+</ul>
+<p>一个载具内可以存在多个储存者（例如多块电池分布在不同零件中），电网会自动汇总所有储存者的充放电能力并统一调度。</p>
+<h3 id="tick">每 tick 结算流程<a class="headerlink" href="#tick" title="Permanent link">&para;</a></h3>
+<p>电网的结算遵循"优先满足消费者，盈余充给储存者，不足由储存者补足"的策略：</p>
+<div class="mermaid">flowchart TB
+    G[收集所有有效参与者]
+    G --&gt; A{总产能 ≥ 消费者总需求?}
+    A --&gt;|是| B[完全满足所有消费者需求]
+    B --&gt; C[剩余产能分配给储存者充电]
+    C --&gt; D[更新电网状态快照]
+
+    A --&gt;|否| E[储存者全力放电补足缺口]
+    E --&gt; F{产能+放电 ≥ 需求?}
+    F --&gt;|是| B
+    F --&gt;|否| H[按消费者优先级逐级削减分配]
+    H --&gt; D</div>
+<p>关键细节：</p>
+<ul>
+<li><strong>优先级机制</strong>：每个消费者可以声明自己的优先级（<code>getPriority()</code>，0.0\~1.0，默认 1.0）。当电力不足时，低优先级的消费者会先被削减分配，高优先级消费者优先满足。这使 UGC 作者可以确保关键系统（如驱动电动机）在电力紧张时比次要系统（如照明、雷达）优先获得供电。</li>
+<li><strong>储能放电限速</strong>：储存者每个 tick 的实际放电量受自身当前储能限制——即使 <code>max_discharge_rate</code> 很高，如果储能已接近耗尽，它也无法提供更多瞬时功率（<code>实际放电功率 ≤ 当前储能 × tps</code>）。</li>
+<li><strong>电网状态快照</strong>：每 tick 结算后，电网更新 <code>totalProduction</code>、<code>totalConsumption</code>、<code>totalStoredEnergy</code> 等快照值，供 HUD 显示或脚本查询。</li>
+</ul>
+<h3 id="_4">当前版本适用范围<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>截至当前版本，模组内置的电力生产者和消费者主要包括：</p>
+<ul>
+<li><strong>电动机</strong>：驱动时作为消费者取电；被外力拖动（下坡/减速）时作为生产者向电网回馈电能（再生发电）。</li>
+<li><strong>电池</strong>：作为储存者，在电力盈余时充电、在电力不足时放电。</li>
+<li><strong>脚本子系统</strong>：可通过 API 读取电网状态和电池电量，实现自定义逻辑。</li>
+</ul>
+<p>目前独立的发电机（如内燃机驱动的交流发电机）和专用用电器（如雷达、主动防御系统、大功率照明）尚未完全实装。因此，在当前版本中，电力网络的核心场景是<strong>电动机驱动 + 电池缓冲 + 再生发电回收</strong>的纯电/混合动力链路。</p>
+<h3 id="_5">脚本查询接口<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>脚本子系统（<code>machine_max:javascript</code>）可以通过 <code>SubsystemController</code> 获取电网实例，进而查询以下信息：</p>
+<table>
+<thead>
+<tr>
+<th>查询内容</th>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>总发电功率</td>
+<td><code>energyGrid.getTotalProduction()</code></td>
+<td>当前所有生产者输出的总功率 (W)</td>
+</tr>
+<tr>
+<td>总耗电功率</td>
+<td><code>energyGrid.getTotalConsumption()</code></td>
+<td>当前所有消费者消耗的总功率 (W)</td>
+</tr>
+<tr>
+<td>电网总储能</td>
+<td><code>energyGrid.getTotalStoredEnergy()</code></td>
+<td>所有储存者当前储能之和 (J)</td>
+</tr>
+<tr>
+<td>电网最大储能</td>
+<td><code>energyGrid.getMaxStoredEnergy()</code></td>
+<td>所有储存者容量上限之和 (J)</td>
+</tr>
+<tr>
+<td>电力是否充足</td>
+<td><code>energyGrid.isPowerSufficient()</code></td>
+<td>总产能 ≥ 总需求时为 true</td>
+</tr>
+<tr>
+<td>某消费者满足率</td>
+<td><code>energyGrid.getSupplyRatio(consumer)</code></td>
+<td>0.0\~1.0，需求被满足的比例</td>
+</tr>
+<tr>
+<td>即时可用储能</td>
+<td><code>energyGrid.getAvailableEnergy()</code></td>
+<td>可用于瞬时的总储能 (J)</td>
+</tr>
+<tr>
+<td>消耗指定能量</td>
+<td><code>energyGrid.consumeEnergy(requested)</code></td>
+<td>瞬时扣减储能，返回实际消耗量</td>
+</tr>
+<tr>
+<td>补充指定能量</td>
+<td><code>energyGrid.addEnergy(energy)</code></td>
+<td>按剩余容量比例分配，返回实际补充量</td>
+</tr>
+</tbody>
+</table>
+<p>其中 <code>consumeEnergy</code> 和 <code>addEnergy</code> 是即时操作，不依赖每 tick 的电网结算，适合用于武器开火（瞬时大功率消耗）或外部能量源（如太阳能板）等场景。</p>
+<h2 id="_6">机械能网络：逐级传递的动力链路<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<p>机械能网络是动力从发动机/电动机逐级传递到轮胎的路径。与电力网络的总线模式不同，机械能采用<strong>点对点逐级传递</strong>的方式——每一级明确指定下一级的目标。</p>
+<h3 id="mechpower">MechPower 数据<a class="headerlink" href="#mechpower" title="Permanent link">&para;</a></h3>
+<p>机械能的核心数据结构是 <code>MechPower</code>，它只包含两个字段：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>power</code></td>
+<td>机械功率</td>
+<td>kW</td>
+</tr>
+<tr>
+<td><code>speed</code></td>
+<td>转速</td>
+<td>rad/s</td>
+</tr>
+</tbody>
+</table>
+<p>通过功率和转速可以推导出扭矩（扭矩 = 功率 / 转速），因此这两个字段完整描述了机械能的状态。每一级接收者在收到 <code>MechPower</code> 后，可以根据自身特性改变转速和扭矩——例如变速箱通过减速比降低转速、提高扭矩，差速器通过分流权重将功率分配到不同输出端。</p>
+<h3 id="_7">零件内的机械能传递<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>机械能的传递路径由两组配置共同决定：</p>
+<ul>
+<li>
+<p><strong>生产者的 <code>power_output</code></strong>：定义机械能发送给本零件内的哪些目标。目标可以是子系统名或连接点名。例如发动机的 <code>power_output</code> 指向变速箱：
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">&quot;subsystem.machine_max.engine&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;machine_max:engine&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">&quot;definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;machine_max:ae86_engine&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">&quot;power_output&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;subsystem.machine_max.gearbox&quot;</span><span class="p">]</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">}</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>连接点的 <code>power_target</code></strong>：定义本连接点收到的机械能应转发给本零件内的哪个目标。这是跨零件机械能传递的入口配置。例如底盘上的连接点 <code>rear_connection</code> 收到后桥传来的机械能，通过 <code>power_target</code> 转发给传动装置：
+  <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">&quot;connector.machine_max.rear_connection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;locator&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RearAttach&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;machine_max:fixed_up&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">&quot;power_target&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;subsystem.machine_max.rear_transmission&quot;</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">}</span>
+</code></pre></div></p>
+</li>
+</ul>
+<h3 id="_8">机械能端口：跨零件接力<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p><code>MechPowerPort</code> 是挂在连接点上的机械能接收器。当两个连接点对接后，机械能端口自动连通。它的工作原理如下：</p>
+<div class="mermaid">sequenceDiagram
+    participant 发动机 as 发动机(零件A)
+    participant 端口A as MechPowerPort A
+    participant 端口B as MechPowerPort B
+    participant 变速箱 as 变速箱(零件B)
+
+    发动机-&gt;&gt;端口A: pushMechPower(mechPower)
+    端口A-&gt;&gt;端口A: attachedConnector为对接, 转发到对侧
+    端口A-&gt;&gt;端口B: onMechPowerReceived(name, mechPower)
+    端口B-&gt;&gt;端口B: 查找power_target指定的本地消费者
+    端口B-&gt;&gt;变速箱: onMechPowerReceived(name, mechPower)</div>
+<p>具体过程：</p>
+<ol>
+<li>发动机通过 <code>pushMechPower</code> 向 <code>power_output</code> 指定的目标发送机械能。如果目标是本零件内的连接点，机械能被推送到该连接点的 <code>mechanicalEnergyPort</code>；</li>
+<li>连接点的 <code>MechPowerPort</code> 检查是否有对接的连接点（<code>attachedConnector</code>）。如果有，将机械能转发到对侧连接点的 <code>mechanicalEnergyPort</code>；</li>
+<li>对侧的 <code>MechPowerPort</code> 根据自身 <code>power_target</code> 字段查找本地接收者——可以是子系统名或另一个连接点名（用于进一步接力）；</li>
+<li>最终接收者（如变速箱、传动装置、轮胎）的 <code>onMechPowerReceived</code> 方法被调用，完成一级传递。</li>
+</ol>
+<h3 id="_9">转速反馈<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<p>机械能链路不仅是单向的——它还支持转速反馈。接收者将自身的实际转速通过反馈链路传回生产者，使生产者能够感知负载状态：</p>
+<ul>
+<li>发动机/电动机通过 <code>collectFeedbackSpeeds</code> 收集所有已连接消费者的转速；</li>
+<li>系统计算所有反馈转速的平均值，用于耦合扭矩补偿——当发动机转速高于负载转速时施加驱动力矩使其匹配；</li>
+<li>当存在转速反馈时，发动机/电动机的实际转速以 95% 内部 + 5% 外部的比例向负载转速靠拢，防止空载时转速无限升高。</li>
+</ul>
+<p>这意味着：如果 <code>power_output</code> 链路中断（例如连接点未对接到位），发动机不仅无法将动力传输到轮胎，还会因为缺少转速反馈而处于空载状态——转速可能异常升高而无法正常工作。</p>
+<h3 id="_10">典型机械能链路<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<p>以下是一个四驱载具的完整机械能链路，展示从发动机到四个轮胎的逐级传递：</p>
+<div class="mermaid">flowchart LR
+    engine["发动机&lt;br/&gt;engine"]
+    gearbox["变速箱&lt;br/&gt;gearbox"]
+    trans["中央传动&lt;br/&gt;transmission"]
+    diff_f["前差速器&lt;br/&gt;transmission"]
+    diff_r["后差速器&lt;br/&gt;transmission"]
+    w_fl["左前轮&lt;br/&gt;wheel"]
+    w_fr["右前轮&lt;br/&gt;wheel"]
+    w_rl["左后轮&lt;br/&gt;wheel"]
+    w_rr["右后轮&lt;br/&gt;wheel"]
+
+    engine --&gt;|power_output| gearbox
+    gearbox --&gt;|power_output| trans
+    trans --&gt;|power_outputs| diff_f
+    trans --&gt;|power_outputs| diff_r
+    diff_f --&gt;|power_output| w_fl
+    diff_f --&gt;|power_output| w_fr
+    diff_r --&gt;|power_output| w_rl
+    diff_r --&gt;|power_output| w_rr</div>
+<p>每经过一级，机械能的转速和扭矩都可能发生变换：</p>
+<ul>
+<li><strong>变速箱</strong>：通过减速比降低转速、提高扭矩（低速挡）或提高转速、降低扭矩（高速挡）。</li>
+<li><strong>传动装置/差速器</strong>：按权重将输入功率分流到多个输出端，同时支持差速锁模式（强制输出端转速一致）。</li>
+<li><strong>轮胎</strong>：将机械能转化为对地面的驱动力。</li>
+</ul>
+<h2 id="_11">双网对比<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<p>电力网络和机械能网络虽然都负责能量管理，但设计理念截然不同：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>电力网络</th>
+<th>机械能网络</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>拓扑模式</td>
+<td>总线（全载具共享一张网）</td>
+<td>点对点链（逐级指定目标）</td>
+</tr>
+<tr>
+<td>配置复杂度</td>
+<td>几乎无需手动配置（自动注册+结算）</td>
+<td>需要逐级配置 <code>power_output</code></td>
+</tr>
+<tr>
+<td>跨零件传播</td>
+<td>自动（所有同网参与者无需关心物理位置）</td>
+<td>依赖连接点的 <code>power_target</code></td>
+</tr>
+<tr>
+<td>能量变换</td>
+<td>无变换（电能即电能）</td>
+<td>每级可变换转速/扭矩（减速比、分流权重）</td>
+</tr>
+<tr>
+<td>反馈机制</td>
+<td>无实时反馈（通过满足率查询快照）</td>
+<td>有转速反馈（耦合扭矩补偿）</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>电动机驱动、电池管理、辅助用电</td>
+<td>内燃机/电动机 → 传动 → 轮胎</td>
+</tr>
+<tr>
+<td>当前完成度</td>
+<td>基础框架可用，发电机/用电器待实装</td>
+<td>完整可用</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>二者并非互斥——一辆载具可以同时拥有电力网络和机械能网络。例如混动载具中，内燃机通过机械能网络驱动轮胎，同时带动发电机向电力网络供电；电动机从电力网络取电，也通过机械能网络驱动轮胎。两个网络在同一辆载具上独立运行，互不干扰。</p>
+</blockquote>
+<h2 id="_12">对深度玩家的观察点<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<p>如果你主要从使用体验来理解能量系统，可以重点观察以下问题：</p>
+<ul>
+<li><strong>电动机突然没力</strong>：如果油门踩到底但电动机输出明显下降，检查电池电量——电池储能过低时放电功率受 <code>max_discharge_rate</code> 和当前储能双重限制，可能已无法满足电动机的满功率需求。同时检查电动机的满足率——如果多个大功率设备同时运行，电力网络可能已进入优先级分配模式。</li>
+<li><strong>电池不充电</strong>：电池充电有两个前提条件：(1) 储能低于 99%；(2) 电力网络存在剩余产能。如果电池始终不充电，可能是当前没有可用的电力生产者（如电动机未进入再生发电状态），或者所有产能已被消费者占满。</li>
+<li><strong>跨零件动力不畅</strong>：如果载具含有拼装结构（如拖车、半挂），但拖车上的车轮不转动，检查连接点的 <code>power_target</code> 是否配置正确，以及整个机械能链路是否形成了完整的从动力源到轮胎的传递路径。</li>
+<li><strong>空载轰鸣</strong>：如果发动机在无负载时转速异常飙升，很可能是因为机械能链路中断——检查 <code>power_output</code> 目标是否可及、连接点是否对接到位。</li>
+<li><strong>再生发电的实用场景</strong>：在长下坡路段，电动机的再生发电可以将重力势能回收为电能存入电池。如果电池已满（储能接近上限），再生发电将无法继续充入，此时需要额外的制动方式（如机械刹车）来控制车速。</li>
+</ul>
+<h2 id="ugc">UGC 设计建议<a class="headerlink" href="#ugc" title="Permanent link">&para;</a></h2>
+<h3 id="_13">电力网络配置要点<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<p>电力网络的优势在于"几乎不需要配置"——只要子系统正确实现了对应的能源接口，挂载后就会自动注册到电网。UGC 作者在设计时主要关注以下几点：</p>
+<ul>
+<li><strong>电池参数的三维平衡</strong>：<code>max_stored_energy</code>（总容量）、<code>max_charge_rate</code>（充电速度）和 <code>max_discharge_rate</code>（放电速度）共同决定了电池的实际效用。三者不宜简单等比例放大——一块超大容量但充放电都很慢的电池适合作为"续航电池"，而一块小容量但高倍率充放电的电池适合作为"爆发电池"（如应对武器系统的瞬时大功率需求）。</li>
+<li><strong>消费者优先级设定</strong>：如果载具中有多个电力消费者，应明确各系统的优先级。建议将驱动电动机设为最高优先级（默认 1.0），辅助系统（照明、雷达等）设为较低优先级，确保电力紧张时载具仍能保持基本机动能力。</li>
+<li><strong>再生发电效率</strong>：电动机的 <code>generator_efficiency</code> 默认 0.85，意为回收 85% 的制动能量。提高此值可增强制动能量回收能力，但也会使电动机在发电模式下的阻力更接近真实值，影响驾驶手感。</li>
+</ul>
+<h3 id="_14">机械能链路配置要点<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>链路必须完整</strong>：从动力源（发动机/电动机）到最终执行器（轮胎）的 <code>power_output</code> 链必须步步相接，不能有断层。建议在规划阶段画出类似上文的链路流程图，逐级确认。</li>
+<li><strong>跨零件连接点必须设置 <code>power_target</code></strong>：如果机械能需要跨越零件边界，接收侧连接点的 JSON 中必须包含 <code>power_target</code> 字段，指向本零件内应接收机械能的子系统。缺少此配置将导致机械能在连接点处中断。</li>
+<li><strong><code>power_target</code> 与 <code>signal_targets</code> 独立配置</strong>：连接点上的信号端口和机械能端口是两套独立的系统，互不依赖。即使信号传递正常，机械能传递仍需要独立的 <code>power_target</code> 配置。反之亦然。</li>
+<li><strong>差速器输出端的命名</strong>：传动装置（<code>transmission</code>）的 <code>power_outputs</code> 字段支持多输出、多权重配置。在命名多个输出端时，建议使用描述性的目标名（如 <code>subsystem.machine_max.front_left_wheel</code> 而非缩写），提高可读性和可维护性。</li>
+<li><strong>测试空载行为</strong>：在设计阶段，可以临时断开机械能链路的末端（如不连接轮胎），观察发动机/电动机在无反馈时的转速行为是否符合预期。如果空载转速过高，可以增大 <code>damping_factors</code> 的内部阻力系数来限制。</li>
+</ul>
+<h3 id="_15">内容包中的连接点配置示例<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<p>以下是一个连接点的完整 JSON 配置示例，同时包含信号端口和机械能端口：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">&quot;connector.machine_max.rear_drivetrain&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;locator&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;RearAttachPoint&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;definition&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;machine_max:fixed_up&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">&quot;power_target&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;subsystem.machine_max.rear_differential&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">&quot;signal_targets&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="nt">&quot;wheel_control&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;subsystem.machine_max.car_controller&quot;</span><span class="p">]</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="nt">&quot;signal_translations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">}</span>
+</code></pre></div>
+<p>其中 <code>power_target</code> 指定了本连接点收到的机械能将转发给名为 <code>rear_differential</code> 的子系统。</p>
+<h3 id="molang">能量相关的 Molang 查询<a class="headerlink" href="#molang" title="Permanent link">&para;</a></h3>
+<p><code>vehicle</code> Molang 绑定对象直接暴露了电网状态属性，可在动画和 HUD 中使用，无需通过脚本中转：</p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vehicle.energy</code></td>
+<td>double</td>
+<td>载具能量网当前总储能（J）</td>
+</tr>
+<tr>
+<td><code>vehicle.max_energy</code></td>
+<td>double</td>
+<td>载具能量网最大总储能（J）</td>
+</tr>
+</tbody>
+</table>
+<p>上述属性适用于动画控制器、HUD 文本和碰撞条件表达式。它们在每帧 <code>update</code> 时通过 <code>EnergyGrid.getTotalStoredEnergy()</code> 和 <code>EnergyGrid.getMaxStoredEnergy()</code> 实时刷新。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>// 电量百分比（用于仪表盘指针旋转或 HUD 显示）
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>vehicle.energy / vehicle.max_energy
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>// 低电量警告（电量低于 10% 时触发）
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>vehicle.energy &lt; vehicle.max_energy * 0.1 ? 1.0 : 0.0
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>// 将电量注入零件动画变量
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>v.energy_percent = vehicle.energy / vehicle.max_energy
+</code></pre></div>
+<blockquote>
+<p>如需在 Molang 中读取特定消费者的电力满足率或执行复杂的能量调度逻辑，仍建议使用脚本子系统（<code>machine_max:javascript</code>）调用 <code>EnergyGrid</code> API，将计算结果写入 <code>signalStorage</code> 后通过 <code>vehicle.get()</code> 查询。常规的仪表盘电量显示直接用 <code>vehicle.energy</code> / <code>vehicle.max_energy</code> 即可满足需求。</p>
+</blockquote>
+<hr />
+<ul>
+<li>上一节：<a href="3.6-%E4%BF%A1%E5%8F%B7%E7%B3%BB%E7%BB%9F.html">3.6 信号系统</a></li>
+<li>下一节：<a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.1-%E6%91%A9%E6%93%A6%E4%B8%8E%E6%8A%93%E5%9C%B0%E5%8A%9B.html">4.1 摩擦与抓地力</a></li>
+<li>相关参考：<a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.4-%E8%BF%9E%E6%8E%A5%E7%82%B9%E5%AE%9A%E4%B9%89.html">5.4 连接点定义</a> / <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.5-%E5%AD%90%E7%B3%BB%E7%BB%9F%E5%AE%9A%E4%B9%89.html">5.5 子系统定义</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; MachineMax Team
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/Sweetzonzi/Machine-Max" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+      
+        <script src="../javascripts/katex-init.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+      
+        <script src="../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>

@@ -25,3 +25,7 @@ run-data
 
 repo
 /logs/
+
+# MkDocs 构建输出
+docs/site/
+

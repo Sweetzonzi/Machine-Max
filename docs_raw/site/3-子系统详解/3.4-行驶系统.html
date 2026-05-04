@@ -1,0 +1,2989 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="MachineMax 模组官方维基 — 载具拼装、物理驾驶、内容包制作">
+      
+      
+        <meta name="author" content="MachineMax Team">
+      
+      
+      
+        <link rel="prev" href="3.3-%E4%BC%A0%E5%8A%A8%E7%B3%BB%E7%BB%9F.html">
+      
+      
+        <link rel="next" href="3.5-%E5%8A%9F%E8%83%BD%E7%B3%BB%E7%BB%9F.html">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>3.4 行驶系统 - MachineMax Wiki</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+    
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#34" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="MachineMax Wiki" class="md-header__button md-logo" aria-label="MachineMax Wiki" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            MachineMax Wiki
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              3.4 行驶系统
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-orange" data-md-color-accent="amber"  aria-label="切换暗色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换暗色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="orange" data-md-color-accent="amber"  aria-label="切换亮色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换亮色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Sweetzonzi/Machine-Max" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Home.html" class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.1-%E8%AE%A4%E8%AF%86MachineMax.html" class="md-tabs__link">
+          
+  
+  
+  快速上手
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.1-%E8%BD%BD%E5%85%B7%E6%A6%82%E5%BF%B5%E4%B8%8E%E5%B1%82%E7%BA%A7.html" class="md-tabs__link">
+          
+  
+  
+  系统指南
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="3.1-%E5%AD%90%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%BF%B0.html" class="md-tabs__link">
+          
+  
+  
+  子系统详解
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.1-%E6%91%A9%E6%93%A6%E4%B8%8E%E6%8A%93%E5%9C%B0%E5%8A%9B.html" class="md-tabs__link">
+          
+  
+  
+  机制详解
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.1-%E5%86%85%E5%AE%B9%E5%8C%85%E6%80%BB%E8%A7%88.html" class="md-tabs__link">
+          
+  
+  
+  内容包教程
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../%E9%99%84%E5%BD%95/A.1-%E6%A8%A1%E7%BB%84%E9%85%8D%E7%BD%AE.html" class="md-tabs__link">
+          
+  
+  
+  附录
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="MachineMax Wiki" class="md-nav__button md-logo" aria-label="MachineMax Wiki" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    MachineMax Wiki
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Sweetzonzi/Machine-Max" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Home.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速上手
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    快速上手
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.1-%E8%AE%A4%E8%AF%86MachineMax.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.1 认识 MachineMax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.2-%E5%AE%89%E8%A3%85%E4%B8%8E%E9%85%8D%E7%BD%AE.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.2 安装与配置
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.3-%E5%88%9B%E9%80%A0%E6%A8%A1%E5%BC%8F%E9%80%A0%E8%BD%A6.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.3 创造模式造车
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.4-%E7%94%9F%E5%AD%98%E6%A8%A1%E5%BC%8F%E8%B5%B7%E6%AD%A5.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.4 生存模式起步
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.5-%E6%A0%B8%E5%BF%83%E7%89%A9%E5%93%81%E4%B8%80%E8%A7%88.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.5 核心物品一览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../1-%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B/1.6-%E5%AE%98%E6%96%B9%E5%86%85%E5%AE%B9%E5%8C%85%E8%BD%BD%E5%85%B7%E4%B8%80%E8%A7%88.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1.6 官方内容包载具一览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    系统指南
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    系统指南
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.1-%E8%BD%BD%E5%85%B7%E6%A6%82%E5%BF%B5%E4%B8%8E%E5%B1%82%E7%BA%A7.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.1 载具概念与层级
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.2-%E8%BD%BD%E5%85%B7%E6%8B%BC%E8%A3%85.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.2 载具拼装
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.3-%E7%BB%84%E8%A3%85%E4%BF%AE%E5%A4%8D.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.3 组装修复
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.4-%E9%9B%B6%E4%BB%B6%E5%8F%98%E4%BD%93.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.4 零件变体
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.5-%E6%B6%82%E8%A3%85%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.5 涂装系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.6-%E8%93%9D%E5%9B%BE%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.6 蓝图系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../2-%E8%BD%BD%E5%85%B7%E7%B3%BB%E7%BB%9F%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/2.7-%E8%BD%BD%E5%85%B7%E4%BF%9D%E5%AD%98%E4%B8%8E%E6%94%B6%E7%BA%B3.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.7 载具保存与收纳
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    子系统详解
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    子系统详解
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.1-%E5%AD%90%E7%B3%BB%E7%BB%9F%E6%A6%82%E8%BF%B0.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.1 子系统概述
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.2-%E5%8A%A8%E5%8A%9B%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.2 动力系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.3-%E4%BC%A0%E5%8A%A8%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.3 传动系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.4 行驶系统
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="3.4-%E8%A1%8C%E9%A9%B6%E7%B3%BB%E7%BB%9F.html" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.4 行驶系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        轮胎：机械能的最终消费者
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="轮胎：机械能的最终消费者">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        滚动轴与转向轴
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        驱动力来源
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#abs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ABS 防抱死制动
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        信号输入与输出
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        车辆控制器：行驶中枢
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="车辆控制器：行驶中枢">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        转向控制
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        自动换挡逻辑
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        制动与手刹
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        漂移机制
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        离合器与手动干预
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        信号收发图
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        摩托车控制器：倾斜与平衡
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="摩托车控制器：倾斜与平衡">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        与车辆控制器的关键区别
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        平衡修正系统
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        阿克曼转向的摩托车适配
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        低速直驱
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        轮胎数量与控制器行为的交互
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        对深度玩家的观察要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        对内容包作者的实战要点
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="对内容包作者的实战要点">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        先完成动力链再调行驶系统
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        转向中心点的设置
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_speed-max_force" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        轮胎的 max_speed 与 max_force 的配合
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        摩托车控制器需要轮胎配合
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        与 5.5 的对接
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.5-%E5%8A%9F%E8%83%BD%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.5 功能系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.6-%E4%BF%A1%E5%8F%B7%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.6 信号系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="3.7-%E8%83%BD%E9%87%8F%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3.7 能量系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    机制详解
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    机制详解
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.1-%E6%91%A9%E6%93%A6%E4%B8%8E%E6%8A%93%E5%9C%B0%E5%8A%9B.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.1 摩擦与抓地力
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.2-%E6%B5%81%E4%BD%93%E5%8A%A8%E5%8A%9B%E5%AD%A6%E4%B8%8E%E6%B0%94%E5%8A%A8.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.2 流体动力学与气动
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.3-%E8%A3%85%E7%94%B2%E4%B8%8E%E7%A9%BF%E7%94%B2.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.3 装甲与穿甲
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.4-%E4%BC%A4%E5%AE%B3%E7%B3%BB%E7%BB%9F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.4 伤害系统
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.5-%E7%A2%B0%E6%92%9E%E6%95%88%E6%9E%9C.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.5 碰撞效果
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4-%E7%89%A9%E7%90%86%E4%B8%8E%E6%88%98%E6%96%97%E6%9C%BA%E5%88%B6/4.6-%E5%9C%B0%E5%BD%A2%E5%B9%B3%E6%BB%91.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4.6 地形平滑
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    内容包教程
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    内容包教程
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.1-%E5%86%85%E5%AE%B9%E5%8C%85%E6%80%BB%E8%A7%88.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.1 内容包总览
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.2-%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%8A%A8%E7%94%BB.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.2 模型与动画
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.3-%E9%9B%B6%E4%BB%B6%E5%AE%9A%E4%B9%89.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.3 零件定义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.4-%E8%BF%9E%E6%8E%A5%E7%82%B9%E5%AE%9A%E4%B9%89.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.4 连接点定义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.5-%E5%AD%90%E7%B3%BB%E7%BB%9F%E5%AE%9A%E4%B9%89.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.5 子系统定义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.6-%E6%9D%90%E6%96%99%E5%AE%9A%E4%B9%89.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.6 材料定义
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.7-%E6%A8%A1%E6%9D%BF%E3%80%81%E8%93%9D%E5%9B%BE%E4%B8%8E%E8%A3%85%E9%85%8D%E4%BD%93.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.7 模板、蓝图与装配体
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.8-%E7%A0%94%E5%8F%91%E4%B8%8E%E5%88%B6%E9%80%A0%E9%85%8D%E6%96%B9.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.8 研发与制造配方
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.9-%E8%BE%85%E5%8A%A9%E6%A8%A1%E5%9D%97.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.9 辅助模块
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.10-Molang%E8%A1%A8%E8%BE%BE%E5%BC%8F.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5.10 Molang 表达式
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    附录
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    附录
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../%E9%99%84%E5%BD%95/A.1-%E6%A8%A1%E7%BB%84%E9%85%8D%E7%BD%AE.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A.1 模组配置
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../%E9%99%84%E5%BD%95/A.2-Create%E5%85%BC%E5%AE%B9%E6%80%A7.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A.2 Create 兼容性
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../%E9%99%84%E5%BD%95/A.3-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A.3 常见问题
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        轮胎：机械能的最终消费者
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="轮胎：机械能的最终消费者">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        滚动轴与转向轴
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        驱动力来源
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#abs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ABS 防抱死制动
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        信号输入与输出
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        车辆控制器：行驶中枢
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="车辆控制器：行驶中枢">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        转向控制
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        自动换挡逻辑
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        制动与手刹
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        漂移机制
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        离合器与手动干预
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        信号收发图
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        摩托车控制器：倾斜与平衡
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="摩托车控制器：倾斜与平衡">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        与车辆控制器的关键区别
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        平衡修正系统
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        阿克曼转向的摩托车适配
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        低速直驱
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        轮胎数量与控制器行为的交互
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        对深度玩家的观察要点
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        对内容包作者的实战要点
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="对内容包作者的实战要点">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        先完成动力链再调行驶系统
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        转向中心点的设置
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_speed-max_force" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        轮胎的 max_speed 与 max_force 的配合
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        摩托车控制器需要轮胎配合
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        与 5.5 的对接
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="34">3.4 行驶系统<a class="headerlink" href="#34" title="Permanent link">&para;</a></h1>
+<p>行驶系统负责将驾驶者的操作意图转化为载具的实际运动，并维持载具的姿态稳定。它不产生动力，也不调节传动比，而是在动力和传动系统完成"产生并整理机械能"之后，承担"把这份机械能作用到地面，同时让车辆按驾驶者意图转向和保持平衡"的最终执行职责。</p>
+<p>在 MachineMax 中，行驶系统由三种子系统组成：</p>
+<ul>
+<li><strong>轮胎（<code>wheel</code>）</strong>：轮毂电机，驱动单个轮端的滚动与转向，是机械能的最终消费者。</li>
+<li><strong>车辆控制器（<code>car_controller</code>）</strong>：四轮及以上载具的驾驶中枢，接收玩家输入并协调油门、制动、转向、换挡和漂移。</li>
+<li><strong>摩托车控制器（<code>motorbike_controller</code>）</strong>：继承车辆控制器逻辑，额外增加倾斜平衡与低速推车功能。</li>
+</ul>
+<p>这三者的典型协作方式是：<strong>控制器收取座舱发出的移动输入 → 控制器计算油门/制动/转向指令并分发给各轮胎和变速箱 → 轮胎通过驱动连接点旋转来推动载具行驶</strong>。其中控制器是"大脑"，轮胎是"手脚"。</p>
+<h2 id="_1">轮胎：机械能的最终消费者<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>轮胎子系统（<code>wheel</code>）是载具与地面交互的末端执行器。它挂载在子零件上，通过驱动一个高级连接点（<code>AdvancedConnector</code>）的旋转轴来模拟轮胎的滚动与转向。每个轮胎子系统控制一个连接点，因此一辆四轮载具通常需要四个独立的 <code>wheel</code> 子系统实例。</p>
+<h3 id="_2">滚动轴与转向轴<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<p>轮胎子系统控制连接点的两个旋转轴：</p>
+<ul>
+<li><strong>X 轴（滚动轴 <code>roll</code>）</strong>：对应轮胎的旋转滚动。系统根据收到的驱动力矩信号（或机械能）设定目标转速，在驱动/制动/手刹三种状态之间切换。</li>
+<li><strong>Y 轴（转向轴 <code>steering</code>）</strong>：对应轮胎的水平转向。系统以伺服模式工作——收到目标角度信号后，以预设的最大角速度转动到目标位置。</li>
+</ul>
+<p>两轴的驱动参数各自独立配置，定义在静态属性中：</p>
+<table>
+<thead>
+<tr>
+<th>轴</th>
+<th>参数</th>
+<th>含义</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>滚动轴</td>
+<td><code>max_drive_force</code></td>
+<td>最大驱动力矩（N·m）。信号值乘以该值得到实际驱动力矩</td>
+<td><code>10000.0</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>max_brake_force</code></td>
+<td>最大常规制动力矩（N·m）</td>
+<td><code>3500.0</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>max_hand_brake_force</code></td>
+<td>最大手刹制动力矩（N·m）</td>
+<td><code>0.0</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>max_speed</code></td>
+<td>最大角速度（rad/s）。设为 <code>0</code> 时不限速</td>
+<td><code>3140.0</code></td>
+</tr>
+<tr>
+<td>转向轴</td>
+<td><code>max_force</code></td>
+<td>最大转向力矩（N·m）</td>
+<td><code>2000.0</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>max_speed</code></td>
+<td>最大转向角速度（rad/s）。π ≈ 180°/s</td>
+<td><code>3.14</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>手刹制动力矩（<code>max_hand_brake_force</code>）默认为 <code>0.0</code>，意味着如果不在轮胎定义中显式配置该值，该轮胎将不参与手刹制动。在典型前驱布局中，通常只给后轮配置手刹制动力矩；在全轮手刹场景中则需要为全部轮胎配置。</p>
+</blockquote>
+<h3 id="_3">驱动力来源<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>轮胎获取驱动力的来源有两类，按优先级排列：</p>
+<ol>
+<li><strong>机械能（MechPower）</strong>：当轮胎的 <code>power_input</code>（动态属性中通过连接点间接配置）收到机械能时，系统将收到的功率除以当前转速得到扭矩，直接作为驱动力矩作用于滚动轴。这是动力链传递的自然结果——发动机或电机经由变速箱、传动装置一路传到轮胎。</li>
+<li><strong>直驱信号（MoveInputSignal）</strong>：如果轮胎的 <code>control_inputs</code> 频道上收到 <code>MoveInputSignal</code> 类型信号（通常是座舱直接发出的移动输入），则将其前进分量（<code>moveInput[2]</code>，范围 0\~100）直接映射为驱动力矩。这种模式跳过了动力系统和传动系统，适用于简易载具或测试场景。</li>
+</ol>
+<p>无论何种来源，驱动力矩最终会被限制在 <code>[-max_drive_force, max_drive_force]</code> 范围内，然后减去制动和手刹力矩，作为净驱动力矩施加到滚动电机上。</p>
+<h3 id="abs">ABS 防抱死制动<a class="headerlink" href="#abs" title="Permanent link">&para;</a></h3>
+<p>轮胎子系统内置了可选的 ABS 功能，通过以下静态参数控制：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>abs_enabled</code></td>
+<td>是否启用 ABS</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>abs_target_slip_ratio</code></td>
+<td>目标滑移率（制动力的峰值区间）</td>
+<td><code>0.15</code></td>
+</tr>
+<tr>
+<td><code>abs_wheel_radius</code></td>
+<td>计算滑移率时使用的轮胎半径（m）</td>
+<td><code>0.3</code></td>
+</tr>
+</tbody>
+</table>
+<p>当 ABS 启用且车速大于 2 m/s 时，系统计算当前滑移率：<code>滑移率 = |车速 − 轮速| / (min(车速, 轮速) + 0.1)</code>。若滑移率超过目标值，系统按比例降低刹车力以避免轮胎抱死。</p>
+<p>ABS 的目标滑移率通常设在 0.10\~0.20 之间（对应 10%\~20% 滑移）。值越小刹车越保守（更不易抱死但制动距离延长），值越大刹车越激进。关闭 ABS 时轮胎抱死后侧向抓地力消失，载具将无法转向。</p>
+<h3 id="_4">信号输入与输出<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>轮胎的信号输入采用优先级机制：<code>control_inputs</code> 列表定义了多个接收频道名，系统按顺序查找第一个有非空信号的频道作为控制输入。如果收到的是 <code>WheelControlSignal</code>（控制器发出的结构化车轮指令），则直接解析其中的刹车、手刹和转向控制量。如果收到 <code>MoveInputSignal</code>，则自动转换为对应的车轮控制量。</p>
+<p>轮胎向外输出两类信号（通过动态属性的 <code>roll_speed_outputs</code> 和 <code>steering_angle_outputs</code> 字段指定目标）：</p>
+<ul>
+<li><strong>滚动速度信号</strong>：反馈 X 轴相对角速度（rad/s），可用于转速表、牵引力控制等下游子系统。</li>
+<li><strong>转向角度信号</strong>：反馈 Y 轴相对角度（rad），可用于 HUD 显示或高级控制逻辑。</li>
+</ul>
+<h2 id="_5">车辆控制器：行驶中枢<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<p>车辆控制器（<code>car_controller</code>）是四轮及以上载具的核心控制子系统。它与座舱直接通信，将玩家的 WASD 输入转化为对各执行子系统的指令信号，协调油门、制动、转向、换挡和手刹。</p>
+<h3 id="_6">转向控制<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>控制器采用 <strong>阿克曼转向几何</strong>（Ackermann Steering）计算每个轮胎的转向角度。阿克曼转向的核心思想是：车辆转弯时，所有车轮应绕同一个瞬时转向中心旋转，内侧轮的转向角度需要大于外侧轮，以避免轮胎侧滑。</p>
+<p>计算过程中涉及两个关键参数：</p>
+<ul>
+<li><strong><code>steering_center</code></strong>：转向中心点相对于子零件原点的偏移（m）。该点定义了"车辆绕哪个点转弯"，在后驱车型中通常位于后桥中心附近。</li>
+<li><strong><code>min_steering_radius</code></strong>：最小转向半径（m）。当方向盘打死时车辆能达到的最小转弯半径。</li>
+</ul>
+<p>实际转向角度的计算还与当前车速挂钩——系统通过 <code>lateral_acceleration</code> 映射表确定当前车速下的最大可用侧向加速度，然后反推出实际转向半径（<code>r = v² / a</code>）。当计算半径小于 <code>min_steering_radius</code> 时，以最小转向半径为准。这种机制自然地实现了"高速时自动限制转向角度，防止侧翻或不稳定"。</p>
+<p><code>lateral_acceleration</code> 是一个速度-加速度映射表（键为车速 km/h，值为最大侧向加速度 m/s²），可仅提供一个常数（所有速度下相同限制），也可提供多组键值对形成速度相关的限制曲线。</p>
+<h3 id="_7">自动换挡逻辑<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>控制器内建了基于输出轴扭矩最大化的自动换挡算法。当 <code>manual_gear_shift</code> 为 <code>false</code>（默认）时，控制器在每个物理 tick 执行以下决策：</p>
+<ol>
+<li>根据当前变速箱输出轴转速，遍历所有可用挡位的减速比，预测挂入每个挡位后的发动机转速。</li>
+<li>查询发动机/电机在该预测转速下的净扭矩（输出扭矩 − 内部阻力），乘以该挡位的减速比得到输出轴扭矩。</li>
+<li>选择输出轴扭矩最大的挡位作为目标挡位。</li>
+<li>通过滞回比较（新挡位扭矩优势小于 5% 时保持原挡位）和单次最多跳一挡的限制，避免频繁跳挡和换挡冲击。</li>
+</ol>
+<p>这套算法等价于"在每个车速下选择使发动机功率最大化的挡位"：低挡位放大扭矩但限制车速，高挡位释放车速但扭矩放大不足。算法会自动在两者之间找到最佳平衡。</p>
+<p>对纯电动车（仅有电动机、无发动机），方向过滤被绕过——电动车不依赖负传动比实现倒车，而是由电动机反转直接驱动（电动机油门范围为 −1\~1）。</p>
+<h3 id="_8">制动与手刹<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>控制器的制动策略围绕行车状态分为几个情景：</p>
+<ul>
+<li><strong>前进方向输入不为零且与行驶方向一致</strong>：正常加速行驶，制动为零。</li>
+<li><strong>前进方向输入与行驶方向相反</strong>：视为主动减速/倒车意图，施加 100% 制动。</li>
+<li><strong>前进方向输入为零且低速（&lt; 1 m/s）</strong>：自动施加制动和手刹以停稳车辆（当 <code>auto_hand_brake</code> 为 <code>true</code> 时）。</li>
+<li><strong>前进方向输入为零且中高速</strong>：不自动制动，允许车辆滑行。</li>
+<li><strong>无输入信号</strong>：拉手刹，防止车辆溜动。</li>
+</ul>
+<p>手刹支持两种操作模式：<strong>按住触发</strong>（按键持续按下时生效）和<strong>切换触发</strong>（每次按键切换手刹状态），通过不同的按键绑定支持。</p>
+<h3 id="_9">漂移机制<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<p>控制器内置了漂移检测与辅助系统，由 <code>drift_assist</code> 字段控制（默认开启）。漂移的触发分为两种情况：</p>
+<ol>
+<li><strong>自然漂移</strong>：车辆侧滑角（<code>driftRad</code>，即局部速度的横向分量与纵向分量之比的反正切）超过 5° 且车速大于零时，自动进入漂移状态。当侧滑角回落至 3° 以下时自动退出。</li>
+<li><strong>手刹起漂</strong>：当玩家拉起手刹（手刹值 &gt; 0.5）且车速足够时，漂移控制强制激活。</li>
+</ol>
+<p>漂移状态激活后，控制器执行以下行为：</p>
+<ul>
+<li>使用 PD 控制器计算漂移转向指令（<code>driftControl</code>），使车身角速度逼近由 <code>max_drift_angular_velocity</code> 映射表确定的目标角速度。</li>
+<li>对前轴外侧车轮施加<strong>反打方向</strong>（与过弯方向相反的角度，约为漂移角的 50%），用于维持车身姿态。</li>
+<li>对后轴车轮不再施加转向角度（由 <code>driftSteering</code> 方法中的 <code>pivot.z &lt;= steeringCenter.z</code> 判断决定），模拟后驱车漂移时前轮反打、后轮固定的经典姿态。</li>
+<li>漂移权重（<code>driftWeight</code>）从正常控制到漂移控制平滑过渡，避免状态切换时的突兀转向。</li>
+</ul>
+<p><code>max_drift_angular_velocity</code> 映射表（键为车速 km/h，值为最大漂移角速度 rad/s）允许内容包作者在不同速度段定制漂移的手感：低速时可设较大值使漂移更灵活，高速时降低以防止失控。</p>
+<h3 id="_10">离合器与手动干预<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<p>即使设置为自动换挡（<code>manual_gear_shift = false</code>），玩家仍可通过按键手动干预：</p>
+<ul>
+<li><strong>升挡/降挡按键</strong>：手动发出升挡或降挡指令后，控制器在 3 秒内暂停自动换挡。</li>
+<li><strong>离合器按键</strong>：手动踩离合时断开动力传递（调用变速箱 <code>setClutched(false)</code>）。</li>
+</ul>
+<p>这为深度玩家保留了在关键时刻手动超控换挡的能力。</p>
+<h3 id="_11">信号收发图<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<p>控制器是信号系统中最繁忙的节点，其信号流向如下：</p>
+<div class="mermaid">flowchart TB
+    seat["座舱&lt;br/&gt;seat"]
+    ctrl["车辆控制器&lt;br/&gt;car_controller"]
+    eng["发动机/电动机&lt;br/&gt;engine / motor"]
+    gb["变速箱&lt;br/&gt;gearbox"]
+    wheel["轮胎&lt;br/&gt;wheel"]
+    other["其他子系统&lt;br/&gt;（遥测消费端）"]
+
+    seat --&gt;|"move_control"| ctrl
+    seat --&gt;|"按键输入&lt;br/&gt;（离合/换挡/手刹）"| ctrl
+    ctrl --&gt;|"engine_control"| eng
+    ctrl --&gt;|"gearbox_control"| gb
+    ctrl --&gt;|"wheel_control&lt;br/&gt;（刹车/手刹/转向）"| wheel
+    ctrl --&gt;|"vehicle_speed"| other
+    ctrl --&gt;|"throttle"| other
+    ctrl --&gt;|"steering"| other
+    ctrl --&gt;|"brake"| other
+    ctrl --&gt;|"handbrake"| other
+    eng -.-&gt;|"callback（握手注册）"| ctrl
+    gb -.-&gt;|"callback（握手注册）"| ctrl
+    wheel -.-&gt;|"callback（握手注册）"| ctrl</div>
+<p>控制器的动态属性中，<code>engine_outputs</code>、<code>wheel_outputs</code>、<code>gearbox_outputs</code> 三个字段为必填项，直接定义了指令信号发给哪些子系统的哪些频道。<code>speed_outputs</code>、<code>throttle_outputs</code>、<code>steering_outputs</code>、<code>brake_outputs</code>、<code>handbrake_outputs</code> 为可选项，提供了遥测数据的广播出口。</p>
+<h2 id="_12">摩托车控制器：倾斜与平衡<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<p>摩托车控制器（<code>motorbike_controller</code>）继承车辆控制器的全部逻辑，增加了以下摩托车特有行为：</p>
+<h3 id="_13">与车辆控制器的关键区别<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>车辆控制器</th>
+<th>摩托车控制器</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>转向计算</td>
+<td>标准阿克曼转向（仅 <code>roll=0</code>）</td>
+<td>阿克曼转向（考虑当前车身倾斜角 <code>roll</code>）</td>
+</tr>
+<tr>
+<td>漂移</td>
+<td>支持漂移检测与辅助</td>
+<td>始终关闭漂移（<code>driftWeight = 0</code>）</td>
+</tr>
+<tr>
+<td>低速行为</td>
+<td>不额外施加力</td>
+<td>直接沿车身前向施加推力（<code>moveInput[2] × 5N</code>）</td>
+</tr>
+<tr>
+<td>平衡修正</td>
+<td>无</td>
+<td>双环 PID 平衡控制</td>
+</tr>
+<tr>
+<td>停车姿态</td>
+<td>无要求</td>
+<td>自动维持停车倾斜角</td>
+</tr>
+</tbody>
+</table>
+<p>摩托车控制器的静态属性在 <code>car_controller</code> 基础上增加三个字段：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>含义</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>max_angle</code></td>
+<td>最大倾斜角度（°）。超过此角后系统不再修正姿态</td>
+<td><code>30.0</code></td>
+</tr>
+<tr>
+<td><code>parking_angle</code></td>
+<td>停车时的目标倾斜角（°）。停车后车身向此角度靠拢</td>
+<td><code>5.0</code></td>
+</tr>
+<tr>
+<td><code>correction_force_multiplier</code></td>
+<td>修正力倍率。整体缩放平衡调节力的强度</td>
+<td><code>1.0</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_14">平衡修正系统<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<p>摩托车控制器的核心是平衡修正算法。当有玩家乘坐、车速低于 2 m/s（低速）或车身倾斜角未超过 <code>max_angle</code>（不认为已失控）时，系统会持续施加力矩以维持车身姿态。</p>
+<p>修正系统采用<strong>双环 PID 架构</strong>：</p>
+<ul>
+<li><strong>外环（角度环）</strong>：输入为目标倾斜角与当前倾斜角的差值，输出目标角速度。P 增益约 0.1。</li>
+<li><strong>内环（角速度环）</strong>：输入为目标角速度与当前角速度的差值，输出控制力矩。P 增益约 500。</li>
+</ul>
+<p>目标倾斜角由物理计算得出：<code>targetRoll = atan(v² / (g × turnRadius))</code>，即车辆在给定车速和转弯半径下自然平衡所需的角度。这个角度被限制在 <code>[-0.8 × maxAngle, +0.8 × maxAngle]</code> 范围内，为系统留出安全裕量。</p>
+<p>在基础 PID 输出之上，系统还叠加了两个补偿项：</p>
+<ol>
+<li><strong>重力矩补偿</strong>：<code>mass × gravity × height × sin(roll)</code>，用于抵消车身倾斜时重力产生的自然倾覆力矩。</li>
+<li><strong>向心力补偿</strong>：<code>mass × v² / turnRadius × height × cos(targetRoll)</code>，用于抵消转弯时向心力对车身产生的额外倾覆力矩。</li>
+</ol>
+<p>当车辆停稳且无人驾驶时（车速 &lt; 0.5 m/s，倾斜角 &lt; <code>10 + 1.5 × parking_angle</code>），系统切换到<strong>停车姿态保持模式</strong>。此模式使用一个独立的低增益 PID 控制器（P 增益约 15），目标角度为 <code>parking_angle</code>，仅当摩托车连接了至少两个轮胎时才生效。</p>
+<h3 id="_15">阿克曼转向的摩托车适配<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<p>摩托车控制器的阿克曼转向计算与车辆版本有一个重要差异：在计算转向角度时，纵向偏移量（<code>deltaForward</code>）会乘以 <code>cos(roll)</code> 因子。这意味着当摩托车倾斜时，前轮的有效纵向力臂会随倾斜角的余弦减小，转向变得更为保守。这种物理上的修正使高速压弯时的转向手感更接近真实摩托车。</p>
+<h3 id="_16">低速直驱<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<p>摩托车在低速（&lt; 2 m/s）时还额外施加一个沿车身前向（Z 轴负方向）的力：<code>5N × moveInput[2]</code>。这一力直接作用于刚体质心，不经过轮胎力学路径，作用类似于玩家用脚推车——确保极低速下即使动力系统尚未充分介入，摩托车也能缓慢移动。</p>
+<h2 id="_17">轮胎数量与控制器行为的交互<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h2>
+<p>车辆控制器在握手阶段（<code>handShake</code>）通过回调机制自动发现并注册所有与本载具相连的轮胎、发动机/电机和变速箱。AutoShift 算法中关于纯电动车的判断（<code>engineCount == 0 &amp;&amp; motorCount &gt; 0</code>）直接依赖此注册结果，因此如果载具在运行时轮胎数量发生变化（如轮胎被击毁），发动机和变速箱的注册列表会同步更新。</p>
+<h2 id="_18">对深度玩家的观察要点<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>转向半径随速度自动增大</strong>：即使方向键打到底，高速时实际转向角度也会减小——这是 <code>lateral_acceleration</code> 映射表在起作用。如果一辆车高速入弯时总感觉"转向不足"，可能不是转向参数有问题，而是侧向加速度限制偏低。</li>
+<li><strong>制动力分配</strong>：常规制动力矩（<code>max_brake_force</code>）对所有配有此值的轮胎生效，手刹制动力矩（<code>max_hand_brake_force</code>）需单独配置。如果拉手刹后感觉制动力矩不足，检查各轮是否配置了 <code>max_hand_brake_force</code>。</li>
+<li><strong>换挡滞回</strong>：控制器自动换挡时，新挡位扭矩优势低于当前挡位的 5% 时会拒绝切换，且每次最多跳一挡。因此从深踩油门到完成最优换挡，可能需要经历多次升挡——这不是 bug，而是防止频繁跳挡的滞回策略。</li>
+<li><strong>ABS 与制动距离</strong>：开启 ABS 后紧急制动距离会略长于抱死状态，但能保留转向能力。内容包中需要根据车型用途权衡 ABS 开关（越野车可能更适合关闭 ABS，公路车建议开启）。</li>
+<li><strong>漂移入门</strong>：手刹 + 方向是最可靠的起漂方式。漂移辅助（<code>drift_assist</code>）开启后系统自动维护反打方向和角速度，关掉则需要玩家完全手动控制车身姿态。</li>
+</ul>
+<h2 id="_19">对内容包作者的实战要点<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h2>
+<h3 id="_20">先完成动力链再调行驶系统<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h3>
+<p>行驶系统的参数调校强烈依赖前端的动力系统和传动系统已经确定。建议的调试顺序是：</p>
+<ol>
+<li>先确保发动机/电机能正常输出动力。</li>
+<li>再确保变速箱和传动装置能把动力正确分配到目标轮胎。</li>
+<li>最后调行驶系统——轮胎的驱动力矩上限、转向特性、ABS 参数等。</li>
+</ol>
+<h3 id="_21">转向中心点的设置<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h3>
+<p><code>steering_center</code> 直接影响阿克曼转向的计算结果。对于常见的前轮转向后驱布局：</p>
+<ul>
+<li>Z 坐标应靠近后桥中心（后桥轴线在局部坐标中的 Z 值），这是"车辆绕哪个后轮之间的中心点转弯"的几何依据。</li>
+<li>X 坐标应接近车身中心线（通常为 0）；Y 坐标应设在底盘重心高度附近。</li>
+</ul>
+<p>如果 <code>steering_center</code> 偏离实际几何中心过远，会导致左右轮转向角度计算不对称，表现为一侧正常转向、另一侧过度转向或转向不足。</p>
+<h3 id="max_speed-max_force">轮胎的 <code>max_speed</code> 与 <code>max_force</code> 的配合<a class="headerlink" href="#max_speed-max_force" title="Permanent link">&para;</a></h3>
+<p><code>max_speed</code> 设为 <code>0</code> 时表示不限速——这适合由动力系统（而非轮胎自身）来限制极速的正常车型。给 <code>max_speed</code> 赋正值的场景通常出现在摩托车中，用于在特定轮速下削减驱动力矩以防止倾覆。</p>
+<h3 id="_22">摩托车控制器需要轮胎配合<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h3>
+<p>摩托车控制器的停车姿态保持仅在连接了两个以上轮胎时生效。此外，<code>max_speed</code>（滚动轴角速度上限）和 <code>max_hand_brake_force</code> 是摩托车轮胎中的关键参数——后者用于在停车状态下提供手刹锁定。</p>
+<p><code>correction_force_multiplier</code> 的值越大平衡修正越"硬"，适合重型巡航车或高速稳定性需求；值越小修正越"软"，适合轻型越野摩托车或追求压弯手感的车型。</p>
+<h3 id="55">与 5.5 的对接<a class="headerlink" href="#55" title="Permanent link">&para;</a></h3>
+<p>本节描述的是行驶系统的行为逻辑和参数含义，实际创建子系统定义时需要对照 <a href="../5-%E5%86%85%E5%AE%B9%E5%8C%85%E5%88%B6%E4%BD%9C%E6%95%99%E7%A8%8B/5.5-%E5%AD%90%E7%B3%BB%E7%BB%9F%E5%AE%9A%E4%B9%89.html">5.5 子系统定义</a>：</p>
+<ul>
+<li>轮胎静态参数看 <code>roll</code>、<code>steering</code>、<code>abs_enabled</code>、<code>abs_target_slip_ratio</code>、<code>abs_wheel_radius</code>；</li>
+<li>轮胎动态属性看 <code>connector</code>（指定驱动哪个连接点）、<code>roll_speed_outputs</code>、<code>steering_angle_outputs</code>；</li>
+<li>车辆控制器静态参数看 <code>steering_center</code>、<code>min_steering_radius</code>、<code>lateral_acceleration</code>、<code>max_drift_angular_velocity</code>、<code>manual_gear_shift</code>、<code>auto_hand_brake</code>、<code>drift_assist</code>；</li>
+<li>摩托车控制器静态参数在车辆控制器基础上增加 <code>max_angle</code>、<code>parking_angle</code>、<code>correction_force_multiplier</code>；</li>
+<li>控制器动态属性看 <code>engine_outputs</code>、<code>wheel_outputs</code>、<code>gearbox_outputs</code> 以及各遥测输出映射。</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; MachineMax Team
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/Sweetzonzi/Machine-Max" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+      
+        <script src="../javascripts/katex-init.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+      
+        <script src="../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>
