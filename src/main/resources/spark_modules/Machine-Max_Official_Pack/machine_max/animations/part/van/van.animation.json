@@ -23,7 +23,23 @@
 					"scale": "!subpart.subsystem_destroyed('subsystem.machine_max.glow_back_left_light')"
 				},
 				"FXP": {
-					"rotation": [0, 0, "-(subpart.connector_rotation('connector.machine_max.left_front_wheel', 1) + subpart.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"]
+					"rotation": [
+						0,
+						0,
+						"-(subpart.connector_rotation('connector.machine_max.left_front_wheel', 1) + subpart.connector_rotation('connector.machine_max.right_front_wheel', 1))*2"
+					]
+				},
+				"XGDown_Left": {
+					"rotation": [0, 0, "-math.atan2(subpart.connector_offset('connector.machine_max.left_front_wheel', 1)*16,12.263)"]
+				},
+				"XGDown_Right": {
+					"rotation": [0, 0, "math.atan2(subpart.connector_offset('connector.machine_max.right_front_wheel', 1)*16,12.263)"]
+				},
+				"XGDown_Left3": {
+					"rotation": [0, 0, "-math.atan2(subpart.connector_offset('connector.machine_max.left_back_wheel', 1)*16,12.263)"]
+				},
+				"XGDown_Right3": {
+					"rotation": [0, 0, "math.atan2(subpart.connector_offset('connector.machine_max.right_back_wheel', 1)*16,12.263)"]
 				}
 			}
 		}

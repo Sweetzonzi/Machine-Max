@@ -11,10 +11,10 @@
   "joint_attrs": {
     "y": {
       "lower_limit": -0.5,
-      "upper_limit": 1.0,
-      "equilibrium": -0.15,
+      "upper_limit": 0.5,
+      "equilibrium": -0.2,
       "stiffness": 70000,
-      "damping": 2500
+      "damping": 3200
     },
     "xr": {
       "lower_limit": 1.0,
@@ -23,14 +23,14 @@
     "yr": {
       "lower_limit": -45.0,
       "upper_limit": 45.0,
-      "stiffness": 4000,
+      "stiffness": 6000,
       "damping": 20
     },
     "zr": {
       "lower_limit": 1.0,
-      "upper_limit": 10.0,
+      "upper_limit": 5.0,
       "equilibrium": 1.0,
-      "stiffness": 70000,
+      "stiffness": 100000,
       "damping": 2500
     }
   }

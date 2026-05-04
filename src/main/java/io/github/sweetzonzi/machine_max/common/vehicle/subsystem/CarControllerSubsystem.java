@@ -17,6 +17,8 @@ import net.minecraft.world.entity.LivingEntity;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Getter
 public class CarControllerSubsystem extends BasicSubsystem {
@@ -27,7 +29,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
     Vector3f[] vs = new Vector3f[6];
     public float speed = 0.0f;
     public float avgSlipRatio = 0.0f;
-    private final Map<ISignalReceiver, Float> overrideCountDown = new HashMap<>();
+    private final ConcurrentMap<ISignalReceiver, Float> overrideCountDown = new ConcurrentHashMap<>();
 
     float avgEngineMaxSpeed = 0f;
     float avgEngineMinSpeed = 0f;
