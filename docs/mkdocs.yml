@@ -12,7 +12,6 @@ theme:
   language: zh
   font: false
   features:
-    - navigation.tabs
     - navigation.sections
     - navigation.expand
     - navigation.top
@@ -23,15 +22,15 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: deep orange
-      accent: amber
+      primary: blue
+      accent: blue
       toggle:
         icon: material/brightness-7
         name: 切换暗色模式
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: orange
-      accent: amber
+      primary: blue
+      accent: blue
       toggle:
         icon: material/brightness-4
         name: 切换亮色模式
