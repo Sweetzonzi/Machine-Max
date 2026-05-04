@@ -29,3 +29,4 @@ repo
 # MkDocs 本地构建输出（不是源码，是编译产物）
 docs/site/
 
+/docs/wiki_html/

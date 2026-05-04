@@ -23,7 +23,7 @@ dependencies {
     // 状态机
     implementation("io.github.nsk90:kstatemachine-jvm:0.33.0")
     // 加速渲染
-    compileOnly("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
+    implementation("maven.modrinth:acceleratedrendering:1.0.5-1.21.1-alpha")
     // 机械动力
     implementation("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
     implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
