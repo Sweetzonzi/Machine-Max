@@ -200,7 +200,7 @@ public class CollisionEffectManager implements ISoundSpreader {
             updateContinuousSound(wheelSnap, true);
 
             //滑移率超过0.4时叠加额外漂移音效
-            if (wheelSnap.slipRatio() > 0.4f) {
+            if (wheelSnap.slipRatio() > 0.4f && wheelSnap.contactVel().length() > 1) {
                 updateSlipSound(level, wheelSnap);
                 spawnDriftSmoke(level, wheelSnap);
             } else {

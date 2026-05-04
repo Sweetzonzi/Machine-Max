@@ -198,8 +198,8 @@ public class ObjectManager {
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onPreTick(LevelTickEvent.Pre event) {
         levelVehicles.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).values().forEach(vehicleCore -> {
+            updateVehicleChunk(vehicleCore); // 先更新区块加载状态，确保 preTick 中 inLoadedChunk 已是最新值
             vehicleCore.preTick();
-            updateVehicleChunk(vehicleCore);
         });
         levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::preTick);
     }

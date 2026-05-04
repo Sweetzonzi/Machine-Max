@@ -84,6 +84,14 @@ public class VehicleCore implements SyncedDataHolder {
     public boolean loadFromSavedData = false;//是否已加载
     public boolean loaded = false;//是否已加载完毕
     public boolean isRemoved = false;//是否已被移除
+    /** 上一帧的区块加载状态，用于检测状态转换。初始为 true 以处理服务器启动时全部载具的场景 */
+    private boolean wasInLoadedChunk = true;
+    /** 解冻倒计时（tick），区块加载后延迟解冻以等待地形碰撞体重建 */
+    private int unfreezeCountdown = 0;
+    /** 物理刚体是否已被冻结（LinearFactor设为0） */
+    private boolean physicsFrozen = false;
+    /** 解冻延迟tick数，给地形异步构建留出时间 */
+    private static final int UNFREEZE_DELAY_TICKS = 20;
     //控制
     public SubsystemController subSystemController = new SubsystemController(this);
     private final AtomicInteger skillCount = new AtomicInteger();
@@ -314,6 +322,29 @@ public class VehicleCore implements SyncedDataHolder {
     public void preTick() {
 //        if (tickCount == 100)
 //            recalculateCameraDistance();
+
+        // 仅在服务端处理物理冻结/解冻（客户端刚体为运动学模式，无需处理）
+        if (!level.isClientSide() && !isRemoved) {
+            if (!wasInLoadedChunk && inLoadedChunk) {
+                // 区块刚加载 → 启动解冻倒计时，等待地形碰撞体重建
+                unfreezeCountdown = UNFREEZE_DELAY_TICKS;
+                // 区块加载后立即刷新所有子部件实体，确保客户端收到正确的实体数据
+                refreshAllPartEntities();
+            }
+            if (wasInLoadedChunk && !inLoadedChunk) {
+                // 区块刚卸载 → 立即冻结刚体，防止失去地形支撑后跌落
+                freezeAllPhysics();
+            }
+            if (unfreezeCountdown > 0) {
+                unfreezeCountdown--;
+                if (unfreezeCountdown == 0 && inLoadedChunk) {
+                    // 倒计时结束且区块已加载 → 解冻刚体
+                    unfreezeAllPhysics();
+                }
+            }
+            wasInLoadedChunk = inLoadedChunk;
+        }
+
         //保持激活与控制量更新
         Vec3 newPos = new Vec3(0, 0, 0);
         Vec3 newVel = new Vec3(0, 0, 0);
@@ -380,6 +411,74 @@ public class VehicleCore implements SyncedDataHolder {
             for (Part part : partMap.values()) part.subParts.values().forEach(subPart -> subPart.body.activate());
             return null;
         });
+    }
+
+    /**
+     * 冻结所有子部件的物理刚体，防止在区块卸载后因失去地形支撑而跌落
+     * <p>
+     * 将 LinearFactor 和 AngularFactor 设为零，同时清零速度和力，
+     * 使刚体在物理空间中保持在原位不动。
+     * 在物理线程上执行。
+     */
+    private void freezeAllPhysics() {
+        if (physicsFrozen) return;
+        physicsFrozen = true;
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+            for (Part part : partMap.values()) {
+                for (SubPart subPart : part.subParts.values()) {
+                    var body = subPart.body;
+                    if (!body.isInWorld()) continue;
+                    body.clearForces();
+                    body.setLinearVelocity(new Vector3f(0, 0, 0));
+                    body.setAngularVelocity(new Vector3f(0, 0, 0));
+                    body.setLinearFactor(new Vector3f(0, 0, 0));
+                    body.setAngularFactor(new Vector3f(0, 0, 0));
+                }
+            }
+            return null;
+        });
+    }
+
+    /**
+     * 解冻所有子部件的物理刚体，恢复正常的物理模拟
+     * <p>
+     * 恢复 LinearFactor 和 AngularFactor，使刚体重新受物理引擎控制。
+     * 在物理线程上执行。
+     * 注意：不使用 physicsFrozen 作为 guard，因为载具分裂时可能继承了已冻结的刚体。
+     */
+    private void unfreezeAllPhysics() {
+        physicsFrozen = false;
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+            for (Part part : partMap.values()) {
+                for (SubPart subPart : part.subParts.values()) {
+                    var body = subPart.body;
+                    if (!body.isInWorld()) continue;
+                    body.setLinearFactor(new Vector3f(1, 1, 1));
+                    body.setAngularFactor(new Vector3f(1, 1, 1));
+                    body.setLinearVelocity(Vector3f.ZERO);//冻结期间速度仍会积累，需要重置
+                    body.setAngularVelocity(Vector3f.ZERO);
+                    body.activate();
+                }
+            }
+            return null;
+        });
+    }
+
+    /**
+     * 刷新所有子部件的实体（MMPartEntity）
+     * <p>
+     * 当区块重新加载后，客户端侧的实体可能已被移除。
+     * 此方法在主线程上重建所有已无效的实体，确保客户端收到正确的实体数据。
+     * 仅在服务端调用。
+     */
+    private void refreshAllPartEntities() {
+        for (Part part : partMap.values()) {
+            for (SubPart subPart : part.subParts.values()) {
+                if (subPart.entity == null || subPart.entity.isRemoved()) {
+                    subPart.refreshPartEntity();
+                }
+            }
+        }
     }
 
     public void updateTotalMass() {

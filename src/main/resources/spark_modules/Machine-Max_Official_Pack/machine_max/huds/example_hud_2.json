@@ -1,6 +1,6 @@
 {
   "model": "machine_max:example_hud_2.geo",
-  "animation": "machine_max:example_hud",
+  "animation": "machine_max:example_hud_2",
   "texture": "machine_max:textures/hud/example_hud_2.png",
   "offset": [95, 45, -135], //(可选，默认[0, 0, 0]) 相对屏幕中心的偏移量，透视投影下单位为米，正交投影下单位为像素
   "rotation": [-25, -30, 0],//(可选，默认[0, 0, 0]) 旋转角度，单位为度
@@ -166,7 +166,7 @@
       "key": "hud.machine_max.default_1.gear",
       "centered": true,
       "shadow": true,
-      "scale": [0.3, 0.3, 0.3],
+      "scale": [0.5, 0.5, 0.5],
       "molang_args": ["vehicle.get('gear')??'NO GBX'"]
     },
     "kmh": {
@@ -185,7 +185,7 @@
       "key": "hud.machine_max.default_1.speed",
       "centered": true,
       "shadow": true,
-      "scale": [0.6, 0.6, 0.6],
+      "scale": [0.9, 0.9, 0.9],
       "molang_args": [//(可选，默认[]) Molang参数，将用于填充翻译文本预留的参数位置
         "math.floor((math.abs(veh.get('vehicle_speed')??0.0)) * 3.6 / 100)",
         "math.floor(math.mod((math.abs(veh.get('vehicle_speed')??0.0)) * 3.6, 100) / 10)",
