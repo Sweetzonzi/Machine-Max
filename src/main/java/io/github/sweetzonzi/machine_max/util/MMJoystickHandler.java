@@ -1,16 +1,18 @@
 package io.github.sweetzonzi.machine_max.util;
 
 import io.github.sweetzonzi.machine_max.external.js.hook.Hook;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-@EventBusSubscriber(value = Dist.CLIENT)
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * 手柄输入处理器。<br>
+ * 注意：GLFW 的初始化由 Minecraft/LWJGL3 在启动时完成，此类的所有 GLFW 调用
+ * 都应仅在主渲染线程（Client Tick）上执行，以避免 macOS 上的线程检查异常。
+ */
 public class MMJoystickHandler {
 
     // 用于存储每个手柄的按钮状态
@@ -18,16 +20,15 @@ public class MMJoystickHandler {
     // 用于存储每个手柄的摇杆（轴）状态
     public static final float[][] axisStates = new float[GLFW.GLFW_JOYSTICK_LAST][];
 
-    /**
-     * 初始化 GLFW 和设置手柄回调函数
-     */
-    @SubscribeEvent
-    public static void init(FMLCommonSetupEvent e) {
-        if (!GLFW.glfwInit()) {
-            System.out.println("Failed to initialize GLFW");
-            return;
-        }
+    // 标记手柄回调是否已注册（懒加载，确保在主线程上执行）
+    private static final AtomicBoolean joystickCallbackRegistered = new AtomicBoolean(false);
 
+    /**
+     * 初始化手柄回调函数。<br>
+     * 此方法必须在主渲染线程上调用。<br>
+     * 由 {@link #refreshState()} 在首次调用时自动触发。
+     */
+    private static void init() {
         // 设置手柄连接/断开回调
         GLFW.glfwSetJoystickCallback((jid, event) -> {
             if (event == GLFW.GLFW_CONNECTED) {
@@ -48,9 +49,14 @@ public class MMJoystickHandler {
     }
 
     /**
-     * 每帧调用，更新所有已连接的手柄的输入状态
+     * 每帧调用，更新所有已连接的手柄的输入状态。<br>
+     * 首次调用时会自动在主线程上注册手柄回调（懒加载）。
      */
     public static void refreshState() {
+        // 懒加载：首次在主线程调用 refreshState 时注册手柄回调
+        if (joystickCallbackRegistered.compareAndSet(false, true)) {
+            init();
+        }
         for (int i = 0; i < GLFW.GLFW_JOYSTICK_LAST; i++) {
             if (GLFW.glfwJoystickPresent(i)) {
                 updateJoystickInput(i);
