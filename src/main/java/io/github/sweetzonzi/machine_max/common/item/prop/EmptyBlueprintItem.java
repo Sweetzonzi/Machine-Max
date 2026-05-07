@@ -50,7 +50,6 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem, MenuPr
                     buf.writeInt(player.getInventory().selected);
                     buf.writeUtf(subPart.part.vehicle.name);
                 });
-                stack.shrink(1);
                 return InteractionResultHolder.consume(stack);
             } else {
                 player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_pass"));

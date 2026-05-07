@@ -62,12 +62,9 @@ public class CameraController {
      */
     private static boolean anglesInitialized = false;
 
-    public static void init() {
-        client = Minecraft.getInstance();
-    }
-
     @SubscribeEvent
     public static void updateCameraPos(ComputeCameraPosEvent event) {
+        if (client == null) client = Minecraft.getInstance();
         Camera camera = event.getCamera();
         float partialTick = (float) event.getPartialTick();
         var type = client.options.getCameraType();
@@ -111,6 +108,7 @@ public class CameraController {
 
     @SubscribeEvent
     public static void updateCameraRot(ViewportEvent.ComputeCameraAngles event) {
+        if (client == null) client = Minecraft.getInstance();
         Camera camera = event.getCamera();
         CameraType type = client.options.getCameraType();
         Entity entity = camera.getEntity();
@@ -273,27 +271,27 @@ public class CameraController {
 
     @SubscribeEvent
     public static void tick(ClientTickEvent.Post event) {
-        if (client.player != null) {
-            AbstractControllableSubsystem subsystem = ((IEntityMixin) client.player).machine_Max$getControllingSubsystem();
-            if (subsystem instanceof SeatSubsystem seat) {
-                //根据座椅设置切换可用视角
-                while ((!seat.attr.staticAttribute.views.enableFirstPerson() && client.options.getCameraType() == CameraType.FIRST_PERSON) ||
-                        (!seat.attr.staticAttribute.views.enableThirdPerson() && (client.options.getCameraType() == CameraType.THIRD_PERSON_BACK
-                                || client.options.getCameraType() == CameraType.THIRD_PERSON_FRONT))) {
-                    client.options.setCameraType(client.options.getCameraType().cycle());
-                    client.levelRenderer.needsUpdate();
-                }
-                //更新附体坐标系的旋转
-                oldExtraTransform = extraTransform;
-                Transform newExtraTransform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, 1);
-                extraTransform = SparkMathKt.lerp(extraTransform, newExtraTransform, 0.15f);
+        if (client == null) client = Minecraft.getInstance();
+        if (client.player == null) return;
+        AbstractControllableSubsystem subsystem = ((IEntityMixin) client.player).machine_Max$getControllingSubsystem();
+        if (subsystem instanceof SeatSubsystem seat) {
+            //根据座椅设置切换可用视角
+            while ((!seat.attr.staticAttribute.views.enableFirstPerson() && client.options.getCameraType() == CameraType.FIRST_PERSON) ||
+                    (!seat.attr.staticAttribute.views.enableThirdPerson() && (client.options.getCameraType() == CameraType.THIRD_PERSON_BACK
+                            || client.options.getCameraType() == CameraType.THIRD_PERSON_FRONT))) {
+                client.options.setCameraType(client.options.getCameraType().cycle());
+                client.levelRenderer.needsUpdate();
             }
-            //TODO:传输相机控制量
+            //更新附体坐标系的旋转
+            oldExtraTransform = extraTransform;
+            Transform newExtraTransform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, 1);
+            extraTransform = SparkMathKt.lerp(extraTransform, newExtraTransform, 0.15f);
+        }
+        //TODO:传输相机控制量
 //            boolean isPassenger = client.player.isPassenger();
 //            Entity vehicle = client.player.getVehicle();
 //            IEntityMixin mixin = (IEntityMixin) client.player;
 //            MachineMax.LOGGER.debug("isPassenger:{}, vehicle:{}, subSystem:{}", isPassenger, vehicle, mixin.machine_Max$getRidingSubsystem());
-        }
     }
 
     @SubscribeEvent

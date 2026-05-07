@@ -5,7 +5,6 @@ import cn.solarmoon.spark_core.animation.IEntityAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.event.PhysicsEntityTickEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
@@ -67,6 +66,8 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     private PhysicsGhostObject testGhost;
     @Getter
     private final Map<String, Object> variables = HashMap.newHashMap(1);
+    /** 缓存1倍尺寸的AABB，供 getBoundingBoxForCulling 使用，避免每帧创建 */
+    private AABB cachedCullingAabb;
 
     /**
      * 不应被使用！
@@ -211,7 +212,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                                 continue;
                             HitBox hitBox = someSubPart.getHitBox(result.triangleIndex());
                             // 跳过未激活的碰撞箱
-                            if (hitBox != null && !hitBox.isActive()) continue;
+                            if (!hitBox.isActive()) continue;
                             //TODO: new一个新的source存储攻击来袭方向
                             Vector3f normal = result.getHitNormalLocal(null);
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
@@ -270,12 +271,25 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             BoundingBox bb = boundingBox.get();
             Vector3f bodyCenter = this.bodyCenter.get();
             if (bb != null && bodyCenter != null) {
-                Vec3 center = position();
-                Vec3 min = center.subtract(bb.getXExtent(), bb.getYExtent(), bb.getZExtent());
-                Vec3 max = center.add(bb.getXExtent(), bb.getYExtent(), bb.getZExtent());
-                AABB aabb = new AABB(min, max);
-                Vector3f boundingBoxCenter = bb.getCenter(null);//注意碰撞箱中心很可能不是实体的坐标处，需要平移
-                return aabb.move(SparkMathKt.toVec3(boundingBoxCenter.subtract(bodyCenter)));
+                Vector3f boundingBoxCenter = bb.getCenter(null);
+                Vec3 offset = SparkMathKt.toVec3(boundingBoxCenter.subtract(bodyCenter));
+                Vec3 center = position().add(offset);
+
+                // 缓存1倍尺寸的AABB用于渲染剔除，避免 getBoundingBoxForCulling 每帧创建
+                double ex = bb.getXExtent();
+                double ey = bb.getYExtent();
+                double ez = bb.getZExtent();
+                cachedCullingAabb = new AABB(
+                    center.x - ex, center.y - ey, center.z - ez,
+                    center.x + ex, center.y + ey, center.z + ez
+                );
+
+                // 交互碰撞箱使用0.7倍缩小，减少阻挡方块挖掘
+                double scale = 0.7;
+                return new AABB(
+                    center.x - ex * scale, center.y - ey * scale, center.z - ez * scale,
+                    center.x + ex * scale, center.y + ey * scale, center.z + ez * scale
+                );
             }
         }
         return super.makeBoundingBox();
@@ -438,6 +452,17 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     @Override
     protected void addAdditionalSaveData(CompoundTag compoundTag) {
 
+    }
+
+    /**
+     * 渲染剔除包围盒，直接使用 makeBoundingBox 时缓存的1倍AABB，避免每帧创建
+     */
+    @Override
+    public @NotNull AABB getBoundingBoxForCulling() {
+        if (cachedCullingAabb != null) {
+            return cachedCullingAabb;
+        }
+        return super.getBoundingBoxForCulling();
     }
 
     @Override
