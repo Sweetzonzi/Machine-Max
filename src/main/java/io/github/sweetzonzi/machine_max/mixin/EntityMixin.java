@@ -110,7 +110,7 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             machine_Max$collideTestShape = new CapsuleCollisionShape(radius, height > 0 ? height : 0.01f);
         }
         List<PhysicsSweepTestResult> results = new ArrayList<>();
-        originalPos.subtract(machine_Max$inheritedMovement);
+        originalPos = originalPos.subtract(machine_Max$inheritedMovement);
         Vec3 delta = new Vec3(originalPos.x, originalPos.y, originalPos.z);
         Vec3 center = aabb.getCenter();
         double len = delta.length();
@@ -189,8 +189,12 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
             if (originalPos.horizontalDistanceSqr() > 1e-6f) {
                 double originalLen = originalPos.horizontalDistance();
                 double finalLen = finalVec.horizontalDistance();
-                if (finalLen > 1e-6f) {
-                    finalVec = finalVec.scale(originalLen / finalLen);
+                if (finalLen > 1e-4f) {
+                    // A valid single-slope reprojection below 45 degrees needs at most ~2x scale.
+                    // Edge/corner contacts can collapse horizontal movement close to zero; do not
+                    // let that tiny denominator launch the entity vertically.
+                    double maxSlopeScale = 1.0 / Math.max(groundNormal.y * groundNormal.y, 0.5);
+                    finalVec = finalVec.scale(Math.min(originalLen / finalLen, maxSlopeScale));
                 }
             } else {
                 finalVec = Vec3.ZERO;
@@ -198,8 +202,8 @@ abstract public class EntityMixin extends AttachmentHolder implements IEntityMix
         }
 
         // === 叠加刚体运动（使用最近约束的刚体） ===
-        machine_Max$inheritedMovement = movement;
-        finalVec.add(machine_Max$inheritedMovement);
+        machine_Max$inheritedMovement = movement.scale(0.05);
+        finalVec = finalVec.add(machine_Max$inheritedMovement);
 //        movement = movement.scale(0.05); // 速度转为单 tick 位移
 //        Vec3 deltaWithPart = movement.subtract(finalVec);
 //        finalVec = finalVec.add(deltaWithPart.scale(machine_Max$groundedByPhysicsBody ? 0.1 : 0.05)); // 摩擦使得双方接近同速

@@ -354,8 +354,8 @@ public class VehicleCore implements SyncedDataHolder {
                 removePart(part);
                 continue;
             }
-            Vec3 partPos = SparkMathKt.toVec3(PhysicsBodyExtensionKt.stateOf(part.rootSubPart.body).getTransform().getTranslation());
-            Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.body.getLinearVelocity(null));
+            Vec3 partPos = SparkMathKt.toVec3(part.rootSubPart.getPosition());
+            Vec3 partVel = SparkMathKt.toVec3(part.rootSubPart.getLinearVelocity());
             newPos = newPos.add(partPos);//计算载具形心位置
             newVel = newVel.add(partVel);//计算载具形心速度
             count++;
