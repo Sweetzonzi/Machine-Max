@@ -73,9 +73,9 @@ public class PartEntityRenderer extends GeoEntityRenderer<MMPartEntity> {
         int skyLight = this.getSkyLightLevel(entity, blockpos);
         poseStack.pushPose();//开始渲染
         var entityPos = entity.getPosition(partialTick);
-        poseStack.translate(-entityPos.x, -entityPos.y, -entityPos.z);
+        poseStack.translate(-entityPos.x, -entityPos.y, -entityPos.z); // 抵消实体位置带来的渲染位置偏移
         poseStack.pushPose();
-        poseStack.mulPose(worldMatrix);
+        poseStack.mulPose(worldMatrix); // 直接使用刚体位姿
         int overlay = OverlayTexture.NO_OVERLAY;
         // 受击闪烁效果
         if (MMClientConfig.getRenderHitWhitening() && entity.subPart.hurtTime > 0) {
