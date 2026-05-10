@@ -739,8 +739,11 @@ public class Part {
     }
 
     /**
-     * <p>设置部件的组装进度，并影响零件的最大耐久、重力和实际质量</p>
-     * <p>Sets the assembling progress of the part, which affects the maximum durability, gravity, and actual mass of the part.</p>
+     * <p>设置部件的组装进度，影响最大耐久和重力，不改变刚体质量</p>
+     * <p>进度为0时重力降为正常的10%；进度>0时重力恢复正常并激活刚体。</p>
+     * <p>进度达到{@link PartType#functionalThreshold}时自动关闭线框渲染。</p>
+     * <p>Sets the assembling progress of the part, which affects the maximum durability and gravity, but does not change the rigid body mass.</p>
+     * <p>When progress is 0, gravity is reduced to 10% of normal; when progress > 0, gravity is restored and the body is activated.</p>
      *
      * @param progress 组装进度，0~1
      */
@@ -752,7 +755,7 @@ public class Part {
             float finalProgress = progress;
             SparkLevel.getPhysicsLevel(level).submitDeduplicatedTask("setAssemblingProgress_" + uuid, PPhase.PRE, () -> {
                 for (SubPart subPart : subParts.values()) {
-                    if (finalProgress == 0) {
+                    if (finalProgress == 0 && renderWireframe) {
                         subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null).mult(0.1f));
                     } else {
                         subPart.body.setGravity(SparkLevel.getPhysicsLevel(level).getWorld().getGravity(null));

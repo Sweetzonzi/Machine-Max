@@ -38,9 +38,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     //物理属性 Physical attributes
     public volatile Transform transform = new Transform();
     public volatile Transform oldTransform = new Transform();//用于渲染插值
-    public Transform syncTransformBuffer = new Transform();//用于缓存同步数据
     public volatile int lastSync;//记录上次同步时刻，用于外推
-    private volatile boolean syncDataUpdatedThisTick = false;//客户端：本tick是否收到新的同步数据
     protected static final EntityDataAccessor<org.joml.Vector3f> DATA_POS_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.VECTOR3);
     protected static final EntityDataAccessor<Quaternionf> DATA_ROT_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.QUATERNION);
     protected static final EntityDataAccessor<org.joml.Vector3f> DATA_VEL_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.VECTOR3);
@@ -80,11 +78,8 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         if (!level.isClientSide()) {
             handleAccumulatedDamage(); // 处理各线程造成的伤害
         } else {
-            //只有收到新的同步数据时才更新插值快照，避免无新数据时覆盖导致抖振
-            if (syncDataUpdatedThisTick) {
-                syncDataUpdatedThisTick = false;
-                clientSyncPose();
-            }
+            //客户端处理同步位姿数据
+            clientSyncPose();
         }
         //判定摧毁
         if (!level.isClientSide() && checkDestroyed())
@@ -182,32 +177,10 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         }
     }
 
-    /**
-     * 收到新位姿数据时刷新插值快照。
-     * <p>若之前因网络滞后处于速度外推状态，用外推终点（而非原始旧位置）
-     * 作为 oldTransform，避免 lerp 从旧值重新开始导致"先前进再被拽回"的视觉抖振。</p>
-     */
     protected void clientSyncPose() {
-        int ticksSinceLastSync = tickCount - lastSync - 1; // 由于tickCount已更新，故此处-1
-        if (ticksSinceLastSync > 0 && ticksSinceLastSync <= 3000) {
-            float fullTickExtrap = Math.min(ticksSinceLastSync * 0.05f, 10.1f);
-            Vector3f prevRenderPos = transform.getTranslation().add(getLinearVelocity().mult(fullTickExtrap));
-            Quaternion prevRenderRot = transform.getRotation();
-            Vector3f angVel = getAngularVelocity();
-            float angSpeed = angVel.length();
-            if (angSpeed > 1e-6f) {
-                prevRenderRot = new Quaternion().fromAngleNormalAxis(angSpeed * fullTickExtrap, angVel.normalize()).mult(prevRenderRot);
-            }
-            oldTransform = new Transform(prevRenderPos, prevRenderRot);
-           if (this instanceof SubPart subPart && subPart.part.name.contains("车架"))
-               MachineMax.LOGGER.debug("tick {} ticksSinceLastSync: {}", tickCount, ticksSinceLastSync);
-        } else {
-            oldTransform = transform;
-        }
-        lastSync = tickCount;
+        oldTransform = transform.clone();
         transform = new Transform(getPosition(), getRotation());
-        if (this instanceof SubPart subPart && subPart.part.name.contains("车架"))
-            MachineMax.LOGGER.debug("tick {} delta: {}", tickCount, transform.getTranslation().subtract(oldTransform.getTranslation()).length());
+        lastSync = tickCount;
     }
 
     @Override
@@ -219,8 +192,6 @@ public abstract class DestroyableObject implements SyncedDataHolder {
         if (!level.isClientSide()) return;//服务器在需同步数据变化时不做特殊处理
         if (key.equals(DATA_DURABILITY_ID)) {
             hurtTime = hurtDuration;
-        } else if (key.equals(DATA_POS_ID)) {
-            syncDataUpdatedThisTick = true;
         } else if (key.equals(DATA_VEL_ID)) {
             Vector3f linearVelocity = PhysicsHelperKt.toBVector3f(getSyncedData().get(DATA_VEL_ID));
             this.setLinearVelocity(linearVelocity);//应用到刚体(若有)
@@ -349,41 +320,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
      */
     @NotNull
     public Matrix4f getWorldPositionMatrix(@NotNull Number number) {
-        if (!level.isClientSide()) {
-            // 服务端无需插值，直接返回当前位姿
-            return SparkMathKt.toMatrix4f(transform.toTransformMatrix());
-        }
-
-        float partialTick = number.floatValue();
-
-        // 本tick收到过同步数据：在 oldTransform 和 transform 之间正常插值
-        if (lastSync == tickCount) {
-            return SparkMathKt.toMatrix4f(SparkMathKt.lerp(oldTransform, transform, partialTick).toTransformMatrix());
-        }
-
-        // ----- 同步滞后(超过1tick未收到新数据)：速度外推补偿 -----
-        // 计算理论外推进度，限幅外推时间，防止外推过头
-        float extrapolationTime = Math.min((tickCount - lastSync - 1 + partialTick) * 0.05f, 10.1f);
-
-        // 外推位置：lastPos + linearVelocity * dt
-        Vector3f basePos = transform.getTranslation();
-        Vector3f extrapolatedPos = basePos.add(getLinearVelocity().mult(extrapolationTime));
-//        if (this instanceof SubPart subPart && subPart.part.name.contains("车架"))
-//            MachineMax.LOGGER.debug("tick: {}, lastSync: {}, delta: {}", tickCount, lastSync, extrapolatedPos.distance(basePos));
-        // 外推旋转：对四元数施加角速度增量的旋转
-        Quaternion baseRot = transform.getRotation();
-        Vector3f angVel = getAngularVelocity();
-        float angSpeed = angVel.length();
-        Quaternion resultRot = baseRot;
-        if (angSpeed > 1e-6f) {
-            Vector3f axis = angVel.normalize();
-            float angle = angSpeed * extrapolationTime;
-            // 构建角速度增量旋转四元数并应用(世界坐标系)
-            resultRot = new Quaternion().fromAngleNormalAxis(angle, axis).mult(baseRot);
-        }
-
-        Transform result = new Transform(extrapolatedPos, resultRot);
-        return SparkMathKt.toMatrix4f(result.toTransformMatrix());
+        return SparkMathKt.toMatrix4f(SparkMathKt.lerp(oldTransform, transform, number.floatValue()).toTransformMatrix());
     }
 
     public float getDurability() {

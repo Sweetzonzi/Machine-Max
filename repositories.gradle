@@ -6,6 +6,15 @@ dependencies {
     } catch (Exception ignore) { // 失败，说明是单独作为项目时运行
         implementation("io.github.solarmoonqaq:spark-core-${mod_loader}:${spark_core_version}") //默认加载
     }
+    // 终点弹道
+    try {
+        // workspace加载模块时
+        implementation(project(':TerminalBallistics'))
+        jarJar(project(':TerminalBallistics'))
+    } catch (Exception ignore) { // 失败，说明是单独作为项目时运行
+        implementation("io.github.sweetzonzi:terminal_ballistics-${minecraft_version}:${terminal_ballistics_version}")
+        jarJar("io.github.sweetzonzi:terminal_ballistics-${minecraft_version}:${terminal_ballistics_version}")
+    }
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
@@ -17,7 +26,6 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js
     compileOnly "org.mozilla:rhino:1.8.0"
-    implementation files('libs/spark-core-graaljs-neoforge-1.21.1-1.0.0.jar')
     // 暴雪粒子
 //    implementation files('libs/particlestorm-1.1.4.jar')
     // 状态机
