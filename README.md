@@ -7,7 +7,12 @@
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![License](https://img.shields.io/badge/License-GPLv3-blue)
 ![License](https://img.shields.io/badge/Resources-CC%20BY--NC%204.0-lightgrey)
+[![Wiki](https://img.shields.io/badge/Wiki-GitHub%20Pages-blue?logo=github)](https://sweetzonzi.github.io/Machine-Max/)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Sweetzonzi/Machine-Max)
+
+[English](README.en.md)
+
+***
 
 > 完整文档请参阅 [MachineMax Wiki](https://sweetzonzi.github.io/Machine-Max/)，内含新手指南、系统详解与内容包制作教程。
 
