@@ -23,8 +23,10 @@ import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
@@ -47,7 +49,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
@@ -66,7 +67,9 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     private PhysicsGhostObject testGhost;
     @Getter
     private final Map<String, Object> variables = HashMap.newHashMap(1);
-    /** 缓存1倍尺寸的AABB，供 getBoundingBoxForCulling 使用，避免每帧创建 */
+    /**
+     * 缓存1倍尺寸的AABB，供 getBoundingBoxForCulling 使用，避免每帧创建
+     */
     private AABB cachedCullingAabb;
 
     /**
@@ -150,21 +153,39 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     @Override
     public boolean hurt(@NotNull DamageSource source, float amount) {
         if (this.subPart == null) return false;
+        // === 投射物伤害：由 IProjectileMixin 提供精确的命中几何数据 ===
         if (source.getDirectEntity() instanceof Projectile projectile) {
-            //来自投射物的伤害处理
             IProjectileMixin mixinProjectile = (IProjectileMixin) projectile;
             SubPart hitSubPart = mixinProjectile.machine_Max$getHitSubPart();
             if (hitSubPart == this.subPart) {//如果命中了部件
                 Vector3f normal = mixinProjectile.machine_Max$getHitNormal();
                 Vector3f contactPoint = mixinProjectile.machine_Max$getHitPoint();
                 HitBox hitBox = mixinProjectile.machine_Max$getHitBox();
-                PartDamageData data = new PartDamageData(source, null, normal,
-                        PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20))
-                                .subtract(hitSubPart.body.getLinearVelocity(null)), contactPoint, hitBox);
-                return hitSubPart.onHurt(data, amount);
+                // 计算相对速度（投射物速度 - 部件速度），用于角度修正和击退
+                Vector3f relVel = PhysicsHelperKt.toBVector3f(projectile.getDeltaMovement().scale(20));
+                relVel.subtractLocal(hitSubPart.body.getLinearVelocity(null));
+                // 尝试取回外部 TB 协议上下文，有则补充缺失的 HIT_BOX，无则自己构造
+                BFDamageContext ctx = BFDamageApi.getContextFor(this);
+                if (ctx != null) {
+                    // 外部 TB 伤害缺少碰撞箱信息，用我们自己的精确检测补上
+                    if (ctx.extensions().get(MMDamageExtensions.HIT_BOX) == null) {
+                        ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+                    }
+                } else {
+                    ctx = BFDamageContext.builder()
+                            .source(source)
+                            .baseDamage(amount)
+                            .hitVelocity(SparkMathKt.toVec3(relVel))
+                            .hitPoint(SparkMathKt.toVec3(contactPoint))
+                            .hitNormal(SparkMathKt.toVec3(normal))
+                            .penetration(angleCorrectedPenetration(relVel, normal, amount))
+                            .build();
+                    ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+                }
+                return BFDamageApi.hurt(hitSubPart, ctx) > 0;
             } else return false;
+        // === 有来源位置的实体/爆炸伤害：通过射线检测找到部件 ===
         } else if (source.getSourcePosition() != null && source.getDirectEntity() instanceof Entity entity) {
-            //来自其他实体的伤害处理
             PhysicsLevel physicsLevel = getPhysicsLevel();
             Vector3f start;
             Vector3f end;
@@ -180,7 +201,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
             }
             if (end.subtract(start).length() > 0) {
                 if (source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION)) {
-                    //范围伤害处理
+                    // 爆炸/范围伤害：直接找最近的部件和最厚的装甲
                     SubPart nearest = null;
                     float nearestDistance = Float.MAX_VALUE;
                     Vector3f normal = new Vector3f();
@@ -193,16 +214,28 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                         normal = delta.multLocal(-1).normalize();
                     }
                     if (nearest != null) {
-                        HitBox hitBox = null;
-                        float maxThickness = -1;
-                        for (String hitBoxName : nearest.attr.hitBoxNames.values()) {
-                            if (subPart.hitBoxes.get(hitBoxName).getRHA(subPart) > maxThickness)
-                                hitBox = subPart.hitBoxes.get(hitBoxName);
+                        // 爆炸没有精确的碰撞箱，用最厚装甲作为命中部位
+                        BFDamageContext ctx = BFDamageApi.getContextFor(this);
+                        HitBox hitBox = subPart.findStrongestHitBox();
+                        if (ctx != null) {
+                            if (ctx.extensions().get(MMDamageExtensions.HIT_BOX) == null) {
+                                ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+                            }
+                        } else {
+                            ctx = BFDamageContext.builder()
+                                    .source(source)
+                                    .baseDamage(amount)
+                                    .hitVelocity(SparkMathKt.toVec3(normal.mult(-1)))
+                                    .hitPoint(SparkMathKt.toVec3(contactPoint))
+                                    .hitNormal(SparkMathKt.toVec3(normal))
+                                    .penetration(amount)
+                                    .build();
+                            ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
                         }
-                        PartDamageData data = new PartDamageData(source, null, normal, normal.mult(-1), contactPoint, hitBox);
-                        return nearest.onHurt(data, amount);
+                        return BFDamageApi.hurt(nearest, ctx) > 0;
                     } else throw new IllegalStateException("No subpart found for explosion damage.");
-                } else {//一般伤害处理
+                // === 一般实体攻击/近战：射线检测精确命中 ===
+                } else {
                     var results = physicsLevel.getWorld().getWorldSnapshot().rayTest(start, end);
                     for (var result : results) {
                         PhysicsRigidBody body = (PhysicsRigidBody) result.getCollisionObject();
@@ -213,42 +246,69 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                             HitBox hitBox = someSubPart.getHitBox(result.triangleIndex());
                             // 跳过未激活的碰撞箱
                             if (!hitBox.isActive()) continue;
-                            //TODO: new一个新的source存储攻击来袭方向
                             Vector3f normal = result.getHitNormalLocal(null);
                             Vector3f contactPoint = start.add(end.subtract(start).mult(result.getHitFraction()));
-                            //将伤害转发给部件进行操作
-                            PartDamageData data = new PartDamageData(source, null, normal, end.subtract(start).normalize(), contactPoint, hitBox);
-                            return someSubPart.onHurt(data, amount);
+                            // 射线检测已有精确的命中几何，同样先检查外部上下文
+                            BFDamageContext ctx = BFDamageApi.getContextFor(this);
+                            if (ctx != null) {
+                                if (ctx.extensions().get(MMDamageExtensions.HIT_BOX) == null) {
+                                    ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+                                }
+                            } else {
+                                Vector3f direction = end.subtract(start).normalize();
+                                ctx = BFDamageContext.builder()
+                                        .source(source)
+                                        .baseDamage(amount)
+                                        .hitVelocity(SparkMathKt.toVec3(direction))
+                                        .hitPoint(SparkMathKt.toVec3(contactPoint))
+                                        .hitNormal(SparkMathKt.toVec3(normal))
+                                        .penetration(angleCorrectedPenetration(direction, normal, amount))
+                                        .build();
+                                ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+                            }
+                            return BFDamageApi.hurt(someSubPart, ctx) > 0;
                         }
                     }
                 }
             } else {//射线长度有问题时的异常处理
-                MachineMax.LOGGER.error("Damage source {} is too close to entity position, causing a zero-length ray.", entity);
+                MachineMax.LOGGER.error("伤害来源 {} 距离实体过近，导致射线长度为0。", entity);
             }
             return false;//未能命中任何部件碰撞箱则不处理伤害
         } else return hurtWithoutRayTest(source, amount);
     }
 
     /**
-     * 无来源位置的伤害的处理
+     * 计算经过入射角效应修正后的穿深值。
+     * <p>
+     * 公式为 {@code penetration = amount * cosθ}，其中 θ 为速度方向与面法线的夹角。
+     * 60° 入射时穿深为伤害的 50%；掠射时钳制到 {@code amount * 0.01f}。
      *
-     * @param source 伤害来源
-     * @param amount 伤害值
-     * @return 是否处理了伤害
+     * @param vel    命中速度方向矢量
+     * @param normal 命中面法线
+     * @param amount 原始伤害量
+     * @return 角度修正后的穿深
+     */
+    private static float angleCorrectedPenetration(Vector3f vel, Vector3f normal, float amount) {
+        float velLen = vel.length();
+        float normalLen = normal.length();
+        if (velLen < 1e-6f || normalLen < 1e-6f) return amount;
+        float cosTheta = Math.abs(vel.dot(normal)) / (velLen * normalLen);
+        return amount * Math.max(cosTheta, 0.01f);
+    }
+
+    /**
+     * 无来源位置的伤害的处理（如/kill、虚空伤害、魔法伤害等）。
+     * 先检查是否在外部 TB 协议管线内，若是则直接转发；
+     * 否则委托 SubPart 生成基础上下文走协议管线。
      */
     public boolean hurtWithoutRayTest(@NotNull DamageSource source, float amount) {
         if (this.subPart == null) return false;
-        Vector3f normal = Vector3f.UNIT_Y;
-        Vector3f contactPoint = PhysicsHelperKt.toBVector3f(this.position());
-        HitBox hitBox = null;
-        //找到装甲最厚的的部分造成伤害
-        float maxThickness = -1;
-        for (String hitBoxName : this.subPart.attr.hitBoxNames.values()) {
-            if (subPart.hitBoxes.get(hitBoxName).getRHA(subPart) > maxThickness)
-                hitBox = subPart.hitBoxes.get(hitBoxName);
+        BFDamageContext ctx = BFDamageApi.getContextFor(this);
+        if (ctx == null) {
+            ctx = this.subPart.createContextFromVanilla(source, amount);
+            if (ctx == null) return false;
         }
-        PartDamageData data = new PartDamageData(source, null, normal, Vector3f.ZERO, contactPoint, hitBox);
-        return this.subPart.onHurt(data, amount);
+        return BFDamageApi.hurt(this.subPart, ctx) > 0;
     }
 
     @Override
@@ -280,15 +340,15 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
                 double ey = bb.getYExtent();
                 double ez = bb.getZExtent();
                 cachedCullingAabb = new AABB(
-                    center.x - ex, center.y - ey, center.z - ez,
-                    center.x + ex, center.y + ey, center.z + ez
+                        center.x - ex, center.y - ey, center.z - ez,
+                        center.x + ex, center.y + ey, center.z + ez
                 );
 
                 // 交互碰撞箱使用0.7倍缩小，减少阻挡方块挖掘
                 double scale = 0.7;
                 return new AABB(
-                    center.x - ex * scale, center.y - ey * scale, center.z - ez * scale,
-                    center.x + ex * scale, center.y + ey * scale, center.z + ez * scale
+                        center.x - ex * scale, center.y - ey * scale, center.z - ez * scale,
+                        center.x + ex * scale, center.y + ey * scale, center.z + ez * scale
                 );
             }
         }

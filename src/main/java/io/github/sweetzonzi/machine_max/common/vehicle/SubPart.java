@@ -12,39 +12,35 @@ import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
-import cn.solarmoon.spark_core.physics.body.CollisionObjectEntity;
-import cn.solarmoon.spark_core.physics.body.ManifoldPoint;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
-import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
 import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
-import cn.solarmoon.spark_core.util.BlockCollisionUtil;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.*;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
-import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
+import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.compat.create.CreateCollisionResolver;
-import io.github.sweetzonzi.machine_max.compat.create.CreateCompat;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
-import io.github.sweetzonzi.machine_max.common.registry.MMTags;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.SubPartAttr;
 import io.github.sweetzonzi.machine_max.common.vehicle.collision.CollisionHandler;
 import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.vehicle.energy.EnergyGrid;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
+import io.github.sweetzonzi.ballistics_framework.api.PenetrationResult;
+import net.minecraft.world.phys.Vec3;
 import io.github.sweetzonzi.machine_max.common.vehicle.event.subpart.SubPartDamageEvent;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
@@ -57,8 +53,6 @@ import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartPaintPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.ShapeHelper;
-import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
-import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DynamicUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import io.github.sweetzonzi.machine_max.util.terrain.LocalHeightField;
@@ -67,30 +61,21 @@ import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Vec3i;
-import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.NeoForge;
@@ -469,126 +454,155 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         for (AbstractConnector connector : this.connectors.values()) connector.postPhysicsTick();
     }
 
+    // ==================== BallisticsFramework 协议穿甲管线 ====================
+
+    @Override
+    public float getRHA(BFDamageContext ctx) {
+        return findHitBox(ctx).getRHA(this);
+    }
+
+    @Override
+    public ArmorLevel getArmorLevel(BFDamageContext ctx) {
+        return ArmorLevel.fromRha(getRHA(ctx));
+    }
+
+    @Override
+    public float modifyPenetration(BFDamageContext ctx) {
+        HitBox hitBox = findHitBox(ctx);
+        return hitBox.modifyPiercing(ctx.source(), ctx.penetration());
+    }
+
+    @Override
+    public boolean isArmorPenetrated(BFDamageContext ctx) {
+        return modifyPenetration(ctx) > getRHA(ctx);
+    }
+
     /**
-     * 实际处理伤害
+     * 根据穿甲结果计算最终伤害量（毫米级精度）。
+     * <p>
+     * PENETRATED：击穿，伤害由碰撞箱的 {@code modifyDamage} 处理（考虑装甲后效衰减）；
+     * BLOCKED / RICOCHET：未击穿，若碰撞箱支持钝伤（{@code hasUnPenetrateDamage}），
+     * 按穿深/装甲厚度比计算钝伤比例（幂函数衰减），否则为 0。
      *
-     * @param data
-     * @param damage
-     * @return 伤害是否被正常处理
+     * @param ctx    命中上下文
+     * @param result 由 {@link #resolvePenetration} 返回的穿甲结果
+     * @return 最终伤害量
      */
-    public boolean onHurt(PartDamageData data, float damage) {
-        if (level.isClientSide()) return true; // 客户端不处理伤害
-        SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, data, damage);
-        if (!NeoForge.EVENT_BUS.post(event).isCanceled()) {
-            DamageSource source = event.getData().source();
-            damage = event.getDamageAmount();
-            HitBox hitBox = data.hitBox();
-            Vector3f normal = data.normal();
-            Vector3f worldContactPoint = data.worldContactPoint();
-            Vector3f worldContactSpeed = data.worldContactSpeed();
-            Vec3 sourcePos = SparkMathKt.toVec3(worldContactPoint);
-            float baseArmor = hitBox.getRHA(this);
-            float angleFactor = 1f;
-            float incidenceAngle = 0f;
-            if (worldContactSpeed.lengthSquared() > 1.0E-6f) {
-                float cos = Math.clamp(-normal.dot(worldContactSpeed.normalize()), 0.0001f, 1f);
-                angleFactor = cos;
-                incidenceAngle = (float) Math.toDegrees(Math.acos(cos));
-            }
-            float armor = baseArmor;
-            if (hitBox.hasAngleEffect()) armor /= angleFactor; // 按照设置考虑入射角影响
-            float armorPenetration;
-            float finalDamage = 0f;
-            //击退处理与特殊逻辑
-            if (!source.is(MMTags.HAS_PEN_DEPTH)) {//原版伤害处理
-                //冲击效果 (部件间的冲击交由物理引擎处理)
-                if (!source.is(MMDamageTypes.PART_COLLISION)) {
-                    float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(damage / getMaxDurability()))) * 250f);//伤害转化为动量，使用log函数以使冲量与部件耐久匹配
-                    if (source.getDirectEntity() != null && source.getWeaponItem() != null) {//应用附魔等效果调整击退力度
-                        knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
-                    }
-                    if (source.is(DamageTypeTags.IS_EXPLOSION))
-                        knockBack *= 10.0f;
-                    float finalKnockBack = knockBack;
-                    SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {//施加动量
-                        part.vehicle.activate();
-                        this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), worldContactPoint.subtract(this.body.getPhysicsLocation(null)));
-                        return null;
-                    });
-                }
-                //换算穿深
-                armorPenetration = hitBox.modifyPiercing(source, damage);
-            } else {//甲弹对抗处理
-                //获取穿深
-                try {
-                    armorPenetration = hitBox.modifyPiercing(source, damage);// TODO: 研究一下Key是怎么用的,换成来自投射物的穿深数据
-//                armorPenetration = (float) source.getExtraData().getBlackBoard().getStorage().getOrDefault(new Key<>("armor_pierce", Float.class), 0f);
-                } catch (Exception e) {
-                    armorPenetration = damage;
-                    MachineMax.LOGGER.warn("{}受到的伤害不包含穿甲值信息", this.part.name);
-                }
-            }
-            //计算冲击对连接点结构完整性的伤害
-            float impactDamage = hitBox.modifyImpact(source, damage);
-            //分配冲击至连接点
-            distributeDamageImpactToConnectors(impactDamage, worldContactPoint);
-            //击穿判定
-            if (armorPenetration > armor || hitBox.hasUnPenetrateDamage()) {
-                float subPartDamage = hitBox.modifyDamage(source, damage);
-                if (armorPenetration < armor)//未击穿且有未击穿伤害时按照设置造成部分伤害
-                    subPartDamage *= (float) Math.pow(armorPenetration / armor, hitBox.getUnPenetrateDamageFactor());
-                //对部件造成伤害
-                accumulateDamage(subPartDamage, data);
-                //播放击穿音效
-                finalDamage = subPartDamage;
-                SparkLevel.submitImmediateTask(level, PPhase.POST, () -> {
-                    //播放击穿音效特效
-                    SoundEvent sound = hitBox.getHitPenSound();
-//                        SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
-//                                (float) ((2 - Math.min(7f, finalDamage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
-//                                0.1f + 0.4f * Math.min(7f, finalDamage) / 7f);
-                    level.playSound(
-                            null,
-                            sourcePos.x, sourcePos.y, sourcePos.z,
-                            sound, SoundSource.NEUTRAL,
-                            0.5f,
-                            1
-                    );
-                });
-            } else {
-                SparkLevel.submitImmediateTask(level, PPhase.POST, () -> {
-                    //播放击穿音效特效
-                    SoundEvent sound = hitBox.getHitPenSound();
-//                        SpreadingSoundHelper.playSpreadingSound(level, sound, SoundSource.NEUTRAL, finalSourcePos, Vec3.ZERO,
-//                                (float) ((2 - Math.min(7f, finalDamage) / 7f) * (1f + 0.2f * (Math.random() - 0.5f))),
-//                                0.1f + 0.4f * Math.min(7f, finalDamage) / 7f);
-                    level.playSound(
-                            null,
-                            sourcePos.x, sourcePos.y, sourcePos.z,
-                            sound, SoundSource.NEUTRAL,
-                            0.5f,
-                            1
-                    );
-                    //添加粒子
-                    var pos = SparkMathKt.toVec3(worldContactPoint);
-                    for (int i = 0; i < 3; i++) {
-                        var dir = normal.mult(0.3f).add(new Vector3f(
-                                (float) (Math.random() - 0.5f),
-                                (float) (Math.random() - 0.5f),
-                                (float) (Math.random() - 0.5f)).mult(0.1f));
-                        level.addParticle(ParticleTypes.FIREWORK, pos.x, pos.y, pos.z, dir.x, dir.y, dir.z);
-                    }
-                });
-            }
-//            if (!level.isClientSide() && source.getEntity() instanceof ServerPlayer player) {
-//                player.sendSystemMessage(Component.literal(String.format(
-//                        "RHA(基本/角度)=%.1f/%.1f, 入射角=%.1f°, 穿深=%.2f, 冲击=%.2f, 伤害=%.2f",
-//                        baseArmor, armor, incidenceAngle, armorPenetration, impactDamage, finalDamage
-//                )));
-//            }
-            return true; //返回true表示命中，且伤害已被处理
+    @Override
+    public float calculateFinalDamage(BFDamageContext ctx, PenetrationResult result) {
+        HitBox hitBox = findHitBox(ctx);
+        if (result == PenetrationResult.PENETRATED) {
+            return hitBox.modifyDamage(ctx.source(), ctx.baseDamage());
         }
-        return false; //返回false表示伤害已被取消
+        if (hitBox.hasUnPenetrateDamage()) {
+            float rha = getRHA(ctx);
+            if (rha > 0) {
+                float ratio = Math.clamp(ctx.penetration() / rha, 0f, 1f);
+                return ctx.baseDamage() * (float) Math.pow(ratio, hitBox.getUnPenetrateDamageFactor());
+            }
+        }
+        return 0f;
+    }
+
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (level.isClientSide()) return true;
+        // 通过 TB 上下文栈取回完整的命中上下文
+        BFDamageContext ctx = BFDamageApi.getContextFor(this);
+        if (ctx == null) {
+            // 不在协议管线内，尝试用低信息量上下文模拟
+            ctx = createContextFromVanilla(source, amount);
+        }
+        if (ctx == null) {
+            // 仍不在协议管线内，丢弃伤害
+            return false;
+        }
+        // 触发伤害事件
+        SubPartDamageEvent.Pre event = NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Pre(this, ctx, amount));
+        if (event.isCanceled()) return false;
+        ctx = event.getCtx();
+        amount = event.getDamageAmount(); // 以事件最终结果为准
+        Vector3f worldContactSpeed = PhysicsHelperKt.toBVector3f(ctx.hitVelocity());
+        Vec3 sourcePos = ctx.hitPoint();
+        HitBox hitBox = findHitBox(ctx);
+        // 击退动量
+        if (!source.is(MMDamageTypes.PART_COLLISION) && worldContactSpeed.lengthSquared() > 1e-6f) {
+            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(amount / getMaxDurability()))) * 250f);
+            if (source.getDirectEntity() != null && source.getWeaponItem() != null) {
+                knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
+            }
+            if (source.is(DamageTypeTags.IS_EXPLOSION)) knockBack *= 10.0f;
+            float finalKnockBack = knockBack;
+            SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+                part.vehicle.activate();
+                Vector3f contactPoint = PhysicsHelperKt.toBVector3f(sourcePos);
+                this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), contactPoint.subtract(this.body.getPhysicsLocation(null)));
+                return null;
+            });
+        }
+        // 连接点冲击分配
+        float impactDamage = hitBox.modifyImpact(source, amount);
+        if (impactDamage > 0) {
+            distributeDamageImpactToConnectors(impactDamage, PhysicsHelperKt.toBVector3f(sourcePos));
+        }
+        // 累积伤害
+        accumulateDamage(amount, ctx);
+        // 音效与粒子
+        Vector3f normal = PhysicsHelperKt.toBVector3f(ctx.hitNormal());
+        BFDamageContext finalCtx = ctx;
+        SparkLevel.submitImmediateTask(level, PPhase.POST, () -> {
+            SoundEvent sound = isArmorPenetrated(finalCtx) ? hitBox.getHitPenSound() : hitBox.getHitUnPenSound();
+            level.playSound(null, sourcePos.x, sourcePos.y, sourcePos.z, sound, SoundSource.NEUTRAL, 0.5f, 1);
+            if (!isArmorPenetrated(finalCtx)) {
+                for (int i = 0; i < 3; i++) {
+                    var dir = normal.mult(0.3f).add(new Vector3f(
+                            (float) (Math.random() - 0.5f),
+                            (float) (Math.random() - 0.5f),
+                            (float) (Math.random() - 0.5f)).mult(0.1f));
+                    level.addParticle(ParticleTypes.FIREWORK, sourcePos.x, sourcePos.y, sourcePos.z, dir.x, dir.y, dir.z);
+                }
+            }
+        });
+        return true;
+    }
+
+    @Override
+    @Nullable
+    public BFDamageContext createContextFromVanilla(DamageSource source, float amount) {
+        // 原版伤害缺少弹道信息，返回仅含 source+baseDamage 的低信息量上下文
+        return BFDamageContext.builder()
+                .source(source)
+                .baseDamage(amount)
+                .penetration(amount)
+                .build();
+    }
+
+    /**
+     * 根据上下文查找命中的碰撞箱
+     */
+    @NotNull
+    private HitBox findHitBox(@NotNull BFDamageContext ctx) {
+        HitBox hitBox = ctx.extensions().get(MMDamageExtensions.HIT_BOX);
+        if (hitBox != null) return hitBox;
+        // 回退：找装甲最厚的
+        return findStrongestHitBox();
+    }
+
+    /**
+     * 获取护甲水平最强的碰撞箱
+     */
+    @NotNull
+    public HitBox findStrongestHitBox() {
+        HitBox best = null;
+        float maxThickness = -1;
+        for (HitBox box : hitBoxes.values()) {
+            float t = box.getRHA(this);
+            if (t > maxThickness) {
+                maxThickness = t;
+                best = box;
+            }
+        }
+        return best;
     }
 
     /**
@@ -635,7 +649,6 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         if (!level.isClientSide) {
             part.setRenderWireframe(true); // 尝试维修时重置为线框模式
             // 修理零件
-            //TODO: 传递修复至载具
             float repairAmount = 0f;
             float requestedRepairAmount = Math.max(amount, 0f);
             float maxDurability = getMaxDurability();
@@ -702,19 +715,20 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             float totalDamage = 0;
             Vec3 soundPos = Vec3.ZERO;
             while (!accumulatedDamage.isEmpty()) {
-                Pair<Float, PartDamageData> pair = accumulatedDamage.poll();
+                Pair<Float, BFDamageContext> pair = accumulatedDamage.poll();
                 float damage = pair.getFirst();
-                PartDamageData data = pair.getSecond();
-                SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, data, damage);
+                BFDamageContext ctx = pair.getSecond();
+                SubPartDamageEvent.Pre event = new SubPartDamageEvent.Pre(this, ctx, damage);
                 //向子系统发送伤害事件，对子系统造成伤害
-                if (data.hitBox().getSubsystem() != null) {
-                    data.hitBox().getSubsystem().onHurt(event);
+                HitBox hitBox = findHitBox(ctx);
+                if (hitBox != null && hitBox.getSubsystem() != null) {
+                    hitBox.getSubsystem().onHurt(event);
                 }
                 if (!event.isCanceled()) { // 若伤害未被子系统取消
                     // 广播事件
-                    NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Post(this, data, damage));
+                    NeoForge.EVENT_BUS.post(new SubPartDamageEvent.Post(this, ctx, damage));
                     totalDamage += damage;
-                    soundPos = SparkMathKt.toVec3(data.worldContactPoint());
+                    soundPos = ctx.hitPoint();
                 }
             }
             if (totalDamage > 0) {

@@ -7,10 +7,10 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import com.mojang.datafixers.util.Pair;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
 import io.github.sweetzonzi.machine_max.network.payload.SubPartSyncPayload;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
+import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
-public abstract class DestroyableObject implements SyncedDataHolder {
+public abstract class DestroyableObject implements SyncedDataHolder, BFHurtTarget {
     protected static final AtomicInteger ENTITY_COUNTER = new AtomicInteger();
     //渲染属性 Renderer attributes
     public int hurtTime = 0;
@@ -50,7 +50,7 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     protected static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.FLOAT);
     protected static final EntityDataAccessor<Boolean> DATA_DESTROYED_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Integer> DESTROY_TIME_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.INT);
-    ConcurrentLinkedQueue<Pair<Float, PartDamageData>> accumulatedDamage = new ConcurrentLinkedQueue<>();
+    ConcurrentLinkedQueue<Pair<Float, BFDamageContext>> accumulatedDamage = new ConcurrentLinkedQueue<>();
     protected final SynchedEntityData syncedData;
     //运行中
     public int tickCount = 0;
@@ -115,17 +115,10 @@ public abstract class DestroyableObject implements SyncedDataHolder {
     public void postPhysicsTick() {
     }
 
-    /**
-     * <p>线程安全地对部件造成伤害，伤害会被在主线程统一处理，参见 {@link #handleAccumulatedDamage()}</p>
-     * <p>Accumulates damage to the part thread safely, which will be handled in the main thread, see {@link #handleAccumulatedDamage()}</p>
-     *
-     * @param damage 伤害值 damage value
-     * @param data   伤害源、命中点、判定区等 damage source, hit point, hit box, etc.
-     */
-    public void accumulateDamage(float damage, PartDamageData data) {
+    public void accumulateDamage(float damage, BFDamageContext ctx) {
         if (damage > 0) {
             hurtTime = hurtDuration;
-            accumulatedDamage.add(Pair.of(damage, data));
+            accumulatedDamage.add(Pair.of(damage, ctx));
         }
     }
 

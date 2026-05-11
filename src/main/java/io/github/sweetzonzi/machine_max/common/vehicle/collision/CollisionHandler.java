@@ -15,15 +15,16 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.collision.*;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.compat.create.CreateCollisionResolver;
 import io.github.sweetzonzi.machine_max.compat.create.CreateCompat;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.PartDamageData;
+import io.github.sweetzonzi.machine_max.common.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.machine_max.common.vehicle.interact.HitBox;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
 import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
@@ -470,17 +471,32 @@ public class CollisionHandler {
             float partDamage = (float) (finalActualPartEnergy / 250);
             DamageSource source = level.damageSources().flyIntoWall();
             if (hitBox.modifyDamage(source, partDamage) > 1) {
-                PartDamageData data = new PartDamageData(source, null, normal, contactVel, worldContactPoint, hitBox);
-                subPart.onHurt(data, partDamage);
+                BFDamageContext ctx = BFDamageContext.builder()
+                        .source(source)
+                        .baseDamage(partDamage)
+                        .hitVelocity(SparkMathKt.toVec3(contactVel))
+                        .hitPoint(SparkMathKt.toVec3(worldContactPoint))
+                        .hitNormal(SparkMathKt.toVec3(normal))
+                        .penetration(hitBox.modifyPiercing(source, partDamage))
+                        .build();
+                ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+                BFDamageApi.hurt(subPart, ctx);
             }
         } else {
             //能量不足，部件吸收部分伤害
             float partDamage = (float) (0.2 * 0.33 * partEnergy / 250);
             DamageSource source = level.damageSources().flyIntoWall();
             if (hitBox.modifyDamage(source, partDamage) > 1) {
-                PartDamageData data = new PartDamageData(source, null, normal, contactVel, worldContactPoint, hitBox);
-                hitBox.modifyDamage(source, partDamage);
-                subPart.onHurt(data, partDamage);
+                BFDamageContext ctx = BFDamageContext.builder()
+                        .source(source)
+                        .baseDamage(partDamage)
+                        .hitVelocity(SparkMathKt.toVec3(contactVel))
+                        .hitPoint(SparkMathKt.toVec3(worldContactPoint))
+                        .hitNormal(SparkMathKt.toVec3(normal))
+                        .penetration(hitBox.modifyPiercing(source, partDamage))
+                        .build();
+                ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+                BFDamageApi.hurt(subPart, ctx);
             }
         }
     }
@@ -583,10 +599,16 @@ public class CollisionHandler {
         float partDamage = 0.0005f * deltaVel * deltaVel * subPart.body.getMass();
         DamageSource source = level.damageSources().source(MMDamageTypes.PART_COLLISION);
         if (otherHitBox.modifyDamage(source, partDamage) > 1) {
-            PartDamageData data = new PartDamageData(
-                    level.damageSources().source(MMDamageTypes.PART_COLLISION),
-                    null, normal, contactVel, worldContactPoint, hitBox);
-            otherSubPart.onHurt(data, partDamage);
+            BFDamageContext ctx = BFDamageContext.builder()
+                    .source(source)
+                    .baseDamage(partDamage)
+                    .hitVelocity(SparkMathKt.toVec3(contactVel))
+                    .hitPoint(SparkMathKt.toVec3(worldContactPoint))
+                    .hitNormal(SparkMathKt.toVec3(normal))
+                    .penetration(hitBox.modifyPiercing(source, partDamage))
+                    .build();
+            ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+            BFDamageApi.hurt(otherSubPart, ctx);
         }
     }
 
@@ -644,10 +666,16 @@ public class CollisionHandler {
         float partDamage = (float) (0.2 * contactEnergy * miu / (250 * partMass));
         DamageSource source = level.damageSources().flyIntoWall();
         if (hitBox.modifyDamage(source, partDamage) > 1) {
-            PartDamageData data = new PartDamageData(
-                    level.damageSources().source(DamageTypes.FLY_INTO_WALL, livingEntity),
-                    null, normal, vel, worldContactPoint, hitBox);
-            subPart.onHurt(data, partDamage);
+            BFDamageContext ctx = BFDamageContext.builder()
+                    .source(level.damageSources().source(DamageTypes.FLY_INTO_WALL, livingEntity))
+                    .baseDamage(partDamage)
+                    .hitVelocity(SparkMathKt.toVec3(vel))
+                    .hitPoint(SparkMathKt.toVec3(worldContactPoint))
+                    .hitNormal(SparkMathKt.toVec3(normal))
+                    .penetration(hitBox.modifyPiercing(source, partDamage))
+                    .build();
+            ctx.extensions().set(MMDamageExtensions.HIT_BOX, hitBox);
+            BFDamageApi.hurt(subPart, ctx);
         }
 
         //部件减速反冲

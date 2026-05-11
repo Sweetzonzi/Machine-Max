@@ -501,7 +501,7 @@ public class BlueprintAttachment {
 
     @SubscribeEvent
     public static void onSubPartHit(SubPartDamageEvent.Pre event) {
-        if (event.getData().source().getEntity() instanceof ServerPlayer player) {
+        if (event.getCtx().source().getEntity() instanceof ServerPlayer player) {
             var research = player.getData(MMAttachments.getBLUEPRINT());
             if (research.hitRpCooldown <= 0) {
                 research.givRp(player, 1, RpAddReason.HIT);
@@ -512,7 +512,7 @@ public class BlueprintAttachment {
 
     @SubscribeEvent
     public static void onSubPartDamage(SubPartDamageEvent.Post event) {
-        if (event.getData().source().getEntity() instanceof ServerPlayer player) {
+        if (event.getCtx().source().getEntity() instanceof ServerPlayer player) {
             var research = player.getData(MMAttachments.getBLUEPRINT());
             research.givRp(player, (int) event.getDamageAmount(), RpAddReason.PART_DAMAGE);
         }

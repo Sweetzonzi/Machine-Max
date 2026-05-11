@@ -66,9 +66,9 @@ file="META-INF/accesstransformer.cfg"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="terminal_ballistics"
+    modId="ballistics_framework"
     type="required"
-    versionRange="[${terminal_ballistics_version},)"
+    versionRange="[${ballistics_framework_version},)"
     ordering="AFTER"
     side="BOTH"
 

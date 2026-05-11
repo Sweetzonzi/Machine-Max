@@ -27,14 +27,14 @@ if (sparkCoreDir.exists()) { // 首选同目录下Spark-Core源码作为依赖
     println("[Machine-Max] Spark-Core not found, using published/local jar")
 }
 
-def terminalBallisticsDir = file("${terminal_ballistics_dir}") // 终点弹道源码目录
-if (terminalBallisticsDir.exists()) { // 首选同目录下终点弹道源码作为依赖
-    includeBuild(terminalBallisticsDir) {
+def ballisticsFrameworkDir = file("${ballistics_framework_dir}") // 弹道框架源码目录
+if (ballisticsFrameworkDir.exists()) { // 首选同目录下弹道框架源码作为依赖
+    includeBuild(ballisticsFrameworkDir) {
         dependencySubstitution {
-            substitute(module("io.github.sweetzonzi:terminal_ballistics-${minecraft_version}"))
+            substitute(module("io.github.sweetzonzi:ballistics_framework-${minecraft_version}"))
                     .using(project(":"))
         }
     }
 } else { // 若不存在，则使用发布的/本地jar作为依赖
-    println("[Machine-Max] TerminalBallistics not found, using published/local jar")
+    println("[Machine-Max] BallisticsFramework not found, using published/local jar")
 }
