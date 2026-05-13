@@ -2,8 +2,8 @@ package io.github.sweetzonzi.machine_max.client.render.gui.hud;
 
 import io.github.sweetzonzi.machine_max.client.render.gui.MMGuiManager;
 import io.github.sweetzonzi.machine_max.client.render.renderable.GuiAnimatable;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.CameraType;

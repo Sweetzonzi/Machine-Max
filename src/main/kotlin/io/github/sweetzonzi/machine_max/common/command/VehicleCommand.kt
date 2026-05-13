@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.common.command
 
 import cn.solarmoon.spark_core.command.BaseCommand
 import com.mojang.brigadier.context.CommandContext
-import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager
 import net.minecraft.commands.CommandBuildContext
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands

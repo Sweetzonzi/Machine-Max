@@ -4,7 +4,7 @@ import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

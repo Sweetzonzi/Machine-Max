@@ -4,7 +4,7 @@ import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.CustomHud;
 import io.github.sweetzonzi.machine_max.client.render.renderable.ITickableRenderable;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;

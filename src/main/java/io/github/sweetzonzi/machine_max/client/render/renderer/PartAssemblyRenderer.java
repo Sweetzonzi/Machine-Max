@@ -1,8 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.renderer;
 
-import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
-import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelper;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -19,15 +17,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.item.prop.AssemblyItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.VariantAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.VariantAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.visual.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
@@ -35,7 +32,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 

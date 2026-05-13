@@ -1,11 +1,11 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.codec.ByteBufCodecs;

@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.common.entity;
 
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;

@@ -1,11 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.item;
 
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.NameTagItem;

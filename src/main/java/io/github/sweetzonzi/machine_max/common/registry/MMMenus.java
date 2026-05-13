@@ -4,7 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.menu.BlueprintResearchMenu;
 import io.github.sweetzonzi.machine_max.common.menu.FabricatingMenu;
 import io.github.sweetzonzi.machine_max.common.menu.VehicleNamingMenu;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.menu.ItemStorageSubsystemMenu;
+import io.github.sweetzonzi.machine_max.common.menu.ItemStorageSubsystemMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;

@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.util.mechanic;
 
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.AdvancedAeroAttr;
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.HydrodynamicAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.AdvancedAeroAttr;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HydrodynamicAttr;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;

@@ -5,7 +5,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.BlueprintAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreferenceAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment
 import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachment
-import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData
 import net.minecraft.client.Minecraft
 import net.neoforged.neoforge.common.util.NeoForgeExtraCodecs
 

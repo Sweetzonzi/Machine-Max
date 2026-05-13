@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.client.render.gui.hud;
 import io.github.sweetzonzi.machine_max.client.input.KeyBinding;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.vehicle.interact.InteractBox;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;

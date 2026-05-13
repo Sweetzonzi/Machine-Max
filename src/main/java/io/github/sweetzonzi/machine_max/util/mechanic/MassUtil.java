@@ -2,10 +2,10 @@ package io.github.sweetzonzi.machine_max.util.mechanic;
 
 import com.jme3.math.Matrix3f;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 

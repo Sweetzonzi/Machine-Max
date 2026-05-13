@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.client.compat.jade;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import snownee.jade.api.EntityAccessor;

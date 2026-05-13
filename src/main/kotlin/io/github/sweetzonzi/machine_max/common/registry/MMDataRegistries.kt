@@ -2,8 +2,8 @@ package io.github.sweetzonzi.machine_max.common.registry
 
 import com.mojang.serialization.MapCodec
 import io.github.sweetzonzi.machine_max.MachineMax
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.AbstractSubsystemAttr
-import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.AbstractSubsystemStaticAttr
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AbstractSubsystemStaticAttr
 
 object MMDataRegistries {
     @JvmStatic

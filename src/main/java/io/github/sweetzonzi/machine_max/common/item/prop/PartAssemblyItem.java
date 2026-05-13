@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.util.TextUtil;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;

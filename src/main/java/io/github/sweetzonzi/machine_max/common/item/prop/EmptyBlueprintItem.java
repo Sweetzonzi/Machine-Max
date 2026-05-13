@@ -9,7 +9,7 @@ import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.menu.VehicleNamingMenu;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;

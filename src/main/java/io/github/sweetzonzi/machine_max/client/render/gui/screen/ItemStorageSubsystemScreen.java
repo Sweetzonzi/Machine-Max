@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.menu.ItemStorageSubsystemMenu;
+import io.github.sweetzonzi.machine_max.common.menu.ItemStorageSubsystemMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;

@@ -1,9 +1,9 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.ScriptableSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ScriptableSubsystem;
 import io.github.sweetzonzi.machine_max.external.js.hook.Hook;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;

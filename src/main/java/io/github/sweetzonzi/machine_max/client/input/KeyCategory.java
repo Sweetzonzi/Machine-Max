@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.input;
 
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;

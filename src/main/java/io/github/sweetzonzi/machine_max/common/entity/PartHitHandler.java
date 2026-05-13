@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.mixin_interface.IProjectileMixin;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.EntityHitResult;

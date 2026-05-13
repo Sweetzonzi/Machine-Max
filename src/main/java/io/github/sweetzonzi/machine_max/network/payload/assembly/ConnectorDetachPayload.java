@@ -2,11 +2,11 @@ package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.SimpleConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.ConnectionData;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.SimpleConnector;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.ConnectionData;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;

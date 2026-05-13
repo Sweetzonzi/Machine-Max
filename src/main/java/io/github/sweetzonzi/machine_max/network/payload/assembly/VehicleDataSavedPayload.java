@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.network.payload.assembly;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

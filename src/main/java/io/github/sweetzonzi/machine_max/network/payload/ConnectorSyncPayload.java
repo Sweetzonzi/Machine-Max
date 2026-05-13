@@ -1,10 +1,10 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.vehicle.DestroyableObject;
-import io.github.sweetzonzi.machine_max.common.vehicle.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

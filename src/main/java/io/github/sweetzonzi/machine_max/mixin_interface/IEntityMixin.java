@@ -1,6 +1,6 @@
 package io.github.sweetzonzi.machine_max.mixin_interface;
 
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractControllableSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 
 import javax.annotation.Nullable;
 

@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.util;
 
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.vehicle.PartType;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;

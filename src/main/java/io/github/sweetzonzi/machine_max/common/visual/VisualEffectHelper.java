@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.visual;
 
 import com.jme3.bullet.objects.PhysicsRigidBody;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.LightingSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.LightingSubsystem;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

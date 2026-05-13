@@ -4,8 +4,8 @@ import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAt
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.IngredientCountPair;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;

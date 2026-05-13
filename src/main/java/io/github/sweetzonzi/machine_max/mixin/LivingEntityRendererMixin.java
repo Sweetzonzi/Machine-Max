@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.mixin;
 
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;

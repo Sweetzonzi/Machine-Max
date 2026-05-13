@@ -45,7 +45,7 @@ description: 读取项目术语表，快速理解用户意图并将需求映射�
 
 → 调用 lookup-glossary
 → 术语表中查到 Vehicle（载具）概念
-→ 关键类: io.github.sweetzonzi.machine_max.common.vehicle.Vehicle
+→ 关键类: io.github.sweetzonzi.machine_max.common.mech.vehicle.Vehicle
 → 直接导航到该类及其相关代码，无需全局搜索
 ```
 

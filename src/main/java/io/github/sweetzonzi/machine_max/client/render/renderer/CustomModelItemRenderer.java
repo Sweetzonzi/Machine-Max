@@ -10,7 +10,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.FabricatingBlueprintItem;
 import io.github.sweetzonzi.machine_max.common.item.prop.VehicleBlueprintItem;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.visual.PartAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.VehicleAnimatable;
 import io.github.sweetzonzi.machine_max.common.visual.SubPartAnimatable;
@@ -24,8 +24,6 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 

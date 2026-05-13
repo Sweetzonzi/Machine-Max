@@ -1,11 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.menu;
 
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.registry.MMMenus;
-import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleDataSavedPayload;
 import lombok.Getter;
 import net.minecraft.network.FriendlyByteBuf;

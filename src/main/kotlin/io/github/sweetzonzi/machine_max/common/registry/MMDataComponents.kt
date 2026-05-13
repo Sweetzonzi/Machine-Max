@@ -4,9 +4,9 @@ import cn.solarmoon.spark_core.animation.IAnimatable
 import cn.solarmoon.spark_core.entry_builder.dataComponentBuilder
 import com.mojang.serialization.Codec
 import io.github.sweetzonzi.machine_max.MachineMax
-import io.github.sweetzonzi.machine_max.common.vehicle.data.AssemblyData
-import io.github.sweetzonzi.machine_max.common.vehicle.data.BlueprintData
-import io.github.sweetzonzi.machine_max.common.vehicle.data.VehicleData
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.AssemblyData
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemDisplayContext

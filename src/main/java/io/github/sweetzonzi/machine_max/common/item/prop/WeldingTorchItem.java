@@ -10,10 +10,10 @@ import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAt
 import io.github.sweetzonzi.machine_max.common.item.ICustomModelItem;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
-import io.github.sweetzonzi.machine_max.common.vehicle.Part;
-import io.github.sweetzonzi.machine_max.common.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.vehicle.connector.AbstractConnector;
-import io.github.sweetzonzi.machine_max.common.vehicle.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
