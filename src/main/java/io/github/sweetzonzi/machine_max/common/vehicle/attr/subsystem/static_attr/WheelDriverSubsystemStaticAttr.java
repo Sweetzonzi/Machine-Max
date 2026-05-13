@@ -41,7 +41,7 @@ public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     public static final MapCodec<WheelDriverSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("wheel_control", "move_control")).forGetter(WheelDriverSubsystemStaticAttr::getControlSignalKeys),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("car_control")).forGetter(WheelDriverSubsystemStaticAttr::getControlSignalKeys),
             StaticWheelRollingAxisAttr.CODEC.optionalFieldOf("roll", new StaticWheelRollingAxisAttr(
                     10000f,
                     3500f,

@@ -70,14 +70,8 @@
         "subsystem.machine_max.car_controller": {
           "type": "machine_max:car_controller", //子系统类型
           "definition": "machine_max:dayun_car_controller", //子系统型号, 需要与子系统类型相匹配
-          "engine_outputs": {
-            "engine_control": ["connector.machine_max.chassis_axis"]
-          },
-          "wheel_outputs": {
-            "wheel_control": ["connector.machine_max.chassis_axis"]
-          },
-          "gearbox_outputs": {
-            "gearbox_control": ["connector.machine_max.chassis_axis"]
+          "control_outputs": {
+            "car_control": ["connector.machine_max.chassis_axis"]
           }
         },
         "subsystem.machine_max.left_seat": {

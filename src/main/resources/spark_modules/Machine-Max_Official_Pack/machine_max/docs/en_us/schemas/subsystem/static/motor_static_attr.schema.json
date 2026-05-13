@@ -86,7 +86,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["motor_control", "move_control"],
+      "default": ["car_control"],
       "description": "List of throttle input signal keys, from highest to lowest priority."
     },
     "sounds": {

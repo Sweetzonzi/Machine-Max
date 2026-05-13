@@ -153,17 +153,14 @@
     {
       "type": "machine_max:car_controller",
       "definition": "machine_max:ae86at_car_controller",
-      "engine_outputs": {
-        "engine_control": [
-          "engine"
-        ]
-      },
-      "wheel_outputs": {
-        "wheel_control": [
-          "left_front_wheel_driver",
-          "right_front_wheel_driver",
-          "left_back_wheel_driver",
-          "right_back_wheel_driver"
+      "control_outputs": {
+        "car_control": [
+          "subsystem.machine_max.engine",
+          "subsystem.machine_max.left_front_wheel_driver",
+          "subsystem.machine_max.right_front_wheel_driver",
+          "subsystem.machine_max.left_back_wheel_driver",
+          "subsystem.machine_max.right_back_wheel_driver",
+          "subsystem.machine_max.gearbox"
         ]
       }
     },

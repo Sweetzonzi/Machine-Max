@@ -64,7 +64,7 @@ public class GearboxSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Codec.FLOAT.optionalFieldOf("final_ratio", 10f).forGetter(GearboxSubsystemStaticAttr::getFinalRatio),
             Codec.list(Codec.FLOAT).optionalFieldOf("ratios", List.of(-3.5f, 3.5f, 2.5f, 1.7f, 1.4f, 1.1f)).forGetter(GearboxSubsystemStaticAttr::getRatios),
             Codec.FLOAT.optionalFieldOf("switch_time", 0.3f).forGetter(GearboxSubsystemStaticAttr::getSwitchTime),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("gearbox_control")).forGetter(GearboxSubsystemStaticAttr::getRatioControlSignalKeys),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("car_control")).forGetter(GearboxSubsystemStaticAttr::getRatioControlSignalKeys),
             GearBoxSoundAttr.CODEC.optionalFieldOf("sounds", GearBoxSoundAttr.DEFAULT).forGetter(GearboxSubsystemStaticAttr::getSounds)
     ).apply(instance, GearboxSubsystemStaticAttr::new));
 

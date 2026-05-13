@@ -42,18 +42,15 @@
           "subsystem.machine_max.car_controller": {
             "type": "machine_max:car_controller", //子系统类型
             "definition": "machine_max:ae86_car_controller", //子系统型号, 需要与子系统类型相匹配
-            "engine_outputs": {
-              "engine_control": ["subsystem.machine_max.engine"]
-            },
-            "wheel_outputs": {
-              "wheel_control": [
-                "subsystem.machine_max.left_front_wheel_driver",
-                "subsystem.machine_max.right_front_wheel_driver",
+            "control_outputs": {
+              "car_control": [
+                "subsystem.machine_max.engine",
+                "subsystem.machine_max.gearbox",
                 "subsystem.machine_max.left_back_wheel_driver",
-                "subsystem.machine_max.right_back_wheel_driver"]
-            },
-            "gearbox_outputs": {
-              "gearbox_control": ["subsystem.machine_max.gearbox"]
+                "subsystem.machine_max.left_front_wheel_driver",
+                "subsystem.machine_max.right_back_wheel_driver",
+                "subsystem.machine_max.right_front_wheel_driver"
+              ]
             },
             "speed_outputs": { //(可选, 默认将移动速度(m/s)发至部件和载具的vehicle_speed频道)移动速度信号输出频道及目标
               "vehicle_speed": ["subpart", "vehicle"]

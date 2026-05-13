@@ -57,7 +57,7 @@ public class EngineSubsystemStaticAttr extends BasicSubsystemStaticAttr implemen
             Codec.BOOL.optionalFieldOf("four_stroke", true).forGetter(EngineSubsystemStaticAttr::isFourStroke),
             Codec.INT.optionalFieldOf("cylinder", 4).forGetter(EngineSubsystemStaticAttr::getCylinderCount),
             Codec.DOUBLE.listOf().optionalFieldOf("damping_factors", List.of(20.0, 0.1, 0.00005)).forGetter(EngineSubsystemStaticAttr::getDampingFactors),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("engine_control", "move_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("car_control")).forGetter(EngineSubsystemStaticAttr::getThrottleInputKeys),
             EngineSoundAttr.CODEC.optionalFieldOf("sounds", EngineSoundAttr.DEFAULT).forGetter(EngineSubsystemStaticAttr::getSounds)
     ).apply(instance, EngineSubsystemStaticAttr::new));
     public static final int LOAD_STATE_COUNT = 4;

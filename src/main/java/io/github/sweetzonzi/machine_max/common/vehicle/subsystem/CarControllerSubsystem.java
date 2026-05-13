@@ -202,19 +202,13 @@ public class CarControllerSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 子系统初始化或载具结构发生变化时，发送空信号，根据回调重新建立连接<p>
-     * Every time the vehicle structure changes, send an empty signal, and reestablish connections based on callbacks.
+     * 子系统初始化或载具结构发生变化时，发送空信号，根据回调重新建立连接。<br>
+     * 所有受控下属子系统（引擎/电动机/变速箱/车轮）统一通过 control_outputs 频道进行握手。
      *
      * @see CarControllerSubsystem#onSignalUpdated(String signalKey, ISignalSender sender)
      */
     protected void handShake() {
-        for (String signalChannel : attr.engineControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
-        }
-        for (String signalChannel : attr.wheelControlOutputTargets.keySet()) {
-            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
-        }
-        for (String signalChannel : attr.gearboxControlOutputTargets.keySet()) {
+        for (String signalChannel : attr.controlOutputTargets.keySet()) {
             sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
         }
     }
@@ -462,7 +456,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
             }
         } else { //无输入信号 No input signal
             for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
-                sendCallbackToAllListeners(entry.getValue(), EmptySignal.INSTANCE);
+                sendCallbackToListener(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
             }
             actualBrake = actualBrake * 0.8f + 0 * 0.2f;
             if (ControlPreference.shouldAutoHandBrake(this) && !handBrake) {
@@ -481,14 +475,18 @@ public class CarControllerSubsystem extends BasicSubsystem {
         }
     }
 
+    /**
+     * 计算引擎/电动机平均转速，并向每个引擎/电动机单独发送油门控制信号。<br>
+     * 使用 sendCallbackToListener 逐个发送（而非广播所有监听者），避免信号串扰。
+     */
     private float calculateAvgSpeedAndControl() {
         float avgEngineSpeed = 0f;
         for (Map.Entry<EngineSubsystem, String> entry : engines.entrySet()) {
-            sendCallbackToAllListeners(entry.getValue(), Math.abs(actualThrottle));
+            sendCallbackToListener(entry.getValue(), entry.getKey(), Math.abs(actualThrottle));
             avgEngineSpeed += (float) entry.getKey().getRotSpeed();
         }
         for (Map.Entry<MotorSubsystem, String> entry : motors.entrySet()) {
-            sendCallbackToAllListeners(entry.getValue(), actualThrottle);
+            sendCallbackToListener(entry.getValue(), entry.getKey(), actualThrottle);
             avgEngineSpeed += entry.getKey().getRotSpeed();
         }
         if (engineCount > 1)
@@ -634,9 +632,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
 
     @Override
     public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> result = new HashMap<>(attr.getEngineControlOutputTargets());
-        result.putAll(attr.getGearboxControlOutputTargets());
-        result.putAll(attr.getWheelControlOutputTargets());
+        Map<String, List<String>> result = new HashMap<>(attr.getControlOutputTargets());
         result.putAll(attr.getSpeedOutputTargets());
         result.putAll(attr.getThrottleOutputTargets());
         result.putAll(attr.getSteeringOutputTargets());

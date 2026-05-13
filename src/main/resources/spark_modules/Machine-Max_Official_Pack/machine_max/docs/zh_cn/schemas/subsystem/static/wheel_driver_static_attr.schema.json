@@ -88,7 +88,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["wheel_control", "move_control"],
+      "default": ["car_control"],
       "description": "控制输入信号键列表。"
     },
     "roll": {
@@ -172,7 +172,7 @@
     {
       "type": "machine_max:wheel_driver",
       "basic_durability": 40.0,
-      "control_inputs": ["wheel_control"],
+      "control_inputs": ["car_control"],
       "roll": {
         "max_drive_force": 12000.0,
         "max_brake_force": 4000.0,
@@ -186,7 +186,7 @@
     {
       "type": "machine_max:wheel_driver",
       "basic_durability": 35.0,
-      "control_inputs": ["wheel_control"],
+      "control_inputs": ["car_control"],
       "roll": {
         "max_drive_force": 10000.0,
         "max_brake_force": 3500.0,

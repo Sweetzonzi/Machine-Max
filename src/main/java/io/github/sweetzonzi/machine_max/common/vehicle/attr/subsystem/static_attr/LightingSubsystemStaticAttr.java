@@ -19,7 +19,7 @@ public class LightingSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     public static final Codec<Color> COLOR_CODEC = Codec.INT.listOf().xmap(
             values -> {
-                int red = values.size() > 0 ? values.get(0) : 255;
+                int red = !values.isEmpty() ? values.get(0) : 255;
                 int green = values.size() > 1 ? values.get(1) : 255;
                 int blue = values.size() > 2 ? values.get(2) : 255;
                 return new Color(clampColor(red), clampColor(green), clampColor(blue));

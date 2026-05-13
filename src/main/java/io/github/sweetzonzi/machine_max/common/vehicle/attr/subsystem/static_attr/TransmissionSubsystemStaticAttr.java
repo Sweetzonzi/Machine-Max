@@ -30,7 +30,8 @@ public class TransmissionSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Codec.STRING.optionalFieldOf("diff_lock", "auto").forGetter(TransmissionSubsystemStaticAttr::getDiffLock),
             Codec.FLOAT.optionalFieldOf("diff_lock_sensitivity", 1f).forGetter(TransmissionSubsystemStaticAttr::getDiffLockSensitivity),
             Codec.FLOAT.optionalFieldOf("auto_diff_lock_threshold", 10f).forGetter(TransmissionSubsystemStaticAttr::getAutoDiffLockThreshold),
-            Codec.STRING.listOf().optionalFieldOf("diff_lock_inputs", List.of("diff_lock_control")).forGetter(TransmissionSubsystemStaticAttr::getManualDiffLockInputChannels),
+            // TODO: 更新schema
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("car_control")).forGetter(TransmissionSubsystemStaticAttr::getManualDiffLockInputChannels),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, TransmissionSubsystemStaticAttr::new));
 

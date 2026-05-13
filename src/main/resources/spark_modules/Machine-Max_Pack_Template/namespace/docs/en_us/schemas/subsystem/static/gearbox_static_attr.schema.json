@@ -55,7 +55,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["gearbox_control"],
+      "default": ["car_control"],
       "description": "List of shifting control signal keys, specifying the selected reduction ratio."
     },
     "sounds": {

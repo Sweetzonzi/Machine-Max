@@ -53,12 +53,9 @@
           "subsystem.machine_max.motorbike_controller": {
             "type": "machine_max:motorbike_controller", //子系统类型
             "definition": "machine_max:vn_motorbike_controller",//子系统型号, 需要与子系统类型相匹配
-            "engine_outputs": {
-              "motor_control": ["subsystem.machine_max.motor"]
-            },
-            "gearbox_outputs": {},
-            "wheel_outputs": {
-              "wheel_control": [
+            "control_outputs": {
+              "car_control": [
+                "subsystem.machine_max.motor",
                 "subsystem.machine_max.front_wheel_driver",
                 "subsystem.machine_max.back_wheel_driver"
               ]

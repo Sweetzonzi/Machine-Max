@@ -8,6 +8,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_at
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.GearboxSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.ItemStorageSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.JointDriverSubsystemAttr
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.FireControlSubsystemAttr
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.LauncherSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.LightingSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.dynamic_attr.MotorbikeControllerSubsystemAttr
@@ -23,6 +25,8 @@ import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_att
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.GearboxSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.ItemStorageSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.JointDriverSubsystemStaticAttr
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.FireControlSubsystemStaticAttr
+import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.LauncherSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.LightingSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorbikeControllerSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.vehicle.attr.subsystem.static_attr.MotorSubsystemStaticAttr
@@ -52,6 +56,8 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("scriptable")) { ScriptableSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("battery")) { BatterySubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("lighting")) { LightingSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("launcher")) { LauncherSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("fire_control")) { FireControlSubsystemAttr.CODEC}
 
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("basic")) { BasicSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("seat")) { SeatSubsystemStaticAttr.CODEC}
@@ -68,6 +74,8 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("scriptable")) { ScriptableSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("battery")) { BatterySubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("lighting")) { LightingSubsystemStaticAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("launcher")) { LauncherSubsystemStaticAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("fire_control")) { FireControlSubsystemStaticAttr.CODEC}
     }
 
     private fun id(id: String) = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, id)

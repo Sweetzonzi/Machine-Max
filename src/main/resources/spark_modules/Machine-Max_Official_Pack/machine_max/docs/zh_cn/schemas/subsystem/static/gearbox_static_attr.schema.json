@@ -55,7 +55,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["gearbox_control"],
+      "default": ["car_control"],
       "description": "换挡控制信号键列表，指定选用的减速比。"
     },
     "sounds": {

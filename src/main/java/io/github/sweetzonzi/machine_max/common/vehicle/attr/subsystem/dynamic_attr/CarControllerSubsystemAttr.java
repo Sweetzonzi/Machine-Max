@@ -13,12 +13,16 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 车辆控制器子系统动态属性。<br>
+ * 控制输出（引擎/电动机/变速箱/车轮）统一通过control_outputs频道进行握手发现和信号发送。<br>
+ * 运行状态输出（速度/油门/转向/刹车/手刹）保持独立频道，用于向HUD、脚本等广播。
+ */
 @Getter
 public class CarControllerSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final CarControllerSubsystemStaticAttr staticAttribute;
-    public final Map<String, List<String>> engineControlOutputTargets;//信号频道和目标名称列表，下同 Signal channels and target hitBoxName list, etc.
-    public final Map<String, List<String>> wheelControlOutputTargets;
-    public final Map<String, List<String>> gearboxControlOutputTargets;
+    /** 统一控制输出频道 → 目标名称列表（同时用于握手发现下属子系统） */
+    public final Map<String, List<String>> controlOutputTargets;
     public final Map<String, List<String>> speedOutputTargets;
     public final Map<String, List<String>> throttleOutputTargets;
     public final Map<String, List<String>> steeringOutputTargets;
@@ -27,21 +31,17 @@ public class CarControllerSubsystemAttr extends BasicSubsystemDynamicAttr {
 
     public static final MapCodec<CarControllerSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
-            SIGNAL_TARGETS_CODEC.fieldOf("engine_outputs").forGetter(CarControllerSubsystemAttr::getEngineControlOutputTargets),
-            SIGNAL_TARGETS_CODEC.fieldOf("wheel_outputs").forGetter(CarControllerSubsystemAttr::getWheelControlOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("gearbox_outputs", Map.of()).forGetter(CarControllerSubsystemAttr::getGearboxControlOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSpeedOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("throttle_outputs", Map.of("throttle", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getThrottleOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("steering_outputs", Map.of("steering", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSteeringOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("brake_outputs", Map.of("brake", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getBrakeOutputTargets),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("handbrake_outputs", Map.of("handbrake", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getHandbrakeOutputTargets)
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.fieldOf("control_outputs").forGetter(CarControllerSubsystemAttr::getControlOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("speed_outputs", Map.of("vehicle_speed", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSpeedOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("throttle_outputs", Map.of("throttle", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getThrottleOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("steering_outputs", Map.of("steering", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getSteeringOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("brake_outputs", Map.of("brake", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getBrakeOutputTargets),
+            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC.optionalFieldOf("handbrake_outputs", Map.of("handbrake", List.of("subpart", "vehicle"))).forGetter(CarControllerSubsystemAttr::getHandbrakeOutputTargets)
     ).apply(instance, CarControllerSubsystemAttr::new));
 
     public CarControllerSubsystemAttr(
             ResourceLocation modelName,
-            Map<String, List<String>> engineControlOutputTargets,
-            Map<String, List<String>> wheelControlOutputTargets,
-            Map<String, List<String>> gearboxControlOutputTargets,
+            Map<String, List<String>> controlOutputTargets,
             Map<String, List<String>> speedOutputTargets,
             Map<String, List<String>> throttleOutputTargets,
             Map<String, List<String>> steeringOutputTargets,
@@ -49,9 +49,7 @@ public class CarControllerSubsystemAttr extends BasicSubsystemDynamicAttr {
             Map<String, List<String>> handbrakeOutputTargets) {
         super(modelName);
         this.staticAttribute = (CarControllerSubsystemStaticAttr) getStaticAttr();
-        this.engineControlOutputTargets = engineControlOutputTargets;
-        this.wheelControlOutputTargets = wheelControlOutputTargets;
-        this.gearboxControlOutputTargets = gearboxControlOutputTargets;
+        this.controlOutputTargets = controlOutputTargets;
         this.speedOutputTargets = speedOutputTargets;
         this.throttleOutputTargets = throttleOutputTargets;
         this.steeringOutputTargets = steeringOutputTargets;

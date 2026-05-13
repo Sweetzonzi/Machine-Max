@@ -8,7 +8,7 @@ public enum SubsystemTypes {
     GEARBOX,//变速箱子系统，可指定多级减速比，自动变速
     CAR_CTRL,//车辆控制子系统，用于更好地处理控制输入信号，辅助控制变速箱、轮胎转向等
     MOTORBIKE_CTRL,//摩托车控制子系统，用于摩托车特有的控制逻辑，如倾斜角度限制
-    TURRET_CTRL,//炮塔控制子系统，用于控制炮塔的位置、角度、开火等
+    FIRE_CTRL,//火控子系统，接收目标坐标和开火指令，控制炮塔驱动和发射器
     TRANSMISSION,//传动子系统，将转速、转矩分发给各个轴
     JOINT,//驱动机构子系统，可指定关节各轴驱动和伺服
     WHEEL,//轮胎子系统，与MOTOR类似，但仅限x轴旋转驱动和y轴旋转伺服
@@ -19,4 +19,5 @@ public enum SubsystemTypes {
     JAVASCRIPT,//自定义脚本子系统
     BATTERY,//电池子系统，储存电力，可充放电
     LIGHTING,//照明子系统，提供客户端体积光视觉效果
+    LAUNCHER,//发射器子系统，代表炮闩、导弹挂架、火箭管等，可发射弹丸
 }

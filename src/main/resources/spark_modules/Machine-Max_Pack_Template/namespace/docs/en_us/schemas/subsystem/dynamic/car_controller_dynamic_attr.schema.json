@@ -13,17 +13,9 @@
       "type": "string",
       "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
-    "engine_outputs": {
+    "control_outputs": {
       "$ref": "../base/signal_targets.json",
-      "description": "Engine control signal output channel and targets."
-    },
-    "wheel_outputs": {
-      "$ref": "../base/signal_targets.json",
-      "description": "Wheel control signal output channel and targets."
-    },
-    "gearbox_outputs": {
-      "$ref": "../base/signal_targets.json",
-      "description": "Transmission control signal output channel and targets."
+      "description": "Unified control signal output channel and targets. All controlled subsystems (engine/motor/gearbox/wheel) are discovered and signaled through this channel."
     },
     "speed_outputs": {
       "$ref": "../base/signal_targets.json",
@@ -51,21 +43,21 @@
       "description": "Handbrake switch signal output channel and targets. Optional, by default sends handbrake level [0,1] to the handbrake channel of parts and vehicles."
     }
   },
-  "required": ["type", "definition", "engine_outputs", "wheel_outputs", "gearbox_outputs"],
+  "required": ["type", "definition", "control_outputs"],
   "examples": [
     {
       "type": "machine_max:car_controller",
       "definition": "machine_max:ae86at_car_controller",
-      "engine_outputs": { "engine_control": ["engine"] },
-      "wheel_outputs": {
-        "wheel_control": [
-          "left_front_wheel_driver",
-          "right_front_wheel_driver",
-          "left_back_wheel_driver",
-          "right_back_wheel_driver"
+      "control_outputs": {
+        "car_control": [
+          "subsystem.machine_max.engine",
+          "subsystem.machine_max.left_front_wheel_driver",
+          "subsystem.machine_max.right_front_wheel_driver",
+          "subsystem.machine_max.left_back_wheel_driver",
+          "subsystem.machine_max.right_back_wheel_driver",
+          "subsystem.machine_max.gearbox"
         ]
-      },
-      "gearbox_outputs": { "gearbox_control": ["gearbox"] }
+      }
     }
   ]
 }

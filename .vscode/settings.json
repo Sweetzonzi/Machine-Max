@@ -1,17 +1,31 @@
 {
-  "json.schemas": [
-    {
-      "fileMatch": [
-        "spark_modules/*/parts/**/*.json"
-      ],
-      "url": "./src/main/resources/spark_modules/Machine-Max_Official_Pack/docs/zh_cn/schema/part_definition_schema.json"
-    },
-    {
-      "fileMatch": [
-        "spark_modules/*/subsystems/**/*.json"
-      ],
-      "url": "./src/main/resources/spark_modules/Machine-Max_Official_Pack/docs/zh_cn/schema/subsystem_definition_schema.json"
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "spark_modules/*/parts/**/*.json"
+            ],
+            "url": "./src/main/resources/spark_modules/Machine-Max_Official_Pack/docs/zh_cn/schema/part_definition_schema.json"
+        },
+        {
+            "fileMatch": [
+                "spark_modules/*/subsystems/**/*.json"
+            ],
+            "url": "./src/main/resources/spark_modules/Machine-Max_Official_Pack/docs/zh_cn/schema/subsystem_definition_schema.json"
+        }
+    ],
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "C:\\Users\\13680\\.jdks\\jbr_jcef-21.0.8-windows-x64-b1140.54",
+            "default": true
+        }
+    ],
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.jdt.ls.vmargs": "-Xmx2G",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "files.exclude": {
+        "**/.gradle": true,
+        "**/build": true,
+        "**/run": true
     }
-  ],
-  "java.compile.nullAnalysis.mode": "automatic"
 }
