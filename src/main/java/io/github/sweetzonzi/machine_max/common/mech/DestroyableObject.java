@@ -47,10 +47,10 @@ public abstract class DestroyableObject implements SyncedDataHolder, BFHurtTarge
     public final Level level;
     @Setter
     private int id = ENTITY_COUNTER.incrementAndGet();//客户端的ID应当根据收到的创建包更新
-    protected static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.FLOAT);
+    public static final EntityDataAccessor<Float> DATA_DURABILITY_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.FLOAT);
     protected static final EntityDataAccessor<Boolean> DATA_DESTROYED_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.BOOLEAN);
     protected static final EntityDataAccessor<Integer> DESTROY_TIME_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.INT);
-    ConcurrentLinkedQueue<Pair<Float, BFDamageContext>> accumulatedDamage = new ConcurrentLinkedQueue<>();
+    protected ConcurrentLinkedQueue<Pair<Float, BFDamageContext>> accumulatedDamage = new ConcurrentLinkedQueue<>();
     protected final SynchedEntityData syncedData;
     //运行中
     public int tickCount = 0;
