@@ -1,0 +1,14 @@
+{
+  "type": "point",
+  "mass": 0.12,
+  "gravity_factor": 1.0,
+  "drag_factor": 0.0003,
+  "radius": 0.01,
+  "base_velocity": 1000,
+  "base_penetration": 45,
+  "base_damage": 25,
+  "base_accuracy_mil": 2.0,
+  "penetration_velocity_coefficient": 1.3,
+  "damage_velocity_coefficient": 0.7,
+  "max_lifetime_ticks": 60
+}

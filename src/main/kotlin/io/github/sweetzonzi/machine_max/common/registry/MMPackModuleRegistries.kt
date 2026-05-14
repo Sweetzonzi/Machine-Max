@@ -17,6 +17,7 @@ object MMPackModuleRegistries {
         event.register(TemplateModule())//预装配结构体模板
         event.register(BlueprintModule())//自定义蓝图
         event.register(AssemblyModule())//自定义装配体
+        event.register(ProjectileModule())//自定义投射物
     }
 
     @JvmStatic

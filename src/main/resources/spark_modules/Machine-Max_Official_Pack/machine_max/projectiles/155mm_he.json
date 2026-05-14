@@ -1,0 +1,14 @@
+{
+  "type": "rigid",
+  "mass": 45,
+  "gravity_factor": 1.0,
+  "drag_factor": 0.001,
+  "radius": 0.078,
+  "base_velocity": 600,
+  "base_penetration": 80,
+  "base_damage": 500,
+  "base_accuracy_mil": 12.0,
+  "penetration_velocity_coefficient": 0,
+  "damage_velocity_coefficient": 0.3,
+  "max_lifetime_ticks": 400
+}

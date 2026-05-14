@@ -56,6 +56,19 @@ object MMDataComponents {
     }
 
     /**
+     * 保存在测试物品上的投射物类型路径
+     */
+    @JvmStatic
+    val PROJECTILE_TYPE = MachineMax.REGISTER.dataComponentType<ResourceLocation> {
+        id = "projectile_type"
+        factory = dataComponentBuilder {
+            persistent(ResourceLocation.CODEC)
+            networkSynchronized(ResourceLocation.STREAM_CODEC)
+            cacheEncoding()
+        }
+    }
+
+    /**
      * 保存在蓝图物品上的蓝图资源路径，用于重建载具
      */
     @JvmStatic

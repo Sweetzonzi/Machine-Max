@@ -143,6 +143,11 @@ public class MMPayloadRegistry {
                 ConnectorSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ConnectorSyncPayload::handler)
         );
+        sync.playToClient(//投射物命中视觉效果
+                ProjectileHitEffectPayload.TYPE,
+                ProjectileHitEffectPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ProjectileHitEffectPayload::handle)
+        );
         sync.playToClient(//向客户端发送载具数据，由客户端保存到本地文件
                 VehicleDataSavedPayload.TYPE,
                 VehicleDataSavedPayload.STREAM_CODEC,

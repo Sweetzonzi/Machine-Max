@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.common.recipe.BlueprintResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.recipe.ResearchRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMResources;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.PartType;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MaterialAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.connector.ConnectorStaticAttr;
@@ -46,6 +47,8 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, ConnectorStaticAttr> CONNECTORS = new ConcurrentHashMap<>();
     public static ConcurrentMap<ResourceLocation, PartType> PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
     public static ConcurrentMap<ResourceLocation, PartType> SERVER_PART_TYPES = new ConcurrentHashMap<>(); // key是自带构造函数生成的registryKey， value是暂存的PartType
+    public static ConcurrentMap<ResourceLocation, ProjectileType> PROJECTILE_TYPES = new ConcurrentHashMap<>();
+    public static ConcurrentMap<ResourceLocation, ProjectileType> SERVER_PROJECTILE_TYPES = new ConcurrentHashMap<>();
     public static ConcurrentMap<ResourceLocation, AbstractSubsystemStaticAttr> STATIC_SUBSYSTEM_ATTRS = new ConcurrentHashMap<>(); // 静态的子系统属性，所有子系统实例共享，表示单一型号如某型发动机
     public static ConcurrentMap<ResourceLocation, AbstractSubsystemStaticAttr> SERVER_STATIC_SUBSYSTEM_ATTRS = new ConcurrentHashMap<>(); // 静态的子系统属性，所有子系统实例共享，表示单一型号如某型发动机
     public static ConcurrentMap<ResourceLocation, VehicleData> TEMPLATES = new ConcurrentHashMap<>(); // 已组装的结构数据

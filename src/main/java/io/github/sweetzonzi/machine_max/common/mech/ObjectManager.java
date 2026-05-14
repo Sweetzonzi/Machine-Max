@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
@@ -43,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ObjectManager {
     public static final Map<Level, Map<UUID, VehicleCore>> levelVehicles = new ConcurrentHashMap<>();
     public static final Map<Level, Map<Integer, DestroyableObject>> levelDestroyableObjects = new ConcurrentHashMap<>();
+    public static final Map<Level, ProjectileManager> levelProjectileManagers = new ConcurrentHashMap<>();
     public static final Map<UUID, VehicleCore> serverAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> clientAllVehicles = HashMap.newHashMap(64);
     public static final Map<UUID, VehicleCore> serverVehiclesToAdd = new HashMap<>();
@@ -51,6 +53,10 @@ public class ObjectManager {
     public static void addDestroyableObject(DestroyableObject object) {
         Level level = object.level;
         levelDestroyableObjects.computeIfAbsent(level, k -> new ConcurrentHashMap<>()).put(object.getId(), object);
+    }
+
+    public static ProjectileManager getOrCreateProjectileManager(Level level) {
+        return levelProjectileManagers.computeIfAbsent(level, ProjectileManager::new);
     }
 
     public static void removeDestroyableObject(DestroyableObject object) {
@@ -212,8 +218,13 @@ public class ObjectManager {
 
     @SubscribeEvent
     public static void onPrePhysicsTick(PhysicsLevelTickEvent.Pre event) {
-        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).values().forEach(VehicleCore::prePhysicsTick);
-        levelDestroyableObjects.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::prePhysicsTick);
+        Level mcLevel = event.getLevel().getMcLevel();
+        levelVehicles.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(VehicleCore::prePhysicsTick);
+        levelDestroyableObjects.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::prePhysicsTick);
+        ProjectileManager pm = levelProjectileManagers.get(mcLevel);
+        if (pm != null) {
+            pm.updatePointProjectiles(event.getLevel());
+        }
     }
 
     @SubscribeEvent
@@ -339,7 +350,9 @@ public class ObjectManager {
 
     @SubscribeEvent//卸载服务端世界时清除相关数据
     public static void unloadVehicleData(LevelEvent.Unload event) {
-        if (event.getLevel().isClientSide()) {
+        Level level = (Level) event.getLevel();
+        levelProjectileManagers.remove(level);
+        if (level.isClientSide()) {
             VisualEffectHelper.attachPoints.clear();
             VisualEffectHelper.boundingBox = null;
             VisualEffectHelper.partToPlace = null;
