@@ -12,12 +12,35 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * 质点投射物。
+ * <p>
+ * 适用于小口径穿甲弹、APFSDS 长杆弹等高速投射物。
+ * 没有 JME 物理刚体，不受 Bullet 管理，运动由 {@link ProjectileManager} 的 SoA 批量积分驱动。
+ * <p>
+ * 继承 {@link DestroyableObject} 以复用其生命周期管理（自动注册/注销于
+ * {@link ObjectManager#levelDestroyableObjects}），但覆写了所有摧毁倒计时相关方法
+ * （投射物命中即消失，无需倒计时）。
+ * <p>
+ * 碰撞检测在 {@link ProjectileManager#updatePointProjectiles} 中通过 JME rayTest 完成。
+ */
 public class PointProjectile extends DestroyableObject implements IProjectile {
 
     private final ProjectileType projectileType;
     private boolean hasHit = false;
     private int lifetime;
 
+    /**
+     * 创建一个质点投射物。
+     * <p>
+     * 服务端：注册到 {@link ObjectManager} 和 {@link ProjectileManager} 的 SoA 数组。
+     * 客户端：仅创建实例等待服务端同步。
+     *
+     * @param level    维度
+     * @param type     投射物类型定义
+     * @param position 初始世界坐标（JME）
+     * @param velocity 初始速度矢量（JME，单位 m/s）
+     */
     public PointProjectile(Level level, ProjectileType type, Vector3f position, Vector3f velocity) {
         super(level);
         this.projectileType = type;
@@ -61,6 +84,8 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
         this.hasHit = true;
     }
 
+    // ========== 覆写 DestroyableObject 生命周期 ==========
+
     @Override
     public void preTick() {
         if (isRemoved) return;
@@ -95,25 +120,36 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
     public void postPhysicsTick() {
     }
 
+    /**
+     * 覆写：基于 hasHit / lifetime 判断摧毁，而非耐久度。
+     * 投射物命中或超时即视为摧毁。
+     */
     @Override
     protected boolean checkDestroyed() {
         return !isDestroyed() && (hasHit || lifetime <= 0);
     }
 
+    /**
+     * 覆写：跳过摧毁倒计时，立即标记为已摧毁。
+     * 投射物不需要像 SubPart 那样有销毁动画/倒计时。
+     */
     @Override
     protected void setDestroyed() {
         getSyncedData().set(DATA_DESTROYED_ID, true);
         getSyncedData().set(DESTROY_TIME_ID, 0);
     }
 
+    /** 覆写为空操作：投射物不需要摧毁倒计时推进 */
     @Override
     protected void tickDestroyTimer(int tick) {
     }
 
+    /** 覆写为空操作：投射物不接收伤害累积 */
     @Override
     protected void handleAccumulatedDamage() {
     }
 
+    /** 覆写为空操作：投射物不接收伤害累积 */
     @Override
     public void accumulateDamage(float damage, BFDamageContext ctx) {
     }
@@ -123,6 +159,9 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
         return 1;
     }
 
+    /**
+     * 质点投射物无物理刚体，调用此方法将抛出异常。
+     */
     @Override
     public @NotNull PhysicsLevel getPhysicsLevel() {
         throw new UnsupportedOperationException("PointProjectile has no physics body");
@@ -131,6 +170,8 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
     @Override
     protected void defineSyncedData(SynchedEntityData.Builder builder) {
     }
+
+    // ========== BFHurtTarget 实现 ==========
 
     @Override
     public boolean hurt(DamageSource source, float amount) {

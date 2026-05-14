@@ -1,33 +1,69 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
+import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
+import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
+/**
+ * 投射物类型数据定义。
+ * <p>
+ * 对应一个 {@code projectiles/*.json} 文件，使用 Mojang Codec 从 JSON 反序列化。
+ * 所有弹道参数在此定义，通过 {@link ProjectileModule} 加载至 {@link MMDynamicRes}，
+ * 运行时由 {@link IProjectile#getProjectileType()} 获取。
+ * <p>
+ * 字段语义参见设计文档 §4。速度-伤害模型见 {@link IProjectile} 中的幂函数实现。
+ */
 @Getter
 public class ProjectileType {
 
+    /** 投射物类型标识："point"（质点）或 "rigid"（刚体） */
     private final String type;
+
+    /** 质量（kg） */
     private final float mass;
+
+    /** 重力系数，1.0 = 标准重力，0 = 无重力 */
     private final float gravityFactor;
+
+    /** 空气阻力系数（速度²阻力），0 = 无阻力 */
     private final float dragFactor;
+
+    /** 碰撞半径（m），质点用于射线检测命中判定，刚体用于 SphereCollisionShape */
     private final float radius;
 
+    /** 参考速度（m/s），速度-伤害模型的基准速度 */
     private final float baseVelocity;
+
+    /** 参考速度下的穿深（mm RHA） */
     private final float basePenetration;
+
+    /** 参考速度下的伤害值 */
     private final float baseDamage;
+
+    /**
+     * 基础精度（密位/千分弧度）。
+     * 表示 1σ 散步角，与发射器的精度乘子叠加。
+     * 默认 5.0 密位 ≈ 每公里 5 米散布。
+     */
     private final float baseAccuracyMil;
 
+    /** 穿深速度系数。0 = 与速度无关，~1.43 = 经典德马尔公式 */
     private final float penetrationVelocityCoefficient;
+
+    /** 伤害速度系数。0 = 与速度无关 */
     private final float damageVelocityCoefficient;
 
+    /** 最大存活 tick 数（默认 200 tick = 10 秒 @ 20Hz） */
     private final int maxLifetimeTicks;
 
     private ResourceLocation registryKey;
 
+    /** Mojang Codec：将 JSON 反序列化为 ProjectileType */
     public static final Codec<ProjectileType> CODEC = RecordCodecBuilder.create(instance -> instance.group(
         Codec.STRING.fieldOf("type").forGetter(ProjectileType::getType),
         Codec.FLOAT.fieldOf("mass").forGetter(ProjectileType::getMass),
@@ -48,17 +84,9 @@ public class ProjectileType {
     ).apply(instance, ProjectileType::new));
 
     public ProjectileType(
-        String type,
-        float mass,
-        float gravityFactor,
-        float dragFactor,
-        float radius,
-        float baseVelocity,
-        float basePenetration,
-        float baseDamage,
-        float baseAccuracyMil,
-        float penetrationVelocityCoefficient,
-        float damageVelocityCoefficient,
+        String type, float mass, float gravityFactor, float dragFactor, float radius,
+        float baseVelocity, float basePenetration, float baseDamage, float baseAccuracyMil,
+        float penetrationVelocityCoefficient, float damageVelocityCoefficient,
         int maxLifetimeTicks
     ) {
         this.type = type;
@@ -75,15 +103,51 @@ public class ProjectileType {
         this.maxLifetimeTicks = maxLifetimeTicks;
     }
 
+    /**
+     * 设置注册键，由 {@link ProjectileModule} 在加载时调用。
+     * 每个 ProjectileType 仅可被注册一次。
+     *
+     * @param registryKey 资源键（如 {@code machine_max:20mm_ap}）
+     * @throws UnsupportedOperationException 重复注册时抛出
+     */
     public void setRegistryKey(ResourceLocation registryKey) {
         if (this.registryKey != null)
-            throw new UnsupportedOperationException("ProjectileType " + this.registryKey + " already registered, cannot register as " + registryKey + ".");
+            throw new UnsupportedOperationException(
+                "ProjectileType " + this.registryKey + " already registered, cannot register as " + registryKey + ".");
         this.registryKey = registryKey;
     }
 
+    /**
+     * 按资源键从全局缓存中获取投射物类型。
+     *
+     * @param level 当前维度（客户端/服务端自动分流）
+     * @param key   投射物类型资源键
+     * @return 投射物类型，或 null（未找到时）
+     */
     public static ProjectileType get(Level level, ResourceLocation key) {
         return level.isClientSide
             ? MMDynamicRes.PROJECTILE_TYPES.get(key)
             : MMDynamicRes.SERVER_PROJECTILE_TYPES.get(key);
     }
+
+    /**
+     * 按类型字段自动分派创建投射物实例。
+     * <p>
+     * "point" → {@link PointProjectile}，"rigid" → {@link RigidProjectile}。
+     * 调用方无需手动判断 type 字段。
+     *
+     * @param level    维度
+     * @param position 初始世界坐标（JME）
+     * @param velocity 初始速度矢量（JME，单位 m/s）
+     * @return 已创建的投射物实例
+     * @throws IllegalArgumentException 当 type 字段既非 "point" 也非 "rigid" 时抛出
+     */
+    public IProjectile create(Level level, Vector3f position, Vector3f velocity) {
+        return switch (type) {
+            case "point" -> new PointProjectile(level, this, position, velocity);
+            case "rigid" -> new RigidProjectile(level, this, position, velocity);
+            default -> throw new IllegalArgumentException("未知投射物类型: " + type);
+        };
+    }
+
 }

@@ -17,11 +17,22 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
+/**
+ * 投射物 Debug 线框渲染器（客户端仅）。
+ * <p>
+ * 在 {@link RenderLevelStageEvent.Stage#AFTER_TRANSLUCENT_BLOCKS} 阶段绘制：
+ * <ul>
+ *   <li><b>红色线段</b>：表示质点投射物的当前位置和运动方向</li>
+ *   <li><b>蓝色线框球体</b>：表示刚体投射物的碰撞体积</li>
+ *   <li><b>黄色</b>：即将超时的投射物（剩余寿命 &lt; 10 tick）</li>
+ * </ul>
+ */
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
 public class ClientProjectileRenderer {
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
+        // 在所有不透明/透明方块渲染完成后绘制
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
 
         Level level = Minecraft.getInstance().level;
@@ -31,7 +42,10 @@ public class ClientProjectileRenderer {
         if (pm == null) return;
 
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        Vector3f cameraPos = new Vector3f((float) camera.getPosition().x, (float) camera.getPosition().y, (float) camera.getPosition().z);
+        Vector3f cameraPos = new Vector3f(
+            (float) camera.getPosition().x,
+            (float) camera.getPosition().y,
+            (float) camera.getPosition().z);
 
         RenderSystem.setShader(GameRenderer::getRendertypeLinesShader);
         RenderSystem.lineWidth(2f);
@@ -39,6 +53,7 @@ public class ClientProjectileRenderer {
         Tesselator tesselator = Tesselator.getInstance();
         BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR);
 
+        // 绘制质点投射物轨迹
         for (int i = 0; i < pm.count; i++) {
             if (!pm.alive[i]) continue;
 
@@ -49,15 +64,14 @@ public class ClientProjectileRenderer {
 
             float r = 1f, g = 0f, b = 0f;
             if (pm.lifetime[i] < 10) {
-                r = 1f;
-                g = 1f;
-                b = 0f;
+                r = 1f; g = 1f; b = 0f; // 即将超时 → 黄色
             }
 
             buffer.addVertex(prevX - cameraPos.x, prevY - cameraPos.y, prevZ - cameraPos.z).setColor(r, g, b, 1f);
             buffer.addVertex(currX - cameraPos.x, currY - cameraPos.y, currZ - cameraPos.z).setColor(r, g, b, 1f);
         }
 
+        // 绘制刚体投射物线框球体
         var objects = ObjectManager.levelDestroyableObjects.get(level);
         if (objects != null) {
             for (DestroyableObject obj : objects.values()) {
@@ -72,6 +86,7 @@ public class ClientProjectileRenderer {
         BufferUploader.drawWithShader(buffer.build());
     }
 
+    /** 绘制球体线框（经纬线方式，12×12 段） */
     private static void drawSphereWireframe(BufferBuilder buffer, Vector3f center, float radius,
                                               float r, float g, float b, Vector3f cameraPos) {
         int segments = 12;

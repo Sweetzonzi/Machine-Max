@@ -27,7 +27,7 @@ abstract public class DestroyableRigidObject extends DestroyableObject implement
     public final PhysicsRigidBody body;
     private final HashMap<String, PhysicsCollisionObject> allPhysicsBodies = new HashMap<>();
     protected boolean updateLock = true;//是否禁止同步应用位姿数据到刚体
-    protected static final EntityDataAccessor<Boolean> IS_ACTIVE_ID = SynchedEntityData.defineId(DestroyableObject.class, EntityDataSerializers.BOOLEAN);
+    protected static final EntityDataAccessor<Boolean> IS_ACTIVE_ID = SynchedEntityData.defineId(DestroyableRigidObject.class, EntityDataSerializers.BOOLEAN);
 
     protected DestroyableRigidObject(Level level, CompoundCollisionShape shape, float mass) {
         super(level);
