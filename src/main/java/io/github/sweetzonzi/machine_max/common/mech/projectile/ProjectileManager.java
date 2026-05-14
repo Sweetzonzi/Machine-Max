@@ -204,7 +204,7 @@ public class ProjectileManager {
                         break label;
                     case SubPart subPart:
                         HitBox hitBox = subPart.getHitBox(result.triangleIndex());
-                        if (!hitBox.isActive()) continue;
+                        if (!hitBox.isActive()) continue; // 忽略未激活碰撞体积
                         break;
                     case MMPartEntity mmPartEntity:
                         continue; // 忽略部件实体

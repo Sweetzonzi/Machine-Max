@@ -21,8 +21,8 @@ import net.minecraft.world.level.Level;
 @Getter
 public class ProjectileType {
 
-    /** 投射物类型标识："point"（质点）或 "rigid"（刚体） */
-    private final String type;
+    /** 投射物类型（枚举），JSON 中以字符串 "point" / "rigid" 读写 */
+    private final ProjectileTypeEnum type;
 
     /** 质量（kg） */
     private final float mass;
@@ -61,11 +61,16 @@ public class ProjectileType {
     /** 最大存活 tick 数（默认 200 tick = 10 秒 @ 20Hz） */
     private final int maxLifetimeTicks;
 
+    /** 注册键，由 {@link ProjectileModule} 加载时赋值 */
     private ResourceLocation registryKey;
+
+    /** 字符串↔枚举互转 Codec */
+    private static final Codec<ProjectileTypeEnum> ENUM_CODEC =
+        Codec.STRING.xmap(ProjectileTypeEnum::fromString, ProjectileTypeEnum::getSerializedName);
 
     /** Mojang Codec：将 JSON 反序列化为 ProjectileType */
     public static final Codec<ProjectileType> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-        Codec.STRING.fieldOf("type").forGetter(ProjectileType::getType),
+        ENUM_CODEC.fieldOf("type").forGetter(ProjectileType::getType),
         Codec.FLOAT.fieldOf("mass").forGetter(ProjectileType::getMass),
         Codec.FLOAT.optionalFieldOf("gravity_factor", 1.0f).forGetter(ProjectileType::getGravityFactor),
         Codec.FLOAT.optionalFieldOf("drag_factor", 0f).forGetter(ProjectileType::getDragFactor),
@@ -84,7 +89,7 @@ public class ProjectileType {
     ).apply(instance, ProjectileType::new));
 
     public ProjectileType(
-        String type, float mass, float gravityFactor, float dragFactor, float radius,
+        ProjectileTypeEnum type, float mass, float gravityFactor, float dragFactor, float radius,
         float baseVelocity, float basePenetration, float baseDamage, float baseAccuracyMil,
         float penetrationVelocityCoefficient, float damageVelocityCoefficient,
         int maxLifetimeTicks
@@ -131,23 +136,21 @@ public class ProjectileType {
     }
 
     /**
-     * 按类型字段自动分派创建投射物实例。
+     * 按类型枚举自动分派创建投射物实例。
      * <p>
-     * "point" → {@link PointProjectile}，"rigid" → {@link RigidProjectile}。
-     * 调用方无需手动判断 type 字段。
+     * {@link ProjectileTypeEnum#POINT} → {@link PointProjectile}，
+     * {@link ProjectileTypeEnum#RIGID} → {@link RigidProjectile}。
+     * 调用方无需手动判断。
      *
      * @param level    维度
      * @param position 初始世界坐标（JME）
      * @param velocity 初始速度矢量（JME，单位 m/s）
      * @return 已创建的投射物实例
-     * @throws IllegalArgumentException 当 type 字段既非 "point" 也非 "rigid" 时抛出
      */
     public IProjectile create(Level level, Vector3f position, Vector3f velocity) {
         return switch (type) {
-            case "point" -> new PointProjectile(level, this, position, velocity);
-            case "rigid" -> new RigidProjectile(level, this, position, velocity);
-            default -> throw new IllegalArgumentException("未知投射物类型: " + type);
+            case POINT -> new PointProjectile(level, this, position, velocity);
+            case RIGID -> new RigidProjectile(level, this, position, velocity);
         };
     }
-
 }
