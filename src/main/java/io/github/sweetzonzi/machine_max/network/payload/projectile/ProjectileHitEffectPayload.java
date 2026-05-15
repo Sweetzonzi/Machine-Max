@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.network.payload;
+package io.github.sweetzonzi.machine_max.network.payload.projectile;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import net.minecraft.core.particles.ParticleTypes;

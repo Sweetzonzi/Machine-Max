@@ -11,6 +11,8 @@ import io.github.sweetzonzi.machine_max.common.mech.projectile.RigidProjectile;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -47,12 +49,8 @@ public class ClientProjectileRenderer {
             (float) camera.getPosition().y,
             (float) camera.getPosition().z);
 
-        RenderSystem.setShader(GameRenderer::getRendertypeLinesShader);
-        RenderSystem.lineWidth(2f);
-
-        Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR);
-
+        MultiBufferSource.BufferSource bufferSource = Minecraft.getInstance().renderBuffers().bufferSource();
+        var buffer = bufferSource.getBuffer(RenderType.lines());
         // 绘制质点投射物轨迹
         for (int i = 0; i < pm.count; i++) {
             if (!pm.alive[i]) continue;
@@ -67,49 +65,10 @@ public class ClientProjectileRenderer {
                 r = 1f; g = 1f; b = 0f; // 即将超时 → 黄色
             }
 
-            buffer.addVertex(prevX - cameraPos.x, prevY - cameraPos.y, prevZ - cameraPos.z).setColor(r, g, b, 1f);
-            buffer.addVertex(currX - cameraPos.x, currY - cameraPos.y, currZ - cameraPos.z).setColor(r, g, b, 1f);
-        }
-
-        // 绘制刚体投射物线框球体
-        var objects = ObjectManager.levelDestroyableObjects.get(level);
-        if (objects != null) {
-            for (DestroyableObject obj : objects.values()) {
-                if (obj instanceof RigidProjectile rp && rp.isAlive()) {
-                    Vector3f pos = rp.getPosition();
-                    float radius = rp.getRadius();
-                    drawSphereWireframe(buffer, pos, radius, 0f, 0f, 1f, cameraPos);
-                }
-            }
-        }
-
-        BufferUploader.drawWithShader(buffer.build());
-    }
-
-    /** 绘制球体线框（经纬线方式，12×12 段） */
-    private static void drawSphereWireframe(BufferBuilder buffer, Vector3f center, float radius,
-                                              float r, float g, float b, Vector3f cameraPos) {
-        int segments = 12;
-        float cx = center.x - cameraPos.x;
-        float cy = center.y - cameraPos.y;
-        float cz = center.z - cameraPos.z;
-
-        for (int ring = 0; ring < segments; ring++) {
-            float phi = (float) (ring * Math.PI * 2 / segments);
-            float phiNext = (float) ((ring + 1) * Math.PI * 2 / segments);
-            for (int dot = 0; dot < segments; dot++) {
-                float theta = (float) (dot * Math.PI / segments);
-
-                float x1 = cx + radius * (float) (Math.sin(theta) * Math.cos(phi));
-                float y1 = cy + radius * (float) (Math.cos(theta));
-                float z1 = cz + radius * (float) (Math.sin(theta) * Math.sin(phi));
-                float x2 = cx + radius * (float) (Math.sin(theta) * Math.cos(phiNext));
-                float y2 = cy + radius * (float) (Math.cos(theta));
-                float z2 = cz + radius * (float) (Math.sin(theta) * Math.sin(phiNext));
-
-                buffer.addVertex(x1, y1, z1).setColor(r, g, b, 1f);
-                buffer.addVertex(x2, y2, z2).setColor(r, g, b, 1f);
-            }
+            buffer.addVertex(prevX - cameraPos.x, prevY - cameraPos.y, prevZ - cameraPos.z)
+                    .setNormal(0, 1, 0).setColor(r, g, b, 1f);
+            buffer.addVertex(currX - cameraPos.x, currY - cameraPos.y, currZ - cameraPos.z)
+                    .setNormal(0, 1, 0).setColor(r, g, b, 1f);
         }
     }
 }

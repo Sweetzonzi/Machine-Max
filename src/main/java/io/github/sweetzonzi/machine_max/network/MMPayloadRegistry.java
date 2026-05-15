@@ -8,6 +8,8 @@ import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationC
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationStartPayload;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitEffectPayload;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpawnPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
 import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.bus.api.SubscribeEvent;

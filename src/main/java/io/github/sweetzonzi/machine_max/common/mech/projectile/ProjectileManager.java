@@ -13,7 +13,7 @@ import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
-import io.github.sweetzonzi.machine_max.network.payload.ProjectileHitEffectPayload;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitEffectPayload;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -150,7 +150,7 @@ public class ProjectileManager {
      * <p>
      * 仅更新位置和速度字段；寿命由 {@link #tickAllLifetimes()} 统一管理。
      *
-     * @param objId 刚体投射物的 DestroyableObject ID
+     * @param targetObjId 刚体投射物的 DestroyableObject ID
      * @param pos   刚体当前世界坐标（JME）
      * @param vel   刚体当前速度（JME）
      */
@@ -420,8 +420,9 @@ public class ProjectileManager {
             label:
             for (PhysicsRayTestResult result : results) {
                 PhysicsCollisionObject obj = result.getCollisionObject();
-                if (obj.getCollisionGroup() != CollisionGroups.PHYSICS_BODY
-                        && obj.getCollisionGroup() != CollisionGroups.TERRAIN)
+                if (obj.getCollisionGroup() != CollisionGroups.PHYSICS_BODY // 零部件刚体
+                        && obj.getCollisionGroup() != CollisionGroups.TERRAIN // 地形
+                            && obj.getCollisionGroup() != CollisionGroups.PAWN) // 一般实体的刚体代理
                     continue;
                 if (!(obj instanceof PhysicsRigidBody body)) continue;
 
@@ -442,7 +443,7 @@ public class ProjectileManager {
                         HitBox hitBox = subPart.getHitBox(result.triangleIndex());
                         if (!hitBox.isActive()) continue;
                         break;
-                    case MMPartEntity mmPartEntity:
+                    case MMPartEntity ignored:
                         continue;
                     default:
                         break;

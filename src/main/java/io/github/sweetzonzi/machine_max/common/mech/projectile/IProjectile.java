@@ -5,6 +5,7 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -104,6 +105,8 @@ public interface IProjectile {
      */
     void markHit();
 
+    Level getLevel();
+
     // ========== 速度-伤害模型 ==========
 
     /**
@@ -157,7 +160,7 @@ public interface IProjectile {
      * @return 实际造成的伤害量（协议层计算值，可能被原版护甲二次减免）
      */
     default float dealDamage(BFHurtTarget target, Vec3 hitPoint, Vec3 hitNormal) {
-        DamageSource source = target.getBFEntity().damageSources().generic();
+        DamageSource source = getLevel().damageSources().generic();
         BFDamageContext ctx = BFDamageContext.builder()
             .source(source)
             .baseDamage(calculateCurrentDamage())

@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.network.payload;
+package io.github.sweetzonzi.machine_max.network.payload.projectile;
 
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
