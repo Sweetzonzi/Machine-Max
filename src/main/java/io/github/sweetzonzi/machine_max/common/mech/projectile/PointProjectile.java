@@ -7,6 +7,7 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.network.payload.ProjectileSpawnPayload;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
@@ -49,6 +50,8 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
         if (!level.isClientSide()) {
             addToLevel();
             ObjectManager.getOrCreateProjectileManager(level).addPointProjectile(this);
+            ProjectileSpawnPayload.broadcast(level, getId(), type.getRegistryKey(),
+                position, velocity, type.getMaxLifetimeTicks(), false);
         }
     }
 

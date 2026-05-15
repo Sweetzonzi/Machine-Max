@@ -154,9 +154,9 @@ public class ProjectileManager {
      * @param pos   刚体当前世界坐标（JME）
      * @param vel   刚体当前速度（JME）
      */
-    public void writebackRigidState(int objId, Vector3f pos, Vector3f vel) {
+    public void writebackRigidState(int targetObjId, Vector3f pos, Vector3f vel) {
         for (int i = 0; i < count; i++) {
-            if (objId[i] == objId && alive[i]) {
+            if (this.objId[i] == targetObjId && alive[i]) {
                 posX[i] = pos.x;
                 posY[i] = pos.y;
                 posZ[i] = pos.z;
@@ -169,9 +169,9 @@ public class ProjectileManager {
     }
 
     /** 检查指定的 DestroyableObject ID 是否由此管理器管理 */
-    public boolean containsProjectile(int objId) {
+    public boolean containsProjectile(int targetObjId) {
         for (int i = 0; i < count; i++) {
-            if (objId[i] == objId) return true;
+            if (this.objId[i] == targetObjId) return true;
         }
         return false;
     }
@@ -239,11 +239,19 @@ public class ProjectileManager {
 
     /**
      * 物理线程 Pre 阶段。
-     * 调用各投射物的 {@code prePhysicsTick()}，然后执行质点投射物批量积分+碰撞检测。
+     * 调用各投射物的 {@code prePhysicsTick()}，然后：
+     * <ul>
+     *   <li>服务端：执行质点投射物批量积分+碰撞检测</li>
+     *   <li>客户端：执行简化积分外推（无碰撞检测）</li>
+     * </ul>
      */
     public void prePhysicsTick(PhysicsLevel physicsLevel) {
         forEachPrePhysicsTick();
-        updatePointProjectiles(physicsLevel);
+        if (level.isClientSide()) {
+            clientExtrapolate(physicsLevel);
+        } else {
+            updatePointProjectiles(physicsLevel);
+        }
     }
 
     /**
@@ -293,6 +301,56 @@ public class ProjectileManager {
             if (obj instanceof RigidProjectile) continue;
             obj.setPosition(new Vector3f(posX[i], posY[i], posZ[i]));
             obj.setLinearVelocity(new Vector3f(velX[i], velY[i], velZ[i]));
+        }
+    }
+
+    /**
+     * 客户端自主外推所有投射物（质点+刚体的简化积分，无碰撞检测）。
+     * <p>
+     * 服务端仅广播关键事件（创建/命中/超时），客户端依赖自主外推来维持帧间
+     * 位置连续性，供 {@code ClientProjectileRenderer} 读取。
+     * <p>
+     * 与服务端 {@link #updatePointProjectiles} 的区别：不执行 rayTest、不发起伤害、
+     * 不广播命中特效。仅做半隐式 Euler 积分和死条清理。
+     *
+     * @param physicsLevel 客户端物理世界
+     */
+    private void clientExtrapolate(PhysicsLevel physicsLevel) {
+        for (int i = count - 1; i >= 0; i--) {
+            if (!alive[i]) swapRemove(i);
+        }
+        if (count == 0) return;
+
+        float dt = 1.0f / physicsLevel.getTps();
+
+        for (int i = 0; i < count; i++) {
+            if (!alive[i]) continue;
+
+            int tIdx = typeIndex[i];
+            float mass = (tIdx >= 0 && tIdx < typeCache.length) ? typeCache[tIdx].getMass() : 1.0f;
+            float gravityFactor = (tIdx >= 0 && tIdx < typeCache.length) ? typeCache[tIdx].getGravityFactor() : 1.0f;
+            float dragFactor = (tIdx >= 0 && tIdx < typeCache.length) ? typeCache[tIdx].getDragFactor() : 0f;
+
+            float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
+
+            float gravityAccY = -gravityFactor * 9.81f;
+            float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
+            if (dragFactor > 1e-8f && speed > 1e-8f) {
+                float dragForce = dragFactor * speed * speed;
+                float dragAcc = dragForce / mass;
+                float invSpeed = 1f / speed;
+                dragAccX = dragAcc * (-velX[i] * invSpeed);
+                dragAccY = dragAcc * (-velY[i] * invSpeed);
+                dragAccZ = dragAcc * (-velZ[i] * invSpeed);
+            }
+
+            velX[i] += dragAccX * dt;
+            velY[i] += (gravityAccY + dragAccY) * dt;
+            velZ[i] += dragAccZ * dt;
+
+            posX[i] += velX[i] * dt;
+            posY[i] += velY[i] * dt;
+            posZ[i] += velZ[i] * dt;
         }
     }
 

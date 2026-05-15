@@ -10,6 +10,7 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.network.payload.ProjectileSpawnPayload;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -64,6 +65,8 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
             PhysicsBodyExtensionKt.setOwner(body, this);
             addToLevel();
             ObjectManager.getOrCreateProjectileManager(level).addRigidProjectile(this);
+            ProjectileSpawnPayload.broadcast(level, getId(), type.getRegistryKey(),
+                position, velocity, type.getMaxLifetimeTicks(), true);
         }
     }
 
