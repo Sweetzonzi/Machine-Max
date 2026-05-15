@@ -28,7 +28,6 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
 
     private final ProjectileType projectileType;
     private boolean hasHit = false;
-    private int lifetime;
 
     /**
      * 创建一个质点投射物。
@@ -44,7 +43,6 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
     public PointProjectile(Level level, ProjectileType type, Vector3f position, Vector3f velocity) {
         super(level);
         this.projectileType = type;
-        this.lifetime = type.getMaxLifetimeTicks();
         setPosition(position);
         setLinearVelocity(velocity);
 
@@ -69,9 +67,20 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
         return !isRemoved && !hasHit;
     }
 
+    /**
+     * 返回剩余存活 tick 数。
+     * <p>
+     * 寿命的权威来源是 {@link ProjectileManager} 的 SoA 数组，
+     * 此处按对象 ID 反向查询。查询开销 O(n)，但 n 通常很小。
+     */
     @Override
     public int getLifetime() {
-        return lifetime;
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm == null) return 0;
+        for (int i = 0; i < pm.count; i++) {
+            if (pm.objId[i] == getId()) return pm.lifetime[i];
+        }
+        return 0;
     }
 
     @Override
@@ -91,20 +100,19 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
         if (isRemoved) return;
         tickCount++;
         if (hurtTime > 0) hurtTime--;
-        lifetime--;
         if (!level.isClientSide() && checkDestroyed()) {
             setDestroyed();
         }
     }
 
+    /**
+     * 覆写：跳过逐 tick syncToClient。
+     * <p>
+     * 投射物网络同步采用关键事件模式（创建/命中/超时），
+     * 不每 tick 同步。仅检查摧毁后立即清理。
+     */
     @Override
     public void postTick() {
-        if (!level.isClientSide()) {
-            if (isDestroyed()) {
-                tickDestroyTimer(1);
-            }
-            syncToClient();
-        }
         if (isDestroyed() && getDestroyTime() <= 0) {
             this.destroy();
         }
@@ -121,12 +129,12 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
     }
 
     /**
-     * 覆写：基于 hasHit / lifetime 判断摧毁，而非耐久度。
-     * 投射物命中或超时即视为摧毁。
+     * 覆写：基于 hasHit / SoA 寿命判断摧毁，而非耐久度。
+     * 寿命权威来源为 {@link ProjectileManager} SoA 数组。
      */
     @Override
     protected boolean checkDestroyed() {
-        return !isDestroyed() && (hasHit || lifetime <= 0);
+        return !isDestroyed() && (hasHit || getLifetime() <= 0);
     }
 
     /**

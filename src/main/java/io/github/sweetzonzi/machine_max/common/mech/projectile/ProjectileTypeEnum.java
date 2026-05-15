@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
+import lombok.Getter;
+
 /**
  * 投射物物理模型类型枚举。
  * <p>
@@ -7,6 +9,7 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
  * 通过 {@link #fromString(String)} 转换为枚举，
  * 通过 {@link #getSerializedName()} 序列化为字符串。
  */
+@Getter
 public enum ProjectileTypeEnum {
 
     /** 质点投射物：无 JME 物理刚体，运动由 SoA 批量积分驱动，JME rayTest 碰撞检测 */
@@ -19,13 +22,6 @@ public enum ProjectileTypeEnum {
 
     ProjectileTypeEnum(String serializedName) {
         this.serializedName = serializedName;
-    }
-
-    /**
-     * @return JSON 中使用的字符串标识
-     */
-    public String getSerializedName() {
-        return serializedName;
     }
 
     /**

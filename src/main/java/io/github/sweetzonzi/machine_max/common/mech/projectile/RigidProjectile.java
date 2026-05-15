@@ -9,6 +9,7 @@ import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
+import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -33,13 +34,13 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
 
     private final ProjectileType projectileType;
     private boolean hasHit = false;
-    private int lifetime;
+    // 注：寿命权威来源为 ProjectileManager SoA 数组，不再持有本地 lifetime
 
     /**
      * 创建一个刚体投射物。
      * <p>
      * 服务端：创建球体 CompoundCollisionShape → 初始化刚体 → 设置 CCD（连续碰撞检测）
-     * → 注册到物理世界。
+     * → 注册到物理世界 → 注册到 ProjectileManager SoA。
      *
      * @param level    维度
      * @param type     投射物类型定义
@@ -49,7 +50,6 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
     public RigidProjectile(Level level, ProjectileType type, Vector3f position, Vector3f velocity) {
         super(level, createCollisionShape(type.getRadius()), type.getMass());
         this.projectileType = type;
-        this.lifetime = type.getMaxLifetimeTicks();
 
         setPosition(position);
         setLinearVelocity(velocity);
@@ -63,6 +63,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
             body.setLinearVelocity(velocity);
             PhysicsBodyExtensionKt.setOwner(body, this);
             addToLevel();
+            ObjectManager.getOrCreateProjectileManager(level).addRigidProjectile(this);
         }
     }
 
@@ -90,7 +91,12 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
 
     @Override
     public int getLifetime() {
-        return lifetime;
+        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+        if (pm == null) return 0;
+        for (int i = 0; i < pm.count; i++) {
+            if (pm.objId[i] == getId()) return pm.lifetime[i];
+        }
+        return 0;
     }
 
     @Override
@@ -110,12 +116,17 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
         if (isRemoved) return;
         tickCount++;
         if (hurtTime > 0) hurtTime--;
-        lifetime--;
         if (!level.isClientSide() && checkDestroyed()) {
             setDestroyed();
         }
     }
 
+    /**
+     * 覆写：仅从刚体同步位姿，不逐 tick syncToClient。
+     * <p>
+     * 投射物网络同步采用关键事件模式（创建/命中/超时），
+     * 摧毁后立即清理，不走倒计时。
+     */
     @Override
     public void postTick() {
         // 服务端：从刚体同步位姿/速度到 SynchedEntityData
@@ -129,12 +140,6 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
                 updateLock = false;
                 checkBodyCollision();
             }
-        }
-        if (!level.isClientSide()) {
-            if (isDestroyed()) {
-                super.tickDestroyTimer(1);
-            }
-            syncToClient();
         }
         if (isDestroyed() && getDestroyTime() <= 0) {
             this.destroy();
@@ -178,12 +183,21 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
 
     @Override
     public void postPhysicsTick() {
+        // 将 Bullet 刚体状态回写到 SoA（物理线程，供渲染器和其他模块读取）
+        if (!level.isClientSide() && body.isInWorld()) {
+            ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
+            if (pm != null) {
+                pm.writebackRigidState(getId(),
+                    body.getPhysicsLocation(null),
+                    body.getLinearVelocity(null));
+            }
+        }
     }
 
-    /** 覆写：基于 hasHit / lifetime 判断摧毁 */
+    /** 覆写：基于 hasHit / SoA 寿命判断摧毁 */
     @Override
     protected boolean checkDestroyed() {
-        return !isDestroyed() && (hasHit || lifetime <= 0);
+        return !isDestroyed() && (hasHit || getLifetime() <= 0);
     }
 
     /** 覆写：跳过摧毁倒计时 */

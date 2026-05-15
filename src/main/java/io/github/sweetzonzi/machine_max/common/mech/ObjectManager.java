@@ -204,33 +204,68 @@ public class ObjectManager {
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onPreTick(LevelTickEvent.Pre event) {
-        levelVehicles.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).values().forEach(vehicleCore -> {
+        Level mcLevel = event.getLevel();
+        // 投射物管理器生命周期 Pre（含寿命递减 + 投射物 preTick）
+        ProjectileManager pm = levelProjectileManagers.get(mcLevel);
+        if (pm != null) {
+            pm.preTick();
+        }
+        levelVehicles.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(vehicleCore -> {
             updateVehicleChunk(vehicleCore); // 先更新区块加载状态，确保 preTick 中 inLoadedChunk 已是最新值
             vehicleCore.preTick();
         });
-        levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::preTick);
+        // 非投射物的 DestroyableObject preTick（投射物已由 pm.preTick 处理）
+        levelDestroyableObjects.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(obj -> {
+            if (pm != null && pm.containsProjectile(obj.getId())) return;
+            obj.preTick();
+        });
     }
 
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onPostTick(LevelTickEvent.Post event) {
-        levelDestroyableObjects.computeIfAbsent(event.getLevel(), k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::postTick);
+        Level mcLevel = event.getLevel();
+        ProjectileManager pm = levelProjectileManagers.get(mcLevel);
+        // 非投射物的 DestroyableObject postTick（投射物已由 pm.postTick 处理）
+        levelDestroyableObjects.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(obj -> {
+            if (pm != null && pm.containsProjectile(obj.getId())) return;
+            obj.postTick();
+        });
+        // 投射物管理器生命周期 Post（含投射物 postTick + SoA → SynchedEntityData）
+        if (pm != null) {
+            pm.postTick();
+        }
     }
 
     @SubscribeEvent
     public static void onPrePhysicsTick(PhysicsLevelTickEvent.Pre event) {
         Level mcLevel = event.getLevel().getMcLevel();
         levelVehicles.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(VehicleCore::prePhysicsTick);
-        levelDestroyableObjects.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::prePhysicsTick);
         ProjectileManager pm = levelProjectileManagers.get(mcLevel);
+        // 非投射物的 DestroyableObject prePhysicsTick（投射物已由 pm.prePhysicsTick 处理）
+        levelDestroyableObjects.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(obj -> {
+            if (pm != null && pm.containsProjectile(obj.getId())) return;
+            obj.prePhysicsTick();
+        });
+        // 投射物管理器生命周期 PrePhysics（含投射物 prePhysicsTick + 质点批量积分碰撞）
         if (pm != null) {
-            pm.updatePointProjectiles(event.getLevel());
+            pm.prePhysicsTick(event.getLevel());
         }
     }
 
     @SubscribeEvent
     public static void onPostPhysicsTick(PhysicsLevelTickEvent.Post event) {
-        levelVehicles.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).values().forEach(VehicleCore::postPhysicsTick);
-        levelDestroyableObjects.computeIfAbsent(event.getLevel().getMcLevel(), k -> new ConcurrentHashMap<>()).values().forEach(DestroyableObject::postPhysicsTick);
+        Level mcLevel = event.getLevel().getMcLevel();
+        levelVehicles.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(VehicleCore::postPhysicsTick);
+        ProjectileManager pm = levelProjectileManagers.get(mcLevel);
+        // 非投射物的 DestroyableObject postPhysicsTick（投射物已由 pm.postPhysicsTick 处理）
+        levelDestroyableObjects.computeIfAbsent(mcLevel, k -> new ConcurrentHashMap<>()).values().forEach(obj -> {
+            if (pm != null && pm.containsProjectile(obj.getId())) return;
+            obj.postPhysicsTick();
+        });
+        // 投射物管理器生命周期 PostPhysics（含投射物 postPhysicsTick → 刚体回写 SoA）
+        if (pm != null) {
+            pm.postPhysicsTick();
+        }
     }
 
     private static void updateVehicleChunk(VehicleCore vehicle) {
