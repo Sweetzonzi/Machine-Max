@@ -127,41 +127,41 @@ public class CameraController {
             anglesInitialized = true;
         }
 
-        //更新计算相机相对其所处坐标系的旋转
-        float lerp = 0.25f;
-        pitch = (1 - lerp) * pitch + lerp * targetViewPitch;
-        yaw = (1 - lerp) * yaw + lerp * targetViewYaw;
-        roll = (1 - lerp) * roll + lerp * targetViewRoll;
         AbstractControllableSubsystem subsystem = ((IEntityMixin) entity).machine_Max$getControllingSubsystem();
-        if (subsystem instanceof SeatSubsystem seat && (type.isFirstPerson() || ControlPreference.shouldFollowPose(seat))) {
-            //基于附体坐标系旋转相机
-            Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
-            //TODO: combine的TempVars.get()会在未找到座椅连接点时IndexOutOfBoundsException，检查逻辑
-            MyMath.combine(new Transform(Vector3f.ZERO, SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
-                            (float) Math.toRadians(roll),
-                            (float) Math.toRadians(-yaw),
-                            (float) Math.toRadians(pitch)))),
-                    extra, tmpViewTransform);
-            //计算对应欧拉角
-            org.joml.Vector3f rot = new org.joml.Vector3f();
-            SparkMathKt.toQuaternionf(tmpViewTransform.getRotation()).getEulerAnglesYXZ(rot);
-            //计算相机瞄准方向向量
-            aimDirection = new Vec3(Math.cos(rot.x) * Math.sin(rot.y), Math.sin(rot.x), Math.cos(rot.x) * Math.cos(rot.y));
-            rot.mul((float) (180 / Math.PI));
-            //应用旋转
-            event.setPitch(rot.x);
-            event.setYaw(-rot.y);
-            event.setRoll(rot.z);
-        } else {
-            //基于世界坐标系旋转相机 TODO: 玩家朝向有bug
-            event.setPitch(pitch);
-            event.setYaw(yaw);
-            event.setRoll(roll);
-            aimDirection = new Vec3(Math.cos(aimPitch) * Math.sin(aimYaw), Math.sin(aimPitch), Math.cos(aimPitch) * Math.cos(aimYaw));
-        }
-        //非自由视角模式下，逐渐回正视角
-        if (!RawInputHandler.freeCam) {
-            if (subsystem instanceof SeatSubsystem seat) {
+        if (subsystem instanceof SeatSubsystem seat) {
+            // 乘坐载具时：平滑插值并应用载具坐标系旋转
+            float lerp = 0.25f;
+            pitch = (1 - lerp) * pitch + lerp * targetViewPitch;
+            yaw = (1 - lerp) * yaw + lerp * targetViewYaw;
+            roll = (1 - lerp) * roll + lerp * targetViewRoll;
+            if (type.isFirstPerson() || ControlPreference.shouldFollowPose(seat)) {
+                //基于附体坐标系旋转相机
+                Transform extra = SparkMathKt.lerp(oldExtraTransform, extraTransform, partialTick);
+                //TODO: combine的TempVars.get()会在未找到座椅连接点时IndexOutOfBoundsException，检查逻辑
+                MyMath.combine(new Transform(Vector3f.ZERO, SparkMathKt.toBQuaternion(new Quaternionf().rotateZYX(
+                                (float) Math.toRadians(roll),
+                                (float) Math.toRadians(-yaw),
+                                (float) Math.toRadians(pitch)))),
+                        extra, tmpViewTransform);
+                //计算对应欧拉角
+                org.joml.Vector3f rot = new org.joml.Vector3f();
+                SparkMathKt.toQuaternionf(tmpViewTransform.getRotation()).getEulerAnglesYXZ(rot);
+                //计算相机瞄准方向向量
+                aimDirection = new Vec3(Math.cos(rot.x) * Math.sin(rot.y), Math.sin(rot.x), Math.cos(rot.x) * Math.cos(rot.y));
+                rot.mul((float) (180 / Math.PI));
+                //应用旋转
+                event.setPitch(rot.x);
+                event.setYaw(-rot.y);
+                event.setRoll(rot.z);
+            } else {
+                //基于世界坐标系旋转相机 TODO: 玩家朝向有bug
+                event.setPitch(pitch);
+                event.setYaw(yaw);
+                event.setRoll(roll);
+                aimDirection = new Vec3(Math.cos(aimPitch) * Math.sin(aimYaw), Math.sin(aimPitch), Math.cos(aimPitch) * Math.cos(aimYaw));
+            }
+            //非自由视角模式下，逐渐回正视角
+            if (!RawInputHandler.freeCam) {
                 if (!onBoard) {
                     onBoard = true;
                     justLeft = false;
@@ -173,29 +173,30 @@ public class CameraController {
                     entity.setXRot(aimPitch);
                     entity.setYRot(aimYaw + 180 + partEntity.getYRot());
                 }
-            } else {
-                if (onBoard) {
-                    onBoard = false;
-                    justLeft = true;
-                    anglesInitialized = false;
+                if (justLeft) {
+                    targetViewPitch = aimPitch;
+                    targetViewYaw = aimYaw;
+                    targetViewRoll = aimRoll;
+                    pitch = aimPitch;
+                    yaw = aimYaw;
+                    roll = aimRoll;
+                } else {
+                    targetViewPitch = 0.9f * targetViewPitch + 0.1f * aimPitch;
+                    targetViewYaw = 0.9f * targetViewYaw + 0.1f * aimYaw;
+                    targetViewRoll = 0.9f * targetViewRoll + 0.1f * aimRoll;
                 }
-                //回到实体实时视角
-                aimPitch = entity.getViewXRot(partialTick);
-                aimYaw = entity.getViewYRot(partialTick);
-                aimRoll = 0F;
             }
-            if (justLeft) {
-                targetViewPitch = aimPitch;
-                targetViewYaw = aimYaw;
-                targetViewRoll = aimRoll;
-                pitch = aimPitch;
-                yaw = aimYaw;
-                roll = aimRoll;
-            } else {
-                targetViewPitch = 0.9f * targetViewPitch + 0.1f * aimPitch;
-                targetViewYaw = 0.9f * targetViewYaw + 0.1f * aimYaw;
-                targetViewRoll = 0.9f * targetViewRoll + 0.1f * aimRoll;
+        } else {
+            // 未乘坐载具时，直接使用实体的原始视角，不做任何平滑插值
+            if (onBoard) {
+                onBoard = false;
+                justLeft = true;
+                anglesInitialized = false;
             }
+            event.setPitch(entity.getViewXRot(partialTick));
+            event.setYaw(entity.getViewYRot(partialTick));
+            event.setRoll(0F);
+            aimDirection = new Vec3(Math.cos(aimPitch) * Math.sin(aimYaw), Math.sin(aimPitch), Math.cos(aimPitch) * Math.cos(aimYaw));
         }
     }
 
@@ -258,14 +259,8 @@ public class CameraController {
                 targetViewPitch += f;
                 targetViewYaw += f1;
             }
-        } else {
-            targetViewPitch += f;
-            targetViewYaw += f1;
-            if (!RawInputHandler.freeCam) {
-                aimPitch += f;
-                aimYaw += f1;
-            }
         }
+        // 未乘坐载具时，不做任何处理，由原版处理视角
     }
 
     @SubscribeEvent
