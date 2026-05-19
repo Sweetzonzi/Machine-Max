@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Quaternion;
@@ -86,7 +87,15 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
     }
 
     @Override
-    public void render(@NotNull Minecraft minecraft, @NotNull Vec3 camPos, @NotNull PoseStack poseStack, @NotNull MultiBufferSource bufferSource, float partialTick) {
+    public @NotNull RenderLevelStageEvent.Stage getRenderStage() {
+        return RenderLevelStageEvent.Stage.AFTER_ENTITIES;
+    }
+
+    @Override
+    public void render(@NotNull RenderLevelStageEvent event, @NotNull MultiBufferSource bufferSource) {
+        Vec3 camPos = event.getCamera().getPosition();
+        float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(true);
+        PoseStack poseStack = event.getPoseStack();
         renderPartToAssembly(camPos, poseStack, bufferSource, partialTick);
         renderBoundingBoxes(camPos, poseStack, bufferSource, partialTick);
         renderVehicleProjection(camPos, poseStack, bufferSource, partialTick);
