@@ -92,9 +92,8 @@ public class PartAssemblyRenderer extends VisualEffectRenderer {
     }
 
     @Override
-    public void render(@NotNull RenderLevelStageEvent event, @NotNull MultiBufferSource bufferSource) {
+    public void render(@NotNull RenderLevelStageEvent event, @NotNull MultiBufferSource bufferSource, float partialTick) {
         Vec3 camPos = event.getCamera().getPosition();
-        float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(true);
         PoseStack poseStack = event.getPoseStack();
         renderPartToAssembly(camPos, poseStack, bufferSource, partialTick);
         renderBoundingBoxes(camPos, poseStack, bufferSource, partialTick);
