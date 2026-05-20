@@ -126,16 +126,16 @@ public class RawInputHandler {
                         } else {
                             if (forward) {
                                 // W: input+ , conflict+  (前进意图)
-                                if (trans_z_input < 0) trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundBrakeOffStep());
-                                else trans_z_input += MMClientConfig.getGroundFullPowerStep();
-                                if (trans_z_conflict < 0) trans_z_conflict = Math.min(0, trans_z_conflict + MMClientConfig.getGroundBrakeOffStep());
-                                else trans_z_conflict += MMClientConfig.getGroundFullBrakeStep();
+                                if (trans_z_input < 0) trans_z_input = 0;
+                                trans_z_input += MMClientConfig.getGroundFullPowerStep();
+                                if (trans_z_conflict < 0) trans_z_conflict = 0;
+                                trans_z_conflict += MMClientConfig.getGroundFullBrakeStep();
                             } else if (backWard) {
                                 // S: input- , conflict-  (后退意图)
-                                if (trans_z_input > 0) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
-                                else trans_z_input -= MMClientConfig.getGroundFullBrakeStep();
-                                if (trans_z_conflict > 0) trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
-                                else trans_z_conflict -= MMClientConfig.getGroundFullBrakeStep();
+                                if (trans_z_input > 0) trans_z_input = 0;
+                                trans_z_input -= MMClientConfig.getGroundFullBrakeStep();
+                                if (trans_z_conflict > 0) trans_z_conflict = 0;
+                                trans_z_conflict -= MMClientConfig.getGroundFullBrakeStep();
                             } else {
                                 // 无输入：两通道各自回零
                                 if (trans_z_input > 0) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
