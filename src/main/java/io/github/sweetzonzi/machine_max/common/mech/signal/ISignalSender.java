@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.signal;
+package io.github.sweetzonzi.machine_max.common.mech.signal;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
@@ -97,9 +97,10 @@ public interface ISignalSender {
      * @param signalChannel 信号频道
      * @param targetName    接收者名称
      * @param signalValue   信号值
+     * @return 接收者的处理结果
      */
-    default void sendSignalToTarget(String signalChannel, String targetName, Object signalValue) {
-        sendSignalToTarget(signalChannel, targetName, signalValue, false, false);
+    default SignalResult sendSignalToTarget(String signalChannel, String targetName, Object signalValue) {
+        return sendSignalToTarget(signalChannel, targetName, signalValue, false, false);
     }
 
     /**
@@ -109,9 +110,10 @@ public interface ISignalSender {
      * @param targetName                 接收者名称
      * @param signalValue                信号值
      * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
+     * @return 接收者的处理结果
      */
-    default void sendSignalToTargetWithCallback(String signalChannel, String targetName, Object signalValue, boolean callbackReturnsSignalValue) {
-        sendSignalToTarget(signalChannel, targetName, signalValue, true, callbackReturnsSignalValue);
+    default SignalResult sendSignalToTargetWithCallback(String signalChannel, String targetName, Object signalValue, boolean callbackReturnsSignalValue) {
+        return sendSignalToTarget(signalChannel, targetName, signalValue, true, callbackReturnsSignalValue);
     }
 
     /**
@@ -122,8 +124,9 @@ public interface ISignalSender {
      * @param signalValue                信号值
      * @param requiresImmediateCallback  是否需要即时回调
      * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
+     * @return 接收者的处理结果
      */
-    default void sendSignalToTarget(String signalChannel, String targetName, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
+    default SignalResult sendSignalToTarget(String signalChannel, String targetName, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
         if (getTargets().containsKey(signalChannel)) {
             ISignalReceiver signalReceiver = getTargets().get(signalChannel).get(targetName);
             if (signalReceiver != null) {
@@ -133,7 +136,7 @@ public interface ISignalSender {
                 } else if (signalReceiver instanceof SubPart subPart) {
                     subPart.signalStorage.put(signalChannel, signalValue);
                 }
-                signalReceiver.onSignalUpdated(signalChannel, this);
+                SignalResult result = signalReceiver.onSignalUpdated(signalChannel, this);
                 if (requiresImmediateCallback && this instanceof ISignalReceiver) {
                     if (signalReceiver instanceof SignalPort port
                             && port.getOwner().getAttachedConnector() instanceof AbstractConnector connector
@@ -153,8 +156,10 @@ public interface ISignalSender {
                         else callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalChannel);
                     }
                 }
+                return result;
             }
         }
+        return SignalResult.PASS;
     }
 
     /**
@@ -165,9 +170,10 @@ public interface ISignalSender {
      * @param target                     接收者
      * @param signalValue                信号值
      * @param callbackReturnsSignalValue true: 回调函数返回信号值，false: 回调函数返回信号频道名称
+     * @return 接收者的处理结果
      */
-    default void sendSignalToTargetWithCallback(String signalChannel, ISignalReceiver target, Object signalValue, boolean callbackReturnsSignalValue) {
-        this.sendSignalToTarget(signalChannel, target.getName(), signalValue, true, callbackReturnsSignalValue);
+    default SignalResult sendSignalToTargetWithCallback(String signalChannel, ISignalReceiver target, Object signalValue, boolean callbackReturnsSignalValue) {
+        return this.sendSignalToTarget(signalChannel, target.getName(), signalValue, true, callbackReturnsSignalValue);
     }
 
     default void sendCallbackToAllListeners(String signalChannel, Object signalValue) {

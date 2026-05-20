@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.signal;
+package io.github.sweetzonzi.machine_max.common.mech.signal;
 
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
@@ -43,7 +43,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
      * @param sender      信号发送者
      */
     @Override
-    public void onSignalUpdated(String channelName, ISignalSender sender) {
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
         if (owner instanceof AbstractConnector ownerConnector
                 && ownerConnector.attachedConnector != null
                 && ownerConnector.attachedConnector.signalPort != null) {
@@ -58,7 +58,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
 
                 SignalChannel currentChannels = signalInputChannels.get(channelName);
                 if (currentChannels == null) {
-                    return; // 没有信号可转发
+                    return SignalResult.PASS; // 没有信号可转发
                 }
 
                 // 仅在实际发生变更时传播
@@ -86,6 +86,7 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
                 });
             }
         }
+        return SignalResult.PASS;
     }
 
     /**

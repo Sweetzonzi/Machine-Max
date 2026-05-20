@@ -1,9 +1,9 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.MoveInputSignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.EmptySignal;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.MoveInputSignal;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 
 import java.util.ArrayList;

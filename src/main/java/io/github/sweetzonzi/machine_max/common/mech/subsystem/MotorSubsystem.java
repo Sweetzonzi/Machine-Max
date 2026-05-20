@@ -2,13 +2,13 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.sound.IMultiChannelSoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
+import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
+import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;
+import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.WorkingState;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.MotorSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.MotorSubsystemStaticAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IMechPowerConsumer;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IMechPowerProducer;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.MechPower;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.control.PDController;
 import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataAccessor;

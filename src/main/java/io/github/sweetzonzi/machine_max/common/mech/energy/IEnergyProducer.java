@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.energy;
+package io.github.sweetzonzi.machine_max.common.mech.energy;
 
 /**
  * 电力生产者接口——实现此接口的子系统可向电网供电

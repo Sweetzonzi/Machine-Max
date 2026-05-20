@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.signal;
+package io.github.sweetzonzi.machine_max.common.mech.signal;
 
 import com.mojang.datafixers.util.Pair;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;

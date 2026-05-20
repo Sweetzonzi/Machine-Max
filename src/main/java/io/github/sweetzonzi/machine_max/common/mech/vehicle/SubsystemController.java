@@ -1,10 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 
 import cn.solarmoon.spark_core.api.SparkLevel;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.EnergyGrid;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IMechPowerProducer;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.ISignalReceiver;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
+import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import lombok.Getter;
 

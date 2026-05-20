@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.energy;
+package io.github.sweetzonzi.machine_max.common.mech.energy;
 
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import lombok.Getter;

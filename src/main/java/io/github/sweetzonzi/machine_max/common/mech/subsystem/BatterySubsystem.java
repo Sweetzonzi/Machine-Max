@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.common.mech.energy.IEnergyStorage;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BatterySubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IEnergyStorage;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;

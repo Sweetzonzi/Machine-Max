@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.ItemStorageSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.menu.ItemStorageSubsystemMenu;
 import lombok.Getter;
@@ -51,15 +52,17 @@ public class ItemStorageSubsystem extends BasicSubsystem implements MenuProvider
     }
 
     @Override
-    public void onInteract(LivingEntity entity) {
-        super.onInteract(entity);
+    public SignalResult onInteract(LivingEntity entity) {
+        SignalResult result = super.onInteract(entity);
         if (entity instanceof ServerPlayer player && isActive()) {
             player.openMenu(this, (buf) -> {
                 buf.writeInt(container.getContainerSize());
                 buf.writeInt(attr.staticAttribute.rows);
                 buf.writeInt(attr.staticAttribute.columns);
             });
+            return SignalResult.CONSUME;
         }
+        return result;
     }
 
     public void popItems() {

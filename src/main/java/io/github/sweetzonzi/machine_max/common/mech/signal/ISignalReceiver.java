@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.signal;
+package io.github.sweetzonzi.machine_max.common.mech.signal;
 
 import java.util.concurrent.ConcurrentMap;
 
@@ -7,7 +7,8 @@ public interface ISignalReceiver {
 
     ConcurrentMap<String, SignalChannel> getSignalInputChannels();
 
-    default void onSignalUpdated(String channelName, ISignalSender sender) {
+    default SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        return SignalResult.PASS;
     }
 
     default SignalChannel getSignalChannel(String channelName) {

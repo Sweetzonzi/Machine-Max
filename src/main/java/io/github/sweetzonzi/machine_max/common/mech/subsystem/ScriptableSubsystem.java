@@ -3,14 +3,15 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalPort;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.ScriptableSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.ISignalReceiver;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.ISignalSender;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.SignalChannel;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.SignalPort;
 import io.github.sweetzonzi.machine_max.external.js.hook.Hook;
 import io.github.sweetzonzi.machine_max.network.payload.ScriptablePayload;
 import lombok.Getter;
@@ -217,9 +218,10 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     }
 
     @Override
-    public void onSignalUpdated(String channelName, ISignalSender sender) {
-        super.onSignalUpdated(channelName, sender);
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        SignalResult result = super.onSignalUpdated(channelName, sender);
         Hook.run(this, channelName, sender);
+        return result;
     }
 
     @Override
@@ -274,27 +276,31 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     }
 
     @Override
-    public void sendSignalToTarget(String signalChannel, String targetName, Object signalValue) {
-        super.sendSignalToTarget(signalChannel, targetName, signalValue);
+    public SignalResult sendSignalToTarget(String signalChannel, String targetName, Object signalValue) {
+        SignalResult result = super.sendSignalToTarget(signalChannel, targetName, signalValue);
         Hook.run(this, signalChannel, targetName, signalValue);
+        return result;
     }
 
     @Override
-    public void sendSignalToTargetWithCallback(String signalChannel, String targetName, Object signalValue, boolean callbackReturnsSignalValue) {
-        super.sendSignalToTargetWithCallback(signalChannel, targetName, signalValue, callbackReturnsSignalValue);
+    public SignalResult sendSignalToTargetWithCallback(String signalChannel, String targetName, Object signalValue, boolean callbackReturnsSignalValue) {
+        SignalResult result = super.sendSignalToTargetWithCallback(signalChannel, targetName, signalValue, callbackReturnsSignalValue);
         Hook.run(this, signalChannel, targetName, signalValue, callbackReturnsSignalValue);
+        return result;
     }
 
     @Override
-    public void sendSignalToTarget(String signalChannel, String targetName, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
-        super.sendSignalToTarget(signalChannel, targetName, signalValue, requiresImmediateCallback, callbackReturnsSignalValue);
+    public SignalResult sendSignalToTarget(String signalChannel, String targetName, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
+        SignalResult result = super.sendSignalToTarget(signalChannel, targetName, signalValue, requiresImmediateCallback, callbackReturnsSignalValue);
         Hook.run(this, signalChannel, targetName, signalValue, requiresImmediateCallback, callbackReturnsSignalValue);
+        return result;
     }
 
     @Override
-    public void sendSignalToTargetWithCallback(String signalChannel, ISignalReceiver target, Object signalValue, boolean callbackReturnsSignalValue) {
-        super.sendSignalToTargetWithCallback(signalChannel, target, signalValue, callbackReturnsSignalValue);
+    public SignalResult sendSignalToTargetWithCallback(String signalChannel, ISignalReceiver target, Object signalValue, boolean callbackReturnsSignalValue) {
+        SignalResult result = super.sendSignalToTargetWithCallback(signalChannel, target, signalValue, callbackReturnsSignalValue);
         Hook.run(this, signalChannel, target, signalValue, callbackReturnsSignalValue);
+        return result;
     }
 
     @Override

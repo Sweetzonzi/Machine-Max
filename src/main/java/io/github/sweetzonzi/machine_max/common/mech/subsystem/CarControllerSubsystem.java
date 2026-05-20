@@ -6,9 +6,9 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
+import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CarControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.control.PIDController;
 import lombok.Getter;
 import net.minecraft.sounds.SoundSource;
@@ -239,7 +239,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
      * @see CarControllerSubsystem#onVehicleStructureChanged()
      */
     @Override
-    public void onSignalUpdated(String channelName, ISignalSender sender) {
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
         Object signalValue = getSignalChannel(channelName).get(sender);
         if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
             if (sender instanceof WheelDriverSubsystem wheel) {
@@ -348,6 +348,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     break;
             }
         }
+        return SignalResult.PASS;
     }
 
     protected void updateMoveInputs() {

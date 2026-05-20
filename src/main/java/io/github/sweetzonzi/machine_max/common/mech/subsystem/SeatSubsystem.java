@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.CollisionManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
@@ -54,11 +55,13 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
     }
 
     @Override
-    public void onInteract(LivingEntity entity) {
-        super.onInteract(entity);
-        if (!occupied && isActive()) {//如果此座椅已有乘客或未激活，则忽略信号
+    public SignalResult onInteract(LivingEntity entity) {
+        SignalResult result = super.onInteract(entity);
+        if (!occupied && isActive()) {
             setPassenger(entity);
+            return SignalResult.CONSUME;
         }
+        return occupied ? SignalResult.FAIL : result;
     }
 
     public void setPassenger(LivingEntity passenger) {

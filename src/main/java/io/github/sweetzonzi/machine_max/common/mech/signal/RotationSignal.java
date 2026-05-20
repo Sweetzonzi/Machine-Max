@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.signal;
+package io.github.sweetzonzi.machine_max.common.mech.signal;
 
 import com.jme3.math.Vector3f;
 

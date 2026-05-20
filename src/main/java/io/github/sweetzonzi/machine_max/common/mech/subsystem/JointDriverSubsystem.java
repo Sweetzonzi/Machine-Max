@@ -9,11 +9,11 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.MotorAttr;
+import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
+import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;
+import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.JointDriverSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IMechPowerConsumer;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.MechPower;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.*;
 import io.github.sweetzonzi.machine_max.util.data.Axis;
 import jme3utilities.math.MyQuaternion;
 

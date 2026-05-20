@@ -5,15 +5,16 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.energy.IEnergyConsumer;
+import io.github.sweetzonzi.machine_max.common.mech.energy.IEnergyProducer;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
+import io.github.sweetzonzi.machine_max.common.mech.signal.InteractSignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IEnergyProducer;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IEnergyConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.ISignalReceiver;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.ISignalSender;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.InteractSignal;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.network.payload.SubsystemSyncPayload;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
@@ -168,13 +169,14 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     }
 
     @Override
-    public void onSignalUpdated(String channelName, ISignalSender sender) {
-        ISignalReceiver.super.onSignalUpdated(channelName, sender);
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        SignalResult result = ISignalReceiver.super.onSignalUpdated(channelName, sender);
         Object signal = getSignalValueFrom(channelName, sender);
         if (signal instanceof InteractSignal interactSignal) {
-            LivingEntity entity = interactSignal.getEntity();
-            onInteract(entity);
+            onInteract(interactSignal.getEntity());
+            return SignalResult.CONSUME;
         }
+        return result;
     }
 
     /**
@@ -183,7 +185,8 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
      *
      * @param entity 交互的实体
      */
-    public void onInteract(LivingEntity entity) {
+    public SignalResult onInteract(LivingEntity entity) {
+        return SignalResult.PASS;
     }
 
     public void onVehicleStructureChanged() {

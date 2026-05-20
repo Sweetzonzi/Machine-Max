@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.interact;
 
+import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.InteractBoxAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.*;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -46,7 +46,7 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
     }
 
     @Override
-    public void onSignalUpdated(String channelName, ISignalSender sender) {
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
         ISignalReceiver.super.onSignalUpdated(channelName, sender);
         boolean isSignalValid;
         int trueCount = 0;
@@ -131,14 +131,20 @@ public class InteractBox implements ISignalSender, ISignalReceiver {
                 isSignalValid = true;
         }
         this.enabled = isSignalValid;
+        return enabled ? SignalResult.PASS : SignalResult.PASS;
     }
 
 
-    //TODO:回调？
     public void interact(LivingEntity entity) {
         for (Map.Entry<String, Map<String, ISignalReceiver>> entry : targets.entrySet()) {
             String channelName = entry.getKey();
-            sendSignalToAllTargets(channelName, new InteractSignal(entity));
+            Map<String, ISignalReceiver> receivers = entry.getValue();
+            for (ISignalReceiver receiver : receivers.values()) {
+                SignalResult result = sendSignalToTarget(channelName, receiver.getName(), new InteractSignal(entity));
+                if (result == SignalResult.CONSUME || result == SignalResult.FAIL) {
+                    return;
+                }
+            }
         }
     }
 

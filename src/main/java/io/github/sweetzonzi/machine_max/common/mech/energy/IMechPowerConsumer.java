@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.energy;
+package io.github.sweetzonzi.machine_max.common.mech.energy;
 
 public interface IMechPowerConsumer {
     String getName();

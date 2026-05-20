@@ -1,11 +1,11 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.molang;
+package io.github.sweetzonzi.machine_max.common.mech.molang;
 
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimInstance;
 import cn.solarmoon.spark_core.js.molang.IMolangContext;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.EnergyGrid;
+import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import kotlin.jvm.JvmField;

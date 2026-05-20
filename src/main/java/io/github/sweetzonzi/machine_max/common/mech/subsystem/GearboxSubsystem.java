@@ -3,10 +3,11 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Vector3f;
+
+import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
+import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
+import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.GearboxSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IMechPowerConsumer;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IMechPowerProducer;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.MechPower;
 import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;

@@ -1,8 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubsystemController;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.EnergyGrid;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

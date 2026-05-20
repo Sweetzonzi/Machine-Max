@@ -1,11 +1,11 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
+import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
+import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;
+import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TransmissionSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.TransmissionSubsystemStaticAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IMechPowerConsumer;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.IMechPowerProducer;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.energy.MechPower;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.*;
 import lombok.Getter;
 
 import java.util.*;

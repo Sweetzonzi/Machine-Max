@@ -1,11 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import com.jme3.math.Vector3f;
+
+import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
+import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.FireControlSubsystemAttr;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.EmptySignal;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.ISignalSender;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.RotationSignal;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.signal.SignalChannel;
 import lombok.Getter;
 import net.minecraft.world.phys.Vec3;
 
@@ -205,7 +207,7 @@ public class FireControlSubsystem extends BasicSubsystem {
      * - 同载具外的子系统（通过连接点穿透）会被过滤移除
      */
     @Override
-    public void onSignalUpdated(String channelName, ISignalSender sender) {
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
         super.onSignalUpdated(channelName, sender);
         Object signalValue = getSignalChannel(channelName).get(sender);
         if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
@@ -229,6 +231,7 @@ public class FireControlSubsystem extends BasicSubsystem {
                 }
             }
         }
+        return SignalResult.PASS;
     }
 
     @Override

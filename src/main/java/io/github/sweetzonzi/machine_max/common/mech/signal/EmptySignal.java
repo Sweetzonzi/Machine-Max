@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.signal;
+package io.github.sweetzonzi.machine_max.common.mech.signal;
 
 public class EmptySignal extends Signal<Void> {
     public static final EmptySignal INSTANCE = new EmptySignal();

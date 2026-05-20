@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.energy;
+package io.github.sweetzonzi.machine_max.common.mech.energy;
 
 /**
  * 电力消费者接口——实现此接口的子系统可从电网取电

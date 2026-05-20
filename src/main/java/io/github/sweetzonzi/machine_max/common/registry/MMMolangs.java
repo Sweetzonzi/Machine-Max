@@ -2,8 +2,8 @@ package io.github.sweetzonzi.machine_max.common.registry;
 
 import cn.solarmoon.spark_core.event.MolangRegisterEvent;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.molang.SubPartBinding;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.molang.VehicleBinding;
+import io.github.sweetzonzi.machine_max.common.mech.molang.SubPartBinding;
+import io.github.sweetzonzi.machine_max.common.mech.molang.VehicleBinding;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 

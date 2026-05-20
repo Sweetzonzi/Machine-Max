@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle.energy;
+package io.github.sweetzonzi.machine_max.common.mech.energy;
 
 public record MechPower(float power, float speed) {
     public static final MechPower ZERO = new MechPower(0, 0);
