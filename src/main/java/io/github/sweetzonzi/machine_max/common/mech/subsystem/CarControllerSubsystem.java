@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
 import com.jme3.math.Vector3f;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CarControllerSubsystemAttr;
@@ -448,7 +449,6 @@ public class CarControllerSubsystem extends BasicSubsystem {
 
                 actualThrottle = actualThrottle * 0.2f + targetThrottle * 0.8f;
                 actualBrake = actualBrake * 0.2f + targetBrake * 0.8f;
-
                 float avgEngineSpeed = calculateAvgSpeedAndControl();
 
                 for (GearboxSubsystem gearbox : gearboxes.keySet()) {

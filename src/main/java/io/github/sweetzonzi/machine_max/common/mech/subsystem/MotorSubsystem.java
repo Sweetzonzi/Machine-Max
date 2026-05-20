@@ -304,7 +304,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
         for (String inputKey : attr.staticAttribute.throttleInputKeys) {
             SignalChannel signalChannel = getSignalChannel(inputKey);
             if (signalChannel.getFirstSignal() instanceof Float) {
-                powerControlInput = (float) signalChannel.getFirstSignal() / 100f;
+                powerControlInput = (float) signalChannel.getFirstSignal();
                 break;
             } else if (signalChannel.getFirstSignal() instanceof MoveInputSignal) {
                 powerControlInput = ((MoveInputSignal) signalChannel.getFirstSignal()).getMoveInput()[2] / 100f;

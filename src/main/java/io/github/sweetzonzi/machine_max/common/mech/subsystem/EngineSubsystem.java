@@ -287,7 +287,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
             SignalChannel signalChannel = getSignalChannel(inputKey);
             Object signal = signalChannel.getFirstSignal();
             if (signal instanceof Float) {
-                powerControlInput = (float) signalChannel.getFirstSignal() / 100f;
+                powerControlInput = (float) signalChannel.getFirstSignal();
                 break;
             } else if (signal instanceof MoveInputSignal) {
                 powerControlInput = Math.abs(((MoveInputSignal) signalChannel.getFirstSignal()).getMoveInput()[2] / 100f);
