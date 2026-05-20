@@ -30,6 +30,12 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
     private boolean hasHit = false;
 
     /**
+     * 缓存寿命副本，由 {@link ProjectileManager#tickAndPreTick()} 在调用 preTick() 前设置。
+     * 避免 getLifetime() 在 preTick() → checkDestroyed() 链条中进行 O(n) 线性扫描。
+     */
+    int cachedLifetime = 0;
+
+    /**
      * 创建一个质点投射物。
      * <p>
      * 服务端：注册到 {@link ObjectManager} 和 {@link ProjectileManager} 的 SoA 数组。
@@ -73,16 +79,12 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
      * 返回剩余存活 tick 数。
      * <p>
      * 寿命的权威来源是 {@link ProjectileManager} 的 SoA 数组，
-     * 此处按对象 ID 反向查询。查询开销 O(n)，但 n 通常很小。
+     * {@link ProjectileManager#tickAndPreTick()} 在每 tick 将 SoA 中的寿命
+     * 写入 {@link #cachedLifetime}，避免在此处进行 O(n) 线性扫描。
      */
     @Override
     public int getLifetime() {
-        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
-        if (pm == null) return 0;
-        for (int i = 0; i < pm.count; i++) {
-            if (pm.objId[i] == getId()) return pm.lifetime[i];
-        }
-        return 0;
+        return cachedLifetime;
     }
 
     @Override

@@ -10,6 +10,23 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        // 内置标签
+        this.add("machine_max.left", "Left");
+        this.add("machine_max.right", "Right");
+        this.add("machine_max.front", "Front");
+        this.add("machine_max.back", "Back");
+        this.add("machine_max.top", "Top");
+        this.add("machine_max.bottom", "Bottom");
+        this.add("machine_max.structural", "Structural");
+        this.add("machine_max.decoration", "Decoration");
+        this.add("machine_max.mobility", "Mobility");
+        this.add("machine_max.weapon", "Weapon");
+        this.add("machine_max.misc", "Misc");
+        this.add("machine_max.land", "Land");
+        this.add("machine_max.marine", "Marine");
+        this.add("machine_max.aerial", "Aerial");
+        this.add("machine_max.mecha", "Mecha");
+
         //Key categories
         this.add("key.category.machine_max.general", "Machine Max:General");
         this.add("key.category.machine_max.ground", "Machine Max:Ground");
@@ -105,6 +122,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("gui.machine_max.welcome.title", "Welcome to Machine Max Beta!");
         this.add("gui.machine_max.welcome.content", "This is a Minecraft mod themed around physics and vehicle assembly.\nThis mod is still in an early version, may have various issues, and does not represent final quality.\nPlease make sure to back up your old saves.\n\nHave fun!");
         this.add("gui.machine_max.welcome.proceed", "Confirm");
+        this.add("gui.machine_max.welcome.dont_show_again", "Don't show this again");
         this.add("gui.machine_max.set_vehicle_name", "Set Vehicle Name");
         this.add("gui.machine_max.confirm", "Confirm");
         this.add("gui.machine_max.cancel", "Cancel");
@@ -184,35 +202,53 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         // Ground Vehicle Configuration
         this.add("machine_max.configuration.ground_vehicle", "Ground Vehicle");
         this.add("machine_max.configuration.ground_vehicle.button", "Ground Vehicle");
-        this.add("machine_max.configuration.ground_vehicle.tooltip", "Ground vehicle related settings");
-        this.add("machine_max.configuration.full_power_time", "Full Power Time");
-        this.add("machine_max.configuration.full_power_time.tooltip", "Time (in seconds) to reach full throttle when holding key. Default: 1.2 (ground), 2.5 (plane). Range: 0.05 ~ 99999.0");
-        this.add("machine_max.configuration.full_steering_time", "Full Steering Time");
-        this.add("machine_max.configuration.full_steering_time.tooltip", "Time (in seconds) to reach full steering when holding key. Default: 0.4 (ground), 0.25 (ship). Range: 0.05 ~ 99999.0");
-        this.add("machine_max.configuration.auto_switch_gear", "Auto Switch Gear");
-        this.add("machine_max.configuration.auto_switch_gear.tooltip", "Whether to automatically shift gears based on input, vehicle speed and engine RPM. Default: FOLLOW_VEHICLE");
+        this.add("machine_max.configuration.ground_vehicle.tooltip", "Ground vehicle control smoothness and behavior settings");
+        this.add("machine_max.configuration.full_power_time", "Throttle Ramp-Up Time");
+        this.add("machine_max.configuration.full_power_time.tooltip", "Seconds to reach full throttle after pressing the key. Lower = faster response. Default: 1.5 (ground), 2.5 (plane). Range: 0.05 ~ 99999.0");
+        this.add("machine_max.configuration.power_off_time", "Throttle Release Time");
+        this.add("machine_max.configuration.power_off_time.tooltip", "Seconds to return throttle to 0 after releasing the key. Lower = faster throttle cut. Default: 2.0. Range: 0.05 ~ 99999.0");
+        this.add("machine_max.configuration.full_brake_time", "Brake Ramp-Up Time");
+        this.add("machine_max.configuration.full_brake_time.tooltip", "Seconds to reach full brake after pressing the key. Lower = faster braking. Default: 0.3. Range: 0.05 ~ 99999.0");
+        this.add("machine_max.configuration.brake_off_time", "Brake Release Time");
+        this.add("machine_max.configuration.brake_off_time.tooltip", "Seconds to release brake to 0 after releasing the key. Lower = wheels resume rolling faster. Default: 0.1. Range: 0.05 ~ 99999.0");
+        this.add("machine_max.configuration.full_steering_time", "Steering Ramp-Up Time");
+        this.add("machine_max.configuration.full_steering_time.tooltip", "Seconds to reach full steering angle after pressing the key. Lower = faster steering. Default: 0.4 (ground), 0.25 (ship). Range: 0.05 ~ 99999.0");
+        this.add("machine_max.configuration.steering_off_time", "Steering Return Time");
+        this.add("machine_max.configuration.steering_off_time.tooltip", "Seconds to return steering to center after releasing the key. Lower = wheels straighten faster. Default: 0.2. Range: 0.05 ~ 99999.0");
+        this.add("machine_max.configuration.auto_switch_gear", "Auto Gear Shift");
+        this.add("machine_max.configuration.auto_switch_gear.tooltip", "FOLLOW_VEHICLE = vehicle-defined. ALWAYS_ENABLED = always auto. ALWAYS_DISABLED = manual only. Default: FOLLOW_VEHICLE");
         this.add("machine_max.configuration.auto_handbrake", "Auto Handbrake");
-        this.add("machine_max.configuration.auto_handbrake.tooltip", "Whether to automatically apply handbrake when vehicle stops and release it when starting. Default: FOLLOW_VEHICLE");
+        this.add("machine_max.configuration.auto_handbrake.tooltip", "FOLLOW_VEHICLE = vehicle-defined. ALWAYS_ENABLED = always auto. ALWAYS_DISABLED = manual only. Default: FOLLOW_VEHICLE");
         this.add("machine_max.configuration.drift_assist", "Drift Assist");
-        this.add("machine_max.configuration.drift_assist.tooltip", "Whether to automatically counter-steer during drifting to maintain control. Default: FOLLOW_VEHICLE");
-        this.add("machine_max.configuration.pose_preference", "Pose Preference");
-        this.add("machine_max.configuration.pose_preference.tooltip", "Whether to automatically rotate camera view to follow vehicle orientation. Default: FOLLOW_VEHICLE");
-        this.add("machine_max.configuration.speed_turning_limit", "Speed Turning Limit");
-        this.add("machine_max.configuration.speed_turning_limit.tooltip", "Whether to limit lateral acceleration during high-speed turning to prevent loss of control or rollover. Default: true");
-        this.add("machine_max.configuration.render_hit_whitening", "Part Hit Visual Effect");
-        this.add("machine_max.configuration.render_hit_whitening.tooltip", "Whether to enable visual effect when parts are hit. Default: true");
-        this.add("machine_max.configuration.render_destroy_blackening", "Part Destruction Visual Effect");
-        this.add("machine_max.configuration.render_destroy_blackening.tooltip", "Whether to enable visual effect when parts are destroyed. Default: true");
-        this.add("machine_max.configuration.render_force_translucent_parts", "Part Translucent Rendering");
-        this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "Whether to replace Cutout part rendering with translucent entity rendering. Default: false");
+        this.add("machine_max.configuration.drift_assist.tooltip", "Auto counter-steer during drifting. FOLLOW_VEHICLE = vehicle-defined. ALWAYS_ENABLED = always on. ALWAYS_DISABLED = off. Default: FOLLOW_VEHICLE");
+        this.add("machine_max.configuration.pose_preference", "Camera Follow Vehicle");
+        this.add("machine_max.configuration.pose_preference.tooltip", "Auto rotate camera to follow vehicle heading. FOLLOW_VEHICLE = vehicle-defined. ALWAYS_ENABLED = follow. ALWAYS_DISABLED = free. Default: FOLLOW_VEHICLE");
+        this.add("machine_max.configuration.speed_turning_limit", "High-Speed Steering Limit");
+        this.add("machine_max.configuration.speed_turning_limit.tooltip", "Limit steering angle at high speed to prevent rollover. Default: true");
+        this.add("machine_max.configuration.separate_throttle_brake", "Separate Throttle & Brake");
+        this.add("machine_max.configuration.separate_throttle_brake.tooltip", "Separate throttle and brake into independent channels. false = intent mode (W forward, S backward, vehicle auto-decides). true = raw pedal mode (W gas, S brake). Default: false");
+        this.add("machine_max.configuration.render_hit_whitening", "Part Hit Flash");
+        this.add("machine_max.configuration.render_hit_whitening.tooltip", "Show a white flash on parts when hit. Default: true");
+        this.add("machine_max.configuration.render_destroy_blackening", "Part Destroyed Overlay");
+        this.add("machine_max.configuration.render_destroy_blackening.tooltip", "Dark overlay on destroyed parts. Default: true");
+        this.add("machine_max.configuration.render_force_translucent_parts", "Force Translucent Parts");
+        this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "Replace cutout part rendering with translucent entity rendering. Off by default because translucent rendering often causes incorrect z-sorting and object culling. Default: false");
+        this.add("machine_max.configuration.show_welcome_screen", "Show Welcome Screen");
+        this.add("machine_max.configuration.show_welcome_screen.tooltip", "Show the welcome screen when entering the title screen for the first time after launch. Default: true");
         // Ship Configuration
         this.add("machine_max.configuration.ship", "Ship");
         this.add("machine_max.configuration.ship.button", "Ship");
-        this.add("machine_max.configuration.ship.tooltip", "Ship related settings");
+        this.add("machine_max.configuration.ship.tooltip", "Ship steering smoothness settings");
         // Plane Configuration
         this.add("machine_max.configuration.plane", "Plane");
         this.add("machine_max.configuration.plane.button", "Plane");
-        this.add("machine_max.configuration.plane.tooltip", "Plane related settings");
+        this.add("machine_max.configuration.plane.tooltip", "Plane control smoothness settings");
+        this.add("machine_max.configuration.full_pitch_time", "Pitch Ramp-Up Time");
+        this.add("machine_max.configuration.full_pitch_time.tooltip", "Seconds to reach full pitch after pressing the key. Lower = faster. Default: 0.25. Range: 0.05 ~ 99999.0");
+        this.add("machine_max.configuration.full_yaw_time", "Yaw Ramp-Up Time");
+        this.add("machine_max.configuration.full_yaw_time.tooltip", "Seconds to reach full yaw after pressing the key. Lower = faster. Default: 0.25. Range: 0.05 ~ 99999.0");
+        this.add("machine_max.configuration.full_roll_time", "Roll Ramp-Up Time");
+        this.add("machine_max.configuration.full_roll_time.tooltip", "Seconds to reach full roll after pressing the key. Lower = faster. Default: 0.25. Range: 0.05 ~ 99999.0");
         // Server Configuration
         this.add("machine_max.configuration.should_destroy_blocks", "Allow Collision Destroy Blocks");
         this.add("machine_max.configuration.should_destroy_blocks.tooltip", "Whether or not the parts should destroy blocks when the impact is big enough. Default: true");

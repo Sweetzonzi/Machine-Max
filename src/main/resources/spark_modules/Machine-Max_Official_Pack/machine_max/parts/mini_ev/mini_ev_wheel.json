@@ -10,7 +10,7 @@
       "model": "machine_max:mini_ev_wheel_left.geo", //模型路径
       "textures": "machine_max:textures/part/mini_ev/mini_ev_ae86.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
-      "tags": ["machine_max:wheel", "machine_max:mini_ev", "machine_max:left"],//(可选)部件标签列表
+      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:wheel", "machine_max:mini_ev", "machine_max:left"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
           "durability": 120.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
@@ -48,7 +48,7 @@
       "model": "machine_max:mini_ev_wheel_right.geo",
       "textures": "machine_max:textures/part/mini_ev/mini_ev_ae86.png",
       "animations": "machine_max:empty",
-      "tags": ["machine_max:wheel", "machine_max:mini_ev", "machine_max:right"],
+      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:wheel", "machine_max:mini_ev", "machine_max:right"],
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 120.0,

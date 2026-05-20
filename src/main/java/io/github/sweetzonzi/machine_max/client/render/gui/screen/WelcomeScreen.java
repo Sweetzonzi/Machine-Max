@@ -1,11 +1,13 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.MultiLineLabel;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -53,6 +55,8 @@ public class WelcomeScreen extends Screen {
     private MultiLineLabel message = MultiLineLabel.EMPTY;
     private int freezeTicks = FROZEN_TICKS;
     private AbstractButton proceedButton;
+    /** "不再显示"复选框 */
+    private Checkbox dontShowAgainCheckbox;
 
     protected WelcomeScreen() {
         super(Component.translatable("gui.machine_max.welcome.title").withStyle(ChatFormatting.BOLD));
@@ -68,12 +72,19 @@ public class WelcomeScreen extends Screen {
                 this.width - 100
         );
 
-        int buttonY = Math.min(
+        int baseY = Math.min(
                 CONTENT_TOP + message.getLineCount() * LINE_HEIGHT + CONTENT_BUTTON_GAP,
                 this.height - BUTTON_BOTTOM_MARGIN
         );
 
-        proceedButton = createProceedButton(buttonY);
+        // 在按钮下方添加"不再显示"复选框
+        dontShowAgainCheckbox = Checkbox.builder(
+                Component.translatable("gui.machine_max.welcome.dont_show_again"),
+                font
+        ).selected(false).pos(this.width / 2 - 80, baseY + BUTTON_HEIGHT + 4).build();
+        addRenderableWidget(dontShowAgainCheckbox);
+
+        proceedButton = createProceedButton(baseY);
         proceedButton.active = false;
         addRenderableWidget(proceedButton);
     }
@@ -120,11 +131,19 @@ public class WelcomeScreen extends Screen {
         Minecraft.getInstance().setScreen(new TitleScreen());
     }
 
+    /**
+     * 创建"确认"按钮，点击时如果复选框被勾选则禁止欢迎页再次弹出
+     */
     private AbstractButton createProceedButton(int buttonY) {
         return Button.builder(
                 Component.translatable("gui.machine_max.welcome.proceed")
                         .append(Component.literal(" (" + (FROZEN_TICKS + 19) / 20 + "s)")),
-                btn -> Minecraft.getInstance().setScreen(new TitleScreen())
+                btn -> {
+                    if (dontShowAgainCheckbox.selected()) {
+                        MMClientConfig.setShowWelcomeScreen(false);
+                    }
+                    Minecraft.getInstance().setScreen(new TitleScreen());
+                }
         ).bounds(this.width / 2 - BUTTON_WIDTH / 2, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT).build();
     }
 
@@ -140,6 +159,8 @@ public class WelcomeScreen extends Screen {
         public static void onTitleScreenInit(ScreenEvent.Init.Post event) {
             if (alreadyShown) return;
             if (!(event.getScreen() instanceof TitleScreen)) return;
+            // 检查配置项，如果用户选择了"不再显示"则跳过
+            if (!MMClientConfig.isShowWelcomeScreen()) return;
 
             alreadyShown = true;
             Minecraft.getInstance().setScreen(new WelcomeScreen());

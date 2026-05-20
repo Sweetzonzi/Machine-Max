@@ -23,6 +23,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 投射物管理器（每 Level 一个实例）。
@@ -62,8 +65,20 @@ public class ProjectileManager {
     public volatile int count;          // 当前活跃总数（volatile 保证跨线程可见性）
     private int capacity = 256;         // 当前数组容量
 
+    /**
+     * 投射物 Object ID 集合，用于 O(1) containsProjectile 查询。
+     * 与 SoA 数组同步更新，替代线性扫描。
+     */
+    private final Set<Integer> projectileObjIds = ConcurrentHashMap.newKeySet();
+
     /** 该维度所有已加载的投射物类型，typeIndex 映射到此数组 */
     private ProjectileType[] typeCache;
+
+    /** 复用 Vector3f 避免热路径中重复分配 */
+    private final Vector3f rayFrom = new Vector3f();
+    private final Vector3f rayTo = new Vector3f();
+    private final Vector3f hitPointJme = new Vector3f();
+    private final Vector3f hitNormalJme = new Vector3f();
 
     public ProjectileManager(Level level) {
         this.level = level;
@@ -104,6 +119,7 @@ public class ProjectileManager {
     private void addProjectileInternal(IProjectile proj, Vector3f pos, Vector3f vel) {
         ensureCapacity(count + 1);
         int i = count++;
+        int id = ((DestroyableObject) proj).getId();
         posX[i] = pos.x;
         posY[i] = pos.y;
         posZ[i] = pos.z;
@@ -112,8 +128,9 @@ public class ProjectileManager {
         velZ[i] = vel.z;
         lifetime[i] = proj.getMaxLifetime();
         typeIndex[i] = getOrAddType(proj.getProjectileType());
-        objId[i] = ((DestroyableObject) proj).getId();
+        objId[i] = id;
         alive[i] = true;
+        projectileObjIds.add(id);
     }
 
     /**
@@ -139,6 +156,7 @@ public class ProjectileManager {
         for (int i = 0; i < count; i++) {
             if (objId[i] == objIdToRemove) {
                 alive[i] = false;
+                projectileObjIds.remove(objIdToRemove);
                 swapRemove(i);
                 return;
             }
@@ -168,49 +186,96 @@ public class ProjectileManager {
         }
     }
 
-    /** 检查指定的 DestroyableObject ID 是否由此管理器管理 */
+    /**
+     * O(1) 检查指定的 DestroyableObject ID 是否由此管理器管理。
+     * 使用 ConcurrentHashSet 替代线性扫描 SoA 数组。
+     */
     public boolean containsProjectile(int targetObjId) {
-        for (int i = 0; i < count; i++) {
-            if (this.objId[i] == targetObjId) return true;
-        }
-        return false;
+        return projectileObjIds.contains(targetObjId);
     }
 
     /**
-     * 遍历 SoA 中所有投射物，调用其 DestroyableObject.preTick()。
-     * 早于寿命递减，使 checkDestroyed() 能读到已更新的值。
+     * 单趟遍历：寿命递减 + preTick。
+     * <p>
+     * 将原本两趟独立的遍历（tickAllLifetimes + forEachPreTick）合并为一趟，
+     * 减少对 SoA 数组的重复访问，改善缓存局部性。
      */
-    private void forEachPreTick() {
+    private void tickAndPreTick() {
+        Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
         for (int i = 0; i < count; i++) {
             if (!alive[i]) continue;
-            DestroyableObject obj = ObjectManager.getDestroyableObject(level, objId[i]);
-            if (obj != null) obj.preTick();
+
+            // 寿命递减
+            lifetime[i]--;
+            if (lifetime[i] <= 0) {
+                alive[i] = false;
+                projectileObjIds.remove(objId[i]);
+                DestroyableObject obj = (objMap != null) ? objMap.get(objId[i]) : null;
+                if (obj != null) {
+                    obj.isRemoved = true;
+                    objMap.remove(objId[i]);
+                }
+                continue;
+            }
+
+            // preTick：先写入缓存寿命，避免 preTick → checkDestroyed → getLifetime 的 O(n) 线性扫描
+            DestroyableObject obj = (objMap != null) ? objMap.get(objId[i]) : null;
+            if (obj != null) {
+                if (obj instanceof PointProjectile pp) {
+                    pp.cachedLifetime = lifetime[i];
+                } else if (obj instanceof RigidProjectile rp) {
+                    rp.cachedLifetime = lifetime[i];
+                }
+                obj.preTick();
+            }
         }
     }
 
-    /** 遍历 SoA 中所有投射物，调用其 DestroyableObject.postTick()。 */
-    private void forEachPostTick() {
+    /**
+     * 单趟遍历：postTick + SoA 回写 SynchedEntityData。
+     * <p>
+     * 将原本两趟独立的遍历（forEachPostTick + syncAllToSyncedData）合并为一趟，
+     * 减少对 SoA 数组和 HashMap 的重复访问。
+     */
+    private void postTickAndSync() {
+        Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
+        if (objMap == null) return;
+
         for (int i = 0; i < count; i++) {
             if (!alive[i]) continue;
-            DestroyableObject obj = ObjectManager.getDestroyableObject(level, objId[i]);
-            if (obj != null) obj.postTick();
+            DestroyableObject obj = objMap.get(objId[i]);
+            if (obj == null) continue;
+
+            obj.postTick();
+
+            // 刚体投射物跳过回写（RigidProjectile.postTick 中已自行从 Bullet 同步）
+            if (obj instanceof RigidProjectile) continue;
+
+            obj.setPosition(new Vector3f(posX[i], posY[i], posZ[i]));
+            obj.setLinearVelocity(new Vector3f(velX[i], velY[i], velZ[i]));
         }
     }
 
-    /** 遍历 SoA 中所有投射物，调用其 DestroyableObject.prePhysicsTick()。 */
+    /** 单趟遍历：prePhysicsTick（缓存本层 Map 引用） */
     private void forEachPrePhysicsTick() {
+        Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
+        if (objMap == null) return;
+
         for (int i = 0; i < count; i++) {
             if (!alive[i]) continue;
-            DestroyableObject obj = ObjectManager.getDestroyableObject(level, objId[i]);
+            DestroyableObject obj = objMap.get(objId[i]);
             if (obj != null) obj.prePhysicsTick();
         }
     }
 
-    /** 遍历 SoA 中所有投射物，调用其 DestroyableObject.postPhysicsTick()。 */
+    /** 单趟遍历：postPhysicsTick（缓存本层 Map 引用） */
     private void forEachPostPhysicsTick() {
+        Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
+        if (objMap == null) return;
+
         for (int i = 0; i < count; i++) {
             if (!alive[i]) continue;
-            DestroyableObject obj = ObjectManager.getDestroyableObject(level, objId[i]);
+            DestroyableObject obj = objMap.get(objId[i]);
             if (obj != null) obj.postPhysicsTick();
         }
     }
@@ -222,19 +287,21 @@ public class ProjectileManager {
     /**
      * 主线程 Pre 阶段。
      * 递减所有投射物寿命 + 调用各投射物的 {@code preTick()}。
+     * <p>
+     * 优化：合并寿命递减和 preTick 为一趟遍历，减少 SoA 数组重复访问。
      */
     public void preTick() {
-        tickAllLifetimes();
-        forEachPreTick();
+        tickAndPreTick();
     }
 
     /**
      * 主线程 Post 阶段。
      * 调用各投射物的 {@code postTick()}，然后将 SoA 位置/速度回写到 SynchedEntityData。
+     * <p>
+     * 优化：合并 postTick 和 syncToSyncedData 为一趟遍历。
      */
     public void postTick() {
-        forEachPostTick();
-        syncAllToSyncedData();
+        postTickAndSync();
     }
 
     /**
@@ -267,69 +334,34 @@ public class ProjectileManager {
     // ================================================================
 
     /**
-     * 递减所有活跃投射物的寿命。
-     * <p>
-     * 超时的投射物被标记为不活跃（alive[i] = false），
-     * 实际的 swapRemove 清理由物理线程在下一 tick 执行。
-     */
-    private void tickAllLifetimes() {
-        for (int i = 0; i < count; i++) {
-            if (!alive[i]) continue;
-            lifetime[i]--;
-            if (lifetime[i] <= 0) {
-                alive[i] = false;
-                DestroyableObject destroyable = ObjectManager.getDestroyableObject(level, objId[i]);
-                if (destroyable != null) {
-                    destroyable.isRemoved = true;
-                    ObjectManager.removeDestroyableObject(level, objId[i]);
-                }
-            }
-        }
-    }
-
-    /**
-     * 将 SoA 位置/速度回写到各投射物对象的 SynchedEntityData。
-     * <p>
-     * 刚体投射物跳过（已在 postTick 中由 RigidProjectile 自行从 Bullet 同步）；
-     * 仅回写质点投射物。
-     */
-    private void syncAllToSyncedData() {
-        for (int i = 0; i < count; i++) {
-            if (!alive[i]) continue;
-            DestroyableObject obj = ObjectManager.getDestroyableObject(level, objId[i]);
-            if (obj == null) continue;
-            if (obj instanceof RigidProjectile) continue;
-            obj.setPosition(new Vector3f(posX[i], posY[i], posZ[i]));
-            obj.setLinearVelocity(new Vector3f(velX[i], velY[i], velZ[i]));
-        }
-    }
-
-    /**
      * 客户端自主外推所有投射物（质点+刚体的简化积分，无碰撞检测）。
      * <p>
      * 服务端仅广播关键事件（创建/命中/超时），客户端依赖自主外推来维持帧间
      * 位置连续性，供 {@code ClientProjectileRenderer} 读取。
      * <p>
-     * 与服务端 {@link #updatePointProjectiles} 的区别：不执行 rayTest、不发起伤害、
-     * 不广播命中特效。仅做半隐式 Euler 积分和死条清理。
+     * 优化：在热路径中缓存 typeCache 引用，一次提取 ProjectileType 代替三次数组访问。
      *
      * @param physicsLevel 客户端物理世界
      */
     private void clientExtrapolate(PhysicsLevel physicsLevel) {
         for (int i = count - 1; i >= 0; i--) {
-            if (!alive[i]) swapRemove(i);
+            if (!alive[i]) {
+                projectileObjIds.remove(objId[i]);
+                swapRemove(i);
+            }
         }
         if (count == 0) return;
 
         float dt = 1.0f / physicsLevel.getTps();
+        ProjectileType[] types = this.typeCache;
 
         for (int i = 0; i < count; i++) {
             if (!alive[i]) continue;
 
-            int tIdx = typeIndex[i];
-            float mass = (tIdx >= 0 && tIdx < typeCache.length) ? typeCache[tIdx].getMass() : 1.0f;
-            float gravityFactor = (tIdx >= 0 && tIdx < typeCache.length) ? typeCache[tIdx].getGravityFactor() : 1.0f;
-            float dragFactor = (tIdx >= 0 && tIdx < typeCache.length) ? typeCache[tIdx].getDragFactor() : 0f;
+            ProjectileType type = types[typeIndex[i]];
+            float mass = type.getMass();
+            float gravityFactor = type.getGravityFactor();
+            float dragFactor = type.getDragFactor();
 
             float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
 
@@ -359,34 +391,48 @@ public class ProjectileManager {
      * <p>
      * 每个物理步对每个活跃质点执行：
      * <ol>
-     *   <li>清理死条（被主线程 {@link #tickAllLifetimes()} 标记的）</li>
+     *   <li>清理死条（被主线程 {@link #tickAndPreTick()} 标记的）</li>
      *   <li>半隐式 Euler 积分（重力 + 空气阻力）</li>
      *   <li>JME {@code rayTest} 碰撞检测</li>
      *   <li>命中处理→发起协议伤害→视觉特效广播</li>
      * </ol>
      * <p>
-     * 寿命管理已移至主线程 {@link #tickAllLifetimes()}，此处不再递减或检查寿命。
+     * 优化项：
+     * <ul>
+     *   <li>缓存 typeCache 引用，一次提取 ProjectileType 避免三次数组访问</li>
+     *   <li>复用 Vector3f 实例避免热路径中重复分配</li>
+     *   <li>缓存 ObjectManager.levelDestroyableObjects 本层 Map 引用</li>
+     * </ul>
      *
      * @param physicsLevel 当前维度的物理世界
      */
     public void updatePointProjectiles(PhysicsLevel physicsLevel) {
-        // 0) 清理死条（被主线程 tickAllLifetimes 标记为 !alive 的条目）
+        // 0) 清理死条（被主线程 tickAndPreTick 标记为 !alive 的条目）
         for (int i = count - 1; i >= 0; i--) {
-            if (!alive[i]) swapRemove(i);
+            if (!alive[i]) {
+                projectileObjIds.remove(objId[i]);
+                swapRemove(i);
+            }
         }
         if (count == 0) return;
 
         var world = physicsLevel.getWorld();
         float dt = 1.0f / physicsLevel.getTps();
+        ProjectileType[] types = this.typeCache;
+        Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
+        Vector3f rayFrom = this.rayFrom;
+        Vector3f rayTo = this.rayTo;
+        Vector3f hitPointJme = this.hitPointJme;
+        Vector3f hitNormalJme = this.hitNormalJme;
 
         for (int i = 0; i < count; i++) {
             if (!alive[i]) continue;
 
             // 从类型缓存读取弹道参数
-            int tIdx = typeIndex[i];
-            float mass = (tIdx >= 0 && tIdx < typeCache.length) ? typeCache[tIdx].getMass() : 1.0f;
-            float gravityFactor = (tIdx >= 0 && tIdx < typeCache.length) ? typeCache[tIdx].getGravityFactor() : 1.0f;
-            float dragFactor = (tIdx >= 0 && tIdx < typeCache.length) ? typeCache[tIdx].getDragFactor() : 0f;
+            ProjectileType type = types[typeIndex[i]];
+            float mass = type.getMass();
+            float gravityFactor = type.getGravityFactor();
+            float dragFactor = type.getDragFactor();
 
             float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
 
@@ -411,25 +457,28 @@ public class ProjectileManager {
             posY[i] += velY[i] * dt;
             posZ[i] += velZ[i] * dt;
 
-            // JME 物理射线碰撞检测
-            Vector3f prevPos = new Vector3f(prevX, prevY, prevZ);
-            Vector3f currPos = new Vector3f(posX[i], posY[i], posZ[i]);
+            // JME 物理射线碰撞检测（复用 Vector3f 实例）
+            rayFrom.set(prevX, prevY, prevZ);
+            rayTo.set(posX[i], posY[i], posZ[i]);
 
-            List<PhysicsRayTestResult> results = world.rayTest(prevPos, currPos);
+            List<PhysicsRayTestResult> results = world.rayTest(rayFrom, rayTo);
             boolean hit = false;
             label:
             for (PhysicsRayTestResult result : results) {
-                PhysicsCollisionObject obj = result.getCollisionObject();
-                if (obj.getCollisionGroup() != CollisionGroups.PHYSICS_BODY // 零部件刚体
-                        && obj.getCollisionGroup() != CollisionGroups.TERRAIN // 地形
-                            && obj.getCollisionGroup() != CollisionGroups.PAWN) // 一般实体的刚体代理
+                PhysicsCollisionObject collObj = result.getCollisionObject();
+                if (collObj.getCollisionGroup() != CollisionGroups.PHYSICS_BODY
+                        && collObj.getCollisionGroup() != CollisionGroups.TERRAIN
+                            && collObj.getCollisionGroup() != CollisionGroups.PAWN)
                     continue;
-                if (!(obj instanceof PhysicsRigidBody body)) continue;
+                if (!(collObj instanceof PhysicsRigidBody body)) continue;
 
                 Object owner = PhysicsBodyExtensionKt.getOwner(body);
-                Vector3f hitPointJme = prevPos.add(currPos.subtract(prevPos).mult(result.getHitFraction()));
+                float hitFrac = result.getHitFraction();
+                hitPointJme.set(
+                    rayFrom.x + (rayTo.x - rayFrom.x) * hitFrac,
+                    rayFrom.y + (rayTo.y - rayFrom.y) * hitFrac,
+                    rayFrom.z + (rayTo.z - rayFrom.z) * hitFrac);
                 Vec3 hitPointMc = new Vec3(hitPointJme.x, hitPointJme.y, hitPointJme.z);
-                Vector3f hitNormalJme = new Vector3f();
                 result.getHitNormalLocal(hitNormalJme);
                 Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
 
@@ -437,6 +486,7 @@ public class ProjectileManager {
                     case null:
                         spawnTerrainHitEffect(hitPointMc);
                         alive[i] = false;
+                        projectileObjIds.remove(objId[i]);
                         hit = true;
                         break label;
                     case SubPart subPart:
@@ -449,9 +499,10 @@ public class ProjectileManager {
                         break;
                 }
 
-                DestroyableObject destroyable = ObjectManager.getDestroyableObject(level, objId[i]);
+                DestroyableObject destroyable = (objMap != null) ? objMap.get(objId[i]) : null;
                 if (!(destroyable instanceof IProjectile projectile)) {
                     alive[i] = false;
+                    projectileObjIds.remove(objId[i]);
                     hit = true;
                     break;
                 }
@@ -465,12 +516,13 @@ public class ProjectileManager {
                 spawnHitVisualEffect(level, hitPointMc, hitNormalMc, owner instanceof BFHurtTarget);
                 projectile.markHit();
                 alive[i] = false;
+                projectileObjIds.remove(objId[i]);
                 hit = true;
                 break;
             }
 
             if (hit) {
-                DestroyableObject destroyable = ObjectManager.getDestroyableObject(level, objId[i]);
+                DestroyableObject destroyable = (objMap != null) ? objMap.get(objId[i]) : null;
                 if (destroyable != null) {
                     destroyable.destroy();
                 }

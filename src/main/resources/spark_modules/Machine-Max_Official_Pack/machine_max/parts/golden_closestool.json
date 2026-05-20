@@ -8,7 +8,7 @@
     "model": "machine_max:golden_closestool.geo",
     "textures": "machine_max:textures/part/golden_closestool.png",
     "animations": "machine_max:empty", 
-    "tags": [],
+    "tags": ["machine_max:land", "machine_max:misc"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 4000.0,

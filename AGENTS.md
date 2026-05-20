@@ -1,103 +1,95 @@
 # Machine-Max — Agent Guide
 
-## Project
+**Generated:** 2026-05-17 · **Commit:** f9ca6dc7 · **Branch:** 1.21.1
 
-NeoForge 1.21.1 Minecraft vehicle mod. Kotlin + Java, Gradle 8.9, JDK 21.
+## OVERVIEW
 
-- **Group**: `io.github.sweetzonzi.machine_max` · **Mod ID**: `machine_max`
-- **Entry**: `src/main/java/io/github/sweetzonzi/machine_max/MachineMax.java` — registration hub via `REGISTER` (ObjectRegister)
-- **ModLoader**: `kotlinforforge` (Kotlin for Forge — mods.toml uses this)
+NeoForge 1.21.1 Minecraft vehicle mod. Kotlin + Java, Gradle 8.9, JDK 21. Data-driven part-based vehicle assembly with real-time physics (Bullet via Spark-Core), 18 subsystem types, and content pack extensibility.
 
-## Key Commands
-
-| Command | Purpose |
-|---|---|
-| `./gradlew build` | Build the mod (jar in `build/libs/`) |
-| `./gradlew runClient` | Launch Minecraft client |
-| `./gradlew runServer` | Launch dedicated server |
-| `./gradlew runGameTestServer` | Run game tests |
-| `./gradlew runData` | **Regenerate** `src/generated/resources/` |
-
-## Composite Builds (local dev)
-
-`settings.gradle` conditionally includes sibling directories for source-level dependency:
-
-- `../Spark-Core` (Spark-Core content pack framework)
-- `../BallisticsFramework` (physics/ballistics)
-
-If absent, falls back to published Maven jars. CI uses published jars.
-
-## Actual Package Layout
-
-Source has been **refactored**: `common/mech/` (not `common/vehicle/` as the README says — README is outdated).
+## STRUCTURE
 
 ```
 io.github.sweetzonzi.machine_max/
-├── MachineMax.java          # mod init, registers everything
-├── common/                  # server & shared
-│   ├── mech/                # core vehicle domain (was vehicle/)
-│   │   ├── vehicle/         # VehicleCore, Part, SubPart, connectors, signals, energy
-│   │   ├── subsystem/       # Engine, Gearbox, Seat, Battery, etc.
-│   │   ├── ObjectManager.java  # global per-dimension VehicleCore registry
+├── MachineMax.java              # mod init, ObjectRegister hub
+├── common/
+│   ├── mech/                    # CORE DOMAIN — see common/mech/AGENTS.md
+│   │   ├── vehicle/             # VehicleCore, Part, SubPart, connectors, signals, energy
+│   │   ├── subsystem/           # 18 subsystem types — see subsystem/AGENTS.md
+│   │   ├── ObjectManager.java   # per-dimension VehicleCore registry
 │   │   ├── DestroyableObject.java / DestroyableRigidObject.java
-│   │   └── projectile/      # data-driven projectile system (WIP)
-│   ├── item/                # PartItem, AssemblyItem, WeldingTorchItem, CrowbarItem, etc.
-│   ├── block/               # Fabricator, ResearchTable, TotalStation, RoadBase
-│   ├── recipe/              # ResearchRecipe, FabricatingRecipe
-│   ├── attachment/          # VehicleAssemblyAttachment (per-player assembly state)
-│   ├── registry/            # MMItems, MMBlocks, MMEntities, etc.
-│   └── visual/              # PartAnimatable, VehicleAnimatable
-├── client/                  # rendering, input, GUI, HUD
-├── network/                 # payload classes + MMPayloadRegistry
-├── mixin/                   # 6 server + 6 client mixins (machine_max.mixins.json)
-├── util/                    # PD/PID controllers, terrain (LocalHeightField), MMMath
-├── external/                # MMDynamicRes (Spark-Core integration)
-├── datagen/                 # data generator
-└── compat/                  # Create mod interop
+│   │   └── projectile/          # data-driven projectile system (SoA)
+│   ├── item/                    # PartItem, AssemblyItem, WeldingTorch, Crowbar, Blueprint
+│   ├── block/                   # Fabricator, ResearchTable, TotalStation, RoadBase
+│   ├── recipe/                  # ResearchRecipe, FabricatingRecipe
+│   ├── attachment/              # VehicleAssemblyAttachment, BlueprintAttachment
+│   ├── registry/                # MMItems, MMBlocks, MMEntities (Kotlin)
+│   └── visual/                  # PartAnimatable, VehicleAnimatable, AnimatableParams
+├── client/                      # rendering, input, GUI, HUD — see client/AGENTS.md
+├── network/                     # payload classes + MMPayloadRegistry — see network/AGENTS.md
+├── mixin/                       # 6 server + 6 client mixins
+├── util/                        # PD/PID, terrain (LocalHeightField), MMMath
+├── external/                    # MMDynamicRes (Spark-Core resource loading)
+├── datagen/                     # data generator (Kotlin)
+└── compat/                      # Create mod interop
 ```
 
-## Math Library Duality (critical)
+## WHERE TO LOOK
 
-Two incompatible math libraries coexist — **never mix them directly**:
+| Task | Location | Notes |
+|------|----------|-------|
+| Add/modify vehicle physics | `common/mech/vehicle/` | VehicleCore, SubPart, Part, connectors |
+| Add new subsystem type | `common/mech/subsystem/` | Extend AbstractSubsystem |
+| Add network packet | `network/` | Register in MMPayloadRegistry |
+| Add client GUI/HUD | `client/render/gui/` | Screen + HUD + hud3d |
+| Add item/block/entity | `common/registry/` (Kotlin) | MMItems.kt, MMBlocks.kt, MMEntities.kt |
+| Add content pack data | `src/main/resources/spark_modules/` | JSON in Official_Pack or new pack |
+| Add recipe | `common/recipe/` + `resources/spark_modules/.../recipe/` |
+| Fix rendering | `client/render/renderer/` | PartEntityRenderer is main vehicle renderer |
+| Fix collision | `common/mech/vehicle/collision/` | CollisionHandler + CollisionEffectManager |
+| Fix input/control | `client/input/` + `common/mech/subsystem/CarControllerSubsystem.java` |
 
-| Domain | Library | Key Types |
-|---|---|---|
-| **Physics** (JME) | `com.jme3.math` | `Vector3f`, `Quaternion`, `Transform`, `Matrix4f` |
-| **Rendering** (JOML) | `org.joml` | `Vector3f`, `Quaternionf`, `Matrix4f` |
+## COMMANDS
 
-**Always use `SparkMathKt.*` (from Spark-Core) for cross-type conversion** (e.g., `toBVector3f`, `toQuaternionf`).
+```bash
+./gradlew build              # Build mod JAR
+./gradlew runClient          # Launch client
+./gradlew runServer          # Launch dedicated server
+./gradlew runGameTestServer  # Run NeoForge game tests
+./gradlew runData            # Regenerate src/generated/resources/
+```
 
-## Content Pack System
+## CONVENTIONS
 
-Data-driven content via Spark-Core JSON modules. All definition files are in `src/main/resources/spark_modules/`:
+- **Kotlin for declarations, Java for logic**: Registry files (MM*.kt), datagen, resource modules in Kotlin; vehicle core, physics, networking, rendering in Java.
+- **ObjectRegister pattern**: Single `MachineMax.REGISTER` field handles all NeoForge registrations via Spark-Core.
+- **Thread annotations**: Methods document calling thread in Javadoc — `主线程` (main) vs `物理线程` (physics).
+- **Content pack everything**: Parts, subsystems, connectors, recipes, blueprints defined in JSON under `spark_modules/`.
 
-- `Machine-Max_Official_Pack/` — official parts, connectors, subsystems, assemblies, blueprints
-- `machine_max.builtin/` — core models and textures
-- `Machine-Max_Pack_Template/` — template for UGC creators
+## ANTI-PATTERNS (THIS PROJECT)
 
-JSON schemas are at `Machine-Max_Official_Pack/docs/zh_cn/schema/`.
+- **Never mix JME and JOML math directly**: Physics uses `com.jme3.math.*`, rendering uses `org.joml.*`. Always convert via `SparkMathKt.*`.
+- **Never use `synchronized` outside `partNet`**: Only 2 `synchronized` blocks exist (VehicleCore.java:893,972) guarding the Guava `MutableNetwork`. All other shared state uses `ConcurrentHashMap`, `ConcurrentLinkedQueue`, `volatile`, or `CopyOnWriteArraySet`.
+- **Never call physics-body mutations from main thread directly**: Use `getPhysicsLevel().submitImmediateTask(PPhase.ALL/PRE, ...)`.
+- **README package map is wrong**: README says `common/vehicle/` but actual package is `common/mech/vehicle/`.
 
-## Architecture in Brief
+## UNIQUE STYLES
 
-- **Part** — assembly/recipe granularity, holds SubParts, manages recipes and material progress
-- **SubPart** — physics/functional granularity: rigid body, collision, subsystems, connectors
-- **VehicleCore** — aggregate root: partNet (topology), mass, HP, tick via ObjectManager
-- **SignalChannel/SignalPort** — cross-part communication (input, control, power signals)
-- **EnergyGrid** — electrical bus; **MechPowerPort** — mechanical power transfer
-- **VehicleAssemblyAttachment** — per-player state cache for assembly: current part type, variant, connector, rotation
+- **ConcurrentLinkedQueue accumulator pattern**: Physics threads enqueue damage/impact/integrity changes; main thread drains in `handleAccumulated*()`.
+- **Volatile snapshot pattern**: `CollisionEffectManager.latestWheelSnapshot` — physics writes, main reads, latest-value-only.
+- **SoA projectile arrays**: `ProjectileManager` uses primitive arrays (`posX[]`, `velX[]`, etc.) with swap-remove O(1) deletion.
+- **Dual-math conversion files**: 9 files import both JME and JOML (see MMMath, PosRot, VehicleAnimatable, SubPartAnimatable, RenderableBoundingBox, AnimatableParams, EntityMixin, ProjectileSpawnPayload).
 
-## Testing
+## NOTES
 
-`./gradlew runGameTestServer` runs NeoForge's game test framework.  
-Registered under `neoforge.enabledGameTestNamespaces = machine_max`.
+- **Composite builds**: `settings.gradle` conditionally includes `../Spark-Core` and `../BallisticsFramework` for local dev. Falls back to Maven jars in CI.
+- **No unit tests**: Only NeoForge runtime game tests (`runGameTestServer`). No `src/test/` directory.
+- **CI uses JDK 17** while build targets Java 21 bytecode.
+- **24 TODOs in MachineMax.java** — full roadmap including network refactor, turret control, mech suit, and more.
+- **Known crash**: Multi-threaded physics + joints = crash (VehicleCore.java:1038). Sequential addToLevel is the workaround.
+- **Coupling torque disabled**: `MotorSubsystem.coupleTorque = 0` due to wheel oscillation at stop.
 
-## CI / Docs
+## REFERENCE FILES
 
-- **Build**: `.github/workflows/build.yml` — on push/PR
-- **Wiki**: MkDocs + Material theme, deployed to GitHub Pages. Build with `mkdocs build --config-file docs/mkdocs.yml`
-- **Pages deploy**: only from `1.21.1` branch, triggered by `docs/**` or `.github/**` changes
-
-## Existing Reference Files
-
-- `docs/LLM_QUICKSTART.md` — deep dive into assembly pipeline (VehicleCore, attachment, signal system, network sync)
-- `docs/glossary.md` — auto-generated term dictionary covering all major classes
+- `docs/LLM_QUICKSTART.md` — deep dive into assembly pipeline, signal system, network sync
+- `docs/glossary.md` — auto-generated term dictionary (287 lines)
+- `docs/武器系统-数据驱动投射物设计文档.md` — projectile system design doc (Chinese)

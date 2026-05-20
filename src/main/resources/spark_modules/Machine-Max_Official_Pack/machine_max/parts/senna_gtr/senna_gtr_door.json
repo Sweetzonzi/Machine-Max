@@ -10,7 +10,7 @@
       "model": "machine_max:senna_gtr_door_left.geo",
       "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty",
-      "tags": ["machine_max:door", "machine_max:senna_gtr", "machine_max:left"],
+      "tags": ["machine_max:land", "machine_max:structural", "machine_max:door", "machine_max:senna_gtr", "machine_max:left"],
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 50.0,
@@ -50,7 +50,7 @@
       "model": "machine_max:senna_gtr_door_right.geo",
       "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty",
-      "tags": ["machine_max:door", "machine_max:senna_gtr", "machine_max:right"],
+      "tags": ["machine_max:land", "machine_max:structural", "machine_max:door", "machine_max:senna_gtr", "machine_max:right"],
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 50.0,

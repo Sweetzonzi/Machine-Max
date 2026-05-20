@@ -12,12 +12,14 @@ public class ControlPreferenceAttachment {
     public ControlPreference groundHandBrakePreference = ControlPreference.FOLLOW_VEHICLE;
     public ControlPreference groundDriftPreference = ControlPreference.FOLLOW_VEHICLE;
     public boolean groundSpeedTurningLimitPreference = true;
+    public boolean groundSeparateThrottleBrake = false;
 
     public static final Codec<ControlPreferenceAttachment> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ControlPreference.CODEC.optionalFieldOf("ground_gear_preference", ControlPreference.FOLLOW_VEHICLE).forGetter(ControlPreferenceAttachment::getGroundGearPreference),
             ControlPreference.CODEC.optionalFieldOf("ground_hand_brake_preference", ControlPreference.FOLLOW_VEHICLE).forGetter(ControlPreferenceAttachment::getGroundHandBrakePreference),
             ControlPreference.CODEC.optionalFieldOf("ground_drift_preference", ControlPreference.FOLLOW_VEHICLE).forGetter(ControlPreferenceAttachment::getGroundDriftPreference),
-            Codec.BOOL.optionalFieldOf("ground_speed_turning_limit_preference", true).forGetter(ControlPreferenceAttachment::isGroundSpeedTurningLimitPreference)
+            Codec.BOOL.optionalFieldOf("ground_speed_turning_limit_preference", true).forGetter(ControlPreferenceAttachment::isGroundSpeedTurningLimitPreference),
+            Codec.BOOL.optionalFieldOf("ground_separate_throttle_brake", false).forGetter(ControlPreferenceAttachment::isGroundSeparateThrottleBrake)
     ).apply(instance, ControlPreferenceAttachment::new));
 
     public static final StreamCodec<FriendlyByteBuf, ControlPreferenceAttachment> STREAM_CODEC =
@@ -28,6 +30,7 @@ public class ControlPreferenceAttachment {
                         ControlPreference.STREAM_CODEC.encode(buf, value.groundHandBrakePreference);
                         ControlPreference.STREAM_CODEC.encode(buf, value.groundDriftPreference);
                         buf.writeBoolean(value.groundSpeedTurningLimitPreference);
+                        buf.writeBoolean(value.groundSeparateThrottleBrake);
                     },
                     // decode
                     buf -> {
@@ -35,11 +38,13 @@ public class ControlPreferenceAttachment {
                         ControlPreference handBrake = ControlPreference.STREAM_CODEC.decode(buf);
                         ControlPreference drift = ControlPreference.STREAM_CODEC.decode(buf);
                         boolean speedLimit = buf.readBoolean();
+                        boolean separate = buf.readBoolean();
                         return new ControlPreferenceAttachment(
                                 gear,
                                 handBrake,
                                 drift,
-                                speedLimit
+                                speedLimit,
+                                separate
                         );
                     }
             );
@@ -48,12 +53,14 @@ public class ControlPreferenceAttachment {
             ControlPreference groundGearPreference,
             ControlPreference groundHandBrakePreference,
             ControlPreference groundDriftPreference,
-            boolean groundSpeedTurningLimitPreference
+            boolean groundSpeedTurningLimitPreference,
+            boolean groundSeparateThrottleBrake
     ) {
         this.groundGearPreference = groundGearPreference;
         this.groundHandBrakePreference = groundHandBrakePreference;
         this.groundDriftPreference = groundDriftPreference;
         this.groundSpeedTurningLimitPreference = groundSpeedTurningLimitPreference;
+        this.groundSeparateThrottleBrake = groundSeparateThrottleBrake;
     }
 
     public ControlPreferenceAttachment() {}

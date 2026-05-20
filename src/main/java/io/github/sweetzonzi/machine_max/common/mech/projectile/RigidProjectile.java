@@ -31,7 +31,12 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
 
     private final ProjectileType projectileType;
     private boolean hasHit = false;
-    // 注：寿命权威来源为 ProjectileManager SoA 数组，不再持有本地 lifetime
+
+    /**
+     * 缓存寿命副本，由 {@link ProjectileManager#tickAndPreTick()} 在调用 preTick() 前设置。
+     * 避免 getLifetime() 在 preTick() → checkDestroyed() 链条中进行 O(n) 线性扫描。
+     */
+    int cachedLifetime = 0;
 
     /**
      * 创建一个刚体投射物。
@@ -90,12 +95,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
 
     @Override
     public int getLifetime() {
-        ProjectileManager pm = ObjectManager.levelProjectileManagers.get(level);
-        if (pm == null) return 0;
-        for (int i = 0; i < pm.count; i++) {
-            if (pm.objId[i] == getId()) return pm.lifetime[i];
-        }
-        return 0;
+        return cachedLifetime;
     }
 
     @Override

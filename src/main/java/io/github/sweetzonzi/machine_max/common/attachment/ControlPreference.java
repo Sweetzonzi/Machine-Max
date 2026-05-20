@@ -69,6 +69,20 @@ public enum ControlPreference implements StringRepresentable {
         return data.groundSpeedTurningLimitPreference;
     }
 
+    /**
+     * 判断是否启用分离模式（W=油门, S=刹车，油门刹车解耦）。
+     * 服务端入口，从玩家 Attachment 读取。
+     *
+     * @param ctrl 车辆控制器子系统
+     * @return true=分离模式, false=意图模式
+     */
+    public static boolean shouldRawThrottleBrake(CarControllerSubsystem ctrl) {
+        if (ctrl.getController() == null)
+            return false;
+        var data = ctrl.getController().getData(MMAttachments.getCONTROL_PREFERENCE());
+        return data.groundSeparateThrottleBrake;
+    }
+
     @Override
     public @NotNull String getSerializedName() {
         return name().toLowerCase();

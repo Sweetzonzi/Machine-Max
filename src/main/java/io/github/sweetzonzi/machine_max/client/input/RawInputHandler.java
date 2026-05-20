@@ -99,37 +99,82 @@ public class RawInputHandler {
                     boolean backWard = new KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover();
                     boolean leftward = new KeyHooks.EVENT(KeyBinding.groundLeftwardKey).isHover();
                     boolean rightward = new KeyHooks.EVENT(KeyBinding.groundRightwardKey).isHover();
-                    // 前进后退
-                    if (forward || backWard) { // 有输入
-                        if (forward && backWard) trans_z_conflict = 1;
-                        else trans_z_conflict = 0;
-                        if (forward && !backWard) {
+
+                    if (MMClientConfig.isSeparateThrottleBrake()) {
+                        // 分离模式：W=油门(trans_z_input), S=刹车(trans_z_conflict)，各自独立非负
+                        if (forward) {
                             if (trans_z_input < 0) trans_z_input = 0;
                             trans_z_input += MMClientConfig.getGroundFullPowerStep();
                         }
-                        if (backWard && !forward) {
-                            if (trans_z_input > 0) trans_z_input = 0;
-                            trans_z_input -= MMClientConfig.getGroundFullPowerStep();
+                        if (backWard) {
+                            if (trans_z_conflict < 0) trans_z_conflict = 0;
+                            trans_z_conflict += MMClientConfig.getGroundFullBrakeStep();
                         }
-                    } else { // 无输入逐渐归零
-                        if (trans_z_input > 0) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundFullPowerStep());
-                        if (trans_z_input < 0) trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundFullPowerStep());
+                        // 松键回零（油门走 power_off，刹车走 brake_off）
+                        if (!forward) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
+                        if (!backWard) trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
+                    } else {
+                        // 意图模式：W=前进意图, S=后退意图
+                        // 双通道双向设计：W → input+, conflict+ ; S → input-, conflict-
+                        // 向±1移动用Full*Step，向0移动用*OffStep
+                        if (forward && backWard) {
+                            // W+S同时：两通道各自归零
+                            if (trans_z_input > 0) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
+                            if (trans_z_input < 0) trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundBrakeOffStep());
+                            if (trans_z_conflict > 0) trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
+                            if (trans_z_conflict < 0) trans_z_conflict = Math.min(0, trans_z_conflict + MMClientConfig.getGroundBrakeOffStep());
+                        } else {
+                            if (forward) {
+                                // W: input+ , conflict+  (前进意图)
+                                if (trans_z_input < 0) trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundBrakeOffStep());
+                                else trans_z_input += MMClientConfig.getGroundFullPowerStep();
+                                if (trans_z_conflict < 0) trans_z_conflict = Math.min(0, trans_z_conflict + MMClientConfig.getGroundBrakeOffStep());
+                                else trans_z_conflict += MMClientConfig.getGroundFullBrakeStep();
+                            } else if (backWard) {
+                                // S: input- , conflict-  (后退意图)
+                                if (trans_z_input > 0) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
+                                else trans_z_input -= MMClientConfig.getGroundFullBrakeStep();
+                                if (trans_z_conflict > 0) trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
+                                else trans_z_conflict -= MMClientConfig.getGroundFullBrakeStep();
+                            } else {
+                                // 无输入：两通道各自回零
+                                if (trans_z_input > 0) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
+                                if (trans_z_input < 0) trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundBrakeOffStep());
+                                if (trans_z_conflict > 0) trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
+                                if (trans_z_conflict < 0) trans_z_conflict = Math.min(0, trans_z_conflict + MMClientConfig.getGroundBrakeOffStep());
+                            }
+                        }
                     }
                     // 手柄直接取用输出值
-                    if (MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) > 0
-                            || MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) > 0) {
-                        trans_z_input = Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
-                        trans_z_input -= Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
+                    if (MMClientConfig.isSeparateThrottleBrake()) {
+                        // 分离模式：RT=油门轴, LT=刹车轴，各自独立
+                        float rt = MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER);
+                        float lt = MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER);
+                        if (rt > 0) {
+                            trans_z_input = Math.round((rt + 1) / 2 * 100);
+                        }
+                        if (lt > 0) {
+                            trans_z_conflict = Math.round((lt + 1) / 2 * 100);
+                        }
+                    } else {
+                        // 意图模式：RT→input+conflict+, LT→input-conflict-，两通道同值
+                        if (MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) > 0
+                                || MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) > 0) {
+                            int rtVal = Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) + 1) / 2 * 100);
+                            int ltVal = Math.round((MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) + 1) / 2 * 100);
+                            trans_z_input = rtVal - ltVal;
+                            trans_z_conflict = rtVal - ltVal;
+                        }
                     }
                     // 转向
-                    if (leftward || rightward) { // 有输入
+                    if (leftward || rightward) {
                         if (leftward) rot_y_input += MMClientConfig.getGroundFullSteeringStep();
                         if (rightward) rot_y_input -= MMClientConfig.getGroundFullSteeringStep();
                         if (leftward && rightward) rot_y_conflict = 1;
                         else rot_y_conflict = 0;
-                    } else { // 无输入逐渐回正
-                        if (rot_y_input > 0) rot_y_input = Math.max(0, rot_y_input - MMClientConfig.getGroundFullSteeringStep());
-                        if (rot_y_input < 0) rot_y_input = Math.min(0, rot_y_input + MMClientConfig.getGroundFullSteeringStep());
+                    } else {
+                        if (rot_y_input > 0) rot_y_input = Math.max(0, rot_y_input - MMClientConfig.getGroundSteeringOffStep());
+                        if (rot_y_input < 0) rot_y_input = Math.min(0, rot_y_input + MMClientConfig.getGroundSteeringOffStep());
                     }
                     // 手柄直接取用输出值
                     rot_y_input -= Math.round(MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
@@ -152,6 +197,12 @@ public class RawInputHandler {
             rot_x_input = Math.clamp(rot_x_input, -100, 100);
             rot_y_input = Math.clamp(rot_y_input, -100, 100);
             rot_z_input = Math.clamp(rot_z_input, -100, 100);
+            trans_x_conflict = Math.clamp(trans_x_conflict, -100, 100);
+            trans_y_conflict = Math.clamp(trans_y_conflict, -100, 100);
+            trans_z_conflict = Math.clamp(trans_z_conflict, -100, 100);
+            rot_x_conflict = Math.clamp(rot_x_conflict, -100, 100);
+            rot_y_conflict = Math.clamp(rot_y_conflict, -100, 100);
+            rot_z_conflict = Math.clamp(rot_z_conflict, -100, 100);
             // 打包数据
             moveInputs = new byte[]{
                     (byte) trans_x_input,

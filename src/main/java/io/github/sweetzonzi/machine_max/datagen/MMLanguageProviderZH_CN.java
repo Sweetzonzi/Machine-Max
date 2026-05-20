@@ -10,6 +10,23 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
+        // 内置标签
+        this.add("machine_max.left", "左");
+        this.add("machine_max.right", "右");
+        this.add("machine_max.front", "前");
+        this.add("machine_max.back", "后");
+        this.add("machine_max.top", "上");
+        this.add("machine_max.bottom", "下");
+        this.add("machine_max.structural", "结构");
+        this.add("machine_max.decoration", "装饰");
+        this.add("machine_max.mobility", "机动");
+        this.add("machine_max.weapon", "武器");
+        this.add("machine_max.misc", "杂项");
+        this.add("machine_max.land", "陆地");
+        this.add("machine_max.marine", "水上");
+        this.add("machine_max.aerial", "空中");
+        this.add("machine_max.mecha", "机甲");
+
         // 按键类别
         this.add("key.category.machine_max.general", "Machine Max:通用");
         this.add("key.category.machine_max.ground", "Machine Max:地面载具");
@@ -105,6 +122,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("gui.machine_max.welcome.title", "欢迎参与 Machine Max Beta 公开测试!");
         this.add("gui.machine_max.welcome.content", "这是一款以物理和载具组装为主题的 Minecraft模组。\n本模组仍处于早期版本，可能存在各类问题，不代表最终品质。\n使用旧有存档时请务必做好备份工作。\n\n祝游玩愉快！");
         this.add("gui.machine_max.welcome.proceed", "确认");
+        this.add("gui.machine_max.welcome.dont_show_again", "不再显示此页面");
         this.add("gui.machine_max.confirm", "确认");
         this.add("gui.machine_max.cancel", "取消");
         this.add("gui.machine_max.enter_vehicle_name", "设置载具名称");
@@ -208,35 +226,53 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         // 地面载具配置
         this.add("machine_max.configuration.ground_vehicle", "地面载具");
         this.add("machine_max.configuration.ground_vehicle.button", "地面载具");
-        this.add("machine_max.configuration.ground_vehicle.tooltip", "地面载具相关设置");
-        this.add("machine_max.configuration.full_power_time", "满动力时间");
-        this.add("machine_max.configuration.full_power_time.tooltip", "按住按键达到满动力所需的时间（秒）。默认值：1.2（地面载具）、2.5（飞行器）。范围：0.05 ~ 99999.0");
-        this.add("machine_max.configuration.full_steering_time", "满转向时间");
-        this.add("machine_max.configuration.full_steering_time.tooltip", "按住按键达到满转向所需的时间（秒）。默认值：0.4（地面载具）、0.25（舰艇）。范围：0.05 ~ 99999.0");
+        this.add("machine_max.configuration.ground_vehicle.tooltip", "地面载具控制的平滑度与行为设置");
+        this.add("machine_max.configuration.full_power_time", "油门建立时间");
+        this.add("machine_max.configuration.full_power_time.tooltip", "按下按键后达到满油门所需时间（秒）。越小响应越快。默认值：1.5（地面载具）、2.5（飞行器）。范围：0.05 ~ 99999.0");
+        this.add("machine_max.configuration.power_off_time", "收油归零时间");
+        this.add("machine_max.configuration.power_off_time.tooltip", "松开按键后油门回零所需时间（秒）。越小收油越快。默认值：2.0。范围：0.05 ~ 99999.0");
+        this.add("machine_max.configuration.full_brake_time", "刹车建立时间");
+        this.add("machine_max.configuration.full_brake_time.tooltip", "按下按键后达到满刹车所需时间（秒）。越小刹车响应越快。默认值：0.3。范围：0.05 ~ 99999.0");
+        this.add("machine_max.configuration.brake_off_time", "刹车释放时间");
+        this.add("machine_max.configuration.brake_off_time.tooltip", "松开按键后刹车归零所需时间（秒）。越小车轮恢复滚动越快。默认值：0.1。范围：0.05 ~ 99999.0");
+        this.add("machine_max.configuration.full_steering_time", "转向建立时间");
+        this.add("machine_max.configuration.full_steering_time.tooltip", "按下按键后达到满转向角所需时间（秒）。越小转向越快。默认值：0.4（地面载具）、0.25（舰艇）。范围：0.05 ~ 99999.0");
+        this.add("machine_max.configuration.steering_off_time", "转向回正时间");
+        this.add("machine_max.configuration.steering_off_time.tooltip", "松开按键后转向回正到中央所需时间（秒）。越小车轮回正越快。默认值：0.2。范围：0.05 ~ 99999.0");
         this.add("machine_max.configuration.auto_switch_gear", "自动换挡");
-        this.add("machine_max.configuration.auto_switch_gear.tooltip", "根据输入、车速和发动机转速自动换挡。默认值：FOLLOW_VEHICLE");
+        this.add("machine_max.configuration.auto_switch_gear.tooltip", "FOLLOW_VEHICLE=由载具定义决定。ALWAYS_ENABLED=始终自动。ALWAYS_DISABLED=仅手动。默认值：FOLLOW_VEHICLE");
         this.add("machine_max.configuration.auto_handbrake", "自动手刹");
-        this.add("machine_max.configuration.auto_handbrake.tooltip", "车辆停止时自动拉手刹，启动时自动释放。默认值：FOLLOW_VEHICLE");
+        this.add("machine_max.configuration.auto_handbrake.tooltip", "FOLLOW_VEHICLE=由载具定义决定。ALWAYS_ENABLED=始终自动。ALWAYS_DISABLED=仅手动。默认值：FOLLOW_VEHICLE");
         this.add("machine_max.configuration.drift_assist", "漂移辅助");
-        this.add("machine_max.configuration.drift_assist.tooltip", "漂移时自动反打方向以保持控制。默认值：FOLLOW_VEHICLE");
+        this.add("machine_max.configuration.drift_assist.tooltip", "漂移时自动反打方向。FOLLOW_VEHICLE=由载具定义决定。ALWAYS_ENABLED=始终开启。ALWAYS_DISABLED=关闭。默认值：FOLLOW_VEHICLE");
         this.add("machine_max.configuration.pose_preference", "视角跟随");
-        this.add("machine_max.configuration.pose_preference.tooltip", "自动旋转摄像机视角以跟随载具方向。默认值：FOLLOW_VEHICLE");
+        this.add("machine_max.configuration.pose_preference.tooltip", "自动旋转摄像机跟随载具朝向。FOLLOW_VEHICLE=由载具定义决定。ALWAYS_ENABLED=跟随。ALWAYS_DISABLED=自由视角。默认值：FOLLOW_VEHICLE");
         this.add("machine_max.configuration.speed_turning_limit", "高速转向限制");
-        this.add("machine_max.configuration.speed_turning_limit.tooltip", "高速行驶时限制转向时的侧向加速度，防止失控或侧翻。默认值：true");
-        this.add("machine_max.configuration.render_hit_whitening", "部件受击视觉效果");
-        this.add("machine_max.configuration.render_hit_whitening.tooltip", "是否启用部件在受击时的视觉效果。默认值：true");
-        this.add("machine_max.configuration.render_destroy_blackening", "部件损毁视觉效果");
-        this.add("machine_max.configuration.render_destroy_blackening.tooltip", "是否启用部件在损毁状态下的视觉效果。默认值：true");
-        this.add("machine_max.configuration.render_force_translucent_parts", "部件半透明渲染");
-        this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "是否将使用 Cutout 渲染的部件改为半透明实体渲染。默认值：false");
+        this.add("machine_max.configuration.speed_turning_limit.tooltip", "高速时限制转向角度防止侧翻。默认值：true");
+        this.add("machine_max.configuration.separate_throttle_brake", "分离油门刹车通道");
+        this.add("machine_max.configuration.separate_throttle_brake.tooltip", "将油门和刹车分离为独立通道。false=意图模式（W前进/S后退，由载具自动判断油门刹车）。true=分离模式（W油门/S刹车）。默认值：false");
+        this.add("machine_max.configuration.render_hit_whitening", "部件受击闪白");
+        this.add("machine_max.configuration.render_hit_whitening.tooltip", "部件被击中时显示白色闪烁效果。默认值：true");
+        this.add("machine_max.configuration.render_destroy_blackening", "部件损毁变暗");
+        this.add("machine_max.configuration.render_destroy_blackening.tooltip", "部件损毁后显示暗色覆盖。默认值：true");
+        this.add("machine_max.configuration.render_force_translucent_parts", "强制半透明部件");
+        this.add("machine_max.configuration.render_force_translucent_parts.tooltip", "将使用Cutout渲染的部件改为半透明实体渲染。默认关闭是因为半透明渲染容易出现排序错误，导致其后的对象被错误剔除。默认值：false");
+        this.add("machine_max.configuration.show_welcome_screen", "显示欢迎页面");
+        this.add("machine_max.configuration.show_welcome_screen.tooltip", "启动后首次进入标题画面时弹出欢迎页面。默认值：true");
         // 舰艇配置
         this.add("machine_max.configuration.ship", "舰艇");
         this.add("machine_max.configuration.ship.button", "舰艇");
-        this.add("machine_max.configuration.ship.tooltip", "舰艇相关设置");
+        this.add("machine_max.configuration.ship.tooltip", "舰艇转向平滑度设置");
         // 飞行器配置
         this.add("machine_max.configuration.plane", "飞行器");
         this.add("machine_max.configuration.plane.button", "飞行器");
-        this.add("machine_max.configuration.plane.tooltip", "飞行器相关设置");
+        this.add("machine_max.configuration.plane.tooltip", "飞行器操纵平滑度设置");
+        this.add("machine_max.configuration.full_pitch_time", "俯仰建立时间");
+        this.add("machine_max.configuration.full_pitch_time.tooltip", "按下按键后达到满俯仰角所需时间（秒）。越小越快。默认值：0.25。范围：0.05 ~ 99999.0");
+        this.add("machine_max.configuration.full_yaw_time", "偏航建立时间");
+        this.add("machine_max.configuration.full_yaw_time.tooltip", "按下按键后达到满偏航角所需时间（秒）。越小越快。默认值：0.25。范围：0.05 ~ 99999.0");
+        this.add("machine_max.configuration.full_roll_time", "滚转建立时间");
+        this.add("machine_max.configuration.full_roll_time.tooltip", "按下按键后达到满滚转角所需时间（秒）。越小越快。默认值：0.25。范围：0.05 ~ 99999.0");
         // 服务器配置
         this.add("machine_max.configuration.should_destroy_blocks", "允许碰撞破坏方块");
         this.add("machine_max.configuration.should_destroy_blocks.tooltip", "是否允许部件在冲击力足够大时破坏方块。默认值：true");

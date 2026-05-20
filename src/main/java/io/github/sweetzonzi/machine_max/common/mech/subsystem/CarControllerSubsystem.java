@@ -201,6 +201,25 @@ public class CarControllerSubsystem extends BasicSubsystem {
     }
 
     /**
+     * 分离模式下推断自动换挡的方向参数。
+     * 踩油门时检查当前档位：若已有变速箱处于负挡（玩家手动挂R挡），
+     * 则返回 -1 避免 autoGearShift 的方向过滤器把负挡排除掉。
+     * 松油门时使用车速方向作为回退。
+     */
+    private byte inferDirectionForAutoShift(float targetThrottle) {
+        if (targetThrottle > 0.05f) {
+            for (GearboxSubsystem gearbox : gearboxes.keySet()) {
+                if (gearbox.getCurrentGear() < 0) {
+                    return -1;
+                }
+            }
+            return 1;
+        }
+        if (Math.abs(speed) < 0.5f) return 0;
+        return (byte) (speed >= 0 ? 1 : -1);
+    }
+
+    /**
      * 子系统初始化或载具结构发生变化时，发送空信号，根据回调重新建立连接。<br>
      * 所有受控下属子系统（引擎/电动机/变速箱/车轮）统一通过 control_outputs 频道进行握手。
      *
@@ -361,96 +380,108 @@ public class CarControllerSubsystem extends BasicSubsystem {
     }
 
     protected void distributeControlSignals() {
-        if (this.moveInput != null && moveInputConflict != null) {//前进方向有输入信号 (可为0) Have forward input signal (can be 0)
-            float avgEngineSpeed;
+        if (this.moveInput != null && moveInputConflict != null) {
             byte[] moveInput = this.moveInput;
-            if (moveInput[2] != 0) {//前进方向输入信号不为0 Forward input signal is not 0
-                if (moveInput[2] * speed > 0 || Math.abs(speed) < 1) {//加速行驶 Accelerate
-                    actualThrottle = actualThrottle * 0.9f + moveInput[2] * 0.1f;
-                    actualBrake = actualBrake * 0.8f + 0 * 0.2f;
-                    avgEngineSpeed = calculateAvgSpeedAndControl();
-                    //起步时自动松离合和手刹 Auto release hand brake when starting
-                    if (ControlPreference.shouldAutoHandBrake(this) && handBrake && overrideCountDown.getOrDefault(this, 0f) <= 0) {
+            byte[] moveInputConflict = this.moveInputConflict;
+
+            if (ControlPreference.shouldRawThrottleBrake(this)) {
+                // 分离模式：input[2]=油门(0~100), inputConflict[2]=刹车(0~100)，各自独立
+                float targetThrottle = moveInput[2] / 100f;
+                float targetBrake = moveInputConflict[2] / 100f;
+
+                actualThrottle = actualThrottle * 0.2f + targetThrottle * 0.8f;
+                actualBrake = actualBrake * 0.2f + targetBrake * 0.8f;
+
+                // 自动手刹逻辑
+                if (targetThrottle < 0.01f && targetBrake < 0.01f) {
+                    if (Math.abs(speed) < 1f && ControlPreference.shouldAutoHandBrake(this)) {
+                        handBrake = true;
+                    }
+                } else if (targetThrottle > 0.05f) {
+                    if (ControlPreference.shouldAutoHandBrake(this) && handBrake)
                         handBrake = false;
-                        overrideCountDown.put(this, 2f);
-                    }
-                    for (GearboxSubsystem gearbox : gearboxes.keySet()) {//加速时延迟升档 Delay shifting up when accelerating
-                        if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, moveInput[2]));
-                            //起步时自动松离合 Auto engage clutch when starting
-                            if (Math.abs(speed) <= 1f) {
-                                gearbox.setClutched(true);
-                            }
-                        }
-                    }
-                } else if (moveInput[2] * speed < 0) {//减速行驶 Brake
-                    actualThrottle = actualThrottle * 0.8f + 0 * 0.2f;
-                    actualBrake = actualBrake * 0.9f + 1 * 0.1f;
-                    avgEngineSpeed = calculateAvgSpeedAndControl();
-                    for (GearboxSubsystem gearbox : gearboxes.keySet()) {//减速时积极降档 Shift down early when braking
-                        if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, moveInput[2]));
-                        }
+                }
+
+                float avgEngineSpeed = calculateAvgSpeedAndControl();
+
+                // 自动换挡方向推断：踩油门时检查是否有变速箱已在负挡
+                byte direction = inferDirectionForAutoShift(targetThrottle);
+                for (GearboxSubsystem gearbox : gearboxes.keySet()) {
+                    if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
+                        gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, direction));
                     }
                 }
-                float maxSlip = 0;
+
                 for (Map.Entry<WheelDriverSubsystem, String> entry : wheels.entrySet()) {
                     String channel = entry.getValue();
                     WheelDriverSubsystem wheel = entry.getKey();
-                    maxSlip = Math.max(maxSlip, calculateSlipRatio(wheel));
                     if (wheel.connector.joint != null) {
                         float steeringInput = steering(actualSteering, wheel.connector);
                         float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
                         sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                     }
                 }
-//                // 简易牵引力控制
-//                if (maxSlip > 0.15f) {
-//                    if (actualThrottle > 0)
-//                        actualThrottle = Math.max(0, actualThrottle - maxSlip * 0.5f);
-//                    else
-//                        actualThrottle = Math.min(0, actualThrottle + maxSlip * 0.5f);
-//                }
-            } else {//前进方向输入信号为0 Forward input signal is 0
-                actualThrottle = actualThrottle * 0.9f + 0 * 0.1f;
-                avgEngineSpeed = calculateAvgSpeedAndControl();
-                if (Math.abs(speed) < 1f) {//速度小于一定程度时，刹车 Brake if the speed is too low
-                    actualBrake = actualBrake * 0.9f + 1 * 0.1f;
-                    if (ControlPreference.shouldAutoHandBrake(this) && overrideCountDown.getOrDefault(this, 0f) <= 0) {
-                        handBrake = true;
-                        overrideCountDown.put(this, 0.5f);
-                    }
-                    for (Map.Entry<WheelDriverSubsystem, String> entry : wheels.entrySet()) {
-                        String channel = entry.getValue();
-                        WheelDriverSubsystem wheel = entry.getKey();
-                        if (wheel.connector.joint != null) {
-                            float steeringInput = steering(actualSteering, wheel.connector);
-                            float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
-                            sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
+
+            } else {
+                // 意图模式：input[2]=方向意图(-100~+100), conflict[2]=刹车道(-100~+100)
+                // speed>0: 用 input>0 加油, conflict<0 刹车
+                // speed<0: 用 input<0 加油, conflict>0 刹车
+                // 极低速时始终按输入方向加速（S=倒车起步）
+                float throttleInput = moveInput[2] / 100f;
+                float brakeInput = moveInputConflict[2] / 100f;
+
+                float targetThrottle;
+                float targetBrake;
+                byte direction;
+
+                if (Math.abs(speed) < 0.5f) {
+                    // 近乎静止：始终加速，方向由输入决定
+                    targetThrottle = Math.abs(throttleInput);
+                    targetBrake = 0;
+                    direction = throttleInput > 0.01f ? (byte) 1 : (throttleInput < -0.01f ? (byte) -1 : 0);
+                } else {
+                    boolean forward = speed > 0;
+                    targetThrottle = forward ? Math.max(throttleInput, 0f) : Math.max(-throttleInput, 0f);
+                    targetBrake    = forward ? Math.max(-brakeInput, 0f)  : Math.max(brakeInput, 0f);
+                    direction = targetThrottle > 0.01f ? (byte)(forward ? 1 : -1) : (byte)(speed >= 0 ? 1 : -1);
+                }
+
+                actualThrottle = actualThrottle * 0.2f + targetThrottle * 0.8f;
+                actualBrake = actualBrake * 0.2f + targetBrake * 0.8f;
+
+                float avgEngineSpeed = calculateAvgSpeedAndControl();
+
+                for (GearboxSubsystem gearbox : gearboxes.keySet()) {
+                    if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
+                        gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, direction));
+                        if (Math.abs(speed) <= 1f && targetThrottle > 0.01f) {
+                            gearbox.setClutched(true);
                         }
                     }
-                    for (GearboxSubsystem gearbox : gearboxes.keySet()) {
-                        if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            gearbox.setClutched(false);//停止传输动力 Stop transmission power
-                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, moveInput[2]));
-                        }
+                }
+
+                for (Map.Entry<WheelDriverSubsystem, String> entry : wheels.entrySet()) {
+                    String channel = entry.getValue();
+                    WheelDriverSubsystem wheel = entry.getKey();
+                    if (wheel.connector.joint != null) {
+                        float steeringInput = steering(actualSteering, wheel.connector);
+                        float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
+                        sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                     }
-                } else {//速度大于一定程度时，不刹车 Don't brake if the speed is high enough
-                    actualBrake = actualBrake * 0.8f + 0 * 0.1f;
-                    for (Map.Entry<WheelDriverSubsystem, String> entry : wheels.entrySet()) {
-                        String channel = entry.getValue();
-                        WheelDriverSubsystem wheel = entry.getKey();
-                        if (wheel.connector.joint != null) {
-                            float steeringInput = steering(actualSteering, wheel.connector);
-                            float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
-                            sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
-                        }
-                    }
-                    for (GearboxSubsystem gearbox : gearboxes.keySet()) {//溜车时适度降档 Shift down moderately when rolling
-                        if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
-                            gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, moveInput[2]));
-                        }
-                    }
+                }
+
+                // 起动时松手刹
+                if (targetThrottle > 0.05f && ControlPreference.shouldAutoHandBrake(this) && handBrake
+                        && overrideCountDown.getOrDefault(this, 0f) <= 0) {
+                    handBrake = false;
+                    overrideCountDown.put(this, 2f);
+                }
+                // 静止无输入时自动手刹
+                if (targetThrottle < 0.01f && targetBrake < 0.01f && Math.abs(speed) < 1f
+                        && ControlPreference.shouldAutoHandBrake(this) && !handBrake
+                        && overrideCountDown.getOrDefault(this, 0f) <= 0) {
+                    handBrake = true;
+                    overrideCountDown.put(this, 0.5f);
                 }
             }
         } else { //无输入信号 No input signal
