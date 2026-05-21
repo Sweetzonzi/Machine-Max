@@ -20,6 +20,9 @@
             -1,
             -1
           ],
+          "block_collision": "ground",
+          "collision_height": 2,
+          "climb_assist": true,
           "hit_boxes": {
             "LeftWheelHitBox": {
               "id": "part",
@@ -58,6 +61,9 @@
             -1,
             -1
           ],
+          "block_collision": "ground",
+          "collision_height": 2,
+          "climb_assist": true,
           "hit_boxes": {
             "RightWheelHitBox": {
               "id": "part",

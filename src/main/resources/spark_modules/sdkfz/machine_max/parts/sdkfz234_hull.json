@@ -23,6 +23,8 @@
             -1,
             -1
           ],
+          "block_collision": "ground",
+          "collision_height": 2,
           "hit_boxes": {
             "FrontArmorHitBox": {
               "id": "front",
@@ -210,19 +212,19 @@
                 ]
               }
             },
-            "subsystem.machine_max.item_storage": {
-              "type": "machine_max:item_storage",
-              "definition": "machine_max:default_trunk"
-            },
             "subsystem.machine_max.left_wheel_1": {
               "type": "machine_max:wheel_driver",
               "definition": "machine_max:sdkfz234_wheel_driver",
               "connector": "connector.machine_max.hull_left_wheel_1"
             },
+            "subsystem.machine_max.item_storage": {
+              "type": "machine_max:item_storage",
+              "definition": "machine_max:default_trunk"
+            },
             "subsystem.machine_max.left_wheel_2": {
               "type": "machine_max:wheel_driver",
               "definition": "machine_max:sdkfz234_wheel_driver",
-              "connector": "connector.machine_max.hull_left_wheel_2"
+              "connector": "connector.machine_max.hull_right_wheel_2"
             },
             "subsystem.machine_max.left_wheel_3": {
               "type": "machine_max:wheel_driver",

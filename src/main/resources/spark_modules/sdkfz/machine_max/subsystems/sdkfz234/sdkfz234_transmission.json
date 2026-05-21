@@ -3,8 +3,8 @@
   "type": "machine_max:transmission",
   "basic_durability": 500,
   "diff_lock": "auto",
-  "diff_lock_sensitivity": 0.9,
-  "auto_diff_lock_threshold": 10,
+  "diff_lock_sensitivity": 2,
+  "auto_diff_lock_threshold": 5,
   "diff_lock_inputs": [
     "diff_lock_control"
   ]
