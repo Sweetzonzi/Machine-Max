@@ -10,10 +10,12 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.event.ComputeCameraPosEvent;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
+import io.github.sweetzonzi.machine_max.network.payload.ViewInputPayload;
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import jme3utilities.math.MyMath;
 import net.minecraft.client.Camera;
@@ -27,6 +29,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.*;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Quaternionf;
 
 @EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
@@ -60,6 +63,12 @@ public class CameraController {
      * 角度是否已初始化，避免刚进游戏和刚上车时从0开始插值
      */
     private static boolean anglesInitialized = false;
+    /** 上次发送的瞄准点位置，用于变化阈值过滤 */
+    private static Vec3 lastSentAimPoint = null;
+    /** 瞄准点投影最大距离 */
+    private static final double AIM_MAX_DISTANCE = 256.0;
+    /** 瞄准点变化阈值（平方距离），超过此值才重新发包 */
+    private static final double AIM_POINT_THRESHOLD_SQ = 0.0001;
 
     @SubscribeEvent
     public static void updateCameraPos(ComputeCameraPosEvent event) {
@@ -280,8 +289,28 @@ public class CameraController {
             oldExtraTransform = extraTransform;
             Transform newExtraTransform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, 1);
             extraTransform = SparkMathKt.lerp(extraTransform, newExtraTransform, 0.15f);
+
+            //计算并发送瞄准点
+            Camera mcCamera = client.gameRenderer.getMainCamera();
+            Vec3 cameraPos = mcCamera.getPosition();
+            Vec3 aimPoint = cameraPos.add(
+                    aimDirection.x * AIM_MAX_DISTANCE,
+                    aimDirection.y * AIM_MAX_DISTANCE,
+                    aimDirection.z * AIM_MAX_DISTANCE
+            );
+            if (lastSentAimPoint == null || aimPoint.distanceToSqr(lastSentAimPoint) > AIM_POINT_THRESHOLD_SQ) {
+                lastSentAimPoint = aimPoint;
+                SubPart ownerSubPart = seat.getOwner().getSubPart();
+                PacketDistributor.sendToServer(new ViewInputPayload(
+                        ownerSubPart.getId(),
+                        seat.getName(),
+                        aimPoint.x, aimPoint.y, aimPoint.z
+                ));
+            }
+        } else {
+            //未乘坐载具时重置缓存
+            lastSentAimPoint = null;
         }
-        //TODO:传输相机控制量
 //            boolean isPassenger = client.player.isPassenger();
 //            Entity vehicle = client.player.getVehicle();
 //            IEntityMixin mixin = (IEntityMixin) client.player;

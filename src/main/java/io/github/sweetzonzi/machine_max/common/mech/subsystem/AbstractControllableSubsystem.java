@@ -3,8 +3,11 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.MoveInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,12 +84,26 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         }
     }
 
-    public void setViewInputSignal() {
+    /**
+     * 设置视角输入信号（瞄准点世界坐标），发送到所有 viewSignalTargets 频道。
+     * 内容包 JSON 中通过信号端口将瞄准输出 (aim_outputs) 连接到火控的 target_inputs。
+     *
+     * @param aimPoint 玩家瞄准点的世界坐标，null 表示无有效瞄准目标
+     */
+    public void setViewInputSignal(@Nullable Vec3 aimPoint) {
         if (!viewSignalTargets.isEmpty() && this.isActive()) {
             for (String signalKey : viewSignalTargets.keySet()) {
-                this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
+                this.sendSignalToAllTargets(signalKey,
+                        aimPoint != null ? new ViewInputSignal(aimPoint) : EmptySignal.INSTANCE);
             }
-            this.getOwner().getSubPart().part.vehicle.activate();
+            if (aimPoint != null) {
+                for (int i = 0; i < 6; i++) {
+                    if (this.getSubPart() != null && this.getOwner().getSubPart().part.vehicle != null) {
+                        break;
+                    }
+                }
+                this.getOwner().getSubPart().part.vehicle.activate();
+            }
         } else {
             for (String signalKey : viewSignalTargets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);

@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.FireControlSubsystemAttr;
 import lombok.Getter;
 import net.minecraft.world.phys.Vec3;
@@ -152,7 +153,10 @@ public class FireControlSubsystem extends BasicSubsystem {
         for (String signalKey : attr.staticAttribute.getTargetInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
             for (Object signal : channel.values()) {
-                if (signal instanceof Vec3 vec3) {
+                if (signal instanceof ViewInputSignal vis) {
+                    this.targetPosition = vis.value;
+                    break;
+                } else if (signal instanceof Vec3 vec3) {
                     this.targetPosition = vec3;
                     break;
                 } else if (signal instanceof Vector3f jmeVec) {

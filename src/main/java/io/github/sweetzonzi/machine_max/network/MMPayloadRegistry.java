@@ -65,6 +65,11 @@ public class MMPayloadRegistry {
                         ScriptablePayload::serverHandler
                 )
         );
+        input.playToServer(//视角输入（瞄准点世界坐标）
+                ViewInputPayload.TYPE,
+                ViewInputPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ViewInputPayload::serverHandler)
+        );
         sync.playToClient(//通知客户端创建载具
                 VehicleCreatePayload.TYPE,
                 VehicleCreatePayload.STREAM_CODEC,
