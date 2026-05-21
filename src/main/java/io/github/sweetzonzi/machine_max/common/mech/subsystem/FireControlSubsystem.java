@@ -13,9 +13,11 @@ import lombok.Getter;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 火控子系统。<br>
@@ -236,6 +238,15 @@ public class FireControlSubsystem extends BasicSubsystem {
             }
         }
         return SignalResult.PASS;
+    }
+
+    @Override
+    public Set<String> getAcceptedChannels() {
+        var staticAttr = attr.staticAttribute;
+        Set<String> channels = HashSet.newHashSet(staticAttr.getTargetInputs().size() + staticAttr.getFireInputs().size());
+        channels.addAll(staticAttr.getTargetInputs());
+        channels.addAll(staticAttr.getFireInputs());
+        return channels;
     }
 
     @Override

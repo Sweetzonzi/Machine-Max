@@ -18,8 +18,10 @@ import jme3utilities.math.MyQuaternion;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 炮塔驱动子系统。<br>
@@ -218,6 +220,11 @@ public class TurretDriverSubsystem extends BasicSubsystem {
         Vector3f result = new Vector3f();
         connector.joint.getAngles(result);
         return result;
+    }
+
+    @Override
+    public Set<String> getAcceptedChannels() {
+        return Set.copyOf(attr.staticAttribute.getControlInputs());
     }
 
     @Override

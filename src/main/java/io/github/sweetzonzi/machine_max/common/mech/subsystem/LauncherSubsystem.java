@@ -15,6 +15,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 发射器子系统。<br>
@@ -195,6 +196,11 @@ public class LauncherSubsystem extends BasicSubsystem {
                 .add(right.scale((float)(sinRadial * hOffset / radialDist)))
                 .add(localUp.scale((float)(sinRadial * vOffset / radialDist)))
                 .normalize();
+    }
+
+    @Override
+    public Set<String> getAcceptedChannels() {
+        return Set.copyOf(attr.staticAttribute.getControlInputs());
     }
 
     @Override

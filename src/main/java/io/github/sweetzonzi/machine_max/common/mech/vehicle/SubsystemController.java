@@ -3,19 +3,21 @@ package io.github.sweetzonzi.machine_max.common.mech.vehicle;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalBus;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import lombok.Getter;
 
-import java.util.Collection;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 @Getter
-public class SubsystemController implements ISignalReceiver {
+public class SubsystemController implements ISignalBus {
     public final String name = "vehicle";
     public final VehicleCore CORE;
     public final ConcurrentMap<String, SignalChannel> channels = new ConcurrentHashMap<>();//可查可改
@@ -24,9 +26,21 @@ public class SubsystemController implements ISignalReceiver {
     public final Set<AbstractSubsystem> allSubsystems = new CopyOnWriteArraySet<>();
     public final EnergyGrid energyGrid = new EnergyGrid();
 
+    // 总线订阅表：频道名 → 订阅者集合
+    private final ConcurrentMap<String, Set<ISignalReceiver>> busSubscriptions = new ConcurrentHashMap<>();
+    // 反向索引：接收者 → 订阅的频道集合
+    private final ConcurrentMap<ISignalReceiver, Set<String>> reverseIndex = new ConcurrentHashMap<>();
+    // 通配接收者：acceptAllBroadcastInput() == true 的接收者
+    private final Set<ISignalReceiver> wildcardBroadcastReceivers = ConcurrentHashMap.newKeySet();
+
+    // ISignalSender 要求
+    private final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();
+
     public SubsystemController(VehicleCore core) {
         CORE = core;
     }
+
+    // ===== 现有生命周期方法（整合总线订阅） =====
 
     public void tick() {
         for (AbstractSubsystem subsystem : allSubsystems) {
@@ -54,21 +68,22 @@ public class SubsystemController implements ISignalReceiver {
     }
 
     /**
-     * 初始化子系统，连接机械功传递链路，调用{@link AbstractSubsystem#onAttach}方法
+     * 初始化子系统，连接机械功传递链路，调用{@link AbstractSubsystem#onAttach}方法并注册总线订阅
      */
     public void initAllSubsystems() {
         rebuildAllEnergyPaths();
-        allSubsystems.forEach(AbstractSubsystem::onAttach);
+        allSubsystems.forEach(sub -> {
+            sub.onAttach();
+            autoSubscribe(sub);
+        });
     }
 
     /**
      * 将子系统加入控制器，等待初始化
-     * @param subSystems 子系统集合
      */
     public void addSubsystems(Collection<AbstractSubsystem> subSystems) {
         allSubsystems.addAll(subSystems);
     }
-
 
     public void removeSubsystems(Collection<AbstractSubsystem> subSystems, boolean transferToAnotherVehicle) {
         for (AbstractSubsystem subSystem : subSystems) this.removeSubsystem(subSystem, transferToAnotherVehicle);
@@ -76,11 +91,16 @@ public class SubsystemController implements ISignalReceiver {
     }
 
     public void removeSubsystem(AbstractSubsystem subSystem, boolean transferToAnotherVehicle) {
-        if (!transferToAnotherVehicle) subSystem.onDetach();
+        if (!transferToAnotherVehicle) {
+            subSystem.onDetach();
+            unsubscribeAll(subSystem);
+        }
         allSubsystems.remove(subSystem);
     }
 
     public void onVehicleStructureChanged() {
+        // 重建总线订阅
+        rebuildSubscriptions();
         allSubsystems.forEach(AbstractSubsystem::onVehicleStructureChanged);
         rebuildAllEnergyPaths();
         energyGrid.rebuildFrom(allSubsystems);
@@ -99,11 +119,135 @@ public class SubsystemController implements ISignalReceiver {
         return channels;
     }
 
+    /**
+     * 当总线自身作为路由目标收到信号时（"vehicle" 目标名），
+     * 将信号转发给所有订阅了此频道的子系统，并写入 signalStorage。
+     */
+    @Override
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        SignalChannel sigChannel = channels.get(channelName);
+        if (sigChannel != null) {
+            for (Map.Entry<ISignalSender, Object> entry : sigChannel.entrySet()) {
+                signalStorage.put(channelName, entry.getValue());
+                broadcast(channelName, entry.getValue(), entry.getKey());
+            }
+        }
+        return SignalResult.PASS;
+    }
+
+    // ===== ISignalBus 实现 =====
+
+    @Override
+    public void broadcast(String channel, Object value, ISignalSender originalSender) {
+        signalStorage.put(channel, value);
+
+        Set<ISignalReceiver> subscribers = busSubscriptions.get(channel);
+        if (subscribers != null) {
+            for (ISignalReceiver sub : subscribers) {
+                writeSignalAndNotify(sub, channel, value, originalSender);
+            }
+        }
+        // 通配订阅者——接受所有频道的广播
+        for (ISignalReceiver sub : wildcardBroadcastReceivers) {
+            writeSignalAndNotify(sub, channel, value, originalSender);
+        }
+    }
+
+    private void writeSignalAndNotify(ISignalReceiver sub, String channel, Object value, ISignalSender sender) {
+        sub.getSignalInputChannels()
+                .computeIfAbsent(channel, k -> new SignalChannel())
+                .put(sender, value);
+        sub.onSignalUpdated(channel, sender);
+    }
+
+    @Override
+    public void subscribe(ISignalReceiver subscriber, String channel) {
+        busSubscriptions.computeIfAbsent(channel, k -> ConcurrentHashMap.newKeySet()).add(subscriber);
+        reverseIndex.computeIfAbsent(subscriber, k -> ConcurrentHashMap.newKeySet()).add(channel);
+    }
+
+    @Override
+    public void unsubscribe(ISignalReceiver subscriber, String channel) {
+        Set<ISignalReceiver> subs = busSubscriptions.get(channel);
+        if (subs != null) subs.remove(subscriber);
+        Set<String> channels = reverseIndex.get(subscriber);
+        if (channels != null) channels.remove(channel);
+    }
+
+    @Override
+    public void unsubscribeAll(ISignalReceiver subscriber) {
+        Set<String> channels = reverseIndex.remove(subscriber);
+        if (channels != null) {
+            for (String ch : channels) {
+                Set<ISignalReceiver> subs = busSubscriptions.get(ch);
+                if (subs != null) subs.remove(subscriber);
+            }
+        }
+        wildcardBroadcastReceivers.remove(subscriber);
+    }
+
+    @Override
+    public Set<ISignalReceiver> getSubscribers(String channel) {
+        return busSubscriptions.getOrDefault(channel, Set.of());
+    }
+
+    @Override
+    public Set<String> getSubscriptions(ISignalReceiver subscriber) {
+        return reverseIndex.getOrDefault(subscriber, Set.of());
+    }
+
+    /**
+     * 根据接收者声明的 getAcceptedChannels() 自动注册订阅。
+     */
+    private void autoSubscribe(ISignalReceiver receiver) {
+        if (receiver.acceptAllBroadcastInput()) {
+            wildcardBroadcastReceivers.add(receiver);
+            return;
+        }
+        for (String channel : receiver.getAcceptedChannels()) {
+            subscribe(receiver, channel);
+        }
+    }
+
+    /**
+     * 清除所有旧的订阅关系，为所有子系统重新注册订阅。
+     * 在载具结构变化时调用。
+     */
+    private void rebuildSubscriptions() {
+        busSubscriptions.clear();
+        reverseIndex.clear();
+        wildcardBroadcastReceivers.clear();
+        allSubsystems.forEach(this::autoSubscribe);
+    }
+
+    // ===== ISignalSender 实现 =====
+
+    @Override
+    public Map<String, List<String>> getTargetNames() {
+        return Map.of();
+    }
+
+    @Override
+    public Map<String, Map<String, ISignalReceiver>> getTargets() {
+        return targets;
+    }
+
+    @Override
+    public SubPart getSubPart() {
+        return null;
+    }
+
+    // ===== 销毁 =====
+
     public void destroy() {
         allSubsystems.forEach(AbstractSubsystem::onDetach);
         allSubsystems.clear();
+        busSubscriptions.clear();
+        reverseIndex.clear();
+        wildcardBroadcastReceivers.clear();
         channels.clear();
         resources.clear();
+        signalStorage.clear();
     }
 
     private float getPhysicsTps() {

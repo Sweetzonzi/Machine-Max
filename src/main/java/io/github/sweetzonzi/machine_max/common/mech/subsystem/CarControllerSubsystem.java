@@ -18,8 +18,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -724,6 +726,11 @@ public class CarControllerSubsystem extends BasicSubsystem {
         if (wheelDrive.subPart.body == joint.getBodyA()) joint.getPivotA(pivot);
         else joint.getPivotB(pivot);
         return pivot.z <= computedSteeringCenter.z ? 0.5f * driftRad - driftControl : 0;
+    }
+
+    @Override
+    public Set<String> getAcceptedChannels() {
+        return Set.copyOf(attr.staticAttribute.getControlInputKeys());
     }
 
     @Override

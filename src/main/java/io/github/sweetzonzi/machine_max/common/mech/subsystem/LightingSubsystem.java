@@ -1,7 +1,11 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LightingSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
+
+import java.util.Set;
 
 public class LightingSubsystem extends BasicSubsystem {
     public final LightingSubsystemAttr attr;
@@ -9,6 +13,26 @@ public class LightingSubsystem extends BasicSubsystem {
     public LightingSubsystem(ISubsystemHost owner, String name, LightingSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
+    }
+
+    @Override
+    public Set<String> getAcceptedChannels() {
+        return Set.of("toggle_light");
+    }
+
+    @Override
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        SignalResult result = super.onSignalUpdated(channelName, sender);
+        if ("toggle_light".equals(channelName)) {
+            Object signal = getSignalValueFrom(channelName, sender);
+            if (signal instanceof Float f) {
+                setActive(f > 0);
+            } else if (signal instanceof Number n) {
+                setActive(n.floatValue() > 0);
+            }
+            return SignalResult.CONSUME;
+        }
+        return result;
     }
 
     @Override

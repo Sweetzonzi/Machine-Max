@@ -63,6 +63,11 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
 
                 // 仅在实际发生变更时传播
                 targetReceivers.forEach((receiverName, signalReceiver) -> {
+                    // 检查接收者是否声明接受此频道（acceptAllRoutingInput 跳过检查）
+                    boolean accepts = signalReceiver.acceptAllRoutingInput()
+                            || signalReceiver.getAcceptedChannels().contains(targetChannelName);
+                    if (!accepts) return;
+
                     SignalChannel receiverChannels = signalReceiver.getSignalInputChannels()
                             .computeIfAbsent(targetChannelName, k -> new SignalChannel());
 

@@ -19,6 +19,7 @@ import net.minecraft.sounds.SoundSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerConsumer {
     @Getter
@@ -204,6 +205,11 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
             MyQuaternion.rotateInverse(localToWorld, relativeVelInWorld, result);
         }
         return result;
+    }
+
+    @Override
+    public Set<String> getAcceptedChannels() {
+        return Set.copyOf(attr.staticAttribute.getControlSignalKeys());
     }
 
     @Override

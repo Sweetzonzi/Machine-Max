@@ -329,6 +329,11 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
     }
 
     @Override
+    public Set<String> getAcceptedChannels() {
+        return Set.copyOf(attr.staticAttribute.getThrottleInputKeys());
+    }
+
+    @Override
     public Map<String, List<String>> getTargetNames() {
         Map<String, List<String>> result = new HashMap<>(2);
         result.putAll(attr.rpmOutputTargets);
