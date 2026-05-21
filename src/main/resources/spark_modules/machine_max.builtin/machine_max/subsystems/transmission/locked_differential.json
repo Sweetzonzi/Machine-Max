@@ -1,0 +1,7 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
+  "basic_durability": 400, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪, 常锁差速器结构加强以适应极端工况
+  "diff_lock": "true", //(可选, 默认auto)差速锁模式: true=常锁差速器, 各输出端转速相同, 适合越野/极限地形
+  "diff_lock_sensitivity": 1.0 //(可选, 默认1.0)差速锁灵敏度, 常锁模式下保持标准锁定力度
+}

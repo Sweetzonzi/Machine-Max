@@ -1,0 +1,14 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:engine", //引擎子系统
+  "basic_durability": 150, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪
+  "max_power": 180000, //最大功率(W), 约180kW, 仿Jeep
+  "max_torque": 380, //(可选, 默认100)峰值扭矩(N·m), 约380N·m
+  "idle_rpm": 750, //(可选, 默认500.0)怠速转速(RPM)
+  "max_torque_rpm": 4000, //(可选, 默认5200.0)达到最大扭矩的转速(RPM)
+  "red_line_rpm": 6000, //(可选, 默认7500.0)红线转速(RPM)
+  "red_line_torque_ratio": 0.65, //(可选, 默认0.9)红线转速时扭矩与最大扭矩比值
+  "inertia": 15, //(可选, 默认10.0)转动惯量(kg·m²)
+  "cylinder": 6, //(可选, 默认4)气缸数, 影响发动机音效
+  "damping_factors": [2.0, 0.03, 0.00002] //(可选, 默认[20.0, 0.1, 0.00005])发动机各阶阻力系数
+}

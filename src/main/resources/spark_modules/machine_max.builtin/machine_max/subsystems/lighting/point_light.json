@@ -1,0 +1,11 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:lighting", //照明子系统, 仅在客户端渲染视觉体积光, 不改变方块实际亮度
+  "basic_durability": 2, //(可选, 默认20.0)子系统基础耐久度
+  "hidden": true, //(可选, 默认false)是否在HUD等界面隐藏该子系统
+  "light_type": "point", //(可选, 默认beam)点光源, 向所有方向均匀渲染体积光
+  "range": 1, //(可选, 默认16)光源视觉范围
+  "color": [255, 235, 180], //(可选, 默认[255,255,255])RGB颜色, 取值0-255
+  "intensity": 0.55, //(可选, 默认1.0)光效强度, 取值0-1
+  "beam_angle": 24 //(仅beam生效)点光源会忽略该字段
+}

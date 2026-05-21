@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",
+  "title": "座椅子系统动态属性",
+  "description": "座椅的动态属性，定义座椅位置、信号传输目标等。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:seat",
+      "description": "子系统类型，必须为'machine_max:seat'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+    },
+    "locator": {
+      "type": "string",
+      "default": "",
+      "description": "座椅点定位器名称，模型中的骨骼将作为座椅位置。若为空，则使用子系统定义的默认定位器。"
+    },
+    "move_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "移动控制信号输出频道及目标。"
+    },
+    "aim_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "视角控制信号输出频道及目标。"
+    },
+    "regular_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "常规控制信号输出频道及目标。"
+    },
+    "passenger_num_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "乘客数量信号输出频道及目标。"
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:seat",
+      "definition": "machine_max:driver_seat",
+      "locator": "DriverSeat",
+      "move_outputs": {
+        "move_control": [
+          "car_controller",
+          "engine",
+          "left_front_wheel_driver",
+          "right_front_wheel_driver",
+          "left_back_wheel_driver",
+          "right_back_wheel_driver"
+        ]
+      },
+      "regular_outputs": { "regular_control": ["car_controller"] }
+    }
+  ]
+}

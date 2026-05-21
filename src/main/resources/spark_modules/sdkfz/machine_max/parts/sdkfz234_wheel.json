@@ -1,0 +1,81 @@
+{
+  "variants": {
+    "left": {
+      "model": "machine_max:sdkfz234_2.geo",
+      "textures": {
+        "default": "machine_max:textures/part/sdkfz234/puma_2.png",
+        "print.machine_max.dessert": "machine_max:textures/part/sdkfz234/puma_1.png"
+      },
+      "tags": [
+        "machine_max:left",
+        "machine_max:mobility",
+        "machine_max:land"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "LeftWheel_1",
+          "end_bones": [],
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "LeftWheelHitBox": {
+              "id": "part",
+              "type": "wheel",
+              "material": "machine_max:off_road_tire",
+              "thickness": 10
+            }
+          },
+          "connectors": {
+            "connector.machine_max.left_wheel_hull": {
+              "locator": "left_wheel_hull",
+              "definition": "machine_max:fixed_right",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    },
+    "right": {
+      "model": "machine_max:sdkfz234_2.geo",
+      "textures": {
+        "default": "machine_max:textures/part/sdkfz234/puma_2.png",
+        "print.machine_max.dessert": "machine_max:textures/part/sdkfz234/puma_1.png"
+      },
+      "tags": [
+        "machine_max:right",
+        "machine_max:mobility",
+        "machine_max:land"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "RightWheel_1",
+          "end_bones": [],
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "RightWheelHitBox": {
+              "id": "part",
+              "type": "wheel",
+              "material": "machine_max:off_road_tire",
+              "thickness": 10
+            }
+          },
+          "connectors": {
+            "connector.machine_max.right_wheel_hull": {
+              "locator": "right_wheel_hull",
+              "definition": "machine_max:fixed_left",
+              "overwrite": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+}

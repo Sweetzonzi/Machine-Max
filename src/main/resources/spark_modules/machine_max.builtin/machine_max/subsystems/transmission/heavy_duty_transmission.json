@@ -1,0 +1,8 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:transmission", //传动子系统, 将接收到的功率分配至各个输出目标
+  "basic_durability": 800, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪, 重载传动采用加强结构
+  "diff_lock": "auto", //(可选, 默认auto)差速锁模式: true=常锁, false=开放, auto=自动, manual=手动
+  "diff_lock_sensitivity": 1.0, //(可选, 默认1.0)差速锁灵敏度, 重载设定保持标准灵敏度以确保可靠性
+  "auto_diff_lock_threshold": 15.0 //(可选, 默认10.0)自动模式下启用差速锁的转速差距百分比阈值, 越野场景需更大阈值防止频繁锁止
+}

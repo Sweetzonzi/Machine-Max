@@ -1,0 +1,8 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:gearbox", //子系统类型：变速箱
+  "basic_durability": 80, //基础耐久度，仿Van/Wine Fox轻型变速箱
+  "final_ratio": 8.0, //最终减速比
+  "ratios": [-3.5, 3.5, 2.5, 1.75, 1.4, 1.15, 0.85], //减速比列表，首项为倒挡(-3.5)，后6项为1~6前进挡
+  "switch_time": 0.2 //换挡时间（秒），轻型手动变速箱中等换挡速度
+}

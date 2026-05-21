@@ -35,11 +35,6 @@
       "default": false,
       "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
     },
-    "steering_center": {
-      "$ref": "../../base/vector_3d.schema.json",
-      "default": [0, 0, 0],
-      "description": "转向中心位置，相对于部件局部坐标系。摩托车控制辅助力的计算依赖于转向中心字段的y值。它应当填写预计的组装好后的车辆接地处相对车控子系统附着刚体质心的距离。例如，一个质心在原点处的摩托车架，这里的y应当填写负值。"
-    },
     "min_steering_radius": {
       "type": "number",
       "minimum": 0,

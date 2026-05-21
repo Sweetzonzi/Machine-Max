@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/joint/joint_attr.schema.json",
+  "title": "关节属性",
+  "description": "定义关节的物理属性，包括限制、刚度、阻尼等。每个关节属性对应一个自由度（平动或旋转）。",
+  "type": "object",
+  "properties": {
+    "lower_limit": {
+      "type": "number",
+      "description": "关节位置下限，对于平动轴单位为m，对于旋转轴单位为度。当下限高于上限时，指定的轴自由活动；下限低于上限时，指定的轴被限定于区间内活动；下限等于上限时，指定的轴被固定死。"
+    },
+    "upper_limit": {
+      "type": "number",
+      "description": "关节位置上限，对于平动轴单位为m，对于旋转轴单位为度。当下限高于上限时，指定的轴自由活动；下限低于上限时，指定的轴被限定于区间内活动；下限等于上限时，指定的轴被固定死。"
+    },
+    "equilibrium": {
+      "type": "number",
+      "description": "平衡位置，关节在无外力作用时趋向的位置。"
+    },
+    "stiffness": {
+      "type": "number",
+      "minimum": 0,
+      "description": "刚度系数(N/m或N·m/rad)，表示关节抵抗变形的能力。"
+    },
+    "damping": {
+      "type": "number",
+      "minimum": 0,
+      "description": "阻尼系数(N/(m/s)或N·m/(rad/s))，表示关节运动时的能量耗散。"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "lower_limit": -45.0,
+      "upper_limit": 45.0,
+      "stiffness": 4000,
+      "damping": 20,
+      "description": "旋转关节，限制在-45°到45°之间，具有中等刚度和阻尼"
+    },
+    {
+      "lower_limit": 1.0,
+      "upper_limit": -1.0,
+      "description": "自由活动的关节（下限高于上限）"
+    },
+    {
+      "lower_limit": 0.0,
+      "upper_limit": 0.0,
+      "stiffness": 100000,
+      "damping": 1000,
+      "description": "固定关节（上下限相同）"
+    },
+    {
+      "lower_limit": -0.2,
+      "upper_limit": 0.2,
+      "stiffness": 50000,
+      "damping": 200,
+      "description": "缓冲关节，允许小范围位移，用于减震器"
+    },
+    {
+      "lower_limit": -90.0,
+      "upper_limit": 90.0,
+      "equilibrium": 0.0,
+      "stiffness": 1000,
+      "damping": 50,
+      "description": "铰链关节，允许大角度旋转，用于门或舱盖"
+    }
+  ]
+}

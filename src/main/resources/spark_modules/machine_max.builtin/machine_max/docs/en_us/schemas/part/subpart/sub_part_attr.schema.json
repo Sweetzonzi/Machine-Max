@@ -1,0 +1,227 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/part/subpart/sub_part_attr.schema.json",
+  "title": "Sub-Part Attributes",
+  "description": "Defines the attributes of a sub-part (smallest motion unit) in a vehicle part, including physical properties, collision detection, connection points and subsystems, etc.",
+  "type": "object",
+  "properties": {
+    "start_bone": {
+      "type": "string",
+      "default": "",
+      "description": "The starting bone name of the sub-part, used to select the set of bones to render and calculate collisions from the model. If empty, all bones of the entire model will be used"
+    },
+    "end_bones": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "List of ending bone names, bones between the starting and ending bones will be included in the sub-part. Used to exclude unwanted parts"
+    },
+    "durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Base health value of the sub-part, when reduced to 0, all subsystems of the sub-part will be paralyzed. Note: Multiple sub-parts can share durability (controlled by share_durability in the part definition)"
+    },
+    "mass": {
+      "type": "number",
+      "minimum": 0,
+      "default": 25.0,
+      "description": "Sub-part mass (kg), must be greater than 0, used for physics calculations"
+    },
+    "mass_center": {
+      "type": "string",
+      "default": "mass_center",
+      "description": "Mass center locator name, used to specify a locator with the same name in the model as the mass center position. If not specified or not found, the geometric center of the collision volume will be used as the mass center."
+    },
+    "projected_area": {
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": {"x": 0, "y": 0, "z": 0},
+      "description": "Projected area of the sub-part in three axial directions (m²), used to calculate air resistance"
+    },
+    "block_collision": {
+      "type": "string",
+      "enum": ["true", "false", "ground"],
+      "default": "true",
+      "description": "Terrain collision mode: true (default, collides with all blocks), ground (only collides with ground blocks below the part), false (does not collide with any blocks)"
+    },
+    "collision_height": {
+      "type": "number",
+      "default": -1.0,
+      "description": "Collision detection height (m), when encountering obstacles lower than this height, no collision occurs with the obstacle (block collision mode needs to be ground). Default -1.0 means all obstacles collide"
+    },
+    "climb_assist": {
+      "type": "boolean",
+      "default": false,
+      "description": "Climbing assistance, whether to enable climbing assistance function"
+    },
+    "hit_boxes": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "hit_box/hit_box_attr.schema.json"
+      },
+      "default": {},
+      "minProperties": 1,
+      "description": "Collision box definition, key is bone name, will search for bones with matching names, and create collision volumes of different shapes based on the blocks in them. Each sub-part needs at least one collision box"
+    },
+    "interact_boxes": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "interact_box_attr.schema.json"
+      },
+      "default": {},
+      "description": "Interaction box definition, key is interaction box name, value is interaction box attributes. Used to define areas where players can interact"
+    },
+    "connectors": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "connector/connector_attr.schema.json"
+      },
+      "default": {},
+      "description": "List of connection points, interface definitions for sub-parts to connect with other parts"
+    },
+    "subsystems": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "../../subsystem/subsystem_dynamic_attr.schema.json"
+      },
+      "default": {},
+      "description": "Subsystem definition, key is subsystem name, value is subsystem dynamic attributes. Defines the interaction relationship between sub-parts and connection points, other subsystems"
+    },
+    "hydro_priority": {
+      "type": "integer",
+      "default": 0,
+      "description": "Air resistance calculation priority, the higher the value the higher the priority. Parts with higher or equal priority will block parts with lower or equal priority, causing changes in drag coefficients"
+    },
+    "hydrodynamics": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "hydrodynamic_attr.schema.json"
+      },
+      "default": {
+        "": {}
+      },
+      "description": "List of hydrodynamic calculation reference points, key-value pair key name is first searched as bone name, if a matching bone is found, all locators within that bone are used as aerodynamic calculation points; if no matching bone is found, it is searched as locator name. Empty string means calculation based on center of mass position."
+    }
+  },
+  "required": ["hit_boxes"],
+  "examples": [
+    {
+      "hit_boxes": {
+        "mmCollision_Box_Chassis": {
+          "name": "chassis",
+          "type": "box"
+        }
+      },
+      "description": "Minimal sub-part example, only includes required hit box definition"
+    },
+    {
+      "start_bone": "chassis",
+      "end_bones": ["engine"],
+      "mass_center": "hull_mass_center",
+      "durability": 550.0,
+      "mass": 1200.0,
+      "projected_area": {
+        "x": 1.5,
+        "y": 0.8,
+        "z": 3.2
+      },
+      "block_collision": "ground",
+      "collision_height": 2.5,
+      "climb_assist": true,
+      "hit_boxes": {
+        "mmCollision_Box_Chassis": {
+          "name": "chassis",
+          "type": "box",
+          "block_damage_factor": 1.5,
+          "angle_effect": true,
+          "thickness": 10
+        },
+        "mmCollision_Box_Engine": {
+          "name": "engine",
+          "type": "box",
+          "subsystem": "engine",
+          "block_damage_factor": 0.95,
+          "angle_effect": true,
+          "thickness": 3
+        }
+      },
+      "interact_boxes": {
+        "driver_seat": {
+          "bone_name": "driver_seat",
+          "interact_type": "seat"
+        }
+      },
+      "connectors": {
+        "wheel_front_left": {
+          "locator": "wheel_front_left",
+          "type": "Advanced"
+        },
+        "wheel_front_right": {
+          "locator": "wheel_front_right",
+          "type": "Advanced"
+        }
+      },
+      "subsystems": {
+        "driver_seat": {
+          "type": "machine_max:seat",
+          "definition": "machine_max:default_seat",
+          "locator": "driver_seat_point",
+          "move_outputs": {
+            "move_control": ["car_controller"]
+          },
+          "regular_outputs": {
+            "regular_control": ["car_controller"]
+          },
+          "aim_outputs": {
+            "aim_control": ["car_controller"]
+          }
+        },
+        "passenger_seat": {
+          "type": "machine_max:seat",
+          "definition": "machine_max:default_passenger_seat",
+          "locator": "passenger_seat_point"
+        },
+        "car_controller": {
+          "type": "machine_max:car_controller",
+          "definition": "machine_max:default_car_controller"
+        },
+        "engine": {
+          "type": "machine_max:engine",
+          "definition": "machine_max:default_engine"
+        },
+        "gearbox": {
+          "type": "machine_max:gearbox",
+          "definition": "machine_max:default_gearbox"
+        },
+        "trunk_storage": {
+          "type": "machine_max:item_storage",
+          "definition": "machine_max:default_trunk"
+        },
+        "glove_box": {
+          "type": "machine_max:item_storage",
+          "definition": "machine_max:glove_box"
+        },
+        "left_front_wheel_driver": {
+          "type": "machine_max:wheel_driver",
+          "definition": "machine_max:default_wheel_driver",
+          "connector": "wheel_front_left"
+        },
+        "right_front_wheel_driver": {
+          "type": "machine_max:wheel_driver",
+          "definition": "machine_max:default_wheel_driver",
+          "connector": "wheel_front_right"
+        }
+      },
+      "hydro_priority": 0,
+      "hydrodynamics": {
+        "hull_aero": {
+          "drag_coefficient": 0.3,
+          "lift_coefficient": 0.1
+        }
+      },
+      "description": "Complete sub-part example, includes mass center locator, hydrodynamics, connectors and comprehensive subsystem configuration (seats, storage, controller, engine, gearbox, etc.)"
+    }
+  ]
+}

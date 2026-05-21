@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/engine_static_attr.json",
+  "title": "Engine Subsystem Static Attributes",
+  "description": "Static attributes of the piston engine, including power, torque, speed characteristics, etc.",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:engine",
+      "description": "Subsystem type, must be 'machine_max:engine'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Subsystem basic durability, becomes paralyzed when reduced to 0, restores functionality when repaired to 30% durability."
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem will be transferred to the sub-part."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to limit damage transfer value to the subsystem's remaining durability. For example, 40 damage with 20 remaining durability will only transfer 20 damage to the holder."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the subsystem in HUD displays, commonly used for purely providing model part damage differentiation for non-functional subsystems"
+    },
+    "max_power": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Maximum power, in watts (W)."
+    },
+    "max_torque": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Maximum torque, in newton-meters (N·m)."
+    },
+    "idle_rpm": {
+      "type": "number",
+      "minimum": 0,
+      "default": 500.0,
+      "description": "Idle speed, in revolutions per minute (RPM)."
+    },
+    "idle_rpm_torque_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.333,
+      "description": "Ratio of idle torque to maximum torque."
+    },
+    "max_torque_rpm": {
+      "type": "number",
+      "minimum": 0,
+      "default": 5200.0,
+      "description": "Speed at which maximum torque is achieved, in revolutions per minute (RPM)."
+    },
+    "red_line_rpm": {
+      "type": "number",
+      "minimum": 0,
+      "default": 7500.0,
+      "description": "Redline speed, exceeding which may cause damage, in revolutions per minute (RPM)."
+    },
+    "red_line_torque_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.9,
+      "description": "Ratio of torque at redline speed to maximum torque."
+    },
+    "inertia": {
+      "type": "number",
+      "minimum": 0,
+      "default": 10.0,
+      "description": "Engine system moment of inertia, in kilogram-square meters (kg·m²)."
+    },
+    "four_stroke": {
+      "type": "boolean",
+      "default": true,
+      "description": "Is it a four-stroke, false then two-stroke, affecting engine sound effect."
+    },
+    "cylinder": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 4,
+      "description": "Cylinder count, affecting engine sound effect."
+    },
+    "damping_factors": {
+      "type": "array",
+      "items": { "type": "number" },
+      "default": [20.0, 0.1, 0.00005],
+      "description": "Engine resistance coefficients at various orders, constant term, first order term, second order term, ... increasing, in N·m/(rad/s)^n."
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["car_control"],
+      "description": "List of throttle input signal keys, from highest to lowest priority."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_deactivate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "working_sounds": {
+          "type": "object",
+          "description": "Manual working sound map. Keys are RPM strings (e.g. \"800\", \"4500.0\"), values are sound events. Uses auto synthesis when empty.",
+          "patternProperties": {
+            "^-?[0-9]+(\\.[0-9]+)?$": {
+              "$ref": "../../base/sound_event.schema.json"
+            }
+          },
+          "default": {},
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "Basic sound configuration for the subsystem."
+    }
+  },
+  "required": ["type", "max_power", "max_torque"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:engine",
+      "basic_durability": 80.0,
+      "max_power": 75000.0,
+      "max_torque": 130.0,
+      "idle_rpm": 800.0,
+      "max_torque_rpm": 4500.0,
+      "red_line_rpm": 6500.0,
+      "inertia": 15.0
+    }
+  ]
+}

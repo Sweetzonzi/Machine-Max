@@ -1,0 +1,18 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced", //连接点类型, 支持Simple和Advanced
+  "direction": "xp", //连接点法线方向, 指向被连接的轮轴方向
+  "integrity": 45.0, //连接点结构完整度, 可承受不高于此数值的冲击力而不脱落
+  "impact_absorption": 0.15, //冲击转化为结构完整性损耗的比例
+  "impact_reduction": 2.0, //冲击减免值
+  "impact_multiplier": 1.0, //冲击吸收率
+  "required_tags": ["machine_max:left"], //需要左侧标签, 用于区分左右轮
+  "joint_attrs": {
+    "y": {
+      "lower_limit": -0.15, //悬挂行程下限(m), 压缩时极限位置
+      "upper_limit": 0.2, //悬挂行程上限(m), 拉伸时极限位置
+      "stiffness": 30000, //刚度系数(N/m), 值越大悬挂越硬
+      "damping": 1500 //阻尼系数(N/(m/s)), 值越大减震器越硬
+    }
+  }
+}

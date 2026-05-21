@@ -9,8 +9,6 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemType
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.phys.Vec3;
-
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -35,7 +33,6 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 SoundEvent.DIRECT_CODEC.optionalFieldOf("handbrake_off", DEFAULT.handBrakeOff).forGetter(HandBrakeSoundAttr::handBrakeOff)
         ).apply(instance, HandBrakeSoundAttr::new));
     }
-    public final Vec3 steeringCenter;
     public final float minSteeringRadius;
     public final TreeMap<Float, Float> lateralAccelerationMap;
     public final TreeMap<Float, Float> maxDriftAngularVelocityMap;
@@ -85,7 +82,6 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     public static final MapCodec<CarControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
-            Vec3.CODEC.optionalFieldOf("steering_center", Vec3.ZERO).forGetter(CarControllerSubsystemStaticAttr::getSteeringCenter),
             Codec.FLOAT.optionalFieldOf("min_steering_radius", 5.0f).forGetter(CarControllerSubsystemStaticAttr::getMinSteeringRadius),
             STEERING_RADIUS_CODEC.optionalFieldOf("lateral_acceleration", createDefaultLateralAccelerationMap()).forGetter(CarControllerSubsystemStaticAttr::getLateralAccelerationMap),
             STEERING_RADIUS_CODEC.optionalFieldOf("max_drift_angular_velocity", createDefaultMaxDriftAngularVelocityMap()).forGetter(CarControllerSubsystemStaticAttr::getMaxDriftAngularVelocityMap),
@@ -110,7 +106,6 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     public CarControllerSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr,
-            Vec3 steeringCenter,
             float minSteeringRadius,
             TreeMap<Float, Float> lateralAccelerationMap,
             TreeMap<Float, Float> maxDriftAngularVelocityMap,
@@ -120,7 +115,6 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             List<String> controlInputKeys,
             HandBrakeSoundAttr sounds) {
         super(basicAttr, sounds.basicSounds());
-        this.steeringCenter = steeringCenter;
         this.minSteeringRadius = minSteeringRadius;
         this.lateralAccelerationMap = lateralAccelerationMap;
         this.maxDriftAngularVelocityMap = maxDriftAngularVelocityMap;

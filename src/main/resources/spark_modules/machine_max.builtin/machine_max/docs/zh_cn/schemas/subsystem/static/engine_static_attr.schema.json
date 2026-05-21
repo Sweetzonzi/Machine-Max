@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/engine_static_attr.json",
+  "title": "引擎子系统静态属性",
+  "description": "活塞引擎的静态属性，包括功率、扭矩、转速特性等。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:engine",
+      "description": "子系统类型，必须为'machine_max:engine'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否传递伤害至子系统持有者。若为true，子系统受到的伤害会传递给零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值至子系统剩余耐久度。例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
+    },
+    "max_power": {
+      "type": "number",
+      "minimum": 0,
+      "description": "最大功率，单位瓦特(W)。"
+    },
+    "max_torque": {
+      "type": "number",
+      "minimum": 0,
+      "description": "最大扭矩，单位牛顿·米(N·m)。"
+    },
+    "idle_rpm": {
+      "type": "number",
+      "minimum": 0,
+      "default": 500.0,
+      "description": "怠速转速，单位转/分钟(RPM)。"
+    },
+    "idle_rpm_torque_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.333,
+      "description": "怠速时扭矩与最大扭矩的比值。"
+    },
+    "max_torque_rpm": {
+      "type": "number",
+      "minimum": 0,
+      "default": 5200.0,
+      "description": "达到最大扭矩的转速，单位转/分钟(RPM)。"
+    },
+    "red_line_rpm": {
+      "type": "number",
+      "minimum": 0,
+      "default": 7500.0,
+      "description": "红线转速，超过此转速可能导致损坏，单位转/分钟(RPM)。"
+    },
+    "red_line_torque_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.9,
+      "description": "红线转速时扭矩与最大扭矩的比值。"
+    },
+    "inertia": {
+      "type": "number",
+      "minimum": 0,
+      "default": 10.0,
+      "description": "发动机系统转动惯量，单位千克·平方米(kg·m²)。"
+    },
+    "four_stroke": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否为四冲程，false则为二冲程，影响发动机音效。"
+    },
+    "cylinder": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 4,
+      "description": "气缸数，影响发动机音效。"
+    },
+    "damping_factors": {
+      "type": "array",
+      "items": { "type": "number" },
+      "default": [20.0, 0.1, 0.00005],
+      "description": "发动机各阶阻力系数，分别为常数项，一次项，二次项，…递增，单位N·m/(rad/s)^n。"
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["car_control"],
+      "description": "油门输入信号键列表，优先级从高到低。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_deactivate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被关闭时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "working_sounds": {
+          "type": "object",
+          "description": "手动工况音效映射，键为RPM字符串（如\"800\"、\"4500.0\"），值为音效事件。为空时使用自动合成。",
+          "patternProperties": {
+            "^-?[0-9]+(\\.[0-9]+)?$": {
+              "$ref": "../../base/sound_event.schema.json"
+            }
+          },
+          "default": {},
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "子系统基本音效配置。"
+    }
+  },
+  "required": ["type", "max_power", "max_torque"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:engine",
+      "basic_durability": 80.0,
+      "max_power": 75000.0,
+      "max_torque": 130.0,
+      "idle_rpm": 800.0,
+      "max_torque_rpm": 4500.0,
+      "red_line_rpm": 6500.0,
+      "inertia": 15.0
+    }
+  ]
+}

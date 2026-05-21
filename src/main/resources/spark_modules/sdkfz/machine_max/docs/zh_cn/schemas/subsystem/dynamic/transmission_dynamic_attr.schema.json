@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/transmission_dynamic_attr.json",
+  "title": "传动系统子系统动态属性",
+  "description": "传动系统的动态属性，将接收到的功率分配至各个输出目标。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:transmission",
+      "description": "子系统类型，必须为'machine_max:transmission'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+    },
+    "power_outputs": {
+      "$ref": "../base/power_outputs.schema.json",
+      "description": "动力输出目标及减速比。"
+    }
+  },
+  "required": ["type", "definition", "power_outputs"],
+  "examples": [
+    {
+      "type": "machine_max:transmission",
+      "definition": "machine_max:ae86at_transmission",
+      "power_outputs": {
+        "left_front_wheel_driver": 1.0,
+        "right_front_wheel_driver": 1.0,
+        "left_back_wheel_driver": 1.0,
+        "right_back_wheel_driver": 1.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/car_controller_dynamic_attr.json",
+  "title": "Vehicle Controller Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the vehicle controller, defining signal output targets and control relationships.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:car_controller",
+      "description": "Subsystem type, must be 'machine_max:car_controller'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "control_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "description": "Unified control signal output channel and targets. All controlled subsystems (engine/motor/gearbox/wheel) are discovered and signaled through this channel."
+    },
+    "speed_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": { "vehicle_speed": ["subpart", "vehicle"] },
+      "description": "Movement speed signal output channel and targets. Optional, by default sends movement speed (m/s) to the vehicle_speed channel of parts and vehicles."
+    },
+    "throttle_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": { "throttle": ["subpart", "vehicle"] },
+      "description": "Throttle signal output channel and targets. Optional, by default sends throttle [0,1] to the throttle channel of parts and vehicles."
+    },
+    "brake_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": { "brake": ["subpart", "vehicle"] },
+      "description": "Brake signal output channel and targets. Optional, by default sends brake level [0,1] to the brake channel of parts and vehicles."
+    },
+    "steering_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": { "steering": ["subpart", "vehicle"] },
+      "description": "Steering angle signal output channel and targets. Optional, by default sends steering level [-1,1] to the steering channel of parts and vehicles."
+    },
+    "handbrake_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": { "handbrake": ["subpart", "vehicle"] },
+      "description": "Handbrake switch signal output channel and targets. Optional, by default sends handbrake level [0,1] to the handbrake channel of parts and vehicles."
+    }
+  },
+  "required": ["type", "definition", "control_outputs"],
+  "examples": [
+    {
+      "type": "machine_max:car_controller",
+      "definition": "machine_max:ae86at_car_controller",
+      "control_outputs": {
+        "car_control": [
+          "subsystem.machine_max.engine",
+          "subsystem.machine_max.left_front_wheel_driver",
+          "subsystem.machine_max.right_front_wheel_driver",
+          "subsystem.machine_max.left_back_wheel_driver",
+          "subsystem.machine_max.right_back_wheel_driver",
+          "subsystem.machine_max.gearbox"
+        ]
+      }
+    }
+  ]
+}

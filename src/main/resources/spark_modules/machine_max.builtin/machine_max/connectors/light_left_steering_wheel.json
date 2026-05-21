@@ -1,0 +1,24 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced", //连接点类型, 支持Simple和Advanced
+  "direction": "xp", //连接点法线方向, 指向被连接的零件方向, 取值: xp, yp, zp, xn, yn, zn
+  "integrity": 30.0, //(可选, 默认20.0)连接点结构完整度
+  "impact_absorption": 0.15, //(可选, 默认0.2)冲击转化为结构完整性损耗的比例
+  "impact_reduction": 1.0, //(可选, 默认2.0)连接点冲击减免值
+  "impact_multiplier": 1.0, //(可选, 默认1.0)连接点冲击吸收率
+  "required_tags": ["machine_max:left"], //连接所需标签
+  "joint_attrs": { //Advanced类型专属关节属性
+    "y": { //悬挂轴(平移), 沿法线方向的线性弹簧阻尼器
+      "lower_limit": -0.1, //下限(m)
+      "upper_limit": 0.15, //上限(m)
+      "stiffness": 15000, //刚度系数(N/m)
+      "damping": 800 //阻尼系数(N·s/m)
+    },
+    "yr": { //转向轴(旋转), 绕法线方向的扭转弹簧阻尼器
+      "lower_limit": -45.0, //下限(度)
+      "upper_limit": 45.0, //上限(度)
+      "stiffness": 2000, //刚度系数(N·m/rad)
+      "damping": 15 //阻尼系数(N·m·s/rad)
+    }
+  }
+}

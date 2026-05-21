@@ -1,0 +1,174 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/subsystem_dynamic_attr.json",
+  "title": "子系统动态属性",
+  "description": "子系统动态属性的顶层架构，根据 type 字段分派到具体子系统动态属性架构。",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "machine_max:basic",
+        "machine_max:car_controller",
+        "machine_max:motorbike_controller",
+        "machine_max:engine",
+        "machine_max:gearbox",
+        "machine_max:item_storage",
+        "machine_max:motor",
+        "machine_max:motor_controller",
+        "machine_max:seat",
+        "machine_max:transmission",
+        "machine_max:wheel_driver",
+        "machine_max:lighting"
+      ],
+      "description": "子系统类型，决定使用哪个具体的子系统架构。"
+    }
+  },
+  "additionalProperties": true,
+  "required": [
+    "type"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:car_controller"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/car_controller_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:engine"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/engine_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:gearbox"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/gearbox_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:item_storage"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/item_storage_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:motor"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/motor_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:motor_controller"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/motorbike_controller_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:seat"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/seat_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:transmission"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/transmission_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:wheel_driver"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/wheel_driver_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:lighting"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/lighting_dynamic_attr.schema.json"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "type": "machine_max:car_controller",
+      "definition": "machine_max:ae86at_car_controller",
+      "control_outputs": {
+        "car_control": [
+          "subsystem.machine_max.engine",
+          "subsystem.machine_max.left_front_wheel_driver",
+          "subsystem.machine_max.right_front_wheel_driver",
+          "subsystem.machine_max.left_back_wheel_driver",
+          "subsystem.machine_max.right_back_wheel_driver",
+          "subsystem.machine_max.gearbox"
+        ]
+      }
+    },
+    {
+      "type": "machine_max:engine",
+      "definition": "machine_max:ae86at_engine",
+      "power_output": "gearbox"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/wheel_driver_dynamic_attr.json",
+  "title": "Wheel Driver Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the wheel driver, driving rolling and steering of parts on connection points.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:wheel_driver",
+      "description": "Subsystem type, must be 'machine_max:wheel_driver'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "connector": {
+      "type": "string",
+      "description": "Name of the controlled connection point."
+    },
+    "roll_speed_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Rolling speed signal output channel and targets."
+    },
+    "steering_angle_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Steering angle signal output channel and targets."
+    }
+  },
+  "required": ["type", "definition", "connector"],
+  "examples": [
+    {
+      "type": "machine_max:wheel_driver",
+      "definition": "machine_max:ae86at_front_wheel_driver",
+      "connector": "left_front_wheel",
+      "roll_speed_outputs": { "wheel_speed": ["part", "vehicle"] },
+      "steering_angle_outputs": { "steering_angle": ["part", "vehicle"] }
+    }
+  ]
+}

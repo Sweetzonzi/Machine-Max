@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/part/subpart/interact_box_attr.schema.json",
+  "title": "交互箱属性",
+  "description": "定义交互箱的属性，用于玩家与部件的交互。交互箱通常对应模型中的骨骼，当玩家点击时触发信号。",
+  "type": "object",
+  "properties": {
+    "bone": {
+      "type": "string",
+      "description": "交互区对应的骨骼名称，模型中的骨骼将作为交互区域。"
+    },
+    "signal_targets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "description": "信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/vehicle）。例如：{\"door_interact\": [\"door_controller\"]}。"
+    },
+    "interact_mode": {
+      "type": "string",
+      "enum": ["fast", "accurate"],
+      "default": "fast",
+      "description": "交互模式。fast：快速交互，仅需要玩家与交互区相交；accurate：需要玩家瞄准交互区。二者中accurate优先级高于fast。"
+    },
+    "condition": {
+      "type": "string",
+      "enum": ["AND", "OR", "NAND", "NOR", "XOR", "XNOR"],
+      "default": "NOR",
+      "description": "交互区可用的条件，AND: 所有输入信号都不为0；OR: 任意一个输入信号不为0；NAND: 所有输入信号都为0；NOR: 任意一个输入信号为0；XOR: 只有一个输入信号为1；XNOR: 只有一个输入信号为0。"
+    }
+  },
+  "required": ["bone", "signal_targets"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "bone": "DoorHandle",
+      "signal_targets": {
+        "door_interact": ["door_controller"]
+      },
+      "condition": "NOR",
+      "description": "门把手交互箱，触发门控制器"
+    },
+    {
+      "bone": "Lever",
+      "signal_targets": {
+        "lever_pull": ["engine_start", "lights"]
+      },
+      "interact_mode": "toggle",
+      "condition": "OR",
+      "description": "控制杆交互箱，切换引擎和灯光状态"
+    }
+  ]
+}

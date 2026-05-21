@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/motor_static_attr.json",
+  "title": "电机子系统静态属性",
+  "description": "电机的静态属性，包括功率、扭矩、转速特性等。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:motor",
+      "description": "子系统类型，必须为'machine_max:motor'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否传递伤害至子系统持有者。若为true，子系统受到的伤害会传递给零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值至子系统剩余耐久度。例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
+    },
+    "particle_locator": {
+      "type": "string",
+      "default": "",
+      "description": "粒子效果定位器名称，用于显示电机工作时的粒子效果。"
+    },
+    "max_power": {
+      "type": "number",
+      "minimum": 0,
+      "description": "最大功率，单位瓦特(W)。"
+    },
+    "max_torque": {
+      "type": "number",
+      "minimum": 0,
+      "default": 100.0,
+      "description": "最大扭矩，单位牛顿·米(N·m)。"
+    },
+    "red_line_rpm": {
+      "type": "number",
+      "minimum": 0,
+      "default": 10000.0,
+      "description": "红线转速，单位转/分钟(RPM)。"
+    },
+    "red_line_power_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.8,
+      "description": "红线转速处的功率占峰值功率的比例（0~1）。控制电机高转速区的功率衰减程度，值越小档位选择效益越明显，真实永磁同步电机通常约 0.7~0.85。"
+    },
+    "inertia": {
+      "type": "number",
+      "minimum": 0,
+      "default": 10.0,
+      "description": "电机系统转动惯量，单位千克·平方米(kg·m²)。"
+    },
+    "damping_factors": {
+      "type": "array",
+      "items": { "type": "number" },
+      "default": [10.0, 0.1, 0.00005],
+      "description": "电机系统各阶阻力系数，分别为常数项，一次项，二次项，…递增，单位N·m/(rad/s)^n。"
+    },
+    "generator_efficiency": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.85,
+      "description": "发电效率（0-1），当电机作为发电机时的效率。"
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["car_control"],
+      "description": "油门输入信号键列表，优先级从高到低。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_deactivate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被关闭时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "working_sounds": {
+          "type": "object",
+          "description": "手动工况音效映射，键为RPM字符串（如\"800\"、\"4500.0\"），值为音效事件。为空时使用自动合成。",
+          "patternProperties": {
+            "^-?[0-9]+(\\.[0-9]+)?$": {
+              "$ref": "../../base/sound_event.schema.json"
+            }
+          },
+          "default": {},
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "子系统基本音效配置。"
+    }
+  },
+  "required": ["type", "max_power"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:motor",
+      "basic_durability": 50.0,
+      "max_power": 50000.0,
+      "max_torque": 80.0,
+      "red_line_rpm": 12000.0,
+      "generator_efficiency": 0.9
+    }
+  ]
+}

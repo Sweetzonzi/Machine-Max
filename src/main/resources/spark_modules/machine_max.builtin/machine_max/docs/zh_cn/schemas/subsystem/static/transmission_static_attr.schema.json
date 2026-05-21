@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/transmission_static_attr.json",
+  "title": "传动系统子系统静态属性",
+  "description": "传动系统的静态属性，负责将输入动力分配至各个输出端。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:transmission",
+      "description": "子系统类型，必须为'machine_max:transmission'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否传递伤害至子系统持有者。若为true，子系统受到的伤害会传递给零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值至子系统剩余耐久度。例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
+    },
+    "diff_lock": {
+      "type": "string",
+      "enum": ["true", "false", "auto", "manual"],
+      "default": "auto",
+      "description": "差速锁模式。true：始终锁定；false：从不锁定；auto：自动锁定；manual：手动控制锁定。"
+    },
+    "diff_lock_sensitivity": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": "差速锁灵敏度。"
+    },
+    "auto_diff_lock_threshold": {
+      "type": "number",
+      "minimum": 0,
+      "default": 10.0,
+      "description": "自动差速锁阈值，当输出端转速差百分比超过该值且diff_lock为auto时，自动启用差速锁。"
+    },
+    "diff_lock_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["diff_lock_control"],
+      "description": "手动差速锁控制信号键列表，优先级递减。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "子系统基本音效配置。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:transmission",
+      "basic_durability": 70.0,
+      "diff_lock": "auto",
+      "auto_diff_lock_threshold": 15.0,
+      "diff_lock_sensitivity": 1.5
+    }
+  ]
+}

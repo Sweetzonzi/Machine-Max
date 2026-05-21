@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/view_attr.json",
+  "title": "View Attributes",
+  "description": "View attributes of the seat subsystem, defining first-person and third-person camera settings.",
+  "type": "object",
+  "properties": {
+    "enable_first_person": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to enable first-person view."
+    },
+    "first_person_hud": {
+      "type": "array",
+      "items": { "$ref": "../../base/resource_location.schema.json" },
+      "default": [],
+      "description": "List of HUD interface resources for first-person view."
+    },
+    "first_person_offset": {
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0.0, 0.0, 0.0],
+      "description": "3D offset for first-person view, based on the attached part's pose, x+right, y+up, z+back, in meters."
+    },
+    "enable_third_person": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to enable third-person view."
+    },
+    "third_person_hud": {
+      "type": "array",
+      "items": { "$ref": "../../base/resource_location.schema.json" },
+      "default": [],
+      "description": "List of HUD interface resources for third-person view."
+    },
+    "third_person_offset": {
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0.0, 0.75, 0.0],
+      "description": "3D offset for third-person view, based on the attached part's pose, x+right, y+up, z+back, in meters."
+    },
+    "follow_vehicle": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the camera follows the vehicle movement."
+    },
+    "focus_on_center": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to focus on the vehicle center."
+    },
+    "distance_scale": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.1,
+      "description": "Camera distance scaling factor."
+    },
+    "min_pitch": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": -70,
+      "description": "Minimum pitch angle in degrees. Zero degrees is horizontal. For example, min_pitch=-30 means you can look down up to 30 degrees."
+    },
+    "max_pitch": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": 45,
+      "description": "Maximum pitch angle in degrees. Zero degrees is horizontal. For example, max_pitch=60 means you can look up up to 60 degrees."
+    },
+    "yaw_limit": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360,
+      "default": 180,
+      "description": "Yaw angle limit in degrees. This represents the total angular range, so the actual yaw range will be [180 - yaw_limit/2, 180 + yaw_limit/2]. For example, yaw_limit=90 means ±45 degrees of horizontal movement."
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "enable_first_person": true,
+      "first_person_hud": ["machine_max:hud/driver"],
+      "first_person_offset": [0.0, 0.3, 0.0],
+      "enable_third_person": true,
+      "distance_scale": 1.2
+    },
+    {
+      "enable_first_person": true,
+      "first_person_offset": [0.0, 0.2, 0.0],
+      "enable_third_person": false,
+      "min_pitch": -30,
+      "max_pitch": 60,
+      "yaw_limit": 120
+    }
+  ]
+}

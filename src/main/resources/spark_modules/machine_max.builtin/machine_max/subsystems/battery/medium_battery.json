@@ -1,0 +1,8 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:battery", //电池子系统, 中容量电池(如电动轿车/轻型车)
+  "basic_durability": 50, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪
+  "max_stored_energy": 100000, //最大储能(J), 约100kJ, 适合日常通勤
+  "max_charge_rate": 2000, //最大充电速率(W), 约2000W
+  "max_discharge_rate": 5000 //最大放电速率(W), 约5000W
+}

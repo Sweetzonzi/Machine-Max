@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/view_attr.json",
+  "title": "视图属性",
+  "description": "座椅子系统的视图属性，定义第一人称和第三人称摄像机设置。",
+  "type": "object",
+  "properties": {
+    "enable_first_person": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否启用第一人称视角。"
+    },
+    "first_person_hud": {
+      "type": "array",
+      "items": { "$ref": "../../base/resource_location.schema.json" },
+      "default": [],
+      "description": "第一人称视角的HUD界面资源列表。"
+    },
+    "first_person_offset": {
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0.0, 0.0, 0.0],
+      "description": "第一人称视角的三维偏移，以子系统附着的零件姿态为基准，x+右，y+上，z+后，单位米。"
+    },
+    "enable_third_person": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否启用第三人称视角。"
+    },
+    "third_person_hud": {
+      "type": "array",
+      "items": { "$ref": "../../base/resource_location.schema.json" },
+      "default": [],
+      "description": "第三人称视角的HUD界面资源列表。"
+    },
+    "third_person_offset": {
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0.0, 0.75, 0.0],
+      "description": "第三人称视角的三维偏移，以子系统附着的零件姿态为基准，x+右，y+上，z+后，单位米。"
+    },
+    "follow_vehicle": {
+      "type": "boolean",
+      "default": true,
+      "description": "摄像机是否跟随车辆运动。"
+    },
+    "focus_on_center": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否聚焦于车辆中心。"
+    },
+    "distance_scale": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.1,
+      "description": "摄像机距离缩放系数。"
+    },
+    "min_pitch": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": -70,
+      "description": "最小俯仰角限制（单位：度）。零度对应水平方向。例如，min_pitch=-30表示最多向下看30度。"
+    },
+    "max_pitch": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": 45,
+      "description": "最大俯仰角限制（单位：度）。零度对应水平方向。例如，max_pitch=60表示最多向上看60度。"
+    },
+    "yaw_limit": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 360,
+      "default": 90,
+      "description": "偏航角限制（单位：度）。此值表示总角度范围，因此实际偏航角范围为[180 - yaw_limit/2, 180 + yaw_limit/2]。例如，yaw_limit=90表示水平方向±45度的移动范围。"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "enable_first_person": true,
+      "first_person_hud": ["machine_max:hud/driver"],
+      "first_person_offset": [0.0, 0.3, 0.0],
+      "enable_third_person": true,
+      "distance_scale": 1.2
+    },
+    {
+      "enable_first_person": true,
+      "first_person_offset": [0.0, 0.2, 0.0],
+      "enable_third_person": false,
+      "min_pitch": -30,
+      "max_pitch": 60,
+      "yaw_limit": 120
+    }
+  ]
+}

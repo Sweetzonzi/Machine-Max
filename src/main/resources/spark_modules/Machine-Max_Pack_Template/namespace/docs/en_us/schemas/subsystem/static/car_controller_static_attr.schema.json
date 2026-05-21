@@ -35,11 +35,6 @@
       "default": false,
       "description": "Whether to hide the subsystem in HUD displays, commonly used for purely providing model part damage differentiation for non-functional subsystems"
     },
-    "steering_center": {
-      "$ref": "../../base/vector_3d.schema.json",
-      "default": [0, 0, 0],
-      "description": "Steering center position, relative to the part's local coordinate system."
-    },
     "min_steering_radius": {
       "type": "number",
       "minimum": 0,
@@ -173,7 +168,6 @@
     {
       "type": "machine_max:car_controller",
       "basic_durability": 50.0,
-      "steering_center": [0, 0.5, 0],
       "min_steering_radius": 4.0,
       "lateral_acceleration": 8.0,
       "max_drift_angular_velocity": 2.0,
@@ -186,7 +180,6 @@
     {
       "type": "machine_max:car_controller",
       "basic_durability": 60.0,
-      "steering_center": [0, 0.3, -0.2],
       "min_steering_radius": 3.5,
       "lateral_acceleration": {
         "0": 8.0,

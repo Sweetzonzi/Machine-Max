@@ -1,0 +1,8 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:gearbox", //子系统类型：变速箱
+  "basic_durability": 500, //基础耐久度，仿大运卡车重型变速箱，极高耐久
+  "final_ratio": 3.7, //最终减速比，卡车因减速比级数多且范围广，最终比偏小以匹配低速高扭特性
+  "ratios": [-12.3, 12.1, 9.41, 7.31, 5.71, 4.46, 3.4, 2.7, 2.11, 1.84, 1.3, 1.0, 0.78], //减速比列表，首项为倒挡(-12.3)，后12项为1~12前进挡
+  "switch_time": 0.3 //换挡时间（秒），重型变速箱换挡较慢
+}

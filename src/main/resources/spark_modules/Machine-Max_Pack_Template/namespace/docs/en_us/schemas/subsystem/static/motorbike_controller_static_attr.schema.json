@@ -35,11 +35,6 @@
       "default": false,
       "description": "Whether to hide the subsystem in HUD displays, commonly used for purely providing model part damage differentiation for non-functional subsystems"
     },
-    "steering_center": {
-      "$ref": "../../base/vector_3d.schema.json",
-      "default": [0, 0, 0],
-      "description": "Steering center position, relative to the part's local coordinate system. The calculation of motorbike control assistance force depends on the y-value of the steering center field. It should be filled with the expected distance from the vehicle's ground contact point relative to the center of mass of the control subsystem attachment rigid body after assembly. For example, for a motorbike frame with its center of mass at the origin, the y-value here should be negative."
-    },
     "min_steering_radius": {
       "type": "number",
       "minimum": 0,

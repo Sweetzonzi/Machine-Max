@@ -1,0 +1,13 @@
+{
+  "id": "machine_max:sdkfz",
+  "version": "1.0",
+  "author": "12312412",
+  "description": "4232324",
+  "dependencies": [
+    {
+      "id": "machine_max:builtin",
+      "type": "hard"
+    }
+  ],
+  "enable_auto_pack": true
+}

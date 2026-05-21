@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/part_definition_schema.json",
+  "title": "Part Definition",
+  "description": "Complete definition file for MachineMax vehicle parts, this is the top-level configuration for creating custom vehicle parts",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/zh_cn/schemas/part_definition_schema.json"
+    },
+    "icon": {
+      "$ref": "base/resource_location.schema.json",
+      "description": "Part icon path, used for UI display. If left empty, a purple-black default icon will be used as the icon",
+      "default": "minecraft:missingno"
+    },
+    "vehicle_durability_rate": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1.0,
+      "default": 0.8,
+      "description": "Vehicle durability contribution rate, part durability contributes to the total vehicle durability at this ratio. For example, 0.8 means 80% of the part's durability contributes to the vehicle"
+    },
+    "vehicle_damage_rate": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": "Normal vehicle damage transmission coefficient, when the part takes damage, it transmits to the vehicle at this ratio. For example, 1.0 means 100% damage transmission"
+    },
+    "vehicle_damage_rate_destroyed": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0.1,
+      "description": "Vehicle damage transmission coefficient after part is destroyed, when the destroyed part takes damage, it transmits to the vehicle at this ratio. Usually set to a lower value to prevent corpse punishment"
+    },
+    "functional_threshold": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.3,
+      "description": "Part functional threshold. Subsystems can work and assembly wireframe mode can auto-close after assembling progress reaches this value."
+    },
+    "share_durability": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether parts within the component share durability. If true, all sub-parts share the same durability pool; if false, each sub-part has independent durability"
+    },
+    "max_stack_size": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 64,
+      "default": 1,
+      "description": "Maximum stack size for the part item. Determines how many of this part can be stacked in inventory. Default is 1 (no stacking)"
+    },
+    "variants": {
+      "oneOf": [
+        {
+          "$ref": "part/variant_attr.schema.json",
+          "description": "Single variant definition, using default variant name (\"default\")"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "part/variant_attr.schema.json"
+          },
+          "minProperties": 1,
+          "description": "Multiple variant definition, key is variant name (such as \"red\", \"blue\", \"camouflage\", etc.), value is variant configuration"
+        }
+      ],
+      "description": "Part variant list, supports single variant (default) or multiple variant configurations. Each variant can have different appearance and characteristics"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["variants"],
+  "examples": [
+    {
+      "$schema": "../../docs/en_us/schemas/part_definition_schema.json",
+      "icon": "machine_max:textures/icon/ae86_chassis_all_terrain_icon.png",
+      "vehicle_durability_rate": 1.0,
+      "vehicle_damage_rate": 1.0,
+      "vehicle_damage_rate_destroyed": 0.1,
+      "functional_threshold": 0.6,
+      "share_durability": true,
+      "variants": {
+        "models": "machine_max:ae86_chassis_all_terrain.geo",
+        "textures": [
+          "machine_max:textures/part/ae86_all_terrain_1.png",
+          "machine_max:textures/part/ae86_all_terrain_2.png"
+        ],
+        "animations": "machine_max:ae86",
+        "tags": [],
+        "sub_parts": {
+          "ae86_chassis_all_terrain": {
+            "durability": 550.0,
+            "mass": 1200.0,
+            "hit_boxes": {
+              "mmCollision_Box_Chassis": {
+                "name": "chassis",
+                "type": "box",
+                "thickness": 10
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$schema": "../../docs/en_us/schemas/part_definition_schema.json",
+      "icon": "machine_max:textures/icon/car_chassis_icon.png",
+      "vehicle_durability_rate": 0.9,
+      "variants": {
+        "red": {
+          "models": "machine_max:car_chassis.geo",
+          "textures": ["machine_max:textures/part/car_chassis_red.png"],
+          "sub_parts": {
+            "chassis": {
+              "durability": 400.0,
+              "mass": 800.0,
+              "hit_boxes": {
+                "collision_box": {
+                  "type": "box",
+                  "thickness": 8
+                }
+              }
+            }
+          }
+        },
+        "blue": {
+          "models": "machine_max:car_chassis.geo",
+          "textures": ["machine_max:textures/part/car_chassis_blue.png"],
+          "sub_parts": {
+            "chassis": {
+              "durability": 400.0,
+              "mass": 800.0,
+              "hit_boxes": {
+                "collision_box": {
+                  "type": "box",
+                  "thickness": 8
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

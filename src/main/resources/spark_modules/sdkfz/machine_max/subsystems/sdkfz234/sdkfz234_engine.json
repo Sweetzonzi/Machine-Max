@@ -1,0 +1,19 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:engine",
+  "basic_durability": 220,
+  "max_power": 156597,
+  "max_torque": 400,
+  "idle_rpm": 250,
+  "idle_rpm_torque_ratio": 0.4,
+  "max_torque_rpm": 2000,
+  "red_line_rpm": 3000,
+  "red_line_torque_ratio": 0.8,
+  "inertia": 15,
+  "cylinder": 12,
+  "damping_factors": [
+    3,
+    0.05,
+    0.00005
+  ]
+}

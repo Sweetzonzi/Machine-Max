@@ -1,0 +1,8 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:gearbox", //子系统类型：变速箱
+  "basic_durability": 60, //基础耐久度，仿Mini EV/Kuluo简易变速箱
+  "final_ratio": 8.0, //最终减速比
+  "ratios": [2.0, 1.3], //减速比列表，仅2个前进挡，无倒挡
+  "switch_time": 0.1 //换挡时间（秒），简易变速箱换挡较快
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/base/signal_targets.json",
+  "title": "Signal Target Mapping",
+  "description": "Mapping from signal channels to target lists, used to define signal transmission relationships between subsystems.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "array",
+    "items": { "type": "string" },
+    "description": "List of target names, can be subsystem names, connection point names, 'part' or 'vehicle'."
+  },
+  "default": {},
+  "examples": [
+    {
+      "move_control": ["car_controller", "engine"],
+      "gear_control": ["gearbox"]
+    }
+  ]
+}

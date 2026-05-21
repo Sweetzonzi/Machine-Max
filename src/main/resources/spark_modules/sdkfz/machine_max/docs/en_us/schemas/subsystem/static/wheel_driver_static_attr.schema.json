@@ -1,0 +1,204 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/wheel_driver_static_attr.json",
+  "title": "轮驱动子系统静态属性",
+  "description": "轮驱动的静态属性，包括驱动力和转向特性。",
+  "definitions": {
+    "StaticWheelRollingAxisAttr": {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+          "default": "../../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+        },
+        "max_drive_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 10000.0,
+          "description": "最大驱动力，单位牛顿(N)。"
+        },
+        "basic_durability": {
+          "type": "number",
+          "minimum": 0,
+          "default": 20.0,
+          "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+        },
+        "pass_damage": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否传递伤害至子系统持有者。若为true，子系统受到的伤害会传递给零件。"
+        },
+        "limit_damage": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否限制伤害传递值至子系统剩余耐久度。例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者。"
+        },
+        "hidden": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
+        },
+        "max_brake_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 3500.0,
+          "description": "最大制动力，单位牛顿(N)。"
+        },
+        "max_hand_brake_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.0,
+          "description": "最大手刹制动力，单位牛顿(N)。"
+        },
+        "max_speed": {
+          "type": "number",
+          "minimum": 0,
+          "default": 3140.0,
+          "description": "最大转速，单位弧度/秒(rad/s)。"
+        }
+      },
+      "additionalProperties": false
+    },
+    "StaticWheelSteeringAxisAttr": {
+      "type": "object",
+      "properties": {
+        "max_force": {
+          "type": "number",
+          "minimum": 0,
+          "default": 5000.0,
+          "description": "最大转向力，单位牛顿(N)。"
+        },
+        "max_speed": {
+          "type": "number",
+          "minimum": 0,
+          "default": 3.14,
+          "description": "最大转向速度，单位弧度/秒(rad/s)。"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:wheel_driver",
+      "description": "子系统类型，必须为'machine_max:wheel_driver'。"
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["car_control"],
+      "description": "控制输入信号键列表。"
+    },
+    "roll": {
+      "$ref": "#/definitions/StaticWheelRollingAxisAttr",
+      "default": {
+        "max_drive_force": 10000.0,
+        "max_brake_force": 1500.0,
+        "max_hand_brake_force": 0.0,
+        "max_speed": 3140.0
+      },
+      "description": "滚动轴属性。"
+    },
+    "steering": {
+      "$ref": "#/definitions/StaticWheelSteeringAxisAttr",
+      "default": {
+        "max_force": 4000.0,
+        "max_speed": 3.14
+      },
+      "description": "转向轴属性。"
+    },
+    "abs_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否启用防抱死系统(ABS)。"
+    },
+    "abs_target_slip_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.15,
+      "description": "ABS目标滑移率，通常设置在0.1-0.2之间。滑移率过高时ABS会减少刹车力。"
+    },
+    "abs_wheel_radius": {
+      "type": "number",
+      "minimum": 0.01,
+      "default": 0.3,
+      "description": "轮胎半径，单位米，用于计算轮胎线速度和滑移率。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "brake_on": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "刹车开启时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:subsystem.wheel_driver.brake_on",
+            "range": 16
+          }
+        },
+        "brake_off": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "刹车关闭时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:subsystem.wheel_driver.brake_off",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "刹车操作音效配置。"
+    }
+  },
+  "required": ["type"],
+  "examples": [
+    {
+      "type": "machine_max:wheel_driver",
+      "basic_durability": 40.0,
+      "control_inputs": ["car_control"],
+      "roll": {
+        "max_drive_force": 12000.0,
+        "max_brake_force": 4000.0,
+        "max_speed": 2800.0
+      },
+      "steering": {
+        "max_force": 3000.0,
+        "max_speed": 2.5
+      }
+    },
+    {
+      "type": "machine_max:wheel_driver",
+      "basic_durability": 35.0,
+      "control_inputs": ["car_control"],
+      "roll": {
+        "max_drive_force": 10000.0,
+        "max_brake_force": 3500.0,
+        "max_speed": 3000.0
+      },
+      "steering": {
+        "max_force": 2500.0,
+        "max_speed": 3.0
+      },
+      "abs_enabled": true,
+      "abs_target_slip_ratio": 0.15,
+      "abs_wheel_radius": 0.35
+    }
+  ]
+}

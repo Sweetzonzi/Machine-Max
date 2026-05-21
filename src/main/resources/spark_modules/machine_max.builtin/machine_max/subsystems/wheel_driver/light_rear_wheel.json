@@ -1,0 +1,13 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:wheel_driver", //子系统类型：轮毂驱动器
+  "basic_durability": 60, //子系统基础耐久度
+  "roll": { //滚动相关参数
+    "max_drive_force": 1500, //最大驱动力
+    "max_brake_force": 800, //最大制动力（刹车）
+    "max_hand_brake_force": 1000, //最大手制动力
+    "max_speed": 2500 //最大转速（角速度）
+  },
+  "abs_enabled": true, //是否启用ABS防抱死系统
+  "abs_wheel_radius": 0.35 //防抱死轮速计算用轮胎半径
+}

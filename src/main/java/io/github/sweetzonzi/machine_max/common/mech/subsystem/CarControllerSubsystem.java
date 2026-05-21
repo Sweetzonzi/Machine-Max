@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.bullet.joints.New6Dof;
+import com.jme3.bullet.joints.motors.MotorParam;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
@@ -9,10 +10,12 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.signal.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CarControllerSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedConnector;
+import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.control.PIDController;
 import lombok.Getter;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
 import java.util.List;
@@ -69,6 +72,9 @@ public class CarControllerSubsystem extends BasicSubsystem {
      * 漂移转向输入，弧度制
      */
     private float driftControl = 0;
+
+    /** 根据已装配车轮几何位置自动计算的转向中心，用于阿克曼转向和漂移判断 */
+    protected volatile Vec3 computedSteeringCenter = Vec3.ZERO;
 
     public CarControllerSubsystem(ISubsystemHost owner, String name, CarControllerSubsystemAttr attr) {
         super(owner, name, attr);
@@ -230,6 +236,65 @@ public class CarControllerSubsystem extends BasicSubsystem {
         for (String signalChannel : attr.controlOutputTargets.keySet()) {
             sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
         }
+        recalculateSteeringCenter();
+    }
+
+    /**
+     * 根据已装配车轮的关节枢轴位置自动计算转向中心。<br>
+     * 遍历所有受控车轮驱动子系统，读取关节 Y 轴旋转限位以区分转向/非转向轮，<br>
+     * 用非转向轮枢轴的 Z 均值作为转向参考轴（X 取左右对称中心），<br>
+     * 若全为转向轮则回退到全部车轮的几何中心。
+     */
+    protected void recalculateSteeringCenter() {
+        float sumNonSteerX = 0, sumNonSteerZ = 0;
+        int nonSteerCount = 0;
+        float sumAllX = 0, sumAllZ = 0;
+        int allCount = 0;
+
+        var carBody = getOwner().getSubPart().body;
+
+        for (WheelDriverSubsystem wheel : getWheels().keySet()) {
+            if (wheel.connector == null || wheel.connector.joint == null) continue;
+
+            New6Dof joint = wheel.connector.joint;
+            Vector3f pivotLocal = new Vector3f();
+            if (wheel.connector.subPart.body == joint.getBodyA()) {
+                joint.getPivotA(pivotLocal);
+            } else {
+                joint.getPivotB(pivotLocal);
+            }
+            // 统一转换到车控子系统的刚体局部坐标系，确保不同 SubPart 上的车轮在同一空间内对比
+            Vector3f worldPivot = MMMath.relPointWorldPos(pivotLocal, wheel.connector.subPart.body);
+            Vector3f carLocalPivot = MMMath.worldPointLocalPos(worldPivot, carBody);
+
+            // 检查 Y 轴旋转自由度范围判断是否为转向轮（带 1e-4 容差）
+            double lowerYr = joint.get(MotorParam.LowerLimit, 4);
+            double upperYr = joint.get(MotorParam.UpperLimit, 4);
+            boolean isSteering = Math.abs(upperYr - lowerYr) > 1e-4;
+
+            if (!isSteering) {
+                sumNonSteerX += carLocalPivot.x;
+                sumNonSteerZ += carLocalPivot.z;
+                nonSteerCount++;
+            }
+            sumAllX += carLocalPivot.x;
+            sumAllZ += carLocalPivot.z;
+            allCount++;
+        }
+
+        float avgX, avgZ;
+        if (nonSteerCount > 0) {
+            avgX = sumNonSteerX / nonSteerCount;
+            avgZ = sumNonSteerZ / nonSteerCount;
+        } else if (allCount > 0) {
+            avgX = sumAllX / allCount;
+            avgZ = sumAllZ / allCount;
+        } else {
+            avgX = 0;
+            avgZ = 0;
+        }
+
+        this.computedSteeringCenter = new Vec3(avgX, 0, avgZ);
     }
 
     /**
@@ -641,9 +706,9 @@ public class CarControllerSubsystem extends BasicSubsystem {
             float steeringRadius = ControlPreference.shouldLimitSpeedTurning(this)
                     ? attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
                     : attr.staticAttribute.getMinSteeringRadius() / steeringInput; // 否则使用最小转向半径
-            double deltaRadius = pivot.x - attr.staticAttribute.steeringCenter.x;
+            double deltaRadius = pivot.x - computedSteeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
-            double deltaForward = pivot.z - attr.staticAttribute.steeringCenter.z;
+            double deltaForward = pivot.z - computedSteeringCenter.z;
             return (float) Math.atan(deltaForward / (steeringRadius + deltaRadius));
         }
     }
@@ -658,7 +723,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
         Vector3f pivot = new Vector3f();
         if (wheelDrive.subPart.body == joint.getBodyA()) joint.getPivotA(pivot);
         else joint.getPivotB(pivot);
-        return pivot.z <= getAttr().getStaticAttribute().getSteeringCenter().z() ? 0.5f * driftRad - driftControl : 0;
+        return pivot.z <= computedSteeringCenter.z ? 0.5f * driftRad - driftControl : 0;
     }
 
     @Override

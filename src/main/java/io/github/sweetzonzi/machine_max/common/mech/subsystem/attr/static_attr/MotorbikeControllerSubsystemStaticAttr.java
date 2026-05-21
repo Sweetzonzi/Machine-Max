@@ -5,7 +5,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import lombok.Getter;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.TreeMap;
@@ -18,7 +17,6 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
 
     public static final MapCodec<MotorbikeControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
-            Vec3.CODEC.optionalFieldOf("steering_center", Vec3.ZERO).forGetter(MotorbikeControllerSubsystemStaticAttr::getSteeringCenter),
             Codec.FLOAT.optionalFieldOf("min_steering_radius", 5.0f).forGetter(MotorbikeControllerSubsystemStaticAttr::getMinSteeringRadius),
             CarControllerSubsystemStaticAttr.STEERING_RADIUS_CODEC.optionalFieldOf("lateral_acceleration", CarControllerSubsystemStaticAttr.createDefaultLateralAccelerationMap()).forGetter(MotorbikeControllerSubsystemStaticAttr::getLateralAccelerationMap),
             CarControllerSubsystemStaticAttr.STEERING_RADIUS_CODEC.optionalFieldOf("max_drift_angular_velocity", CarControllerSubsystemStaticAttr.createDefaultMaxDriftAngularVelocityMap()).forGetter(MotorbikeControllerSubsystemStaticAttr::getMaxDriftAngularVelocityMap),
@@ -33,7 +31,6 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
 
     public MotorbikeControllerSubsystemStaticAttr(
             BasicSubsystemStaticAttr.BasicAttr basicAttr,
-            Vec3 steeringCenter,
             float minSteeringRadius,
             TreeMap<Float, Float> lateralAccelerationMap,
             TreeMap<Float, Float> maxDriftAngularVelocityMap,
@@ -46,7 +43,6 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             HandBrakeSoundAttr sounds
     ) {
         super(basicAttr,
-                steeringCenter,
                 minSteeringRadius,
                 lateralAccelerationMap,
                 maxDriftAngularVelocityMap,

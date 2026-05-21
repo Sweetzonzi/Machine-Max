@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/base/power_outputs.json",
+  "title": "功率输出映射",
+  "description": "功率输出目标及减速比的映射，用于传动系统等需要分配功率的子系统。",
+  "type": "object",
+  "additionalProperties": {
+    "type": "number",
+    "description": "减速比或权重，正数表示减速，负数表示增速，0表示固定连接。"
+  },
+  "default": {},
+  "examples": [
+    {
+      "left_front_wheel_driver": 1.0,
+      "right_front_wheel_driver": 1.0,
+      "left_back_wheel_driver": 1.0,
+      "right_back_wheel_driver": 1.0
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subpart/hydrodynamic_attr.schema.json",
+  "title": "Hydrodynamic Attributes",
+  "description": "Defines the dynamic properties of parts in fluids (air, water), including drag, lift, etc. Used to simulate aerodynamic and hydrodynamic effects.\n\n## Aerodynamic Calculation Model\n\nFluid dynamic calculations are based on the following physical models:\n\n### Default Mode (advanced = false)\n- **Drag calculation**: Uses first-order (viscous) + second-order (inertial) model in all directions\n- **Lift calculation**: Simple velocity squared model (x/y/z_lift)\n\n### Advanced Aerodynamic Mode (advanced = true)\n- **In advanced aerodynamic convention directions**: Uses lift line model to calculate lift and second-order drag\n- **First-order drag (viscous)**: Still preserved and superimposed\n- **Non-lift directions**: Still uses original drag model\n\n**Note: Advanced aerodynamic mode is still WIP. It is already connected to real force application, but it has not yet seen sufficient official content usage or long-term tuning validation.**\n\n## Coordinate Convention\n- **Fluid dynamic calculation point local coordinate system**:\n  - y+ : Lift normal direction\n  - z- : Flow direction (forward)\n\n## Detailed Calculation Model\n\n### Drag Calculation\n- **First-order drag (viscous drag)**: Related to fluid viscosity, calculated using wetted surface area\n  - Formula: `F_viscous = viscosity × C_d1 × v × wettedArea`\n  - Suitable for low-speed flow, linearly related to velocity\n- **Second-order drag (pressure drag)**: Related to fluid density, calculated using projected area\n  - Formula: `F_pressure = 0.5 × density × C_d2 × v² × projectedArea`\n  - Suitable for high-speed flow, related to velocity squared\n\n### Lift Calculation\n- **Lift**: Related to fluid density, calculated using projected area\n  - Formula: `F_lift = 0.5 × density × C_L × v × projectedArea`\n  - Based on velocity component perpendicular to flow direction\n\n### Area Definitions\n- **Projected area**: Area perpendicular to flow direction\n- **Wetted surface area**: Total surface area in contact with fluid, approximated as sum of projected areas × 2\n\n## Parameter Description\nDrag coefficient list must contain 2 values: [first-order coefficient, second-order coefficient], lift coefficient is a single value.",
+  "type": "object",
+  "properties": {
+    "scale": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": "Scale factor, used to adjust hydrodynamic effects as a whole."
+    },
+    "effective_range": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.0,
+      "description": "Effective calculation range, unit in m, when obstructions are detected within this distance in the flow direction, the actual air drag coefficient of the part will be reduced, to simulate drag reduction effects such as streamline flow caused by vehicle shell obstruction."
+    },
+    "transonic_amplifier": {
+      "type": "number",
+      "minimum": 0,
+      "default": 5.0,
+      "description": "Transonic amplification coefficient, used to simulate drag changes during transonic speeds. When speed approaches sonic speed, drag increases sharply."
+    },
+    "front_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "Front drag coefficient list, must contain two values: [first-order coefficient, second-order coefficient]. First-order coefficient is used for low-speed viscous drag calculation, second-order coefficient is used for high-speed pressure drag calculation."
+    },
+    "back_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "Back drag coefficient list, must contain two values: [first-order coefficient, second-order coefficient]."
+    },
+    "left_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "Left drag coefficient list, must contain two values: [first-order coefficient, second-order coefficient]."
+    },
+    "right_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "Right drag coefficient list, must contain two values: [first-order coefficient, second-order coefficient]."
+    },
+    "up_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "Up drag coefficient list, must contain two values: [first-order coefficient, second-order coefficient]."
+    },
+    "down_drag": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2,
+      "default": [0.1, 1.0],
+      "description": "Down drag coefficient list, must contain two values: [first-order coefficient, second-order coefficient]."
+    },
+    "x_lift": {
+      "type": "number",
+      "default": 0.0,
+      "description": "X-axis lift coefficient. Based on Y-Z plane velocity component to calculate lift, usually 0 indicates no X-axis lift is generated."
+    },
+    "y_lift": {
+      "type": "number",
+      "default": 0.0,
+      "description": "Y-axis lift coefficient. Based on X-Z plane velocity component to calculate lift, usually 0 indicates no Y-axis lift is generated."
+    },
+    "z_lift": {
+      "type": "number",
+      "default": 0.0,
+      "description": "Z-axis lift coefficient. Based on X-Y plane velocity component to calculate lift, usually 0 indicates no Z-axis lift is generated."
+    },
+    "advanced": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to enable advanced aerodynamic mode. When enabled, uses lift line model to calculate lift and second-order drag in advanced aerodynamic convention directions. Note: This mode is still WIP, but it is already connected to real force application and mainly lacks sufficient official content usage and long-term tuning validation."
+    },
+    "advanced_aero": {
+      "type": "object",
+      "properties": {
+        "lift_slope": {
+          "type": "number",
+          "default": 6.28,
+          "description": "Lift line slope dCl/dα (unit: 1/rad), thin airfoil theory default value is 2π"
+        },
+        "alpha0": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Zero-lift angle of attack (unit: rad), no lift at this angle of attack"
+        },
+        "alpha_stall": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.52,
+          "description": "Stall angle of attack (unit: rad, positive value, symmetric stall), approximately 30°"
+        },
+        "cd0": {
+          "type": "number",
+          "minimum": 0.0,
+          "default": 0.02,
+          "description": "Zero-lift drag coefficient"
+        },
+        "k_induced": {
+          "type": "number",
+          "default": 0.05,
+          "description": "Induced drag coefficient (≈ 1 / (π * AR * e))"
+        }
+      },
+      "default": {
+        "lift_slope": 6.28,
+        "alpha0": 0.0,
+        "alpha_stall": 0.52,
+        "cd0": 0.02,
+        "k_induced": 0.05
+      },
+      "description": "Advanced aerodynamic parameter configuration, only effective when advanced = true. Based on simplified lift line theory: lift coefficient Cl = liftSlope * (α - alpha0), drag coefficient Cd = cd0 + kInduced * Cl²."
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "scale": 1.0,
+      "effective_range": [5.0, 5.0, 5.0],
+      "transonic_amplifier": 5.0,
+      "front_drag": [0.2, 1.5],
+      "back_drag": [0.3, 1.8],
+      "left_drag": [0.15, 1.2],
+      "right_drag": [0.15, 1.2],
+      "up_drag": [0.1, 0.8],
+      "down_drag": [0.1, 0.8],
+      "x_lift": 0.0,
+      "y_lift": 0.0,
+      "z_lift": 0.0,
+      "advanced": false,
+      "description": "Typical vehicle aerodynamic configuration with larger front drag, smaller lateral and vertical drag"
+    }
+  ]
+}

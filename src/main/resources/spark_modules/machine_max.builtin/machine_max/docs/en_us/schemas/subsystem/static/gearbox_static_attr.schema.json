@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/gearbox_static_attr.json",
+  "title": "Transmission Subsystem Static Attributes",
+  "description": "Static attributes of the transmission, including reduction ratios, shifting time, etc.",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:gearbox",
+      "description": "Subsystem type, must be 'machine_max:gearbox'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Subsystem basic durability, becomes paralyzed when reduced to 0, restores functionality when repaired to 30% durability."
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem will be transferred to the sub-part."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to limit damage transfer value to the subsystem's remaining durability. For example, 40 damage with 20 remaining durability will only transfer 20 damage to the holder."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the subsystem in HUD displays, commonly used for purely providing model part damage differentiation for non-functional subsystems"
+    },
+    "final_ratio": {
+      "type": "number",
+      "default": 10.0,
+      "description": "Final reduction ratio, used to scale all reduction ratios."
+    },
+    "ratios": {
+      "type": "array",
+      "items": { "type": "number" },
+      "default": [-3.5, 3.5, 2.5, 1.7, 1.4, 1.1],
+      "description": "List of reduction ratios, arranged in ascending order. Negative numbers are reverse gears, positive numbers are forward gears."
+    },
+    "switch_time": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0.3,
+      "description": "Shifting time, in seconds."
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["car_control"],
+      "description": "List of shifting control signal keys, specifying the selected reduction ratio."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "clutch_in": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event for clutch engagement.",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.clutch_in",
+            "range": 16
+          }
+        },
+        "clutch_out": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event for clutch disengagement.",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.clutch_out",
+            "range": 16
+          }
+        },
+        "gear_up": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event for shifting up.",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.up.light",
+            "range": 16
+          }
+        },
+        "gear_down": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event for shifting down.",
+          "default": {
+            "sound_id": "machine_max:subsystem.gearbox.down.light",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Sound configuration for gearbox operations."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:gearbox",
+      "basic_durability": 60.0,
+      "final_ratio": 12.0,
+      "ratios": [-4.0, 3.8, 2.8, 2.0, 1.5, 1.2, 0.9],
+      "switch_time": 0.4
+    },
+    {
+      "type": "machine_max:gearbox",
+      "basic_durability": 40.0,
+      "final_ratio": 8.0,
+      "ratios": [-3.0, 2.5, 1.8, 1.2, 0.8],
+      "switch_time": 0.2,
+      "sounds": {
+        "clutch_in": {
+          "sound_id": "minecraft:block.iron_trapdoor.close",
+          "range": 8
+        },
+        "clutch_out": {
+          "sound_id": "minecraft:block.iron_trapdoor.open",
+          "range": 8
+        },
+        "gear_up": {
+          "sound_id": "minecraft:entity.arrow.hit_player",
+          "range": 12
+        },
+        "gear_down": {
+          "sound_id": "minecraft:entity.arrow.hit",
+          "range": 12
+        }
+      }
+    }
+  ]
+}

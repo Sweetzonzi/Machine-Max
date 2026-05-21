@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AdvancedCo
 import io.github.sweetzonzi.machine_max.util.MMMath;
 import io.github.sweetzonzi.machine_max.util.control.PIDController;
 import lombok.Getter;
+import net.minecraft.world.phys.Vec3;
 
 @Getter
 public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
@@ -59,7 +60,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
         // 有人控制车辆，且未失去平衡或处于低速时应用修正力
         float maxAngle = getAttr().getStaticAttribute().getMaxAngle();
         float gravity = getSubPart().body.getGravity(null).length();
-        double massCenterHeight = -getAttr().getStaticAttribute().getSteeringCenter().y;
+        double massCenterHeight = -computedSteeringCenter.y;
         if (moveInput != null && (Math.abs(speed) < 2 || Math.abs(roll) < maxAngle)) {
             float targetRoll = Math.clamp(
                     calculateTargetRoll(
@@ -108,6 +109,42 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
         return (float) Math.toDegrees(Math.atan(speed * speed / (gravity * turningRadius)));
     }
 
+    /**
+     * 在父类计算 X/Z 的基础上，额外计算 Y 轴（接地高度）。<br>
+     * 接地高度 = 车轮枢轴 Y 均值 - 轮胎半径均值，<br>
+     * 使得 massCenterHeight = -computedSteeringCenter.y 等于质心到地面的距离。
+     */
+    @Override
+    protected void recalculateSteeringCenter() {
+        super.recalculateSteeringCenter();
+
+        float sumPivotY = 0;
+        float sumRadius = 0;
+        int count = 0;
+
+        var carBody = getOwner().getSubPart().body;
+
+        for (WheelDriverSubsystem wheel : getWheels().keySet()) {
+            if (wheel.connector == null || wheel.connector.joint == null) continue;
+
+            New6Dof joint = wheel.connector.joint;
+            Vector3f pivotLocal = new Vector3f();
+            if (wheel.connector.subPart.body == joint.getBodyA()) joint.getPivotA(pivotLocal);
+            else joint.getPivotB(pivotLocal);
+            Vector3f worldPivot = MMMath.relPointWorldPos(pivotLocal, wheel.connector.subPart.body);
+            Vector3f carLocalPivot = MMMath.worldPointLocalPos(worldPivot, carBody);
+
+            sumPivotY += carLocalPivot.y;
+            sumRadius += wheel.attr.staticAttribute.getAbsWheelRadius();
+            count++;
+        }
+
+        if (count > 0) {
+            double avgGroundY = sumPivotY / count - sumRadius / count;
+            this.computedSteeringCenter = new Vec3(computedSteeringCenter.x, avgGroundY, computedSteeringCenter.z);
+        }
+    }
+
     @Override
     protected float ackermannSteering(float steeringInput, AdvancedConnector wheelDrive) {
         New6Dof joint = wheelDrive.joint;
@@ -121,9 +158,9 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
             float steeringRadius = ControlPreference.shouldLimitSpeedTurning(this)
                     ? attr.staticAttribute.getSteeringRadiusAtSpeed(speed) / steeringInput // 使用动态转向半径映射表，根据当前速度获取合适的转向半径
                     : attr.staticAttribute.getMinSteeringRadius() / steeringInput; // 否则使用最小转向半径
-            double deltaRadius = pivot.x - attr.staticAttribute.steeringCenter.x;
+            double deltaRadius = pivot.x - computedSteeringCenter.x;
             deltaRadius *= Math.signum(steeringInput);
-            double deltaForward = pivot.z - attr.staticAttribute.steeringCenter.z;
+            double deltaForward = pivot.z - computedSteeringCenter.z;
             return (float) Math.atan(deltaForward * Math.cos(Math.toRadians(roll)) / (steeringRadius + deltaRadius));
         }
     }

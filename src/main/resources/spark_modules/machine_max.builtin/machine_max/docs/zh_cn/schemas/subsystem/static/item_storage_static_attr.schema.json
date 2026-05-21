@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/item_storage_static_attr.json",
+  "title": "物品存储子系统静态属性",
+  "description": "物品存储容器的静态属性，包括行数和列数。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:item_storage",
+      "description": "子系统类型，必须为'machine_max:item_storage'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否传递伤害至子系统持有者。若为true，子系统受到的伤害会传递给零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值至子系统剩余耐久度。例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
+    },
+    "rows": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 3,
+      "description": "容器的物品槽行数。"
+    },
+    "columns": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 9,
+      "description": "容器的物品槽列数。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "子系统基本音效配置。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:item_storage",
+      "basic_durability": 100.0,
+      "rows": 6,
+      "columns": 9
+    }
+  ]
+}

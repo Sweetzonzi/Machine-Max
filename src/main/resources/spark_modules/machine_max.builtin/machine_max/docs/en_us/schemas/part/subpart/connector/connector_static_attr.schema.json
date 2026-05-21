@@ -1,0 +1,107 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/connector/connector_static_attr.schema.json",
+  "title": "Connection Point Static Attributes",
+  "description": "Defines the static attributes of connection points, including type, direction, structural integrity, impact handling, etc. These attributes are referenced by definition ID to avoid repetitive definitions in each part definition.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../docs/en_us/schemas/part/subpart/connector/connector_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["Simple", "simple", "advanced", "Advanced"],
+      "description": "Connection point type. Simple: Simple connection point; Advanced: Advanced connection point, supports complex joint attributes."
+    },
+    "direction": {
+      "$ref": "../../../base/axis.schema.json",
+      "description": "Normal direction of the connection point, used to determine the connection direction. X+ = right, Y+ = up, Z+ = back."
+    },
+    "integrity": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Basic structural integrity of the part, the part can withstand impact forces not exceeding this value without detaching, impact forces come from damage or joint stress."
+    },
+    "impact_reduction": {
+      "type": "number",
+      "minimum": 0,
+      "default": 2.0,
+      "description": "Impact reduction value of the connection point, applied before calculating part detachment, can reduce impact to 0 to completely avoid effects on structural integrity."
+    },
+    "impact_multiplier": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1.5,
+      "description": "Impact absorption rate of the connection point, applied after impact reduction before calculating part detachment, greater than 1 will make the connection point easier to break."
+    },
+    "impact_absorption": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.2,
+      "description": "The proportion of impact converted to structural integrity loss when the connection point is impacted but not detached. For example, 0.2 means 20% of the impact will be converted to structural integrity loss."
+    },
+    "required_tags": {
+      "type": "array",
+      "items": { "$ref": "../../../base/resource_location.schema.json" },
+      "default": [],
+      "description": "Tags that the connecting part must all have, leave empty to allow any tags. For example: [\"machine_max:left\"] means must include left variant tag."
+    },
+    "acceptable_tags": {
+      "type": "array",
+      "items": { "$ref": "../../../base/resource_location.schema.json" },
+      "default": [],
+      "description": "Tags that the connecting part must have at least one of, leave empty to allow any tags. For example: [\"machine_max:door\", \"machine_max:hatch\"] means must include one of door or hatch tags."
+    },
+    "forbidden_tags": {
+      "type": "array",
+      "items": { "$ref": "../../../base/resource_location.schema.json" },
+      "default": [],
+      "description": "Tags that the connecting part must not contain, leave empty to allow any tags. For example: [\"machine_max:explosive\"] means cannot include explosive tag."
+    },
+    "joint_attrs": {
+      "type": "object",
+      "additionalProperties": { "$ref": "joint_attr.schema.json"},
+      "default": {},
+      "description": "Joint attributes, currently only effective when joint type is Advanced. Keys are x, y, z, xr, yr, zr, representing translation along x, y, z axes and rotation around x, y, z axes respectively."
+    },
+    "collide_between_parts": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the connection point allows collision between parts. Usually set to false to avoid penetration issues between connection points."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "Simple",
+      "description": "最简连接点示例，仅包含必需字段"
+    },
+    {
+      "type": "Advanced",
+      "required_tags": ["machine_max:left"],
+      "impact_absorption": 0.1,
+      "impact_reduction": 3.0,
+      "impact_multiplier": 0.5,
+      "joint_attrs": {
+        "y": {
+          "lower_limit": -0.5,
+          "upper_limit": 1.0,
+          "stiffness": 28000,
+          "damping": 1500
+        },
+        "yr": {
+          "lower_limit": -45.0,
+          "upper_limit": 45.0,
+          "stiffness": 4000,
+          "damping": 20
+        }
+      },
+      "description": "左前轮连接点，仅允许左变体，具有垂直缓冲和转向能力，冲击吸收率较低，冲击减免较高"
+    }
+  ]
+}
