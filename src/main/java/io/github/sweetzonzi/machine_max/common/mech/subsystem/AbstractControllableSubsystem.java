@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.MoveInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
@@ -7,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -89,7 +91,6 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
                         aimPoint != null ? new ViewInputSignal(aimPoint) : EmptySignal.INSTANCE);
             }
             if (aimPoint != null) {
-                getLevel().addParticle(ParticleTypes.DRAGON_BREATH,true, aimPoint.x, aimPoint.y, aimPoint.z, 0.0, 0.0, 0.0);
                 this.getOwner().getSubPart().part.vehicle.activate();
             }
         } else {

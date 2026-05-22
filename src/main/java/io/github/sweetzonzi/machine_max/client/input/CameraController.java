@@ -66,7 +66,7 @@ public class CameraController {
     /** 上次发送的瞄准点位置，用于变化阈值过滤 */
     private static Vec3 lastSentAimPoint = null;
     /** 瞄准点投影最大距离 */
-    private static final double AIM_MAX_DISTANCE = 256.0;
+    private static final double AIM_MAX_DISTANCE = 64.0;
     /** 瞄准点变化阈值（平方距离），超过此值才重新发包 */
     private static final double AIM_POINT_THRESHOLD_SQ = 0.0001;
 

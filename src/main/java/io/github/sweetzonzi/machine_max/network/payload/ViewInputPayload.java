@@ -54,17 +54,19 @@ public record ViewInputPayload(
     }
 
     public static void serverHandler(final ViewInputPayload payload, final IPayloadContext context) {
-        DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.subPartId());
-        if (object instanceof SubPart subPart) {
-            AbstractSubsystem subsystem = subPart.subsystems.get(payload.subSystemName());
-            if (subsystem instanceof AbstractControllableSubsystem controllable && controllable.isActive()) {
-                Vec3 aimPoint = new Vec3(payload.aimPointX(), payload.aimPointY(), payload.aimPointZ());
-                controllable.setViewInputSignal(aimPoint);
+        context.enqueueWork(() -> {
+            DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.subPartId());
+            if (object instanceof SubPart subPart) {
+                AbstractSubsystem subsystem = subPart.subsystems.get(payload.subSystemName());
+                if (subsystem instanceof AbstractControllableSubsystem controllable && controllable.isActive()) {
+                    Vec3 aimPoint = new Vec3(payload.aimPointX(), payload.aimPointY(), payload.aimPointZ());
+                    controllable.setViewInputSignal(aimPoint);
+                } else {
+                    MachineMax.LOGGER.warn("收到视角输入数据包，但子系统 {} 不存在于 SubPart(id={})", payload.subSystemName(), payload.subPartId());
+                }
             } else {
-                MachineMax.LOGGER.warn("收到视角输入数据包，但子系统 {} 不存在于 SubPart(id={})", payload.subSystemName(), payload.subPartId());
+                MachineMax.LOGGER.warn("收到视角输入数据包，但维度 {} 中不存在 SubPart(id={})", context.player().level().dimension().location(), payload.subPartId());
             }
-        } else {
-            MachineMax.LOGGER.warn("收到视角输入数据包，但维度 {} 中不存在 SubPart(id={})", context.player().level().dimension().location(), payload.subPartId());
-        }
+        });
     }
 }
