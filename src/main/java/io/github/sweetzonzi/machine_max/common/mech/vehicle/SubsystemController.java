@@ -26,12 +26,8 @@ public class SubsystemController implements ISignalBus {
     public final Set<AbstractSubsystem> allSubsystems = new CopyOnWriteArraySet<>();
     public final EnergyGrid energyGrid = new EnergyGrid();
 
-    // 总线订阅表：频道名 → 订阅者集合
-    private final ConcurrentMap<String, Set<ISignalReceiver>> busSubscriptions = new ConcurrentHashMap<>();
-    // 反向索引：接收者 → 订阅的频道集合
-    private final ConcurrentMap<ISignalReceiver, Set<String>> reverseIndex = new ConcurrentHashMap<>();
-    // 通配接收者：acceptAllBroadcastInput() == true 的接收者
-    private final Set<ISignalReceiver> wildcardBroadcastReceivers = ConcurrentHashMap.newKeySet();
+    // 总线订阅者集合（广播时遍历此集合，运行时检查接受条件）
+    private final Set<ISignalReceiver> busSubscribers = ConcurrentHashMap.newKeySet();
 
     // ISignalSender 要求
     private final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();
@@ -74,7 +70,7 @@ public class SubsystemController implements ISignalBus {
         rebuildAllEnergyPaths();
         allSubsystems.forEach(sub -> {
             sub.onAttach();
-            autoSubscribe(sub);
+            subscribe(sub);
         });
     }
 
@@ -93,7 +89,7 @@ public class SubsystemController implements ISignalBus {
     public void removeSubsystem(AbstractSubsystem subSystem, boolean transferToAnotherVehicle) {
         if (!transferToAnotherVehicle) {
             subSystem.onDetach();
-            unsubscribeAll(subSystem);
+            unsubscribe(subSystem);
         }
         allSubsystems.remove(subSystem);
     }
@@ -138,57 +134,18 @@ public class SubsystemController implements ISignalBus {
     // ===== ISignalBus 实现 =====
 
     @Override
-    public Set<ISignalReceiver> getWildcardBroadcastSubscribers() {
-        return wildcardBroadcastReceivers;
+    public Set<ISignalReceiver> getAllSubscribers() {
+        return busSubscribers;
     }
 
     @Override
-    public void subscribe(ISignalReceiver subscriber, String channel) {
-        busSubscriptions.computeIfAbsent(channel, k -> ConcurrentHashMap.newKeySet()).add(subscriber);
-        reverseIndex.computeIfAbsent(subscriber, k -> ConcurrentHashMap.newKeySet()).add(channel);
+    public void subscribe(ISignalReceiver subscriber) {
+        busSubscribers.add(subscriber);
     }
 
     @Override
-    public void unsubscribe(ISignalReceiver subscriber, String channel) {
-        Set<ISignalReceiver> subs = busSubscriptions.get(channel);
-        if (subs != null) subs.remove(subscriber);
-        Set<String> channels = reverseIndex.get(subscriber);
-        if (channels != null) channels.remove(channel);
-    }
-
-    @Override
-    public void unsubscribeAll(ISignalReceiver subscriber) {
-        Set<String> channels = reverseIndex.remove(subscriber);
-        if (channels != null) {
-            for (String ch : channels) {
-                Set<ISignalReceiver> subs = busSubscriptions.get(ch);
-                if (subs != null) subs.remove(subscriber);
-            }
-        }
-        wildcardBroadcastReceivers.remove(subscriber);
-    }
-
-    @Override
-    public Set<ISignalReceiver> getSubscribers(String channel) {
-        return busSubscriptions.getOrDefault(channel, Set.of());
-    }
-
-    @Override
-    public Set<String> getSubscriptions(ISignalReceiver subscriber) {
-        return reverseIndex.getOrDefault(subscriber, Set.of());
-    }
-
-    /**
-     * 根据接收者声明的 getAcceptedChannels() 自动注册订阅。
-     */
-    private void autoSubscribe(ISignalReceiver receiver) {
-        if (receiver.acceptAllBroadcastInput()) {
-            wildcardBroadcastReceivers.add(receiver);
-            return;
-        }
-        for (String channel : receiver.getAcceptedChannels()) {
-            subscribe(receiver, channel);
-        }
+    public void unsubscribe(ISignalReceiver subscriber) {
+        busSubscribers.remove(subscriber);
     }
 
     /**
@@ -196,10 +153,8 @@ public class SubsystemController implements ISignalBus {
      * 在载具结构变化时调用。
      */
     private void rebuildSubscriptions() {
-        busSubscriptions.clear();
-        reverseIndex.clear();
-        wildcardBroadcastReceivers.clear();
-        allSubsystems.forEach(this::autoSubscribe);
+        busSubscribers.clear();
+        busSubscribers.addAll(allSubsystems);
     }
 
     // ===== ISignalSender 实现 =====
@@ -224,9 +179,7 @@ public class SubsystemController implements ISignalBus {
     public void destroy() {
         allSubsystems.forEach(AbstractSubsystem::onDetach);
         allSubsystems.clear();
-        busSubscriptions.clear();
-        reverseIndex.clear();
-        wildcardBroadcastReceivers.clear();
+        busSubscribers.clear();
         channels.clear();
         resources.clear();
         signalStorage.clear();
