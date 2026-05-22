@@ -283,8 +283,8 @@ public class GearboxSubsystem extends BasicSubsystem implements IMechPowerConsum
      * @return 信号名称->接收者名称列表 Map of signal names to a list of receiver names.
      */
     @Override
-    public Set<String> getAcceptedChannels() {
-        return Set.copyOf(attr.staticAttribute.getRatioControlSignalKeys());
+    public List<String> getAcceptedChannels() {
+        return attr.staticAttribute.getRatioControlSignalKeys();
     }
 
     @Override

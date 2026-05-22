@@ -5,7 +5,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LightingSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.visual.VisualEffectHelper;
 
-import java.util.Set;
+import java.util.List;
 
 public class LightingSubsystem extends BasicSubsystem {
     public final LightingSubsystemAttr attr;
@@ -16,8 +16,8 @@ public class LightingSubsystem extends BasicSubsystem {
     }
 
     @Override
-    public Set<String> getAcceptedChannels() {
-        return Set.of("toggle_light");
+    public List<String> getAcceptedChannels() {
+        return List.of("toggle_light");
     }
 
     @Override

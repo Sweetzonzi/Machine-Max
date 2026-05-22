@@ -312,8 +312,8 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
     }
 
     @Override
-    public Set<String> getAcceptedChannels() {
-        return Set.copyOf(attr.staticAttribute.getThrottleInputKeys());
+    public List<String> getAcceptedChannels() {
+        return attr.staticAttribute.getThrottleInputKeys();
     }
 
     @Override

@@ -18,10 +18,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -729,8 +727,8 @@ public class CarControllerSubsystem extends BasicSubsystem {
     }
 
     @Override
-    public Set<String> getAcceptedChannels() {
-        return Set.copyOf(attr.staticAttribute.getControlInputKeys());
+    public List<String> getAcceptedChannels() {
+        return attr.staticAttribute.getControlInputKeys();
     }
 
     @Override

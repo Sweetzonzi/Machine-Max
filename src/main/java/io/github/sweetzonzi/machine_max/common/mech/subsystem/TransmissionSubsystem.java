@@ -235,8 +235,8 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
     }
 
     @Override
-    public Set<String> getAcceptedChannels() {
-        return Set.copyOf(attr.staticAttribute.getManualDiffLockInputChannels());
+    public List<String> getAcceptedChannels() {
+        return attr.staticAttribute.getManualDiffLockInputChannels();
     }
 
     @Override

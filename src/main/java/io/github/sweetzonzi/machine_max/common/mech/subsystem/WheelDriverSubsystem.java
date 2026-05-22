@@ -19,7 +19,6 @@ import net.minecraft.sounds.SoundSource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerConsumer {
     @Getter
@@ -208,8 +207,8 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
     }
 
     @Override
-    public Set<String> getAcceptedChannels() {
-        return Set.copyOf(attr.staticAttribute.getControlSignalKeys());
+    public List<String> getAcceptedChannels() {
+        return attr.staticAttribute.getControlSignalKeys();
     }
 
     @Override

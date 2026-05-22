@@ -102,6 +102,7 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             sendSignalToAllTargets(channel, 0f);
         }
         resetSignalOutputs();
+        clearInputSignals();
     }
 
     @Override

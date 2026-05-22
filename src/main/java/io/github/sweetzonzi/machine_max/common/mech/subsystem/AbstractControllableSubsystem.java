@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,19 +38,15 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         return map;
     }
 
-    public void resetMoveSignalTarget(String typeName) {
-        moveSignalTargets.remove(typeName);
-    }
-
-    public void addMoveSignalTarget(String typeName, String connectorName) {
-        if (!moveSignalTargets.containsKey(typeName)) moveSignalTargets.put(typeName, new ArrayList<>());
-        moveSignalTargets.get(typeName).add(connectorName);
-    }
-
-    public void deleteMoveSignalTarget(String typeName, String connectorName) {
-        if (moveSignalTargets.containsKey(typeName)) {
-            moveSignalTargets.get(typeName).remove(connectorName);
-            if (moveSignalTargets.get(typeName).isEmpty()) moveSignalTargets.remove(typeName);
+    public void clearInputSignals() {
+        for (String signalKey : moveSignalTargets.keySet()) {
+            this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
+        }
+        for (String signalKey : regularSignalTargets.keySet()) {
+            this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
+        }
+        for (String signalKey : viewSignalTargets.keySet()) {
+            this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
         }
     }
 
@@ -57,11 +54,6 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         if (!moveSignalTargets.isEmpty() && this.isActive()) {
             for (String signalKey : moveSignalTargets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
-            }
-            for (int i = 0; i < 6; i++) {
-                if (inputs[i] != 0 && this.getSubPart() != null && this.getOwner().getSubPart().part.vehicle != null) {
-                    break;
-                }
             }
             this.getOwner().getSubPart().part.vehicle.activate();
         } else {
@@ -97,11 +89,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
                         aimPoint != null ? new ViewInputSignal(aimPoint) : EmptySignal.INSTANCE);
             }
             if (aimPoint != null) {
-                for (int i = 0; i < 6; i++) {
-                    if (this.getSubPart() != null && this.getOwner().getSubPart().part.vehicle != null) {
-                        break;
-                    }
-                }
+                getLevel().addParticle(ParticleTypes.DRAGON_BREATH,true, aimPoint.x, aimPoint.y, aimPoint.z, 0.0, 0.0, 0.0);
                 this.getOwner().getSubPart().part.vehicle.activate();
             }
         } else {
