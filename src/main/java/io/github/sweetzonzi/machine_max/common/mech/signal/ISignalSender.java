@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -193,7 +194,14 @@ public interface ISignalSender {
         }
     }
 
-    SubPart getSubPart();
+    /**
+     * 获取此发送者所属的 SubPart。
+     * 没有所属 SubPart 的发送者（如 {@link io.github.sweetzonzi.machine_max.common.mech.vehicle.SubsystemController}）返回 null。
+     */
+    @Nullable
+    default SubPart getSubPart(){
+        return null;
+    }
 
     /**
      * 设置信号传输目标

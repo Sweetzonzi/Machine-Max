@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.signal;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,4 +47,18 @@ public interface ISignalBus extends ISignalReceiver, ISignalSender {
 
     /** 取消接收者的订阅 */
     void unsubscribe(ISignalReceiver subscriber);
+
+    /**
+     * ISignalBus 使用 broadcast() 广播信号，不依赖 ISignalSender 的按名称路由机制，
+     * 因此 getTargets() 和 getTargetNames() 返回空映射。
+     */
+    @Override
+    default Map<String, Map<String, ISignalReceiver>> getTargets(){
+        return Map.of();
+    }
+
+    @Override
+    default Map<String, List<String>> getTargetNames() {
+        return Map.of();
+    }
 }

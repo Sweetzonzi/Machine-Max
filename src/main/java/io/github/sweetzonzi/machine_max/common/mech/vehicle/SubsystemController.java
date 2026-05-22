@@ -29,15 +29,13 @@ public class SubsystemController implements ISignalBus {
     // 总线订阅者集合（广播时遍历此集合，运行时检查接受条件）
     private final Set<ISignalReceiver> busSubscribers = ConcurrentHashMap.newKeySet();
 
-    // ISignalSender 要求
-    private final Map<String, Map<String, ISignalReceiver>> targets = new HashMap<>();
-
     public SubsystemController(VehicleCore core) {
         CORE = core;
     }
 
     // ===== 现有生命周期方法（整合总线订阅） =====
 
+    /** 调用所有子系统的 onTick，在主线程 20tps 下执行 */
     public void tick() {
         for (AbstractSubsystem subsystem : allSubsystems) {
             if (subsystem != null) {
@@ -46,6 +44,7 @@ public class SubsystemController implements ISignalBus {
         }
     }
 
+    /** 物理 tick 前调用所有子系统的 onPrePhysicsTick（物理引擎步进前更新控制量） */
     public void prePhysicsTick() {
         for (AbstractSubsystem subsystem : allSubsystems) {
             if (subsystem != null) {
@@ -55,6 +54,7 @@ public class SubsystemController implements ISignalBus {
         energyGrid.prePhysicsTick(getPhysicsTps());
     }
 
+    /** 物理 tick 后调用所有子系统的 onPostPhysicsTick（物理引擎步进后读取反馈） */
     public void postPhysicsTick() {
         for (AbstractSubsystem subsystem : allSubsystems) {
             if (subsystem != null) {
@@ -155,23 +155,6 @@ public class SubsystemController implements ISignalBus {
     private void rebuildSubscriptions() {
         busSubscribers.clear();
         busSubscribers.addAll(allSubsystems);
-    }
-
-    // ===== ISignalSender 实现 =====
-
-    @Override
-    public Map<String, List<String>> getTargetNames() {
-        return Map.of();
-    }
-
-    @Override
-    public Map<String, Map<String, ISignalReceiver>> getTargets() {
-        return targets;
-    }
-
-    @Override
-    public SubPart getSubPart() {
-        return null;
     }
 
     // ===== 销毁 =====
