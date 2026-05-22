@@ -138,26 +138,8 @@ public class SubsystemController implements ISignalBus {
     // ===== ISignalBus 实现 =====
 
     @Override
-    public void broadcast(String channel, Object value, ISignalSender originalSender) {
-        signalStorage.put(channel, value);
-
-        Set<ISignalReceiver> subscribers = busSubscriptions.get(channel);
-        if (subscribers != null) {
-            for (ISignalReceiver sub : subscribers) {
-                writeSignalAndNotify(sub, channel, value, originalSender);
-            }
-        }
-        // 通配订阅者——接受所有频道的广播
-        for (ISignalReceiver sub : wildcardBroadcastReceivers) {
-            writeSignalAndNotify(sub, channel, value, originalSender);
-        }
-    }
-
-    private void writeSignalAndNotify(ISignalReceiver sub, String channel, Object value, ISignalSender sender) {
-        sub.getSignalInputChannels()
-                .computeIfAbsent(channel, k -> new SignalChannel())
-                .put(sender, value);
-        sub.onSignalUpdated(channel, sender);
+    public Set<ISignalReceiver> getWildcardBroadcastSubscribers() {
+        return wildcardBroadcastReceivers;
     }
 
     @Override

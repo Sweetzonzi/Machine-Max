@@ -19,13 +19,40 @@ public interface ISignalBus extends ISignalReceiver, ISignalSender {
 
     /**
      * 将信号广播到所有订阅了此频道的子系统。
-     * 同时写入 signalStorage 供 MoLang 查询。
+     * 默认实现使用 {@link #getSubscribers(String)} 获取精确匹配的订阅者，
+     * 以及 {@link #getWildcardBroadcastSubscribers()} 获取通配订阅者，
+     * 将信号写入每个订阅者的 signalInputChannels 并触发 onSignalUpdated。
      *
      * @param channel        信号频道名
      * @param value          信号值
      * @param originalSender 原始发送者（保留身份，使接收方能区分信号来源）
      */
-    void broadcast(String channel, Object value, ISignalSender originalSender);
+    default void broadcast(String channel, Object value, ISignalSender originalSender) {
+        for (ISignalReceiver sub : getSubscribers(channel)) {
+            writeSignalAndNotify(sub, channel, value, originalSender);
+        }
+        for (ISignalReceiver sub : getWildcardBroadcastSubscribers()) {
+            writeSignalAndNotify(sub, channel, value, originalSender);
+        }
+    }
+
+    /**
+     * 将信号写入接收者的输入频道并通知。
+     */
+    private static void writeSignalAndNotify(ISignalReceiver sub, String channel, Object value, ISignalSender sender) {
+        sub.getSignalInputChannels()
+                .computeIfAbsent(channel, k -> new SignalChannel())
+                .put(sender, value);
+        sub.onSignalUpdated(channel, sender);
+    }
+
+    /**
+     * 获取接受所有广播信号的通配订阅者集合。
+     * 默认返回空集，实现类若有通配订阅者可覆盖此方法。
+     */
+    default Set<ISignalReceiver> getWildcardBroadcastSubscribers() {
+        return Set.of();
+    }
 
     /**
      * 注册接收者对指定频道的订阅。
