@@ -1,31 +1,31 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/wheel_driver_dynamic_attr.json",
-  "title": "轮驱动子系统动态属性",
-  "description": "轮驱动的动态属性，驱动连接点上的部件滚动和转向。",
+  "title": "Wheel Driver Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the wheel driver, driving rolling and steering of parts on connection points.",
   "properties": {
     "type": {
       "type": "string",
       "const": "machine_max:wheel_driver",
-      "description": "子系统类型，必须为'machine_max:wheel_driver'。"
+      "description": "Subsystem type, must be 'machine_max:wheel_driver'."
     },
     "definition": {
       "type": "string",
-      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
     "connector": {
       "type": "string",
-      "description": "控制的连接点名称。"
+      "description": "Name of the controlled connection point."
     },
     "roll_speed_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": {},
-      "description": "滚动速度信号输出频道及目标。"
+      "description": "Rolling speed signal output channel and targets."
     },
     "steering_angle_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": {},
-      "description": "转向角度信号输出频道及目标。"
+      "description": "Steering angle signal output channel and targets."
     }
   },
   "required": ["type", "definition", "connector"],

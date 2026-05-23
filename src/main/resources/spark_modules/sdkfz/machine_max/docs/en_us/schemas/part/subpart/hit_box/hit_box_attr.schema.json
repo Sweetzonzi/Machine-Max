@@ -1,52 +1,55 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/hit_box/hit_box_attr.json",
-  "title": "碰撞箱属性",
-  "description": "定义部件碰撞箱的物理属性、护甲值和伤害修正系统。",
+  "title": "Hit Box Attributes",
+  "description": "Defines the physical properties, armor values, and damage modification system of part collision boxes.",
   "type": "object",
   "properties": {
     "id": {
       "type": "string",
       "default": "part",
-      "description": "碰撞形状id，同id的碰撞体积不会被同一次攻击重复命中。"
+      "description": "Collision shape id, same id collision volumes will not be hit by the same attack."
     },
     "type": {
       "type": "string",
       "enum": ["box", "sphere", "cylinder", "capsule", "wheel"],
-      "description": "碰撞形状类型。各类型生效方式如下：\n- box：长方体碰撞形状，取方块位姿和半长生成。\n- sphere：球体碰撞形状，取方块y方向半长作为半径。\n- cylinder：圆柱体碰撞形状，取方块位姿和半长生成，圆柱轴向为z轴。\n- capsule：胶囊体碰撞形状，取方块位姿和半长生成，胶囊轴向为y轴。\n- wheel：特殊球体碰撞形状，取方块y方向半长作为半径，x方向尺寸作为宽度。碰撞时检测碰撞点的相对位置，若x值超出轮胎半宽则忽略此次碰撞。此类型碰撞体积会根据方块尺寸以圆柱体转动惯量公式调整整个刚体的转动惯量，建议单个subpart仅包含一个类型为wheel的hitbox，且内部仅包含一个cube。"
+      "description": "Collision shape type. Each type works as follows:\n- box: Box collision shape, generated from cube pose and half-extents.\n- sphere: Sphere collision shape, uses cube y-direction half-length as radius.\n- cylinder: Cylinder collision shape, generated from cube pose and half-extents, cylinder axis is z-axis.\n- capsule: Capsule collision shape, generated from cube pose and half-extents, capsule axis is y-axis.\n- wheel: Special sphere collision shape, uses cube y-direction half-length as radius and x-direction size as width. During collision, checks the relative position of contact point, ignores collision if x value exceeds half-width. This type adjusts the entire rigid body's moment of inertia using cylinder formula based on cube dimensions. It is recommended that a single subpart contains only one hitbox of type wheel, with only one cube inside."
     },
     "subsystem": {
       "type": "string",
       "default": "",
-      "description": "子系统名称，用于将此碰撞箱与特定子系统关联，当此碰撞箱受到伤害时，关联的子系统会受到等量伤害。"
+      "description": "Subsystem name, used to associate this hit box with a specific subsystem, when this hit box takes damage, the associated subsystem will take equivalent damage."
     },
     "material": {
       "$ref": "../../../base/resource_location.schema.json",
       "default": "machine_max:default",
-      "description": "材料注册id，用于获取摩擦系数、减伤属性、音效等物理属性。"
+      "description": "Material registry id, used to obtain friction coefficients, damage reduction properties, sound effects, and other physical properties."
+    },
+    "angle_effect": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether equivalent armor thickness is affected by impact angle, if false, impact angle is not considered when calculating thickness."
     },
     "thickness": {
       "type": "number",
       "minimum": 0.0,
       "default": 1.0,
-      "description": "护甲厚度，单位mm，减免伤害并控制碰撞时的能量分配情况。"
+      "description": "Armor thickness, unit mm, reduces damage and controls energy distribution during collisions."
     },
     "overwrite": {
       "type": "object",
-      "description": "命中箱材质属性覆写。可按需覆写material引用材质中的任意字段。",
+      "description": "Hit box material override. Any provided fields override the referenced material fields.",
       "properties": {
         "friction": {
-          "$ref": "../../../base/vector_3d.schema.json",
-          "description": "摩擦系数覆写。"
+          "$ref": "../../../base/vector_3d.schema.json"
         },
         "slip_adaptation": {
           "type": "number",
-          "minimum": 0.0,
-          "description": "滑移适应系数覆写。"
+          "minimum": 0.0
         },
         "slip_curve": {
           "type": "object",
-          "description": "滑移曲线覆写。可只覆写部分字段，其余继承材质定义。",
+          "description": "Slip curve override. Supports partial override, unspecified fields inherit from material.",
           "properties": {
             "longitudinal": {
               "type": "object",
@@ -73,12 +76,12 @@
                 "peak_angle_deg": {
                   "type": "number",
                   "minimum": 0.0,
-                  "description": "侧偏角峰值，单位：度。"
+                  "description": "Slip-angle peak in degrees."
                 },
                 "kinetic_angle_deg": {
                   "type": "number",
                   "minimum": 0.0,
-                  "description": "动摩擦终点侧偏角，单位：度。"
+                  "description": "Kinetic-region slip angle endpoint in degrees."
                 },
                 "base_scale": {
                   "type": "number"
@@ -97,50 +100,40 @@
         },
         "rolling_friction": {
           "type": "number",
-          "minimum": 0.0,
-          "description": "滚动摩擦系数覆写。"
+          "minimum": 0.0
         },
         "spinning_friction": {
           "type": "number",
-          "minimum": 0.0,
-          "description": "旋转摩擦系数覆写。"
+          "minimum": 0.0
         },
         "restitution": {
           "type": "number",
           "minimum": 0.0,
-          "maximum": 1.0,
-          "description": "恢复系数覆写。"
+          "maximum": 1.0
         },
         "block_damage_factor": {
           "type": "number",
-          "minimum": 0.0,
-          "description": "方块伤害系数覆写。"
+          "minimum": 0.0
         },
         "rha": {
           "type": "number",
-          "minimum": 0.0,
-          "description": "相对RHA抗穿系数覆写。1.0表示等效RHA，0.5表示同厚度下仅50%抗穿，1.5表示1.5倍抗穿。"
+          "minimum": 0.0
         },
         "angle_effect": {
-          "type": "boolean",
-          "description": "角度效应覆写。"
+          "type": "boolean"
         },
         "impact_modifiers": {
-          "$ref": "modifier/damage_modifier.schema.json",
-          "description": "冲击修正覆写。"
+          "$ref": "modifier/damage_modifier.schema.json"
         },
         "piercing_modifiers": {
-          "$ref": "modifier/damage_modifier.schema.json",
-          "description": "穿深修正覆写。"
+          "$ref": "modifier/damage_modifier.schema.json"
         },
         "damage_modifiers": {
-          "$ref": "modifier/damage_modifier.schema.json",
-          "description": "伤害修正覆写。"
+          "$ref": "modifier/damage_modifier.schema.json"
         },
         "un_penetrate_damage_factor": {
           "type": "number",
-          "minimum": 0.0,
-          "description": "未击穿伤害系数覆写。"
+          "minimum": 0.0
         },
         "sounds": {
           "type": "object",
@@ -152,16 +145,80 @@
               "$ref": "../../../base/sound_event.schema.json"
             }
           },
-          "additionalProperties": false,
-          "description": "材质音效覆写。"
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
     },
+    "impact_modifiers": {
+      "$ref": "modifier/damage_modifier.schema.json",
+      "description": "Impact modifiers, convert received damage into impact values applied to connection points according to certain rules. Default is empty list, apply as much impact as the damage caused to connection points."
+    },
+    "penetration_modifiers": {
+      "$ref": "modifier/damage_modifier.schema.json",
+      "default": [
+        {
+          "operation": "multiply",
+          "value": 0.5,
+          "condition": {
+            "type": "not",
+            "condition": {
+              "type": "damage_tag",
+              "tag": "machine_max:has_pen_depth"
+            }
+          }
+        }
+      ],
+      "description": "Penetration depth modifiers, adjust penetration depth based on received damage. If damage doesn't include penetration depth data, pass in damage value, otherwise pass in penetration depth. Default is to use 0.5 times the damage as penetration depth when the incoming damage doesn't include penetration depth."
+    },
+    "damage_modifiers": {
+      "$ref": "modifier/damage_modifier.schema.json",
+      "default": [
+        {
+          "operation": "add",
+          "value": -5.0,
+          "condition": {
+            "type": "damage_type",
+            "id": "minecraft:fly_into_wall"
+          }
+        },
+        {
+          "operation": "multiply",
+          "value": 0.05,
+          "condition": {
+            "type": "damage_type",
+            "id": "minecraft:sweet_berry_bush"
+          }
+        },
+        {
+          "operation": "multiply",
+          "value": 0.05,
+          "condition": {
+            "type": "entity_type",
+            "id": "minecraft:slime"
+          }
+        },
+        {
+          "operation": "multiply",
+          "value": 0.1,
+          "condition": {
+            "type": "entity_type",
+            "id": "minecraft:magma_cube"
+          }
+        }
+      ],
+      "description": "Damage modifiers, convert received damage into damage values according to certain rules. If damage doesn't include damage data, pass in damage value, otherwise pass in damage data. Default ignores impact damage below 5, significantly reduces damage caused by slimes per tick."
+    },
+    "un_penetrate_damage_factor": {
+      "type": "number",
+      "minimum": 0.0,
+      "default": 0.0,
+      "description": "Damage coefficient when attack fails to fully penetrate armor, formula: attack damage * (penetration depth / equivalent armor)^un_penetrate_damage_factor, when this value is 0.0, no damage is dealt if not penetrated."
+    },
     "condition": {
       "type": "string",
       "default": "true",
-      "description": "生效条件，使用molang表达式控制碰撞箱是否生效。可用于实现玻璃被击碎后不再有命中判定、拖车撑脚等功能。"
+      "description": "Activation condition, uses molang expression to control whether the hit box is active. Can be used to implement features like glass losing hit detection after being broken, trailer supports, etc."
     }
   },
   "required": ["type"],
@@ -173,56 +230,25 @@
     {
       "id": "chassis",
       "type": "box",
-      "subsystem": "sub_part.machine_max.main",
       "material": "machine_max:heavy_armor",
       "thickness": 10.0,
       "overwrite": {
-        "rha": 1.35,
-        "angle_effect": true,
         "slip_curve": {
           "lateral": {
             "peak_angle_deg": 9.0
           }
-        },
-        "impact_modifiers": [
-          {
-            "operation": "multiply",
-            "value": 0.8,
-            "condition": {
-              "type": "always"
-            }
-          }
-        ],
-        "piercing_modifiers": [
-          {
-            "operation": "multiply",
-            "value": 0.9,
-            "condition": {
-              "type": "always"
-            }
-          }
-        ],
-        "damage_modifiers": [
-          {
-            "operation": "add",
-            "value": -1.0,
-            "condition": {
-              "type": "always"
-            }
-          }
-        ],
-        "un_penetrate_damage_factor": 0.15,
-        "sounds": {
-          "hit_un_pen": {
-            "sound_id": "machine_max:hit_box.hit.up_pen.metal",
-            "range": 64
-          },
-          "hit_pen": {
-            "sound_id": "machine_max:hit_box.hit.pen.metal",
-            "range": 64
-          }
         }
       },
+      "angle_effect": true,
+      "damage_modifiers": [
+        {
+          "operation": "add",
+          "value": -1.0,
+          "condition": {
+            "type": "always"
+          }
+        }
+      ],
       "condition": "!subpart.has_connector('connector.machine_max.chassis_connection')"
     }
   ]

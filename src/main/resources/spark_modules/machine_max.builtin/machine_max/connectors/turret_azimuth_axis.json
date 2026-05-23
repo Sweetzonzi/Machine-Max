@@ -1,0 +1,16 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced", //必须为Advanced才能提供旋转关节自由度
+  "direction": "yn", //放置于炮塔上，法线朝下与车体连接
+  "integrity": 100.0, //方向机基座结构完整度，需承受较大的炮塔重量和冲击
+  "impact_absorption": 0.12,
+  "impact_reduction": 3.0,
+  "impact_multiplier": 0.8,
+  "joint_attrs": {
+    "yr": { //偏航轴（Yaw），绕垂直轴旋转，实现炮塔水平方向回转
+      "lower_limit": 1, //全向回转
+      "upper_limit": -1,
+      "damping": 6000 //阻尼(N·m·s/°)，避免回转惯性震荡
+    }
+  }
+}

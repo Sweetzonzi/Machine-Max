@@ -20,7 +20,7 @@ import java.util.Map;
  * 发射器子系统。<br>
  * 代表炮闩、导弹挂架、火箭发射管等单个发射口。<br>
  * 从locator位置沿其朝向发射原版Arrow弹丸，初速受子系统属性影响。<br>
- * 对外提供 getMuzzleWorldTransform/getMuzzleWorldPosition/getMuzzleDirection 用于火控瞄准判定。<br>
+ * 对外提供 getMuzzleWorldTransform/getMuzzleWorldPosition/getMuzzleDirection 用于武器控制器瞄准判定。<br>
  * TODO: 弹药消耗逻辑、弹丸类型可配置
  */
 public class LauncherSubsystem extends BasicSubsystem {

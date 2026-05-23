@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/hit_box/modifier/condition/condition_types.json",
-  "title": "条件类型定义",
-  "description": "所有具体条件类型的定义",
+  "title": "Condition Type Definitions",
+  "description": "Definitions of all specific condition types",
   "definitions": {
     "Always": {
       "properties": {
@@ -10,55 +10,55 @@
       },
       "required": ["type"],
       "additionalProperties": false,
-      "description": "总是满足的条件，用于全局性修改器。"
+      "description": "Condition that is always satisfied, used for global modifiers."
     },
     "DamageTypeCondition": {
       "properties": {
         "type": { "const": "damage_type" },
         "id": {
           "$ref": "../../../../../base/resource_location.schema.json",
-          "description": "伤害类型的资源地址，例如：'minecraft:fly_into_wall'。"
+          "description": "Resource location of damage type, for example: 'minecraft:fly_into_wall'."
         }
       },
       "required": ["type", "id"],
       "additionalProperties": false,
-      "description": "判断伤害是否为指定类型。"
+      "description": "Check if damage is of specified type."
     },
     "DamageTagCondition": {
       "properties": {
         "type": { "const": "damage_tag" },
         "id": {
           "$ref": "../../../../../base/resource_location.schema.json",
-          "description": "伤害标签的资源地址，例如：'machine_max:has_pen_depth'。"
+          "description": "Resource location of damage tag, for example: 'machine_max:has_pen_depth'."
         }
       },
       "required": ["type", "id"],
       "additionalProperties": false,
-      "description": "判断伤害是否含有指定标签。"
+      "description": "Check if damage has specified tag."
     },
     "EntityTypeCondition": {
       "properties": {
         "type": { "const": "entity_type" },
         "id": {
           "$ref": "../../../../../base/resource_location.schema.json",
-          "description": "实体类型的资源地址，例如：'minecraft:slime'。"
+          "description": "Resource location of entity type, for example: 'minecraft:slime'."
         }
       },
       "required": ["type", "id"],
       "additionalProperties": false,
-      "description": "判断造成伤害的实体是否为指定类型。"
+      "description": "Check if the entity causing damage is of specified type."
     },
     "EntityTagCondition": {
       "properties": {
         "type": { "const": "entity_tag" },
         "id": {
           "$ref": "../../../../../base/resource_location.schema.json",
-          "description": "实体标签的资源地址，例如：'minecraft:skeletons'。"
+          "description": "Resource location of entity tag, for example: 'minecraft:skeletons'."
         }
       },
       "required": ["type", "id"],
       "additionalProperties": false,
-      "description": "判断造成伤害的实体是否含有指定标签。"
+      "description": "Check if the entity causing damage has specified tag."
     },
     "And": {
       "properties": {
@@ -67,12 +67,12 @@
           "type": "array",
           "items": { "$ref": "condition.schema.json"},
           "minItems": 1,
-          "description": "子条件列表，所有条件必须满足。"
+          "description": "List of sub-conditions, all conditions must be satisfied."
         }
       },
       "required": ["type", "conditions"],
       "additionalProperties": false,
-      "description": "逻辑与条件，所有子条件都必须满足。"
+      "description": "Logical AND condition, all sub-conditions must be satisfied."
     },
     "Or": {
       "properties": {
@@ -81,24 +81,24 @@
           "type": "array",
           "items": { "$ref": "condition.schema.json"},
           "minItems": 1,
-          "description": "子条件列表，任意条件满足即可。"
+          "description": "List of sub-conditions, any condition can be satisfied."
         }
       },
       "required": ["type", "conditions"],
       "additionalProperties": false,
-      "description": "逻辑或条件，至少一个子条件满足即可。"
+      "description": "Logical OR condition, at least one sub-condition must be satisfied."
     },
     "Not": {
       "properties": {
         "type": { "const": "not" },
         "condition": {
           "$ref": "condition.schema.json",
-          "description": "子条件，不满足此条件时返回true。"
+          "description": "Sub-condition, returns true when this condition is not satisfied."
         }
       },
       "required": ["type", "condition"],
       "additionalProperties": false,
-      "description": "逻辑非条件，反转子条件的结果。"
+      "description": "Logical NOT condition, reverses the result of the sub-condition."
     }
   }
 }

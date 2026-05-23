@@ -1,0 +1,16 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Advanced", //必须为Advanced才能提供旋转关节自由度
+  "direction": "zn", //法线朝前，连接炮管
+  "integrity": 80.0, //高低机结构完整度
+  "impact_absorption": 0.12,
+  "impact_reduction": 2.0,
+  "impact_multiplier": 0.9,
+  "joint_attrs": {
+    "xr": { //俯仰轴（Pitch），绕水平轴旋转，实现炮管上下俯仰
+      "lower_limit": -15.0, //俯角上限（°），模拟多数地面载具射界下限
+      "upper_limit": 60.0, //仰角上限（°），可对付低空目标
+      "damping": 5000 //阻尼(N·m·s/°)，俯仰运动平顺
+    }
+  }
+}

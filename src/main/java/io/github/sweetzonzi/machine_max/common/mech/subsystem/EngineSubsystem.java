@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.sound.IMultiChannelSoundSpreader;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;
@@ -120,8 +121,7 @@ public class EngineSubsystem extends BasicSubsystem implements IMultiChannelSoun
                 count++;
             }
             if (count > 0) avgFeedback /= count;
-            avgFeedback = -avgFeedback;
-            double speedDiff = rotSpeed + avgFeedback;
+            double speedDiff = rotSpeed - avgFeedback;
             double coupleTorque = Math.abs(speedDiff) < 5 ? Math.clamp(
                     this.isActive() ? this.coupleTorquePD.step(0, Math.abs(speedDiff) < 10 ? speedDiff * speedDiff / 10 : speedDiff) : 0,
                     -0.25 * attr.getStaticAttribute().maxTorque,

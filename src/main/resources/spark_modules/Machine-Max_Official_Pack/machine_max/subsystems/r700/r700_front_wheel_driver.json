@@ -6,11 +6,11 @@
     "max_drive_force": 0.0,
     "max_brake_force": 600.0,
     "max_hand_brake_force": 0.0,
-    "max_speed": 3140.0
+    "max_rpm": 30000.0
   },
   "steering": {
     "max_force": 500,
-    "max_speed": 3.14
+    "max_speed": 180
   },
   "abs_enabled": true, //(可选, 默认false)是否启用ABS
   "abs_target_slip_ratio": 0.15, //(可选, 默认0.15)ABS目标滑移率

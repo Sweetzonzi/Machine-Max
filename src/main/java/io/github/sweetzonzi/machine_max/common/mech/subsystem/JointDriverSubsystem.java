@@ -47,7 +47,7 @@ public class JointDriverSubsystem extends BasicSubsystem implements IMechPowerCo
                     totalPowerWeight += axisAttr.maxForce();
                 MAX_FORCE[axis.getValue()] = Math.max(0f, axisAttr.maxForce());
                 MAX_BRAKE_FORCE[axis.getValue()] = Math.max(0f, axisAttr.maxBrakeForce());
-                MAX_SPEED[axis.getValue()] = Math.max(0f, axisAttr.maxSpeed());
+                MAX_SPEED[axis.getValue()] = Math.max(0f, axisAttr.maxSpeed() * (axis.getValue() <= 2 ? 1f : (float) Math.PI / 180f));
             }
             TOTAL_POWER_WEIGHT = Math.max(1f, totalPowerWeight);
         } else {

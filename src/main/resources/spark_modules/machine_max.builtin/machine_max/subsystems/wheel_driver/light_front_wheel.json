@@ -6,11 +6,11 @@
     "max_drive_force": 0, //最大驱动力，0表示不驱动
     "max_brake_force": 800, //最大制动力（刹车）
     "max_hand_brake_force": 0, //最大手制动力，0表示无手刹
-    "max_speed": 2500 //最大转速（角速度）
+    "max_rpm": 2500 //最大转速（RPM）
   },
   "steering": { //转向相关参数
     "max_force": 2000, //最大转向力
-    "max_speed": 3.14 //最大转向角速度（弧度/秒）
+    "max_speed": 180 //最大转向角速度（度/秒）
   },
   "abs_enabled": true, //是否启用ABS防抱死系统
   "abs_wheel_radius": 0.35 //防抱死轮速计算用轮胎半径

@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/base/power_outputs.json",
-  "title": "功率输出映射",
-  "description": "功率输出目标及减速比的映射，用于传动系统等需要分配功率的子系统。",
+  "title": "Power Output Mapping",
+  "description": "Mapping of power output targets and reduction ratios, used for subsystems that need to distribute power such as transmission systems.",
   "type": "object",
   "additionalProperties": {
     "type": "number",
-    "description": "减速比或权重，正数表示减速，负数表示增速，0表示固定连接。"
+    "description": "Reduction ratio or weight, positive number indicates reduction, negative number indicates acceleration, 0 indicates fixed connection."
   },
   "default": {},
   "examples": [

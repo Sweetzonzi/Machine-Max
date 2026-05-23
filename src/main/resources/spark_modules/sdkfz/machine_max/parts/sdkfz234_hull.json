@@ -125,6 +125,16 @@
               "locator": "hull_back_wheel",
               "definition": "machine_max:fixed_back",
               "overwrite": {}
+            },
+            "connector.machine_max.hull_turret_axis": {
+              "locator": "hull_turret_axis",
+              "definition": "machine_max:fixed_up",
+              "signal_targets": {
+                "move_control": [
+                  "subsystem.machine_max.car_controller"
+                ]
+              },
+              "overwrite": {}
             }
           },
           "subsystems": {
@@ -224,7 +234,7 @@
             "subsystem.machine_max.left_wheel_2": {
               "type": "machine_max:wheel_driver",
               "definition": "machine_max:sdkfz234_wheel_driver",
-              "connector": "connector.machine_max.hull_right_wheel_2"
+              "connector": "connector.machine_max.hull_left_wheel_2"
             },
             "subsystem.machine_max.left_wheel_3": {
               "type": "machine_max:wheel_driver",

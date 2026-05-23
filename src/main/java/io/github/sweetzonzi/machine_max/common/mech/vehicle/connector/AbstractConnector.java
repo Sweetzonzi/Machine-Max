@@ -266,8 +266,11 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
 
     protected void attachJoint(SimpleConnector targetConnector) {
         this.joint = new New6Dof(this.subPart.body, targetConnector.subPart.body,
-                this.actualTransform.getTranslation(), targetConnector.actualTransform.getTranslation(),
-                this.actualTransform.getRotation().toRotationMatrix(), targetConnector.actualTransform.getRotation().toRotationMatrix(),
+                this.actualTransform.getTranslation(),
+                targetConnector.actualTransform.getTranslation(),
+                // 旋转180°，以匹配blockbench的x+朝右，y+朝上，z+朝后的坐标系
+                this.actualTransform.getRotation().mult(new Quaternion().fromAngles(0, (float) Math.PI, 0)).toRotationMatrix(),
+                targetConnector.actualTransform.getRotation().mult(new Quaternion().fromAngles(0, (float) Math.PI, 0)).toRotationMatrix(),
                 RotationOrder.XYZ);
         targetConnector.joint = this.joint;
         adjustJoint();//调整关节属性
@@ -312,25 +315,28 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     if (jointAttr.equilibrium() != null)
                         joint.set(MotorParam.Equilibrium, i, (float) (jointAttr.equilibrium() * (i <= 2 ? 1 : Math.PI / 180)));
                     if (jointAttr.stiffness() != null) {
-                        float maxStiffness = jointAttr.stiffness();
+                        float stiffness = (float) (jointAttr.stiffness() * (i <= 2 ? 1 : Math.PI / 180));
                         if (!getPhysicsLevel().getMcLevel().isClientSide()) {
-                            maxStiffness = safe * 4 * m_eff / (1f / getPhysicsLevel().getTps() / getPhysicsLevel().getTps());  // 稳定性条件: k_max = 4·m_eff/Δt²
-                            if (jointAttr.stiffness() > maxStiffness)
+                            float maxStiffness = safe * 4 * m_eff / (1f / getPhysicsLevel().getTps() / getPhysicsLevel().getTps());  // 稳定性条件: k_max = 4·m_eff/Δt²
+                            if (stiffness > maxStiffness) {
+                                stiffness = maxStiffness;
                                 MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的刚度值过大:{}，已自动限制为{}！",
                                         Component.translatable(this.getName()).getString(),
                                         Component.translatable(this.subPart.part.name).getString(),
                                         Component.translatable(attachedConnector.getName()).getString(),
                                         Component.translatable(attachedConnector.subPart.part.name).getString(),
-                                        i, jointAttr.stiffness(), maxStiffness);
+                                        i, stiffness, maxStiffness);
+                            }
                         }
-                        joint.set(MotorParam.Stiffness, i, Math.min(jointAttr.stiffness(), maxStiffness));
+                        joint.set(MotorParam.Stiffness, i, stiffness);
                         joint.enableSpring(i, true);
                     }
                     if (jointAttr.damping() != null) {
                         //限制最大阻尼以确保稳定性
-                        float maxDamping = jointAttr.damping();
+                        float damping = (float) (jointAttr.damping() * (i <= 2 ? 1 : Math.PI / 180));
                         if (!getPhysicsLevel().getMcLevel().isClientSide()) {
                             float stiffness = joint.get(MotorParam.Stiffness, i) / getPhysicsLevel().getTps() / getPhysicsLevel().getTps() / m_eff;
+                            float maxDamping;
                             if (stiffness >= 4f - 1e-6f) {
                                 maxDamping = 0f; // 刚度已达上限，阻尼只能为0
                             } else {
@@ -338,7 +344,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                                 maxDamping = C_max * m_eff * getPhysicsLevel().getTps();
                             }
                             maxDamping *= safe; // 安全系数
-                            if (jointAttr.damping() > maxDamping) {
+                            if (damping > maxDamping) {
+                                damping = maxDamping;
                                 joint.set(MotorParam.MotorErp, i, 0.5f);
                                 joint.set(MotorParam.StopErp, i, 0.2f);
                                 MachineMax.LOGGER.warn("连接点{}(部件{})与连接点{}(部件{})的{}轴的阻尼值过大:{}，已自动限制为{}！",
@@ -346,10 +353,10 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                                         Component.translatable(this.subPart.part.name).getString(),
                                         Component.translatable(attachedConnector.getName()).getString(),
                                         Component.translatable(attachedConnector.subPart.part.name).getString(),
-                                        i, jointAttr.damping(), maxDamping);
+                                        i, damping, maxDamping);
                             }
                         }
-                        joint.set(MotorParam.Damping, i, Math.min(jointAttr.damping(), maxDamping));
+                        joint.set(MotorParam.Damping, i, damping);
                         joint.set(MotorParam.MotorCfm, i, 1e-5f);
                         joint.set(MotorParam.StopCfm, i, 1e-5f);
                         joint.enableSpring(i, true);

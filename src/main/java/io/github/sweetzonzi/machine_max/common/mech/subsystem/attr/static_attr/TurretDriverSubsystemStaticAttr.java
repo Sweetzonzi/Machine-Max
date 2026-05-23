@@ -26,7 +26,7 @@ public class TurretDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      * 信号输入/输出配置在动态属性中。
      *
      * @param maxForce 最大驱动力矩（刹车力矩与之相同）
-     * @param maxSpeed 最大角速度 (rad/s)
+     * @param maxSpeed 最大角速度 (°/s)
      */
     public record TurretAxisAttr(
             float maxForce,
@@ -49,7 +49,7 @@ public class TurretDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             TurretAxisAttr.CODEC.optionalFieldOf("yaw").forGetter(attr -> Optional.ofNullable(attr.yawAxis)),
             TurretAxisAttr.CODEC.optionalFieldOf("pitch").forGetter(attr -> Optional.ofNullable(attr.pitchAxis)),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("fire_control")).forGetter(TurretDriverSubsystemStaticAttr::getControlInputs),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("weapon_control")).forGetter(TurretDriverSubsystemStaticAttr::getControlInputs),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, (basic, yaw, pitch, controlInputs, sounds) ->
             new TurretDriverSubsystemStaticAttr(basic, yaw.orElse(null), pitch.orElse(null), controlInputs, sounds)

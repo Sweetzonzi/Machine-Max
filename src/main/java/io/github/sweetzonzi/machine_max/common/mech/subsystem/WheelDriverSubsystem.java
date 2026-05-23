@@ -16,6 +16,7 @@ import jme3utilities.math.MyQuaternion;
 import lombok.Getter;
 import net.minecraft.sounds.SoundSource;
 
+import javax.crypto.Mac;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +41,8 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
     public WheelDriverSubsystem(ISubsystemHost owner, String name, WheelDriverSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        MAX_SPEED = attr.staticAttribute.rollingAxis.maxSpeed();
-        MAX_STEERING_SPEED = attr.staticAttribute.steeringAxis.maxSpeed();
+        MAX_SPEED = attr.staticAttribute.rollingAxis.maxRpm() * (float) Math.PI / 30f;
+        MAX_STEERING_SPEED = attr.staticAttribute.steeringAxis.maxSpeed() * (float) Math.PI / 180f;
         MAX_DRIVE_FORCE = attr.staticAttribute.rollingAxis.maxForce();
         MAX_BRAKE_FORCE = attr.staticAttribute.rollingAxis.maxBrakeForce();
         MAX_HAND_BRAKE_FORCE = attr.staticAttribute.rollingAxis.maxHandBrakeForce();
@@ -122,7 +123,7 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
                 torque -= brakeTorque + handBrakeTorque;//施加刹车力矩 Apply braking torque
                 rollingMotor.set(MotorParam.MaxMotorForce, Math.abs(torque));
                 if (torque > 0) {//加速过程 Accelerating
-                    rollingMotor.set(MotorParam.TargetVelocity, Math.signum(speed) * Math.min(30 + Math.abs(speed), MAX_SPEED));
+                    rollingMotor.set(MotorParam.TargetVelocity, - Math.signum(speed) * Math.min(30 + Math.abs(speed), MAX_SPEED));
                 } else {//减速过程 Decelerating
                     rollingMotor.set(MotorParam.TargetVelocity, 0);
                 }
@@ -151,8 +152,8 @@ public class WheelDriverSubsystem extends BasicSubsystem implements IMechPowerCo
             for (String signalKey : attr.rollingSpeedOutputs.keySet())//转动速度信号
                 sendSignalToAllTargets(signalKey, relativeAngularVel.get(0));
             for (String signalKey : attr.steeringAngleOutputs.keySet())//转向位置信号
-                sendSignalToAllTargets(signalKey, -relativeAngle.get(1));
-            feedbackSpeed = relativeAngularVel.get(0);//反馈转动速度信号
+                sendSignalToAllTargets(signalKey, relativeAngle.get(1));
+            feedbackSpeed = - relativeAngularVel.get(0);//反馈转动速度信号，正值表示前进，因此需要取反
         }
     }
 

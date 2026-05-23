@@ -151,8 +151,8 @@ public class CarControllerSubsystem extends BasicSubsystem {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
                 actualSteering = actualSteering * 0.9f + (moveInput[4] / 100f) * 0.1f;
-                // 使用最大漂移角速度作为PD控制器的目标值
-                float maxDriftAngularVelocity = attr.staticAttribute.getMaxDriftAngularVelocityAtSpeed(Math.abs(speed));
+                // 使用最大漂移角速度作为PD控制器的目标值（°/s → rad/s）
+                float maxDriftAngularVelocity = attr.staticAttribute.getMaxDriftAngularVelocityAtSpeed(Math.abs(speed)) * (float) Math.PI / 180f;
                 if (driftWeight > 1e-4)
                     driftControl = (float) driftingPD.step(actualSteering * maxDriftAngularVelocity, bodyYawRate);
                 else {

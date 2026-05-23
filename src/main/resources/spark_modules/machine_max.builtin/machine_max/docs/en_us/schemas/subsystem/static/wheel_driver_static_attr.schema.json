@@ -51,11 +51,11 @@
           "default": 0.0,
           "description": "Maximum handbrake force, in newtons (N)."
         },
-        "max_speed": {
+        "max_rpm": {
           "type": "number",
           "minimum": 0,
-          "default": 3140.0,
-          "description": "Maximum rotational speed, in radians per second (rad/s)."
+          "default": 30000.0,
+          "description": "Maximum rotational speed, in RPM."
         }
       },
       "additionalProperties": false
@@ -72,8 +72,8 @@
         "max_speed": {
           "type": "number",
           "minimum": 0,
-          "default": 3.14,
-          "description": "Maximum steering speed, in radians per second (rad/s)."
+          "default": 180,
+          "description": "Maximum steering speed, in °/s."
         }
       },
       "additionalProperties": false
@@ -97,7 +97,7 @@
         "max_drive_force": 10000.0,
         "max_brake_force": 1500.0,
         "max_hand_brake_force": 0.0,
-        "max_speed": 3140.0
+        "max_rpm": 30000.0
       },
       "description": "Rolling axis attributes."
     },
@@ -105,7 +105,7 @@
       "$ref": "#/definitions/StaticWheelSteeringAxisAttr",
       "default": {
         "max_force": 4000.0,
-        "max_speed": 3.14
+        "max_speed": 180
       },
       "description": "Steering axis attributes."
     },

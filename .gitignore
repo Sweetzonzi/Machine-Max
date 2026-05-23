@@ -31,3 +31,6 @@ docs/site/
 
 /docs/wiki_html/
 /.kotlin/
+
+# NeoForge Gradle 源码缓存
+/net/

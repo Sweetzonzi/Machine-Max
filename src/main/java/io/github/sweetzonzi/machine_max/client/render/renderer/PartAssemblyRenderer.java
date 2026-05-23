@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.physics.mesh.BoxShapeMesh;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.visual_effect.VisualEffectRenderer;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import com.jme3.bullet.collision.shapes.BoxCollisionShape;
 import com.jme3.bullet.objects.PhysicsRigidBody;

@@ -1,0 +1,164 @@
+{
+  "variants": {
+    "sdkfz234_2": {
+      "model": "machine_max:sdkfz234_2.geo",
+      "textures": {
+        "default": "machine_max:textures/part/sdkfz234/puma_2.png",
+        "print.machine_max.dessert": "machine_max:textures/part/sdkfz234/puma_1.png"
+      },
+      "tags": [
+        "machine_max:structural",
+        "machine_max:weapon",
+        "machine_max:land"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "AllTurret",
+          "end_bones": [
+            "AllGun"
+          ],
+          "durability": 1000,
+          "mass": 2500,
+          "mass_center": "turret_mass_center",
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "TurretFrontHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "TurretLeftHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 10
+            },
+            "TurretRightHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            },
+            "TurretBackTopHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 5
+            }
+          },
+          "interact_boxes": {
+            "interact.machine_max.gunner_cover_interact": {
+              "bone": "GunnerCoverInteract",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.machine_max.gunner_seat"
+                ]
+              }
+            },
+            "interact.machine_max.commander_cover_interact": {
+              "bone": "CommanderCoverInteract",
+              "interact_mode": "accurate",
+              "signal_targets": {
+                "interact": [
+                  "subsystem.machine_max.commander_seat"
+                ]
+              }
+            }
+          },
+          "connectors": {
+            "connector.machine_max.turret_hull_axis": {
+              "locator": "turret_hull_axis",
+              "definition": "machine_max:turret_azimuth_axis",
+              "overwrite": {}
+            },
+            "connector.machine_max.turret_gun_axis": {
+              "locator": "turret_gun_axis",
+              "definition": "machine_max:turret_elevation_axis",
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.machine_max.gunner_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_seat",
+              "locator": "gunner_seat",
+              "move_outputs": {
+                "move_control": []
+              },
+              "aim_outputs": {
+                "aim_control": [
+                  "subsystem.machine_max.weapon_controller"
+                ]
+              },
+              "regular_outputs": {
+                "regular_control": [
+                  "subsystem.machine_max.weapon_controller"
+                ]
+              },
+              "passenger_num_outputs": {
+                "passenger_num": [
+                  "subpart",
+                  "vehicle"
+                ]
+              }
+            },
+            "subsystem.machine_max.commander_seat": {
+              "type": "machine_max:seat",
+              "definition": "machine_max:default_seat",
+              "locator": "commander_seat",
+              "move_outputs": {
+                "move_control": [
+                  "connector.machine_max.turret_hull_axis"
+                ]
+              },
+              "aim_outputs": {
+                "aim_control": [
+                  "subsystem.machine_max.weapon_controller"
+                ]
+              },
+              "regular_outputs": {
+                "regular_control": [
+                  "subsystem.machine_max.weapon_controller"
+                ]
+              },
+              "passenger_num_outputs": {
+                "passenger_num": [
+                  "subpart",
+                  "vehicle"
+                ]
+              }
+            },
+            "subsystem.machine_max.azimuth_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "machine_max:basic_azimuth_driver",
+              "connector": "connector.machine_max.turret_hull_axis"
+            },
+            "subsystem.machine_max.elevation_driver": {
+              "type": "machine_max:turret_driver",
+              "definition": "machine_max:basic_elevation_driver",
+              "connector": "connector.machine_max.turret_gun_axis"
+            },
+            "subsystem.machine_max.weapon_controller": {
+              "type": "machine_max:weapon_controller",
+              "definition": "machine_max:basic_weapon_controller",
+              "control_outputs": {
+                "weapon_control": [
+                  "subsystem.machine_max.elevation_driver",
+                  "subsystem.machine_max.azimuth_driver",
+                  "connector.machine_max.turret_gun_axis"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+}

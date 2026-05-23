@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Vector3f;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;

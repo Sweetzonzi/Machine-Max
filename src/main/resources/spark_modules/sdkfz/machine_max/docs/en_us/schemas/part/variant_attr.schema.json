@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/variant_attr.json",
-  "title": "部件变体属性",
-  "description": "定义载具部件的一个变体（Variant），包含该变体的外观、模型、子部件等配置。支持多状态（state）映射。",
+  "title": "Part Variant Attributes",
+  "description": "Defines a variant of a vehicle part, including the variant's appearance, models, sub-parts, etc. Supports multi-state mapping.",
   "type": "object",
   "properties": {
     "tags": {
@@ -11,11 +11,11 @@
         "$ref": "../base/resource_location.schema.json"
       },
       "default": [],
-      "description": "部件标签列表，用于连接点匹配和功能分类"
+      "description": "List of part tags, used for connection point matching and functional classification"
     },
     "model": {
       "$ref": "../base/resource_location.schema.json",
-      "description": "模型路径，无视内层文件夹架构，例如machine_max:ae86_chassis.geo会在所有内容包的models/machine_max/part的所有子目录中中寻找ae86_chassis.geo.json"
+      "description": "Model path configuration, 无视内层文件夹架构，例如machine_max:ae86_chassis.geo会在所有内容包的models/machine_max/part的所有子目录中中寻找ae86_chassis.geo.json"
     },
     "textures": {
       "oneOf": [
@@ -47,7 +47,7 @@
       "oneOf": [
         {
           "$ref": "subpart/sub_part_attr.schema.json",
-          "description": "单一零件定义，使用默认零件名（\"sub_part.machine_max.main\"）"
+          "description": "Single sub-part definition, using default sub-part name (\"sub_part.machine_max.main\")"
         },
         {
           "type": "object",
@@ -55,17 +55,17 @@
             "$ref": "subpart/sub_part_attr.schema.json"
           },
           "minProperties": 1,
-          "description": "多零件定义，键为零件名称，值为零件配置"
+          "description": "Multi sub-part definition, key is sub-part name, value is the sub-part configuration"
         }
       ],
-      "description": "子部件（零件）定义，支持单一零件（简写）或多个零件（键值对）两种写法。这是部件运动的最小单元，部件的每个可动部分都应当是一个子部件"
+      "description": "Sub-part definition, supports either a single sub-part (shorthand) or multiple sub-parts (key-value pairs). This is the smallest unit of part movement, each movable part of the part should be a sub-part"
     }
   },
   "additionalProperties": false,
-  "required": ["model", "sub_parts"],
+  "required": ["models", "sub_parts"],
   "examples": [
     {
-      "model": "machine_max:ae86_chassis_all_terrain.geo",
+      "models": "machine_max:ae86_chassis_all_terrain.geo",
       "textures": [
         "machine_max:textures/part/ae86_all_terrain_1.png",
         "machine_max:textures/part/ae86_all_terrain_2.png"
@@ -87,7 +87,7 @@
       }
     },
     {
-      "model": {
+      "models": {
         "default": "machine_max:tank_turret_normal.geo",
         "broken": "machine_max:tank_turret_damaged.geo"
       },

@@ -20,12 +20,12 @@
     "stiffness": {
       "type": "number",
       "minimum": 0,
-      "description": "Stiffness coefficient (N/m or N·m/rad), indicates the joint's ability to resist deformation."
+      "description": "Stiffness coefficient (N/m or N·m/deg), indicates the joint's ability to resist deformation."
     },
     "damping": {
       "type": "number",
       "minimum": 0,
-      "description": "Damping coefficient (N/(m/s) or N·m/(rad/s)), indicates energy dissipation during joint movement."
+      "description": "Damping coefficient (N/(m/s) or N·m·s/deg), indicates energy dissipation during joint movement."
     }
   },
   "additionalProperties": false,
@@ -33,8 +33,8 @@
     {
       "lower_limit": -45.0,
       "upper_limit": 45.0,
-      "stiffness": 4000,
-      "damping": 20,
+      "stiffness": 229000,
+      "damping": 1150,
       "description": "Rotational joint, constrained between -45° and 45°, with medium stiffness and damping"
     },
     {
@@ -45,23 +45,23 @@
     {
       "lower_limit": 0.0,
       "upper_limit": 0.0,
-      "stiffness": 100000,
-      "damping": 1000,
+      "stiffness": 5730000,
+      "damping": 57300,
       "description": "Fixed joint (lower and upper limits are the same)"
     },
     {
       "lower_limit": -0.2,
       "upper_limit": 0.2,
-      "stiffness": 50000,
-      "damping": 200,
+      "stiffness": 2865000,
+      "damping": 11500,
       "description": "Suspension joint, allows small range displacement, used for shock absorbers"
     },
     {
       "lower_limit": -90.0,
       "upper_limit": 90.0,
       "equilibrium": 0.0,
-      "stiffness": 1000,
-      "damping": 50,
+      "stiffness": 57000,
+      "damping": 2900,
       "description": "Hinge joint, allows large angle rotation, used for doors or hatches"
     }
   ]

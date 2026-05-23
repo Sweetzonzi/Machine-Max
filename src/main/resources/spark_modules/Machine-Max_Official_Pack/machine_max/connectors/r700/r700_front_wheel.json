@@ -21,7 +21,7 @@
     "yr": {
       "lower_limit": -45.0,
       "upper_limit": 45.0,
-      "damping": 20
+      "damping": 1150
     }
   }
 }

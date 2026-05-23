@@ -31,7 +31,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Codec.FLOAT.optionalFieldOf("velocity_bonus", 0f).forGetter(LauncherSubsystemStaticAttr::getVelocityBonus),
             Codec.FLOAT.optionalFieldOf("horizontal_accuracy_multiplier", 1.0f).forGetter(LauncherSubsystemStaticAttr::getHorizontalAccuracyMultiplier),
             Codec.FLOAT.optionalFieldOf("vertical_accuracy_multiplier", 1.0f).forGetter(LauncherSubsystemStaticAttr::getVerticalAccuracyMultiplier),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("fire_control")).forGetter(LauncherSubsystemStaticAttr::getControlInputs),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("weapon_control")).forGetter(LauncherSubsystemStaticAttr::getControlInputs),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, LauncherSubsystemStaticAttr::new));
 

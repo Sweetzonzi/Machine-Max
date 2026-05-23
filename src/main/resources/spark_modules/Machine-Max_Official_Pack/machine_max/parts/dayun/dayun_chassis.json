@@ -123,17 +123,15 @@
           "locator": "chassis_hull_axis",
           "definition": "machine_max:dayun_hull_axis",
           "signal_targets": {
-            "engine_control": ["subsystem.machine_max.engine"],
-            "wheel_control": [
+            "car_control": [
+              "subsystem.machine_max.engine",
+              "subsystem.machine_max.gearbox",
               "subsystem.machine_max.left_front_wheel_driver",
               "subsystem.machine_max.right_front_wheel_driver",
               "subsystem.machine_max.left_back_wheel_1_driver",
               "subsystem.machine_max.left_back_wheel_2_driver",
               "subsystem.machine_max.right_back_wheel_1_driver",
               "subsystem.machine_max.right_back_wheel_2_driver"
-            ],
-            "gearbox_control": [
-              "subsystem.machine_max.gearbox"
             ]
           }
         },

@@ -2,15 +2,15 @@
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
   "type": "machine_max:wheel_driver", //轮胎驱动子系统, 驱动对接口上的部件滚动和转向
   "basic_durability": 100, //(可选, 默认20.0)子系统基础耐久度, 降至0时会瘫痪
-  "roll": {//(可选)轮胎滚动相关属性, 默认最大驱动力矩10000N*m, 最大刹车力矩3500N*m, 最大手刹车力矩0N*m, 最大转速3140rad/s
+  "roll": {//(可选)轮胎滚动相关属性, 默认最大驱动力矩10000N*m, 最大刹车力矩3500N*m, 最大手刹车力矩0N*m, 最大转速30000RPM
     "max_drive_force": 0.0,
     "max_brake_force": 1700.0,
     "max_hand_brake_force": 0.0,
-    "max_speed": 3140.0
+    "max_rpm": 30000.0
   },
   "steering": {
-    "max_force": 4000,
-    "max_speed": 6.28
+    "max_force": 5000,
+    "max_speed": 360
   },
   "abs_wheel_radius": 0.4218
 }

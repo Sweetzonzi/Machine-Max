@@ -80,7 +80,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     /**
      * 设置视角输入信号（瞄准点世界坐标），发送到所有 viewSignalTargets 频道。
-     * 内容包 JSON 中通过信号端口将瞄准输出 (aim_outputs) 连接到火控的 target_inputs。
+     * 内容包 JSON 中通过信号端口将瞄准输出 (aim_outputs) 连接到武器控制器的 target_inputs。
      *
      * @param aimPoint 玩家瞄准点的世界坐标，null 表示无有效瞄准目标
      */

@@ -48,16 +48,16 @@ public class TurretDriverSubsystem extends BasicSubsystem {
         this.hasYaw = yawAttr != null;
         this.hasPitch = pitchAttr != null;
         this.yawMaxForce = hasYaw ? yawAttr.maxForce() : 0f;
-        this.yawMaxSpeed = hasYaw ? yawAttr.maxSpeed() : 0f;
+        this.yawMaxSpeed = hasYaw ? yawAttr.maxSpeed() * (float) Math.PI / 180f : 0f;
         this.pitchMaxForce = hasPitch ? pitchAttr.maxForce() : 0f;
-        this.pitchMaxSpeed = hasPitch ? pitchAttr.maxSpeed() : 0f;
+        this.pitchMaxSpeed = hasPitch ? pitchAttr.maxSpeed() * (float) Math.PI / 180f : 0f;
         // 查找受控的高级连接器
         if (owner.getSubPart() != null &&
                 owner.getSubPart().connectors.get(this.attr.controlledConnector) instanceof AdvancedConnector advancedConnector) {
             this.connector = advancedConnector;
         } else {
             this.connector = null;
-            MachineMax.LOGGER.error("炮塔驱动子系统 {} 无法找到特殊连接点 {}", name, this.attr.controlledConnector);
+            MachineMax.LOGGER.error("炮塔驱动子系统 {} 无法找到高级连接点 {}", name, this.attr.controlledConnector);
         }
     }
 
@@ -92,7 +92,7 @@ public class TurretDriverSubsystem extends BasicSubsystem {
                     // setServoTarget 取负，与伺服马达方向约定一致
                     yawMotor.setMotorEnabled(true);
                     yawMotor.setServoEnabled(true);
-                    yawMotor.set(MotorParam.ServoTarget, -rotationSignal.getYaw());
+                    yawMotor.set(MotorParam.ServoTarget, rotationSignal.getYaw());
                     yawMotor.set(MotorParam.TargetVelocity, yawMaxSpeed);
                     yawMotor.set(MotorParam.MaxMotorForce, yawMaxForce);
                 } else {
@@ -130,7 +130,7 @@ public class TurretDriverSubsystem extends BasicSubsystem {
             // pitch 取自 XR，yaw 取自 YR（取负以与输入符号约定一致）
             Vector3f feedbackAngle = new Vector3f(
                     relativeAngle.x,     // pitch = XR 直接读数
-                    -relativeAngle.y,    // yaw = -YR（与 -yawTarget 约定对称）
+                    relativeAngle.y,    // yaw = YR
                     0f                   // roll 暂不使用
             );
             for (String signalKey : attr.rotationAngleOutputs.keySet()) {
@@ -153,6 +153,9 @@ public class TurretDriverSubsystem extends BasicSubsystem {
      * @return Vector3f(pitch, yaw, 0) 单位弧度
      */
     public Vector3f computeAimAngles(Vec3 targetWorldPos) {
+        if (connector == null || connector.joint == null) {
+            return new Vector3f();
+        }
         // ① 关节枢轴在 bodyA 局部空间的位置 → 转换到世界空间
         Vector3f pivotLocal = new Vector3f();
         connector.joint.getPivotA(pivotLocal);
@@ -167,18 +170,18 @@ public class TurretDriverSubsystem extends BasicSubsystem {
                 (float) (targetWorldPos.z - pivotWorld.z)
         ).normalize();
 
-        // ③ 转换到 bodyA 局部空间（底座坐标系）
-        Quaternion bodyARot = bodyATf.getRotation();
+        // ③ 转换到 bodyB 局部空间（底座坐标系）
+        Transform bodyBTf = connector.joint.getBodyB().getTransform(null);
+        Quaternion bodyBRot = bodyBTf.getRotation();
         Vector3f localDir = new Vector3f();
         try {
-            MyQuaternion.rotate(bodyARot.inverse(), worldDir, localDir);
+            MyQuaternion.rotate(bodyBRot.inverse(), worldDir, localDir);
         } catch (NullPointerException e) {
             MachineMax.LOGGER.error("炮塔驱动子系统 {} 无法计算目标方向，请检查输入信号 {}", name, attr.staticAttribute.getControlInputs());
         }
 
         // ④ 分解角度：yaw = 水平偏航，pitch = 垂直俯仰
-        //    符号约定与伺服马达的 -yawTarget / +pitchTarget 一致
-        float yaw = (float) Math.atan2(localDir.x, -localDir.z);
+        float yaw = (float) (Math.atan2(localDir.x, localDir.z) + Math.PI);
         float pitch = (float) Math.asin(Math.clamp(localDir.y, -1.0f, 1.0f));
 
         return new Vector3f(pitch, yaw, 0f);
@@ -188,6 +191,9 @@ public class TurretDriverSubsystem extends BasicSubsystem {
      * 获取关节枢轴（旋转中心）在世界空间中的位置。
      */
     public Vec3 getJointPivotWorld() {
+        if (connector == null || connector.joint == null) {
+            return Vec3.ZERO;
+        }
         Vector3f pivotLocal = new Vector3f();
         connector.joint.getPivotA(pivotLocal);
         Transform bodyATf = connector.joint.getBodyA().getTransform(null);
@@ -215,6 +221,9 @@ public class TurretDriverSubsystem extends BasicSubsystem {
      * 获取关节的相对角度（弧度），返回值为局部坐标系下的角度。
      */
     private Vector3f getRelativeAngle() {
+        if (connector == null || connector.joint == null) {
+            return new Vector3f();
+        }
         Vector3f result = new Vector3f();
         connector.joint.getAngles(result);
         return result;

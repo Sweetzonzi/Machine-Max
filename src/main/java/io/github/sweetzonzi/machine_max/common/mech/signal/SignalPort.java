@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * 用于在部件之间转发子系统信号，如玩家控制量、引擎功率、火控信号等
+ * 用于在部件之间转发子系统信号，如玩家控制量、引擎功率、武器控制器信号等
  */
 @Getter
 public class SignalPort implements ISignalReceiver, ISignalSender {

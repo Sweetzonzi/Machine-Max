@@ -9,11 +9,11 @@ import lombok.Getter;
 import java.util.List;
 
 /**
- * 火控子系统静态属性。<br>
+ * 武器控制器子系统静态属性。<br>
  * 定义射击模式、瞄准容差、输入频道等硬件参数。
  */
 @Getter
-public class FireControlSubsystemStaticAttr extends BasicSubsystemStaticAttr {
+public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     /**
      * 射击模式：
@@ -34,41 +34,37 @@ public class FireControlSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     private final FireMode defaultFireMode;
     /** 轮射模式下每两次发射之间的间隔（tick数） */
     private final int rippleIntervalTick;
-    /** 是否启用瞄准容差检查 */
-    private final boolean aimToleranceEnabled;
-    /** 瞄准容差角度（度），发射器指向与目标方向偏差小于此值时允许开火 */
+    /** 瞄准容差角度（度），发射器指向与目标方向偏差小于此值时允许开火。<br>
+     * 设为大于 180 的值（如 360）等效于禁用容差检查。 */
     private final float aimToleranceDeg;
     /** 瞄准目标坐标输入频道列表，从任一频道读取Vec3世界坐标 */
-    private final List<String> targetInputs;
+    private final List<String> aimInputs;
     /** 开火指令输入频道列表，任一频道有非EmptySignal即视为开火指令 */
     private final List<String> fireInputs;
 
-    public static final MapCodec<FireControlSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+    public static final MapCodec<WeaponControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
-            FIRE_MODE_CODEC.optionalFieldOf("fire_mode", FireMode.SALVO).forGetter(FireControlSubsystemStaticAttr::getDefaultFireMode),
-            Codec.INT.optionalFieldOf("ripple_interval_tick", 2).forGetter(FireControlSubsystemStaticAttr::getRippleIntervalTick),
-            Codec.BOOL.optionalFieldOf("aim_tolerance_enabled", true).forGetter(FireControlSubsystemStaticAttr::isAimToleranceEnabled),
-            Codec.FLOAT.optionalFieldOf("aim_tolerance_deg", 3.0f).forGetter(FireControlSubsystemStaticAttr::getAimToleranceDeg),
-            Codec.STRING.listOf().optionalFieldOf("target_inputs", List.of()).forGetter(FireControlSubsystemStaticAttr::getTargetInputs),
-            Codec.STRING.listOf().optionalFieldOf("fire_inputs", List.of()).forGetter(FireControlSubsystemStaticAttr::getFireInputs),
+            FIRE_MODE_CODEC.optionalFieldOf("fire_mode", FireMode.SALVO).forGetter(WeaponControllerSubsystemStaticAttr::getDefaultFireMode),
+            Codec.INT.optionalFieldOf("ripple_interval_tick", 2).forGetter(WeaponControllerSubsystemStaticAttr::getRippleIntervalTick),
+            Codec.FLOAT.optionalFieldOf("aim_tolerance_deg", 3.0f).forGetter(WeaponControllerSubsystemStaticAttr::getAimToleranceDeg),
+            Codec.STRING.listOf().optionalFieldOf("aim_inputs", List.of("aim_control")).forGetter(WeaponControllerSubsystemStaticAttr::getAimInputs),
+            Codec.STRING.listOf().optionalFieldOf("fire_inputs", List.of("regular_control")).forGetter(WeaponControllerSubsystemStaticAttr::getFireInputs),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
-    ).apply(instance, FireControlSubsystemStaticAttr::new));
+    ).apply(instance, WeaponControllerSubsystemStaticAttr::new));
 
-    public FireControlSubsystemStaticAttr(
+    public WeaponControllerSubsystemStaticAttr(
             BasicAttr basicAttr,
             FireMode defaultFireMode,
             int rippleIntervalTick,
-            boolean aimToleranceEnabled,
             float aimToleranceDeg,
-            List<String> targetInputs,
+            List<String> aimInputs,
             List<String> fireInputs,
             BasicSoundAttr sounds) {
         super(basicAttr, sounds);
         this.defaultFireMode = defaultFireMode;
         this.rippleIntervalTick = rippleIntervalTick;
-        this.aimToleranceEnabled = aimToleranceEnabled;
         this.aimToleranceDeg = aimToleranceDeg;
-        this.targetInputs = targetInputs;
+        this.aimInputs = aimInputs;
         this.fireInputs = fireInputs;
     }
 
@@ -79,6 +75,6 @@ public class FireControlSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     @Override
     public SubsystemTypes getType() {
-        return SubsystemTypes.FIRE_CTRL;
+        return SubsystemTypes.WEAPON_CTRL;
     }
 }

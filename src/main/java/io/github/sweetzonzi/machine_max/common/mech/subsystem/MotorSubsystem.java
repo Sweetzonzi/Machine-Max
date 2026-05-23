@@ -112,8 +112,7 @@ public class MotorSubsystem extends BasicSubsystem implements IMultiChannelSound
                 count++;
             }
             if (count > 0) avgFeedback /= count;
-            avgFeedback = -avgFeedback;
-            double speedDiff = rotSpeed + avgFeedback;
+            double speedDiff = rotSpeed - avgFeedback;
             double coupleTorque = Math.abs(speedDiff) < 5 ? Math.clamp(
                     this.isActive() ? this.coupleTorquePD.step(0, Math.abs(speedDiff) < 10 ? speedDiff * speedDiff / 10 : speedDiff) : 0,
                     -0.25 * attr.getStaticAttribute().maxTorque,

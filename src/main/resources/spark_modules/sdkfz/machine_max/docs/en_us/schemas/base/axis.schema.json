@@ -1,18 +1,18 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/base/axis.json",
-  "title": "轴方向",
-  "description": "表示三维空间中的轴方向，用于定义连接点的法线方向。",
+  "title": "Axis Direction",
+  "description": "Represents the axis direction in 3D space, used to define the normal direction of connection points.",
   "type": "string",
   "enum": ["xp", "xn", "yp", "yn", "zp", "zn"],
   "default": "yp",
   "examples": ["yp", "xn", "zp"],
   "description_map": {
-    "xp": "正X轴方向",
-    "xn": "负X轴方向",
-    "yp": "正Y轴方向",
-    "yn": "负Y轴方向",
-    "zp": "正Z轴方向",
-    "zn": "负Z轴方向"
+    "xp": "Positive X-axis direction",
+    "xn": "Negative X-axis direction",
+    "yp": "Positive Y-axis direction",
+    "yn": "Negative Y-axis direction",
+    "zp": "Positive Z-axis direction",
+    "zn": "Negative Z-axis direction"
   }
 }

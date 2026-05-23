@@ -28,5 +28,20 @@
   "subsystem.machine_max.radio_seat": "Radio Seat",
   "machine_max.sdkfz234_wheel": "Sdkfz234 Wheel",
   "connector.machine_max.left_wheel_hull": "Left Wheel Hull",
-  "connector.machine_max.right_wheel_hull": "Right Wheel Hull"
+  "connector.machine_max.right_wheel_hull": "Right Wheel Hull",
+  "connector.machine_max.hull_turret_axis": "Hull Turret Axis",
+  "machine_max.sdkfz234_turret": "Sdkfz234 Turret",
+  "interact.machine_max.gunner_cover_interact": "Gunner Cover Interact",
+  "interact.machine_max.commander_cover_interact": "Commander Cover Interact",
+  "connector.machine_max.turret_hull_axis": "Turret Hull Axis",
+  "connector.machine_max.turret_gun_axis": "Turret Gun Axis",
+  "subsystem.machine_max.gunner_seat": "Gunner Seat",
+  "subsystem.machine_max.commander_seat": "Commander Seat",
+  "subsystem.machine_max.azimuth_driver": "Azimuth Driver",
+  "subsystem.machine_max.elevation_driver": "Elevation Driver",
+  "subsystem.machine_max.weapon_controller": "Weapon Controller",
+  "sub_part.machine_max.main_2": "Main 2",
+  "machine_max.sdkfz234_gun": "Sdkfz234 Gun",
+  "connector.machine_max.gun_turret_axis": "Gun Turret Axis",
+  "subsystem.machine_max.launcher": "Launcher"
 }

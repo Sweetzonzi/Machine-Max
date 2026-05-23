@@ -1,26 +1,26 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/gearbox_dynamic_attr.json",
-  "title": "变速箱子系统动态属性",
-  "description": "变速箱的动态属性，定义功率输出目标和挡位信号输出。",
+  "title": "Transmission Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the transmission, defining power output targets and gear signal output.",
   "properties": {
     "type": {
       "type": "string",
       "const": "machine_max:gearbox",
-      "description": "子系统类型，必须为'machine_max:gearbox'。"
+      "description": "Subsystem type, must be 'machine_max:gearbox'."
     },
     "definition": {
       "type": "string",
-      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
     "power_output": {
       "type": "string",
-      "description": "功率输出目标，子系统或部件接口名。"
+      "description": "Power output target, subsystem or part interface name."
     },
     "gear_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": { "gear": ["part", "vehicle"] },
-      "description": "挡位名称输出频道及目标。可选，默认将当前挡位名称发至部件和载具的gear频道。"
+      "description": "Gear name output channel and targets. Optional, by default sends current gear name to the gear channel of parts and vehicles."
     }
   },
   "required": ["type", "definition", "power_output"],

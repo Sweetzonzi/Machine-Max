@@ -6,7 +6,7 @@
     "max_drive_force": 2500.0,
     "max_brake_force": 1500.0,
     "max_hand_brake_force": 700.0,
-    "max_speed": 3140.0
+    "max_rpm": 30000.0
   },
   "steering": {
     "max_force": 0.0,

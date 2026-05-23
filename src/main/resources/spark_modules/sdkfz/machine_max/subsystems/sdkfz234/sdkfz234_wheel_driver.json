@@ -6,11 +6,11 @@
     "max_drive_force": 4000,
     "max_brake_force": 3500,
     "max_hand_brake_force": 500,
-    "max_speed": 3140
+    "max_rpm": 30000
   },
   "steering": {
     "max_force": 3500,
-    "max_speed": 1.9
+    "max_speed": 180
   },
   "abs_enabled": true,
   "abs_target_slip_ratio": 0.15,

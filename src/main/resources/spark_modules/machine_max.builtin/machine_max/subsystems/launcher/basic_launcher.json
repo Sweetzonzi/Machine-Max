@@ -1,0 +1,11 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:launcher", //发射器子系统
+  "basic_durability": 80, //(可选, 默认20.0)子系统基础耐久度
+  "fire_rate": 600, //射速(RPM), 600发/分钟
+  "velocity_multiplier": 1.0, //(可选, 默认1.0)初速乘数
+  "velocity_bonus": 0, //(可选, 默认0)初速线性加成(m/s)
+  "horizontal_accuracy_multiplier": 1.0, //(可选, 默认1.0)水平精度乘子
+  "vertical_accuracy_multiplier": 1.0, //(可选, 默认1.0)垂直精度乘子
+  "control_inputs": ["weapon_control"] //(可选, 默认["weapon_control"])开火信号输入频道
+}

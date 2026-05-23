@@ -1,89 +1,89 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/base/material_attr.json",
-  "title": "材料属性",
-  "description": "定义材料的物理属性，包括摩擦系数、弹性、伤害修正和音效等。",
+  "title": "Material Attributes",
+  "description": "Defines the physical properties of materials, including friction coefficients, elasticity, damage modifiers, and sound effects.",
   "type": "object",
   "properties": {
     "$schema": {
       "type": "string",
-      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
       "default": "../docs/zh_cn/schemas/base/material_attr.schema.json"
     },
     "friction": {
       "$ref": "vector_3d.schema.json",
       "default": [0.5, 0.5, 0.5],
-      "description": "摩擦系数向量，格式为[x, y, z]。x为侧向摩擦系数，y为前向摩擦系数，z无实际意义。"
+      "description": "Friction coefficient vector, format [x, y, z]. x is lateral friction coefficient, y is forward friction coefficient, z has no practical meaning."
     },
     "slip_adaptation": {
       "type": "number",
       "minimum": 0.0,
       "maximum": 1.0,
       "default": 0.5,
-      "description": "滑移适应系数，用于调整在滑动时的摩擦行为。"
+      "description": "Slip adaptation coefficient, used to adjust friction behavior during sliding."
     },
     "slip_curve": {
       "type": "object",
-      "description": "轮胎滑移摩擦曲线参数。用于控制纵向滑移率与侧向滑移角变化时的摩擦缩放。",
+      "description": "Tire slip friction curve parameters for longitudinal slip ratio and lateral slip angle.",
       "properties": {
         "longitudinal": {
           "type": "object",
-          "description": "纵向滑移率曲线参数。",
+          "description": "Longitudinal slip-ratio curve parameters.",
           "properties": {
             "peak_slip_ratio": {
               "type": "number",
               "minimum": 0.0,
               "default": 0.2,
-              "description": "峰值滑移率（无量纲），达到该值时摩擦缩放为peak_scale。"
+              "description": "Slip ratio at the peak friction scale."
             },
             "base_scale": {
               "type": "number",
               "default": 1.0,
-              "description": "滑移率为0时的摩擦缩放。"
+              "description": "Friction scale at zero slip."
             },
             "peak_scale": {
               "type": "number",
               "default": 1.4,
-              "description": "峰值滑移率处的摩擦缩放。"
+              "description": "Friction scale at peak_slip_ratio."
             },
             "kinetic_scale": {
               "type": "number",
               "default": 0.9,
-              "description": "高滑移状态下（动摩擦段）的摩擦缩放。"
+              "description": "Friction scale in the high-slip kinetic region."
             }
           },
           "additionalProperties": false
         },
         "lateral": {
           "type": "object",
-          "description": "侧向滑移角曲线参数（角度单位为度）。",
+          "description": "Lateral slip-angle curve parameters. All angle fields use degrees.",
           "properties": {
             "peak_angle_deg": {
               "type": "number",
               "minimum": 0.0,
               "default": 12.0,
-              "description": "峰值侧偏角（度）。"
+              "description": "Slip angle (degrees) at peak friction scale."
             },
             "kinetic_angle_deg": {
               "type": "number",
               "minimum": 0.0,
               "default": 90.0,
-              "description": "进入动摩擦平台的侧偏角（度）。"
+              "description": "Slip angle (degrees) where kinetic scale is reached."
             },
             "base_scale": {
               "type": "number",
               "default": 1.0,
-              "description": "侧偏角为0度时的摩擦缩放。"
+              "description": "Friction scale at zero slip angle."
             },
             "peak_scale": {
               "type": "number",
               "default": 1.2,
-              "description": "峰值侧偏角处的摩擦缩放。"
+              "description": "Friction scale at peak_angle_deg."
             },
             "kinetic_scale": {
               "type": "number",
               "default": 0.7,
-              "description": "高侧偏角状态下（动摩擦段）的摩擦缩放。"
+              "description": "Friction scale in the high-angle kinetic region."
             }
           },
           "additionalProperties": false
@@ -95,41 +95,41 @@
       "type": "number",
       "minimum": 0.0,
       "default": 0.2,
-      "description": "滚动摩擦系数。"
+      "description": "Rolling friction coefficient."
     },
     "spinning_friction": {
       "type": "number",
       "minimum": 0.0,
       "default": 0.0,
-      "description": "旋转摩擦系数。"
+      "description": "Spinning friction coefficient."
     },
     "restitution": {
       "type": "number",
       "minimum": 0.0,
       "maximum": 1.0,
       "default": 0.1,
-      "description": "恢复系数（弹性），0为完全非弹性碰撞，1为完全弹性碰撞。"
+      "description": "Restitution coefficient (elasticity), 0 for completely inelastic collision, 1 for completely elastic collision."
     },
     "block_damage_factor": {
       "type": "number",
       "minimum": 0.0,
       "default": 1.0,
-      "description": "方块破坏系数，0为无法破坏方块，1为造成全额伤害，调整此系数以改变对方块的破坏能力。"
+      "description": "Block damage factor, 0 for unable to break blocks, 1 for full damage, adjust this coefficient to change block breaking capability."
     },
     "rha": {
       "type": "number",
       "minimum": 0.0,
       "default": 1.0,
-      "description": "材料相对轧制均质装甲(RHA)的抗穿能力系数。0.5表示同等厚度下仅有50%RHA抗穿，1.5表示1.5倍RHA抗穿。"
+      "description": "Material relative hardness armor (RHA) penetration resistance coefficient. 0.5 means 50% RHA penetration resistance at same thickness, 1.5 means 1.5 times RHA penetration resistance."
     },
     "angle_effect": {
       "type": "boolean",
       "default": true,
-      "description": "等效护甲厚度是否受入射角度影响，若为false，则计算厚度时不考虑入射角度。"
+      "description": "Whether equivalent armor thickness is affected by impact angle, if false, thickness calculation ignores impact angle."
     },
     "impact_modifiers": {
       "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
-      "description": "冲击修正器，将受到的伤害按照一定规则转换为冲击数值施加到各连接点。默认为空列表，造成多少伤害就对连接点施加多少冲击。"
+      "description": "Impact modifiers, convert received damage into impact values applied to connection points according to certain rules. Default empty list, applies same amount of impact as damage to connection points."
     },
     "penetration_modifiers": {
       "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
@@ -146,7 +146,7 @@
           }
         }
       ],
-      "description": "穿深修正器，根据受到的伤害调整其穿深。若伤害不带穿深数据，则传入伤害值，否则传入穿深。默认在传入的伤害不包含穿深时，以伤害的0.5倍作为穿深。"
+      "description": "Penetration modifiers, adjust penetration depth based on received damage. If damage doesn't include penetration data, uses damage value; otherwise uses penetration data. Default uses 0.5 times the damage as penetration when damage doesn't include penetration data."
     },
     "damage_modifiers": {
       "$ref": "../part/subpart/hit_box/modifier/damage_modifier.schema.json",
@@ -184,20 +184,20 @@
           }
         }
       ],
-      "description": "伤害修正器，将受到的伤害按照一定规则转换为伤害数值。若伤害不带伤害数据，则传入伤害值，否则传入伤害数据。默认忽视5以下的撞击伤害，大幅减弱史莱姆等每帧造成的伤害。"
+      "description": "Damage modifiers, convert received damage into damage values according to certain rules. If damage doesn't include damage data, uses damage value; otherwise uses damage data. Default ignores impact damage below 5, significantly reduces damage from slimes and similar per-frame damage sources."
     },
     "un_penetrate_damage_factor": {
       "type": "number",
       "minimum": 0.0,
       "default": 0.0,
-      "description": "攻击未能完全击穿护甲时的伤害系数，公式为:攻击伤害*(穿深/等效护甲)^un_penetrate_damage_factor，此项为0.0时未击穿则无伤害。"
+      "description": "Damage factor when attack fails to fully penetrate armor, formula: attack_damage * (penetration / equivalent_armor) ^ un_penetrate_damage_factor, no damage when not fully penetrated if this is 0.0."
     },
     "sounds": {
       "type": "object",
       "properties": {
         "hit_un_pen": {
           "$ref": "sound_event.schema.json",
-          "description": "碰撞箱被命中但未穿透时的音效事件。",
+          "description": "Sound event when hit box is hit but not penetrated.",
           "default": {
             "sound_id": "machine_max:hit_box.hit.up_pen.metal",
             "range": 64
@@ -205,7 +205,7 @@
         },
         "hit_pen": {
           "$ref": "sound_event.schema.json",
-          "description": "碰撞箱被命中且穿透时的音效事件。",
+          "description": "Sound event when hit box is hit and penetrated.",
           "default": {
             "sound_id": "machine_max:hit_box.hit.pen.metal",
             "range": 64
@@ -213,12 +213,14 @@
         }
       },
       "additionalProperties": false,
-      "description": "材料命中音效配置。"
+      "description": "Material hit sound configuration."
     }
   },
   "additionalProperties": false,
   "examples": [
-    {},
+    {
+      "friction": [0.5, 0.5, 0.5]
+    },
     {
       "friction": [0.8, 0.8, 0.8],
       "slip_adaptation": 0.3,
@@ -241,7 +243,6 @@
       "spinning_friction": 0.01,
       "restitution": 0.05,
       "block_damage_factor": 0.5,
-      "rha": 1.2,
       "angle_effect": false,
       "impact_modifiers": [
         {

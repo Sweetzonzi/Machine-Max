@@ -10,15 +10,15 @@ import java.util.Map;
 import java.util.Optional;
 
 public record MotorAttr(
-        @Nullable Float lowerLimit,
-        @Nullable Float upperLimit,
-        @Nullable Float equilibrium,
-        @Nullable Float stiffness,
-        @Nullable Float damping,
+        @Nullable Float lowerLimit,    // 下限：平动轴=m，旋转轴=度
+        @Nullable Float upperLimit,    // 上限：平动轴=m，旋转轴=度
+        @Nullable Float equilibrium,   // 平衡位置：平动轴=m，旋转轴=度
+        @Nullable Float stiffness,     // 刚度：平动轴=N/m，旋转轴=N·m/度
+        @Nullable Float damping,       // 阻尼：平动轴=N·s/m，旋转轴=N·m·s/度
         boolean needsPower,
-        float maxForce,
-        float maxBrakeForce,
-        float maxSpeed,
+        float maxForce,                // 最大驱动力/力矩：平动轴=N，旋转轴=N·m
+        float maxBrakeForce,           // 最大制动力/力矩：平动轴=N，旋转轴=N·m
+        float maxSpeed,                // 最大速度：平动轴=m/s，旋转轴=°/s
         List<String> targetSpeedSignalKey,
         List<String> targetPositionSignalKey,
         Map<String, List<String>> speedSignalOutputs,

@@ -1,14 +1,14 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/sub_part_attr.schema.json",
-  "title": "子部件属性",
-  "description": "定义载具部件中的一个子部件（最小运动单元）的属性，包含物理特性、碰撞检测、连接点和子系统等",
+  "title": "Sub-Part Attributes",
+  "description": "Defines the attributes of a sub-part (smallest motion unit) in a vehicle part, including physical properties, collision detection, connection points and subsystems, etc.",
   "type": "object",
   "properties": {
     "start_bone": {
       "type": "string",
       "default": "",
-      "description": "子部件的起始骨骼名称，用于从模型中选择要渲染和计算碰撞的骨骼集合。若为空，则使用整个模型的所有骨骼"
+      "description": "The starting bone name of the sub-part, used to select the set of bones to render and calculate collisions from the model. If empty, all bones of the entire model will be used"
     },
     "end_bones": {
       "type": "array",
@@ -16,45 +16,45 @@
         "type": "string"
       },
       "default": [],
-      "description": "结束骨骼名称列表，在起始骨骼和结束骨骼之间的骨骼将被包含在子部件中。用于排除不需要的部分"
+      "description": "List of ending bone names, bones between the starting and ending bones will be included in the sub-part. Used to exclude unwanted parts"
     },
     "durability": {
       "type": "number",
       "minimum": 0,
       "default": 20.0,
-      "description": "子部件基础生命值，降至0时该子部件的所有子系统会瘫痪。注意：多个子部件可共享耐久度（由部件定义中的share_durability控制）"
+      "description": "Base health value of the sub-part, when reduced to 0, all subsystems of the sub-part will be paralyzed. Note: Multiple sub-parts can share durability (controlled by share_durability in the part definition)"
     },
     "mass": {
       "type": "number",
       "minimum": 0,
       "default": 25.0,
-      "description": "子部件质量(kg)，必须大于0，用于物理计算"
+      "description": "Sub-part mass (kg), must be greater than 0, used for physics calculations"
     },
     "mass_center": {
       "type": "string",
       "default": "mass_center",
-      "description": "质心定位器名称，用于指定模型中的同名定位器作为质心位置。若未指定或未找到定位器，则会以碰撞体积的几何中心作为质心。"
+      "description": "Mass center locator name, used to specify a locator with the same name in the model as the mass center position. If not specified or not found, the geometric center of the collision volume will be used as the mass center."
     },
     "projected_area": {
       "$ref": "../../base/vector_3d.schema.json",
       "default": {"x": 0, "y": 0, "z": 0},
-      "description": "子部件在三个轴向上的投影面积(m²)，用于计算空气阻力"
+      "description": "Projected area of the sub-part in three axial directions (m²), used to calculate air resistance"
     },
     "block_collision": {
       "type": "string",
       "enum": ["true", "false", "ground"],
       "default": "true",
-      "description": "地形碰撞模式：true（默认，与所有方块碰撞），ground（仅与部件之下的地面方块碰撞），false（不与任何方块碰撞）"
+      "description": "Terrain collision mode: true (default, collides with all blocks), ground (only collides with ground blocks below the part), false (does not collide with any blocks)"
     },
     "collision_height": {
       "type": "number",
       "default": -1.0,
-      "description": "碰撞检测高度(m)，遭遇的障碍小于此高度时不与障碍发生碰撞（方块碰撞模式需要为ground）。默认-1.0表示所有障碍均碰撞"
+      "description": "Collision detection height (m), when encountering obstacles lower than this height, no collision occurs with the obstacle (block collision mode needs to be ground). Default -1.0 means all obstacles collide"
     },
     "climb_assist": {
       "type": "boolean",
       "default": false,
-      "description": "攀爬辅助，是否启用攀爬辅助功能"
+      "description": "Climbing assistance, whether to enable climbing assistance function"
     },
     "hit_boxes": {
       "type": "object",
@@ -63,7 +63,7 @@
       },
       "default": {},
       "minProperties": 1,
-      "description": "碰撞箱定义，键为骨骼名称，会寻找名称匹配的骨骼，并根据其中的方块创建不同形状的碰撞体。每个子部件至少需要一个碰撞箱"
+      "description": "Collision box definition, key is bone name, will search for bones with matching names, and create collision volumes of different shapes based on the blocks in them. Each sub-part needs at least one collision box"
     },
     "interact_boxes": {
       "type": "object",
@@ -71,7 +71,7 @@
         "$ref": "interact_box_attr.schema.json"
       },
       "default": {},
-      "description": "交互箱定义，键为交互箱名称，值为交互箱属性。用于定义玩家可以交互的区域"
+      "description": "Interaction box definition, key is interaction box name, value is interaction box attributes. Used to define areas where players can interact"
     },
     "connectors": {
       "type": "object",
@@ -79,7 +79,7 @@
         "$ref": "connector/connector_attr.schema.json"
       },
       "default": {},
-      "description": "连接点列表，子部件用于与其他部件连接的接口定义"
+      "description": "List of connection points, interface definitions for sub-parts to connect with other parts"
     },
     "subsystems": {
       "type": "object",
@@ -87,12 +87,12 @@
         "$ref": "../../subsystem/subsystem_dynamic_attr.schema.json"
       },
       "default": {},
-      "description": "子系统定义，键为子系统名称，值为子系统动态属性。定义子部件与连接点、其他子系统的交互关系"
+      "description": "Subsystem definition, key is subsystem name, value is subsystem dynamic attributes. Defines the interaction relationship between sub-parts and connection points, other subsystems"
     },
     "hydro_priority": {
       "type": "integer",
       "default": 0,
-      "description": "空气阻力计算优先级，值越大优先级越高。优先级高或相等的部件会遮挡优先级低或相等的部件，导致阻力系数发生变化"
+      "description": "Air resistance calculation priority, the higher the value the higher the priority. Parts with higher or equal priority will block parts with lower or equal priority, causing changes in drag coefficients"
     },
     "hydrodynamics": {
       "type": "object",
@@ -102,7 +102,7 @@
       "default": {
         "": {}
       },
-      "description": "流体动力计算定位点列表，键值对的键名优先作为骨骼名称查找，若找到对应骨骼则使用该骨骼内的所有定位器作为气动计算点；若未找到对应骨骼，则作为定位器名称查找。空字符串表示以质心位置计算。每个定位点的属性定义参考hydrodynamic_attr.schema.json。"
+      "description": "List of hydrodynamic calculation reference points, key-value pair key name is first searched as bone name, if a matching bone is found, all locators within that bone are used as aerodynamic calculation points; if no matching bone is found, it is searched as locator name. Empty string means calculation based on center of mass position."
     }
   },
   "required": ["hit_boxes"],
@@ -114,7 +114,7 @@
           "type": "box"
         }
       },
-      "description": "最简子部件示例，仅包含必需的碰撞箱定义"
+      "description": "Minimal sub-part example, only includes required hit box definition"
     },
     {
       "start_bone": "chassis",
@@ -221,7 +221,7 @@
           "lift_coefficient": 0.1
         }
       },
-      "description": "完整子部件示例，包含质心定位器、流体动力、连接点及完整的子系统配置（座位、储物、控制器、发动机、变速箱等）"
+      "description": "Complete sub-part example, includes mass center locator, hydrodynamics, connectors and comprehensive subsystem configuration (seats, storage, controller, engine, gearbox, etc.)"
     }
   ]
 }

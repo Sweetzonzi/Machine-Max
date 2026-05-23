@@ -156,7 +156,7 @@ public class CameraController {
                 org.joml.Vector3f rot = new org.joml.Vector3f();
                 SparkMathKt.toQuaternionf(tmpViewTransform.getRotation()).getEulerAnglesYXZ(rot);
                 //计算相机瞄准方向向量
-                aimDirection = new Vec3(Math.cos(rot.x) * Math.sin(rot.y), Math.sin(rot.x), Math.cos(rot.x) * Math.cos(rot.y));
+                aimDirection = new Vec3(Math.cos(rot.x) * Math.sin(rot.y), -Math.sin(rot.x), Math.cos(rot.x) * Math.cos(rot.y));
                 rot.mul((float) (180 / Math.PI));
                 //应用旋转
                 event.setPitch(rot.x);
@@ -167,7 +167,9 @@ public class CameraController {
                 event.setPitch(pitch);
                 event.setYaw(yaw);
                 event.setRoll(roll);
-                aimDirection = new Vec3(Math.cos(aimPitch) * Math.sin(aimYaw), Math.sin(aimPitch), Math.cos(aimPitch) * Math.cos(aimYaw));
+                double pitch = - Math.toRadians(aimPitch);
+                double yaw = - Math.toRadians(aimYaw);
+                aimDirection = new Vec3(Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch), Math.cos(pitch) * Math.cos(yaw));
             }
             //非自由视角模式下，逐渐回正视角
             if (!RawInputHandler.freeCam) {

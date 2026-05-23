@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/base/vector_3d.json",
-  "title": "三维向量",
-  "description": "表示三维空间中的向量",
+  "title": "3D Vector",
+  "description": "Represents a vector in 3D space",
   "type": "array",
   "items": {
     "type": "number"

@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/turret_driver_dynamic_attr.json",
+  "title": "炮塔驱动子系统动态属性",
+  "description": "炮塔驱动子系统的动态属性，定义受控连接器、旋转角度反馈输出等运行时配置。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:turret_driver",
+      "description": "子系统类型，必须为'machine_max:turret_driver'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+    },
+    "connector": {
+      "type": "string",
+      "description": "受控的高级连接器名称，炮塔驱动通过此连接器的New6Dof关节控制炮塔旋转。"
+    },
+    "rotation_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "当前关节角度反馈输出频道及目标。可选，将当前偏航/俯仰角（弧度）发送至指定频道。"
+    }
+  },
+  "required": ["type", "definition", "connector"],
+  "examples": [
+    {
+      "type": "machine_max:turret_driver",
+      "definition": "machine_max:basic_azimuth_driver",
+      "connector": "turret_joint",
+      "rotation_outputs": {
+        "turret_angle": ["subpart", "vehicle"]
+      }
+    }
+  ]
+}

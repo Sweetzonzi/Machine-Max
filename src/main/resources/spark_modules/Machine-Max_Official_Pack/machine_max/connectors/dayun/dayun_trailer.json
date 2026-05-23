@@ -9,18 +9,18 @@
     "xr": {
       "lower_limit": -10.0,
       "upper_limit": 10.0,
-      "damping": 500
+      "damping": 28600
     },
     "yr": {
       "lower_limit": -85.0,
       "upper_limit": 85.0,
-      "damping": 500
+      "damping": 28600
     },
     "zr": {
       "lower_limit": -5.0,
       "upper_limit": 5.0,
-      "stiffness": 10000,
-      "damping": 1000
+      "stiffness": 573000,
+      "damping": 57300
     }
   }
 }

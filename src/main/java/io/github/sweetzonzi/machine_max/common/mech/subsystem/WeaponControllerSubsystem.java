@@ -8,8 +8,9 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.FireControlSubsystemAttr;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
 import lombok.Getter;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -18,15 +19,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 火控子系统。<br>
+ * 武器控制器子系统。<br>
  * 接收目标坐标和开火指令，控制炮塔驱动子系统指向目标，
  * 并控制发射器子系统在瞄准完毕后开火。<br>
  * 通过握手（callback）自动发现并绑定同载具内的 TurretDriver 和 Launcher 子系统。
  */
 @Getter
-public class FireControlSubsystem extends BasicSubsystem {
+public class WeaponControllerSubsystem extends BasicSubsystem {
 
-    public final FireControlSubsystemAttr attr;
+    public final WeaponControllerSubsystemAttr attr;
 
     /** 通过握手发现的炮塔驱动子系统及其对应的控制频道名 */
     private final Map<TurretDriverSubsystem, String> turrets = new HashMap<>();
@@ -34,16 +35,16 @@ public class FireControlSubsystem extends BasicSubsystem {
     private final Map<LauncherSubsystem, String> launchers = new HashMap<>();
 
     /** 缓存的目标世界坐标，每物理tick更新 */
-    private Vec3 targetPosition = null;
+    private volatile Vec3 targetPosition = null;
     /** 当前是否有开火指令 */
-    private boolean firing = false;
+    private volatile boolean firing = false;
 
     /** 轮射模式下当前发射的索引 */
     private int rippleIndex = 0;
     /** 轮射模式下的tick计时器 */
     private int rippleTickCounter = 0;
 
-    public FireControlSubsystem(ISubsystemHost owner, String name, FireControlSubsystemAttr attr) {
+    public WeaponControllerSubsystem(ISubsystemHost owner, String name, WeaponControllerSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
     }
@@ -57,36 +58,35 @@ public class FireControlSubsystem extends BasicSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        if (!isActive() || isDestroyed() || targetPosition == null) {
+        // 物理线程开始时读取一次 volatile 字段到局部变量，避免与主线程写入 targetPosition 的竞态
+        Vec3 target = this.targetPosition;
+        if (!isActive() || isDestroyed() || target == null) {
             resetSignalOutputs();
             return;
         }
 
         var staticAttr = attr.staticAttribute;
-        float tolDeg = staticAttr.isAimToleranceEnabled() ? staticAttr.getAimToleranceDeg() : Float.MAX_VALUE;
+        float tolDeg = staticAttr.getAimToleranceDeg();
 
         // ① 向每个炮塔驱动发送目标旋转角度
-        //    Send target rotation angles to each turret driver
         for (Map.Entry<TurretDriverSubsystem, String> entry : turrets.entrySet()) {
             TurretDriverSubsystem turret = entry.getKey();
             String channel = entry.getValue();
             if (turret.isDestroyed() || !turret.isActive()) continue;
-            Vector3f aimAngles = turret.computeAimAngles(targetPosition);
+            Vector3f aimAngles = turret.computeAimAngles(target);
             sendCallbackToListener(channel, turret, new RotationSignal(aimAngles));
         }
 
         // ② 筛选瞄准目标的发射器
-        //    Filter launchers that are aimed at the target
         List<LauncherSubsystem> aimedLaunchers = new ArrayList<>();
         for (LauncherSubsystem launcher : launchers.keySet()) {
             if (launcher.isDestroyed() || !launcher.isActive()) continue;
-            if (launcher.isAimedAt(targetPosition, tolDeg)) {
+            if (launcher.isAimedAt(target, tolDeg)) {
                 aimedLaunchers.add(launcher);
             }
         }
 
         // ③ 按射击模式开火
-        //    Fire according to the configured fire mode
         if (firing && !aimedLaunchers.isEmpty()) {
             switch (staticAttr.getDefaultFireMode()) {
                 case SALVO -> fireSalvo(aimedLaunchers);
@@ -94,7 +94,6 @@ public class FireControlSubsystem extends BasicSubsystem {
             }
         } else {
             // 无开火指令或无可开火发射器 → 发送空信号停止射击
-            //    No fire command or no aimed launchers → send empty signal to stop
             for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
                 sendCallbackToListener(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
             }
@@ -123,13 +122,11 @@ public class FireControlSubsystem extends BasicSubsystem {
 
         if (rippleTickCounter <= 0) {
             // 发送空信号给所有发射器，先停止上轮射击
-            //    Stop all launchers first
             for (Map.Entry<LauncherSubsystem, String> entry : launchers.entrySet()) {
                 sendCallbackToListener(entry.getValue(), entry.getKey(), EmptySignal.INSTANCE);
             }
 
             // 只让当前索引的发射器开火
-            //    Only fire the launcher at current index
             if (rippleIndex < aimedLaunchers.size()) {
                 LauncherSubsystem launcher = aimedLaunchers.get(rippleIndex);
                 String channel = launchers.get(launcher);
@@ -148,27 +145,29 @@ public class FireControlSubsystem extends BasicSubsystem {
      */
     private void readInputSignals() {
         // 读取目标坐标：轮询 targetInputs 频道，取第一个 Vec3
-        //    Read target position: poll targetInputs channels, take the first Vec3
-        this.targetPosition = null;
-        for (String signalKey : attr.staticAttribute.getTargetInputs()) {
+        Vec3 pos = null;
+        for (String signalKey : attr.staticAttribute.getAimInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
             for (Object signal : channel.values()) {
                 if (signal instanceof ViewInputSignal vis) {
-                    this.targetPosition = vis.value;
+                    pos = vis.value;
                     break;
                 } else if (signal instanceof Vec3 vec3) {
-                    this.targetPosition = vec3;
+                    pos = vec3;
                     break;
                 } else if (signal instanceof Vector3f jmeVec) {
-                    this.targetPosition = new Vec3(jmeVec.x, jmeVec.y, jmeVec.z);
+                    pos = new Vec3(jmeVec.x, jmeVec.y, jmeVec.z);
                     break;
                 }
             }
-            if (this.targetPosition != null) break;
+            if (pos != null) {
+                this.targetPosition = pos;
+                break;
+            }
         }
+        if (pos == null) this.targetPosition = null;
 
         // 读取开火指令：轮询 fireInputs 频道，任一非EmptySignal即视为开火
-        //    Read fire command: poll fireInputs channels, any non-EmptySignal is fire command
         this.firing = false;
         for (String signalKey : attr.staticAttribute.getFireInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
@@ -177,6 +176,29 @@ public class FireControlSubsystem extends BasicSubsystem {
                 break;
             }
         }
+    }
+
+    @Override
+    public void loadData(CompoundTag data) {
+        super.loadData(data);
+        if (data.contains("target_x") && data.contains("target_y") && data.contains("target_z")) {
+            this.targetPosition = new Vec3(
+                data.getDouble("target_x"),
+                data.getDouble("target_y"),
+                data.getDouble("target_z")
+            );
+        }
+    }
+
+    @Override
+    public CompoundTag saveData(CompoundTag data) {
+        super.saveData(data);
+        if (targetPosition != null) {
+            data.putDouble("target_x", targetPosition.x);
+            data.putDouble("target_y", targetPosition.y);
+            data.putDouble("target_z", targetPosition.z);
+        }
+        return data;
     }
 
     @Override
@@ -241,8 +263,8 @@ public class FireControlSubsystem extends BasicSubsystem {
     @Override
     public List<String> getAcceptedChannels() {
         var staticAttr = attr.staticAttribute;
-        List<String> channels = new ArrayList<>(staticAttr.getTargetInputs().size() + staticAttr.getFireInputs().size());
-        channels.addAll(staticAttr.getTargetInputs());
+        List<String> channels = new ArrayList<>(staticAttr.getAimInputs().size() + staticAttr.getFireInputs().size());
+        channels.addAll(staticAttr.getAimInputs());
         channels.addAll(staticAttr.getFireInputs());
         return channels;
     }

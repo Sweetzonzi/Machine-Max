@@ -7,7 +7,7 @@
     "yr": {
       "lower_limit": 0.0,
       "upper_limit": 80.0,
-      "damping": 100
+      "damping": 5700
     }
   }
 }

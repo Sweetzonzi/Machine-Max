@@ -100,7 +100,7 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     public static TreeMap<Float, Float> createDefaultMaxDriftAngularVelocityMap() {
         TreeMap<Float, Float> map = new TreeMap<>();
-        map.put(0.0f, 1.0f); // 默认最大漂移角速度 1 rad/s
+        map.put(0.0f, 57.3f); // 默认最大漂移角速度 57.3 °/s
         return map;
     }
 

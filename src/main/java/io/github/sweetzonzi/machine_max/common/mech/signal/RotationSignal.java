@@ -5,7 +5,7 @@ import com.jme3.math.Vector3f;
 /**
  * 三轴旋转信号，单位弧度。<br>
  * x = pitch(俯仰), y = yaw(偏航), z = roll(横滚)。<br>
- * 用于火控子系统 → 炮塔驱动子系统的目标角度传递，以及炮塔驱动子系统的角度反馈。
+ * 用于武器控制器子系统 → 炮塔驱动子系统的目标角度传递，以及炮塔驱动子系统的角度反馈。
  */
 public class RotationSignal extends Signal<Vector3f> {
 

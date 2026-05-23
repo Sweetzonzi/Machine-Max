@@ -1,78 +1,78 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/connector/connector_attr.schema.json",
-  "title": "连接点属性",
-  "description": "定义部件连接点的属性，包括位置、定义ID、信号传输等。连接点用于部件之间的物理连接和信号传递。静态属性通过definition字段引用预定义的连接点类型。",
+  "title": "Connection Point Attributes",
+  "description": "Defines the attributes of part connection points, including position, definition ID, signal transmission, etc. Connection points are used for physical connections and signal transmission between parts. Static attributes are referenced through the definition field to predefined connection point types.",
   "type": "object",
   "properties": {
     "locator": {
       "type": "string",
-      "description": "连接点对应的Locator名称，会寻找名称匹配的Locator，以其位置与姿态作为连接点的位置和姿态。"
+      "description": "Locator name corresponding to the connection point, will search for Locators with matching names, using their position and orientation as the connection point's position and orientation."
     },
     "definition": {
       "type": "string",
-      "description": "连接点定义ID，引用预定义的连接点静态属性。例如：\"machine_max:simple_connector\"。"
+      "description": "Connection point definition ID, references predefined connection point static attributes. For example: \"machine_max:simple_connector\"."
     },
     "power_target": {
       "type": "string",
-      "description": "对侧连接器传入的机械能在本零件内的接收目标（子系统名或连接点名）。设置后该连接点可作为机械能传输通道，将对侧传入的机械能转发至本零件内的目标。例如：\"subsystem.machine_max.engine\"。"
+      "description": "Local target (subsystem or connector name) that receives mechanical energy from the opposite side's connector. When set, this connector acts as a mechanical energy transmission channel, forwarding incoming power to the specified local target. For example: \"subsystem.machine_max.engine\"."
     },
     "overwrite": {
       "type": "object",
-      "description": "连接点属性覆写。可按需覆写definition指向的静态连接点属性。",
+      "description": "Connection point attribute overwrite. Can overwrite static connection point attributes pointed to by definition as needed.",
       "properties": {
         "type": {
           "type": "string",
           "enum": ["Simple", "simple", "advanced", "Advanced"],
-          "description": "连接点类型覆写。"
+          "description": "Connection point type overwrite."
         },
         "direction": {
           "$ref": "../../../base/axis.schema.json",
-          "description": "连接点法线方向覆写。"
+          "description": "Connection point normal direction overwrite."
         },
         "integrity": {
           "type": "number",
           "minimum": 0.0,
-          "description": "结构完整性覆写。"
+          "description": "Structural integrity overwrite."
         },
         "impact_absorption": {
           "type": "number",
           "minimum": 0.0,
-          "description": "冲击转结构损耗比例覆写。"
+          "description": "Impact to structural loss ratio overwrite."
         },
         "impact_reduction": {
           "type": "number",
           "minimum": 0.0,
-          "description": "冲击减免值覆写。"
+          "description": "Impact reduction value overwrite."
         },
         "impact_multiplier": {
           "type": "number",
           "minimum": 0.0,
-          "description": "冲击倍率覆写。"
+          "description": "Impact multiplier overwrite."
         },
         "collide_between_parts": {
           "type": "boolean",
-          "description": "是否允许部件间碰撞覆写。"
+          "description": "Whether to allow collision between parts overwrite."
         },
         "required_tags": {
           "type": "array",
           "items": { "$ref": "../../../base/resource_location.schema.json" },
-          "description": "必需标签覆写。"
+          "description": "Required tags overwrite."
         },
         "acceptable_tags": {
           "type": "array",
           "items": { "$ref": "../../../base/resource_location.schema.json" },
-          "description": "可接受标签覆写。"
+          "description": "Acceptable tags overwrite."
         },
         "forbidden_tags": {
           "type": "array",
           "items": { "$ref": "../../../base/resource_location.schema.json" },
-          "description": "禁止标签覆写。"
+          "description": "Forbidden tags overwrite."
         },
         "joint_attrs": {
           "type": "object",
           "additionalProperties": { "$ref": "joint_attr.schema.json" },
-          "description": "关节属性覆写。"
+          "description": "Joint attributes overwrite."
         }
       },
       "additionalProperties": false
@@ -81,7 +81,7 @@
       "type": "object",
       "additionalProperties": { "type": "string" },
       "default": {},
-      "description": "从对侧连接点接收到的信号频道转译规则，例如：{\"channel_a\": \"channel_c\"}表示将channel_a信号转译为channel_c。"
+      "description": "Signal channel translation rules received from the opposite connection point, for example: {\"channel_a\": \"channel_c\"} means translating channel_a signal to channel_c."
     },
     "signal_targets": {
       "type": "object",
@@ -90,12 +90,12 @@
         "items": { "type": "string" }
       },
       "default": {},
-      "description": "连接点在本零件内的控制信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/vehicle）。例如：{\"move_control\": [\"car_controller\", \"engine\"]}。"
+      "description": "Control signal transmission targets of the connection point within this part, key is signal channel, value is target list (subsystem/connection point name/part/vehicle). For example: {\"move_control\": [\"car_controller\", \"engine\"]}."
     },
     "internal": {
       "type": "boolean",
       "default": false,
-      "description": "是否为部件内部连接点。为true时仅用于同一Part内部自动连接，不参与对外拼装。"
+      "description": "Whether this is an internal connector. When true, it is only used for automatic pairing within the same Part and is not exposed for outward assembly."
     }
   },
   "required": ["locator", "definition"],

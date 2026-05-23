@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/base/resource_location.json",
-  "title": "资源位置",
-  "description": "Minecraft 资源位置标识符，格式为 '命名空间:路径'",
+  "title": "Resource Location",
+  "description": "Minecraft resource location identifier, format is 'namespace:path'",
   "type": "string",
   "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
   "examples": [

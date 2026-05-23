@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/hit_box/modifier/damage_modifier.json",
-  "title": "伤害修改器",
-  "description": "包含多个修改器条目的列表，按顺序应用。每个修改器条目根据条件决定是否生效。",
+  "title": "Damage Modifier",
+  "description": "A list containing multiple modifier entries, applied in sequence. Each modifier entry determines whether to take effect based on conditions.",
   "type": "array",
   "items": {
     "$ref": "modifier_entry.schema.json"

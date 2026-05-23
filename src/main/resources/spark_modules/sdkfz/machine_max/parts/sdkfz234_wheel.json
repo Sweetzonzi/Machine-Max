@@ -15,6 +15,7 @@
         "sub_part.machine_max.main": {
           "start_bone": "LeftWheel_1",
           "end_bones": [],
+          "durability": 50,
           "projected_area": [
             -1,
             -1,
@@ -56,6 +57,7 @@
         "sub_part.machine_max.main": {
           "start_bone": "RightWheel_1",
           "end_bones": [],
+          "durability": 50,
           "projected_area": [
             -1,
             -1,

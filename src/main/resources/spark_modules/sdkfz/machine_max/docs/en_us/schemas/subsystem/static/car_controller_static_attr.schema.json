@@ -1,45 +1,45 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/static/car_controller_static_attr.json",
-  "title": "车辆控制器子系统静态属性",
-  "description": "车辆控制系统的静态属性，负责处理驾驶输入、转向控制等。",
+  "title": "Vehicle Controller Subsystem Static Attributes",
+  "description": "Static attributes of the vehicle control system, responsible for handling driving inputs, steering control, etc.",
   "properties": {
     "$schema": {
       "type": "string",
-      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
-      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
     },
     "type": {
       "type": "string",
       "const": "machine_max:car_controller",
-      "description": "子系统类型，必须为'machine_max:car_controller'。"
+      "description": "Subsystem type, must be 'machine_max:car_controller'."
     },
     "basic_durability": {
       "type": "number",
       "minimum": 0,
       "default": 20.0,
-      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+      "description": "Subsystem basic durability, becomes paralyzed when reduced to 0, restores functionality when repaired to 30% durability."
     },
     "pass_damage": {
       "type": "boolean",
       "default": true,
-      "description": "是否传递伤害至子系统持有者。若为true，子系统受到的伤害会传递给零件。"
+      "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem will be transferred to the sub-part."
     },
     "limit_damage": {
       "type": "boolean",
       "default": false,
-      "description": "是否限制伤害传递值至子系统剩余耐久度。例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者。"
+      "description": "Whether to limit damage transfer value to the subsystem's remaining durability. For example, 40 damage with 20 remaining durability will only transfer 20 damage to the holder."
     },
     "hidden": {
       "type": "boolean",
       "default": false,
-      "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
+      "description": "Whether to hide the subsystem in HUD displays, commonly used for purely providing model part damage differentiation for non-functional subsystems"
     },
     "min_steering_radius": {
       "type": "number",
       "minimum": 0,
       "default": 5.0,
-      "description": "最小转向半径，单位米。用于低速时的转向限制。"
+      "description": "Minimum steering radius, in meters. Used for steering limits at low speeds and when handbrake is applied."
     },
     "lateral_acceleration": {
       "oneOf": [
@@ -47,7 +47,7 @@
           "type": "number",
           "minimum": 0,
           "default": 8.0,
-          "description": "侧向加速度限制，单位m/s²。用于根据速度实时计算转向半径（半径 = 速度² / 加速度）。"
+          "description": "Lateral acceleration limit, in m/s². Used to calculate steering radius in real-time based on speed (radius = speed² / acceleration)."
         },
         {
           "type": "object",
@@ -55,7 +55,7 @@
             "type": "number",
             "minimum": 0
           },
-          "description": "速度-侧向加速度映射表，键为速度（km/h），值为对应的侧向加速度限制（m/s²）。线性插值。",
+          "description": "Speed-lateral acceleration mapping table, where keys are speed (km/h) and values are corresponding lateral acceleration limits (m/s²). Supports linear interpolation.",
           "examples": [
             {
               "0": 8.0,
@@ -67,15 +67,15 @@
         }
       ],
       "default": 8.0,
-      "description": "侧向加速度限制，单位m/s²。用于根据速度实时计算转向半径（半径 = 速度² / 加速度）。"
+      "description": "Lateral acceleration limit, in m/s². Used to calculate steering radius in real-time based on speed (radius = speed² / acceleration)."
     },
     "max_drift_angular_velocity": {
       "oneOf": [
         {
           "type": "number",
           "minimum": 0,
-          "default": 1.0,
-          "description": "最大漂移角速度，单位rad/s。作为漂移时PD控制器的目标值。"
+          "default": 57.3,
+          "description": "Maximum drift angular velocity, in °/s. Used as the target value for PD controller during drifting."
         },
         {
           "type": "object",
@@ -83,47 +83,47 @@
             "type": "number",
             "minimum": 0
           },
-          "description": "速度-最大漂移角速度映射表，键为速度（km/h），值为对应的最大漂移角速度（rad/s）。线性插值。",
+          "description": "Speed-maximum drift angular velocity mapping table, where keys are speed (km/h) and values are corresponding maximum drift angular velocity (°/s). Supports linear interpolation.",
           "examples": [
             {
-              "0": 0.8,
-              "30": 1.0,
-              "60": 1.2,
-              "100": 1.5
+              "0": 45.8,
+              "30": 57.3,
+              "60": 68.8,
+              "100": 85.9
             }
           ]
         }
       ],
-      "default": 1.0,
-      "description": "最大漂移角速度，单位rad/s。作为漂移时PD控制器的目标值。"
+      "default": 57.3,
+      "description": "Maximum drift angular velocity, in °/s. Used as the target value for PD controller during drifting."
     },
     "manual_gear_shift": {
       "type": "boolean",
       "default": false,
-      "description": "是否启用手动换挡。若为false，则自动换挡。"
+      "description": "Whether to enable manual gear shifting. If false, automatic shifting is used."
     },
     "auto_hand_brake": {
       "type": "boolean",
       "default": true,
-      "description": "是否自动启用手刹。当车辆静止且无输入时自动应用手刹。"
+      "description": "Whether to automatically apply handbrake. Automatically applies handbrake when vehicle is stationary and no input is given."
     },
     "drift_assist": {
       "type": "boolean",
       "default": true,
-      "description": "是否启用漂移辅助。当车辆转向时自动辅助维持漂移状态。"
+      "description": "Whether to enable drift assist. Automatically assists in maintaining drift state when the vehicle is turning."
     },
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
       "default": ["move_control"],
-      "description": "控制输入信号键列表，优先级从高到低。"
+      "description": "List of control input signal keys, from highest to lowest priority."
     },
     "sounds": {
       "type": "object",
       "properties": {
         "on_destroyed": {
           "$ref": "../../base/sound_event.schema.json",
-          "description": "子系统被摧毁时的音效事件。",
+          "description": "Sound event when the subsystem is destroyed.",
           "default": {
             "sound_id": "machine_max:empty_sound",
             "range": 16
@@ -131,7 +131,7 @@
         },
         "on_activate": {
           "$ref": "../../base/sound_event.schema.json",
-          "description": "子系统被激活时的音效事件。",
+          "description": "Sound event when the subsystem is activated.",
           "default": {
             "sound_id": "machine_max:empty_sound",
             "range": 16
@@ -139,7 +139,7 @@
         },
         "handbrake_on": {
           "$ref": "../../base/sound_event.schema.json",
-          "description": "手刹开启时的音效事件。",
+          "description": "Sound event for handbrake engagement.",
           "default": {
             "sound_id": "machine_max:subsystem.car_controller.handbrake_on",
             "range": 16
@@ -147,7 +147,7 @@
         },
         "handbrake_off": {
           "$ref": "../../base/sound_event.schema.json",
-          "description": "手刹关闭时的音效事件。",
+          "description": "Sound event for handbrake disengagement.",
           "default": {
             "sound_id": "machine_max:subsystem.car_controller.handbrake_off",
             "range": 16
@@ -155,7 +155,7 @@
         }
       },
       "additionalProperties": false,
-      "description": "手刹操作音效配置。"
+      "description": "Sound configuration for handbrake operations."
     }
   },
   "required": ["type"],
@@ -163,7 +163,7 @@
   "examples": [
     {
       "type": "machine_max:car_controller",
-      "description": "最简示例 - 仅包含必须字段"
+      "description": "Minimal example - only required fields"
     },
     {
       "type": "machine_max:car_controller",
@@ -175,7 +175,7 @@
       "auto_hand_brake": true,
       "drift_assist": true,
       "control_inputs": ["move_control", "regular_control"],
-      "description": "完整示例 - 包含所有可选字段"
+      "description": "Complete example - includes all optional fields"
     },
     {
       "type": "machine_max:car_controller",
@@ -197,7 +197,7 @@
       "auto_hand_brake": true,
       "drift_assist": false,
       "control_inputs": ["move_control"],
-      "description": "高级示例 - 使用映射表配置，禁用漂移辅助"
+      "description": "Advanced example - using mapping tables, drift assist disabled"
     }
   ]
 }

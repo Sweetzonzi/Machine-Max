@@ -1,0 +1,10 @@
+{
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+  "type": "machine_max:turret_driver", //炮塔驱动器，可配置方向机(Yaw)和/或高低机(Pitch)轴
+  "basic_durability": 150, //高低机耐久度，支撑炮管俯仰运动
+  "pitch": { //俯仰轴（高低机），垂直方向俯仰驱动参数
+    "max_force": 35000, //最大驱动力矩(N·m)，35kN·m足以支撑炮管/发射器俯仰
+    "max_speed": 30.0 //最大角速度(°/s)，30°/s为典型俯仰速度，低于回转速度保证瞄准稳定性
+  },
+  "control_inputs": ["weapon_control"] //(可选, 默认["weapon_control"])控制信号输入频道，接收武器控制器下发的RotationSignal
+}

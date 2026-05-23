@@ -1,46 +1,46 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/motorbike_controller_dynamic_attr.json",
-  "title": "摩托车控制器子系统动态属性",
-  "description": "车辆控制器的动态属性，定义信号输出目标和控制关系。",
+  "title": "Motorbike Controller Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the motorbike controller, defining signal output targets and control relationships.",
   "properties": {
     "type": {
       "type": "string",
       "const": "machine_max:motorbike_controller",
-      "description": "子系统类型，必须为'machine_max:motorbike_controller'。"
+      "description": "Subsystem type, must be 'machine_max:motorbike_controller'."
     },
     "definition": {
       "type": "string",
-      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
     },
     "control_outputs": {
       "$ref": "../base/signal_targets.json",
-      "description": "统一控制信号输出频道及目标。引擎/电动机/变速箱/车轮等受控子系统均通过此通道进行握手和信号传输。"
+      "description": "Unified control signal output channel and targets. All controlled subsystems (engine/motor/gearbox/wheel) are discovered and signaled through this channel."
     },
     "speed_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": { "vehicle_speed": ["subpart", "vehicle"] },
-      "description": "移动速度信号输出频道及目标。可选，默认将移动速度(m/s)发至部件和载具的vehicle_speed频道。"
+      "description": "Movement speed signal output channel and targets. Optional, by default sends movement speed (m/s) to the vehicle_speed channel of parts and vehicles."
     },
     "throttle_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": { "throttle": ["subpart", "vehicle"] },
-      "description": "油门信号输出频道及目标。可选，默认将油门[0,1]发至部件和载具的throttle频道。"
+      "description": "Throttle signal output channel and targets. Optional, by default sends throttle [0,1] to the throttle channel of parts and vehicles."
     },
     "brake_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": { "brake": ["subpart", "vehicle"] },
-      "description": "制动信号输出频道及目标。可选，默认将制动程度[0,1]发至部件和载具的brake频道。"
+      "description": "Brake signal output channel and targets. Optional, by default sends brake level [0,1] to the brake channel of parts and vehicles."
     },
     "steering_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": { "steering": ["subpart", "vehicle"] },
-      "description": "转向角度信号输出频道及目标。可选，默认将转向程度[-1,1]发至部件和载具的steering频道。"
+      "description": "Steering angle signal output channel and targets. Optional, by default sends steering level [-1,1] to the steering channel of parts and vehicles."
     },
     "handbrake_outputs": {
       "$ref": "../base/signal_targets.json",
       "default": { "handbrake": ["subpart", "vehicle"] },
-      "description": "手刹器开关信号输出频道及目标。可选，默认将手刹程度[0,1]发至部件和载具的handbrake频道。"
+      "description": "Handbrake switch signal output channel and targets. Optional, by default sends handbrake level [0,1] to the handbrake channel of parts and vehicles."
     }
   },
   "required": ["type", "definition", "control_outputs"],

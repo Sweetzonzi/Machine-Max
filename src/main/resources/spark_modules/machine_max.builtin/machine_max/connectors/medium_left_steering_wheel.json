@@ -17,8 +17,8 @@
     "yr": { //转向轴(旋转), 绕法线方向的扭转弹簧阻尼器
       "lower_limit": -35.0, //下限(度)
       "upper_limit": 35.0, //上限(度)
-      "stiffness": 4000, //刚度系数(N·m/rad)
-      "damping": 25 //阻尼系数(N·m·s/rad)
+      "stiffness": 229200, //刚度系数(N·m/度)
+      "damping": 1433 //阻尼系数(N·m·s/度)
     }
   }
 }

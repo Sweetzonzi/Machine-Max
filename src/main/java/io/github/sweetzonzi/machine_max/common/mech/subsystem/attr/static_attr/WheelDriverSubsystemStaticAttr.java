@@ -46,11 +46,11 @@ public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                     10000f,
                     3500f,
                     0f,
-                    3140f
+                    30000f
             )).forGetter(WheelDriverSubsystemStaticAttr::getRollingAxis),
             StaticWheelSteeringAxisAttr.CODEC.optionalFieldOf("steering", new StaticWheelSteeringAxisAttr(
                     2000f,
-                    3.14f
+                    180f
             )).forGetter(WheelDriverSubsystemStaticAttr::getSteeringAxis),
             Codec.BOOL.optionalFieldOf("abs_enabled", false).forGetter(WheelDriverSubsystemStaticAttr::isAbsEnabled),
             Codec.FLOAT.optionalFieldOf("abs_target_slip_ratio", 0.15f).forGetter(WheelDriverSubsystemStaticAttr::getAbsTargetSlipRatio),
@@ -100,13 +100,13 @@ public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float maxForce,
             float maxBrakeForce,
             float maxHandBrakeForce,
-            float maxSpeed
+            float maxRpm
     ) {
         public static final Codec<StaticWheelRollingAxisAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.FLOAT.optionalFieldOf("max_drive_force", 10000f).forGetter(StaticWheelRollingAxisAttr::maxForce),
                 Codec.FLOAT.optionalFieldOf("max_brake_force", 3500f).forGetter(StaticWheelRollingAxisAttr::maxBrakeForce),
                 Codec.FLOAT.optionalFieldOf("max_hand_brake_force", 0f).forGetter(StaticWheelRollingAxisAttr::maxHandBrakeForce),
-                Codec.FLOAT.optionalFieldOf("max_speed", 3140f).forGetter(StaticWheelRollingAxisAttr::maxSpeed)
+                Codec.FLOAT.optionalFieldOf("max_rpm", 30000f).forGetter(StaticWheelRollingAxisAttr::maxRpm)
         ).apply(instance, StaticWheelRollingAxisAttr::new));
     }
 
@@ -116,7 +116,7 @@ public class WheelDriverSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     ) {
         public static final Codec<StaticWheelSteeringAxisAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.FLOAT.optionalFieldOf("max_force", 2000f).forGetter(StaticWheelSteeringAxisAttr::maxForce),
-                Codec.FLOAT.optionalFieldOf("max_speed", 3.14f).forGetter(StaticWheelSteeringAxisAttr::maxSpeed)
+                Codec.FLOAT.optionalFieldOf("max_speed", 180f).forGetter(StaticWheelSteeringAxisAttr::maxSpeed)
         ).apply(instance, StaticWheelSteeringAxisAttr::new));
     }
 }

@@ -155,13 +155,12 @@ public class PartItem extends Item implements ICustomModelItem, PartAssemblyItem
                 } else {
                     message.append("未选中可用的部件接口，右键将直接放置零件");
                     if (VisualEffectHelper.partToPlace != null) {
-                        LivingEntity livingEntity = (LivingEntity) entity;
                         Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(cache.getAttachRotation() - entity.getYRot()));
                         VisualEffectHelper.partToPlace.updateTransform(
                                 new Transform(
                                         PhysicsHelperKt.toBVector3f(level.clip(new ClipContext(
                                                 entity.getEyePosition(),
-                                                entity.getEyePosition().add(entity.getViewVector(1).scale(livingEntity.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
+                                                entity.getEyePosition().add(entity.getViewVector(1).scale(player.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE))),
                                                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity)).getLocation()),
                                         SparkMathKt.toBQuaternion(rotation)
                                 )

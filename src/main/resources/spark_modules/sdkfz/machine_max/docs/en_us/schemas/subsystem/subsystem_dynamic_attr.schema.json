@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/subsystem_dynamic_attr.json",
-  "title": "子系统动态属性",
-  "description": "子系统动态属性的顶层架构，根据 type 字段分派到具体子系统动态属性架构。",
+  "title": "Subsystem Dynamic Attributes",
+  "description": "Top-level architecture for subsystem dynamic attributes, dispatched to specific subsystem dynamic attribute schemas based on the type field.",
   "type": "object",
   "properties": {
     "type": {
@@ -15,13 +15,12 @@
         "machine_max:gearbox",
         "machine_max:item_storage",
         "machine_max:motor",
-        "machine_max:motor_controller",
         "machine_max:seat",
         "machine_max:transmission",
         "machine_max:wheel_driver",
         "machine_max:lighting"
       ],
-      "description": "子系统类型，决定使用哪个具体的子系统架构。"
+      "description": "Subsystem type, determines which specific subsystem schema to use."
     }
   },
   "additionalProperties": true,

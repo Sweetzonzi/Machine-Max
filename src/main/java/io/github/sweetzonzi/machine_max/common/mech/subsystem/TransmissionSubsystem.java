@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.IMechPowerProducer;
 import io.github.sweetzonzi.machine_max.common.mech.energy.MechPower;
@@ -158,7 +159,7 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
         Map<String, Float> weights = new HashMap<>();
         for (var entry : feedbacks.entrySet()) {
             String name = entry.getKey();
-            float speed = -entry.getValue();
+            float speed = (float) (0.8 * entry.getValue() + 0.2 * inputSpeed);
             float weight;
             if (Math.signum(speed * inputSpeed) >= 0) {
                 weight = 1f;
@@ -180,8 +181,8 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
             if (gearRatio == null || gearRatio == 0f) continue;
             float weight = weights.get(name);
             float power = totalPower * weight / totalWeight;
-            float speed = -0.995f * entry.getValue() + 0.005f * inputSpeed;
-            if (speed == 0f) speed = 0.005f * inputSpeed;
+            float speed = 0.8f * entry.getValue() + 0.2f * inputSpeed;
+            if (speed == 0f) speed = 0.2f * inputSpeed;
             outputs.put(name, new MechPower(power, speed / gearRatio));
         }
         pushMechPower(outputs);
@@ -200,18 +201,18 @@ public class TransmissionSubsystem extends BasicSubsystem implements IMechPowerC
         }
         float receiverTotalSpeed = 0.0F;
         for (float speed : feedbacks.values()) {
-            receiverTotalSpeed -= speed;
+            receiverTotalSpeed += speed;
         }
         receiverTotalSpeed += 0.005f * inputSpeed;
-        if (receiverTotalSpeed == 0f) receiverTotalSpeed = 0.005f * inputSpeed;
+        if (receiverTotalSpeed == 0f) receiverTotalSpeed = 0.2f * inputSpeed;
         float torque = totalPower / receiverTotalSpeed;
         Map<String, MechPower> outputs = new HashMap<>();
         for (var entry : feedbacks.entrySet()) {
             String name = entry.getKey();
             Float gearRatio = attr.getPowerOutputs().get(name);
             if (gearRatio == null || gearRatio == 0f) continue;
-            float receiverSpeed = -0.99f * entry.getValue() + 0.01f * inputSpeed;
-            if (receiverSpeed == 0f) receiverSpeed = 0.01f * inputSpeed;
+            float receiverSpeed = 0.8f * entry.getValue() + 0.2f * inputSpeed;
+            if (receiverSpeed == 0f) receiverSpeed = 0.2f * inputSpeed;
             float power = torque * receiverSpeed;
             outputs.put(name, new MechPower(power, receiverSpeed / gearRatio));
         }

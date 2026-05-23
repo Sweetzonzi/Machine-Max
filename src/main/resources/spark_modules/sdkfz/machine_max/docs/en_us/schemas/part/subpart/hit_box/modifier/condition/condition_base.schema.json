@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/hit_box/modifier/condition/condition_base.json",
-  "title": "条件基础",
-  "description": "伤害修改器的条件判断基础结构。所有条件类型都必须包含 'type' 字段。",
+  "title": "Condition Base",
+  "description": "Base structure for damage modifier condition judgment. All condition types must include the 'type' field.",
   "type": "object",
   "properties": {
     "type": {
@@ -17,7 +17,7 @@
         "or",
         "not"
       ],
-      "description": "条件类型。always: 总是满足；damage_type: 伤害类型匹配；damage_tag: 伤害标签匹配；entity_type: 实体类型匹配；entity_tag: 实体标签匹配；and: 所有子条件满足；or: 任意子条件满足；not: 不满足子条件。"
+      "description": "Condition type. always: always satisfied; damage_type: damage type matches; damage_tag: damage tag matches; entity_type: entity type matches; entity_tag: entity tag matches; and: all sub-conditions satisfied; or: any sub-condition satisfied; not: sub-condition not satisfied."
     }
   },
   "required": ["type"],

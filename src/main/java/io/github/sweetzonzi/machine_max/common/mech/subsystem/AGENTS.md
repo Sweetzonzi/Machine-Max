@@ -23,7 +23,7 @@ subsystem/
 ├── TurretDriverSubsystem.java          # Azimuth/elevation servos
 ├── CarControllerSubsystem.java         # Interprets player input
 ├── MotorbikeControllerSubsystem.java   # Motorcycle controls
-├── FireControlSubsystem.java           # Targeting + fire commands
+├── WeaponControllerSubsystem.java      # Targeting + fire commands
 ├── SignalConvertSubsystem.java         # Signal renaming/mapping
 ├── SeatSubsystem.java                  # Passenger mount, input routing
 ├── BatterySubsystem.java               # Energy storage

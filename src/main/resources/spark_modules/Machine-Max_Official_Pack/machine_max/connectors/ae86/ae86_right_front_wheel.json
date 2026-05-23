@@ -23,15 +23,15 @@
     "yr": {
       "lower_limit": -45.0,
       "upper_limit": 45.0,
-      "stiffness": 4000,
-      "damping": 20
+      "stiffness": 229000,
+      "damping": 1150
     },
     "zr": {//注意另一边的方向相反, 因此上下界也相反
       "lower_limit": -15.0,
       "upper_limit": -1.0,
       "equilibrium": -1.0,
-      "stiffness": 50000,
-      "damping": 1000
+      "stiffness": 2865000,
+      "damping": 57300
     }
   }
 }

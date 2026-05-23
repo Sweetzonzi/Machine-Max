@@ -1,13 +1,13 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/part/subpart/interact_box_attr.schema.json",
-  "title": "交互箱属性",
-  "description": "定义交互箱的属性，用于玩家与部件的交互。交互箱通常对应模型中的骨骼，当玩家点击时触发信号。",
+  "title": "Interaction Box Attributes",
+  "description": "Defines the attributes of an interaction box, used for player interaction with parts. The interaction box typically corresponds to bones in the model, triggering signals when the player clicks.",
   "type": "object",
   "properties": {
     "bone": {
       "type": "string",
-      "description": "交互区对应的骨骼名称，模型中的骨骼将作为交互区域。"
+      "description": "Bone name corresponding to the interaction area, bones in the model will serve as the interaction area."
     },
     "signal_targets": {
       "type": "object",
@@ -15,19 +15,19 @@
         "type": "array",
         "items": { "type": "string" }
       },
-      "description": "信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/vehicle）。例如：{\"door_interact\": [\"door_controller\"]}。"
+      "description": "Signal transmission targets, key is signal channel, value is target list (subsystem/connection point name/part/vehicle). For example: {\"door_interact\": [\"door_controller\"]}."
     },
     "interact_mode": {
       "type": "string",
       "enum": ["fast", "accurate"],
       "default": "fast",
-      "description": "交互模式。fast：快速交互，仅需要玩家与交互区相交；accurate：需要玩家瞄准交互区。二者中accurate优先级高于fast。"
+      "description": "Interaction mode. fast: quick interaction, only requires player to intersect with the interaction area; accurate: requires player to aim at the interaction area. Between the two, accurate has higher priority than fast."
     },
     "condition": {
       "type": "string",
       "enum": ["AND", "OR", "NAND", "NOR", "XOR", "XNOR"],
       "default": "NOR",
-      "description": "交互区可用的条件，AND: 所有输入信号都不为0；OR: 任意一个输入信号不为0；NAND: 所有输入信号都为0；NOR: 任意一个输入信号为0；XOR: 只有一个输入信号为1；XNOR: 只有一个输入信号为0。"
+      "description": "Conditions for interaction area availability, AND: all input signals are non-zero; OR: any input signal is non-zero; NAND: all input signals are zero; NOR: any input signal is zero; XOR: only one input signal is 1; XNOR: only one input signal is 0."
     }
   },
   "required": ["bone", "signal_targets"],
@@ -39,7 +39,7 @@
         "door_interact": ["door_controller"]
       },
       "condition": "NOR",
-      "description": "门把手交互箱，触发门控制器"
+      "description": "Door handle interaction box, triggers door controller"
     },
     {
       "bone": "Lever",
@@ -48,7 +48,7 @@
       },
       "interact_mode": "toggle",
       "condition": "OR",
-      "description": "控制杆交互箱，切换引擎和灯光状态"
+      "description": "Lever interaction box, toggles engine and light status"
     }
   ]
 }

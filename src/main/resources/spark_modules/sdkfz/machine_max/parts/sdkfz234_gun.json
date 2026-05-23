@@ -1,0 +1,68 @@
+{
+  "variants": {
+    "sdkfz234_2_gun": {
+      "model": "machine_max:sdkfz234_2.geo",
+      "textures": {
+        "default": "machine_max:textures/part/sdkfz234/puma_2.png",
+        "print.machine_max.dessert": "machine_max:textures/part/sdkfz234/puma_1.png"
+      },
+      "tags": [
+        "machine_max:weapon",
+        "machine_max:land"
+      ],
+      "sub_parts": {
+        "sub_part.machine_max.main": {
+          "start_bone": "AllGun",
+          "end_bones": [],
+          "durability": 200,
+          "mass": 300,
+          "projected_area": [
+            -1,
+            -1,
+            -1
+          ],
+          "hit_boxes": {
+            "BarrelHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 20
+            },
+            "GunShieldHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:rha",
+              "thickness": 30
+            },
+            "BreechblockHitBox": {
+              "id": "part",
+              "type": "box",
+              "material": "machine_max:structural_steel",
+              "thickness": 40
+            }
+          },
+          "connectors": {
+            "connector.machine_max.gun_turret_axis": {
+              "locator": "gun_turret_axis",
+              "definition": "machine_max:fixed_back",
+              "signal_targets": {
+                "weapon_control": [
+                  "subsystem.machine_max.launcher"
+                ]
+              },
+              "overwrite": {}
+            }
+          },
+          "subsystems": {
+            "subsystem.machine_max.launcher": {
+              "type": "machine_max:launcher",
+              "definition": "machine_max:basic_launcher",
+              "locator": "muzzle"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json"
+}
