@@ -3,13 +3,13 @@
         "name": "base",
         "control_mode": "inherit",
         "move_targets": {
-            "move_control": ["connector.machine_max.chassis_connection"]
+            "move_input": ["connector.machine_max.chassis_connection"]
         },
         "view_targets": {
-            "aim_control": ["connector.machine_max.chassis_connection"]
+            "aim_input": ["connector.machine_max.chassis_connection"]
         },
         "regular_targets": {
-            "regular_control": ["connector.machine_max.chassis_connection"]
+            "regular_input": ["connector.machine_max.chassis_connection"]
         },
         "bindings": []
     }

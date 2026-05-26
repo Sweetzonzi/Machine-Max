@@ -5,7 +5,7 @@
   "min_steering_radius": 3.5,
   "lateral_acceleration": 20.0,
   "max_drift_angular_velocity": 103.1,
-  "control_inputs": ["move_control"],
+  "control_inputs": ["move_input"],
   "max_angle": 35.0,
   "parking_angle": 5.0
 }

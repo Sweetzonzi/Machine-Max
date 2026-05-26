@@ -4,6 +4,6 @@
   "basic_durability": 100,
   "fire_mode": "SALVO", //(可选, 默认SALVO)射击模式: SALVO(齐射) / RIPPLE(轮射)
   "aim_tolerance_deg": 3.0, //(可选, 默认3.0)瞄准容差角度(°)。发射器指向与目标偏差小于此值时允许开火，设为大于180(如360)则禁用容差检查
-  "aim_inputs": ["aim_control"], //目标坐标输入频道，接收CameraSubsystem或SeatSubsystem的ViewInputSignal
-  "fire_inputs": ["regular_control"] //开火指令输入频道，接收按键触发的开火信号
+  "aim_inputs": ["aim_input"], //目标坐标输入频道，接收CameraSubsystem或SeatSubsystem的ViewInputSignal
+  "fire_inputs": ["regular_input"] //开火指令输入频道，接收按键触发的开火信号
 }

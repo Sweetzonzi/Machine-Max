@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/weapon_controller_static_attr.json",
+  "title": "武器控制器子系统静态属性",
+  "description": "武器控制器子系统的静态属性，定义射击模式、瞄准容差、输入频道等硬件参数。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:weapon_controller",
+      "description": "子系统类型，必须为'machine_max:weapon_controller'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否传递伤害至子系统持有者。若为true，子系统受到的伤害会传递给零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值至子系统剩余耐久度。例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
+    },
+    "fire_mode": {
+      "type": "string",
+      "enum": ["SALVO", "RIPPLE"],
+      "default": "SALVO",
+      "description": "射击模式：SALVO(齐射) — 所有已瞄准的发射器同时开火；RIPPLE(轮射) — 发射器按顺序依次开火。"
+    },
+    "ripple_interval_tick": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 2,
+      "description": "轮射模式下每两次发射之间的间隔（tick数）。仅在fire_mode为RIPPLE时生效。"
+    },
+    "aim_tolerance_deg": {
+      "type": "number",
+      "minimum": 0,
+      "default": 3.0,
+      "description": "瞄准容差角度（度）。发射器指向与目标方向偏差小于此值时允许开火。设为大于180（如360）则禁用容差检查。"
+    },
+    "aim_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "瞄准目标坐标输入频道列表，从任一频道读取Vec3世界坐标。通常接收CameraSubsystem或SeatSubsystem的ViewInputSignal。"
+    },
+    "fire_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "开火指令输入频道列表，任一频道有非EmptySignal即视为开火指令。通常接收按键触发的开火信号。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "武器控制器子系统的音效配置。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:weapon_controller",
+      "description": "最简示例 - 仅包含必须字段"
+    },
+    {
+      "type": "machine_max:weapon_controller",
+      "basic_durability": 100,
+      "fire_mode": "SALVO",
+      "aim_tolerance_deg": 5.0,
+      "aim_inputs": ["view_target"],
+      "fire_inputs": ["fire_command"],
+      "description": "齐射模式示例 - 标准武器控制器配置"
+    },
+    {
+      "type": "machine_max:weapon_controller",
+      "basic_durability": 80,
+      "fire_mode": "RIPPLE",
+      "ripple_interval_tick": 5,
+      "aim_tolerance_deg": 2.0,
+      "aim_inputs": ["view_target", "radar_target"],
+      "fire_inputs": ["fire_command", "auto_fire"],
+      "description": "轮射模式示例 - 支持多个目标源和开火指令源"
+    }
+  ]
+}

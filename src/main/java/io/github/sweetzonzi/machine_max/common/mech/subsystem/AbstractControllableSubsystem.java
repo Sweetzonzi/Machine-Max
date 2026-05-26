@@ -11,6 +11,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
+import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceLocation;
@@ -22,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 abstract public class AbstractControllableSubsystem extends BasicSubsystem {
-
+    @Getter
     protected ControlGroupSet controlGroupSet = ControlGroupSet.EMPTY;
 
     protected AbstractControllableSubsystem(ISubsystemHost owner, String name, BasicSubsystemDynamicAttr attr) {

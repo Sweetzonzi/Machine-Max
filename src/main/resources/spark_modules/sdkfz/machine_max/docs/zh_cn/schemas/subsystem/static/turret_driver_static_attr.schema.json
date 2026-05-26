@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/turret_driver_static_attr.json",
+  "title": "炮塔驱动子系统静态属性",
+  "description": "炮塔驱动子系统的静态属性，定义方向机(Yaw)和/或高低机(Pitch)的硬件参数。",
+  "definitions": {
+    "TurretAxisAttr": {
+      "type": "object",
+      "properties": {
+        "max_force": {
+          "type": "number",
+          "minimum": 0,
+          "description": "最大驱动力矩，单位 N·m。同时也是刹车力矩。"
+        },
+        "max_speed": {
+          "type": "number",
+          "minimum": 0,
+          "description": "最大角速度，单位 °/s。"
+        }
+      },
+      "required": ["max_force", "max_speed"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:turret_driver",
+      "description": "子系统类型，必须为'machine_max:turret_driver'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否传递伤害至子系统持有者。若为true，子系统受到的伤害会传递给零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值至子系统剩余耐久度。例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
+    },
+    "yaw": {
+      "$ref": "#/definitions/TurretAxisAttr",
+      "description": "偏航轴（方向机）配置。配置此轴后炮塔可进行水平方向回转。若省略则不启用偏航控制。"
+    },
+    "pitch": {
+      "$ref": "#/definitions/TurretAxisAttr",
+      "description": "俯仰轴（高低机）配置。配置此轴后炮塔可进行垂直方向俯仰。若省略则不启用俯仰控制。"
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["weapon_control"],
+      "description": "旋转控制信号输入频道列表，优先级从高到低。接收 RotationSignal（x=pitch, y=yaw, z=roll）。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "炮塔驱动子系统的音效配置。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:turret_driver",
+      "description": "最简示例 - 仅包含必须字段"
+    },
+    {
+      "type": "machine_max:turret_driver",
+      "basic_durability": 200,
+      "yaw": {
+        "max_force": 80000,
+        "max_speed": 45.0
+      },
+      "control_inputs": ["weapon_control"],
+      "description": "仅方向机示例 - 适用于炮塔底座"
+    },
+    {
+      "type": "machine_max:turret_driver",
+      "basic_durability": 150,
+      "pitch": {
+        "max_force": 35000,
+        "max_speed": 30.0
+      },
+      "control_inputs": ["weapon_control"],
+      "description": "仅高低机示例 - 适用于炮管俯仰"
+    },
+    {
+      "type": "machine_max:turret_driver",
+      "basic_durability": 250,
+      "yaw": {
+        "max_force": 120000,
+        "max_speed": 60.0
+      },
+      "pitch": {
+        "max_force": 50000,
+        "max_speed": 35.0
+      },
+      "control_inputs": ["weapon_control", "manual_control"],
+      "description": "完整示例 - 双轴配置，支持多个控制信号源"
+    }
+  ]
+}

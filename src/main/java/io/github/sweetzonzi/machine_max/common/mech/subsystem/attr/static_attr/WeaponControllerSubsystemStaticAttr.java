@@ -47,8 +47,8 @@ public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAtt
             FIRE_MODE_CODEC.optionalFieldOf("fire_mode", FireMode.SALVO).forGetter(WeaponControllerSubsystemStaticAttr::getDefaultFireMode),
             Codec.INT.optionalFieldOf("ripple_interval_tick", 2).forGetter(WeaponControllerSubsystemStaticAttr::getRippleIntervalTick),
             Codec.FLOAT.optionalFieldOf("aim_tolerance_deg", 3.0f).forGetter(WeaponControllerSubsystemStaticAttr::getAimToleranceDeg),
-            Codec.STRING.listOf().optionalFieldOf("aim_inputs", List.of("aim_control")).forGetter(WeaponControllerSubsystemStaticAttr::getAimInputs),
-            Codec.STRING.listOf().optionalFieldOf("fire_inputs", List.of("regular_control")).forGetter(WeaponControllerSubsystemStaticAttr::getFireInputs),
+            Codec.STRING.listOf().optionalFieldOf("aim_inputs", List.of("aim_input_p0", "aim_input_p1", "aim_input_p2", "aim_input_p3", "aim_input")).forGetter(WeaponControllerSubsystemStaticAttr::getAimInputs),
+            Codec.STRING.listOf().optionalFieldOf("fire_inputs", List.of("fire_input_p0", "fire_input_p1", "fire_input_p2", "fire_input_p3", "fire_input")).forGetter(WeaponControllerSubsystemStaticAttr::getFireInputs),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, WeaponControllerSubsystemStaticAttr::new));
 

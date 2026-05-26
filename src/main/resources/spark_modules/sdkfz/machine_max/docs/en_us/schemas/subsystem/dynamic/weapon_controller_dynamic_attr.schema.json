@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.json",
+  "title": "Weapon Controller Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the weapon controller subsystem, defining control signal output channels and other runtime configuration.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:weapon_controller",
+      "description": "Subsystem type, must be 'machine_max:weapon_controller'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "control_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Control signal output channels and target lists. The weapon controller sends control signals to turret drivers and launchers through these channels, and uses them for handshake discovery of subordinate subsystems within the same vehicle."
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:weapon_controller",
+      "definition": "machine_max:basic_weapon_controller",
+      "control_outputs": {
+        "weapon_control": [
+          "subsystem.machine_max.turret_base",
+          "subsystem.machine_max.barrel_elevation",
+          "subsystem.machine_max.main_launcher"
+        ]
+      }
+    }
+  ]
+}

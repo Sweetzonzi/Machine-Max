@@ -9,6 +9,6 @@
   "lateral_acceleration": 40,
   "max_drift_angular_velocity": 1,
   "control_inputs": [
-    "move_control"
+    "move_input"
   ]
 }

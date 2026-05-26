@@ -19,7 +19,9 @@
         "machine_max:seat",
         "machine_max:transmission",
         "machine_max:wheel_driver",
-        "machine_max:lighting"
+        "machine_max:lighting",
+        "machine_max:turret_driver",
+        "machine_max:weapon_controller"
       ],
       "description": "子系统类型，决定使用哪个具体的子系统架构。"
     }
@@ -147,6 +149,30 @@
       },
       "then": {
         "$ref": "dynamic/lighting_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:turret_driver"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/turret_driver_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:weapon_controller"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/weapon_controller_dynamic_attr.schema.json"
       }
     }
   ],

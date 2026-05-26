@@ -115,7 +115,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["move_control"],
+      "default": ["move_input"],
       "description": "控制输入信号键列表，优先级从高到低。"
     },
     "sounds": {
@@ -174,7 +174,7 @@
       "manual_gear_shift": true,
       "auto_hand_brake": true,
       "drift_assist": true,
-      "control_inputs": ["move_control", "regular_control"],
+      "control_inputs": ["move_input", "regular_input"],
       "description": "完整示例 - 包含所有可选字段"
     },
     {
@@ -196,7 +196,7 @@
       "manual_gear_shift": false,
       "auto_hand_brake": true,
       "drift_assist": false,
-      "control_inputs": ["move_control"],
+      "control_inputs": ["move_input"],
       "description": "高级示例 - 使用映射表配置，禁用漂移辅助"
     }
   ]

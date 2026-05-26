@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/turret_driver_dynamic_attr.json",
+  "title": "Turret Driver Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the turret driver subsystem, defining the controlled connector, rotation angle feedback output, and other runtime configuration.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:turret_driver",
+      "description": "Subsystem type, must be 'machine_max:turret_driver'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "connector": {
+      "type": "string",
+      "description": "Name of the controlled AdvancedConnector. The turret driver controls turret rotation through this connector's New6Dof joint."
+    },
+    "rotation_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Current joint angle feedback output channels and targets. Optional, sends current yaw/pitch angles (radians) to specified channels."
+    }
+  },
+  "required": ["type", "definition", "connector"],
+  "examples": [
+    {
+      "type": "machine_max:turret_driver",
+      "definition": "machine_max:basic_azimuth_driver",
+      "connector": "turret_joint",
+      "rotation_outputs": {
+        "turret_angle": ["subpart", "vehicle"]
+      }
+    }
+  ]
+}

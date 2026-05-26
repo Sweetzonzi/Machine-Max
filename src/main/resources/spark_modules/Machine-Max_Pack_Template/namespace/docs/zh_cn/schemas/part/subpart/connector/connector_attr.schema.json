@@ -90,7 +90,7 @@
         "items": { "type": "string" }
       },
       "default": {},
-      "description": "连接点在本零件内的控制信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/vehicle）。例如：{\"move_control\": [\"car_controller\", \"engine\"]}。"
+      "description": "连接点在本零件内的控制信号传输目标，键为信号频道，值为目标列表（子系统/连接点名/part/vehicle）。例如：{\"move_input\": [\"car_controller\", \"engine\"]}。"
     },
     "internal": {
       "type": "boolean",

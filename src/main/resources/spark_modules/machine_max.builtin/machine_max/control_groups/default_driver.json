@@ -3,13 +3,11 @@
         "name": "base",
         "control_mode": "ground",
         "move_targets": {
-            "move_control": ["vehicle"]
+            "move_input_p1": ["vehicle"]
         },
-        "view_targets": {
-            "aim_control": ["vehicle"]
-        },
+        "view_targets": {},
         "regular_targets": {
-            "regular_control": ["vehicle"]
+            "regular_input_p1": ["vehicle"]
         },
         "bindings": []
     }

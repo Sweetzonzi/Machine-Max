@@ -22,7 +22,7 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
             CarControllerSubsystemStaticAttr.STEERING_RADIUS_CODEC.optionalFieldOf("max_drift_angular_velocity", CarControllerSubsystemStaticAttr.createDefaultMaxDriftAngularVelocityMap()).forGetter(MotorbikeControllerSubsystemStaticAttr::getMaxDriftAngularVelocityMap),
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(MotorbikeControllerSubsystemStaticAttr::isManualGearShift),
             Codec.BOOL.optionalFieldOf("auto_hand_brake", true).forGetter(MotorbikeControllerSubsystemStaticAttr::isAutoHandBrake),
-            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_control")).forGetter(MotorbikeControllerSubsystemStaticAttr::getControlInputKeys),
+            Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("move_input_p0", "move_input_p1", "move_input_p2", "move_input_p3", "move_input")).forGetter(MotorbikeControllerSubsystemStaticAttr::getControlInputKeys),
             Codec.FLOAT.optionalFieldOf("max_angle", 30f).forGetter(MotorbikeControllerSubsystemStaticAttr::getMaxAngle),
             Codec.FLOAT.optionalFieldOf("parking_angle", 5f).forGetter(MotorbikeControllerSubsystemStaticAttr::getParkingAngle),
             Codec.FLOAT.optionalFieldOf("correction_force_multiplier", 1.0f).forGetter(MotorbikeControllerSubsystemStaticAttr::getCorrectionForceMultiplier),

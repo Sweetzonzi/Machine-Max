@@ -18,7 +18,9 @@
         "machine_max:seat",
         "machine_max:transmission",
         "machine_max:wheel_driver",
-        "machine_max:lighting"
+        "machine_max:lighting",
+        "machine_max:turret_driver",
+        "machine_max:weapon_controller"
       ],
       "description": "Subsystem type, determines which specific subsystem schema to use."
     }
@@ -146,6 +148,30 @@
       },
       "then": {
         "$ref": "static/lighting_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:turret_driver"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/turret_driver_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:weapon_controller"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/weapon_controller_static_attr.schema.json"
       }
     }
   ],

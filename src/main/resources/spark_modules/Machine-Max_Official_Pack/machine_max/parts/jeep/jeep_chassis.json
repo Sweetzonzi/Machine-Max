@@ -75,7 +75,7 @@
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
             "locator": "seat_point_right",
-            "control_group_preset": "machine_max:passenger",
+            "control_group_preset": "machine_max:default_passenger",
             "passenger_num_outputs": {
               "copilot_occupied": ["interact.machine_max.right_seat", "connector.machine_max.hull_connection"]
             }

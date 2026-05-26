@@ -115,7 +115,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["move_control"],
+      "default": ["move_input"],
       "description": "List of control input signal keys, from highest to lowest priority."
     },
     "sounds": {
@@ -174,7 +174,7 @@
       "manual_gear_shift": true,
       "auto_hand_brake": true,
       "drift_assist": true,
-      "control_inputs": ["move_control", "regular_control"],
+      "control_inputs": ["move_input", "regular_input"],
       "description": "Complete example - includes all optional fields"
     },
     {
@@ -196,7 +196,7 @@
       "manual_gear_shift": false,
       "auto_hand_brake": true,
       "drift_assist": false,
-      "control_inputs": ["move_control"],
+      "control_inputs": ["move_input"],
       "description": "Advanced example - using mapping tables, drift assist disabled"
     }
   ]

@@ -130,7 +130,7 @@
               "locator": "hull_turret_axis",
               "definition": "machine_max:fixed_up",
               "signal_targets": {
-                "move_control": [
+                "move_input": [
                   "subsystem.machine_max.car_controller"
                 ]
               },
@@ -282,7 +282,7 @@
               "type": "machine_max:seat",
               "definition": "machine_max:default_passenger_seat",
               "locator": "radio_seat",
-              "control_group_preset": "machine_max:passenger",
+              "control_group_preset": "machine_max:default_passenger",
               "passenger_num_outputs": {
                 "passenger_num": [
                   "subpart",

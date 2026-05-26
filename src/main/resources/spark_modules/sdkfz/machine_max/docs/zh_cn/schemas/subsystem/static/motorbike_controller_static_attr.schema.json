@@ -110,7 +110,7 @@
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
-      "default": ["move_control"],
+      "default": ["move_input"],
       "description": "控制输入信号键列表，优先级从高到低。"
     },
     "max_angle": {
@@ -168,7 +168,7 @@
       "lateral_acceleration": 8.0,
       "max_drift_angular_velocity": 2.0,
       "manual_gear_shift": false,
-      "control_inputs": ["move_control"],
+      "control_inputs": ["move_input"],
       "max_angle": 45.0,
       "parking_angle": 5.0,
       "correction_force_multiplier": 1.2

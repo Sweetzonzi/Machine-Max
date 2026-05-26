@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/weapon_controller_dynamic_attr.json",
+  "title": "武器控制器子系统动态属性",
+  "description": "武器控制器子系统的动态属性，定义控制信号输出频道等运行时配置。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:weapon_controller",
+      "description": "子系统类型，必须为'machine_max:weapon_controller'。"
+    },
+    "definition": {
+      "type": "string",
+      "description": "子系统型号的资源地址，指向对应的子系统静态属性定义文件。"
+    },
+    "control_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "控制信号输出频道及目标列表。武器控制器通过这些频道向炮塔驱动和发射器发送控制信号，同时用于握手发现并绑定同载具内的下属子系统。"
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:weapon_controller",
+      "definition": "machine_max:basic_weapon_controller",
+      "control_outputs": {
+        "weapon_control": [
+          "subsystem.machine_max.turret_base",
+          "subsystem.machine_max.barrel_elevation",
+          "subsystem.machine_max.main_launcher"
+        ]
+      }
+    }
+  ]
+}

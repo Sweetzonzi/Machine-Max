@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/turret_driver_static_attr.json",
+  "title": "Turret Driver Subsystem Static Attributes",
+  "description": "Static attributes of the turret driver subsystem, defining hardware parameters for the yaw and/or pitch axes.",
+  "definitions": {
+    "TurretAxisAttr": {
+      "type": "object",
+      "properties": {
+        "max_force": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum driving torque, in N·m. Also serves as the braking torque."
+        },
+        "max_speed": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Maximum angular velocity, in °/s."
+        }
+      },
+      "required": ["max_force", "max_speed"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:turret_driver",
+      "description": "Subsystem type, must be 'machine_max:turret_driver'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Subsystem basic durability. Becomes paralyzed at 0, restores functionality when repaired to 30%."
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem is transferred to the part."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to limit damage transfer to remaining durability. e.g. 40 damage, 20 remaining, only 20 transfers."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the subsystem in HUD, commonly used for non-functional parts that only provide damage differentiation."
+    },
+    "yaw": {
+      "$ref": "#/definitions/TurretAxisAttr",
+      "description": "Yaw axis (azimuth) configuration. Enables horizontal turret rotation. Omit to disable yaw control."
+    },
+    "pitch": {
+      "$ref": "#/definitions/TurretAxisAttr",
+      "description": "Pitch axis (elevation) configuration. Enables vertical turret aiming. Omit to disable pitch control."
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["weapon_control"],
+      "description": "List of rotation control signal input channels, priority descending. Accepts RotationSignal (x=pitch, y=yaw, z=roll)."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Turret driver sound configuration."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:turret_driver",
+      "description": "Minimal example - required fields only"
+    },
+    {
+      "type": "machine_max:turret_driver",
+      "basic_durability": 200,
+      "yaw": {
+        "max_force": 80000,
+        "max_speed": 45.0
+      },
+      "control_inputs": ["weapon_control"],
+      "description": "Yaw-only example - suitable for turret base"
+    },
+    {
+      "type": "machine_max:turret_driver",
+      "basic_durability": 150,
+      "pitch": {
+        "max_force": 35000,
+        "max_speed": 30.0
+      },
+      "control_inputs": ["weapon_control"],
+      "description": "Pitch-only example - suitable for barrel elevation"
+    },
+    {
+      "type": "machine_max:turret_driver",
+      "basic_durability": 250,
+      "yaw": {
+        "max_force": 120000,
+        "max_speed": 60.0
+      },
+      "pitch": {
+        "max_force": 50000,
+        "max_speed": 35.0
+      },
+      "control_inputs": ["weapon_control", "manual_control"],
+      "description": "Full example - dual-axis with multiple control signal sources"
+    }
+  ]
+}

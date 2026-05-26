@@ -12,7 +12,7 @@
   "default": {},
   "examples": [
     {
-      "move_control": ["car_controller", "engine"],
+      "move_input": ["car_controller", "engine"],
       "gear_control": ["gearbox"]
     }
   ]

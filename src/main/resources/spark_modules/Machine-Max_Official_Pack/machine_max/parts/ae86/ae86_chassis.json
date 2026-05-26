@@ -144,10 +144,10 @@
             "locator": "DriverSeat",
             "definition": "machine_max:fixed_up",
             "signal_targets": {
-              "move_control": [
+              "move_input": [
                 "subsystem.machine_max.car_controller" //向控制器传输标准移动输入信号, 如转向、加速、刹车等
               ],
-              "regular_control": ["subsystem.machine_max.car_controller"]//向车辆控制器传输一般按键输入信号, 如换挡、离合器控制等
+              "regular_input": ["subsystem.machine_max.car_controller"]//向车辆控制器传输一般按键输入信号, 如换挡、离合器控制等
             }
           },
           "connector.machine_max.copilot_seat": {

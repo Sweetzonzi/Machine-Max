@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/weapon_controller_static_attr.json",
+  "title": "Weapon Controller Subsystem Static Attributes",
+  "description": "Static attributes of the weapon controller subsystem, defining fire mode, aim tolerance, input channels and other hardware parameters.",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference path, used for editor intelligent suggestions and validation",
+      "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:weapon_controller",
+      "description": "Subsystem type, must be 'machine_max:weapon_controller'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "Subsystem basic durability. Becomes paralyzed at 0, restores functionality when repaired to 30%."
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pass damage to the subsystem holder. If true, damage received by the subsystem is transferred to the part."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to limit damage transfer to remaining durability. e.g. 40 damage, 20 remaining, only 20 transfers."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the subsystem in HUD, commonly used for non-functional parts that only provide damage differentiation."
+    },
+    "fire_mode": {
+      "type": "string",
+      "enum": ["SALVO", "RIPPLE"],
+      "default": "SALVO",
+      "description": "Fire mode: SALVO — all aimed launchers fire simultaneously; RIPPLE — launchers fire sequentially."
+    },
+    "ripple_interval_tick": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 2,
+      "description": "Interval between each fire in ripple mode (in ticks). Only applicable when fire_mode is RIPPLE."
+    },
+    "aim_tolerance_deg": {
+      "type": "number",
+      "minimum": 0,
+      "default": 3.0,
+      "description": "Aim tolerance angle (degrees). A launcher is considered aimed if its direction is within this angle of the target. Set to >180 (e.g. 360) to disable tolerance checking."
+    },
+    "aim_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "List of aim target coordinate input channels. Reads Vec3 world coordinates from any channel. Typically receives ViewInputSignal from CameraSubsystem or SeatSubsystem."
+    },
+    "fire_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "List of fire command input channels. Any non-EmptySignal on any channel is treated as a fire command. Typically receives key-triggered fire signals."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the subsystem is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Weapon controller subsystem sound configuration."
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:weapon_controller",
+      "description": "Minimal example - required fields only"
+    },
+    {
+      "type": "machine_max:weapon_controller",
+      "basic_durability": 100,
+      "fire_mode": "SALVO",
+      "aim_tolerance_deg": 5.0,
+      "aim_inputs": ["view_target"],
+      "fire_inputs": ["fire_command"],
+      "description": "Salvo mode example - standard weapon controller configuration"
+    },
+    {
+      "type": "machine_max:weapon_controller",
+      "basic_durability": 80,
+      "fire_mode": "RIPPLE",
+      "ripple_interval_tick": 5,
+      "aim_tolerance_deg": 2.0,
+      "aim_inputs": ["view_target", "radar_target"],
+      "fire_inputs": ["fire_command", "auto_fire"],
+      "description": "Ripple mode example - multiple target sources and fire command sources"
+    }
+  ]
+}

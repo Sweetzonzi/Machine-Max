@@ -169,13 +169,13 @@
           "definition": "machine_max:default_seat",
           "locator": "driver_seat_point",
           "move_outputs": {
-            "move_control": ["car_controller"]
+            "move_input": ["car_controller"]
           },
           "regular_outputs": {
-            "regular_control": ["car_controller"]
+            "regular_input": ["car_controller"]
           },
           "aim_outputs": {
-            "aim_control": ["car_controller"]
+            "aim_input": ["car_controller"]
           }
         },
         "passenger_seat": {

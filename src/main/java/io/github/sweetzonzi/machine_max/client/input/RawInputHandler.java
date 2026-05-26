@@ -3,10 +3,14 @@ package io.github.sweetzonzi.machine_max.client.input;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.MMClientConfig;
 import io.github.sweetzonzi.machine_max.common.item.prop.PartAssemblyItem;
-import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
+import io.github.sweetzonzi.machine_max.common.mech.control.BindingAction;
+import io.github.sweetzonzi.machine_max.common.mech.control.ControlBinding;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import io.github.sweetzonzi.machine_max.network.payload.MovementInputPayload;
@@ -111,18 +115,24 @@ public class RawInputHandler {
                             trans_z_conflict += MMClientConfig.getGroundFullBrakeStep();
                         }
                         // 松键回零（油门走 power_off，刹车走 brake_off）
-                        if (!forward) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
-                        if (!backWard) trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
+                        if (!forward)
+                            trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
+                        if (!backWard)
+                            trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
                     } else {
                         // 意图模式：W=前进意图, S=后退意图
                         // 双通道双向设计：W → input+, conflict+ ; S → input-, conflict-
                         // 向±1移动用Full*Step，向0移动用*OffStep
                         if (forward && backWard) {
                             // W+S同时：两通道各自归零
-                            if (trans_z_input > 0) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
-                            if (trans_z_input < 0) trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundBrakeOffStep());
-                            if (trans_z_conflict > 0) trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
-                            if (trans_z_conflict < 0) trans_z_conflict = Math.min(0, trans_z_conflict + MMClientConfig.getGroundBrakeOffStep());
+                            if (trans_z_input > 0)
+                                trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
+                            if (trans_z_input < 0)
+                                trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundBrakeOffStep());
+                            if (trans_z_conflict > 0)
+                                trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
+                            if (trans_z_conflict < 0)
+                                trans_z_conflict = Math.min(0, trans_z_conflict + MMClientConfig.getGroundBrakeOffStep());
                         } else {
                             if (forward) {
                                 // W: input+ , conflict+  (前进意图)
@@ -138,10 +148,14 @@ public class RawInputHandler {
                                 trans_z_conflict -= MMClientConfig.getGroundFullBrakeStep();
                             } else {
                                 // 无输入：两通道各自回零
-                                if (trans_z_input > 0) trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
-                                if (trans_z_input < 0) trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundBrakeOffStep());
-                                if (trans_z_conflict > 0) trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
-                                if (trans_z_conflict < 0) trans_z_conflict = Math.min(0, trans_z_conflict + MMClientConfig.getGroundBrakeOffStep());
+                                if (trans_z_input > 0)
+                                    trans_z_input = Math.max(0, trans_z_input - MMClientConfig.getGroundPowerOffStep());
+                                if (trans_z_input < 0)
+                                    trans_z_input = Math.min(0, trans_z_input + MMClientConfig.getGroundBrakeOffStep());
+                                if (trans_z_conflict > 0)
+                                    trans_z_conflict = Math.max(0, trans_z_conflict - MMClientConfig.getGroundBrakeOffStep());
+                                if (trans_z_conflict < 0)
+                                    trans_z_conflict = Math.min(0, trans_z_conflict + MMClientConfig.getGroundBrakeOffStep());
                             }
                         }
                     }
@@ -173,8 +187,10 @@ public class RawInputHandler {
                         if (leftward && rightward) rot_y_conflict = 1;
                         else rot_y_conflict = 0;
                     } else {
-                        if (rot_y_input > 0) rot_y_input = Math.max(0, rot_y_input - MMClientConfig.getGroundSteeringOffStep());
-                        if (rot_y_input < 0) rot_y_input = Math.min(0, rot_y_input + MMClientConfig.getGroundSteeringOffStep());
+                        if (rot_y_input > 0)
+                            rot_y_input = Math.max(0, rot_y_input - MMClientConfig.getGroundSteeringOffStep());
+                        if (rot_y_input < 0)
+                            rot_y_input = Math.min(0, rot_y_input + MMClientConfig.getGroundSteeringOffStep());
                     }
                     // 手柄直接取用输出值
                     rot_y_input -= Math.round(MMJoystickHandler.getAxisState(0, GLFW.GLFW_GAMEPAD_AXIS_LEFT_X) * 100);
@@ -265,20 +281,14 @@ public class RawInputHandler {
         // TODO: 策略组的事件体测试区
         new KeyHooks.EVENT("e")
                 .with(LEFT_CTRL)
-                .OnKeyTriplePress(() -> {
-                    System.out.println("弹射跳伞");
-                })
+                .OnKeyTriplePress(() -> System.out.println("弹射跳伞"))
                 .flush() //与上方的绑定断开
                 .with(LEFT_SHIFT)
-                .OnKeyTriplePress(() -> {
-                    System.out.println("抛离武器挂架");
-                })
+                .OnKeyTriplePress(() -> System.out.println("抛离武器挂架"))
                 .flush() //与上方的绑定断开
                 .with(LEFT_CTRL)
                 .with(LEFT_SHIFT)
-                .OnKeyTriplePress(() -> {
-                    System.out.println("同时按下组合键的E键三连击情况");
-                })
+                .OnKeyTriplePress(() -> System.out.println("同时按下组合键的E键三连击情况"))
         ;
         if (client.player != null) {
 
@@ -322,77 +332,58 @@ public class RawInputHandler {
          */
             //离合
             new KeyHooks.EVENT(KeyBinding.groundClutchKey)
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 0));
-                    })
-                    .OnKeyUp(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 1));
-                    });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 0)))
+                    .OnKeyUp(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CLUTCH.getValue(), 1)));
 
             //升档
             new KeyHooks.EVENT(KeyBinding.groundUpShiftKey)
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.UP_SHIFT.getValue(), 0));
-                    });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.UP_SHIFT.getValue(), 0)));
 
             //降档
             new KeyHooks.EVENT(KeyBinding.groundDownShiftKey)
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.DOWN_SHIFT.getValue(), 0));
-                    });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.DOWN_SHIFT.getValue(), 0)));
 
             //按住手刹
             new KeyHooks.EVENT(KeyBinding.groundHandBrakeKey)
                     .addChild(new KeyHooks.EVENT( // 模仿尘埃拉力：手柄B键也会触发
                             new KeyHooks.GamePadSetting(0, KeyHooks.GamePadSetting.GType.Button, GLFW.GLFW_GAMEPAD_BUTTON_B)))
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 0));
-                    })
-                    .OnKeyUp(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 1));
-                    });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 0)))
+                    .OnKeyUp(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.HAND_BRAKE.getValue(), 1)));
 
             //切换手刹
             new KeyHooks.EVENT(KeyBinding.groundToggleHandBrakeKey)
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_HAND_BRAKE.getValue(), 0));
-                    });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_HAND_BRAKE.getValue(), 0)));
 
         /*
           载具组装
          */
             //切换部件安装角
             new KeyHooks.EVENT(KeyBinding.assemblyAddAttachAngleKey)
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.ADD_PART_ATTACH_ANGLE.getValue(), 0));
-                    });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.ADD_PART_ATTACH_ANGLE.getValue(), 0)));
 
             new KeyHooks.EVENT(KeyBinding.assemblySubAttachAngleKey)
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.SUB_PART_ATTACH_ANGLE.getValue(), 0));
-                    });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.SUB_PART_ATTACH_ANGLE.getValue(), 0)));
 
             //切换部件连接点
             new KeyHooks.EVENT(KeyBinding.assemblyCycleConnectorKey) //C
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
-                    });
-
-//            Key_C.setEventOnce(() -> {
-//                PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0));
-//            });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_CONNECTORS.getValue(), 0)));
 
             //切换部件变体类型
             new KeyHooks.EVENT(KeyBinding.assemblyCycleVariantKey)
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0));
-                    });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_VARIANTS.getValue(), 0)));
 
             //切换部件配方
             new KeyHooks.EVENT(KeyBinding.assemblyCycleRecipeKey)
-                    .OnKeyDown(() -> {
-                        PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_RECIPES.getValue(), 0));
-                    });
+                    .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_RECIPES.getValue(), 0)));
+
+            /*
+              控制组按键绑定 — 从当前座椅子系统的 ControlGroupSet 动态加载
+             */
+            if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
+                for (ControlBinding binding : sub.getControlGroupSet().getMergedBindings()) {
+                    //TODO 可能需要一个工具方法，从ControlBinding创建KeyHooks.EVENT？
+                }
+            }
         }
 
 

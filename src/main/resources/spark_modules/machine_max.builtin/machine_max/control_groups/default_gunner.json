@@ -1,0 +1,12 @@
+{
+    "base_group": {
+        "name": "base",
+        "control_mode": "inherit",
+        "move_targets": {},
+        "view_targets": {
+            "aim_input_p1": ["vehicle"]
+        },
+        "regular_targets": {},
+        "bindings": []
+    }
+}

@@ -552,6 +552,23 @@ public class KeyHooks {
     }
 
     @SubscribeEvent
+    public static void onMouseButton(InputEvent.MouseButton.Pre event) {
+        int button = event.getButton();
+        int action = event.getAction();
+        String keyName = InputConstants.getKey(button, action).getName();
+
+        if (!HOOK_SIGNAL_MAP.containsKey(keyName)) HOOK_SIGNAL_MAP.put(keyName, 0.0);
+
+        if (action == GLFW.GLFW_RELEASE) {
+            HOOK_SIGNAL_MAP.put(keyName, 0.0);
+            HOOK_SIGNAL_MAP.put(keyName + INVERSE_NAME, 1.0);
+        } else if (action == GLFW.GLFW_PRESS) {
+            HOOK_SIGNAL_MAP.put(keyName, 1.0);
+            HOOK_SIGNAL_MAP.put(keyName + INVERSE_NAME, 0.0);
+        }
+    }
+
+    @SubscribeEvent
     public static void runKeyHook(ClientTickEvent.Post event) {
         for (String name : HOOK_SIGNAL_MAP.keySet()) {
             if (HOOK_SIGNAL_MAP.get(name) instanceof Double d) {

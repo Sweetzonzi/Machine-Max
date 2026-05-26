@@ -96,7 +96,7 @@
               "type": "machine_max:seat", //子系统类型
               "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
               "locator": "left_back_seat_seatpoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
-              "control_group_preset": "machine_max:passenger",
+              "control_group_preset": "machine_max:default_passenger",
               "passenger_num_outputs": {
                 "occupied": ["interact.machine_max.seat", "connector.machine_max.left_back_seat"]
               }
@@ -154,7 +154,7 @@
               "type": "machine_max:seat", //子系统类型
               "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
               "locator": "right_front_seat_seatpoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
-              "control_group_preset": "machine_max:passenger",
+              "control_group_preset": "machine_max:default_passenger",
               "passenger_num_outputs": {
                 "occupied": ["interact.machine_max.seat", "connector.machine_max.right_front_seat"]
               }
@@ -212,7 +212,7 @@
               "type": "machine_max:seat", //子系统类型
               "definition": "machine_max:default_seat", //子系统型号, 需要与子系统类型相匹配
               "locator": "right_back_seat_seatpoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
-              "control_group_preset": "machine_max:passenger",
+              "control_group_preset": "machine_max:default_passenger",
               "passenger_num_outputs": {
                 "occupied": ["interact.machine_max.seat", "connector.machine_max.right_back_seat"]
               }
