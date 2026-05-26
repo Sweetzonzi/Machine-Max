@@ -36,15 +36,7 @@
             "type": "machine_max:seat", 
             "definition": "machine_max:golden_closestool",
             "locator": "sit_point",
-            "move_outputs": {
-              "move_control": ["connector.machine_max.chassis_connection"]
-            },
-            "regular_outputs": {
-              "regular_control": ["vehicle", "connector.machine_max.chassis_connection"]
-            },
-            "aim_outputs": {
-              "aim_control": ["connector.machine_max.chassis_connection"]
-            },
+            "control_group_preset": "machine_max:default_driver",
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.golden.seat", "connector.machine_max.chassis_connection"]
             }

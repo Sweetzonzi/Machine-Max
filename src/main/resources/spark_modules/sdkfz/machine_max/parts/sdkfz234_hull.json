@@ -270,17 +270,7 @@
               "type": "machine_max:seat",
               "definition": "machine_max:default_seat",
               "locator": "driver_seat",
-              "move_outputs": {
-                "move_control": [
-                  "subsystem.machine_max.car_controller"
-                ]
-              },
-              "aim_outputs": {
-                "aim": []
-              },
-              "regular_outputs": {
-                "regular_control": []
-              },
+              "control_group_preset": "machine_max:default_driver",
               "passenger_num_outputs": {
                 "passenger_num": [
                   "subpart",

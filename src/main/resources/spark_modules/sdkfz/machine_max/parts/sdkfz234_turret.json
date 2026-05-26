@@ -88,19 +88,7 @@
               "type": "machine_max:seat",
               "definition": "machine_max:default_seat",
               "locator": "gunner_seat",
-              "move_outputs": {
-                "move_control": []
-              },
-              "aim_outputs": {
-                "aim_control": [
-                  "subsystem.machine_max.weapon_controller"
-                ]
-              },
-              "regular_outputs": {
-                "regular_control": [
-                  "subsystem.machine_max.weapon_controller"
-                ]
-              },
+              "control_group_preset": "machine_max:default_driver",
               "passenger_num_outputs": {
                 "passenger_num": [
                   "subpart",
@@ -112,21 +100,7 @@
               "type": "machine_max:seat",
               "definition": "machine_max:default_seat",
               "locator": "commander_seat",
-              "move_outputs": {
-                "move_control": [
-                  "connector.machine_max.turret_hull_axis"
-                ]
-              },
-              "aim_outputs": {
-                "aim_control": [
-                  "subsystem.machine_max.weapon_controller"
-                ]
-              },
-              "regular_outputs": {
-                "regular_control": [
-                  "subsystem.machine_max.weapon_controller"
-                ]
-              },
+              "control_group_preset": "machine_max:default_driver",
               "passenger_num_outputs": {
                 "passenger_num": [
                   "subpart",
