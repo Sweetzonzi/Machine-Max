@@ -98,6 +98,17 @@ public class ControlGroupSet {
         return baseGroup.viewTargets;
     }
 
+    /**
+     * 获取当前有效的常规按键输入输出目标。
+     */
+    public Map<String, List<String>> getMergedRegularTargets() {
+        ControlGroup active = getActiveGroup();
+        if (active != null && !active.regularTargets.isEmpty()) {
+            return active.regularTargets;
+        }
+        return baseGroup.regularTargets;
+    }
+
     /** 获取 GUI 交互元素列表（不可变视图） */
     public List<AbstractGuiAction> getGuiActions() {
         return Collections.unmodifiableList(guiActions);
@@ -130,6 +141,25 @@ public class ControlGroupSet {
             return merged.get(index);
         }
         return null;
+    }
+
+    /** 空控制组集合常量，无任何输出目标和绑定 */
+    public static final ControlGroupSet EMPTY = new ControlGroupSet(
+            new ControlGroup("base", ControlMode.INHERIT,
+                    Collections.emptyMap(), Collections.emptyMap(),
+                    Collections.emptyMap(), Collections.emptyList()),
+            Collections.emptyList()
+    );
+
+    /**
+     * 判断此控制组集合是否为空（baseGroup 无任何输出目标和绑定，且无子组）。
+     */
+    public boolean isEmpty() {
+        return groups.isEmpty()
+                && baseGroup.moveTargets.isEmpty()
+                && baseGroup.viewTargets.isEmpty()
+                && baseGroup.regularTargets.isEmpty()
+                && baseGroup.bindings.isEmpty();
     }
 
     public static final Codec<ControlGroupSet> CODEC = RecordCodecBuilder.create(instance -> instance.group(

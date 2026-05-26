@@ -27,25 +27,30 @@ public class ControlGroup {
     /** 视角输入输出映射 {频道名: [目标名称列表]} */
     public final Map<String, List<String>> viewTargets;
 
+    /** 常规按键输入输出映射 {频道名: [目标名称列表]}，如离合/换挡/灯光等 KeyInputMapping 事件 */
+    public final Map<String, List<String>> regularTargets;
+
     /** 离散按键绑定列表 */
     public final List<ControlBinding> bindings;
 
     public ControlGroup(String name, ControlMode controlMode,
                         Map<String, List<String>> moveTargets,
                         Map<String, List<String>> viewTargets,
+                        Map<String, List<String>> regularTargets,
                         List<ControlBinding> bindings) {
         this.name = name;
         this.controlMode = controlMode != null ? controlMode : ControlMode.INHERIT;
         this.moveTargets = moveTargets != null ? Map.copyOf(moveTargets) : Collections.emptyMap();
         this.viewTargets = viewTargets != null ? Map.copyOf(viewTargets) : Collections.emptyMap();
+        this.regularTargets = regularTargets != null ? Map.copyOf(regularTargets) : Collections.emptyMap();
         this.bindings = bindings != null ? List.copyOf(bindings) : Collections.emptyList();
     }
 
     /**
-     * 便捷构造：适用于纯离散按键的控制组（无移动/视角输出）。
+     * 便捷构造：适用于纯离散按键的控制组（无移动/视角/常规输出）。
      */
     public ControlGroup(String name, ControlMode controlMode, List<ControlBinding> bindings) {
-        this(name, controlMode, Collections.emptyMap(), Collections.emptyMap(), bindings);
+        this(name, controlMode, Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), bindings);
     }
 
     private static final Codec<Map<String, List<String>>> TARGET_MAP_CODEC = Codec.unboundedMap(
@@ -58,6 +63,7 @@ public class ControlGroup {
             ControlMode.CODEC.optionalFieldOf("control_mode", ControlMode.INHERIT).forGetter(g -> g.controlMode),
             TARGET_MAP_CODEC.optionalFieldOf("move_targets", Collections.emptyMap()).forGetter(g -> g.moveTargets),
             TARGET_MAP_CODEC.optionalFieldOf("view_targets", Collections.emptyMap()).forGetter(g -> g.viewTargets),
+            TARGET_MAP_CODEC.optionalFieldOf("regular_targets", Collections.emptyMap()).forGetter(g -> g.regularTargets),
             ControlBinding.CODEC.listOf().optionalFieldOf("bindings", Collections.emptyList()).forGetter(g -> g.bindings)
     ).apply(instance, ControlGroup::new));
 
@@ -96,6 +102,7 @@ public class ControlGroup {
             ControlMode.STREAM_CODEC, g -> g.controlMode,
             TARGET_MAP_STREAM_CODEC, g -> g.moveTargets,
             TARGET_MAP_STREAM_CODEC, g -> g.viewTargets,
+            TARGET_MAP_STREAM_CODEC, g -> g.regularTargets,
             ControlBinding.STREAM_CODEC.apply(ByteBufCodecs.list()), g -> g.bindings,
             ControlGroup::new
     );

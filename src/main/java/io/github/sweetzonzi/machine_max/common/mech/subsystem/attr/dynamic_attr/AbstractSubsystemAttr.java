@@ -34,6 +34,18 @@ abstract public class AbstractSubsystemAttr {
             Codec.STRING.listOf()
     );
 
+    /** 控制组预设的"空"哨兵，表示无预设 */
+    public static final ResourceLocation NO_CONTROL_GROUP_PRESET = ResourceLocation.parse("machine_max:empty");
+
+    /**
+     * 获取控制组预设的 ResourceLocation。
+     * 子类（如 SeatSubsystemAttr）如有预设则覆盖此方法返回实际 RL；
+     * 无预设的子系统继承此默认实现返回 NO_CONTROL_GROUP_PRESET。
+     */
+    public ResourceLocation getControlGroupPresetRl() {
+        return NO_CONTROL_GROUP_PRESET;
+    }
+
     public static final Codec<AbstractSubsystemAttr> CODEC = MMDataRegistries.getSUBSYSTEM_ATTR_CODEC().byNameCodec()
             .dispatch(
                     AbstractSubsystemAttr::codec,

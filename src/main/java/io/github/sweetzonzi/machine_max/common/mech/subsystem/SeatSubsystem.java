@@ -5,7 +5,11 @@ import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.CollisionManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
+import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SeatSubsystemAttr;
+import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,7 +28,15 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
     public SeatSubsystem(ISubsystemHost owner, String name, SeatSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
-        setUp(attr.moveSignalTargets, attr.viewSignalTargets, attr.regularSignalTargets);
+        //从动态属性加载控制组预设
+        if (!attr.controlGroupPreset.equals(AbstractSubsystemAttr.NO_CONTROL_GROUP_PRESET)) {
+            ControlGroupSet preset = MMDynamicRes.CONTROL_GROUP_PRESETS.get(attr.controlGroupPreset);
+            if (preset != null) {
+                setControlGroupSet(preset);
+            } else {
+                MachineMax.LOGGER.warn("控制组预设 {} 未找到，使用空控制组", attr.controlGroupPreset);
+            }
+        }
         this.disableVanillaActions = !this.attr.staticAttribute.allowUseItems;
     }
 
