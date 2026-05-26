@@ -14,11 +14,13 @@ public class HitBox {
     public final HitBoxAttr attr;
     public final AbstractSubsystem subsystem;
     private boolean active = true;
+    private final boolean alwaysActive;
 
     public HitBox(SubPart subPart, HitBoxAttr attr) {
         this.subPart = subPart;
         this.attr = attr;
         this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem, null);
+        alwaysActive = attr.condition.isEmpty() || attr.condition.equalsIgnoreCase("true");
     }
 
     /**
@@ -26,11 +28,11 @@ public class HitBox {
      * 应在每物理刻（prePhysicsTick）调用
      */
     public void updateActive() {
-        String condition = attr.condition;
-        if (condition == null || condition.isEmpty()) {
+        if (alwaysActive) {
             active = true;
             return;
         }
+        String condition = attr.condition;
         try {
             active = JSMolangValueKt.evalAsBoolean(condition, subPart);
         } catch (Exception e) {
