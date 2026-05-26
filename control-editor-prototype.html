@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Machine-Max 控制组编辑器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a24;
+            color: #e8e8f0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 32px;
+            min-height: 100vh;
+        }
+
+        .panel {
+            width: 820px;
+            background: #242430;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 40px rgba(0,0,0,0.4);
+        }
+
+        .panel-header {
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .panel-header .title { font-size: 16px; font-weight: 700; color: #f0f0f8; }
+        .panel-header .preset-badge {
+            font-size: 10px;
+            color: #ff8833;
+            background: rgba(255, 100, 0, 0.12);
+            padding: 2px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .panel-header .subtitle { font-size: 11px; color: rgba(255,255,255,0.3); margin-left: auto; }
+
+        .back-bar {
+            display: flex;
+            align-items: center;
+            padding: 12px 28px;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .back-bar .back-btn {
+            cursor: pointer;
+            font-size: 13px;
+            color: rgba(255,255,255,0.35);
+            padding: 4px 12px;
+            border-radius: 4px;
+            transition: all 0.12s;
+        }
+        .back-bar .back-btn:hover { color: #ff8833; background: rgba(255, 100, 0, 0.1); }
+        .back-bar .view-title { font-size: 14px; font-weight: 600; color: #e0e0ec; }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .section { margin: 18px 28px; }
+        .section:last-child { margin-bottom: 24px; }
+
+        /* ===== 主页面：HUD 风格卡片网格 ===== */
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .section-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .section-header .section-count {
+            font-size: 11px;
+            color: rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.05);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .section-header .add-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 14px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.12s;
+            background: rgba(255, 100, 0, 0.15);
+            color: #ff8833;
+        }
+        .section-header .add-btn:hover { background: rgba(255, 100, 0, 0.25); }
+
+        /* --- 控制组：HUD 风格卡片 --- */
+        .hud-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .hud-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 6px;
+            padding: 14px 14px 12px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .hud-card:hover {
+            border-color: rgba(255, 100, 0, 0.25);
+            background: rgba(255,255,255,0.06);
+        }
+        .hud-card.active {
+            border-color: rgba(255, 100, 0, 0.4);
+            background: rgba(255, 100, 0, 0.06);
+        }
+
+        /* 左侧装饰条 */
+        .hud-card .left-bar {
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 3px;
+            height: calc(100% - 12px);
+            background: rgba(255,255,255,0.1);
+        }
+        .hud-card.active .left-bar.orange,
+        .hud-card:hover .left-bar.orange { background: #ff6400; }
+        .hud-card.active .left-bar.green,
+        .hud-card:hover .left-bar.green { background: #2a9d5c; }
+        .hud-card.active .left-bar.cyan,
+        .hud-card:hover .left-bar.cyan { background: #2bc0b8; }
+        .hud-card.active .left-bar.blue,
+        .hud-card:hover .left-bar.blue { background: #4a8cff; }
+        .hud-card.active .left-bar.pink,
+        .hud-card:hover .left-bar.pink { background: #d46abf; }
+        .hud-card.active .left-bar.yellow,
+        .hud-card:hover .left-bar.yellow { background: #d4a82a; }
+
+        .hud-card .card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            padding-left: 8px;
+        }
+        .hud-card .card-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #f0f0f8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .hud-card .card-name .base-badge {
+            font-size: 9px;
+            background: rgba(255, 100, 0, 0.12);
+            color: #ff8833;
+            padding: 1px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .hud-card .card-mode {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .card-mode.mode-ground { background: rgba(255, 100, 0, 0.15); color: #ff8833; }
+        .card-mode.mode-inherit { background: rgba(42, 157, 92, 0.15); color: #4ac87a; }
+        .card-mode.mode-plane { background: rgba(74, 140, 255, 0.15); color: #7aacff; }
+        .card-mode.mode-ship { background: rgba(43, 192, 184, 0.15); color: #50d4cc; }
+        .card-mode.mode-mech { background: rgba(212, 168, 42, 0.15); color: #e0c050; }
+
+        .hud-card .card-desc {
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+            line-height: 1.5;
+            margin-bottom: 10px;
+            flex: 1;
+            padding-left: 8px;
+        }
+
+        .hud-card .card-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 0 0 8px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .hud-card .card-actions .btn-sm {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.12s;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.5);
+            font-weight: 600;
+        }
+        .hud-card .card-actions .btn-sm:hover { background: rgba(255, 100, 0, 0.15); color: #ff8833; }
+        .hud-card .card-actions .btn-icon-sm {
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            border: none;
+            color: rgba(255,255,255,0.15);
+            background: transparent;
+            transition: all 0.12s;
+            margin-left: auto;
+        }
+        .hud-card .card-actions .btn-icon-sm:hover { color: #ff4444; background: rgba(255, 68, 68, 0.1); }
+
+        /* --- GUI控件：HUD 风格卡片 --- */
+        .ctrl-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .ctrl-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 6px;
+            padding: 12px 14px;
+            transition: all 0.18s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ctrl-card:hover {
+            border-color: rgba(255, 100, 0, 0.2);
+            background: rgba(255,255,255,0.06);
+        }
+
+        .ctrl-card .ctrl-body { flex: 1; min-width: 0; }
+        .ctrl-card .ctrl-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #e0e0ec;
+        }
+        .ctrl-card .ctrl-channel {
+            font-size: 10px;
+            color: rgba(255,255,255,0.3);
+            margin-top: 1px;
+            font-family: 'SF Mono', 'Cascadia Code', monospace;
+        }
+        .ctrl-card .ctrl-widget { flex-shrink: 0; }
+        .ctrl-card .ctrl-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .ctrl-card .ctrl-actions .btn-ghost-sm {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.3);
+            transition: all 0.12s;
+        }
+        .ctrl-card .ctrl-actions .btn-ghost-sm:hover { background: rgba(255,255,255,0.06); color: #ff8833; }
+        .ctrl-card .ctrl-actions .btn-icon-sm {
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            border: none;
+            color: rgba(255,255,255,0.15);
+            background: transparent;
+            transition: all 0.12s;
+        }
+        .ctrl-card .ctrl-actions .btn-icon-sm:hover { color: #ff4444; background: rgba(255, 68, 68, 0.1); }
+
+        /* ===== 组件样式 (HUD 色调) ===== */
+        .toggle-switch {
+            width: 34px; height: 18px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.15s;
+            flex-shrink: 0;
+        }
+        .toggle-switch.on { background: #ff6400; }
+        .toggle-switch .knob {
+            width: 14px; height: 14px;
+            background: #ddd;
+            border-radius: 2px;
+            position: absolute; top: 2px; left: 2px;
+            transition: left 0.15s;
+        }
+        .toggle-switch.on .knob { left: 18px; background: #fff; }
+
+        .pulse-btn {
+            width: 52px; height: 24px;
+            background: rgba(255, 100, 0, 0.2);
+            border: none;
+            border-radius: 4px;
+            color: #ff8833;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.1s;
+            flex-shrink: 0;
+        }
+        .pulse-btn:hover { background: rgba(255, 100, 0, 0.3); }
+        .pulse-btn:active { transform: scale(0.94); background: rgba(255, 100, 0, 0.4); }
+
+        .slider-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .slider-control input[type=range] {
+            width: 72px;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        .slider-control input[type=range]::-webkit-slider-runnable-track {
+            height: 3px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 1px;
+        }
+        .slider-control input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px; height: 12px;
+            background: #ff6400;
+            border-radius: 2px;
+            margin-top: -4.5px;
+            cursor: pointer;
+        }
+        .slider-control .val { font-size: 10px; color: #ff8833; min-width: 26px; text-align: right; font-weight: 700; }
+
+        .btn-icon {
+            width: 26px; height: 26px; padding: 0;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 4px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.2);
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-icon:hover { color: #ff4444; background: rgba(255, 68, 68, 0.1); }
+
+        .btn { transition: all 0.12s; border-radius: 4px; font-weight: 600; }
+        .btn-primary { background: #ff6400; color: #fff; }
+        .btn-primary:hover { background: #ff7a20; }
+        .btn-danger { background: transparent; color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.2); }
+        .btn-danger:hover { background: rgba(255, 68, 68, 0.1); }
+        .btn-ghost { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+        .btn-reset { background: transparent; color: #ff4444; border: 1px solid rgba(255, 68, 68, 0.25); font-size: 12px; padding: 6px 16px; }
+        .btn-reset:hover { background: rgba(255, 68, 68, 0.1); border-color: #ff4444; }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: rgba(255,255,255,0.06);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+        }
+        .tag .remove {
+            cursor: pointer;
+            font-size: 11px;
+            line-height: 1;
+            opacity: 0.4;
+            margin-left: 2px;
+        }
+        .tag .remove:hover { opacity: 1; color: #ff4444; }
+        .tag-purple { background: rgba(255, 100, 0, 0.12); color: #ff8833; }
+
+        /* ===== 编辑页样式 ===== */
+        input, select {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px;
+            padding: 5px 8px;
+            color: #d0d0e0;
+            font-size: 12px;
+            outline: none;
+            transition: border 0.12s;
+        }
+        input:focus, select:focus { border-color: #ff6400; }
+        select { cursor: pointer; }
+        select option { background: #242430; color: #d0d0e0; }
+        input::placeholder { color: rgba(255,255,255,0.2); }
+
+        .form-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 0;
+        }
+        .form-field label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            min-width: 60px;
+            flex-shrink: 0;
+        }
+        .form-field input, .form-field select { flex: 1; max-width: 200px; }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.35);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-title .count {
+            font-size: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 1px 7px;
+            border-radius: 4px;
+            color: rgba(255,255,255,0.35);
+        }
+
+        .hint {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.06);
+            line-height: 1.6;
+        }
+
+        .gui-edit-section { margin: 14px 28px; }
+        .gui-edit-section h4 { font-size: 12px; color: rgba(255,255,255,0.35); margin-bottom: 10px; }
+
+        .footer-actions {
+            display: flex;
+            gap: 10px;
+            padding: 16px 28px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            margin-top: 4px;
+        }
+
+        /* 信号目标编辑 */
+        .signal-group { margin-bottom: 10px; }
+        .signal-group-header {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+        }
+        .signal-group-header:hover { color: rgba(255,255,255,0.6); }
+        .signal-group-header .arrow { font-size: 10px; transition: transform 0.12s; color: rgba(255,255,255,0.15); }
+        .signal-group-header .arrow.open { transform: rotate(90deg); }
+
+        .signal-targets { display: flex; flex-direction: column; gap: 4px; }
+        .signal-target-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0 3px 20px;
+        }
+        .signal-target-row .channel-input {
+            width: 90px;
+            font-size: 11px;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.04);
+        }
+        .signal-target-row .targets {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+        .signal-target-row .target-input {
+            width: 60px;
+            font-size: 11px;
+            padding: 3px 6px;
+            background: rgba(255,255,255,0.04);
+        }
+
+        .binding-list { display: flex; flex-direction: column; gap: 5px; }
+        .binding-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 12px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .binding-row .binding-label { width: 50px; font-size: 11px; padding: 3px 6px; background: rgba(255,255,255,0.04); }
+        .binding-row .key-badge {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            color: #d0d0e0;
+            cursor: pointer;
+            min-width: 70px;
+            text-align: center;
+            transition: all 0.12s;
+        }
+        .binding-row .key-badge:hover { border-color: #ff6400; color: #ff8833; }
+        .binding-row .key-badge.listening {
+            border-color: #ff6400;
+            background: rgba(255, 100, 0, 0.1);
+            animation: pulse 0.8s infinite;
+        }
+        @keyframes pulse { 50% { border-color: #ff4400; } }
+
+        .binding-row .action-select { width: 70px; font-size: 11px; padding: 3px 5px; background: rgba(255,255,255,0.04); }
+        .binding-row .channel-input { width: 70px; font-size: 11px; padding: 3px 6px; background: rgba(255,255,255,0.04); }
+        .binding-row .target-tags { display: flex; gap: 3px; flex-wrap: wrap; flex: 1; }
+        .binding-row .target-input { width: 44px; font-size: 10px; padding: 2px 5px; background: rgba(255,255,255,0.04); }
+
+        .add-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px;
+            border: 1px dashed rgba(255,255,255,0.12);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: rgba(255,255,255,0.2);
+            transition: all 0.12s;
+        }
+        .add-row:hover { border-color: #ff6400; color: #ff8833; background: rgba(255, 100, 0, 0.06); }
+
+        .btn-config {
+            background: rgba(255, 100, 0, 0.1);
+            border: none;
+            color: #ff8833;
+            font-size: 11px;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.12s;
+            font-weight: 600;
+        }
+        .btn-config:hover { background: rgba(255, 100, 0, 0.18); }
+
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 28, 0.95);
+            border: 1px solid rgba(255, 100, 0, 0.2);
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #e0e0ec;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+        }
+        .toast.show { display: block; animation: fadeInOut 1.5s ease; }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="panel">
+    <div class="panel-header">
+        <span class="title">控制组编辑器</span>
+        <span class="preset-badge">machine_max:default_driver</span>
+        <span class="subtitle">driver_seat</span>
+    </div>
+
+    <!-- ========== 主页 ========== -->
+    <div class="page active" id="page-main">
+
+        <!-- 控制组：HUD 风格卡片 -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-header-left">
+                    <span class="section-title">控制组</span>
+                    <span class="section-count" id="group-count">3</span>
+                </div>
+                <button class="add-btn" onclick="addGroup()">+ 添加</button>
+            </div>
+
+            <div class="hud-grid" id="group-list">
+                <!-- base -->
+                <div class="hud-card active" data-name="base">
+                    <div class="left-bar orange"></div>
+                    <div class="card-top">
+                        <div class="card-name">
+                            base <span class="base-badge">基础</span>
+                        </div>
+                        <span class="card-mode mode-ground">GROUND</span>
+                    </div>
+                    <div class="card-desc">始终激活 · 2 个绑定 · 3 个输出频道</div>
+                    <div class="card-actions">
+                        <button class="btn-sm" onclick="openGroupEdit('base')">配置</button>
+                        <button class="btn-icon-sm" onclick="deleteGroup(this)" title="删除">✕</button>
+                    </div>
+                </div>
+
+                <!-- combat -->
+                <div class="hud-card" data-name="combat">
+                    <div class="left-bar green"></div>
+                    <div class="card-top">
+                        <div class="card-name">combat</div>
+                        <span class="card-mode mode-inherit">INHERIT</span>
+                    </div>
+                    <div class="card-desc">战斗模式 · 4 个绑定 · 2 个输出频道</div>
+                    <div class="card-actions">
+                        <button class="btn-sm" onclick="openGroupEdit('combat')">配置</button>
+                        <button class="btn-icon-sm" onclick="deleteGroup(this)" title="删除">✕</button>
+                    </div>
+                </div>
+
+                <!-- cruise -->
+                <div class="hud-card" data-name="cruise">
+                    <div class="left-bar cyan"></div>
+                    <div class="card-top">
+                        <div class="card-name">cruise</div>
+                        <span class="card-mode mode-inherit">INHERIT</span>
+                    </div>
+                    <div class="card-desc">巡航模式 · 2 个绑定 · 1 个输出频道</div>
+                    <div class="card-actions">
+                        <button class="btn-sm" onclick="openGroupEdit('cruise')">配置</button>
+                        <button class="btn-icon-sm" onclick="deleteGroup(this)" title="删除">✕</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GUI控件：HUD 风格卡片 -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-header-left">
+                    <span class="section-title">GUI 控件</span>
+                    <span class="section-count" id="gui-count">3</span>
+                </div>
+                <button class="add-btn" onclick="addGui()">+ 添加</button>
+            </div>
+
+            <div class="ctrl-grid" id="gui-list">
+                <!-- 武器保险 -->
+                <div class="ctrl-card" data-name="武器保险" data-type="toggle">
+                    <div class="ctrl-widget">
+                        <div class="toggle-switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+                    </div>
+                    <div class="ctrl-body">
+                        <div class="ctrl-label">武器保险</div>
+                        <div class="ctrl-channel">weapon_safety</div>
+                    </div>
+                    <div class="ctrl-actions">
+                        <button class="btn-ghost-sm" onclick="openGuiEdit('武器保险')">编辑</button>
+                        <button class="btn-icon-sm" onclick="deleteGui(this)" title="删除">✕</button>
+                    </div>
+                </div>
+
+                <!-- 瞄准灵敏度 -->
+                <div class="ctrl-card" data-name="瞄准灵敏度" data-type="slider">
+                    <div class="ctrl-body">
+                        <div class="ctrl-label">瞄准灵敏度</div>
+                        <div class="ctrl-channel">aim_sensitivity</div>
+                    </div>
+                    <div class="ctrl-widget">
+                        <div class="slider-control">
+                            <input type="range" min="0" max="100" value="65" oninput="this.nextElementSibling.textContent=this.value+'%'">
+                            <span class="val">65%</span>
+                        </div>
+                    </div>
+                    <div class="ctrl-actions">
+                        <button class="btn-ghost-sm" onclick="openGuiEdit('瞄准灵敏度')">编辑</button>
+                        <button class="btn-icon-sm" onclick="deleteGui(this)" title="删除">✕</button>
+                    </div>
+                </div>
+
+                <!-- 武器切换 -->
+                <div class="ctrl-card" data-name="武器切换" data-type="pulse">
+                    <div class="ctrl-body">
+                        <div class="ctrl-label">武器切换</div>
+                        <div class="ctrl-channel">weapon_cycle</div>
+                    </div>
+                    <div class="ctrl-widget">
+                        <button class="pulse-btn" onclick="showToast('发送脉冲信号')">发射</button>
+                    </div>
+                    <div class="ctrl-actions">
+                        <button class="btn-ghost-sm" onclick="openGuiEdit('武器切换')">编辑</button>
+                        <button class="btn-icon-sm" onclick="deleteGui(this)" title="删除">✕</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-actions">
+            <button class="btn btn-reset" onclick="if(confirm('确定重置为预设配置？此操作不可撤销。'))showToast('已重置为预设配置')">重置为预设</button>
+        </div>
+    </div>
+
+    <!-- ========== 控制组编辑页（不变） ========== -->
+    <div class="page" id="page-group-edit">
+        <div class="back-bar">
+            <span class="back-btn" onclick="backToMain()">&larr; 返回</span>
+            <span class="view-title">编辑控制组</span>
+        </div>
+
+        <div class="section">
+            <div class="section-title">控制组属性</div>
+            <div class="form-field">
+                <label>名称</label>
+                <input id="ge-name" value="combat" style="max-width:160px;">
+            </div>
+            <div class="form-field">
+                <label>控制模式</label>
+                <select id="ge-mode" style="max-width:120px;">
+                    <option>INHERIT</option>
+                    <option>GROUND</option>
+                    <option>PLANE</option>
+                    <option>SHIP</option>
+                    <option>MECH</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">信号输出目标 <span class="count">4类</span></div>
+
+            <div class="signal-group">
+                <div class="signal-group-header" onclick="toggleCollapse(this)">
+                    <span class="arrow open">&#9654;</span> 移动输入 (move)
+                </div>
+                <div class="signal-targets">
+                    <div class="signal-target-row">
+                        <input class="channel-input" value="throttle" placeholder="频道">
+                        <span class="targets">
+                            <span class="tag">engine<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                            <span class="tag">motor<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                            <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                        </span>
+                        <button class="btn-icon" onclick="this.closest('.signal-target-row').remove()">x</button>
+                    </div>
+                    <div class="signal-target-row">
+                        <input class="channel-input" value="steering" placeholder="频道">
+                        <span class="targets">
+                            <span class="tag">wheel_servo<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                            <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                        </span>
+                        <button class="btn-icon" onclick="this.closest('.signal-target-row').remove()">x</button>
+                    </div>
+                </div>
+                <div class="add-row" style="margin-left:20px;margin-top:4px;" onclick="showToast('添加新频道')">+ 添加频道</div>
+            </div>
+
+            <div class="signal-group">
+                <div class="signal-group-header" onclick="toggleCollapse(this)">
+                    <span class="arrow open">&#9654;</span> 视角输入 (view)
+                </div>
+                <div class="signal-targets">
+                    <div class="signal-target-row">
+                        <input class="channel-input" value="aim_target" placeholder="频道">
+                        <span class="targets">
+                            <span class="tag">weapon_controller<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                            <span class="tag">turret_driver<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                            <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                        </span>
+                        <button class="btn-icon">x</button>
+                    </div>
+                </div>
+                <div class="add-row" style="margin-left:20px;margin-top:4px;">+ 添加频道</div>
+            </div>
+
+            <div class="signal-group">
+                <div class="signal-group-header" onclick="toggleCollapse(this)">
+                    <span class="arrow open">&#9654;</span> 常规按键 (regular)
+                </div>
+                <div class="signal-targets">
+                    <div class="signal-target-row">
+                        <input class="channel-input" value="clutch" placeholder="频道">
+                        <span class="targets">
+                            <span class="tag tag-purple">car_controller<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                            <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                        </span>
+                        <button class="btn-icon">x</button>
+                    </div>
+                    <div class="signal-target-row">
+                        <input class="channel-input" value="shift" placeholder="频道">
+                        <span class="targets">
+                            <span class="tag tag-purple">car_controller<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                            <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                        </span>
+                        <button class="btn-icon">x</button>
+                    </div>
+                </div>
+                <div class="add-row" style="margin-left:20px;margin-top:4px;">+ 添加频道</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">
+                按键绑定 <span class="count">7</span>
+                <div style="margin-left:auto;"><button class="btn btn-primary btn-sm" onclick="addBinding()">+ 添加</button></div>
+            </div>
+
+            <div class="binding-list" id="binding-list">
+                <div class="binding-row">
+                    <input class="binding-label" value="前进" placeholder="名称">
+                    <span class="key-badge" onclick="startCapture(this)">W</span>
+                    <select class="action-select"><option>PRESS</option><option selected>HOLD</option><option>TOGGLE</option></select>
+                    <input class="channel-input" value="throttle" placeholder="频道">
+                    <div class="target-tags">
+                        <span class="tag">engine<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                        <span class="tag">motor<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                        <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                    </div>
+                    <button class="btn-icon" onclick="this.closest('.binding-row').remove()" title="删除">x</button>
+                </div>
+                <div class="binding-row">
+                    <input class="binding-label" value="刹车" placeholder="名称">
+                    <span class="key-badge" onclick="startCapture(this)">S</span>
+                    <select class="action-select"><option>PRESS</option><option selected>HOLD</option><option>TOGGLE</option></select>
+                    <input class="channel-input" value="brake" placeholder="频道">
+                    <div class="target-tags">
+                        <span class="tag">vehicle<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                        <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                    </div>
+                    <button class="btn-icon" onclick="this.closest('.binding-row').remove()" title="删除">x</button>
+                </div>
+                <div class="binding-row">
+                    <input class="binding-label" value="左转" placeholder="名称">
+                    <span class="key-badge" onclick="startCapture(this)">A</span>
+                    <select class="action-select"><option>PRESS</option><option selected>HOLD</option><option>TOGGLE</option></select>
+                    <input class="channel-input" value="steering_left" placeholder="频道">
+                    <div class="target-tags">
+                        <span class="tag">wheel_servo<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                        <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                    </div>
+                    <button class="btn-icon" onclick="this.closest('.binding-row').remove()" title="删除">x</button>
+                </div>
+                <div class="binding-row">
+                    <input class="binding-label" value="右转" placeholder="名称">
+                    <span class="key-badge" onclick="startCapture(this)">D</span>
+                    <select class="action-select"><option>PRESS</option><option selected>HOLD</option><option>TOGGLE</option></select>
+                    <input class="channel-input" value="steering_right" placeholder="频道">
+                    <div class="target-tags">
+                        <span class="tag">wheel_servo<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                        <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                    </div>
+                    <button class="btn-icon" onclick="this.closest('.binding-row').remove()" title="删除">x</button>
+                </div>
+                <div class="binding-row">
+                    <input class="binding-label" value="手刹" placeholder="名称">
+                    <span class="key-badge" onclick="startCapture(this)">Space</span>
+                    <select class="action-select"><option>PRESS</option><option selected>HOLD</option><option>TOGGLE</option></select>
+                    <input class="channel-input" value="hand_brake" placeholder="频道">
+                    <div class="target-tags">
+                        <span class="tag">vehicle<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                        <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                    </div>
+                    <button class="btn-icon" onclick="this.closest('.binding-row').remove()" title="删除">x</button>
+                </div>
+                <div class="binding-row">
+                    <input class="binding-label" value="灯光" placeholder="名称">
+                    <span class="key-badge" onclick="startCapture(this)">L</span>
+                    <select class="action-select"><option>PRESS</option><option>HOLD</option><option selected>TOGGLE</option></select>
+                    <input class="channel-input" value="lights" placeholder="频道">
+                    <div class="target-tags">
+                        <span class="tag">lighting<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                        <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                    </div>
+                    <button class="btn-icon" onclick="this.closest('.binding-row').remove()" title="删除">x</button>
+                </div>
+                <div class="binding-row">
+                    <input class="binding-label" value="开火" placeholder="名称">
+                    <span class="key-badge" onclick="startCapture(this)">mouse_left</span>
+                    <select class="action-select"><option selected>PRESS</option><option>HOLD</option><option>TOGGLE</option></select>
+                    <input class="channel-input" value="fire" placeholder="频道">
+                    <div class="target-tags">
+                        <span class="tag">weapon_controller<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                        <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)">
+                    </div>
+                    <button class="btn-icon" onclick="this.closest('.binding-row').remove()" title="删除">x</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-actions">
+            <button class="btn btn-ghost" onclick="showToast('已保存')">保存</button>
+            <button class="btn btn-ghost" onclick="backToMain()">取消</button>
+        </div>
+    </div>
+
+    <!-- ========== GUI控件编辑页（不变） ========== -->
+    <div class="page" id="page-gui-edit">
+        <div class="back-bar">
+            <span class="back-btn" onclick="backToMain()">&larr; 返回</span>
+            <span class="view-title">编辑GUI控件: <span id="gui-edit-title">武器保险</span></span>
+        </div>
+
+        <div class="gui-edit-section">
+            <h4>基本信息</h4>
+            <div class="form-field">
+                <label>标签</label>
+                <input value="武器保险" id="gui-edit-label">
+            </div>
+            <div class="form-field">
+                <label>频道</label>
+                <input value="weapon_safety" id="gui-edit-channel">
+            </div>
+            <div class="form-field">
+                <label>目标</label>
+                <span class="targets" id="gui-edit-targets">
+                    <span class="tag">vehicle<span class="remove" onclick="this.parentElement.remove()">x</span></span>
+                    <input class="target-input" placeholder="+目标" onkeydown="if(event.key==='Enter')addTargetFromInput(this)" style="width:70px;">
+                </span>
+            </div>
+        </div>
+
+        <div class="gui-edit-section">
+            <h4>控件类型</h4>
+            <div class="form-field">
+                <label>类型</label>
+                <select id="gui-edit-type" onchange="onGuiTypeChange()">
+                    <option value="toggle" selected>开关 (Toggle)</option>
+                    <option value="pulse">按钮 (Pulse)</option>
+                    <option value="slider">滑块 (Slider)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="gui-edit-section gui-type-options" id="gui-toggle-options">
+            <h4>开关设置</h4>
+            <div class="form-field">
+                <label>默认状态</label>
+                <div class="toggle-switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+            </div>
+        </div>
+
+        <div class="gui-edit-section gui-type-options" id="gui-pulse-options" style="display:none;">
+            <h4>按钮设置</h4>
+            <div class="hint" style="margin:0;">按下时发送 1.0f 脉冲信号，无运行时状态。</div>
+        </div>
+
+        <div class="gui-edit-section gui-type-options" id="gui-slider-options" style="display:none;">
+            <h4>滑块设置</h4>
+            <div class="form-field"><label>最小值</label><input type="number" value="0" style="width:80px;"></div>
+            <div class="form-field"><label>最大值</label><input type="number" value="100" style="width:80px;"></div>
+            <div class="form-field"><label>步进</label><input type="number" value="1" style="width:80px;"></div>
+            <div class="form-field"><label>默认值</label><input type="number" value="50" style="width:80px;"></div>
+        </div>
+
+        <div class="footer-actions">
+            <button class="btn btn-ghost" onclick="showToast('已保存')">保存</button>
+            <button class="btn btn-ghost" onclick="backToMain()">取消</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function backToMain() { showPage('page-main'); }
+
+    function openGroupEdit(name) {
+        document.getElementById('ge-name').value = name;
+        var modeMap = { 'base': 'GROUND', 'combat': 'INHERIT', 'cruise': 'INHERIT' };
+        document.getElementById('ge-mode').value = modeMap[name] || 'INHERIT';
+        showPage('page-group-edit');
+    }
+
+    function openGuiEdit(name) {
+        document.getElementById('gui-edit-title').textContent = name;
+        if (name === '武器保险') {
+            document.getElementById('gui-edit-type').value = 'toggle';
+            document.getElementById('gui-edit-label').value = '武器保险';
+            document.getElementById('gui-edit-channel').value = 'weapon_safety';
+        } else if (name === '瞄准灵敏度') {
+            document.getElementById('gui-edit-type').value = 'slider';
+            document.getElementById('gui-edit-label').value = '瞄准灵敏度';
+            document.getElementById('gui-edit-channel').value = 'aim_sensitivity';
+        } else if (name === '武器切换') {
+            document.getElementById('gui-edit-type').value = 'pulse';
+            document.getElementById('gui-edit-label').value = '武器切换';
+            document.getElementById('gui-edit-channel').value = 'weapon_cycle';
+        }
+        onGuiTypeChange();
+        showPage('page-gui-edit');
+    }
+
+    function onGuiTypeChange() {
+        var t = document.getElementById('gui-edit-type').value;
+        document.getElementById('gui-toggle-options').style.display = t === 'toggle' ? '' : 'none';
+        document.getElementById('gui-pulse-options').style.display = t === 'pulse' ? '' : 'none';
+        document.getElementById('gui-slider-options').style.display = t === 'slider' ? '' : 'none';
+    }
+
+    function toggleCollapse(el) {
+        var arrow = el.querySelector('.arrow');
+        var targets = el.nextElementSibling;
+        arrow.classList.toggle('open');
+        targets.style.display = targets.style.display === 'none' ? '' : 'none';
+    }
+
+    // ========== 按键捕获 ==========
+    var capturing = null;
+    function startCapture(el) {
+        if (capturing) capturing.classList.remove('listening');
+        capturing = el;
+        el.classList.add('listening');
+        el.textContent = '按任意键...';
+        showToast('按下新按键...');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (!capturing) return;
+        e.preventDefault();
+        var key = e.key;
+        if (key === ' ') key = 'Space';
+        else if (key === 'Escape') { cancelCapture(); return; }
+        else if (key === 'Control' || key === 'Shift' || key === 'Alt') return;
+        capturing.textContent = key;
+        capturing.classList.remove('listening');
+        capturing = null;
+        showToast('已设置为: ' + key);
+    });
+
+    document.addEventListener('mousedown', function(e) {
+        if (!capturing) return;
+        if (e.button === 0) capturing.textContent = 'mouse_left';
+        else if (e.button === 1) capturing.textContent = 'mouse_middle';
+        else if (e.button === 2) capturing.textContent = 'mouse_right';
+        else if (e.button === 3) capturing.textContent = 'mouse_4';
+        else if (e.button === 4) capturing.textContent = 'mouse_5';
+        capturing.classList.remove('listening');
+        capturing = null;
+        showToast('已捕获鼠标按键');
+        e.preventDefault();
+    });
+
+    function cancelCapture() {
+        if (!capturing) return;
+        capturing.classList.remove('listening');
+        capturing = null;
+        showToast('已取消');
+    }
+
+    // ========== 控制组增删（HUD 风格） ==========
+    var leftBarColors = ['orange', 'green', 'cyan', 'blue', 'pink', 'yellow'];
+
+    function addGroup() {
+        var list = document.getElementById('group-list');
+        var count = list.querySelectorAll('.hud-card').length;
+        var name = 'group_' + count;
+        var color = leftBarColors[count % leftBarColors.length];
+
+        var card = document.createElement('div');
+        card.className = 'hud-card';
+        card.setAttribute('data-name', name);
+        card.innerHTML =
+            '<div class="left-bar ' + color + '"></div>' +
+            '<div class="card-top">' +
+                '<div class="card-name">' + name + '</div>' +
+                '<span class="card-mode mode-inherit">INHERIT</span>' +
+            '</div>' +
+            '<div class="card-desc">新建控制组 · 0 个绑定 · 0 个输出频道</div>' +
+            '<div class="card-actions">' +
+                '<button class="btn-sm" onclick="openGroupEdit(\'' + name + '\')">配置</button>' +
+                '<button class="btn-icon-sm" onclick="deleteGroup(this)" title="删除">✕</button>' +
+            '</div>';
+        list.appendChild(card);
+        updateGroupCount();
+        showToast('已添加控制组: ' + name);
+    }
+
+    function deleteGroup(btn) {
+        var row = btn.closest('.hud-card');
+        var name = row.getAttribute('data-name');
+        if (!confirm('确定删除控制组 "' + name + '" 吗?')) return;
+        row.remove();
+        updateGroupCount();
+        showToast('已删除控制组: ' + name);
+    }
+
+    function updateGroupCount() {
+        var list = document.getElementById('group-list');
+        var count = list.querySelectorAll('.hud-card').length;
+        document.getElementById('group-count').textContent = count;
+    }
+
+    // ========== GUI控件增删（更新版） ==========
+    function addGui() {
+        var list = document.getElementById('gui-list');
+        var count = list.querySelectorAll('.ctrl-card').length;
+        var name = 'gui_control_' + count;
+        var row = document.createElement('div');
+        row.className = 'ctrl-card';
+        row.setAttribute('data-name', name);
+        row.setAttribute('data-type', 'toggle');
+        row.innerHTML =
+            '<div class="ctrl-widget">' +
+                '<div class="toggle-switch" onclick="this.classList.toggle(\'on\')"><div class="knob"></div></div>' +
+            '</div>' +
+            '<div class="ctrl-body">' +
+                '<div class="ctrl-label">' + name + '</div>' +
+                '<div class="ctrl-channel">new_channel</div>' +
+            '</div>' +
+            '<div class="ctrl-actions">' +
+                '<button class="btn-ghost-sm" onclick="openGuiEdit(\'' + name + '\')">编辑</button>' +
+                '<button class="btn-icon-sm" onclick="deleteGui(this)" title="删除">✕</button>' +
+            '</div>';
+        list.appendChild(row);
+        updateGuiCount();
+        showToast('已添加GUI控件: ' + name);
+    }
+
+    function deleteGui(btn) {
+        var row = btn.closest('.ctrl-card');
+        var name = row.getAttribute('data-name');
+        if (!confirm('确定删除GUI控件 "' + name + '" 吗?')) return;
+        row.remove();
+        updateGuiCount();
+        showToast('已删除GUI控件: ' + name);
+    }
+
+    function updateGuiCount() {
+        var list = document.getElementById('gui-list');
+        var count = list.querySelectorAll('.ctrl-card').length;
+        document.getElementById('gui-count').textContent = count;
+    }
+
+    // ========== 添加绑定 ==========
+    function addBinding() {
+        var list = document.getElementById('binding-list');
+        var row = document.createElement('div');
+        row.className = 'binding-row';
+        row.innerHTML =
+            '<input class="binding-label" value="" placeholder="名称">' +
+            '<span class="key-badge" onclick="startCapture(this)">未设置</span>' +
+            '<select class="action-select"><option selected>PRESS</option><option>HOLD</option><option>TOGGLE</option></select>' +
+            '<input class="channel-input" value="" placeholder="频道">' +
+            '<div class="target-tags">' +
+                '<span class="tag">vehicle<span class="remove" onclick="this.parentElement.remove()">x</span></span>' +
+                '<input class="target-input" placeholder="+目标" onkeydown="if(event.key===\'Enter\')addTargetFromInput(this)">' +
+            '</div>' +
+            '<button class="btn-icon" onclick="this.closest(\'.binding-row\').remove()">x</button>';
+        list.appendChild(row);
+        showToast('已添加新绑定');
+    }
+
+    // ========== 目标添加 ==========
+    function addTargetFromInput(input) {
+        var v = input.value.trim();
+        if (!v) return;
+        var tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.innerHTML = v + '<span class="remove" onclick="this.parentElement.remove()">x</span>';
+        input.parentElement.insertBefore(tag, input);
+        input.value = '';
+        showToast('已添加目标: ' + v);
+    }
+
+    // ========== Toast ==========
+    var toastTimer = null;
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function() { t.classList.remove('show'); }, 1500);
+    }
+</script>
+
+</body>
+</html>
