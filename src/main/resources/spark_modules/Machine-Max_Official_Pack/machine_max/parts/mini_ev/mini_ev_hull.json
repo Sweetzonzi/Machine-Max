@@ -115,6 +115,7 @@
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
             "locator": "RightFrontSeatPoint", //乘坐点定位器名称, 该定位器需要位于任意零件的碰撞箱骨骼中, 乘客将被定位于此
+            "control_group_preset": "machine_max:passenger",
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.right_front_door"]
             }
@@ -123,6 +124,7 @@
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
             "locator": "LeftBackSeatPoint",
+            "control_group_preset": "machine_max:passenger",
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.left_back_door"]
             }
@@ -131,6 +133,7 @@
             "type": "machine_max:seat",
             "definition": "machine_max:default_passenger_seat",
             "locator": "RightBackSeatPoint",
+            "control_group_preset": "machine_max:passenger",
             "passenger_num_outputs": {
               "occupied": ["interact.machine_max.right_back_door"]
             }

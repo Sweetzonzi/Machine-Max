@@ -1,0 +1,10 @@
+{
+    "base_group": {
+        "name": "base",
+        "control_mode": "inherit",
+        "move_targets": {},
+        "view_targets": {},
+        "regular_targets": {},
+        "bindings": []
+    }
+}

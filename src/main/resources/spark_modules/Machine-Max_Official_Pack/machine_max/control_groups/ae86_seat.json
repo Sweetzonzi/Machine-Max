@@ -9,7 +9,7 @@
             "aim_control": ["connector.machine_max.chassis_connection"]
         },
         "regular_targets": {
-            "regular_control": ["vehicle", "connector.machine_max.chassis_connection"]
+            "regular_control": ["connector.machine_max.chassis_connection"]
         },
         "bindings": []
     }
