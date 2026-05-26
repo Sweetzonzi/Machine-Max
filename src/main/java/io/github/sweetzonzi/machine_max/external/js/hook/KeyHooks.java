@@ -555,7 +555,17 @@ public class KeyHooks {
     public static void onMouseButton(InputEvent.MouseButton.Pre event) {
         int button = event.getButton();
         int action = event.getAction();
-        String keyName = InputConstants.getKey(button, action).getName();
+        String keyName = switch (button) {
+            case 0 -> "key.mouse.left";
+            case 1 -> "key.mouse.right";
+            case 2 -> "key.mouse.middle";
+            case 3 -> "key.mouse.4";
+            case 4 -> "key.mouse.5";
+            case 5 -> "key.mouse.6";
+            case 6 -> "key.mouse.7";
+            case 7 -> "key.mouse.8";
+            default -> "key.mouse." + button;
+        };
 
         if (!HOOK_SIGNAL_MAP.containsKey(keyName)) HOOK_SIGNAL_MAP.put(keyName, 0.0);
 

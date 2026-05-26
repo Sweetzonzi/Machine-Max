@@ -7,8 +7,5 @@
   "drift_assist": false,
   "min_steering_radius": 6.2,
   "lateral_acceleration": 40,
-  "max_drift_angular_velocity": 1,
-  "control_inputs": [
-    "move_input"
-  ]
+  "max_drift_angular_velocity": 1
 }

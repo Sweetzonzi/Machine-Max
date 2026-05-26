@@ -88,7 +88,7 @@
               "type": "machine_max:seat",
               "definition": "machine_max:default_seat",
               "locator": "gunner_seat",
-              "control_group_preset": "sdkfz:gunner_seat",
+              "control_group_preset": "machine_max:default_gunner",
               "passenger_num_outputs": {
                 "passenger_num": [
                   "subpart",
@@ -100,7 +100,7 @@
               "type": "machine_max:seat",
               "definition": "machine_max:default_seat",
               "locator": "commander_seat",
-              "control_group_preset": "sdkfz:commander_seat",
+              "control_group_preset": "machine_max:default_commander",
               "passenger_num_outputs": {
                 "passenger_num": [
                   "subpart",

@@ -11,6 +11,13 @@
         "regular_targets": {
             "regular_input": ["vehicle"]
         },
-        "bindings": []
+        "bindings": [
+            {
+                "trigger": "key.keyboard.1",
+                "action": "hold",
+                "channel": "fire_input",
+                "targets": ["vehicle"]
+            }
+        ]
     }
 }

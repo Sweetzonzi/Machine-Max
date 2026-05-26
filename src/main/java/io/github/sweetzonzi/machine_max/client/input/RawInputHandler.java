@@ -13,6 +13,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
+import io.github.sweetzonzi.machine_max.network.payload.ControlBindingPayload;
 import io.github.sweetzonzi.machine_max.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
 import io.github.sweetzonzi.machine_max.util.MMJoystickHandler;
@@ -28,8 +29,10 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.List;
 import java.util.UUID;
 
 import static io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks.Combination.LEFT_CTRL;
@@ -380,8 +383,22 @@ public class RawInputHandler {
               控制组按键绑定 — 从当前座椅子系统的 ControlGroupSet 动态加载
              */
             if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
-                for (ControlBinding binding : sub.getControlGroupSet().getMergedBindings()) {
-                    //TODO 可能需要一个工具方法，从ControlBinding创建KeyHooks.EVENT？
+                int subPartId = sub.getOwner().getSubPart().getId();
+                String subSystemName = sub.name;
+                List<ControlBinding> bindings = sub.getControlGroupSet().getMergedBindings();
+                for (int i = 0; i < bindings.size(); i++) {
+                    ControlBinding binding = bindings.get(i);
+                    int index = i;
+                    InputConstants.Key inputKey = InputConstants.getKey(binding.trigger);
+                    new KeyHooks.EVENT(inputKey)
+                            .OnKeyDown(() -> PacketDistributor.sendToServer(
+                                    new ControlBindingPayload(subPartId, subSystemName, index, 0)))
+                            .OnKeyUp(() -> {
+                                if (binding.action != BindingAction.TOGGLE) {
+                                    PacketDistributor.sendToServer(
+                                            new ControlBindingPayload(subPartId, subSystemName, index, 1));
+                                }
+                            });
                 }
             }
         }

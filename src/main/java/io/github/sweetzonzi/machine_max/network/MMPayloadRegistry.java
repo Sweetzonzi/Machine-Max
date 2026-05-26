@@ -70,6 +70,11 @@ public class MMPayloadRegistry {
                 ViewInputPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ViewInputPayload::serverHandler)
         );
+        input.playToServer(//控制组按键绑定输入
+                ControlBindingPayload.TYPE,
+                ControlBindingPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ControlBindingPayload::serverHandler)
+        );
         sync.playToClient(//通知客户端创建载具
                 VehicleCreatePayload.TYPE,
                 VehicleCreatePayload.STREAM_CODEC,

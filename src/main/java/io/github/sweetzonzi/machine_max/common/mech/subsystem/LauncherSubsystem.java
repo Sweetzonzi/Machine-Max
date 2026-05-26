@@ -9,6 +9,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr;
 import jme3utilities.math.MyQuaternion;
 import net.minecraft.world.entity.projectile.Arrow;
+import net.minecraft.world.entity.projectile.Snowball;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
@@ -102,10 +103,10 @@ public class LauncherSubsystem extends BasicSubsystem {
 
         // 生成Arrow并发射
         if (!getLevel().isClientSide()) {
-            Arrow arrow = new Arrow(getLevel(), spawnPos.x, spawnPos.y, spawnPos.z, ItemStack.EMPTY, null);
-            arrow.shoot(spreadDir.x, spreadDir.y, spreadDir.z, speedBpt, 0f);
+            Snowball snowball = new Snowball(getLevel(), spawnPos.x, spawnPos.y, spawnPos.z);
+            snowball.shoot(spreadDir.x, spreadDir.y, spreadDir.z, speedBpt, 0f);
             // TODO: 设置弹丸的发射者（从座舱玩家获取）
-            getLevel().addFreshEntity(arrow);
+            getLevel().addFreshEntity(snowball);
         }
     }
 

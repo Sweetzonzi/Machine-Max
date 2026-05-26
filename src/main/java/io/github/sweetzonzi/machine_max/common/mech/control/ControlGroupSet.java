@@ -77,36 +77,153 @@ public class ControlGroupSet {
     }
 
     /**
-     * 获取当前有效的移动输入输出目标。
+     * 获取当前有效的移动输入输出目标：以 baseGroup 为基准，激活子组同频道覆盖合并。
+     * 用于实际信号发送。
      */
     public Map<String, List<String>> getMergedMoveTargets() {
         ControlGroup active = getActiveGroup();
-        if (active != null && !active.moveTargets.isEmpty()) {
-            return active.moveTargets;
+        if (active == null || active.moveTargets.isEmpty()) {
+            return baseGroup.moveTargets;
         }
-        return baseGroup.moveTargets;
+        Map<String, List<String>> result = new HashMap<>(baseGroup.moveTargets);
+        result.putAll(active.moveTargets);
+        return result;
     }
 
     /**
-     * 获取当前有效的视角输入输出目标。
+     * 获取当前有效的视角输入输出目标：以 baseGroup 为基准，激活子组同频道覆盖合并。
+     * 用于实际信号发送。
      */
     public Map<String, List<String>> getMergedViewTargets() {
         ControlGroup active = getActiveGroup();
-        if (active != null && !active.viewTargets.isEmpty()) {
-            return active.viewTargets;
+        if (active == null || active.viewTargets.isEmpty()) {
+            return baseGroup.viewTargets;
         }
-        return baseGroup.viewTargets;
+        Map<String, List<String>> result = new HashMap<>(baseGroup.viewTargets);
+        result.putAll(active.viewTargets);
+        return result;
     }
 
     /**
-     * 获取当前有效的常规按键输入输出目标。
+     * 获取当前有效的常规按键输入输出目标：以 baseGroup 为基准，激活子组同频道覆盖合并。
+     * 用于实际信号发送。
      */
     public Map<String, List<String>> getMergedRegularTargets() {
         ControlGroup active = getActiveGroup();
-        if (active != null && !active.regularTargets.isEmpty()) {
-            return active.regularTargets;
+        if (active == null || active.regularTargets.isEmpty()) {
+            return baseGroup.regularTargets;
         }
-        return baseGroup.regularTargets;
+        Map<String, List<String>> result = new HashMap<>(baseGroup.regularTargets);
+        result.putAll(active.regularTargets);
+        return result;
+    }
+
+    /**
+     * 获取所有控制组的移动输出目标并集（baseGroup + 全部子组）。
+     * 用于注册和显示所有可能的目标名称，实际发送信号时应使用 getMergedMoveTargets()。
+     */
+    public Map<String, List<String>> getAllMoveTargets() {
+        Map<String, List<String>> result = new HashMap<>(baseGroup.moveTargets);
+        for (ControlGroup group : groups) {
+            for (Map.Entry<String, List<String>> entry : group.moveTargets.entrySet()) {
+                result.merge(entry.getKey(), entry.getValue(), (a, b) -> {
+                    List<String> merged = new ArrayList<>(a);
+                    for (String s : b) {
+                        if (!merged.contains(s)) merged.add(s);
+                    }
+                    return merged;
+                });
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 获取所有控制组的视角输出目标并集（baseGroup + 全部子组）。
+     * 用于注册和显示所有可能的目标名称，实际发送信号时应使用 getMergedViewTargets()。
+     */
+    public Map<String, List<String>> getAllViewTargets() {
+        Map<String, List<String>> result = new HashMap<>(baseGroup.viewTargets);
+        for (ControlGroup group : groups) {
+            for (Map.Entry<String, List<String>> entry : group.viewTargets.entrySet()) {
+                result.merge(entry.getKey(), entry.getValue(), (a, b) -> {
+                    List<String> merged = new ArrayList<>(a);
+                    for (String s : b) {
+                        if (!merged.contains(s)) merged.add(s);
+                    }
+                    return merged;
+                });
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 获取所有控制组的常规按键输出目标并集（baseGroup + 全部子组）。
+     * 用于注册和显示所有可能的目标名称，实际发送信号时应使用 getMergedRegularTargets()。
+     */
+    public Map<String, List<String>> getAllRegularTargets() {
+        Map<String, List<String>> result = new HashMap<>(baseGroup.regularTargets);
+        for (ControlGroup group : groups) {
+            for (Map.Entry<String, List<String>> entry : group.regularTargets.entrySet()) {
+                result.merge(entry.getKey(), entry.getValue(), (a, b) -> {
+                    List<String> merged = new ArrayList<>(a);
+                    for (String s : b) {
+                        if (!merged.contains(s)) merged.add(s);
+                    }
+                    return merged;
+                });
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 获取所有控制组（baseGroup + 全部子组）中所有 ControlBinding 的目标并集 {频道 -> [目标名列表]}。
+     * 用于注册和显示所有可能的目标名称，实际发送信号时应使用 getMergedBindings() 按激活态发送。
+     */
+    public Map<String, List<String>> getAllBindingTargets() {
+        Map<String, List<String>> result = new HashMap<>();
+        for (ControlGroup group : getAllGroups()) {
+            for (ControlBinding binding : group.bindings) {
+                result.merge(binding.channel, binding.targets, (a, b) -> {
+                    List<String> merged = new ArrayList<>(a);
+                    for (String s : b) {
+                        if (!merged.contains(s)) merged.add(s);
+                    }
+                    return merged;
+                });
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 获取所有 GUI 交互元素的目标并集 {频道 -> [目标名列表]}。
+     * 用于注册和显示所有可能的目标名称。
+     */
+    public Map<String, List<String>> getAllGuiActionTargets() {
+        Map<String, List<String>> result = new HashMap<>();
+        for (AbstractGuiAction action : guiActions) {
+            result.merge(action.channel, action.targets, (a, b) -> {
+                List<String> merged = new ArrayList<>(a);
+                for (String s : b) {
+                    if (!merged.contains(s)) merged.add(s);
+                }
+                return merged;
+            });
+        }
+        return result;
+    }
+
+    /**
+     * 获取 baseGroup + 全部子组的列表，用于遍历所有控制组。
+     */
+    private List<ControlGroup> getAllGroups() {
+        List<ControlGroup> all = new ArrayList<>(1 + groups.size());
+        all.add(baseGroup);
+        all.addAll(groups);
+        return all;
     }
 
     /** 获取 GUI 交互元素列表（不可变视图） */
