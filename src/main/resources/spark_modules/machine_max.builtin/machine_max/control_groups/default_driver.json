@@ -1,7 +1,7 @@
 {
     "base_group": {
         "name": "base",
-        "control_mode": "inherit",
+        "control_mode": "ground",
         "move_targets": {
             "move_control": ["vehicle"]
         },

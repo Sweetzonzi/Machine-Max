@@ -1,0 +1,16 @@
+{
+    "base_group": {
+        "name": "base",
+        "control_mode": "inherit",
+        "move_targets": {
+            "move_control": ["connector.machine_max.chassis_connection"]
+        },
+        "view_targets": {
+            "aim_control": ["connector.machine_max.chassis_connection"]
+        },
+        "regular_targets": {
+            "regular_control": ["vehicle", "connector.machine_max.chassis_connection"]
+        },
+        "bindings": []
+    }
+}
