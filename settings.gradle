@@ -38,3 +38,15 @@ if (ballisticsFrameworkDir.exists()) { // 首选同目录下弹道框架源码�
 } else { // 若不存在，则使用发布的/本地jar作为依赖
     println("[Machine-Max] BallisticsFramework not found, using published/local jar")
 }
+
+def apricityuiDir = file("${apricityui_dir}") // AUI HTML/CSS/JS UI 框架源码目录
+if (apricityuiDir.exists()) { // 首选同目录下AUI源码作为依赖
+    includeBuild(apricityuiDir) {
+        dependencySubstitution {
+            substitute(module("com.sighs:ApricityUI-neoforge-1.21.1"))
+                    .using(project(":"))
+        }
+    }
+} else { // 若不存在，则使用发布的/本地jar作为依赖
+    println("[Machine-Max] ApricityUI not found, using published/local jar")
+}

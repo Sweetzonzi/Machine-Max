@@ -19,6 +19,7 @@ public class KeyBinding {
     public static final String INTERACT_KEY = "key.machine_max.general.interact";
     public static final String LEAVE_VEHICLE_KEY = "key.machine_max.general.leave_vehicle";
     public static final String GENERAL_TOGGLE_LIGHT_KEY = "key.machine_max.general.toggle_light";
+    public static final String GENERAL_VEHICLE_INFO_KEY = "key.machine_max.general.vehicle_info";
 
     public static final String GROUND_FORWARD_KEY = "key.machine_max.ground.forward";
     public static final String GROUND_BACKWARD_KEY = "key.machine_max.ground.backward";
@@ -47,6 +48,7 @@ public class KeyBinding {
         event.register(KeyBinding.generalInteractKey);//互动
         event.register(KeyBinding.generalLeaveVehicleKey);//离开载具
         event.register(KeyBinding.generalToggleLightKey);//灯光开关
+        event.register(KeyBinding.generalVehicleInfoKey);//车辆信息面板
         //地面载具
         event.register(KeyBinding.groundForwardKey);//地面载具前进
         event.register(KeyBinding.groundBackWardKey);//地面载具后退
@@ -96,6 +98,13 @@ public class KeyBinding {
             KeyCategory.GENERAL,//键位冲突类型
             InputConstants.Type.KEYSYM,//默认为键盘
             GLFW.GLFW_KEY_L,//默认按键
+            KeyCategory.GENERAL.getCategory()//键位类型
+    );
+
+    public static KeyMapping generalVehicleInfoKey = new KeyMapping(GENERAL_VEHICLE_INFO_KEY,//键位名称
+            KeyCategory.GENERAL,//键位冲突类型
+            InputConstants.Type.KEYSYM,//默认为键盘
+            GLFW.GLFW_KEY_TAB,//默认按键
             KeyCategory.GENERAL.getCategory()//键位类型
     );
 

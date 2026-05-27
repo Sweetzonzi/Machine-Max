@@ -29,6 +29,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
+import com.sighs.apricityui.ApricityUI;
 import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
@@ -53,6 +54,24 @@ public class RawInputHandler {
     static byte[] moveInputConflicts = new byte[6];//相应轴向上的输入冲突
     public static boolean freeCam = false;//自由视角是否激活
     public static boolean vehicleLightsOn = false;//灯光是否开启
+    public static boolean vehicleInfoPanelVisible = false;// 车辆信息面板是否可见
+    private static final String VEHICLE_INFO_PANEL_PATH = "machine_max/vehicle_info_panel.html";
+
+    /* TODO: 未来扩展 —— 绑定方块实体以支持车辆物资存取
+      *  在需要绑定车体存储的 BlockEntity 时，服务端改为使用 OpenBindPlan：
+      *
+      *   OpenBindPlan plan = ApricityUI.bind()
+      *           .primaryBind("vehicle-storage")                     // 车体存储容器
+      *               .blockEntity(pos.getX(), pos.getY(), pos.getZ(), null)
+      *               .bind()
+      *           .bind("backpack")                                   // 玩家背包
+      *               .player()
+      *               .bind()
+      *           .build();
+      *
+      *   // 服务端打开（需要 ServerPlayer 引用，不能从客户端按键直接调用）
+      *   // ApricityUI.openScreen(serverPlayer, VEHICLE_INFO_PANEL_PATH, plan);
+      */
 
     static int trans_x_input = 0;
     static int trans_y_input = 0;
@@ -328,6 +347,20 @@ public class RawInputHandler {
                     .OnKeyDown(() -> {
                         vehicleLightsOn = !vehicleLightsOn;
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_LIGHT.getValue(), vehicleLightsOn ? 1 : 0));
+                    });
+
+            //车辆信息面板开关（Tab键）
+            new KeyHooks.EVENT(KeyBinding.generalVehicleInfoKey)
+                    .OnKeyDown(() -> {
+                        vehicleInfoPanelVisible = !vehicleInfoPanelVisible;
+                        if (vehicleInfoPanelVisible) {
+                            // 使用客户端 openScreen 发送网络请求到服务端，
+                            // 服务端编译 HTML 模板、自动解析 bind="player" 的容器绑到玩家背包，
+                            // 然后打开 ApricityContainerMenu 供客户端渲染。
+                            ApricityUI.openScreen(VEHICLE_INFO_PANEL_PATH);
+                        } else {
+                            ApricityUI.closeScreen();
+                        }
                     });
 
         /*

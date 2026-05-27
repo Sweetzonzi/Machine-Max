@@ -144,6 +144,7 @@
   "key.machine_max.general.interact": "交互",
   "key.machine_max.general.leave_vehicle": "离开载具",
   "key.machine_max.general.toggle_light": "灯光开关",
+  "key.machine_max.general.vehicle_info": "车辆信息",
   "key.machine_max.ground.backward": "后退",
   "key.machine_max.ground.clutch": "离合",
   "key.machine_max.ground.down_shift": "降档",
