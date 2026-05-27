@@ -5,6 +5,7 @@ import com.sighs.apricityui.event.MouseEvent;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.control.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
@@ -14,7 +15,9 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 车辆信息面板（控制组编辑器）管理器。
@@ -28,7 +31,6 @@ import java.util.List;
 public class VehicleInfoPanelManager {
 
     private static final String PANEL_PATH = "machine_max/vehicle_info_panel.html";
-    private static boolean initialized = false;
     private static int toastTimer = 0;
 
     /** 上次初始化的文档 UUID，用于检测文档实例是否变化（ESC 关闭再 TAB 打开时会创建新文档） */
@@ -42,27 +44,72 @@ public class VehicleInfoPanelManager {
     private static int    dragStartPct = 50;
     private static final double TRACK_WIDTH = 48.0; // 与 CSS .widget-slider .track width 一致
 
-    // 控制组名称 → 编辑页表单数据的映射
-    private static final String[][] GROUP_DATA = {
-            {"base",   "GROUND",  "始终激活 · 2 个绑定 · 3 个输出频道"},
-            {"combat", "INHERIT", "战斗模式 · 4 个绑定 · 2 个输出频道"},
-            {"cruise", "INHERIT", "巡航模式 · 2 个绑定 · 1 个输出频道"}
-    };
+    /**
+     * 用于 GUI 测试的预置控制组集合。<br>
+     * 包含 1 个 baseGroup（地面载具模式）、2 个子控制组（combat / cruise）和 3 个 GUI 交互元素。<br>
+     * 默认激活 combat 子组（activeIndex = 0）。
+     */
+    private static ControlGroupSet FOR_GUI_TEST = null;
 
-    // GUI 控件名称 → 编辑页表单数据的映射
-    private static final String[][] GUI_DATA = {
-            {"武器保险",   "weapon_safety",   "toggle"},
-            {"瞄准灵敏度", "aim_sensitivity", "slider"},
-            {"武器切换",   "weapon_cycle",    "pulse"}
-    };
+    /**
+     * 获取 baseGroup + 全部子组的列表，用于卡片构建。
+     */
+    private static List<ControlGroup> getAllControlGroups(ControlGroupSet set) {
+        List<ControlGroup> all = new ArrayList<>(1 + set.groups.size());
+        all.add(set.baseGroup);
+        all.addAll(set.groups);
+        return all;
+    }
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Pre event) {
+        if (FOR_GUI_TEST == null) {
+            var baseGroup = new ControlGroup("base", ControlMode.GROUND,
+                    Map.of(
+                            "forward", List.of("main_engine"),
+                            "steering", List.of("steering_gear")
+                    ),
+                    Map.of("camera", List.of("main_camera")),
+                    Map.of("handbrake", List.of("brake_system")),
+                    List.of(
+                            new ControlBinding("key.w", BindingAction.PRESS, "forward", List.of("main_engine")),
+                            new ControlBinding("key.s", BindingAction.PRESS, "brake", List.of("main_engine")),
+                            new ControlBinding("key.a", BindingAction.PRESS, "steering", List.of("steering_gear")),
+                            new ControlBinding("key.d", BindingAction.PRESS, "steering", List.of("steering_gear")),
+                            new ControlBinding("key.space", BindingAction.HOLD, "handbrake", List.of("brake_system"))
+                    )
+            );
+
+            var groups = List.of(
+                    new ControlGroup("combat", ControlMode.INHERIT,
+                            Map.of(), Map.of(), Map.of(),
+                            List.of(
+                                    new ControlBinding("mouse.left", BindingAction.PRESS, "fire_primary", List.of("turret")),
+                                    new ControlBinding("mouse.right", BindingAction.TOGGLE, "aim_mode", List.of("turret")),
+                                    new ControlBinding("key.r", BindingAction.PRESS, "reload", List.of("turret")),
+                                    new ControlBinding("key.f", BindingAction.PRESS, "cycle_weapon", List.of("turret"))
+                            )
+                    ),
+                    new ControlGroup("cruise", ControlMode.INHERIT,
+                            Map.of(), Map.of(), Map.of(),
+                            List.of(
+                                    new ControlBinding("key.c", BindingAction.TOGGLE, "cruise_control", List.of("main_engine")),
+                                    new ControlBinding("key.up", BindingAction.PRESS, "speed_up", List.of("main_engine"))
+                            )
+                    )
+            );
+
+            FOR_GUI_TEST = new ControlGroupSet(baseGroup, groups, List.of(
+                    new GuiToggleAction("武器保险", "weapon_safety", List.of("turret")),
+                    new GuiSliderAction("瞄准灵敏度", "aim_sensitivity", List.of("turret"),
+                            0f, 100f, 1f, 50f),
+                    new GuiPulseAction("武器切换", "weapon_cycle", List.of("turret"))
+            ), 0);
+        }
         List<Document> docs = ApricityUI.getDocument(PANEL_PATH);
 
         // 文档不存在 → 面板已关闭，重置状态
-        if (docs == null || docs.isEmpty()) {
-            initialized = false;
+        if (docs.isEmpty()) {
             lastDocUuid = null;
             return;
         }
@@ -71,15 +118,13 @@ public class VehicleInfoPanelManager {
         var player = Minecraft.getInstance().player;
         if (player == null || !(((IEntityMixin) player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem)) {
             ApricityUI.closeScreen();
-            initialized = false;
             lastDocUuid = null;
             return;
         }
 
         // 取最后一个文档（最新的），避免旧文档残留干扰
-        Document doc = docs.get(docs.size() - 1);
+        Document doc = docs.getLast();
         if (doc == null || doc.body == null) {
-            initialized = false;
             lastDocUuid = null;
             return;
         }
@@ -88,7 +133,6 @@ public class VehicleInfoPanelManager {
         String currentUuid = doc.getUuid().toString();
         if (!currentUuid.equals(lastDocUuid)) {
             initPanel(doc);
-            initialized = true;
             lastDocUuid = currentUuid;
         }
 
@@ -104,8 +148,8 @@ public class VehicleInfoPanelManager {
     /** 初始化：构建卡片 + 绑定事件 */
     private static void initPanel(Document doc) {
         // --- 动态构建卡片列表 ---
-        buildGroupCards(doc);
-        buildGuiCards(doc);
+        buildGroupCards(doc, FOR_GUI_TEST);
+        buildGuiCards(doc, FOR_GUI_TEST);
 
         // --- 滑条拖拽：document 级 mousemove / mouseup ---
         doc.body.addEventListener("mousemove", e -> {
@@ -133,17 +177,17 @@ public class VehicleInfoPanelManager {
         bindClick(doc, "btn-reset", e -> showToast(doc, "已重置为预设配置"));
 
         // 控制组卡片 → 编辑页
-        for (String[] g : GROUP_DATA) {
-            String name = g[0];
-            bindClick(doc, "btn-config-" + name, e -> openGroupEdit(doc, name));
+        for (ControlGroup group : getAllControlGroups(FOR_GUI_TEST)) {
+            String name = group.name;
+            bindClick(doc, "btn-config-" + name, e -> openGroupEdit(doc, group));
             bindClick(doc, "btn-del-" + name, e -> showToast(doc, "删除控制组: " + name + "（待实现）"));
         }
 
         // GUI 控件卡片 → 编辑页
-        for (String[] g : GUI_DATA) {
-            String name = g[0];
-            bindClick(doc, "btn-gui-config-" + name, e -> openGuiEdit(doc, name));
-            bindClick(doc, "btn-gui-del-" + name, e -> showToast(doc, "删除控件: " + name + "（待实现）"));
+        for (AbstractGuiAction action : FOR_GUI_TEST.getGuiActions()) {
+            String label = action.label;
+            bindClick(doc, "btn-gui-config-" + label, e -> openGuiEdit(doc, action));
+            bindClick(doc, "btn-gui-del-" + label, e -> showToast(doc, "删除控件: " + label + "（待实现）"));
         }
 
         // --- 控制组编辑页 ---
@@ -159,15 +203,17 @@ public class VehicleInfoPanelManager {
 
     // ===== 动态构建卡片 =====
 
-    /** 根据 GROUP_DATA 在 #group-list 中动态创建控制组卡片 */
-    private static void buildGroupCards(Document doc) {
+    /** 根据 ControlGroupSet 在 #group-list 中动态创建控制组卡片 */
+    private static void buildGroupCards(Document doc, ControlGroupSet data) {
         Element groupList = doc.getElementById("group-list");
         if (groupList == null) return;
 
-        for (String[] g : GROUP_DATA) {
-            String name = g[0];
-            String mode = g[1];
-            String desc = g[2];
+        List<ControlGroup> allGroups = getAllControlGroups(data);
+
+        for (ControlGroup group : allGroups) {
+            String name = group.name;
+            String mode = group.controlMode.name();
+            String desc = buildGroupDesc(group);
 
             // 卡片容器
             Element card = doc.createElement("div");
@@ -190,8 +236,8 @@ public class VehicleInfoPanelManager {
             nameEl.setAttribute("class", "card-name");
             nameEl.innerText = name;
 
-            // base 组额外显示"基础"角标
-            if ("base".equals(name)) {
+            // baseGroup 额外显示"基础"角标
+            if (group == data.baseGroup) {
                 Element badge = doc.createElement("span");
                 badge.setAttribute("class", "base-badge");
                 badge.innerText = "基础";
@@ -238,18 +284,29 @@ public class VehicleInfoPanelManager {
 
         // 更新计数
         Element countEl = doc.getElementById("group-count");
-        if (countEl != null) countEl.innerText = String.valueOf(GROUP_DATA.length);
+        if (countEl != null) countEl.innerText = String.valueOf(allGroups.size());
     }
 
-    /** 根据 GUI_DATA 在 #gui-list 中动态创建 GUI 控件卡片 */
-    private static void buildGuiCards(Document doc) {
+    /** 构建控制组的描述文字 */
+    private static String buildGroupDesc(ControlGroup group) {
+        int bindings = group.bindings.size();
+        int channels = group.moveTargets.size()
+                + group.viewTargets.size()
+                + group.regularTargets.size();
+        return bindings + " 个绑定 · " + channels + " 个输出频道";
+    }
+
+    /** 根据 ControlGroupSet 的 guiActions 在 #gui-list 中动态创建 GUI 控件卡片 */
+    private static void buildGuiCards(Document doc, ControlGroupSet data) {
         Element guiList = doc.getElementById("gui-list");
         if (guiList == null) return;
 
-        for (String[] g : GUI_DATA) {
-            String label = g[0];
-            String channel = g[1];
-            String type = g[2];
+        List<AbstractGuiAction> actions = data.getGuiActions();
+
+        for (AbstractGuiAction action : actions) {
+            String label = action.label;
+            String channel = action.channel;
+            String type = action.type().name().toLowerCase();
 
             // 卡片容器
             Element card = doc.createElement("div");
@@ -277,8 +334,8 @@ public class VehicleInfoPanelManager {
             buildWidget(doc, widget, type, label, channel);
 
             // 右侧按钮区
-            Element actions = doc.createElement("div");
-            actions.setAttribute("class", "ctrl-actions");
+            Element actionsEl = doc.createElement("div");
+            actionsEl.setAttribute("class", "ctrl-actions");
 
             Element editBtn = doc.createElement("span");
             editBtn.setAttribute("class", "btn-config");
@@ -290,18 +347,18 @@ public class VehicleInfoPanelManager {
             delBtn.setAttribute("id", "btn-gui-del-" + label);
             delBtn.innerText = "×";
 
-            actions.append(editBtn);
-            actions.append(delBtn);
+            actionsEl.append(editBtn);
+            actionsEl.append(delBtn);
 
             card.append(body);
             card.append(widget);
-            card.append(actions);
+            card.append(actionsEl);
             guiList.append(card);
         }
 
         // 更新计数
         Element countEl = doc.getElementById("gui-count");
-        if (countEl != null) countEl.innerText = String.valueOf(GUI_DATA.length);
+        if (countEl != null) countEl.innerText = String.valueOf(actions.size());
     }
 
     /** 根据控件类型构建可交互的微件 DOM 子树，追加到 widget 容器中 */
@@ -379,7 +436,6 @@ public class VehicleInfoPanelManager {
     private static String modeToStyle(String mode) {
         return switch (mode) {
             case "GROUND" -> "ground";
-            case "INHERIT" -> "inherit";
             case "PLANE" -> "plane";
             case "SHIP" -> "ship";
             case "MECH" -> "mech";
@@ -404,27 +460,18 @@ public class VehicleInfoPanelManager {
         }
     }
 
-    private static void openGroupEdit(Document doc, String groupName) {
-        // 查找控制组数据并填充表单
-        for (String[] g : GROUP_DATA) {
-            if (g[0].equals(groupName)) {
-                setValue(doc, "ge-name", g[0]);
-                setSelect(doc, "ge-mode", g[1]);
-                break;
-            }
-        }
+    /** 打开控制组编辑页，填充表单 */
+    private static void openGroupEdit(Document doc, ControlGroup group) {
+        setValue(doc, "ge-name", group.name);
+        setSelect(doc, "ge-mode", group.controlMode.name());
         showPage(doc, "page-group-edit");
     }
 
-    private static void openGuiEdit(Document doc, String guiName) {
-        for (String[] g : GUI_DATA) {
-            if (g[0].equals(guiName)) {
-                setValue(doc, "ge-label", g[0]);
-                setValue(doc, "ge-channel-input", g[1]);
-                setSelect(doc, "ge-type", g[2]);
-                break;
-            }
-        }
+    /** 打开 GUI 控件编辑页，填充表单 */
+    private static void openGuiEdit(Document doc, AbstractGuiAction action) {
+        setValue(doc, "ge-label", action.label);
+        setValue(doc, "ge-channel-input", action.channel);
+        setSelect(doc, "ge-type", action.type().name().toLowerCase());
         showPage(doc, "page-gui-edit");
     }
 

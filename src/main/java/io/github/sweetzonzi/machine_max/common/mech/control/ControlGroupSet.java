@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.control;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.netty.buffer.ByteBuf;
+import lombok.Getter;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +15,7 @@ import java.util.*;
  * 包含一个始终激活的 baseGroup 和一个可切换的子控制组列表。<br>
  * 激活切换时自动合并 baseGroup 和当前子组的绑定与输出目标。
  */
+@Getter
 public class ControlGroupSet {
 
     /** 始终激活的基础控制组，由 UGC 作者预设，玩家不可移除 */
@@ -23,14 +25,16 @@ public class ControlGroupSet {
     public final List<ControlGroup> groups;
 
     /** 当前激活的子控制组索引，-1 表示无子组激活 */
-    private int activeIndex = -1;
+    private int activeIndex;
 
     /** GUI 交互元素列表，始终可见，不占物理按键。运行时状态（TOGGLE/SLIDER）保存在元素自身 */
     private final List<AbstractGuiAction> guiActions = new ArrayList<>();
 
-    public ControlGroupSet(ControlGroup baseGroup, List<ControlGroup> groups) {
+    public ControlGroupSet(ControlGroup baseGroup, List<ControlGroup> groups, List<AbstractGuiAction> guiActions, int activeIndex) {
         this.baseGroup = baseGroup;
         this.groups = groups != null ? List.copyOf(groups) : Collections.emptyList();
+        this.guiActions.addAll(guiActions != null ? guiActions : Collections.emptyList());
+        this.activeIndex = activeIndex;
     }
 
     /**
@@ -42,13 +46,6 @@ public class ControlGroupSet {
             return groups.get(activeIndex);
         }
         return null;
-    }
-
-    /**
-     * 获取当前激活的子控制组索引。
-     */
-    public int getActiveIndex() {
-        return activeIndex;
     }
 
     /**
@@ -226,11 +223,6 @@ public class ControlGroupSet {
         return all;
     }
 
-    /** 获取 GUI 交互元素列表（不可变视图） */
-    public List<AbstractGuiAction> getGuiActions() {
-        return Collections.unmodifiableList(guiActions);
-    }
-
     /**
      * 根据按键名查找第一个匹配的绑定（优先查当前子组，再查 baseGroup）。
      */
@@ -265,7 +257,9 @@ public class ControlGroupSet {
             new ControlGroup("base", ControlMode.INHERIT,
                     Collections.emptyMap(), Collections.emptyMap(),
                     Collections.emptyMap(), Collections.emptyList()),
-            Collections.emptyList()
+            Collections.emptyList(),
+            Collections.emptyList(),
+            -1
     );
 
     /**
@@ -282,25 +276,15 @@ public class ControlGroupSet {
     public static final Codec<ControlGroupSet> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ControlGroup.CODEC.fieldOf("base_group").forGetter(s -> s.baseGroup),
             ControlGroup.CODEC.listOf().optionalFieldOf("groups", Collections.emptyList()).forGetter(s -> s.groups),
-            Codec.INT.optionalFieldOf("active_index", -1).forGetter(s -> s.activeIndex),
-            AbstractGuiAction.CODEC.listOf().optionalFieldOf("gui_actions", Collections.emptyList()).forGetter(s -> s.guiActions)
-    ).apply(instance, (baseGroup, groups, activeIndex, guiActions) -> {
-        ControlGroupSet set = new ControlGroupSet(baseGroup, groups);
-        set.activeIndex = activeIndex;
-        set.guiActions.addAll(guiActions);
-        return set;
-    }));
+            AbstractGuiAction.CODEC.listOf().optionalFieldOf("gui_actions", Collections.emptyList()).forGetter(s -> s.guiActions),
+            Codec.INT.optionalFieldOf("active_index", -1).forGetter(s -> s.activeIndex)
+    ).apply(instance, ControlGroupSet::new));
 
     public static final StreamCodec<ByteBuf, ControlGroupSet> STREAM_CODEC = StreamCodec.composite(
             ControlGroup.STREAM_CODEC, s -> s.baseGroup,
             ControlGroup.STREAM_CODEC.apply(ByteBufCodecs.list()), s -> s.groups,
-            ByteBufCodecs.VAR_INT, s -> s.activeIndex,
             AbstractGuiAction.STREAM_CODEC.apply(ByteBufCodecs.list()), s -> s.guiActions,
-            (baseGroup, groups, activeIndex, guiActions) -> {
-                ControlGroupSet set = new ControlGroupSet(baseGroup, groups);
-                set.activeIndex = activeIndex;
-                set.guiActions.addAll(guiActions);
-                return set;
-            }
+            ByteBufCodecs.VAR_INT, s -> s.activeIndex,
+            ControlGroupSet::new
     );
 }
