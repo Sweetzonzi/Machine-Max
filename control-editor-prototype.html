@@ -16,7 +16,7 @@
         }
 
         .panel {
-            width: 820px;
+            width: 420px;
             background: #242430;
             border-radius: 8px;
             overflow: hidden;
@@ -113,7 +113,7 @@
         /* --- 控制组：HUD 风格卡片 --- */
         .hud-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr;
             gap: 6px;
         }
 
@@ -121,12 +121,13 @@
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.06);
             border-radius: 6px;
-            padding: 14px 14px 12px;
             cursor: pointer;
             transition: all 0.18s ease;
             position: relative;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            align-items: stretch;
+            min-height: 0;
         }
         .hud-card:hover {
             border-color: rgba(255, 100, 0, 0.25);
@@ -135,6 +136,26 @@
         .hud-card.active {
             border-color: rgba(255, 100, 0, 0.4);
             background: rgba(255, 100, 0, 0.06);
+        }
+
+        /* 卡片主体（标题+描述） */
+        .hud-card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 14px 14px 12px 18px;
+            min-width: 0;
+        }
+
+        /* 右侧按钮行（垂直居中） */
+        .hud-card-side {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 14px 14px 12px 0;
+            flex-shrink: 0;
         }
 
         /* 左侧装饰条 */
@@ -161,10 +182,14 @@
 
         .hud-card .card-top {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
+            align-items: center;
             margin-bottom: 6px;
-            padding-left: 8px;
+        }
+        .hud-card .card-top-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
         }
         .hud-card .card-name {
             font-size: 13px;
@@ -200,52 +225,12 @@
             font-size: 11px;
             color: rgba(255,255,255,0.35);
             line-height: 1.5;
-            margin-bottom: 10px;
-            flex: 1;
-            padding-left: 8px;
         }
-
-        .hud-card .card-actions {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 0 0 8px;
-            border-top: 1px solid rgba(255,255,255,0.04);
-        }
-        .hud-card .card-actions .btn-sm {
-            padding: 4px 12px;
-            border-radius: 4px;
-            font-size: 10px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.12s;
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.5);
-            font-weight: 600;
-        }
-        .hud-card .card-actions .btn-sm:hover { background: rgba(255, 100, 0, 0.15); color: #ff8833; }
-        .hud-card .card-actions .btn-icon-sm {
-            width: 24px;
-            height: 24px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            font-size: 11px;
-            cursor: pointer;
-            border: none;
-            color: rgba(255,255,255,0.15);
-            background: transparent;
-            transition: all 0.12s;
-            margin-left: auto;
-        }
-        .hud-card .card-actions .btn-icon-sm:hover { color: #ff4444; background: rgba(255, 68, 68, 0.1); }
-
         /* --- GUI控件：HUD 风格卡片 --- */
         .ctrl-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
+            grid-template-columns: 1fr;
+            gap: 6px;
         }
 
         .ctrl-card {
@@ -282,7 +267,7 @@
             gap: 4px;
             flex-shrink: 0;
         }
-        .ctrl-card .ctrl-actions .btn-ghost-sm {
+        .btn-ghost-sm {
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 10px;
@@ -291,9 +276,10 @@
             background: transparent;
             color: rgba(255,255,255,0.3);
             transition: all 0.12s;
+            font-weight: 600;
         }
-        .ctrl-card .ctrl-actions .btn-ghost-sm:hover { background: rgba(255,255,255,0.06); color: #ff8833; }
-        .ctrl-card .ctrl-actions .btn-icon-sm {
+        .btn-ghost-sm:hover { background: rgba(255,255,255,0.06); color: #ff8833; }
+        .btn-icon-sm {
             width: 22px;
             height: 22px;
             display: inline-flex;
@@ -307,7 +293,7 @@
             background: transparent;
             transition: all 0.12s;
         }
-        .ctrl-card .ctrl-actions .btn-icon-sm:hover { color: #ff4444; background: rgba(255, 68, 68, 0.1); }
+        .btn-icon-sm:hover { color: #ff4444; background: rgba(255, 68, 68, 0.1); }
 
         /* ===== 组件样式 (HUD 色调) ===== */
         .toggle-switch {
@@ -617,7 +603,7 @@
 
 <div class="panel">
     <div class="panel-header">
-        <span class="title">控制组编辑器</span>
+        <span class="title">载具控制</span>
         <span class="preset-badge">machine_max:default_driver</span>
         <span class="subtitle">driver_seat</span>
     </div>
@@ -639,15 +625,19 @@
                 <!-- base -->
                 <div class="hud-card active" data-name="base">
                     <div class="left-bar orange"></div>
-                    <div class="card-top">
-                        <div class="card-name">
-                            base <span class="base-badge">基础</span>
+                    <div class="hud-card-body">
+                        <div class="card-top">
+                            <div class="card-top-left">
+                                <div class="card-name">
+                                    base <span class="base-badge">基础</span>
+                                </div>
+                                <span class="card-mode mode-ground">GROUND</span>
+                            </div>
                         </div>
-                        <span class="card-mode mode-ground">GROUND</span>
+                        <div class="card-desc">始终激活 · 2 个绑定 · 3 个输出频道</div>
                     </div>
-                    <div class="card-desc">始终激活 · 2 个绑定 · 3 个输出频道</div>
-                    <div class="card-actions">
-                        <button class="btn-sm" onclick="openGroupEdit('base')">配置</button>
+                    <div class="hud-card-side">
+                        <button class="btn-ghost-sm" onclick="openGroupEdit('base')">编辑</button>
                         <button class="btn-icon-sm" onclick="deleteGroup(this)" title="删除">✕</button>
                     </div>
                 </div>
@@ -655,13 +645,17 @@
                 <!-- combat -->
                 <div class="hud-card" data-name="combat">
                     <div class="left-bar green"></div>
-                    <div class="card-top">
-                        <div class="card-name">combat</div>
-                        <span class="card-mode mode-inherit">INHERIT</span>
+                    <div class="hud-card-body">
+                        <div class="card-top">
+                            <div class="card-top-left">
+                                <div class="card-name">combat</div>
+                                <span class="card-mode mode-inherit">INHERIT</span>
+                            </div>
+                        </div>
+                        <div class="card-desc">战斗模式 · 4 个绑定 · 2 个输出频道</div>
                     </div>
-                    <div class="card-desc">战斗模式 · 4 个绑定 · 2 个输出频道</div>
-                    <div class="card-actions">
-                        <button class="btn-sm" onclick="openGroupEdit('combat')">配置</button>
+                    <div class="hud-card-side">
+                        <button class="btn-ghost-sm" onclick="openGroupEdit('combat')">编辑</button>
                         <button class="btn-icon-sm" onclick="deleteGroup(this)" title="删除">✕</button>
                     </div>
                 </div>
@@ -669,13 +663,17 @@
                 <!-- cruise -->
                 <div class="hud-card" data-name="cruise">
                     <div class="left-bar cyan"></div>
-                    <div class="card-top">
-                        <div class="card-name">cruise</div>
-                        <span class="card-mode mode-inherit">INHERIT</span>
+                    <div class="hud-card-body">
+                        <div class="card-top">
+                            <div class="card-top-left">
+                                <div class="card-name">cruise</div>
+                                <span class="card-mode mode-inherit">INHERIT</span>
+                            </div>
+                        </div>
+                        <div class="card-desc">巡航模式 · 2 个绑定 · 1 个输出频道</div>
                     </div>
-                    <div class="card-desc">巡航模式 · 2 个绑定 · 1 个输出频道</div>
-                    <div class="card-actions">
-                        <button class="btn-sm" onclick="openGroupEdit('cruise')">配置</button>
+                    <div class="hud-card-side">
+                        <button class="btn-ghost-sm" onclick="openGroupEdit('cruise')">编辑</button>
                         <button class="btn-icon-sm" onclick="deleteGroup(this)" title="删除">✕</button>
                     </div>
                 </div>
@@ -686,7 +684,7 @@
         <div class="section">
             <div class="section-header">
                 <div class="section-header-left">
-                    <span class="section-title">GUI 控件</span>
+                    <span class="section-title">配置项</span>
                     <span class="section-count" id="gui-count">3</span>
                 </div>
                 <button class="add-btn" onclick="addGui()">+ 添加</button>
@@ -695,12 +693,12 @@
             <div class="ctrl-grid" id="gui-list">
                 <!-- 武器保险 -->
                 <div class="ctrl-card" data-name="武器保险" data-type="toggle">
-                    <div class="ctrl-widget">
-                        <div class="toggle-switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
-                    </div>
                     <div class="ctrl-body">
                         <div class="ctrl-label">武器保险</div>
                         <div class="ctrl-channel">weapon_safety</div>
+                    </div>
+                    <div class="ctrl-widget">
+                        <div class="toggle-switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
                     </div>
                     <div class="ctrl-actions">
                         <button class="btn-ghost-sm" onclick="openGuiEdit('武器保险')">编辑</button>
@@ -1113,13 +1111,17 @@
         card.setAttribute('data-name', name);
         card.innerHTML =
             '<div class="left-bar ' + color + '"></div>' +
-            '<div class="card-top">' +
-                '<div class="card-name">' + name + '</div>' +
-                '<span class="card-mode mode-inherit">INHERIT</span>' +
+            '<div class="hud-card-body">' +
+                '<div class="card-top">' +
+                    '<div class="card-top-left">' +
+                        '<div class="card-name">' + name + '</div>' +
+                        '<span class="card-mode mode-inherit">INHERIT</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="card-desc">新建控制组 · 0 个绑定 · 0 个输出频道</div>' +
             '</div>' +
-            '<div class="card-desc">新建控制组 · 0 个绑定 · 0 个输出频道</div>' +
-            '<div class="card-actions">' +
-                '<button class="btn-sm" onclick="openGroupEdit(\'' + name + '\')">配置</button>' +
+            '<div class="hud-card-side">' +
+                '<button class="btn-ghost-sm" onclick="openGroupEdit(\'' + name + '\')">编辑</button>' +
                 '<button class="btn-icon-sm" onclick="deleteGroup(this)" title="删除">✕</button>' +
             '</div>';
         list.appendChild(card);
@@ -1152,12 +1154,12 @@
         row.setAttribute('data-name', name);
         row.setAttribute('data-type', 'toggle');
         row.innerHTML =
-            '<div class="ctrl-widget">' +
-                '<div class="toggle-switch" onclick="this.classList.toggle(\'on\')"><div class="knob"></div></div>' +
-            '</div>' +
             '<div class="ctrl-body">' +
                 '<div class="ctrl-label">' + name + '</div>' +
                 '<div class="ctrl-channel">new_channel</div>' +
+            '</div>' +
+            '<div class="ctrl-widget">' +
+                '<div class="toggle-switch" onclick="this.classList.toggle(\'on\')"><div class="knob"></div></div>' +
             '</div>' +
             '<div class="ctrl-actions">' +
                 '<button class="btn-ghost-sm" onclick="openGuiEdit(\'' + name + '\')">编辑</button>' +
