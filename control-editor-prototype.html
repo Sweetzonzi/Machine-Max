@@ -165,20 +165,11 @@
             top: 6px;
             width: 3px;
             height: calc(100% - 12px);
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,100,0,0.3);
+            transition: background 0.18s ease;
         }
-        .hud-card.active .left-bar.orange,
-        .hud-card:hover .left-bar.orange { background: #ff6400; }
-        .hud-card.active .left-bar.green,
-        .hud-card:hover .left-bar.green { background: #2a9d5c; }
-        .hud-card.active .left-bar.cyan,
-        .hud-card:hover .left-bar.cyan { background: #2bc0b8; }
-        .hud-card.active .left-bar.blue,
-        .hud-card:hover .left-bar.blue { background: #4a8cff; }
-        .hud-card.active .left-bar.pink,
-        .hud-card:hover .left-bar.pink { background: #d46abf; }
-        .hud-card.active .left-bar.yellow,
-        .hud-card:hover .left-bar.yellow { background: #d4a82a; }
+        .hud-card.active .left-bar,
+        .hud-card:hover .left-bar { background: #ff6400; }
 
         .hud-card .card-top {
             display: flex;
@@ -644,7 +635,7 @@
 
                 <!-- combat -->
                 <div class="hud-card" data-name="combat">
-                    <div class="left-bar green"></div>
+                    <div class="left-bar orange"></div>
                     <div class="hud-card-body">
                         <div class="card-top">
                             <div class="card-top-left">
@@ -662,7 +653,7 @@
 
                 <!-- cruise -->
                 <div class="hud-card" data-name="cruise">
-                    <div class="left-bar cyan"></div>
+                    <div class="left-bar orange"></div>
                     <div class="hud-card-body">
                         <div class="card-top">
                             <div class="card-top-left">
@@ -1098,7 +1089,7 @@
     }
 
     // ========== 控制组增删（HUD 风格） ==========
-    var leftBarColors = ['orange', 'green', 'cyan', 'blue', 'pink', 'yellow'];
+    var leftBarColors = ['orange'];
 
     function addGroup() {
         var list = document.getElementById('group-list');
@@ -1143,6 +1134,17 @@
         var count = list.querySelectorAll('.hud-card').length;
         document.getElementById('group-count').textContent = count;
     }
+
+    // 控制组点击激活切换（基础组始终激活，不参与切换）
+    document.getElementById('group-list').addEventListener('click', function(e) {
+        var card = e.target.closest('.hud-card');
+        if (!card) return;
+        // 点击按钮不触发切换
+        if (e.target.closest('button')) return;
+        // 基础控制组始终激活，不参与切换
+        if (card.getAttribute('data-name') === 'base') return;
+        card.classList.toggle('active');
+    });
 
     // ========== GUI控件增删（更新版） ==========
     function addGui() {

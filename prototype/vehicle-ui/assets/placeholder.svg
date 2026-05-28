@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500">
+  <style>
+    .frame { fill: none; stroke: #EAEAEA; stroke-width: 1.5; }
+    .frame-bold { fill: none; stroke: #FFFFFF; stroke-width: 2.5; }
+    .detail { fill: none; stroke: #555555; stroke-width: 1; stroke-dasharray: 4 4; }
+    .label { fill: #335D9C; font-family: 'Rajdhani', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; }
+  </style>
+
+  <!-- 机身主体 -->
+  <path class="frame-bold" d="M 400 80 L 580 160 L 620 300 L 560 380 L 400 420 L 240 380 L 180 300 L 220 160 Z"/>
+
+  <!-- 驾驶舱 -->
+  <path class="frame" d="M 360 120 L 400 100 L 440 120 L 440 180 L 360 180 Z"/>
+  <line class="detail" x1="400" y1="100" x2="400" y2="180"/>
+
+  <!-- 左翼 -->
+  <path class="frame" d="M 280 240 L 60 200 L 80 280 L 240 280"/>
+  <line class="frame" x1="60" y1="200" x2="40" y2="210"/>
+  <line class="frame" x1="40" y1="210" x2="80" y2="280"/>
+
+  <!-- 右翼 -->
+  <path class="frame" d="M 520 240 L 740 200 L 720 280 L 560 280"/>
+  <line class="frame" x1="740" y1="200" x2="760" y2="210"/>
+  <line class="frame" x1="760" y1="210" x2="720" y2="280"/>
+
+  <!-- 尾部 -->
+  <path class="frame" d="M 460 280 L 520 390 L 400 420"/>
+  <path class="frame" d="M 340 280 L 280 390 L 400 420"/>
+  <line class="frame" d="M 380 200 L 400 420"/>
+  <line class="frame" d="M 420 200 L 400 420"/>
+
+  <!-- 尾翼 -->
+  <path class="frame" d="M 380 80 L 400 60 L 420 80 L 400 100 Z"/>
+  <line class="frame-bold" x1="400" y1="60" x2="400" y2="20"/>
+
+  <!-- 引擎 -->
+  <rect class="frame" x="370" y="340" width="60" height="30" rx="0"/>
+  <line class="detail" x1="375" y1="370" x2="375" y2="400"/>
+  <line class="detail" x1="400" y1="370" x2="400" y2="410"/>
+  <line class="detail" x1="425" y1="370" x2="425" y2="400"/>
+
+  <!-- 起落架 -->
+  <line class="frame" x1="340" y1="380" x2="320" y2="440"/>
+  <line class="frame" x1="460" y1="380" x2="480" y2="440"/>
+  <line class="frame" x1="310" y1="440" x2="330" y2="440"/>
+  <line class="frame" x1="470" y1="440" x2="490" y2="440"/>
+
+  <!-- 武器挂架 -->
+  <rect class="frame" x="220" y="300" width="40" height="12" rx="0"/>
+  <rect class="frame" x="540" y="300" width="40" height="12" rx="0"/>
+  <rect class="frame" x="260" y="340" width="30" height="8" rx="0"/>
+  <rect class="frame" x="510" y="340" width="30" height="8" rx="0"/>
+
+  <!-- 网格线 -->
+  <line class="detail" x1="180" y1="200" x2="620" y2="200"/>
+  <line class="detail" x1="180" y1="300" x2="620" y2="300"/>
+
+  <!-- 标注 -->
+  <text class="label" x="20" y="30">VEHICLE WIREFRAME — STANDARD CONFIG</text>
+  <text class="label" x="20" y="480">MASS: 24,500 KG • STATUS: PARKED</text>
+</svg>
