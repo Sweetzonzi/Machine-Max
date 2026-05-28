@@ -211,6 +211,16 @@ public class MMPayloadRegistry {
                 VehicleConfigPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(VehicleConfigPayload::handler)
         );
+        misc.playToServer(//控制组编辑结果保存
+                ControlGroupSetEditPayload.TYPE,
+                ControlGroupSetEditPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ControlGroupSetEditPayload::serverHandler)
+        );
+        misc.playToServer(//GUI控件操作（PULSE/TOGGLE/SLIDER）
+                GuiActionPayload.TYPE,
+                GuiActionPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(GuiActionPayload::serverHandler)
+        );
         misc.playToServer(//制造机开始制造
                 FabricationStartPayload.TYPE,
                 FabricationStartPayload.STREAM_CODEC,

@@ -24,8 +24,6 @@
     "java.jdt.ls.vmargs": "-Xmx2G",
     "java.configuration.updateBuildConfiguration": "automatic",
     "files.exclude": {
-        "**/.gradle": true,
-        "**/build": true,
-        "**/run": true
+        "**/.gradle": true
     }
 }

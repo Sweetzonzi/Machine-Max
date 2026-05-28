@@ -29,8 +29,8 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
-import com.sighs.apricityui.ApricityUI;
 import com.mojang.blaze3d.platform.InputConstants;
+import io.github.sweetzonzi.machine_max.client.render.gui.screen.VehicleControlScreen;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -54,7 +54,8 @@ public class RawInputHandler {
     static byte[] moveInputConflicts = new byte[6];//相应轴向上的输入冲突
     public static boolean freeCam = false;//自由视角是否激活
     public static boolean vehicleLightsOn = false;//灯光是否开启
-    private static final String VEHICLE_INFO_PANEL_PATH = "machine_max/vehicle_info_panel.html";
+    private static long lastTabPressTime = 0;
+    private static final long TAB_DEBOUNCE_MS = 200;
 
     static int trans_x_input = 0;
     static int trans_y_input = 0;
@@ -332,15 +333,17 @@ public class RawInputHandler {
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_LIGHT.getValue(), vehicleLightsOn ? 1 : 0));
                     });
 
-            //车辆信息面板开关（Tab键）— 仅限乘坐载具时可用
+            //车辆信息面板开关（Tab键）— 打开/关闭 VehicleControlScreen，含 200ms 防抖
             new KeyHooks.EVENT(KeyBinding.generalVehicleInfoKey)
                     .OnKeyDown(() -> {
-                        // 直接查询文档是否存在来判断开/关，不依赖布尔状态同步
-                        var docs = ApricityUI.getDocument(VEHICLE_INFO_PANEL_PATH);
-                        if (docs.isEmpty() && ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem) {
-                            ApricityUI.openScreen(VEHICLE_INFO_PANEL_PATH);
-                        } else {
-                            ApricityUI.closeScreen();
+                        long now = System.currentTimeMillis();
+                        if (now - lastTabPressTime < TAB_DEBOUNCE_MS) return;
+                        lastTabPressTime = now;
+
+                        if (client.screen instanceof VehicleControlScreen) {
+                            client.setScreen(null);
+                        } else if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem) {
+                            client.setScreen(new VehicleControlScreen());
                         }
                     });
 

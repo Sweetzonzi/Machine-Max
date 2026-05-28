@@ -1,0 +1,74 @@
+<link rel="stylesheet" href="vehicle_control.css">
+
+<body>
+  <!-- 折叠式标题导航 -->
+  <div class="header-strip" id="header-strip">
+    <div class="header-item active" id="tab-btn-0">
+      <span class="header-number">01</span>
+      <div class="header-content" id="tab-content-0">
+        <span class="header-title">VEHICLE OVERVIEW</span>
+        <span class="header-subtitle">/// STATUS</span>
+      </div>
+    </div>
+    <div class="header-item" id="tab-btn-1">
+      <span class="header-number">02</span>
+      <div class="header-content" id="tab-content-1">
+        <span class="header-title">DEVICE CONTROL</span>
+        <span class="header-subtitle">/// REMOTE</span>
+      </div>
+    </div>
+    <div class="header-item" id="tab-btn-2">
+      <span class="header-number">03</span>
+      <div class="header-content" id="tab-content-2">
+        <span class="header-title">EDIT CONFIG</span>
+        <span class="header-subtitle">/// ADVANCED</span>
+      </div>
+    </div>
+    <div class="header-item disabled" id="tab-btn-3">
+      <span class="header-number">04</span>
+      <div class="header-content" id="tab-content-3">
+        <span class="header-title">INVENTORY</span>
+        <span class="header-subtitle">/// STORAGE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 面板内容 -->
+  <div class="panel-content" id="panel-body">
+    <!-- Tab 01: 载具概览 -->
+    <div class="page active" id="tab-overview">
+      <div class="group-strip" id="group-strip-0"></div>
+      <div class="preview-spacer"></div>
+      <div class="info-bar">
+        <div class="info-col" id="status-col"></div>
+        <div class="info-col" id="warning-col"></div>
+        <div class="info-col" id="extra-col"></div>
+      </div>
+    </div>
+
+    <!-- Tab 02: 设备控制 -->
+    <div class="page" id="tab-device">
+      <div class="group-strip" id="group-strip-1"></div>
+      <div class="preview-spacer"></div>
+      <div class="device-bar">
+        <div class="device-section" id="pulse-section"></div>
+        <div class="device-section" id="toggle-section"></div>
+        <div class="device-section" id="slider-section"></div>
+      </div>
+    </div>
+
+    <!-- Tab 03: 编辑配置 — 三栏 -->
+    <div class="page" id="tab-config">
+      <div class="config-layout">
+        <div class="config-left" id="config-left"></div>
+        <div class="config-middle" id="config-middle"></div>
+        <div class="config-right" id="config-right"></div>
+      </div>
+    </div>
+
+    <!-- Tab 04: 库存 — 空占位 -->
+    <div class="page" id="tab-inventory">
+      <div class="inventory-layout" id="inventory-layout"></div>
+    </div>
+  </div>
+</body>

@@ -78,9 +78,139 @@
 
 ---
 
-## 三、架构设计
+## 三、AUI 能力边界参考
 
-### 3.1 核心思路：Minecraft Screen + AUI Document 混合架构
+> 本节是 AUI（ApricityUI）在 Machine-Max 面板开发中可用的能力清单，基于对该框架源码的完整调研。
+> 底层渲染引擎：Java 实现 DOM/CSS 布局 + CPU 绘制（通过 `PoseStack`），非 WebView。
+
+### 3.1 HTML 标签支持
+
+| 标签 | 说明 | 本项目用途 |
+|------|------|-----------|
+| `body` / `div` / `span` | 通用块级和内联容器 | 布局骨架 |
+| `input` | 单行文本输入、checkbox、radio，支持 type/placeholder/value/checked/maxlength | 编辑页表单 |
+| `textarea` | 多行文本输入 | 描述字段 |
+| `select` / `option` | 下拉选择器，点击 option 设置 value 并失焦 | 模式选择、类型选择 |
+| `img` | 图片渲染 | 图标 |
+| `sprite` | 精灵图动画，支持 src/steps/duration/loop/autoplay/fit | 可选动画 |
+| `canvas` | 2D 渲染画布，完整 CanvasRenderingContext2D API | 线框预览（降级方案） |
+| `slot` / `container` | 物品槽和容器绑定系统 | Tab 04 库存管理 |
+| `translation` | 使用 Minecraft `Component.translatable()` 翻译文本 | i18n |
+
+### 3.2 CSS 布局能力
+
+| 布局模式 | 支持 | 说明 |
+|---------|------|------|
+| **Flexbox** | ✅ 完整 | `flex-direction` / `justify-content` / `align-items` / `gap` / `flex-grow/shrink` |
+| **Grid** | ✅ 完整 | `grid-template-columns/rows`（仅 px/auto）、`grid-row/column` + span、gap |
+| **Normal Flow** | ✅ | block（换行堆叠）、inline/inline-block（同行排列） |
+| **Position** | ✅ | `static` / `relative` / `absolute` / `fixed` |
+| **Overflow** | ✅ | `visible` / `hidden` / `scroll` / `auto`，带缓动滚动动画 |
+| **z-index** | ✅ | 堆叠上下文在 `position != static` 或 `z-index != auto` 时创建 |
+
+**不支持的布局**：
+- ❌ `float` / `clear` → 用 flexbox 替代
+- ❌ `position: sticky`
+- ❌ `fr` 单位 → 用 px 或 auto 替代
+- ❌ `grid-template-areas`
+- ❌ `calc()` / `minmax()`（AUI 不支持 CSS 函数表达式）
+
+### 3.3 CSS 属性支持
+
+| 类别 | 支持的属性 | 说明 |
+|------|-----------|------|
+| **尺寸** | `width` / `height` / `min/max-*` / `box-sizing` | 仅 `px` 和 `%` 单位。**不支持 `em`/`rem`/`vw`/`vh`** |
+| **盒模型** | `margin` / `padding` / `border` / `border-radius` | 简写和单独方向均支持 |
+| **背景** | `background-color` / `background-image`(url/linear-gradient) / `background-repeat/size/position` | |
+| **文本** | `color` / `font-size` / `font-weight` / `font-family` / `line-height` / `text-align` / `letter-spacing` / `white-space` / `text-overflow: ellipsis` / `text-stroke` | 字号通过 `fontSize/16*9` 转换到 Minecraft 字体 |
+| **变换** | `transform: translate/rotate/scale`（含 3D 变体 `translatex/y/z` / `rotatex/y/z`） | 默认 `transform-origin` 为中心 |
+| **滤镜** | `filter: blur/brightness/grayscale/invert/hue-rotate/opacity/drop-shadow` | |
+| **阴影** | `box-shadow`（多值逗号分隔） | |
+| **光标** | `cursor: default/pointer/text/crosshair/ew-resize/ns-resize` + `url(...)` 自定义图像光标 | 自定义光标使用伪光标渲染 |
+| **动画** | `@keyframes` + `animation-*`（duration/delay/iteration-count/direction/fill-mode/timing-function） | 只支持 `linear` 和 `steps()` 缓动 |
+| **过渡** | `transition` | ⚠️ 不稳定，源码标注"似乎不大好用"。**推荐 JS class 切换替代** |
+| **自定义属性** | `--*` + `var()` | 支持，如 `--aui-slot-size: 18` |
+
+**不支持的 CSS**：
+- ❌ `calc()`、`clamp()`、`min()`、`max()` CSS 函数
+- ❌ `em` / `rem` / `vw` / `vh` / `vmin` / `vmax` 单位
+- ❌ `::before` / `::after` 伪元素
+- ❌ `backdrop-filter`（属性可解析但不渲染）
+- ❌ `clip-path`（属性可解析但不渲染）
+- ❌ `mix-blend-mode`
+- ❌ `+`（相邻兄弟）、`~`（通用兄弟）、`:not()`、`:nth-of-type()` 选择器
+- ❌ `text-shadow`（有 `text-stroke` 作为替代）
+
+### 3.4 JS / Java DOM 操作
+
+本项目使用 **纯 Java DOM API**，不依赖 `<script>` 标签。暴露的 Java 方法：
+
+```java
+// 选择器
+document.querySelector("#id");         // 按 CSS 选择器查找（返回第一个）
+document.querySelectorAll(".class");   // 查找所有匹配
+document.getElementById("id");         // 按 ID 查找
+
+// DOM 操作
+document.createElement("div");         // 创建新元素
+element.append(child);                 // 追加子元素
+element.prepend(child);                // 头部追加
+element.remove();                      // 从 DOM 移除
+element.setAttribute("class", "val");  // 设置/移除属性
+element.removeAttribute("id");
+element.getAttribute("src");
+
+// 数据读写
+element.innerText = "text";            // 读写文本内容
+element.value = "input text";          // 读写 input 值
+element.className = "abc";             // 读写 class
+element.id = "my-id";                  // 读写 ID
+
+// 事件监听
+element.addEventListener("click", handler);  // 支持的类型：
+// mousedown / mouseup / mousemove / click
+// keydown / keyup
+// scroll / change / focus / blur / load
+
+// 样式操作
+element.setAttribute("style", "display:flex; color:red;");
+```
+
+### 3.5 事件系统
+
+| 特性 | 说明 |
+|------|------|
+| **事件触发** | AUI 通过 Neoforge `InputEvent.MouseButton` / `InputEvent.Key` 全局拦截，自动分发给所有 Document |
+| **事件传播** | 支持捕获 → 目标 → 冒泡 三阶段 |
+| **`stopPropagation()`** | 支持 |
+| **`preventDefault()`** | ❌ **不支持**。只有 `stopPropagation()` |
+| **点击检测** | AUI 根据 DOM 元素的 layout 位置自动命中，不需要自己计算坐标 |
+| **3D 预览交互** | 需在 `VehicleControlScreen` 中通过 `mouseDragged` / `mouseScrolled` 单独处理 |
+| **输入分离** | AUI 全局 handler 先于 Screen 触发，点击 UI 元素时 AUI 自动消耗事件。Screen 只需处理 3D 预览专用的交互 |
+
+### 3.6 常用实例化的预期
+
+```
+Content:                  Input:                    Result:
+─────────────────────────────────────────────────────────────────────
+Minecraft 默认 GUI 缩放    427×240 像素             可用的屏幕空间
+一个 4 Tab 面板           每 Tab 约 400×200         足够容纳三栏布局
+编辑页三栏布局             左 130px / 中 1fr / 右 150px  在 427px 宽内可行，但紧凑
+卡片列表项                每项约 24px 高             单个 tab 可容纳约 8 项（有滚动条）
+按钮 / 开关 / 滑块         最小可交互尺寸 ~20px       可行
+input 文本输入             单行 ~14px 高             可行
+select 下拉                展开后 ~120px 高          可行，但展开高度有限
+```
+
+### 3.7 字体
+
+AUI 内置字库 `lxgw`（霞鹜文楷），以 `@font-face` 注册于 `global.css`。所有字体须通过 `font-family: lxgw` 引用（或其他 Java AWT 可加载的字体）。无法使用 Google Fonts（无网络请求能力）。
+
+---
+
+## 四、架构设计
+
+### 4.1 核心思路：Minecraft Screen + AUI Document 混合架构
 
 当前方案使用 `ApricityUI.openScreen()` 将 AUI 文档作为独立屏幕打开。此模式**无法**做到：
 
@@ -133,9 +263,9 @@
   - 否则 → `return super.mouseClicked()`
 - 3D 拖拽旋转仅在 `mouseDragged()` 中处理，受 `isDragging3d` 守卫
 
-### 3.2 文件组织
+### 4.2 文件组织
 
-#### 3.2.1 HTML / CSS 资源
+#### 4.2.1 HTML / CSS 资源
 
 ```
 machine_max/src/main/resources/assets/apricityui/apricity/machine_max/
@@ -143,7 +273,7 @@ machine_max/src/main/resources/assets/apricityui/apricity/machine_max/
 └── vehicle_control.css        ← 面板样式（从 prototype/style.css 适配）
 ```
 
-#### 3.2.2 Java 类
+#### 4.2.2 Java 类
 
 ```
 client/render/gui/
@@ -161,7 +291,7 @@ client/render/gui/
 
 **不再需要 `VehicleInfoPanelManager`**。原 POC 中使用 `@EventBusSubscriber` + `onClientTick` 轮询是由 `ApricityUI.openScreen()` 无 Screen 可挂载的权宜之计。自定义 Screen 的 `init()` 直接管理 Document 生命周期，消除 tick 延迟。
 
-### 3.3 VehicleControlScreen — 核心入口
+### 4.3 VehicleControlScreen — 核心入口
 
 ```java
 @OnlyIn(Dist.CLIENT)
@@ -297,7 +427,7 @@ public class VehicleControlScreen extends Screen {
 3. **输入事件分流** — Screen 的 `mouseClicked()` 主动判断点击区域，AUI 面板区域内的事件直接 `return true` 留给 AUI 处理，3D 预览区开始拖拽。不再依赖"自然分流"。
 4. **Tab 03 背景遮罩** — 无 3D 预览时绘制半透明深色背景，防止面板边缘透视游戏世界。
 
-### 3.4 打开方式
+### 4.4 打开方式
 
 Tab 键触发时，替换当前的 `ApricityUI.openScreen()` 为直接打开自定义 Screen：
 
@@ -323,7 +453,7 @@ new KeyHooks.EVENT(KeyBinding.generalVehicleInfoKey)
     });
 ```
 
-### 3.5 数据流
+### 4.5 数据流
 
 ```
 服务端 ControlGroupSet (SeatSubsystem / AbstractControllableSubsystem)
@@ -357,7 +487,7 @@ player
           → .getId()  ← 全局 subPartId（用于网络包）
 ```
 
-### 3.6 页面路由（不变）
+### 4.6 页面路由（不变）
 
 ```
 HTML 模板中的 page div：
@@ -373,7 +503,7 @@ HTML 模板中的 page div：
 
 ---
 
-## 四、分阶段实现计划
+## 五、分阶段实现计划
 
 ### 阶段 1：基础框架 — Screen + 多 Tab + Header Strip
 
@@ -691,9 +821,9 @@ PanelConfigEditor.render(auiDocument, data);
 
 ---
 
-## 五、HTML 模板设计要点
+## 六、HTML 模板设计要点
 
-### 5.1 核心布局结构
+### 6.1 核心布局结构
 
 ```html
 <body>
@@ -750,7 +880,7 @@ PanelConfigEditor.render(auiDocument, data);
 </body>
 ```
 
-### 5.2 CSS 适配策略
+### 6.2 CSS 适配策略
 
 | 原 prototype CSS | AUI 适配 |
 |---|---|
@@ -768,7 +898,7 @@ PanelConfigEditor.render(auiDocument, data);
 | `gap` (flex/grid) | 可用 |
 | `::before` / `::after` | 不可用。用额外 div 替代 |
 
-### 5.3 颜色方案
+### 6.3 颜色方案
 
 从 prototype 移植，每个 Tab 有独立主题色：
 
@@ -783,7 +913,7 @@ PanelConfigEditor.render(auiDocument, data);
 
 ---
 
-## 六、与现有 VehicleInfoPanelManager 的关系
+## 七、与现有 VehicleInfoPanelManager 的关系
 
 `VehicleInfoPanelManager.java` 是 POC 阶段的产物，在 `ApricityUI.openScreen()` 模式下需要 `@EventBusSubscriber` + `onClientTick` 轮询来管理 Document 生命周期。
 
@@ -806,7 +936,7 @@ PanelConfigEditor.render(auiDocument, data);
 
 ---
 
-## 七、风险与待确认
+## 八、风险与待确认
 
 | 风险 | 严重度 | 对策 |
 |------|-------|------|
@@ -824,7 +954,7 @@ PanelConfigEditor.render(auiDocument, data);
 
 ---
 
-## 八、文件清单
+## 九、文件清单
 
 ### 新建文件
 
@@ -865,7 +995,7 @@ src/main/java/io/github/sweetzonzi/machine_max/network/
 
 ---
 
-## 九、实现顺序建议（修订版）
+## 十、实现顺序建议
 
 ```
 阶段 1 ─── 基础框架 ─────── 2-3 天
@@ -910,7 +1040,7 @@ src/main/java/io/github/sweetzonzi/machine_max/network/
 
 ---
 
-## 十、参考资料
+## 十一、参考资料
 
 ### 核心参考（3D 预览）
 - [`VehicleAnimatable.java`](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/common/visual/VehicleAnimatable.java) — **整车级动画体**，3D 预览核心（`alignToAxesByFirstSubPart`、`subParts` 遍历）
@@ -925,6 +1055,152 @@ src/main/java/io/github/sweetzonzi/machine_max/network/
 ### 参考（原型与现有实现）
 - [prototype/vehicle-ui/](file:///d:/Files/Project_MinecraftMods/Machine-Max/prototype/vehicle-ui/) — HTML 原型
 - [AUI 现有实现](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/VehicleInfoPanelManager.java) — 当前工作的 POC
+
+---
+
+## 十二、技术笔记与踩坑记录
+
+> 本章记录实际开发中遇到的 AUI 陷阱和 CSS/HTML 布局问题，供后续开发者参考。
+
+### 12.1 AUI body 默认 display:block，所有 flex 子属性静默失效
+
+**踩坑日期**：2026-05-28  
+**严重度**：🔴 高（布局根因）  
+**现象**：`panel-content { flex: 1; }` 完全不生效，面板内容无法填充 header-strip 下方的剩余空间。所有内容堆叠在顶部，底部信息栏位置不对。  
+**根因**：AUI 的 `Style.java` 中 `display` 默认值为 `"block"`。`global.css` 中 body 只设了 `width/height: 100%`，**没有声明 `display: flex`**。`flex: 1` 只在 flex 容器的子元素上生效，block 容器中的 `flex` 属性被静默忽略。  
+**修复**：
+```css
+body {
+    display: flex;
+    flex-direction: column;
+}
+```
+**教训**：AUI 的 body 不像浏览器有 user-agent 样式表提供默认 flex 行为。**每次写 AUI 布局时，第一步必须在最外层容器上显式声明 `display: flex`。**
+
+### 12.2 position:absolute + height:100% 的百分比高度链路
+
+**踩坑日期**：2026-05-28  
+**严重度**：🟡 中  
+**现象**：`.page { position: absolute; height: 100%; }` 的 `height: 100%` 解析为 0，页面内容不显示。  
+**根因**：CSS 规范中，百分比高度需要**包含块**（最近的 position 非 static 的祖先）有确定的高度。如果祖先链中某一层的 `height` 依赖于子内容（auto），则百分比无法解析。  
+**链路**：
+```
+body (height:100% → 窗口高度, ✅ 确定)
+  └─ panel-content (flex:1 → body是flex容器, ✅ 确定)
+       └─ .page (position:absolute, height:100% → 100% of panel-content, ✅ 确定)
+```
+**教训**：如果 12.1 中 body 没有设为 flex，则 panel-content 的高度依赖子内容 → `.page` 的 `height:100%` 无法解析。**两步必须同时修复。**
+
+### 12.3 AUI Element 没有 querySelector 方法
+
+**踩坑日期**：2026-05-28  
+**严重度**：🟡 中  
+**现象**：需要在 tab 切换时控制 `header-content` 子元素的显隐，但无法通过 `element.querySelector(".header-content")` 查找。  
+**根因**：AUI 的 `Element` 类只暴露了 `document.querySelector()` 和 `document.querySelectorAll()`（在 Document 级别），Element 自身没有子树查询方法。  
+**修复**：给每个 `header-content` 加 `id="tab-content-0/1/2/3"`，在 Java 中用 `doc.getElementById()` 精确定位。  
+**教训**：AUI 中任何需要 Java DOM 操作的子元素，**必须预先在 HTML 中分配唯一 ID**。不能依赖 class 选择器做父子层级查找。
+
+### 12.4 CSS 复合类选择器在 AUI 中可用但应有 Java 双重保障
+
+**踩坑日期**：2026-05-28  
+**严重度**：🟢 低  
+**现象**：使用 `.header-item.active .header-content { display: flex; }` 来通过 CSS 控制显隐。  
+**验证**：AUI 的 CSS 引擎**支持**复合类选择器（如 `.header-item.active`）和后代选择器（如 `.group-card.active`），因为现有 CSS 中已有 `.group-card.active` 和 `.header-item.active .header-number` 在使用。  
+**但**：CSS 选择器的行为依赖 AUI 内部的 `Selector.match()` 实现，未来版本可能变化。因此在 [PanelTabBar.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/PanelTabBar.java) 中同时用 `element.setAttribute("style", ...)` 显式设置 `display`，确保 CSS 失效时 Java 侧仍能正常工作。  
+**教训**：关键的布局切换（如 Tab 折叠）**不要只依赖 CSS 选择器**，应在 Java 中同步设置内联 style 作为保底。
+
+### 12.5 AUI CSS 不支持的选择器（补充确认）
+
+**踩坑日期**：2026-05-28  
+**已确认不支持**：`+`（相邻兄弟）、`~`（通用兄弟）、`:not()`、`:nth-of-type()`  
+**已确认支持**：复合类选择器 `.class1.class2`、后代选择器 `.parent .child`、ID 选择器 `#id`、元素选择器 `div`  
+**替代方案**：
+| 需求 | 浏览器方案 | AUI 替代 |
+|------|-----------|---------|
+| "所有非 active 的 header-item" | `.header-item:not(.active)` | Java 循环设置内联 style |
+| "active 元素的下一个兄弟" | `.active + .sibling` | Java 中查找相邻元素并设置 style |
+| "第 N 个子元素" | `.child:nth-of-type(N)` | 给每个子元素分配 ID |
+
+### 12.6 AUI transition 不可靠
+
+**踩坑日期**：2026-05-28  
+**严重度**：🟢 低  
+**现象**：AUI 源码（Style.java 注释）标注 `transition` "似乎不大好用"。  
+**修复**：移除所有 `transition` 属性，改为瞬间生效的 class/style 切换。  
+**教训**：不依赖 AUI 的 CSS 过渡动画。如需动画效果，用 `@keyframes` + `animation` 替代（AUI 支持 `linear` 和 `steps()` 缓动），或在 Java 中手动 tick 驱动。
+
+### 12.7 固定像素高度在不同分辨率下的比例失调
+
+**踩坑日期**：2026-05-28  
+**严重度**：🔴 高  
+**现象**：`info-bar { height: 160px; }` 和 `device-bar { height: 160px; }` 在默认 GUI 缩放下（427×240 像素可用空间）占据了 67% 的屏幕高度，导致 3D 预览区域几乎没有空间。  
+**根因**：AUI 渲染窗口的像素尺寸取决于 Minecraft GUI 缩放设置。`height: 160px` 是绝对值，不会随窗口缩放。  
+**修复**：移除固定 `height`，改为 `flex-shrink: 0` + 内容自适应。让 `preview-spacer { flex: 1; }` 填充中间区域。  
+**教训**：AUI 不支持 `vh`/`vw`/`calc()` 等相对单位。在需要响应式布局的场景中，**优先使用 flex 布局链（flex:1 + flex-shrink:0）来分配空间**，而非固定像素值。
+
+### 12.8 预览区域占位技巧（AUI + Screen 混合渲染）
+
+**踩坑日期**：2026-05-28  
+**严重度**：🟢 低（技巧）  
+**背景**：AUI 面板需要在中间区域显示 3D 载具预览，但 3D 预览由 `VehicleControlScreen.renderBackground()` 在 Screen 层渲染，AUI 无法直接渲染 3D 内容。  
+**方案**：在 HTML 中放置一个**透明的占位 div**（`.preview-spacer { flex: 1; min-height: 0; }`），它在 AUI 布局中占据空间（将 info-bar 推到底部），但因为 `background: transparent`（默认），Screen 层渲染的 3D 内容可以透过它显示。  
+**关键约束**：`min-height: 0` 是必须的，否则 flex 子元素的最小高度默认为内容高度（可能撑开），导致占位区域不是真正的"弹性空间"。
+
+### 12.9 querySelector 与 querySelectorAll 的 Document 级可用性
+
+**踩坑日期**：2026-05-28  
+**严重度**：🟢 低  
+**AUI 暴露的 Java DOM API**：
+```java
+document.querySelector("#id");         // ✅ 按 CSS 选择器查找（返回第一个匹配）
+document.querySelectorAll(".class");   // ✅ 查找所有匹配
+document.getElementById("id");         // ✅ 按 ID 查找（最快）
+```
+**限制**：这些都是 Document 级方法，不能在 Element 上调用。如果需要查找特定子树中的元素，只能通过 ID 定位。
+
+---
+
+## 十三、当前实现进度（2026-05-28）
+
+### 13.1 已完成的阶段
+
+| 阶段 | 状态 | 说明 |
+|------|------|------|
+| 阶段 1 — 基础框架 | ✅ 基本完成 | Tab 切换路由、header 折叠效果、Tab 04 禁用、200ms 防抖 |
+| 阶段 2a — 控制组切换条 | ✅ 完成 | GroupStripRenderer 共享组件，控制组卡片渲染 |
+| 阶段 2b — PanelOverview | ✅ 基本完成 | 状态条 + 列标题 + 控制模式信息，缺失 3D 预览 |
+| 阶段 2c — PanelDeviceControl | ✅ 基本完成 | PULSE/TOGGLE/SLIDER 控件渲染，缺失 3D 预览 |
+| 阶段 4 — Tab 04 库存 | ✅ 占位 | 空 div 占位，按钮禁用 |
+| Mock 数据 | ✅ 完成 | `ControlDataAccessor` 使用 `VehicleInfoPanelManager` 中的丰富 Mock 数据（4 组 + 6 GUI 控件） |
+
+### 13.2 进行中的阶段
+
+| 阶段 | 状态 | 说明 |
+|------|------|------|
+| 阶段 1 — CSS 样式移植 | ⏳ 持续迭代 | Neo-Brutalism 风格已基本移植，正在配合效果图微调间距/配色/比例 |
+
+### 13.3 待完成的阶段
+
+| 阶段 | 优先级 | 说明 |
+|------|--------|------|
+| 阶段 2 — 3D 预览 | 🟡 中 | 需实现 `VehicleControlScreen.render3dPreview()`，复用 `VehicleAnimatable` |
+| 阶段 3 — Tab 03 编辑配置 | 🔴 高 | 三栏布局框架已就绪，但 `PanelConfigEditor.render()` 当前为空实现，需填充 CRUD 逻辑 |
+| 阶段 0.5 — 网络包 | 🟡 中 | `ControlGroupSetEditPayload` + `GuiActionPayload` + `MMPayloadRegistry` 注册 |
+| 阶段 5 — 真实数据接入 | 🟢 低 | 当前使用 Mock 数据，需切换到真实子系统数据 |
+
+### 13.4 已修复的已知问题
+
+| 问题 | 修复日期 | 修复文件 |
+|------|---------|---------|
+| body 缺少 `display:flex` 导致 flex 子属性失效 | 2026-05-28 | [vehicle_control.css](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control.css) |
+| info-bar/device-bar 固定 160px 高度比例失调 | 2026-05-28 | [vehicle_control.css](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control.css) |
+| header 折叠效果缺失，所有 Tab 等宽显示 | 2026-05-28 | [vehicle_control.css](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control.css) + [PanelTabBar.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/PanelTabBar.java) |
+| info 列缺少标题（VEHICLE STATUS / WARNINGS / CONTROL MODE） | 2026-05-28 | [PanelOverview.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/PanelOverview.java) |
+| Toggle 行顺序反了（标签or开关） | 2026-05-28 | [PanelDeviceControl.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/PanelDeviceControl.java) |
+| 控制组卡片主题色不随 Tab 切换 | 2026-05-28 | [vehicle_control.css](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control.css)（CSS 变量方案） |
+| Header 主题色不随 Tab 切换 | 2026-05-28 | [PanelTabBar.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/PanelTabBar.java)（TAB_ACCENT 数组） |
+| info 列宽度分配不合理（warning 列空时被挤压） | 2026-05-28 | [vehicle_control.css](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control.css)（flex:3/2/2 分配） |
+| AUI 热重载后面板内容丢失 | 2026-05-28 | [VehicleControlScreen.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/screen/VehicleControlScreen.java)（tick UUID 检测） |
 
 ---
 
