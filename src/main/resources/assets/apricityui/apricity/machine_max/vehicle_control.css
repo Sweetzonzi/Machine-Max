@@ -50,6 +50,8 @@ body {
     padding: 0 16px;
     gap: 10px;
     justify-content: flex-start;
+    overflow: hidden;
+    z-index: 1;
 }
 .header-item.disabled {
     opacity: 0.3;
@@ -210,24 +212,26 @@ body {
 /* --- 信息栏（底部三列） --- */
 .info-bar {
     flex-shrink: 0;
-    display: grid;
-    grid-template-columns: 180px 120px 120px;
+    display: flex;
+    flex-direction: row;
     gap: 0;
     padding: 0;
     overflow: hidden;
 }
 .info-col {
-    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 2px;
-    overflow-y: auto;
+    overflow: hidden;
     padding: 0 6px 4px;
     border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 .info-col:last-child {
     border-right: none;
 }
+#status-col { width: 180px; flex-shrink: 0; }
+#warning-col { width: 120px; flex-shrink: 0; }
+#extra-col { width: 120px; flex-shrink: 0; }
 
 /* --- 信息列标题 --- */
 .info-col-header {
@@ -275,6 +279,8 @@ body {
     padding: 3px 6px;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 2px;
+    width: 100%;
+    overflow: hidden;
 }
 .stat-bar .sb-label {
     font-size: 8px;

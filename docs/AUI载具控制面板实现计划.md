@@ -1158,6 +1158,77 @@ document.getElementById("id");         // ✅ 按 ID 查找（最快）
 ```
 **限制**：这些都是 Document 级方法，不能在 Element 上调用。如果需要查找特定子树中的元素，只能通过 ID 定位。
 
+### 12.10 AUI CSS Grid 不支持 `fr` 单位
+
+**踩坑日期**：2026-05-28  
+**严重度**：🔴 高（布局方案选择）  
+**现象**：`grid-template-columns: 1fr 1fr 1fr` 导致只有最后一个网格项显示，其余项宽度为 0。  
+**根因**：AUI 的 CSS 引擎（Java 实现）不支持 `fr`（fractional）单位。`fr` 是 CSS Grid 规范中的相对单位，但 AUI 只支持 `px` 和 `auto` 作为 `grid-template-columns/rows` 的值。  
+**验证**：`grid-template-columns: 180px 120px 120px`（固定 px 值）正常工作，三列正确分配。  
+**替代方案**：
+| 需求 | 浏览器方案 | AUI 替代 |
+|------|-----------|---------|
+| 等宽多列 Grid | `grid-template-columns: repeat(N, 1fr)` | 使用 `flex: 1` + `min-width: 0` 的 Flexbox |
+| 按比例分配 Grid | `grid-template-columns: 3fr 2fr 2fr` | 使用固定 `px` 值：`180px 120px 120px` |
+| 动态列数等宽 | `grid-template-columns: repeat(N, 1fr)` | Java 中用 StringBuilder 拼接 `px` 值 |
+
+**教训**：在 AUI 中需要等宽布局时，**优先使用 Flexbox（`flex: 1`）**而非 CSS Grid。Grid 仅在列宽固定为 `px` 值时可用。
+
+### 12.11 AUI CSS Grid 可用但受限
+
+**踩坑日期**：2026-05-28  
+**严重度**：🟡 中  
+**已验证可用**：
+- `display: grid` ✅
+- `grid-template-columns: 180px 120px 120px`（固定 px 值）✅
+- `grid-template-rows`（固定 px 值）✅
+- `grid-row` / `grid-column` + span ✅
+- `gap`（grid 间距）✅
+
+**已验证不可用**：
+- `fr` 单位 ❌（导致列宽为 0）
+- `minmax()` ❌（CSS 函数表达式不支持）
+- `grid-template-areas` ❌（未验证，但文档标注不支持）
+
+**实际应用**：信息栏三列布局最初使用 `grid-template-columns: 180px 120px 120px`，但发现子元素内容（进度条）不受列宽约束会溢出。**最终改用 Flexbox + 固定宽度**（`width: 180px; flex-shrink: 0`）实现可靠约束。
+
+### 12.12 控制组卡片等宽分配策略
+
+**踩坑日期**：2026-05-28  
+**严重度**：🟡 中  
+**问题**：控制组切换条中的卡片需要等宽排列，但 BASE 卡片（白底）因内容较多看起来比其他卡片宽。  
+**尝试过的方案**：
+1. `flex: 1` + `min-width: 0` — 基本可用，但 BASE 卡片视觉上偏宽
+2. `flex: 1 1 0` + `width: 0` — 过度压缩，内容被裁剪
+3. CSS Grid `1fr` — AUI 不支持 `fr` 单位，失败
+4. CSS Grid 固定 `px` — 列数动态变化时不方便
+
+**最终方案**：使用 `flex: 1` + `min-width: 0` + `overflow: hidden`，接受 AUI flex 引擎的微小宽度差异。视觉差异可通过统一 padding 和 font-size 缓解。
+
+### 12.13 导航栏激活态内容溢出
+
+**踩坑日期**：2026-05-28  
+**严重度**：🟡 中  
+**现象**：激活态导航项（白色背景）的标题文字 "VEHICLE OVERVIEW" 延伸到相邻的非激活数字 "02" 上方，产生遮挡。  
+**根因**：`.header-item.active` 使用 `flex: 0 0 auto`，宽度由内容决定。标题文字较长时，白色背景区域与相邻项重叠。  
+**修复**：添加 `overflow: hidden` + `z-index: 1` 到 `.header-item.active`，确保白色背景区域不溢出，且层级高于相邻项。
+
+### 12.14 AUI Grid 子元素不受列宽约束（内容溢出）
+
+**踩坑日期**：2026-05-28  
+**严重度**：🔴 高  
+**现象**：使用 `display: grid; grid-template-columns: 180px 120px 120px` 时，信息栏三列的列标题（VEHICLE STATUS / WARNINGS / CONTROL MODE）正确分离，但列内的进度条（`width: 100%`）横穿整个屏幕，跨越多个列。  
+**根因**：AUI 的 Grid 布局虽然支持固定 `px` 列宽，但**子元素的 `width: 100%` 不受 Grid 列宽约束**。Grid 列宽只是设置了轨道大小，子元素的内容仍可溢出到相邻列。  
+**修复**：放弃 Grid，改用 **Flexbox + 固定宽度**：
+```css
+.info-bar { display: flex; flex-direction: row; }
+#status-col { width: 180px; flex-shrink: 0; }
+#warning-col { width: 120px; flex-shrink: 0; }
+#extra-col { width: 120px; flex-shrink: 0; }
+```
+同时在 `.info-col` 和 `.stat-bar` 上添加 `overflow: hidden` 确保内容不溢出。  
+**教训**：AUI 的 Grid 布局**不适合需要严格约束子元素宽度的场景**。Flexbox + `flex-shrink: 0` + 固定 `width` 是更可靠的选择。
+
 ---
 
 ## 十三、当前实现进度（2026-05-28）
@@ -1201,6 +1272,10 @@ document.getElementById("id");         // ✅ 按 ID 查找（最快）
 | Header 主题色不随 Tab 切换 | 2026-05-28 | [PanelTabBar.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/PanelTabBar.java)（TAB_ACCENT 数组） |
 | info 列宽度分配不合理（warning 列空时被挤压） | 2026-05-28 | [vehicle_control.css](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control.css)（flex:3/2/2 分配） |
 | AUI 热重载后面板内容丢失 | 2026-05-28 | [VehicleControlScreen.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/screen/VehicleControlScreen.java)（tick UUID 检测） |
+| 控制组 BASE 卡片非白底/编号错误/状态文本错误 | 2026-05-28 | [GroupStripRenderer.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/GroupStripRenderer.java)（base 类 + GROUP 00 + ALWAYS ACTIVE） |
+| 导航栏激活态白色背景 + 大号黑色编号 | 2026-05-28 | [vehicle_control.css](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control.css) + [PanelTabBar.java](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/java/io/github/sweetzonzi/machine_max/client/render/gui/panel/PanelTabBar.java) |
+| 信息栏三列宽度不均（进度条撑开列宽） | 2026-05-28 | [vehicle_control.css](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control.css)（改用 grid 固定列宽） |
+| 导航栏激活态标题被相邻数字遮挡 | 2026-05-28 | [vehicle_control.css](file:///d:/Files/Project_MinecraftMods/Machine-Max/src/main/resources/assets/apricityui/apricity/machine_max/vehicle_control.css)（overflow:hidden + z-index:1） |
 
 ---
 

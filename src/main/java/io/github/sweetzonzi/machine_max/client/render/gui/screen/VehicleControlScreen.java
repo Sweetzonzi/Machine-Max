@@ -42,7 +42,7 @@ public class VehicleControlScreen extends Screen {
 
     private Document auiDocument;
 
-    private int activeTab = 0;
+    private int activeTab = 1;
     private ControlGroupSet controlSet;
 
     private float previewRotX = 25f;
@@ -89,6 +89,7 @@ public class VehicleControlScreen extends Screen {
     private void initPanels() {
         clearPanels();
         PanelTabBar.init(auiDocument, this::switchTab);
+        PanelTabBar.setActive(auiDocument, activeTab);
         PanelOverview.render(auiDocument, controlSet);
         PanelDeviceControl.render(auiDocument, controlSet);
         PanelConfigEditor.render(auiDocument, controlSet);
