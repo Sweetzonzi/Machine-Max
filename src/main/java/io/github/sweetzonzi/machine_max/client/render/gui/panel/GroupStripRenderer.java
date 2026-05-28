@@ -19,11 +19,21 @@ import java.util.List;
 public class GroupStripRenderer {
 
     /**
-     * 在指定容器中渲染控制组切换条。<br>
-     * BASE 组始终为白底黑字，标记"始终激活"。<br>
-     * 非基础组激活态使用较浅主题色，未激活使用较深主题色。
+     * 在指定容器中渲染控制组切换条（使用默认主题色）。<br>
+     * BASE 组始终为白底黑字，标记"始终激活"。
      */
     public static void render(Document doc, ControlGroupSet data, String containerId) {
+        render(doc, data, containerId, null);
+    }
+
+    /**
+     * 在指定容器中渲染控制组切换条（可指定主题色）。<br>
+     * BASE 组始终为白底黑字，标记"始终激活"。<br>
+     * 非基础组激活态使用 accent 颜色，未激活使用较深的 accent 颜色。
+     *
+     * @param accent 主题色（如 "#2E5A90"），null 则使用 CSS 默认值
+     */
+    public static void render(Document doc, ControlGroupSet data, String containerId, String accent) {
         Element container = doc.getElementById(containerId);
         if (container == null) return;
 
@@ -34,17 +44,25 @@ public class GroupStripRenderer {
         for (int i = 0; i < count; i++) {
             ControlGroup group = allGroups.get(i);
             boolean isBase = i == 0;
+            boolean isActive = i == 1;
 
             Element card = doc.createElement("div");
             String cardId = containerId + "-card-" + i;
+            card.setAttribute("id", cardId);
+
             if (isBase) {
                 card.setAttribute("class", "group-card base");
-            } else if (i == 1) {
+            } else if (isActive) {
                 card.setAttribute("class", "group-card active");
+                if (accent != null) {
+                    card.setAttribute("style", "background:" + accent + ";color:#111111;");
+                }
             } else {
                 card.setAttribute("class", "group-card");
+                if (accent != null) {
+                    card.setAttribute("style", "background:" + accent + "30;color:#e0e0e8;");
+                }
             }
-            card.setAttribute("id", cardId);
 
             Element nameEl = doc.createElement("div");
             nameEl.setAttribute("class", "gc-name");

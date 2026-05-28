@@ -164,7 +164,7 @@ body {
     background: #221C0C;
 }
 .group-card.active {
-    background: #C89520;
+    background: var(--accent-active, #C89520);
     color: #111111;
 }
 .group-card.base {
@@ -326,6 +326,7 @@ body {
     padding: 0;
     overflow: hidden;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
+    min-height: 100px;
 }
 .device-section {
     flex: 1;
@@ -333,9 +334,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 8px;
+    padding: 6px 8px;
     border-right: 1px solid rgba(255, 255, 255, 0.04);
-    overflow-y: auto;
+    overflow: hidden;
 }
 .device-section:last-child {
     border-right: none;
@@ -353,8 +354,9 @@ body {
     text-align: center;
 }
 
+/* --- ACTIONS 区按钮 --- */
 .btn-pulse {
-    padding: 4px 8px;
+    padding: 5px 10px;
     background: rgba(46, 90, 144, 0.15);
     border: 1px solid rgba(46, 90, 144, 0.3);
     border-radius: 3px;
@@ -369,17 +371,27 @@ body {
     background: rgba(46, 90, 144, 0.25);
 }
 
-/* pulse 按钮区自动换行 */
 #pulse-section {
+    flex: 1;
+    min-width: 0;
     flex-wrap: wrap;
     gap: 4px;
     align-content: flex-start;
 }
 
-/* toggle 区列表项间距 */
+/* --- TOGGLES 区开关 --- */
 #toggle-section {
-    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    gap: 6px;
     align-content: flex-start;
+}
+
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
 }
 
 .toggle-switch {
@@ -413,12 +425,63 @@ body {
     font-weight: 500;
 }
 
-/* slider 区列表项间距 */
+/* --- AXES 区纵向滑条 --- */
 #slider-section {
-    gap: 4px;
-    align-content: flex-start;
+    flex: 1;
+    min-width: 0;
+    flex-direction: row;
+    gap: 0;
+    align-content: stretch;
+    padding: 0;
 }
 
+.slider-axis {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 0;
+}
+
+.slider-axis-label {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.slider-track-v {
+    width: 6px;
+    flex: 1;
+    min-height: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+}
+
+.slider-fill-v {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #2E5A90;
+    border-radius: 3px;
+}
+
+.slider-value-v {
+    font-size: 8px;
+    font-weight: 600;
+    color: #7aacff;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* --- 旧版横向滑条（保留用于兼容） --- */
 .slider-widget {
     display: flex;
     flex-direction: column;

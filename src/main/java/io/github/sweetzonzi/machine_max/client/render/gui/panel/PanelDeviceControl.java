@@ -11,25 +11,24 @@ import java.util.List;
 
 /**
  * Tab 02 设备控制面板。<br>
- * 显示控制组切换条、PULSE 按钮区、TOGGLE 开关区和 SLIDER 滑块区。
- * 控件交互遵循 AUI 能力边界：用 mousedown/mousemove/mouseup 实现拖拽，不依赖 getBoundingClientRect。
+ * 显示控制组切换条、ACTIONS 按钮区、TOGGLES 开关区和 AXES 纵向滑条区。
+ * 滑条使用纵向布局，从底部向上填充。
  */
 @OnlyIn(Dist.CLIENT)
 public class PanelDeviceControl {
 
-    private static Element sliderTrack;
-    private static Element sliderFill;
-    private static Element sliderValue;
-    private static double sliderStartX;
-    private static int sliderStartPct;
-    private static final double SLIDER_WIDTH = 160.0;
+    private static Element vSliderTrack;
+    private static Element vSliderFill;
+    private static Element vSliderValue;
+    private static double vSliderStartY;
+    private static int vSliderStartPct;
 
     public static void render(Document doc, ControlGroupSet data) {
-        GroupStripRenderer.render(doc, data, "group-strip-1");
+        GroupStripRenderer.render(doc, data, "group-strip-1", "#2E5A90");
         buildDeviceSections(doc, data);
 
-        doc.body.addEventListener("mousemove", PanelDeviceControl::onSliderMouseMove);
-        doc.body.addEventListener("mouseup", PanelDeviceControl::onSliderMouseUp);
+        doc.body.addEventListener("mousemove", PanelDeviceControl::onVSliderMouseMove);
+        doc.body.addEventListener("mouseup", PanelDeviceControl::onVSliderMouseUp);
     }
 
     private static void buildDeviceSections(Document doc, ControlGroupSet data) {
@@ -59,7 +58,7 @@ public class PanelDeviceControl {
                 case "slider" -> {
                     if (sliderSection != null) {
                         GuiSliderAction slider = (GuiSliderAction) action;
-                        buildSliderWidget(doc, sliderSection, slider, i);
+                        buildVerticalSlider(doc, sliderSection, slider, i);
                     }
                 }
             }
@@ -68,19 +67,19 @@ public class PanelDeviceControl {
         if (pulseSection != null) {
             Element title = doc.createElement("div");
             title.setAttribute("class", "device-section-title");
-            title.innerText = "PULSE";
+            title.innerText = "ACTIONS";
             pulseSection.prepend(title);
         }
         if (toggleSection != null) {
             Element title = doc.createElement("div");
             title.setAttribute("class", "device-section-title");
-            title.innerText = "TOGGLE";
+            title.innerText = "TOGGLES";
             toggleSection.prepend(title);
         }
         if (sliderSection != null) {
             Element title = doc.createElement("div");
             title.setAttribute("class", "device-section-title");
-            title.innerText = "SLIDER";
+            title.innerText = "AXES";
             sliderSection.prepend(title);
         }
     }
@@ -94,22 +93,21 @@ public class PanelDeviceControl {
         btn.innerText = action.label;
 
         btn.addEventListener("mousedown", e -> {
-            String origBg = btn.getAttribute("style");
             btn.setAttribute("style", "background:rgba(46,90,144,0.4);");
-            btn.addEventListener("mouseup", e2 -> {
-                btn.setAttribute("style", origBg != null ? origBg : "");
-            });
+        });
+        btn.addEventListener("mouseup", e -> {
+            btn.setAttribute("style", "");
         });
 
         container.append(btn);
     }
 
     /**
-     * 构建 TOGGLE 开关。
+     * 构建 TOGGLE 开关，使用 .toggle-row 布局。
      */
     private static void buildToggleSwitch(Document doc, Element container, GuiToggleAction action, int index) {
         Element wrapper = doc.createElement("div");
-        wrapper.setAttribute("style", "display:flex;align-items:center;gap:6px;");
+        wrapper.setAttribute("class", "toggle-row");
 
         Element label = doc.createElement("span");
         label.setAttribute("class", "toggle-label");
@@ -120,7 +118,6 @@ public class PanelDeviceControl {
 
         Element knob = doc.createElement("div");
         knob.setAttribute("class", "knob");
-
         toggle.append(knob);
 
         toggle.addEventListener("mousedown", e -> {
@@ -135,74 +132,63 @@ public class PanelDeviceControl {
     }
 
     /**
-     * 构建 SLIDER 滑块。
+     * 构建纵向 SLIDER 滑条。<br>
+     * 每个滑条占据等宽列，从底部向上填充。
      */
-    private static void buildSliderWidget(Document doc, Element container, GuiSliderAction action, int index) {
+    private static void buildVerticalSlider(Document doc, Element container, GuiSliderAction action, int index) {
         float rawValue = action.getValue();
         int pct = Math.round((rawValue - action.min) / (action.max - action.min) * 100);
 
-        Element widget = doc.createElement("div");
-        widget.setAttribute("class", "slider-widget");
+        Element axis = doc.createElement("div");
+        axis.setAttribute("class", "slider-axis");
 
-        Element header = doc.createElement("div");
-        header.setAttribute("class", "slider-header");
-
-        Element labelEl = doc.createElement("span");
+        Element labelEl = doc.createElement("div");
+        labelEl.setAttribute("class", "slider-axis-label");
         labelEl.innerText = action.label;
 
-        Element valEl = doc.createElement("span");
-        valEl.setAttribute("class", "slider-value");
-        valEl.innerText = String.valueOf(Math.round(rawValue));
-
-        header.append(labelEl);
-        header.append(valEl);
-
         Element track = doc.createElement("div");
-        track.setAttribute("class", "slider-track");
+        track.setAttribute("class", "slider-track-v");
 
         Element fill = doc.createElement("div");
-        fill.setAttribute("class", "slider-fill");
-        fill.setAttribute("style", "width:" + pct + "%");
-
+        fill.setAttribute("class", "slider-fill-v");
+        fill.setAttribute("style", "height:" + pct + "%");
         track.append(fill);
+
+        Element valEl = doc.createElement("div");
+        valEl.setAttribute("class", "slider-value-v");
+        valEl.innerText = String.valueOf(Math.round(rawValue));
 
         track.addEventListener("mousedown", e -> {
             MouseEvent me = (MouseEvent) e;
-            sliderTrack = track;
-            sliderFill = fill;
-            sliderValue = valEl;
-            sliderStartX = me.clientX;
-            String style = fill.getAttribute("style");
-            sliderStartPct = pct;
-            if (style != null && style.contains("width:")) {
-                try {
-                    String p = style.replaceAll("[^0-9]", "");
-                    if (!p.isEmpty()) sliderStartPct = Integer.parseInt(p);
-                } catch (NumberFormatException ignored) {}
-            }
+            vSliderTrack = track;
+            vSliderFill = fill;
+            vSliderValue = valEl;
+            vSliderStartY = me.clientY;
+            vSliderStartPct = pct;
         });
 
-        widget.append(header);
-        widget.append(track);
-        container.append(widget);
+        axis.append(labelEl);
+        axis.append(track);
+        axis.append(valEl);
+        container.append(axis);
     }
 
-    private static void onSliderMouseMove(com.sighs.apricityui.init.Event e) {
-        if (sliderTrack == null) return;
+    private static void onVSliderMouseMove(com.sighs.apricityui.init.Event e) {
+        if (vSliderTrack == null) return;
         MouseEvent me = (MouseEvent) e;
-        double delta = me.clientX - sliderStartX;
-        int pct = (int) Math.round(sliderStartPct + (delta / SLIDER_WIDTH) * 100);
+        double delta = vSliderStartY - me.clientY;
+        int pct = (int) Math.round(vSliderStartPct + (delta / 100.0) * 100);
         if (pct < 0) pct = 0;
         if (pct > 100) pct = 100;
-        sliderFill.setAttribute("style", "width:" + pct + "%");
-        if (sliderValue != null) {
-            sliderValue.innerText = String.valueOf(pct);
+        vSliderFill.setAttribute("style", "height:" + pct + "%");
+        if (vSliderValue != null) {
+            vSliderValue.innerText = String.valueOf(pct);
         }
     }
 
-    private static void onSliderMouseUp(com.sighs.apricityui.init.Event e) {
-        sliderTrack = null;
-        sliderFill = null;
-        sliderValue = null;
+    private static void onVSliderMouseUp(com.sighs.apricityui.init.Event e) {
+        vSliderTrack = null;
+        vSliderFill = null;
+        vSliderValue = null;
     }
 }

@@ -1,6 +1,6 @@
 # AUI 载具控制面板 — 实现计划
 
-**版本**：1.1  
+**版本**：1.2（AUI 能力重调研）  
 **日期**：2026-05-28  
 **目标**：使用 AUI（ApricityUI）实现 Machine-Max 的载具信息查看与控制系统可视化编辑
 
@@ -80,8 +80,14 @@
 
 ## 三、AUI 能力边界参考
 
-> 本节是 AUI（ApricityUI）在 Machine-Max 面板开发中可用的能力清单，基于对该框架源码的完整调研。
+> 本节是 AUI（ApricityUI）在 Machine-Max 面板开发中可用的能力清单，基于对 **v1.1.3dev** 源码的完整调研。
 > 底层渲染引擎：Java 实现 DOM/CSS 布局 + CPU 绘制（通过 `PoseStack`），非 WebView。
+>
+> **版本更新日志**：
+> - **v1.1.3dev** — **CSS 变量 `var()` 自动解析**（`Style.resolveVarReferences()`）、`visibility` 继承修复、容器屏幕重构（`SlotDataBinder` 分离）、字体渲染深度修复、滚动抖动修复、Mask 蒙版支持物品纹理裁剪、`BodyRenderNodeProvider`、stencil buffer
+> - v1.1.2 — `FollowFacingWorldWindow`、`Selector.Index` 选择器索引缓存、`StyleFrameCache` 渲染阶段动画推进
+>
+> **完整深潜文档**：[AUI性能边界.md](file:///d:/Files/Project_MinecraftMods/Machine-Max/docs/AUI性能边界.md)
 
 ### 3.1 HTML 标签支持
 
@@ -129,7 +135,7 @@
 | **光标** | `cursor: default/pointer/text/crosshair/ew-resize/ns-resize` + `url(...)` 自定义图像光标 | 自定义光标使用伪光标渲染 |
 | **动画** | `@keyframes` + `animation-*`（duration/delay/iteration-count/direction/fill-mode/timing-function） | 只支持 `linear` 和 `steps()` 缓动 |
 | **过渡** | `transition` | ⚠️ 不稳定，源码标注"似乎不大好用"。**推荐 JS class 切换替代** |
-| **自定义属性** | `--*` + `var()` | 支持，如 `--aui-slot-size: 18` |
+| **自定义属性（CSS 变量）** | `--*` + `var()` | ✅ `var()` 在 v1.1.3dev 实现自动解析；支持声明、Java API 读取、CSS 值中引用、fallback |
 
 **不支持的 CSS**：
 - ❌ `calc()`、`clamp()`、`min()`、`max()` CSS 函数
@@ -141,9 +147,22 @@
 - ❌ `+`（相邻兄弟）、`~`（通用兄弟）、`:not()`、`:nth-of-type()` 选择器
 - ❌ `text-shadow`（有 `text-stroke` 作为替代）
 
-### 3.4 JS / Java DOM 操作
+### 3.4 CSS 变量（`--*`）支持
 
-本项目使用 **纯 Java DOM API**，不依赖 `<script>` 标签。暴露的 Java 方法：
+**支持声明和 Java 读取，但不自动解析 `var()`。** 详见 [AUI性能边界.md §二](file:///d:/Files/Project_MinecraftMods/Machine-Max/docs/AUI性能边界.md#二css-变量--完整分析)。
+
+| 能力 | 状态 |
+|------|------|
+| `--name: value` 声明 | ✅ 存入 `Style.customProperties` |
+| CSS 中 `var(--name)` 使用 | ✅ **v1.1.3dev 新增自动解析**，在 `getRawComputedStyle()` 构建时通过 `resolveVarReferences()` 替换 |
+| `element.getCustomProperty("--name")` | ✅ 读取当前元素 |
+| `element.getCustomPropertyInherit("--name")` | ✅ 沿父链冒泡读取 |
+
+> ✅ **v1.1.3dev 重大改进**：`var()` 现在在 computed style 构建阶段自动解析。支持 fallback（`var(--name, default)`）、嵌套 var、DOM 父链继承查找。详见 [AUI性能边界.md §二.2.3](file:///d:/Files/Project_MinecraftMods/Machine-Max/docs/AUI性能边界.md#23-var-自动解析v113dev-新增)。
+
+### 3.5 JS / Java DOM 操作
+
+**本项目使用纯 Java DOM API，不依赖 `<script>` 标签。AUI 的 JavaScript 执行功能依赖 KubeJS 模组（通过 Rhino JS 引擎），本项目未引入 KubeJS，因此模板中不可使用 `<script>` 标签。**
 
 ```java
 // 选择器
@@ -176,7 +195,7 @@ element.addEventListener("click", handler);  // 支持的类型：
 element.setAttribute("style", "display:flex; color:red;");
 ```
 
-### 3.5 事件系统
+### 3.6 事件系统
 
 | 特性 | 说明 |
 |------|------|
@@ -188,7 +207,19 @@ element.setAttribute("style", "display:flex; color:red;");
 | **3D 预览交互** | 需在 `VehicleControlScreen` 中通过 `mouseDragged` / `mouseScrolled` 单独处理 |
 | **输入分离** | AUI 全局 handler 先于 Screen 触发，点击 UI 元素时 AUI 自动消耗事件。Screen 只需处理 3D 预览专用的交互 |
 
-### 3.6 常用实例化的预期
+### 3.7 渲染管线与性能特征
+
+详见 [AUI性能边界.md §三](file:///d:/Files/Project_MinecraftMods/Machine-Max/docs/AUI性能边界.md#三帧调度与渲染管线)（帧调度架构、样式失效机制、脏标记系统、paintList 增量更新、动画推进）和 [§八](file:///d:/Files/Project_MinecraftMods/Machine-Max/docs/AUI性能边界.md#八性能特征与限制)（线程安全模型、性能限制表、坑点清单）。
+
+**关键摘要**：
+- **tick/render 分离**：样式/布局在 ClientTick 更新，动画/过渡在渲染阶段推进（`stepMotionRender`）
+- **增量 paintList**：只重建受影响的层叠上下文子树，非全量重建
+- **并发模型**：`Element.children` (CopyOnWriteArrayList)、`Document.dirtyElements` (ConcurrentHashMap)，tick 线程内不并发
+- **性能限制**：所有 CSS 值存为 String（每次 `Size.parse()` 重新解析）、无脏区域渲染（整棵 paintList 遍历）、无纹理图集
+
+**v1.1.2 新增 WorldWindow 类型**：`FollowFacingWorldWindow` — 自动面朝相机的粘性窗口，`followFactor ∈ [0,1]` 控制跟随速度。
+
+### 3.8 常用实例化的预期
 
 ```
 Content:                  Input:                    Result:
