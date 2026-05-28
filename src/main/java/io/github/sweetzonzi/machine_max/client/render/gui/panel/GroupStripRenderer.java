@@ -19,34 +19,55 @@ import java.util.List;
 public class GroupStripRenderer {
 
     /**
-     * 在指定容器中渲染控制组切换条。
+     * 在指定容器中渲染控制组切换条。<br>
+     * BASE 组始终为白底黑字，标记"始终激活"。<br>
+     * 非基础组激活态使用较浅主题色，未激活使用较深主题色。
      */
     public static void render(Document doc, ControlGroupSet data, String containerId) {
         Element container = doc.getElementById(containerId);
         if (container == null) return;
 
         List<ControlGroup> allGroups = getAllGroups(data);
-        for (int i = 0; i < allGroups.size(); i++) {
+        int count = allGroups.size();
+
+        int groupIndex = 0;
+        for (int i = 0; i < count; i++) {
             ControlGroup group = allGroups.get(i);
             boolean isBase = i == 0;
-            boolean isActive = isBase;
 
             Element card = doc.createElement("div");
             String cardId = containerId + "-card-" + i;
-            card.setAttribute("class", isActive ? "group-card active" : "group-card");
+            if (isBase) {
+                card.setAttribute("class", "group-card base");
+            } else if (i == 1) {
+                card.setAttribute("class", "group-card active");
+            } else {
+                card.setAttribute("class", "group-card");
+            }
             card.setAttribute("id", cardId);
 
             Element nameEl = doc.createElement("div");
             nameEl.setAttribute("class", "gc-name");
-            nameEl.innerText = isBase ? group.name + " (BASE)" : group.name;
+            nameEl.innerText = isBase ? "BASE" : group.name;
 
             Element numberEl = doc.createElement("div");
             numberEl.setAttribute("class", "gc-number");
-            numberEl.innerText = isBase ? "GROUP BASE" : String.format("GROUP %02d", i - 1);
+            if (isBase) {
+                numberEl.innerText = "GROUP 00";
+            } else {
+                groupIndex++;
+                numberEl.innerText = String.format("GROUP %02d", groupIndex);
+            }
 
             Element statusEl = doc.createElement("div");
             statusEl.setAttribute("class", "gc-status");
-            statusEl.innerText = isActive ? "ACTIVE" : "STAND BY";
+            if (isBase) {
+                statusEl.innerText = "ALWAYS ACTIVE";
+            } else if (i == 1) {
+                statusEl.innerText = "ACTIVE";
+            } else {
+                statusEl.innerText = "STAND BY";
+            }
 
             card.append(nameEl);
             card.append(numberEl);

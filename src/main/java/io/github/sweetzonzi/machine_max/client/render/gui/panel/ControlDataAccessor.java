@@ -41,7 +41,7 @@ public class ControlDataAccessor {
      * 包含 baseGroup + 3 个子控制组 + 6 个 GUI 交互元素。
      */
     private static void buildMockData() {
-        var baseGroup = new ControlGroup("base", ControlMode.GROUND,
+        var baseGroup = new ControlGroup("BASE", ControlMode.GROUND,
                 Map.of(
                         "forward", List.of("main_engine"),
                         "steering", List.of("steering_gear")
@@ -61,7 +61,7 @@ public class ControlDataAccessor {
                 )
         );
 
-        var combat = new ControlGroup("combat", ControlMode.INHERIT,
+        var combat = new ControlGroup("COMBAT", ControlMode.INHERIT,
                 Map.of(), Map.of(), Map.of(),
                 List.of(
                         new ControlBinding("mouse.left", BindingAction.PRESS, "fire_primary", List.of("turret")),
@@ -71,7 +71,7 @@ public class ControlDataAccessor {
                 )
         );
 
-        var mining = new ControlGroup("mining", ControlMode.INHERIT,
+        var mining = new ControlGroup("MINING", ControlMode.INHERIT,
                 Map.of(), Map.of(), Map.of(),
                 List.of(
                         new ControlBinding("mouse.left", BindingAction.HOLD, "drill_activate", List.of("mining_head")),
@@ -79,7 +79,7 @@ public class ControlDataAccessor {
                 )
         );
 
-        var utility = new ControlGroup("utility", ControlMode.INHERIT,
+        var utility = new ControlGroup("UTILITY", ControlMode.INHERIT,
                 Map.of(), Map.of(), Map.of(),
                 List.of(
                         new ControlBinding("key.l", BindingAction.TOGGLE, "lights", List.of("lighting")),

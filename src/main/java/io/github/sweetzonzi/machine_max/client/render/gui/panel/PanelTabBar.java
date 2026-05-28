@@ -11,7 +11,10 @@ import java.util.function.IntConsumer;
  * Tab 导航栏渲染。<br>
  * 管理 Header Strip 中 4 个 Tab 按钮的激活态切换和点击事件。
  * Tab 04 库存管理暂未实现，按钮为禁用状态。
- * 每个 Tab 有独立主题色，切换时同步更新 header 底部边框和数字颜色。
+ * 激活态：白色背景 + 黑色文字 + 大号编号。
+ * 非激活态：深色背景 + 白色文字 + 小号编号。
+ * 通过内联 style 显式控制 header-content 和 header-number 的显隐与颜色，
+ * 作为 CSS 选择器的保底方案。
  */
 @OnlyIn(Dist.CLIENT)
 public class PanelTabBar {
@@ -21,22 +24,6 @@ public class PanelTabBar {
             "tab-device",
             "tab-config",
             "tab-inventory"
-    };
-
-    /** 每个 Tab 的主题强调色 */
-    private static final String[] TAB_ACCENT = {
-            "#C89520",   // Tab 01: 琥珀
-            "#2E5A90",   // Tab 02: 深蓝
-            "#8A2A2A",   // Tab 03: 锈红
-            "#6850B8"    // Tab 04: 深紫
-    };
-
-    /** 每个 Tab 的强调色背景（8% 透明度） */
-    private static final String[] TAB_ACCENT_BG = {
-            "rgba(200,149,32,0.08)",
-            "rgba(46,90,144,0.08)",
-            "rgba(138,42,42,0.08)",
-            "rgba(104,80,184,0.08)"
     };
 
     /**
@@ -56,50 +43,80 @@ public class PanelTabBar {
     }
 
     /**
-     * 更新 Tab 激活态：切换 header-item 的 active 类 + page 的 active 类。
-     * 同时控制 header-content 的显隐和主题色切换。
+     * 更新 Tab 激活态：切换 header-item 的 active 类 + page 的 active 类。<br>
+     * 激活态：白色背景 + 大号黑色编号 + 显示标题。<br>
+     * 非激活态：深色背景 + 小号白色编号 + 隐藏标题。<br>
+     * 同时通过内联 style 控制 header-content 和 header-number 的显隐与颜色，
+     * 确保即使 CSS 选择器失效也能正常工作。
      */
     public static void setActive(Document doc, int activeIndex) {
-        String accent = TAB_ACCENT[activeIndex];
-        String accentBg = TAB_ACCENT_BG[activeIndex];
-
+        if (doc == null) return;
         for (int i = 0; i < 4; i++) {
             Element btn = doc.getElementById("tab-btn-" + i);
-            if (btn != null) {
-                String cls = (i == activeIndex) ? "header-item active" : "header-item";
-                if (i == 3) cls = "header-item disabled";
-                btn.setAttribute("class", cls);
-                if (i == activeIndex) {
-                    btn.setAttribute("style", "flex:1;border-bottom-color:" + accent + ";background:" + accentBg + ";");
-                } else {
-                    btn.setAttribute("style", "flex:0 0 auto;");
-                }
+            if (btn == null) continue;
+
+            // 优先判断禁用状态，禁用态不做任何激活切换
+            if (i == 3) {
+                btn.setAttribute("class", "header-item disabled");
+                btn.setAttribute("style", "opacity:0.3;cursor:default;pointer-events:none;");
+                hideContent(doc, i);
+                continue;
             }
-            Element content = doc.getElementById("tab-content-" + i);
-            if (content != null) {
-                content.setAttribute("style", i == activeIndex ? "display:flex;" : "display:none;");
+
+            if (i == activeIndex) {
+                btn.setAttribute("class", "header-item active");
+                btn.setAttribute("style", "flex:0 0 auto;background:#FFFFFF;padding:0 16px;gap:10px;justify-content:flex-start;");
+                showContent(doc, i);
+                setNumberColor(doc, i, "#111111");
+            } else {
+                btn.setAttribute("class", "header-item");
+                btn.setAttribute("style", "flex:0 0 auto;background:#111111;");
+                hideContent(doc, i);
+                // 清除内联 number 颜色，让 CSS 默认样式生效
+                clearNumberStyle(doc, i);
             }
-            Element number = doc.getElementById("tab-btn-" + i);
-            if (number != null) {
-                String numStyle = i == activeIndex ? "color:" + accent + ";" : "";
-                setChildStyle(number, 0, numStyle);
-            }
+
             Element page = doc.getElementById(TAB_PAGE_IDS[i]);
             if (page != null) {
-                String pageCls = (i == activeIndex) ? "page active" : "page";
-                page.setAttribute("class", pageCls);
+                page.setAttribute("class", i == activeIndex ? "page active" : "page");
             }
         }
     }
 
-    /**
-     * 设置指定子元素的内联 style（用于修改 header-number 的颜色）。
-     */
-    private static void setChildStyle(Element parent, int childIndex, String style) {
-        if (parent.children != null && childIndex < parent.children.size()) {
-            Element child = parent.children.get(childIndex);
-            if (child != null && !style.isEmpty()) {
-                child.setAttribute("style", style);
+    /** 显示指定 Tab 的 header-content */
+    private static void showContent(Document doc, int index) {
+        Element content = doc.getElementById("tab-content-" + index);
+        if (content != null) {
+            content.setAttribute("style", "display:flex;flex-direction:column;gap:2px;overflow:hidden;");
+        }
+    }
+
+    /** 隐藏指定 Tab 的 header-content */
+    private static void hideContent(Document doc, int index) {
+        Element content = doc.getElementById("tab-content-" + index);
+        if (content != null) {
+            content.setAttribute("style", "display:none;");
+        }
+    }
+
+    /** 设置指定 Tab 的 header-number 颜色 */
+    private static void setNumberColor(Document doc, int index, String color) {
+        Element btn = doc.getElementById("tab-btn-" + index);
+        if (btn != null && btn.children != null && !btn.children.isEmpty()) {
+            Element number = btn.children.get(0);
+            if (number != null) {
+                number.setAttribute("style", "color:" + color + ";");
+            }
+        }
+    }
+
+    /** 清除指定 Tab 的 header-number 内联样式 */
+    private static void clearNumberStyle(Document doc, int index) {
+        Element btn = doc.getElementById("tab-btn-" + index);
+        if (btn != null && btn.children != null && !btn.children.isEmpty()) {
+            Element number = btn.children.get(0);
+            if (number != null) {
+                number.removeAttribute("style");
             }
         }
     }
