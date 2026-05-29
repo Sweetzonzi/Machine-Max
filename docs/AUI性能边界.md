@@ -382,7 +382,7 @@ public void stepMotionRender() {
 |------|-----------|---------|
 | 尺寸 | `width/height/min-max-*/box-sizing` | **仅 `px` 和 `%`**。不支持 `em/rem/vw/vh/vmin/vmax` |
 | 盒模型 | `margin/padding/border/border-radius` | 简写 + 单独方向均支持 |
-| 背景 | `background-color/image/repeat/size/position` | `url()` + `linear-gradient()` |
+| 背景 | `background-color/image/repeat/size/position` | `url()` + `linear-gradient()`。<br>**⚠️ `background` 简写不支持 `var()**`：`background: var(--x)` 不会填充背景色。<br>**必须用 `background-color: var(--x)` 替代**（v1.1.3dev 之前 `var()` 在简写中完全不被识别，见 §8.5 #12）<br>**⚠️ `linear-gradient()` 内的颜色不能包含空格**：`Gradient.parse()` 用 `split("\\s+")` 切分颜色 stop，`rgba(r, g, b, a)` 带空格会被切碎。必须用 `rgba(r,g,b,a)` 无空格格式或 `#hex`。见 §8.5 #13。 |
 | 文本 | `color/font-size/font-weight/font-family/line-height/text-align/letter-spacing/white-space/text-overflow:ellipsis/text-stroke` | 字号公式：`fontSize/16*9` |
 | 变换 | `transform: translate/rotate/scale`（含 3D 变体） | 默认 `transform-origin` 为中心 |
 | 滤镜 | `filter: blur/brightness/grayscale/invert/hue-rotate/opacity/drop-shadow` | CPU 实现 |
@@ -703,10 +703,67 @@ AUI 支持两种显示模式：
 | 9 | 没有 `preventDefault()` | 只有 `stopPropagation()` |
 | 10 | `::before`/`::after` 伪元素 | 不可用，需额外 div 替代 |
 | 11 | `visibility:hidden` 继承 | ❌ **已修复（v1.1.3dev）**，现在正确继承到子元素，详见 §三.2.1 |
+| 12 | `background` 简写不支持 `var()` | `background: var(--x)` 中的 `var()` 不会被 `isColorToken()` 识别，`backgroundColor` 保持 `"unset"`。需改用 `background-color: var(--x)` |
+| 13 | `linear-gradient()` 内颜色不能含空格 | `Gradient.parse()` 用 `split("\\s+")` 切分 stop，`rgba(r, g, b, a)` 会被切成 `["rgba(r,", "g,", "b,", "a)"]`，`Color.parse()` 解析失败返回透明。必须在 gradient 中使用 `rgba(r,g,b,a)`（无空格）或 `#hex` / `#RRGGBBAA`（8 位 hex） |
+| 14 | 8 位 hex `#RRGGBBAA` 的 alpha 被错误解析 | `Color.parseHex()` 对 8 位 hex 不做字节重排，直接 `Long.parseLong(hex, 16)` 原样存入 int。而内部颜色格式为 **ARGB**（alpha 在 bits 24-31，blue 在 bits 0-7）。`#FFFFFF4D` 期望白 @ 30% 透明度（A=0x4D），实际解析为完全不透明的蓝白色（A=0xFF, B=0x4D）。**必须用 `rgba(r,g,b,a)` 替代 8 位 hex 来表达半透明色**。详见 §九。 |
 
 ---
 
-## 九、CSS 变量参考（全局默认值）
+## 九、8 位 hex 颜色解析 BUG 详解
+
+### 9.1 根因
+
+[`Color.parseHex()`](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/style/Color.java#L95-L115) 的实现：
+
+```java
+private static int parseHex(String hex) {
+    // ...
+    if (cleanHex.length() == 6) {
+        cleanHex = "FF" + cleanHex;   // 6 位 hex 补 FF 作为 alpha
+    }
+    return (int) Long.parseLong(cleanHex, 16);  // ← 直接按原始 byte 序列存入
+}
+```
+
+而内部颜色提取采用 ARGB 布局：
+
+```java
+// lerpColor / toRgbaString 中的提取方式
+int a = (value >>> 24) & 0xFF;
+int r = (value >>> 16) & 0xFF;
+int g = (value >>>  8) & 0xFF;
+int b =  value        & 0xFF;
+```
+
+对于 8 位 hex `#RRGGBBAA`，hex 字符串的排列是 `RR GGBB AA`。解析后 int 的字节排列也是 `RR GG BB AA`。但 ARGB 提取要求 `AA RR GG BB`。结果：
+
+| 8 位 hex | 解析为 int | 实际提取（ARGB） | 期望效果 |
+|----------|-----------|-----------------|---------|
+| `#FFFFFF0F` | `0xFFFFFF0F` | A=0xFF(不透), R=FF, G=FF, B=0F | 白 @ 6% 透明度 |
+| `#FFFFFF4D` | `0xFFFFFF4D` | A=0xFF(不透), R=FF, G=FF, B=4D | 白 @ 30% 透明度 |
+| `#FFFFFF80` | `0xFFFFFF80` | A=0xFF(不透), R=FF, G=FF, B=80 | 白 @ 50% 透明度 |
+
+### 9.2 对比：`rgba()` 的正确路径
+
+[`Color.parseRgba()`](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/style/Color.java#L117-L151) 正确构造 ARGB：
+
+```java
+return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
+```
+
+| 写法 | 解析 int | 实际 ARGB |
+|------|---------|-----------|
+| `rgba(255,255,255,0.06)` | `0x0FFFFFFF` | A=0x0F, R=FF, G=FF, B=FF ✅ |
+| `rgba(255,255,255,0.30)` | `0x4CFFFFFF` | A=0x4C, R=FF, G=FF, B=FF ✅ |
+
+### 9.3 建议
+
+- **始终使用 `rgba(r,g,b,a)`** 替代 8 位 hex 表达半透明色
+- 6 位 hex（无 alpha）不受影响，因为 6 位路径补了 `"FF"` 前缀：`#FFFFFF` → `"FF" + "FFFFFF"` → `0xFFFFFFFF` → A=FF, R=FF, G=FF, B=FF ✅
+
+---
+
+## 十、CSS 变量参考（全局默认值）
 
 以下为 [`global.css`](file:///d:/Files/Project_MinecraftMods/AUI/src/main/resources/assets/apricityui/apricity/global.css) 中定义的 CSS 变量：
 
@@ -731,7 +788,7 @@ AUI 支持两种显示模式：
 
 ---
 
-## 十、关键源码文件索引
+## 十一、关键源码文件索引
 
 | 功能 | 文件路径 | 关键行 |
 |------|---------|--------|

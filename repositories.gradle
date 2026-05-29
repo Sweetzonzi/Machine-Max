@@ -26,6 +26,8 @@ dependencies {
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     // js
     compileOnly "org.mozilla:rhino:1.8.0"
+    // GraalVM polyglot（Spark-Core 通过 jarJar 嵌入，运行时由 Spark-Core 提供，此处仅编译需要）
+    compileOnly "org.graalvm.polyglot:polyglot:${graalvm_version}"
     // 暴雪粒子
 //    implementation files('libs/particlestorm-1.1.4.jar')
     // 状态机
@@ -50,6 +52,11 @@ dependencies {
 repositories {
     mavenLocal()
     mavenCentral()
+    // GraalVM 仓库（仅从 Maven Central 拉取 org.graalvm.* 包）
+    exclusiveContent {
+        forRepository { mavenCentral() }
+        filter { includeGroupByRegex("org\\.graalvm(\\..*)?") }
+    }
     maven {
         name = "Progwml6 maven"
         url = "https://dvs1.progwml6.com/files/maven/"

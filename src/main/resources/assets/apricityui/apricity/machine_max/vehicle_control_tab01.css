@@ -1,0 +1,179 @@
+/* ================================================================
+   载具控制面板 — Tab 01 载具概览 专用样式
+   渲染引擎：ApricityUI
+   对应 Java 类：PanelOverview.java
+   依赖：vehicle_control.css（公共变量与组件）
+   ================================================================ */
+
+/* ================================================================
+   Tab 01: 载具概览（PanelOverview.java）
+   主题色：琥珀金 #C89520
+   背景：琥珀黑渐变
+   ================================================================ */
+#tab-overview {
+    background: linear-gradient(180deg, rgba(8,6,2,0.5), rgba(20,16,8,0.5));
+    --accent: #C89520;                  /* 主强调色 — 原型 --panel-accent */
+    --accent-dim: #A67E1E;              /* 边框/弱化色 — 降低饱和度的琥珀金 */
+    --accent-bg: #C89520;               /* 按钮/卡片背景 — 与主强调色一致 */
+    --accent-bg-hover: #D4A630;         /* hover 态背景 — 稍亮 */
+    --bar-bg: #221C0C;                  /* 控制组卡片默认背景 — 原型 --panel-theme-bar */
+    --bar-bg-hover: #483C16;            /* 控制组卡片 hover 背景 — 原型 --panel-theme-header */
+}
+
+/* hover 态：覆盖公共样式中的控制组卡片 hover */
+#tab-overview .group-card:hover {
+    background-color: var(--bar-bg-hover, #221C0C);
+}
+
+/* ================================================================
+   底部信息栏（Tab 01 载具概览专用）
+   ================================================================ */
+
+/* 三列 flex 布局：状态 / 警告 / 控制模式 */
+.info-bar {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border-top: 1px solid #EAEAEA;
+    background: #080602;
+}
+
+/* 单列容器：三栏等宽填充（33.33% × 3 = 99.99%，不依赖 flex 内容协商） */
+.info-col {
+    width: 33.33%;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    padding: 0 6px 4px;
+    border-right: 1px solid #EAEAEA;
+    background: #080602;
+}
+.info-col:last-child {
+    border-right: none;
+}
+
+/* 信息列标题栏 */
+.info-col-header {
+    font-size: 9px;
+    font-weight: 600;
+    color: #AAAAAA;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    background: #483C16;
+    border-bottom: 1px solid #333333;
+    margin-bottom: 4px;
+    flex-shrink: 0;
+}
+
+/* --- 控制模式信息（右列 "extra-col" 内） --- */
+.mode-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: #e0e0e8;
+    padding: 3px 6px;
+}
+.mode-sublabel {
+    font-size: 7px;
+    color: rgba(255,255,255,0.25);
+    padding: 0 6px 3px;
+    letter-spacing: 0.5px;
+}
+.mode-info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 7px;
+    padding: 2px 6px;
+    color: rgba(255,255,255,0.30);
+}
+.mode-info-row .mir-value {
+    color: rgba(255,255,255,0.50);
+    font-weight: 600;
+}
+
+/* --- 状态条（耐久/能量等进度条） --- */
+.stat-bar {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 2px 6px;
+    background: #141008;
+    border-radius: 1px;
+    overflow: hidden;
+}
+.stat-bar .sb-label {
+    font-size: 7px;
+    color: rgba(255,255,255,0.30);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.stat-bar .sb-track {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 1px;
+    overflow: hidden;
+}
+.stat-bar .sb-fill {
+    height: 100%;
+    border-radius: 1px;
+    max-width: 100%;
+    /* sb-fill 背景色由 Java 渲染器动态设置 */
+}
+
+/* --- 数字指标区域（HEADING / ALTITUDE / MASS） --- */
+.stat-numeric-section {
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    margin-top: auto;
+    padding-top: 4px;
+    border-top: 1px solid #333333;
+}
+.stat-numeric-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px 4px;
+}
+.stat-numeric-label {
+    font-size: 6px;
+    color: rgba(255,255,255,0.30);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.stat-numeric-value {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.69);
+}
+
+/* --- 警告项 --- */
+.warning-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 6px;
+    background: rgba(0,0,0,0.15);
+    border-left: 2px solid #ff4444;
+    border-radius: 1px;
+    font-size: 8px;
+    color: #ff6666;
+    flex-shrink: 0;
+}
+
+.group-list-item .gli-name {
+    font-size: 11px;
+    font-weight: 600;
+}
+.group-list-item .gli-meta {
+    font-size: 8px;
+    color: rgba(255,255,255,0.30);
+}

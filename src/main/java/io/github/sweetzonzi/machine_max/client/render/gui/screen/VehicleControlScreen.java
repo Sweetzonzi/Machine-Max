@@ -42,7 +42,7 @@ public class VehicleControlScreen extends Screen {
 
     private Document auiDocument;
 
-    private int activeTab = 1;
+    private int activeTab = -1; // 从 HTML 读取初始值
     private ControlGroupSet controlSet;
 
     private float previewRotX = 25f;
@@ -64,21 +64,20 @@ public class VehicleControlScreen extends Screen {
             onClose();
             return;
         }
-
-        auiDocument = Document.create(AUI_DOC_PATH);
-        if (auiDocument == null) {
-            onClose();
-            return;
-        }
-
-        initPanels();
-
-        // 注册 body "load" 事件：热重载后 Document.refresh() 末尾会触发此事件。
-        // body 的 EventListener 列表会在 refresh() 中被保留并转移到新 body，
-        // 因此只需注册一次，后续每次热重载都会自动调用 initPanels() 重建面板内容。
-        if (!loadListenerRegistered && auiDocument.body != null) {
-            auiDocument.body.addEventListener("load", e -> initPanels());
-            loadListenerRegistered = true;
+        if (auiDocument == null) { // 可能由于窗口尺寸变化导致init再次被触发，此时无需重新创建 Document
+            auiDocument = Document.create(AUI_DOC_PATH);
+            if (auiDocument == null) {
+                onClose();
+            } else {
+                initPanels();
+                // 注册 body "load" 事件：热重载后 Document.refresh() 末尾会触发此事件。
+                // body 的 EventListener 列表会在 refresh() 中被保留并转移到新 body，
+                // 因此只需注册一次，后续每次热重载都会自动调用 initPanels() 重建面板内容。
+                if (!loadListenerRegistered && auiDocument.body != null) {
+                    auiDocument.body.addEventListener("load", e -> initPanels());
+                    loadListenerRegistered = true;
+                }
+            }
         }
     }
 
@@ -88,11 +87,30 @@ public class VehicleControlScreen extends Screen {
      */
     private void initPanels() {
         clearPanels();
+        resolveActiveTabFromDom();
         PanelTabBar.init(auiDocument, this::switchTab);
         PanelTabBar.setActive(auiDocument, activeTab);
         PanelOverview.render(auiDocument, controlSet);
         PanelDeviceControl.render(auiDocument, controlSet);
         PanelConfigEditor.render(auiDocument, controlSet);
+    }
+
+    /**
+     * 从 HTML 模板的 active 类解析默认激活的 Tab 索引。<br>
+     * 遍历 tab-btn-N 查找带有 "active" 类的元素，未找到则默认 0。
+     */
+    private void resolveActiveTabFromDom() {
+        if (auiDocument == null) return;
+        for (int i = 0; i < 4; i++) {
+            Element btn = auiDocument.getElementById("tab-btn-" + i);
+            if (btn == null) continue;
+            String cls = btn.getAttribute("class");
+            if (cls != null && cls.contains("active")) {
+                activeTab = i;
+                return;
+            }
+        }
+        activeTab = 0; // 兜底：如果 HTML 中没有 active 则默认 01 概览
     }
 
     /**
@@ -128,10 +146,9 @@ public class VehicleControlScreen extends Screen {
 
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTick);
         if (activeTab == 0 || activeTab == 1) {
             render3dPreview(graphics, partialTick);
-        } else {
-            graphics.fillGradient(0, 0, width, height, 0xC0101010, 0xC0101010);
         }
     }
 

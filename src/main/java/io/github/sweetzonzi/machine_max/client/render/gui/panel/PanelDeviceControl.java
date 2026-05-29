@@ -39,6 +39,14 @@ public class PanelDeviceControl {
         Element toggleSection = doc.getElementById("toggle-section");
         Element sliderSection = doc.getElementById("slider-section");
 
+        // 创建滑条横向包装容器，使各轴向右依次排开
+        Element sliderAxesRow = null;
+        if (sliderSection != null) {
+            sliderAxesRow = doc.createElement("div");
+            sliderAxesRow.setAttribute("class", "slider-axes-row");
+            sliderSection.append(sliderAxesRow);
+        }
+
         for (int i = 0; i < actions.size(); i++) {
             AbstractGuiAction action = actions.get(i);
             String type = action.type().name().toLowerCase();
@@ -56,9 +64,9 @@ public class PanelDeviceControl {
                     }
                 }
                 case "slider" -> {
-                    if (sliderSection != null) {
+                    if (sliderAxesRow != null) {
                         GuiSliderAction slider = (GuiSliderAction) action;
-                        buildVerticalSlider(doc, sliderSection, slider, i);
+                        buildVerticalSlider(doc, sliderAxesRow, slider, i);
                     }
                 }
             }

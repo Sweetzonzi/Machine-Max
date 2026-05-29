@@ -1,0 +1,260 @@
+/* ================================================================
+   载具控制面板 — Tab 02 设备控制 专用样式
+   渲染引擎：ApricityUI
+   对应 Java 类：PanelDeviceControl.java
+   依赖：vehicle_control.css（公共变量与组件）
+   ================================================================ */
+
+/* ================================================================
+   Tab 02: 设备控制（PanelDeviceControl.java）
+   主题色：深蓝 #2E5A90
+   背景：深蓝渐变
+   ================================================================ */
+#tab-device {
+    background: linear-gradient(180deg, rgba(4,8,15,0.5), rgba(10,14,32,0.5));
+    --accent: #2E5A90;                  /* 主强调色 — 原型 --panel-accent */
+    --accent-dim: #1E4A75;              /* 边框/弱化色 — 降低饱和度的深蓝 */
+    --accent-bg: #2E5A90;               /* 按钮/卡片背景 — 与主强调色一致 */
+    --accent-bg-hover: #3A6FA8;         /* hover 态背景 — 稍亮 */
+    --bar-bg: #122240;                   /* 控制组卡片默认背景 — 原型 --panel-theme-bar */
+    --bar-bg-hover: #1E3A66;            /* 控制组卡片 hover 背景 — 原型 --panel-theme-header */
+}
+
+/* hover 态：覆盖公共样式中的控制组卡片 hover */
+#tab-device .group-card:hover {
+    background-color: var(--bar-bg-hover, #1E3A66);
+}
+
+/* ================================================================
+   底部设备控制三栏（PULSE / TOGGLE / SLIDER）
+   ================================================================ */
+
+/* 三栏容器 — 使用显式 height 确保子元素 flex 高度分配有确定的参考值 */
+.device-bar {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border-top: 1px solid #EAEAEA;
+    height: 130px;
+}
+
+/* 单栏：三栏等宽，与 tab01 一致 */
+.device-section {
+    width: 33.33%;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    padding: 0 6px 4px;
+    border-right: 1px solid #EAEAEA;
+}
+.device-section:last-child {
+    border-right: none;
+}
+
+/* 栏目标题（如 "PULSE""TOGGLE""AXES"），与 tab01 对齐 */
+.device-section-title {
+    font-size: 9px;
+    font-weight: 600;
+    color: #AAAAAA;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    background: #1E3A66;
+    border-bottom: 1px solid #333333;
+    margin-bottom: 4px;
+    flex-shrink: 0;
+}
+
+/* --- ACTIONS 按钮区（"pulse-section"） --- */
+
+/* 脉冲按钮：短按触发一次信号 — 暗卡底 + 白字，激活时变主题色 */
+.btn-pulse {
+    padding: 5px 10px;
+    background-color: #0A1424;
+    border: 1px solid #333333;
+    border-radius: 3px;
+    color: #FFFFFF;
+    font-size: 9px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    flex-shrink: 0;
+}
+.btn-pulse:hover {
+    background-color: #1E3A66;
+    border-color: #1E3A66;
+}
+.btn-pulse.active {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: #FFFFFF;
+}
+
+/* pulse 容器：按钮纵向排列 */
+#pulse-section {
+    min-width: 0;
+    gap: 4px;
+}
+
+/* --- TOGGLE 开关区（"toggle-section"） --- */
+
+/* toggle 容器：纵向排列开关行 */
+#toggle-section {
+    min-width: 0;
+    gap: 6px;
+}
+
+/* 一行开关：标签 + 开关控件 左右分布 */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* 开关控件本体：横条 + 滑钮 */
+.toggle-switch {
+    width: 32px;
+    height: 18px;
+    background: #0A1424;
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+/* 开启态：填充主题色 */
+.toggle-switch.on {
+    background-color: var(--accent);
+}
+/* 滑钮 */
+.toggle-switch .knob {
+    width: 12px;
+    height: 12px;
+    background: #ddd;
+    border-radius: 2px;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+}
+.toggle-switch.on .knob {
+    left: 17px;                        /* 右移 = 开启位置 */
+    background: #fff;
+}
+
+/* 开关行标签文字 */
+.toggle-label {
+    font-size: 9px;
+    color: #c8c8d0;
+    font-weight: 500;
+}
+
+/* --- SLIDER 纵向滑条区（"slider-section"） --- */
+
+/* 滑条容器：标题在上，滑条在下纵向排列 */
+#slider-section {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 滑条横向容器：各轴向右依次排开，撑满剩余高度 — min-height 兜底防止塌陷 */
+.slider-axes-row {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    min-height: 30px;
+    gap: 4px;
+}
+
+/* 单轴滑条（如 PITCH / ROLL / YAW）— min-height 兜底 */
+.slider-axis {
+    flex: 1;
+    min-height: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 0;
+}
+
+/* 轴标签 */
+.slider-axis-label {
+    font-size: 7px;
+    color: rgba(255,255,255,0.40);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* 纵向轨道 — min-height 兜底，防止 flex 塌陷时轨道高度为 0 导致不可见 */
+.slider-track-v {
+    width: 6px;
+    flex: 1;
+    min-height: 30px;
+    background: #0A1424;
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+}
+
+/* 纵向填充条：从底部向上 */
+.slider-fill-v {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--accent);
+    border-radius: 3px;
+}
+
+/* 纵向数值显示 */
+.slider-value-v {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* ================================================================
+   横向滑条（旧版，保留向下兼容）
+   ================================================================ */
+
+.slider-widget {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+}
+.slider-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: rgba(255,255,255,0.30);
+}
+.slider-track {
+    width: 100%;
+    height: 6px;
+    background: #0A1424;
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+}
+.slider-fill {
+    height: 100%;
+    background-color: var(--accent);
+    border-radius: 3px;
+}
+.slider-value {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent);
+    text-align: right;
+}

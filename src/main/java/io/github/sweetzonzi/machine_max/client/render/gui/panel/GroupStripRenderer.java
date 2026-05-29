@@ -54,14 +54,8 @@ public class GroupStripRenderer {
                 card.setAttribute("class", "group-card base");
             } else if (isActive) {
                 card.setAttribute("class", "group-card active");
-                if (accent != null) {
-                    card.setAttribute("style", "background:" + accent + ";color:#111111;");
-                }
             } else {
                 card.setAttribute("class", "group-card");
-                if (accent != null) {
-                    card.setAttribute("style", "background:" + accent + "30;color:#e0e0e8;");
-                }
             }
 
             Element nameEl = doc.createElement("div");

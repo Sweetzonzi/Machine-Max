@@ -1,0 +1,135 @@
+/* ================================================================
+   载具控制面板 — Tab 03 编辑配置 专用样式
+   渲染引擎：ApricityUI
+   对应 Java 类：PanelConfigEditor.java
+   依赖：vehicle_control.css（公共变量与组件）
+   ================================================================ */
+
+/* ================================================================
+   Tab 03: 编辑配置（PanelConfigEditor.java）
+   主题色：锈红 #8A2A2A
+   三栏布局：控制组列表 / 配置项 / 详情编辑
+   ================================================================ */
+#tab-config {
+    background: linear-gradient(180deg, rgba(10,4,4,0.5), rgba(18,10,26,0.5));
+}
+
+/* 三栏容器 */
+.config-layout {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* 左栏：控制组列表（140px） */
+.config-left {
+    width: 140px;
+    flex-shrink: 0;
+    border-right: 1px solid #EAEAEA;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* 中栏：组详情 + 配置项列表（弹性占满） */
+.config-middle {
+    flex: 1;
+    min-width: 0;
+    border-right: 1px solid #EAEAEA;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* 右栏：选中项编辑面板（150px） */
+.config-right {
+    width: 150px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* ---------- 配置页面内部组件 ---------- */
+
+/* 区块标题栏 */
+.config-sect-header {
+    padding: 6px 8px;
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.20);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #333333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 控制组列表项 */
+.group-list-item {
+    padding: 8px;
+    border-bottom: 1px solid #333333;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.group-list-item:hover {
+    background: rgba(138,42,42,0.078);    /* 锈红透明底 */
+}
+.group-list-item.selected {
+    background: #ffffff;   /* 选中态：白底黑字 */
+    color: #0A0404;
+}
+.group-list-item .gli-name {
+    font-size: 11px;
+    font-weight: 600;
+}
+.group-list-item .gli-meta {
+    font-size: 8px;
+    color: #ffffff;
+}
+.group-list-item.selected .gli-meta {
+    color: #0a0404;
+}
+
+/* ---------- 表单控件 ---------- */
+
+.form-group {
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* 表单行：标签 + 输入框 横向排列 */
+.form-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+.form-row label {
+    font-size: 9px;
+    color: rgba(255,255,255,0.30);
+    min-width: 40px;
+    flex-shrink: 0;
+}
+.form-row input,
+.form-row select {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 3px;
+    padding: 3px 6px;
+    color: #c8c8d0;
+    font-size: 10px;
+    outline: none;
+}
+.form-row input:focus,
+.form-row select:focus {
+    border-color: #8A2A2A;             /* 聚焦时使用 Tab 主题色 */
+}
