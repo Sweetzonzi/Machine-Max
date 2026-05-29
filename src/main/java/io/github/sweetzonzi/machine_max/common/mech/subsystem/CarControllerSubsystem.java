@@ -374,7 +374,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     overrideCountDown.put(gearbox, 0f);
                 }
             }
-        } else if (signalValue instanceof RegularInputSignal regularInputSignal) {//处理按键输入 Handle key input
+        } else if (signalValue instanceof RegularInputSignal regularInputSignal) { //处理按键输入 Handle key input
             int tickCount = regularInputSignal.getInputTickCount();
             switch (regularInputSignal.getInputType()) {
                 case CLUTCH:
@@ -503,14 +503,17 @@ public class CarControllerSubsystem extends BasicSubsystem {
 
                 if (Math.abs(speed) < 0.5f) {
                     // 近乎静止：始终加速，方向由输入决定
-                    targetThrottle = Math.abs(throttleInput);
+                    targetThrottle = throttleInput;
                     targetBrake = 0;
                     direction = throttleInput > 0.01f ? (byte) 1 : (throttleInput < -0.01f ? (byte) -1 : 0);
                 } else {
                     boolean forward = speed > 0;
-                    targetThrottle = forward ? Math.max(throttleInput, 0f) : Math.max(-throttleInput, 0f);
+                    targetThrottle = throttleInput;
                     targetBrake    = forward ? Math.max(-brakeInput, 0f)  : Math.max(brakeInput, 0f);
                     direction = targetThrottle > 0.01f ? (byte)(forward ? 1 : -1) : (byte)(speed >= 0 ? 1 : -1);
+                    if(targetThrottle * direction < 0){
+                        targetThrottle = 0; // 无效输入：重置油门
+                    }
                 }
 
                 actualThrottle = actualThrottle * 0.2f + targetThrottle * 0.8f;
@@ -520,7 +523,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                 for (GearboxSubsystem gearbox : gearboxes.keySet()) {
                     if (overrideCountDown.getOrDefault(gearbox, 0f) <= 0) {
                         gearbox.switchGear(autoGearShift(gearbox, avgEngineSpeed, direction));
-                        if (Math.abs(speed) <= 1f && targetThrottle > 0.01f) {
+                        if (Math.abs(speed) <= 1f && Math.abs(targetThrottle) > 0.01f) {
                             gearbox.setClutched(true);
                         }
                     }
@@ -537,13 +540,13 @@ public class CarControllerSubsystem extends BasicSubsystem {
                 }
 
                 // 起动时松手刹
-                if (targetThrottle > 0.05f && ControlPreference.shouldAutoHandBrake(this) && handBrake
+                if (Math.abs(targetThrottle) > 0.05f && ControlPreference.shouldAutoHandBrake(this) && handBrake
                         && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                     handBrake = false;
                     overrideCountDown.put(this, 2f);
                 }
                 // 静止无输入时自动手刹
-                if (targetThrottle < 0.01f && targetBrake < 0.01f && Math.abs(speed) < 1f
+                if (Math.abs(targetThrottle) < 0.01f && Math.abs(targetBrake) < 0.01f && Math.abs(speed) < 1f
                         && ControlPreference.shouldAutoHandBrake(this) && !handBrake
                         && overrideCountDown.getOrDefault(this, 0f) <= 0) {
                     handBrake = true;
@@ -616,7 +619,8 @@ public class CarControllerSubsystem extends BasicSubsystem {
 
         // 低速起步：直接挂最低档
         if (Math.abs(speed) < 0.5f) {
-            return actualDirection >= 0 ? gearbox.minPositiveGear : gearbox.minNegativeGear;
+            if (actualDirection == 0) return currentGear; // 无输入维持当前档位
+            return actualDirection > 0 ? gearbox.minPositiveGear : gearbox.minNegativeGear;
         }
 
         // 计算变速箱输出轴转速: ω_out = ω_engine / R_current
