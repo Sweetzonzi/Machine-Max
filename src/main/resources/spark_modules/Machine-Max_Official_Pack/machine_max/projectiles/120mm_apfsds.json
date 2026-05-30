@@ -10,5 +10,6 @@
   "base_accuracy_mil": 0.8,
   "penetration_velocity_coefficient": 1.2,
   "damage_velocity_coefficient": 0.5,
-  "max_lifetime_ticks": 200
+  "max_lifetime_ticks": 200,
+  "tags": ["caliber:120mm", "ammo:apfsds"]
 }

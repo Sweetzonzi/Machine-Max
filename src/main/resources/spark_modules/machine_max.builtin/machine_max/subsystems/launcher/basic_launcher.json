@@ -8,5 +8,8 @@
   "horizontal_accuracy_multiplier": 1.0, //(可选, 默认1.0)水平精度乘子
   "vertical_accuracy_multiplier": 1.0, //(可选, 默认1.0)垂直精度乘子
   "projectile_type": "machine_max:20mm_ap", //(可选, 默认machine_max:20mm_ap)投射物类型ID
+  "required_tags": [], //(可选, 默认空列表)弹药必须全部具备的tag，待AmmoLoader实现后启用
+  "acceptable_tags": [], //(可选, 默认空列表)弹药至少具备其一即可的tag，待AmmoLoader实现后启用
+  "forbidden_tags": [], //(可选, 默认空列表)弹药不能包含的tag，待AmmoLoader实现后启用
   "control_inputs": ["weapon_control"] //(可选, 默认["weapon_control"])开火信号输入频道
 }

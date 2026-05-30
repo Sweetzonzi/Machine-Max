@@ -9,6 +9,8 @@ import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
+import java.util.List;
+
 /**
  * 投射物类型数据定义。
  * <p>
@@ -64,6 +66,9 @@ public class ProjectileType {
     /** 注册键，由 {@link ProjectileModule} 加载时赋值 */
     private ResourceLocation registryKey;
 
+    /** 弹药tag列表，用于与发射器的 {@code required_tags / acceptable_tags / forbidden_tags} 匹配 */
+    private final List<ResourceLocation> tags;
+
     /** 字符串↔枚举互转 Codec */
     private static final Codec<ProjectileTypeEnum> ENUM_CODEC =
         Codec.STRING.xmap(ProjectileTypeEnum::fromString, ProjectileTypeEnum::getSerializedName);
@@ -85,14 +90,16 @@ public class ProjectileType {
         Codec.FLOAT.optionalFieldOf("damage_velocity_coefficient", 0f)
             .forGetter(ProjectileType::getDamageVelocityCoefficient),
         Codec.INT.optionalFieldOf("max_lifetime_ticks", 200)
-            .forGetter(ProjectileType::getMaxLifetimeTicks)
+            .forGetter(ProjectileType::getMaxLifetimeTicks),
+        ResourceLocation.CODEC.listOf().optionalFieldOf("tags", List.of())
+            .forGetter(ProjectileType::getTags)
     ).apply(instance, ProjectileType::new));
 
     public ProjectileType(
         ProjectileTypeEnum type, float mass, float gravityFactor, float dragFactor, float radius,
         float baseVelocity, float basePenetration, float baseDamage, float baseAccuracyMil,
         float penetrationVelocityCoefficient, float damageVelocityCoefficient,
-        int maxLifetimeTicks
+        int maxLifetimeTicks, List<ResourceLocation> tags
     ) {
         this.type = type;
         this.mass = mass;
@@ -106,6 +113,7 @@ public class ProjectileType {
         this.penetrationVelocityCoefficient = penetrationVelocityCoefficient;
         this.damageVelocityCoefficient = damageVelocityCoefficient;
         this.maxLifetimeTicks = maxLifetimeTicks;
+        this.tags = tags;
     }
 
     /**

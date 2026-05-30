@@ -4,10 +4,13 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 发射器子系统静态属性。<br>
@@ -29,6 +32,14 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     /** 投射物类型ID，指向 {@code projectiles/*.json} 中定义的投射物类型 */
     private final ResourceLocation projectileTypeId;
 
+    // TODO: 弹药tag过滤 —— 预留占位，待 AmmoLoaderSubsystem 实现后用于弹药兼容性检查
+    /** 弹药必须全部具备的tag，空列表表示不要求 */
+    private final List<ResourceLocation> requiredTags;
+    /** 弹药至少具备其一即可的tag，空列表表示接受任意 */
+    private final List<ResourceLocation> acceptableTags;
+    /** 弹药不能包含的tag，空列表表示不禁止 */
+    private final List<ResourceLocation> forbiddenTags;
+
     public static final MapCodec<LauncherSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.FLOAT.fieldOf("fire_rate").forGetter(LauncherSubsystemStaticAttr::getFireRate),
@@ -40,6 +51,13 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("weapon_control")).forGetter(LauncherSubsystemStaticAttr::getControlInputs),
             ResourceLocation.CODEC.optionalFieldOf("projectile_type", ResourceLocation.parse("machine_max:20mm_ap"))
                 .forGetter(LauncherSubsystemStaticAttr::getProjectileTypeId),
+            // TODO: 弹药tag过滤 —— 占位，待 AmmoLoaderSubsystem 集成后启用
+            ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags", List.of())
+                .forGetter(LauncherSubsystemStaticAttr::getRequiredTags),
+            ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags", List.of())
+                .forGetter(LauncherSubsystemStaticAttr::getAcceptableTags),
+            ResourceLocation.CODEC.listOf().optionalFieldOf("forbidden_tags", List.of())
+                .forGetter(LauncherSubsystemStaticAttr::getForbiddenTags),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, LauncherSubsystemStaticAttr::new));
 
@@ -53,6 +71,9 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float recoilAbsorption,
             List<String> controlInputs,
             ResourceLocation projectileTypeId,
+            List<ResourceLocation> requiredTags,
+            List<ResourceLocation> acceptableTags,
+            List<ResourceLocation> forbiddenTags,
             BasicSoundAttr sounds) {
         super(basicAttr, sounds);
         this.fireRate = fireRate;
@@ -63,6 +84,54 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.recoilAbsorption = recoilAbsorption;
         this.controlInputs = controlInputs;
         this.projectileTypeId = projectileTypeId;
+        this.requiredTags = requiredTags;
+        this.acceptableTags = acceptableTags;
+        this.forbiddenTags = forbiddenTags;
+    }
+
+    /**
+     * 判断传入的弹药tag列表是否与该发射器的弹药tag约束兼容。<br>
+     * 规则同连接点tag匹配：
+     * <ul>
+     *   <li>{@code requiredTags} 必须全部包含，空=不要求</li>
+     *   <li>{@code acceptableTags} 至少包含一个，空=允许任意</li>
+     *   <li>{@code forbiddenTags} 不能包含任何，空=不禁止</li>
+     * </ul>
+     *
+     * @param ammoTags 弹药的tag列表
+     * @return 兼容返回true
+     */
+    public boolean isAmmoCompatible(List<ResourceLocation> ammoTags) {
+        Set<ResourceLocation> tagSet = new HashSet<>(ammoTags);
+
+        if (!requiredTags.isEmpty() && !tagSet.containsAll(requiredTags)) return false;
+
+        if (!acceptableTags.isEmpty()) {
+            boolean hasAny = false;
+            for (ResourceLocation tag : acceptableTags) {
+                if (tagSet.contains(tag)) { hasAny = true; break; }
+            }
+            if (!hasAny) return false;
+        }
+
+        if (!forbiddenTags.isEmpty()) {
+            for (ResourceLocation tag : forbiddenTags) {
+                if (tagSet.contains(tag)) return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 判断传入的投射物类型是否与该发射器的弹药tag约束兼容。<br>
+     * 委托到 {@link #isAmmoCompatible(List)}。
+     *
+     * @param type 投射物类型
+     * @return 兼容返回true
+     */
+    public boolean isAmmoCompatible(ProjectileType type) {
+        return isAmmoCompatible(type.getTags());
     }
 
     @Override

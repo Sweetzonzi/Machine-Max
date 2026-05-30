@@ -1,6 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.registry
 
 import io.github.sweetzonzi.machine_max.MachineMax
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AmmoLoaderSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BatterySubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CarControllerSubsystemAttr
@@ -18,6 +19,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TransmissionSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.TurretDriverSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WheelDriverSubsystemAttr
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AmmoLoaderSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.BasicSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.BatterySubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CarControllerSubsystemStaticAttr
@@ -57,6 +59,7 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("battery")) { BatterySubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("lighting")) { LightingSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("launcher")) { LauncherSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("weapon_controller")) { WeaponControllerSubsystemAttr.CODEC}
 
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("basic")) { BasicSubsystemStaticAttr.CODEC}
@@ -75,6 +78,7 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("battery")) { BatterySubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("lighting")) { LightingSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("launcher")) { LauncherSubsystemStaticAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("weapon_controller")) { WeaponControllerSubsystemStaticAttr.CODEC}
     }
 

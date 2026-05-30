@@ -20,4 +20,5 @@ public enum SubsystemTypes {
     BATTERY,//电池子系统，储存电力，可充放电
     LIGHTING,//照明子系统，提供客户端体积光视觉效果
     LAUNCHER,//发射器子系统，代表炮闩、导弹挂架、火箭管等，可发射弹丸
+    AMMO_LOADER,//装弹机子系统，管理弹药供给、装填时序、弹序循环
 }
