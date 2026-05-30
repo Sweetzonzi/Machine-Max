@@ -5,7 +5,7 @@
   "integrity": 1500.0,
   "impact_reduction": 3.0,
   "impact_multiplier": 0.8,
-  "required_tags": ["machine_max:right"],
+  "required_tags": ["machine_max:direction/right"],
   "acceptable_tags": [],
   "forbidden_tags": [],
   "joint_attrs": {

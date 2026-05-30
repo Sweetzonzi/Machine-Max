@@ -8,8 +8,8 @@
         "print.machine_max.dessert": "machine_max:textures/part/sdkfz234/puma_1.png"
       },
       "tags": [
-        "machine_max:structural",
-        "machine_max:land"
+        "machine_max:category/structural",
+        "machine_max:type/land"
       ],
       "sub_parts": {
         "sub_part.machine_max.main": {

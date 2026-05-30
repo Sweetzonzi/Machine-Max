@@ -8,7 +8,7 @@
     "model": "machine_max:container_16x16x8.geo", //模型路径
     "textures": "machine_max:textures/part/reinforced_container_16x16x8.png",
     "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
-    "tags": ["machine_max:land", "machine_max:misc", "machine_max:storage"],
+    "tags": ["machine_max:type/land", "machine_max:category/misc", "machine_max:storage"],
     "sub_parts": {//零件(子部件)列表
       "sub_part.machine_max.main": {//零件(子部件)名称
         "durability": 150.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪

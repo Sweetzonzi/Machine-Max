@@ -6,7 +6,7 @@
   "impact_absorption": 0.15, //(可选, 默认0.2)冲击转化为结构完整性损耗的比例
   "impact_reduction": 2.0, //(可选, 默认2.0)连接点冲击减免值
   "impact_multiplier": 1.0, //(可选, 默认1.0)连接点冲击吸收率
-  "required_tags": ["machine_max:right"], //连接所需标签
+  "required_tags": ["machine_max:direction/right"], //连接所需标签
   "joint_attrs": { //Advanced类型专属关节属性
     "y": { //悬挂轴(平移), 沿法线方向的线性弹簧阻尼器
       "lower_limit": -0.15, //下限(m)

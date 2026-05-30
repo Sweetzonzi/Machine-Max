@@ -8,7 +8,7 @@
     "model": "machine_max:senna_gtr_chassis.geo",
     "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
     "animations": "machine_max:senna_gtr",
-    "tags": ["machine_max:land", "machine_max:structural", "machine_max:chassis", "machine_max:senna_gtr", "machine_max:storage"],
+    "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:chassis", "machine_max:senna_gtr", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 120.0,

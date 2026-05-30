@@ -12,7 +12,7 @@
         "print.machine_max.gray": "machine_max:textures/part/ae86/ae86_all_terrain_2.png"
       },
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
-      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:ae86", "machine_max:wheel", "machine_max:left"], //(可选)部件标签列表
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:ae86", "machine_max:wheel", "machine_max:direction/left"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
           "durability": 180.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪
@@ -53,7 +53,7 @@
           "print.machine_max.gray": "machine_max:textures/part/ae86/ae86_all_terrain_2.png"
       },
       "animations": "machine_max:empty",
-      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:ae86", "machine_max:wheel", "machine_max:right"], //(可选)部件标签列表
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:ae86", "machine_max:wheel", "machine_max:direction/right"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
           "durability": 180.0,//(可选, 默认20.0)部件基础生命值, 降至0时部件的所有子系统会瘫痪

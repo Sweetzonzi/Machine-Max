@@ -9,7 +9,7 @@
     "textures": {
       "default": "machine_max:textures/part/ae86/ae86_armor.png"
     },
-    "tags": ["machine_max:land", "machine_max:structural", "machine_max:ae86"],
+    "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:ae86"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 1200.0,

@@ -10,7 +10,7 @@
       "model": "machine_max:van.geo", //模型路径
       "textures": "machine_max:textures/part/van/van.png",
       "animations": "machine_max:van",
-      "tags": ["machine_max:land", "machine_max:structural", "machine_max:door", "machine_max:van", "machine_max:left", "machine_max:front"], //(可选)部件标签列表
+      "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:door", "machine_max:van", "machine_max:direction/left", "machine_max:direction/front"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
           "start_bone": "LeftFrontDoor", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
@@ -66,7 +66,7 @@
       "model": "machine_max:van.geo", //模型路径
       "textures": "machine_max:textures/part/van/van.png",
       "animations": "machine_max:van",
-      "tags": ["machine_max:land", "machine_max:structural", "machine_max:door", "machine_max:van", "machine_max:right", "machine_max:front"], //(可选)部件标签列表
+      "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:door", "machine_max:van", "machine_max:direction/right", "machine_max:direction/front"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
           "start_bone": "RightFrontDoor", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型

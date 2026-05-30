@@ -7,7 +7,7 @@
   "variants": {
     "model": "machine_max:container_16x32x32.geo",
     "textures": "machine_max:textures/part/container_16x32x32.png",
-    "tags": ["machine_max:land", "machine_max:misc", "machine_max:storage"],
+    "tags": ["machine_max:type/land", "machine_max:category/misc", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 800.0,

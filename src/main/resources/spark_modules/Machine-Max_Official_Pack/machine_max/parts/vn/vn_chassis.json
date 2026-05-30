@@ -8,7 +8,7 @@
     "model": "machine_max:vn_chassis.geo",
     "textures": "machine_max:textures/part/vn/vn.png",
     "animations": "machine_max:vn",
-    "tags": ["machine_max:land", "machine_max:structural", "machine_max:chassis", "machine_max:vn"],
+    "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:chassis", "machine_max:vn"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "durability": 300.0,

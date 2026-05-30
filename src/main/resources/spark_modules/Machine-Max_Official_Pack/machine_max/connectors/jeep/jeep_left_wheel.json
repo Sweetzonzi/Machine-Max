@@ -3,7 +3,7 @@
   "type": "Advanced",
   "direction": "xn",
   "integrity": 100.0,
-  "required_tags": ["machine_max:left"],
+  "required_tags": ["machine_max:direction/left"],
   "acceptable_tags": [],
   "forbidden_tags": ["machine_max:chassis", "machine_max:hull"],
   "joint_attrs": {

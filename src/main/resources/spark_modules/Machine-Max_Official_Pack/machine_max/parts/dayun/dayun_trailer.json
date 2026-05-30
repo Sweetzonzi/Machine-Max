@@ -13,7 +13,7 @@
       "print.machine_max.dayun.6": "machine_max:textures/part/dayun/dayun6.png"
     },
     "animations": "machine_max:dayun",
-    "tags": ["machine_max:land", "machine_max:structural", "machine_max:dayun", "machine_max:chassis", "machine_max:storage"],
+    "tags": ["machine_max:type/land", "machine_max:category/structural", "machine_max:dayun", "machine_max:chassis", "machine_max:storage"],
     "sub_parts": {
       "sub_part.machine_max.main": {
         "start_bone": "AllTrailer",

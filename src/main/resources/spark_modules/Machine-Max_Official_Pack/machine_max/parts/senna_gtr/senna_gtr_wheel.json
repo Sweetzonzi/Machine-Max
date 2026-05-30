@@ -10,7 +10,7 @@
       "model": "machine_max:senna_gtr_wheel_left_front.geo",
       "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
-      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:wheel", "machine_max:senna_gtr", "machine_max:left", "machine_max:front"], //(可选)部件标签列表
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:senna_gtr", "machine_max:direction/left", "machine_max:direction/front"], //(可选)部件标签列表
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 80.0,
@@ -48,7 +48,7 @@
       "model": "machine_max:senna_gtr_wheel_right_front.geo",
       "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty",
-      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:wheel", "machine_max:senna_gtr", "machine_max:right", "machine_max:front"],
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:senna_gtr", "machine_max:direction/right", "machine_max:direction/front"],
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 80.0,
@@ -86,7 +86,7 @@
       "model": "machine_max:senna_gtr_wheel_left_back.geo",
       "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
-      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:wheel", "machine_max:senna_gtr", "machine_max:left", "machine_max:back"], //(可选)部件标签列表
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:senna_gtr", "machine_max:direction/left", "machine_max:direction/back"], //(可选)部件标签列表
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 80.0,
@@ -124,7 +124,7 @@
       "model": "machine_max:senna_gtr_wheel_right_back.geo",
       "textures": "machine_max:textures/part/senna_gtr/senna_gtr.png",
       "animations": "machine_max:empty",
-      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:wheel", "machine_max:senna_gtr", "machine_max:right", "machine_max:back"],
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:senna_gtr", "machine_max:direction/right", "machine_max:direction/back"],
       "sub_parts": {
         "sub_part.machine_max.main": {
           "durability": 80.0,

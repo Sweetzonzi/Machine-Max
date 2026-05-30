@@ -5,7 +5,7 @@
   "integrity": 100.0,
   "impact_reduction": 3.0,
   "impact_multiplier": 0.8,
-  "required_tags": ["machine_max:left"],
+  "required_tags": ["machine_max:direction/left"],
   "forbidden_tags": ["machine_max:chassis", "machine_max:hull"],
   "joint_attrs": {
     "y": {

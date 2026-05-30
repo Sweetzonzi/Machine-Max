@@ -11,21 +11,21 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
     @Override
     protected void addTranslations() {
         // 内置标签
-        this.add("machine_max.left", "Left");
-        this.add("machine_max.right", "Right");
-        this.add("machine_max.front", "Front");
-        this.add("machine_max.back", "Back");
-        this.add("machine_max.top", "Top");
-        this.add("machine_max.bottom", "Bottom");
-        this.add("machine_max.structural", "Structural");
-        this.add("machine_max.decoration", "Decoration");
-        this.add("machine_max.mobility", "Mobility");
-        this.add("machine_max.weapon", "Weapon");
-        this.add("machine_max.misc", "Misc");
-        this.add("machine_max.land", "Land");
-        this.add("machine_max.marine", "Marine");
-        this.add("machine_max.aerial", "Aerial");
-        this.add("machine_max.mecha", "Mecha");
+        this.add("machine_max.direction.left", "Left");
+        this.add("machine_max.direction.right", "Right");
+        this.add("machine_max.direction.front", "Front");
+        this.add("machine_max.direction.back", "Back");
+        this.add("machine_max.direction.top", "Top");
+        this.add("machine_max.direction.bottom", "Bottom");
+        this.add("machine_max.category.structural", "Structural");
+        this.add("machine_max.category.decoration", "Decoration");
+        this.add("machine_max.category.mobility", "Mobility");
+        this.add("machine_max.category.weapon", "Weapon");
+        this.add("machine_max.category.misc", "Misc");
+        this.add("machine_max.type.land", "Land");
+        this.add("machine_max.type.marine", "Marine");
+        this.add("machine_max.type.aerial", "Aerial");
+        this.add("machine_max.type.mecha", "Mecha");
 
         //Key categories
         this.add("key.category.machine_max.general", "Machine Max:General");

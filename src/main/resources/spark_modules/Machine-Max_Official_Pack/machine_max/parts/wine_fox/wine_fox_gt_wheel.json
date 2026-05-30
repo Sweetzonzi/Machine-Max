@@ -13,7 +13,7 @@
         "old": "machine_max:textures/part/wine_fox/wine_fox.png"
       },
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
-      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:wheel", "machine_max:wine_fox", "machine_max:left", "machine_max:gt"], //(可选)部件标签列表
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:wine_fox", "machine_max:direction/left", "machine_max:gt"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
           "start_bone": "GtLeftFrontWheel", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型
@@ -55,7 +55,7 @@
         "old": "machine_max:textures/part/wine_fox/wine_fox.png"
       },
       "animations": "machine_max:empty", //(可选, 留空则不播放动画)动画路径
-      "tags": ["machine_max:land", "machine_max:mobility", "machine_max:wheel", "machine_max:wine_fox", "machine_max:right", "machine_max:gt"], //(可选)部件标签列表
+      "tags": ["machine_max:type/land", "machine_max:category/mobility", "machine_max:wheel", "machine_max:wine_fox", "machine_max:direction/right", "machine_max:gt"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表
         "sub_part.machine_max.main": {//零件(子部件)名称
           "start_bone": "GtRightFrontWheel", // (可选，默认空)起始骨骼名称，此骨骼及其包含的骨骼才会被作为零件的渲染与定义用模型

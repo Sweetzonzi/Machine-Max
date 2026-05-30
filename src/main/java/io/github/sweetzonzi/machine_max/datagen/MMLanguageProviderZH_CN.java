@@ -11,21 +11,21 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
     @Override
     protected void addTranslations() {
         // 内置标签
-        this.add("machine_max.left", "左");
-        this.add("machine_max.right", "右");
-        this.add("machine_max.front", "前");
-        this.add("machine_max.back", "后");
-        this.add("machine_max.top", "上");
-        this.add("machine_max.bottom", "下");
-        this.add("machine_max.structural", "结构");
-        this.add("machine_max.decoration", "装饰");
-        this.add("machine_max.mobility", "机动");
-        this.add("machine_max.weapon", "武器");
-        this.add("machine_max.misc", "杂项");
-        this.add("machine_max.land", "陆地");
-        this.add("machine_max.marine", "水上");
-        this.add("machine_max.aerial", "空中");
-        this.add("machine_max.mecha", "机甲");
+        this.add("machine_max.direction.left", "左");
+        this.add("machine_max.direction.right", "右");
+        this.add("machine_max.direction.front", "前");
+        this.add("machine_max.direction.back", "后");
+        this.add("machine_max.direction.top", "上");
+        this.add("machine_max.direction.bottom", "下");
+        this.add("machine_max.category.structural", "结构");
+        this.add("machine_max.category.decoration", "装饰");
+        this.add("machine_max.category.mobility", "机动");
+        this.add("machine_max.category.weapon", "武器");
+        this.add("machine_max.category.misc", "杂项");
+        this.add("machine_max.type.land", "陆地");
+        this.add("machine_max.type.marine", "水上");
+        this.add("machine_max.type.aerial", "空中");
+        this.add("machine_max.type.mecha", "机甲");
 
         // 按键类别
         this.add("key.category.machine_max.general", "Machine Max:通用");
