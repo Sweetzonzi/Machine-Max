@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -101,12 +102,37 @@ public class LauncherSubsystem extends BasicSubsystem {
         float vRad = ARROW_BASE_ACCURACY_MIL * attr.staticAttribute.getVerticalAccuracyMultiplier() / 1000f;
         Vec3 spreadDir = applyEllipticSpread(direction, hRad, vRad);
 
-        // 生成Arrow并发射
+        // 生成弹丸并发射（仅服务端）
         if (!getLevel().isClientSide()) {
             Snowball snowball = new Snowball(getLevel(), spawnPos.x, spawnPos.y, spawnPos.z);
             snowball.shoot(spreadDir.x, spreadDir.y, spreadDir.z, speedBpt, 0f);
+
+            // 继承发射平台速度 (m/s → blocks/tick)
+            Vector3f platformVel = getSubPart().getLinearVelocity();
+            Vec3 inheritVel = new Vec3(platformVel.x, platformVel.y, platformVel.z).scale(1.0 / 20.0);
+            snowball.setDeltaMovement(snowball.getDeltaMovement().add(inheritVel));
+
             // TODO: 设置弹丸的发射者（从座舱玩家获取）
             getLevel().addFreshEntity(snowball);
+
+            // 计算后坐力冲量并提交到物理线程
+            float projectileMass = 10.0f; // TODO: 从弹丸类型配置获取
+            float absorption = attr.staticAttribute.getRecoilAbsorption();
+            float recoilImpulse = projectileMass * speedMps * (1.0f - absorption);
+            if (recoilImpulse > 1e-6f) {
+                Vector3f impulseWorld = new Vector3f(
+                        (float) -direction.x * recoilImpulse,
+                        (float) -direction.y * recoilImpulse,
+                        (float) -direction.z * recoilImpulse
+                );
+                Vector3f muzzleWorldPos = jmePos.clone();
+                getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
+                    var body = getSubPart().getBody();
+                    Vector3f bodyWorldPos = body.getPhysicsLocation(new Vector3f());
+                    body.applyImpulse(impulseWorld, muzzleWorldPos.subtract(bodyWorldPos));
+                    return null;
+                });
+            }
         }
     }
 

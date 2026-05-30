@@ -21,6 +21,8 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     private final float velocityBonus;                  // 初速线性加成 (m/s)
     private final float horizontalAccuracyMultiplier;   // 水平精度乘子，1.0=不改变弹丸默认水平精度
     private final float verticalAccuracyMultiplier;     // 垂直精度乘子，1.0=不改变弹丸默认垂直精度
+    /** 后坐力吸收率：0.0=全后坐力，1.0=完全吸收 */
+    private final float recoilAbsorption;
     /** 开火信号输入频道列表，优先级从高到低 */
     private final List<String> controlInputs;
 
@@ -31,6 +33,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Codec.FLOAT.optionalFieldOf("velocity_bonus", 0f).forGetter(LauncherSubsystemStaticAttr::getVelocityBonus),
             Codec.FLOAT.optionalFieldOf("horizontal_accuracy_multiplier", 1.0f).forGetter(LauncherSubsystemStaticAttr::getHorizontalAccuracyMultiplier),
             Codec.FLOAT.optionalFieldOf("vertical_accuracy_multiplier", 1.0f).forGetter(LauncherSubsystemStaticAttr::getVerticalAccuracyMultiplier),
+            Codec.FLOAT.optionalFieldOf("recoil_absorption", 0.0f).forGetter(LauncherSubsystemStaticAttr::getRecoilAbsorption),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("weapon_control")).forGetter(LauncherSubsystemStaticAttr::getControlInputs),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, LauncherSubsystemStaticAttr::new));
@@ -42,6 +45,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float velocityBonus,
             float horizontalAccuracyMultiplier,
             float verticalAccuracyMultiplier,
+            float recoilAbsorption,
             List<String> controlInputs,
             BasicSoundAttr sounds) {
         super(basicAttr, sounds);
@@ -50,6 +54,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.velocityBonus = velocityBonus;
         this.horizontalAccuracyMultiplier = horizontalAccuracyMultiplier;
         this.verticalAccuracyMultiplier = verticalAccuracyMultiplier;
+        this.recoilAbsorption = recoilAbsorption;
         this.controlInputs = controlInputs;
     }
 

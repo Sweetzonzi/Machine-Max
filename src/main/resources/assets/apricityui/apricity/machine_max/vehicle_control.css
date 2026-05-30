@@ -24,6 +24,18 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;                     /* 禁止选中，避免误触选中tab标题、数字等文字 */
+}
+
+/* 可编辑元素允许选中文本，保持表单可用性 */
+input, textarea, select {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
 }
 
 /* ---------- body 基础排版 ---------- */
