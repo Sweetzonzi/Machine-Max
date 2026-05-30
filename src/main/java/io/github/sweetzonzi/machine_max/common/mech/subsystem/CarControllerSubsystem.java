@@ -160,6 +160,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     driftingPD.resetError();
                 }
             }
+            updateRegularInputs();
             actualHandBrake = actualHandBrake * 0.9f + (handBrake ? 1 : 0) * 0.1f;
             distributeControlSignals();
         } else resetSignalOutputs();
@@ -374,44 +375,6 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     overrideCountDown.put(gearbox, 0f);
                 }
             }
-        } else if (signalValue instanceof RegularInputSignal regularInputSignal) { //处理按键输入 Handle key input
-            int tickCount = regularInputSignal.getInputTickCount();
-            switch (regularInputSignal.getInputType()) {
-                case CLUTCH:
-                    for (ISignalReceiver gearbox : gearboxes.keySet()) {
-                        overrideCountDown.put(gearbox, 1f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
-                    }
-                    if (tickCount == 0) {//踩离合 Unclutch
-                        for (GearboxSubsystem gearbox : gearboxes.keySet())
-                            gearbox.setClutched(false);
-                    } else {//松离合 Clutch
-                        for (GearboxSubsystem gearbox : gearboxes.keySet())
-                            gearbox.setClutched(true);
-                    }
-                    break;
-                case UP_SHIFT://升档 Shift up
-                    for (ISignalReceiver gearbox : gearboxes.keySet()) {
-                        overrideCountDown.put(gearbox, 3f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
-                    }
-                    for (GearboxSubsystem gearbox : gearboxes.keySet()) gearbox.upShift();
-                    break;
-                case DOWN_SHIFT://降档 Shift down
-                    for (ISignalReceiver gearbox : gearboxes.keySet()) {
-                        overrideCountDown.put(gearbox, 3f);//手动操作后一段时间内不自动切换 Clutch for a period of time after manual operation
-                    }
-                    for (GearboxSubsystem gearbox : gearboxes.keySet()) gearbox.downShift();
-                    break;
-                case HAND_BRAKE:
-                    handBrake = tickCount == 0;
-                    overrideCountDown.put(this, tickCount == 0 ? 100f : 0f);
-                    break;
-                case TOGGLE_HAND_BRAKE:
-                    handBrake = !handBrake;
-                    overrideCountDown.put(this, 1f);
-                    break;
-                default://忽视其他输入 Ignore other inputs
-                    break;
-            }
         }
         return SignalResult.PASS;
     }
@@ -443,6 +406,74 @@ public class CarControllerSubsystem extends BasicSubsystem {
             this.moveInput = null;
             this.moveInputConflict = null;
             this.controller = null;
+        }
+    }
+
+    /**
+     * 按 controlInputKeys 优先级解析常规输入信号（离合/手刹/换挡）。<br>
+     * 直接从 signalInputChannels 读取各频道的信号，<br>
+     * 取优先级最高的第一个 RegularInputSignal 作为有效信号源。<br>
+     * 一次性事件（UP_SHIFT/DOWN_SHIFT/TOGGLE_HAND_BRAKE）处理后从频道中清除，<br>
+     * 防止持久信号导致下一帧重复触发。
+     */
+    protected void updateRegularInputs() {
+        RegularInputSignal activeRegular = null;
+        SignalChannel activeChannel = null;
+        ISignalSender activeSender = null;
+        for (String inputKey : attr.staticAttribute.controlInputKeys) {
+            SignalChannel channel = getSignalChannel(inputKey);
+            for (Map.Entry<ISignalSender, Object> entry : channel.entrySet()) {
+                if (entry.getValue() instanceof RegularInputSignal ris) {
+                    activeRegular = ris;
+                    activeChannel = channel;
+                    activeSender = entry.getKey();
+                    break;
+                }
+            }
+            if (activeRegular != null) break;
+        }
+
+        if (activeRegular != null) {
+            int tickCount = activeRegular.getInputTickCount();
+            switch (activeRegular.getInputType()) {
+                case CLUTCH:
+                    for (ISignalReceiver gearbox : gearboxes.keySet())
+                        overrideCountDown.put(gearbox, 1f);
+                    for (GearboxSubsystem gearbox : gearboxes.keySet())
+                        gearbox.setClutched(tickCount != 0);
+                    break;
+                case UP_SHIFT:
+                    if (tickCount == 0) {
+                        for (ISignalReceiver gearbox : gearboxes.keySet())
+                            overrideCountDown.put(gearbox, 3f);
+                        for (GearboxSubsystem gearbox : gearboxes.keySet())
+                            gearbox.upShift();
+                    }
+                    activeChannel.put(activeSender, EmptySignal.INSTANCE);
+                    break;
+                case DOWN_SHIFT:
+                    if (tickCount == 0) {
+                        for (ISignalReceiver gearbox : gearboxes.keySet())
+                            overrideCountDown.put(gearbox, 3f);
+                        for (GearboxSubsystem gearbox : gearboxes.keySet())
+                            gearbox.downShift();
+                    }
+                    activeChannel.put(activeSender, EmptySignal.INSTANCE);
+                    break;
+                case HAND_BRAKE:
+                    handBrake = tickCount == 0;
+                    overrideCountDown.put(this, tickCount == 0 ? 100f : 0f);
+                    break;
+                case TOGGLE_HAND_BRAKE:
+                    if (tickCount == 0) {
+                        handBrake = !handBrake;
+                        overrideCountDown.put(this, 1f);
+                    }
+                    activeChannel.put(activeSender, EmptySignal.INSTANCE);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

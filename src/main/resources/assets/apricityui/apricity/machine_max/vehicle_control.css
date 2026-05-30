@@ -13,6 +13,12 @@
      - GroupStripRenderer.java — 控制组切换条（所有 Tab 共用）
    ================================================================ */
 
+/* ---------- @font-face: 注册 Microgramma 字体 ---------- */
+@font-face {
+    font-family: "microgramma";
+    src: url("microgrammadbolext.ttf");
+}
+
 /* ---------- 全局重置 ---------- */
 * {
     margin: 0;
@@ -23,7 +29,7 @@
 /* ---------- body 基础排版 ---------- */
 body {
     color: #c8c8d0;                    /* 默认文字色：浅灰 */
-    font-family: unset;                /* unset = 使用 Minecraft 原版字体 */
+    font-family: unset;                      /* unset = 使用 Minecraft 原版字体 */
     background: transparent;            /* 透传 Minecraft GUI 背景 */
     width: 100%;
     height: 100%;
