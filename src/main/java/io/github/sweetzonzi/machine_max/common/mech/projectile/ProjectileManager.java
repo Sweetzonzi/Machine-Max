@@ -2,16 +2,20 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
+import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import net.minecraft.core.BlockPos;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.common.entity.ProjectileEntity;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitEffectPayload;
 import lombok.Getter;
@@ -22,6 +26,8 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,11 +71,38 @@ public class ProjectileManager {
     public volatile int count;          // 当前活跃总数（volatile 保证跨线程可见性）
     private int capacity = 256;         // 当前数组容量
 
+    // ========== Entity 兼容层数组 ==========
+    /**
+     * Entity 因区块卸载丢失，待重建标志。
+     * 与 SoA 数组索引同步，{@link #swapRemove(int)} 时联动交换。
+     */
+    public boolean[] needsEntityRecreate;
+
+    /**
+     * 关联的 {@link ProjectileEntity} 引用（下标对应 SoA 索引，可为 null）。
+     * 服务端：由 {@link #createProjectileEntity(int)} 设置。
+     * 客户端：由 {@link ProjectileEntity#tryBindProjectile()} 建立关联后保留。
+     */
+    public ProjectileEntity[] entities;
+
+    /** Entity 重建检查间隔（tick）。每 N tick 遍历一次 needsEntityRecreate。 */
+    private static final int RECREATE_CHECK_INTERVAL = 10;
+
+    /** 重建检查计数器 */
+    private int recreateCheckCounter = 0;
+
     /**
      * 投射物 Object ID 集合，用于 O(1) containsProjectile 查询。
      * 与 SoA 数组同步更新，替代线性扫描。
      */
     private final Set<Integer> projectileObjIds = ConcurrentHashMap.newKeySet();
+
+    /**
+     * 穿透记录：投射物 objId → 已穿透的穿透密钥集合。
+     * 仅在物理线程（{@link #updatePointProjectiles}）读写，无并发问题。
+     * 同一次飞行中，同一 (owner, zoneId) 不会被重复判定。
+     */
+    private final Map<Integer, Set<PenetrationKey>> penetratedKeys = new HashMap<>();
 
     /** 该维度所有已加载的投射物类型，typeIndex 映射到此数组 */
     private ProjectileType[] typeCache;
@@ -92,6 +125,8 @@ public class ProjectileManager {
         typeIndex = new int[capacity];
         objId = new int[capacity];
         alive = new boolean[capacity];
+        needsEntityRecreate = new boolean[capacity];
+        entities = new ProjectileEntity[capacity];
         typeCache = new ProjectileType[0];
     }
 
@@ -115,7 +150,7 @@ public class ProjectileManager {
         addProjectileInternal(r, r.getPosition(), r.getLinearVelocity());
     }
 
-    /** 内部：将投射物的位置/速度/类型写入 SoA */
+    /** 内部：将投射物的位置/速度/类型写入 SoA，并在服务端创建配套 Entity */
     private void addProjectileInternal(IProjectile proj, Vector3f pos, Vector3f vel) {
         ensureCapacity(count + 1);
         int i = count++;
@@ -131,6 +166,21 @@ public class ProjectileManager {
         objId[i] = id;
         alive[i] = true;
         projectileObjIds.add(id);
+
+        // 服务端：发射位置区块已加载则立即创建 Entity，否则标记延迟创建
+        if (!level.isClientSide()) {
+            if (isChunkLoadedAt(pos)) {
+                createProjectileEntity(i);
+            } else {
+                needsEntityRecreate[i] = true;
+            }
+        }
+    }
+
+    /** 检查世界坐标位置的区块是否已加载（仅服务端） */
+    private boolean isChunkLoadedAt(Vector3f pos) {
+        if (!(level instanceof ServerLevel serverLevel)) return false;
+        return serverLevel.isPositionEntityTicking(BlockPos.containing(pos.x, pos.y, pos.z));
     }
 
     /**
@@ -163,10 +213,70 @@ public class ProjectileManager {
         }
     }
 
+    // ========== Entity 兼容层方法 ==========
+
+    /**
+     * 为 SoA 中索引为 idx 的投射物创建配套的 {@link ProjectileEntity}。
+     * 通过 {@link ObjectManager#levelDestroyableObjects} 实时获取 IProjectile 对象引用。
+     * 仅在服务端主线程调用（内部调用了 {@code level.addFreshEntity}，需要主线程上下文）。
+     *
+     * @param idx SoA 数组索引
+     */
+    public void createProjectileEntity(int idx) {
+        var objMap = ObjectManager.levelDestroyableObjects.get(level);
+        if (objMap == null) return;
+        DestroyableObject obj = objMap.get(objId[idx]);
+        if (!(obj instanceof IProjectile projectile)) return;
+
+        // 清理旧 Entity（若存在）
+        if (entities[idx] != null) {
+            entities[idx].markOrphaned();
+            entities[idx] = null;
+        }
+
+        ProjectileEntity entity = new ProjectileEntity(MMEntities.getPROJECTILE_ENTITY().get(), level);
+        entity.bindToProjectile(projectile);
+        entity.setPos(posX[idx], posY[idx], posZ[idx]);
+        entities[idx] = entity;
+        level.addFreshEntity(entity);
+    }
+
+    /**
+     * 按 objId 查找 SoA 数组中的索引（O(n) 线性扫描）。
+     * 仅在 Entity 端调用（非热路径）。
+     *
+     * @param targetObjId 目标 DestroyableObject ID
+     * @return SoA 索引，-1 表示未找到
+     */
+    public int findIndexByObjId(int targetObjId) {
+        for (int i = 0; i < count; i++) {
+            if (objId[i] == targetObjId) return i;
+        }
+        return -1;
+    }
+
+    /**
+     * 遍历所有 {@code needsEntityRecreate=true} 的条目，检查区块是否已加载。
+     * 若已加载则重建 {@link ProjectileEntity}。每 {@link #RECREATE_CHECK_INTERVAL} tick 执行一次。
+     * <p>
+     * 在主线程 Pre 阶段由 {@link #preTick()} 调用。
+     */
+    public void tryRecreateEntities() {
+        if (++recreateCheckCounter % RECREATE_CHECK_INTERVAL != 0) return;
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        for (int i = 0; i < count; i++) {
+            if (!needsEntityRecreate[i] || !alive[i]) continue;
+            if (!serverLevel.isPositionEntityTicking(
+                    BlockPos.containing(posX[i], posY[i], posZ[i]))) continue;
+            createProjectileEntity(i);
+            needsEntityRecreate[i] = false;
+        }
+    }
+
     /**
      * 由刚体投射物在其 {@code postTick()} 中调用，将其 Bullet 刚体状态回写到 SoA。
      * <p>
-     * 仅更新位置和速度字段；寿命由 {@link #tickAllLifetimes()} 统一管理。
+     * 仅更新位置和速度字段；寿命由 {@link #tickAndPreTick()} 统一管理。
      *
      * @param targetObjId 刚体投射物的 DestroyableObject ID
      * @param pos   刚体当前世界坐标（JME）
@@ -210,6 +320,12 @@ public class ProjectileManager {
             if (lifetime[i] <= 0) {
                 alive[i] = false;
                 projectileObjIds.remove(objId[i]);
+                // 清理关联的 Entity
+                if (entities[i] != null) {
+                    entities[i].markOrphaned();
+                    entities[i] = null;
+                }
+                needsEntityRecreate[i] = false;
                 DestroyableObject obj = (objMap != null) ? objMap.get(objId[i]) : null;
                 if (obj != null) {
                     obj.isRemoved = true;
@@ -286,12 +402,14 @@ public class ProjectileManager {
 
     /**
      * 主线程 Pre 阶段。
-     * 递减所有投射物寿命 + 调用各投射物的 {@code preTick()}。
+     * 递减所有投射物寿命 + 调用各投射物的 {@code preTick()} +
+     * 尝试重建因区块卸载丢失的 {@link ProjectileEntity}。
      * <p>
      * 优化：合并寿命递减和 preTick 为一趟遍历，减少 SoA 数组重复访问。
      */
     public void preTick() {
         tickAndPreTick();
+        tryRecreateEntities();
     }
 
     /**
@@ -394,7 +512,9 @@ public class ProjectileManager {
      *   <li>清理死条（被主线程 {@link #tickAndPreTick()} 标记的）</li>
      *   <li>半隐式 Euler 积分（重力 + 空气阻力）</li>
      *   <li>JME {@code rayTest} 碰撞检测</li>
-     *   <li>命中处理→发起协议伤害→视觉特效广播</li>
+     *   <li>穿透去重检查（{@link PenetrationKey}）——同一次飞行中已穿透的 (owner, zoneId) 不再判定</li>
+     *   <li>命中处理 → 发起协议伤害 → 视觉特效广播</li>
+     *   <li>击穿判定：穿透力 > 装甲等效厚度则击穿——记录密钥、扣减速度、继续飞行；否则投射物停止</li>
      * </ol>
      * <p>
      * 优化项：
@@ -462,8 +582,7 @@ public class ProjectileManager {
             rayTo.set(posX[i], posY[i], posZ[i]);
 
             List<PhysicsRayTestResult> results = world.rayTest(rayFrom, rayTo);
-            boolean hit = false;
-            label:
+            boolean stopped = false;
             for (PhysicsRayTestResult result : results) {
                 PhysicsCollisionObject collObj = result.getCollisionObject();
                 if (collObj.getCollisionGroup() != CollisionGroups.PHYSICS_BODY
@@ -471,6 +590,15 @@ public class ProjectileManager {
                             && collObj.getCollisionGroup() != CollisionGroups.PAWN)
                     continue;
                 if (!(collObj instanceof PhysicsRigidBody body)) continue;
+
+                // 穿透去重检查：同一飞行中，已穿透的 (owner, zoneId) 不再重复判定
+                PenetrationKey penKey = PenetrationKey.fromCollision(collObj, result.triangleIndex());
+                if (penKey != null) {
+                    Set<PenetrationKey> penetrated = penetratedKeys.get(objId[i]);
+                    if (penetrated != null && penetrated.contains(penKey)) {
+                        continue;
+                    }
+                }
 
                 Object owner = PhysicsBodyExtensionKt.getOwner(body);
                 float hitFrac = result.getHitFraction();
@@ -482,46 +610,80 @@ public class ProjectileManager {
                 result.getHitNormalLocal(hitNormalJme);
                 Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
 
-                switch (owner) {
-                    case null:
-                        spawnTerrainHitEffect(hitPointMc);
-                        alive[i] = false;
-                        projectileObjIds.remove(objId[i]);
-                        hit = true;
-                        break label;
-                    case SubPart subPart:
-                        HitBox hitBox = subPart.getHitBox(result.triangleIndex());
-                        if (!hitBox.isActive()) continue;
-                        break;
-                    case MMPartEntity ignored:
-                        continue;
-                    default:
-                        break;
+                // 地形碰撞：永远停止
+                if (owner == null) {
+                    spawnTerrainHitEffect(hitPointMc);
+                    alive[i] = false;
+                    projectileObjIds.remove(objId[i]);
+                    stopped = true;
+                    break;
                 }
 
+                // MMPartEntity：渲染代理，跳过
+                if (owner instanceof MMPartEntity) continue;
+
+                // 获取投射物实例
                 DestroyableObject destroyable = (objMap != null) ? objMap.get(objId[i]) : null;
                 if (!(destroyable instanceof IProjectile projectile)) {
                     alive[i] = false;
                     projectileObjIds.remove(objId[i]);
-                    hit = true;
+                    stopped = true;
                     break;
                 }
 
-                if (owner instanceof BFHurtTarget target) {
-                    projectile.dealDamage(target, hitPointMc, hitNormalMc);
-                } else if (owner instanceof Entity entity) {
-                    entity.hurt(entity.damageSources().generic(), projectile.calculateCurrentDamage());
+                switch (owner) {
+                    case SubPart subPart -> {
+                        HitBox hitBox = subPart.getHitBox(result.triangleIndex());
+                        if (!hitBox.isActive()) continue;
+
+                        projectile.dealDamage(subPart, hitPointMc, hitNormalMc);
+
+                        // 判定是否击穿：穿透力 > 装甲等效厚度则击穿
+                        float pen = projectile.calculateCurrentPenetration();
+                        float rha = hitBox.getRHA(subPart);
+                        if (pen > rha) {
+                            // 击穿：记录穿透密钥，扣减残余速度，继续飞行
+                            if (penKey != null) {
+                                penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
+                            }
+                            float residualRatio = Math.max(0.1f, (pen - rha) / Math.max(pen, 0.001f));
+                            float speedRatio = (float) Math.sqrt(residualRatio);
+                            velX[i] *= speedRatio;
+                            velY[i] *= speedRatio;
+                            velZ[i] *= speedRatio;
+                            spawnHitVisualEffect(level, hitPointMc, hitNormalMc, true);
+                            continue;
+                        }
+                        // 未击穿
+                        spawnHitVisualEffect(level, hitPointMc, hitNormalMc, true);
+                    }
+                    case BFHurtTarget target -> {
+                        projectile.dealDamage(target, hitPointMc, hitNormalMc);
+                        spawnHitVisualEffect(level, hitPointMc, hitNormalMc, true);
+                        if (penKey != null) {
+                            penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
+                        }
+                    }
+                    case Entity entity -> {
+                        entity.hurt(entity.damageSources().generic(), projectile.calculateCurrentDamage());
+                        spawnHitVisualEffect(level, hitPointMc, hitNormalMc, false);
+                        if (penKey != null) {
+                            penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
+                        }
+                    }
+                    default -> {
+                    }
                 }
 
-                spawnHitVisualEffect(level, hitPointMc, hitNormalMc, owner instanceof BFHurtTarget);
+                // 非 SubPart 目标：命中后投射物停止
                 projectile.markHit();
                 alive[i] = false;
                 projectileObjIds.remove(objId[i]);
-                hit = true;
+                stopped = true;
                 break;
             }
 
-            if (hit) {
+            if (stopped) {
                 DestroyableObject destroyable = (objMap != null) ? objMap.get(objId[i]) : null;
                 if (destroyable != null) {
                     destroyable.destroy();
@@ -584,8 +746,15 @@ public class ProjectileManager {
         }
     }
 
-    /** O(1) swap-with-last 移除 */
+    /** O(1) swap-with-last 移除（联动交换 Entity 数组，清理穿透记录） */
     private void swapRemove(int index) {
+        // 先清理被移除条目的 Entity
+        if (entities[index] != null) {
+            entities[index].markOrphaned();
+            entities[index] = null;
+        }
+        // 清理穿透记录
+        penetratedKeys.remove(objId[index]);
         int last = count - 1;
         if (index != last) {
             posX[index] = posX[last];
@@ -598,11 +767,13 @@ public class ProjectileManager {
             typeIndex[index] = typeIndex[last];
             objId[index] = objId[last];
             alive[index] = alive[last];
+            needsEntityRecreate[index] = needsEntityRecreate[last];
+            entities[index] = entities[last];
         }
         count--;
     }
 
-    /** ×2 动态扩容 */
+    /** ×2 动态扩容（联动扩容 Entity 数组） */
     private void ensureCapacity(int required) {
         if (required <= capacity) return;
         int newCap = Math.max(required, capacity * 2);
@@ -616,6 +787,8 @@ public class ProjectileManager {
         typeIndex = Arrays.copyOf(typeIndex, newCap);
         objId = Arrays.copyOf(objId, newCap);
         alive = Arrays.copyOf(alive, newCap);
+        needsEntityRecreate = Arrays.copyOf(needsEntityRecreate, newCap);
+        entities = Arrays.copyOf(entities, newCap);
         capacity = newCap;
     }
 }

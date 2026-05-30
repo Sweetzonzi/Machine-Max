@@ -11,6 +11,7 @@ import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
+import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -797,6 +798,19 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             MachineMax.LOGGER.error("No hit box of sub-part {}-{} found for child shape id: {}", part.name, name, childShapeId);
             return hitBoxes.values().iterator().next();
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * 将三角形索引（碰撞检测结果）映射到对应的 HitBox id。
+     * 不同 HitBox 具有独立穿透判定——击穿外装甲后仍可命中内部引擎等。
+     */
+    @Override
+    @org.jetbrains.annotations.Nullable
+    public String getPenetrationZoneId(com.jme3.bullet.collision.PhysicsCollisionObject body, int triangleIndex) {
+        HitBox hitBox = getHitBox(triangleIndex);
+        return hitBox != null ? hitBox.getAttr().getId() : null;
     }
 
     /**
