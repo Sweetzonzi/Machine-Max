@@ -23,7 +23,7 @@
 /* ---------- body 基础排版 ---------- */
 body {
     color: #c8c8d0;                    /* 默认文字色：浅灰 */
-    font-family: lxgw, 'Segoe UI', system-ui, sans-serif;
+    font-family: unset;                /* unset = 使用 Minecraft 原版字体 */
     background: transparent;            /* 透传 Minecraft GUI 背景 */
     width: 100%;
     height: 100%;
@@ -43,7 +43,7 @@ body {
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    background: #0B0B0B;
+    background: rgba(11,11,11,0.5);
     border-bottom: 1px solid #EAEAEA;
     flex-shrink: 0;
     overflow: hidden;
@@ -56,11 +56,13 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    padding: 0 10px;
+    padding-left: 10px;
+    padding-right: 10px;
     gap: 6px;
     cursor: pointer;
     border-right: 1px solid #EAEAEA;
-    background: #0B0B0B;
+    background: rgba(11,11,11,0.5);
+    transition: background-color 0.2s ease;
 }
 .header-item:last-child {
     border-right: none;
@@ -73,7 +75,8 @@ body {
 .header-item.active {
     flex: 0 0 auto;
     background: #FFFFFF;
-    padding: 0 16px;
+    padding-left: 16px;
+    padding-right: 16px;
     gap: 10px;
     justify-content: flex-start;       /* 内容左对齐 */
     overflow: hidden;
@@ -151,12 +154,18 @@ body {
 .page {
     display: none;
 }
-/* 当前激活页面：flex 纵向布局，弹性占满剩余高度 */
+/* 当前激活页面：flex 纵向布局，弹性占满剩余高度，淡入动画 */
 .page.active {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    animation: pageFadeIn 0.15s linear;
+}
+
+@keyframes pageFadeIn {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
 }
 
 /* ================================================================
@@ -170,6 +179,24 @@ body {
 }
 
 /* ================================================================
+   列内容包装层
+   ================================================================ */
+
+/* 三栏模式中包住实际内容的弹性容器，负责内边距与内部滚动 */
+.col-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 4px;
+}
+
+/* ================================================================
    控制组切换条（GroupStripRenderer.java 渲染）
    ================================================================ */
 
@@ -178,17 +205,22 @@ body {
     display: flex;
     flex-direction: row;
     gap: 4px;                          /* 卡片之间的固定间距 */
-    padding: 6px 4px;                  /* 上下留出与导航栏的间距 */
+    padding-top: 6px;                  /* 上下留出与导航栏的间距 */
+    padding-bottom: 6px;
+    padding-left: 4px;
+    padding-right: 4px;
     flex-shrink: 0;
 }
 
 /* ---------- 控制组卡片（由 GroupStripRenderer.java 生成） ---------- */
 
-/* 单张卡片：三行信息（名称/编号/状态），固定 60px 宽度不拉伸 */
+/* 单张卡片：三行信息（名称/编号/状态），固定 50px 宽度不拉伸 */
 .group-card {
     flex: 0 0 auto;
     width: 50px;
-    padding: 6px 12px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 3px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -196,6 +228,10 @@ body {
     cursor: pointer;
     gap: 1px;
     overflow: hidden;
+    transition: background-color 0.4s ease-in-out;
+}
+.group-card:hover {
+    background-color: var(--bar-bg-hover);
 }
 
 /* 激活态卡片：以主题色填充 */
@@ -247,6 +283,12 @@ body {
 .group-card.active .gc-status {
     color: #111111;                    /* 激活态：黑 */
 }
+.group-card.active .gc-status[data-status="active"] {
+    color: #4ac87a;                    /* ACTIVE 字样标绿 */
+}
+.gc-status[data-status="standby"] {
+    color: #D8A631;                    /* STAND BY 字样标黄，无论卡片是否激活 */
+}
 .group-card.base .gc-status {
     color: #335D9C;                   /* BASE 组始终蓝色 */
 }
@@ -257,7 +299,10 @@ body {
 
 /* 基础小按钮：透明灰底 */
 .btn-sm {
-    padding: 2px 8px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 8px;
+    padding-right: 8px;
     border-radius: 3px;
     font-size: 9px;
     font-weight: 600;

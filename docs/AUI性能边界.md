@@ -381,14 +381,14 @@ public void stepMotionRender() {
 | 类别 | 支持的属性 | 单位限制 |
 |------|-----------|---------|
 | 尺寸 | `width/height/min-max-*/box-sizing` | **仅 `px` 和 `%`**。不支持 `em/rem/vw/vh/vmin/vmax` |
-| 盒模型 | `margin/padding/border/border-radius` | 简写 + 单独方向均支持 |
+| 盒模型 | `margin/padding/border/border-radius` | 简写仅支持单值（如 `padding: 10px`），**多值简写不支持**（如 `padding: 0 10px` 或 `padding: 0 10px 4px` 均不生效，各部分会塌缩为 0）。必须用分方向属性 `padding-left/padding-right` 等 |
 | 背景 | `background-color/image/repeat/size/position` | `url()` + `linear-gradient()`。<br>**⚠️ `background` 简写不支持 `var()**`：`background: var(--x)` 不会填充背景色。<br>**必须用 `background-color: var(--x)` 替代**（v1.1.3dev 之前 `var()` 在简写中完全不被识别，见 §8.5 #12）<br>**⚠️ `linear-gradient()` 内的颜色不能包含空格**：`Gradient.parse()` 用 `split("\\s+")` 切分颜色 stop，`rgba(r, g, b, a)` 带空格会被切碎。必须用 `rgba(r,g,b,a)` 无空格格式或 `#hex`。见 §8.5 #13。 |
 | 文本 | `color/font-size/font-weight/font-family/line-height/text-align/letter-spacing/white-space/text-overflow:ellipsis/text-stroke` | 字号公式：`fontSize/16*9` |
 | 变换 | `transform: translate/rotate/scale`（含 3D 变体） | 默认 `transform-origin` 为中心 |
 | 滤镜 | `filter: blur/brightness/grayscale/invert/hue-rotate/opacity/drop-shadow` | CPU 实现 |
 | 阴影 | `box-shadow`（多值逗号分隔） | |
 | 光标 | `cursor: default/pointer/text/crosshair/ew-resize/ns-resize` + `url()` | 自定义光标使用伪光标渲染 |
-| 动画 | `@keyframes` + `animation-*`（duration/delay/iteration-count/direction/fill-mode/timing-function） | 只支持 `linear` 和 `steps()` 缓动 |
+| 动画 | `@keyframes` + `animation-*`（duration/delay/iteration-count/direction/fill-mode/timing-function） | 只支持 `linear` 和 `steps()` 缓动。<br>**⚠️ 选择器必须用百分比**：不支持 `from`/`to` 关键字。`from { ... }` 会导致 `NumberFormatException`，必须写 `0% { ... }`。见 §8.5 #16。 |
 | 过渡 | `transition` | ⚠️ 不稳定，推荐用 class 切换替代 |
 
 ### 4.3 CSS 选择器支持
@@ -706,6 +706,10 @@ AUI 支持两种显示模式：
 | 12 | `background` 简写不支持 `var()` | `background: var(--x)` 中的 `var()` 不会被 `isColorToken()` 识别，`backgroundColor` 保持 `"unset"`。需改用 `background-color: var(--x)` |
 | 13 | `linear-gradient()` 内颜色不能含空格 | `Gradient.parse()` 用 `split("\\s+")` 切分 stop，`rgba(r, g, b, a)` 会被切成 `["rgba(r,", "g,", "b,", "a)"]`，`Color.parse()` 解析失败返回透明。必须在 gradient 中使用 `rgba(r,g,b,a)`（无空格）或 `#hex` / `#RRGGBBAA`（8 位 hex） |
 | 14 | 8 位 hex `#RRGGBBAA` 的 alpha 被错误解析 | `Color.parseHex()` 对 8 位 hex 不做字节重排，直接 `Long.parseLong(hex, 16)` 原样存入 int。而内部颜色格式为 **ARGB**（alpha 在 bits 24-31，blue 在 bits 0-7）。`#FFFFFF4D` 期望白 @ 30% 透明度（A=0x4D），实际解析为完全不透明的蓝白色（A=0xFF, B=0x4D）。**必须用 `rgba(r,g,b,a)` 替代 8 位 hex 来表达半透明色**。详见 §九。 |
+| 15 | `padding`/`margin` 多值简写不生效 | `applyPaddingAll("0 10px 4px")` 将完整字符串作为单一值传给 `Size.resolveLength()`，`parseNumber()` 无法解析多值字符串，返回 `fallback = 0`，所有方向的 padding 均塌缩为 0。**必须使用分方向属性**如 `padding-left: 10px; padding-right: 10px; padding-bottom: 4px;`。同理适用于 `margin`。根因：[Box.java:50-51](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/style/Box.java#L50-L51)，`Size.resolveLength()` 只接受单数值。 |
+| 16 | `@keyframes` 不支持 `from`/`to` 关键字 | `CSS.parseAndRegisterAnimations()` 对 keyframe 选择器调用 `Double.parseDouble()`，`from`/`to` 不是合法浮点数导致 `NumberFormatException` 崩溃。**必须用百分比语法**如 `0% { ... }` / `100% { ... }`。根因：[CSS.java:151](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/resource/CSS.java#L151)。 |
+| 17 | **父元素 class 变化不传播子元素 CSS 重匹配** | 修改父元素 class（如 `toggle.setAttribute("class", "toggle-switch on")`）后，AUI 不会自动对子元素重新执行 CSS 选择器匹配。子元素的样式依赖于父 class 的后代选择器（如 `.toggle-switch.on .knob`）将**保持旧值**。必须用内联 style 直接操作子元素。见 #18。 |
+| 18 | **`innerText` 直接赋值不触发文本重渲染** | 在某些场景（尤其是父元素 class 同时变化时），`element.innerText = "新文本"` 不会触发 AUI 的文本缓存失效。必须用 **remove() 旧元素 → createElement() 创建新元素 → append() 追加** 的三步式替换。见 `GroupStripRenderer.java`。 |
 
 ---
 

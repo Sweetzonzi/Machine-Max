@@ -20,45 +20,55 @@ public class PanelOverview {
 
     private static void buildStatusBars(Document doc, ControlGroupSet data) {
         Element statusCol = doc.getElementById("status-col");
+        Element statusColContent = doc.getElementById("status-col-content");
         Element warningCol = doc.getElementById("warning-col");
+        Element warningColContent = doc.getElementById("warning-col-content");
         Element extraCol = doc.getElementById("extra-col");
+        Element extraColContent = doc.getElementById("extra-col-content");
 
-        // 左列：载具状态标题 + 状态条 + 底部数字指标
+        // 左列：标题在 col-content 外层（不入 padding），内容注入 col-content 包装层
         if (statusCol != null) {
             appendColHeader(doc, statusCol, "VEHICLE STATUS");
-            appendStatBar(doc, statusCol, "DURABILITY", 85, "#C89520");
-            appendStatBar(doc, statusCol, "ENERGY", 62, "#2E5A90");
-            appendStatBar(doc, statusCol, "THRUST", 40, "#7aacff");
-            appendStatBar(doc, statusCol, "SPEED", 30, "#4ac87a");
-            appendNumericSection(doc, statusCol);
+            if (statusColContent != null) {
+                appendStatBar(doc, statusColContent, "DURABILITY", 85, "#C89520");
+                appendStatBar(doc, statusColContent, "ENERGY", 62, "#2E5A90");
+                appendStatBar(doc, statusColContent, "THRUST", 40, "#7aacff");
+                appendStatBar(doc, statusColContent, "SPEED", 30, "#4ac87a");
+                appendNumericSection(doc, statusColContent);
+            }
         }
 
-        // 中列：警告信息标题 + 警告列表
+        // 中列：标题在 col-content 外层
         if (warningCol != null) {
             appendColHeader(doc, warningCol, "WARNINGS");
-            appendWarningItem(doc, warningCol, "\u25B2", "LEFT ENGINE DURABILITY LOW", "#D8A631");
-            appendWarningItem(doc, warningCol, "\u25B2", "WEAPON SYSTEM NOT RESPONDING", "#D8A631");
-            appendWarningItem(doc, warningCol, "\u25A0", "ENERGY LEVEL CRITICAL", "#ff4444");
+            if (warningColContent != null) {
+                appendWarningItem(doc, warningColContent, "⚠", "LEFT ENGINE DURABILITY LOW", "#D8A631");
+                appendWarningItem(doc, warningColContent, "⚠", "WEAPON SYSTEM NOT RESPONDING", "#D8A631");
+                appendWarningItem(doc, warningColContent, "❌", "ENERGY LEVEL CRITICAL", "#ff4444");
+            }
         }
 
-        // 右列：控制模式标题 + 模式信息
+        // 右列：标题在 col-content 外层
         if (extraCol != null) {
             appendColHeader(doc, extraCol, "CONTROL MODE");
-            appendModeLabel(doc, extraCol, "GROUND", "/// WHEELED VEHICLE CONTROL");
-            appendModeInfoRow(doc, extraCol, "SIGNAL CHANNELS", "12 ACTIVE");
-            appendModeInfoRow(doc, extraCol, "BINDINGS", "8 CONFIGURED");
-            appendModeInfoRow(doc, extraCol, "NETWORK SYNC", "ONLINE");
+            if (extraColContent != null) {
+                appendModeLabel(doc, extraColContent, "GROUND", "/// WHEELED VEHICLE CONTROL");
+                appendModeInfoRow(doc, extraColContent, "SIGNAL CHANNELS", "12 ACTIVE");
+                appendModeInfoRow(doc, extraColContent, "BINDINGS", "8 CONFIGURED");
+                appendModeInfoRow(doc, extraColContent, "NETWORK SYNC", "ONLINE");
+            }
         }
     }
 
     /**
-     * 追加列标题到容器中。
+     * 追加列标题到容器头部。<br>
+     * 使用 prepend 确保标题位于 col-content 包装层之前。
      */
     private static void appendColHeader(Document doc, Element container, String title) {
         Element header = doc.createElement("div");
         header.setAttribute("class", "info-col-header");
         header.innerText = title;
-        container.append(header);
+        container.prepend(header);
     }
 
     /**

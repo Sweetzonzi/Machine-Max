@@ -87,6 +87,7 @@ public class VehicleControlScreen extends Screen {
      */
     private void initPanels() {
         clearPanels();
+        recreateColContentWrappers();
         resolveActiveTabFromDom();
         PanelTabBar.init(auiDocument, this::switchTab);
         PanelTabBar.setActive(auiDocument, activeTab);
@@ -123,6 +124,32 @@ public class VehicleControlScreen extends Screen {
             if (el == null || el.children == null) continue;
             while (!el.children.isEmpty()) {
                 el.children.getFirst().remove();
+            }
+        }
+    }
+
+    /**
+     * 重建 col-content 包装层。<br>
+     * clearPanels() 会清空 info-col / device-section 外层的所有子元素（含 .col-content）,
+     * 因此需要在重新渲染面板内容之前重建这些包装层 div。
+     */
+    private void recreateColContentWrappers() {
+        if (auiDocument == null) return;
+        String[][] wrappers = {
+                {"status-col", "status-col-content"},
+                {"warning-col", "warning-col-content"},
+                {"extra-col", "extra-col-content"},
+                {"pulse-section", "pulse-section-content"},
+                {"toggle-section", "toggle-section-content"},
+                {"slider-section", "slider-section-content"},
+        };
+        for (String[] pair : wrappers) {
+            Element outer = auiDocument.getElementById(pair[0]);
+            if (outer != null) {
+                Element wrapper = auiDocument.createElement("div");
+                wrapper.setAttribute("class", "col-content");
+                wrapper.setAttribute("id", pair[1]);
+                outer.append(wrapper);
             }
         }
     }
@@ -208,6 +235,9 @@ public class VehicleControlScreen extends Screen {
             auiDocument.remove();
             auiDocument = null;
         }
+        GroupStripRenderer.reset();
+        PanelDeviceControl.reset();
+        PanelConfigEditor.reset();
         super.onClose();
     }
 
@@ -217,6 +247,9 @@ public class VehicleControlScreen extends Screen {
             auiDocument.remove();
             auiDocument = null;
         }
+        GroupStripRenderer.reset();
+        PanelDeviceControl.reset();
+        PanelConfigEditor.reset();
         super.removed();
     }
 

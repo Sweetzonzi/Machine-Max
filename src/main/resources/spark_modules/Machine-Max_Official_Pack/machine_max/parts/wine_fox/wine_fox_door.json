@@ -8,7 +8,10 @@
   "variants": {//部件变体列表, 支持单值或多键值对
     "left": {//变体名称
       "model": "machine_max:wine_fox.geo",
-      "textures": "machine_max:textures/part/wine_fox/wine_fox.png",
+      "textures": {
+        "default": "machine_max:textures/part/wine_fox/wine_fox_2.png",
+        "old": "machine_max:textures/part/wine_fox/wine_fox.png"
+      },
       "animations": "machine_max:wine_fox",
       "tags": ["machine_max:land", "machine_max:structural", "machine_max:door", "machine_max:wine_fox", "machine_max:left"], //(可选)部件标签列表
       "sub_parts": {//零件(子部件)列表

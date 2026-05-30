@@ -29,7 +29,7 @@
    底部设备控制三栏（PULSE / TOGGLE / SLIDER）
    ================================================================ */
 
-/* 三栏容器 — 使用显式 height 确保子元素 flex 高度分配有确定的参考值 */
+/* 三栏容器 */
 .device-bar {
     flex-shrink: 0;
     display: flex;
@@ -38,7 +38,7 @@
     padding: 0;
     overflow: hidden;
     border-top: 1px solid #EAEAEA;
-    height: 130px;
+    min-height: 100px;
 }
 
 /* 单栏：三栏等宽，与 tab01 一致 */
@@ -49,7 +49,6 @@
     flex-direction: column;
     gap: 2px;
     overflow: hidden;
-    padding: 0 6px 4px;
     border-right: 1px solid #EAEAEA;
 }
 .device-section:last-child {
@@ -63,7 +62,10 @@
     color: #AAAAAA;
     letter-spacing: 1px;
     text-transform: uppercase;
-    padding: 4px 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 8px;
+    padding-right: 8px;
     background: #1E3A66;
     border-bottom: 1px solid #333333;
     margin-bottom: 4px;
@@ -74,7 +76,10 @@
 
 /* 脉冲按钮：短按触发一次信号 — 暗卡底 + 白字，激活时变主题色 */
 .btn-pulse {
-    padding: 5px 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
     background-color: #0A1424;
     border: 1px solid #333333;
     border-radius: 3px;
@@ -98,6 +103,8 @@
 /* pulse 容器：按钮纵向排列 */
 #pulse-section {
     min-width: 0;
+}
+#pulse-section .col-content {
     gap: 4px;
 }
 
@@ -106,6 +113,8 @@
 /* toggle 容器：纵向排列开关行 */
 #toggle-section {
     min-width: 0;
+}
+#toggle-section .col-content {
     gap: 6px;
 }
 
@@ -125,12 +134,13 @@
     position: relative;
     cursor: pointer;
     flex-shrink: 0;
+    transition: background-color 0.15s linear;
 }
-/* 开启态：填充主题色 */
+/* 开启态：明亮蓝色，与关闭态形成明显区分 */
 .toggle-switch.on {
-    background-color: var(--accent);
+    background-color: #4A8FD0;
 }
-/* 滑钮 */
+/* 滑钮 — 关闭态（默认位置 left:3px） */
 .toggle-switch .knob {
     width: 12px;
     height: 12px;
@@ -139,10 +149,7 @@
     position: absolute;
     top: 3px;
     left: 3px;
-}
-.toggle-switch.on .knob {
-    left: 17px;                        /* 右移 = 开启位置 */
-    background: #fff;
+    transition: left 0.15s linear, background-color 0.15s linear;
 }
 
 /* 开关行标签文字 */
@@ -163,24 +170,25 @@
     flex-direction: column;
 }
 
-/* 滑条横向容器：各轴向右依次排开，撑满剩余高度 — min-height 兜底防止塌陷 */
+/* 滑条横向容器：各轴向右依次排开，撑满剩余高度 */
 .slider-axes-row {
     display: flex;
     flex-direction: row;
     flex: 1;
-    min-height: 30px;
+    min-height: 0;
     gap: 4px;
 }
 
-/* 单轴滑条（如 PITCH / ROLL / YAW）— min-height 兜底 */
+/* 单轴滑条（如 PITCH / ROLL / YAW） */
 .slider-axis {
     flex: 1;
-    min-height: 30px;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    padding: 2px 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 
 /* 轴标签 */
@@ -193,11 +201,11 @@
     flex-shrink: 0;
 }
 
-/* 纵向轨道 — min-height 兜底，防止 flex 塌陷时轨道高度为 0 导致不可见 */
+/* 纵向轨道 */
 .slider-track-v {
     width: 6px;
     flex: 1;
-    min-height: 30px;
+    min-height: 0;
     background: #0A1424;
     border-radius: 3px;
     position: relative;

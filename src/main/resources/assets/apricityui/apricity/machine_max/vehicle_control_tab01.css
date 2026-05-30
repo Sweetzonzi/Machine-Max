@@ -38,7 +38,6 @@
     padding: 0;
     overflow: hidden;
     border-top: 1px solid #EAEAEA;
-    background: #080602;
 }
 
 /* 单列容器：三栏等宽填充（33.33% × 3 = 99.99%，不依赖 flex 内容协商） */
@@ -49,9 +48,7 @@
     flex-direction: column;
     gap: 2px;
     overflow: hidden;
-    padding: 0 6px 4px;
     border-right: 1px solid #EAEAEA;
-    background: #080602;
 }
 .info-col:last-child {
     border-right: none;
@@ -64,7 +61,10 @@
     color: #AAAAAA;
     letter-spacing: 1px;
     text-transform: uppercase;
-    padding: 4px 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 8px;
+    padding-right: 8px;
     background: #483C16;
     border-bottom: 1px solid #333333;
     margin-bottom: 4px;
@@ -76,19 +76,27 @@
     font-size: 13px;
     font-weight: 800;
     color: #e0e0e8;
-    padding: 3px 6px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 6px;
+    padding-right: 6px;
 }
 .mode-sublabel {
     font-size: 7px;
     color: rgba(255,255,255,0.25);
-    padding: 0 6px 3px;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-bottom: 3px;
     letter-spacing: 0.5px;
 }
 .mode-info-row {
     display: flex;
     justify-content: space-between;
     font-size: 7px;
-    padding: 2px 6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
     color: rgba(255,255,255,0.30);
 }
 .mode-info-row .mir-value {
@@ -98,11 +106,14 @@
 
 /* --- 状态条（耐久/能量等进度条） --- */
 .stat-bar {
-    width: 100%;
+    width: 85%;
     display: flex;
     flex-direction: column;
     gap: 1px;
-    padding: 2px 6px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 6px;
+    padding-right: 6px;
     background: #141008;
     border-radius: 1px;
     overflow: hidden;
@@ -141,7 +152,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2px 4px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 4px;
+    padding-right: 4px;
 }
 .stat-numeric-label {
     font-size: 6px;
@@ -160,7 +174,10 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 3px 6px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 6px;
+    padding-right: 6px;
     background: rgba(0,0,0,0.15);
     border-left: 2px solid #ff4444;
     border-radius: 1px;

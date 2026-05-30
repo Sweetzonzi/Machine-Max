@@ -55,7 +55,10 @@
 
 /* 区块标题栏 */
 .config-sect-header {
-    padding: 6px 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
     font-size: 9px;
     font-weight: 600;
     color: rgba(255,255,255,0.20);
@@ -98,7 +101,10 @@
 /* ---------- 表单控件 ---------- */
 
 .form-group {
-    padding: 6px 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -124,7 +130,10 @@
     background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.10);
     border-radius: 3px;
-    padding: 3px 6px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-left: 6px;
+    padding-right: 6px;
     color: #c8c8d0;
     font-size: 10px;
     outline: none;
@@ -132,4 +141,555 @@
 .form-row input:focus,
 .form-row select:focus {
     border-color: #8A2A2A;             /* 聚焦时使用 Tab 主题色 */
+}
+
+/* ---------- 左栏：控制组列表专用 ---------- */
+
+/* 左栏标题行 + 添加按钮 */
+.config-left-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom: 1px solid #333333;
+    flex-shrink: 0;
+}
+.config-left-title {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.30);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.config-left-btn-add {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.40);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.config-left-btn-add:hover {
+    background: #8A2A2A;
+    border-color: #8A2A2A;
+    color: #FFFFFF;
+}
+
+/* 左栏组列表容器 */
+.config-group-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* 左栏列表项：含上排行（名称+编号+删除按钮）和下排元信息 */
+.group-list-item {
+    padding: 6px 8px;
+    border-bottom: 1px solid #333333;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    position: relative;
+}
+.group-list-item:hover {
+    background: rgba(138,42,42,0.10);
+}
+.group-list-item.selected {
+    background: #ffffff;
+    color: #0A0404;
+}
+
+/* 列表项上排行：名称 + 编号 + 删除按钮（hover 显示） */
+.gli-top-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.gli-name {
+    font-size: 11px;
+    font-weight: 600;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.gli-number {
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.25);
+    flex-shrink: 0;
+}
+.group-list-item.selected .gli-number {
+    color: rgba(10,4,4,0.50);
+}
+.gli-del-btn {
+    width: 14px;
+    height: 14px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.35);
+    font-size: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.group-list-item:hover .gli-del-btn {
+    display: flex;
+}
+.gli-del-btn:hover {
+    background: #9E3434;
+    border-color: #9E3434;
+    color: #FFFFFF;
+}
+.group-list-item.selected .gli-del-btn {
+    border-color: rgba(10,4,4,0.20);
+    color: rgba(10,4,4,0.40);
+}
+.group-list-item.selected .gli-del-btn:hover {
+    background: #9E3434;
+    border-color: #9E3434;
+    color: #FFFFFF;
+}
+
+/* 列表项下排元信息 */
+.gli-meta {
+    font-size: 7px;
+    color: rgba(255,255,255,0.30);
+    letter-spacing: 0.3px;
+}
+.group-list-item.selected .gli-meta {
+    color: rgba(10,4,4,0.50);
+}
+
+/* base 组的特别样式：不可删除，蓝色标志 */
+.group-list-item.base-item {
+    border-left: 2px solid #335D9C;
+}
+.group-list-item.base-item .gli-del-btn {
+    display: none !important;
+}
+.gli-base-badge {
+    font-size: 7px;
+    font-weight: 600;
+    color: #335D9C;
+    letter-spacing: 0.5px;
+}
+
+/* 左栏底部重置按钮 */
+.config-left-footer {
+    border-top: 1px solid #333333;
+    flex-shrink: 0;
+    padding: 4px 8px;
+}
+.config-reset-btn {
+    width: 100%;
+    padding: 4px 0;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.30);
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    text-align: center;
+}
+.config-reset-btn:hover {
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.50);
+}
+
+/* ---------- 中栏：组详情区块 ---------- */
+
+/* 组详情表单容器 */
+.group-detail-form {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #333333;
+}
+.group-detail-form .form-row {
+    gap: 4px;
+}
+.group-detail-form .form-row label {
+    min-width: 28px;
+    font-size: 8px;
+}
+.group-detail-form .form-row input,
+.group-detail-form .form-row select {
+    font-size: 9px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+.group-detail-form .form-row textarea {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 3px;
+    padding: 2px 4px;
+    color: #c8c8d0;
+    font-size: 9px;
+    outline: none;
+    min-height: 20px;
+    resize: none;
+}
+.group-detail-form .form-row textarea:focus {
+    border-color: #8A2A2A;
+}
+
+/* ---------- 中栏：配置项列表 ---------- */
+
+/* 配置项区域容器 */
+.config-items-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* 配置项区域标题 + 操作按钮 */
+.config-items-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px;
+    border-top: 1px solid #333333;
+    border-bottom: 1px solid #333333;
+    flex-shrink: 0;
+}
+.config-items-title {
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.config-items-actions {
+    display: flex;
+    gap: 4px;
+}
+.config-items-btn {
+    padding: 2px 6px;
+    font-size: 7px;
+    font-weight: 600;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.30);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.config-items-btn:hover {
+    background: #8A2A2A;
+    border-color: #8A2A2A;
+    color: #FFFFFF;
+}
+
+/* 配置项列表滚动容器 */
+.config-items-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* 单项配置行 */
+.config-item-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    cursor: pointer;
+    min-height: 18px;
+}
+.config-item-row:hover {
+    background: rgba(138,42,42,0.08);
+}
+.config-item-row.selected {
+    background: #8A2A2A;
+    color: #FFFFFF;
+}
+
+/* 配置项名称 */
+.config-item-row .ci-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 8px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 配置项类型标签 */
+.config-item-row .ci-type-badge {
+    font-size: 6px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.30);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+.config-item-row.selected .ci-type-badge {
+    border-color: rgba(255,255,255,0.30);
+    color: rgba(255,255,255,0.70);
+}
+
+/* 配置项频道标识 */
+.config-item-row .ci-channel {
+    font-size: 6px;
+    color: rgba(255,255,255,0.20);
+    flex-shrink: 0;
+    max-width: 40px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.config-item-row.selected .ci-channel {
+    color: rgba(255,255,255,0.50);
+}
+
+/* 配置项删除按钮（hover 显示） */
+.config-item-row .ci-del-btn {
+    width: 12px;
+    height: 12px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.25);
+    font-size: 7px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.config-item-row:hover .ci-del-btn {
+    display: flex;
+}
+.config-item-row .ci-del-btn:hover {
+    color: #ff4444;
+}
+.config-item-row.selected .ci-del-btn:hover {
+    color: #FFFFFF;
+}
+
+/* 配置项空状态 */
+.config-items-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    font-size: 8px;
+    color: rgba(255,255,255,0.15);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* ---------- 右栏：详情编辑面板 ---------- */
+
+/* 右栏标题 */
+.config-right-header {
+    padding: 6px 8px;
+    border-bottom: 1px solid #333333;
+    flex-shrink: 0;
+}
+.config-right-title {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* 右栏表单体 */
+.config-right-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* 空选择占位 */
+.config-right-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 8px;
+    font-size: 8px;
+    color: rgba(255,255,255,0.15);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* 详情编辑表单 */
+.detail-form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 8px;
+}
+
+/* 详情表单字段行 */
+.detail-field {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.detail-field-label {
+    font-size: 7px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+.detail-field input,
+.detail-field select {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 2px;
+    padding: 2px 4px;
+    color: #c8c8d0;
+    font-size: 9px;
+    outline: none;
+}
+.detail-field input:focus,
+.detail-field select:focus {
+    border-color: #8A2A2A;
+}
+
+/* 详情表单中的toggle行 */
+.detail-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 0;
+}
+.detail-toggle-label {
+    font-size: 8px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.40);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.detail-toggle-switch {
+    width: 24px;
+    height: 14px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.detail-toggle-switch.on {
+    background: #5E7A4A;
+}
+.detail-toggle-knob {
+    width: 10px;
+    height: 10px;
+    background: #ddd;
+    border-radius: 1px;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+}
+.detail-toggle-switch.on .detail-toggle-knob {
+    left: 12px;
+    background: #fff;
+}
+
+/* 详情表单中的水平滑块 */
+.detail-slider-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 3px 0;
+}
+.detail-slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.detail-slider-label {
+    font-size: 8px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.40);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.detail-slider-value {
+    font-size: 8px;
+    font-weight: 600;
+    color: #8A2A2A;
+}
+.detail-slider-track {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+}
+.detail-slider-fill {
+    height: 100%;
+    background: #8A2A2A;
+    border-radius: 2px;
+}
+
+/* 右栏底部删除按钮 */
+.config-right-footer {
+    border-top: 1px solid #333333;
+    padding: 4px 8px;
+    flex-shrink: 0;
+}
+.config-del-btn {
+    width: 100%;
+    padding: 4px 0;
+    background: transparent;
+    border: 1px solid #9E3434;
+    color: #9E3434;
+    font-size: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    text-align: center;
+}
+.config-del-btn:hover {
+    background: #9E3434;
+    color: #FFFFFF;
+}
+
+/* 详情表单中的标签行（显示 targets） */
+.detail-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 2px 0;
+}
+.detail-tag {
+    font-size: 7px;
+    font-weight: 600;
+    padding: 1px 4px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.30);
+    letter-spacing: 0.3px;
 }
