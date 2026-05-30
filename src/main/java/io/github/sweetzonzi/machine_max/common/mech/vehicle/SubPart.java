@@ -216,7 +216,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         //同步客户端
         if (!getLevel().isClientSide() && part.vehicle != null)
             PacketDistributor.sendToPlayersInDimension((ServerLevel) getLevel(),
-                    new PartPaintPayload(part.vehicle.uuid, part.uuid, this.name, this.textureName));
+                    new PartPaintPayload(this.getId(), this.textureName));
     }
 
     public void refreshPartEntity() {

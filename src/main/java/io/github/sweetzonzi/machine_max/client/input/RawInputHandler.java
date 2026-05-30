@@ -34,7 +34,6 @@ import io.github.sweetzonzi.machine_max.client.render.gui.screen.VehicleControlS
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
-import java.util.UUID;
 
 import static io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks.Combination.LEFT_CTRL;
 import static io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks.Combination.LEFT_SHIFT;
@@ -97,9 +96,7 @@ public class RawInputHandler {
                 ((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat &&
                 seat.owner instanceof SubPart subPart) {
             Part part = subPart.part;
-            UUID vehicleUuid = part.vehicle.uuid;
-            UUID partUuid = part.uuid;
-            String subPartName = subPart.name;
+            int subPartId = subPart.getId();
             String subSystemName = seat.name;
             MMJoystickHandler.refreshState();
 
@@ -241,9 +238,9 @@ public class RawInputHandler {
                     (byte) rot_y_conflict,
                     (byte) rot_z_conflict};
             // 仅在输入有变化时发送数据包
-            if (vehicleUuid != null && partUuid != null && subSystemName != null && moveInputs != moveInputCache)
+            if (moveInputs != moveInputCache)
                 PacketDistributor.sendToServer(new MovementInputPayload(
-                        vehicleUuid, partUuid, subPartName, subSystemName, moveInputs, moveInputConflicts));
+                        subPartId, subSystemName, moveInputs, moveInputConflicts));
         }
     }
 

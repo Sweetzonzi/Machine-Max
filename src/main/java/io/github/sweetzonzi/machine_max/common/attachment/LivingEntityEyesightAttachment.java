@@ -318,10 +318,7 @@ public class LivingEntityEyesightAttachment implements PhysicsCollisionListener 
         InteractBox interactBox = getAccurateInteractBox();
         if (interactBox == null) interactBox = getFastInteractBox();
         if (interactBox != null) {
-            SubPart subPart = interactBox.subPart;
-            Part part = subPart.part;
-            VehicleCore vehicle = part.vehicle;
-            PacketDistributor.sendToServer(new SubsystemInteractPayload(vehicle.uuid, part.uuid, subPart.name, interactBox.name));
+            PacketDistributor.sendToServer(new SubsystemInteractPayload(interactBox.subPart.getId(), interactBox.name));
         }
     }
 }

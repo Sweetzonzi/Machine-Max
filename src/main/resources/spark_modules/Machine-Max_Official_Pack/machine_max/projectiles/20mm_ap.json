@@ -4,7 +4,7 @@
   "gravity_factor": 1.0,
   "drag_factor": 0.0003,
   "radius": 0.01,
-  "base_velocity": 1000,
+  "base_velocity": 20,
   "base_penetration": 45,
   "base_damage": 25,
   "base_accuracy_mil": 2.0,

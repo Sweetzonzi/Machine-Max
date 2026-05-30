@@ -1,46 +1,39 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.core.UUIDUtil;
-import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.UUID;
-
 public record SubsystemInteractPayload(
-        UUID vehicleUUID,
-        UUID partUUID,
-        String subPartName,
+        int subPartId,
         String interactBoxName
 ) implements CustomPacketPayload {
     public static final Type<SubsystemInteractPayload> TYPE = new Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem_interact_payload")
     );
-    public static final StreamCodec<ByteBuf, SubsystemInteractPayload> STREAM_CODEC = StreamCodec.composite(
-            UUIDUtil.STREAM_CODEC,
-            SubsystemInteractPayload::vehicleUUID,
-            UUIDUtil.STREAM_CODEC,
-            SubsystemInteractPayload::partUUID,
-            ByteBufCodecs.STRING_UTF8,
-            SubsystemInteractPayload::subPartName,
-            ByteBufCodecs.STRING_UTF8,
-            SubsystemInteractPayload::interactBoxName,
-            SubsystemInteractPayload::new
-    );
+    public static final StreamCodec<FriendlyByteBuf, SubsystemInteractPayload> STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public @NotNull SubsystemInteractPayload decode(FriendlyByteBuf buffer) {
+            return new SubsystemInteractPayload(buffer.readInt(), buffer.readUtf());
+        }
+
+        @Override
+        public void encode(FriendlyByteBuf buffer, @NotNull SubsystemInteractPayload value) {
+            buffer.writeInt(value.subPartId());
+            buffer.writeUtf(value.interactBoxName());
+        }
+    };
 
     @Override
     public @NotNull Type<? extends CustomPacketPayload> type() {
@@ -60,19 +53,15 @@ public record SubsystemInteractPayload(
     }
 
     public static void handle(SubsystemInteractPayload payload, IPayloadContext context) {
-        VehicleCore vehicle;
-        Level level = context.player().level();
-        if (level.isClientSide) vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
-        else vehicle = ObjectManager.serverAllVehicles.get(payload.vehicleUUID);
-        if (vehicle != null) {
-            Part part = vehicle.partMap.get(payload.partUUID);
-            if (part != null) {
-                SubPart subPart = part.subParts.get(payload.subPartName);
-                if (subPart != null) {
-                    InteractBox interactBox = subPart.interactBoxes.get(payload.interactBoxName);
-                    if (interactBox != null) context.enqueueWork(() -> interactBox.interact(context.player()));
-                } else MachineMax.LOGGER.error("{}中未找到子部件{}，无法互动。", part, payload.subPartName);
-            } else MachineMax.LOGGER.error("{}中未找到部件{}，无法互动。", vehicle, payload.partUUID);
-        } else MachineMax.LOGGER.error("未找到载具{}，无法互动。", payload.partUUID);
+        DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.subPartId());
+        if (object instanceof SubPart subPart) {
+            InteractBox interactBox = subPart.interactBoxes.get(payload.interactBoxName());
+            if (interactBox != null)
+                context.enqueueWork(() -> interactBox.interact(context.player()));
+            else
+                MachineMax.LOGGER.error("SubPart(id={})中未找到交互框{}，无法互动。", payload.subPartId(), payload.interactBoxName());
+        } else
+            MachineMax.LOGGER.error("维度{}中不存在SubPart(id={})，无法互动。",
+                    context.player().level().dimension().location(), payload.subPartId());
     }
 }

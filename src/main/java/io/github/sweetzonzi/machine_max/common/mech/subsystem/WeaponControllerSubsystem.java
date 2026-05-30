@@ -148,19 +148,17 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         Vec3 pos = null;
         for (String signalKey : attr.staticAttribute.getAimInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
-            for (Object signal : channel.values()) {
-                if (signal instanceof ViewInputSignal vis) {
-                    pos = vis.value;
-                    break;
-                } else if (signal instanceof Vec3 vec3) {
-                    pos = vec3;
-                    break;
-                } else if (signal instanceof Vector3f jmeVec) {
-                    pos = new Vec3(jmeVec.x, jmeVec.y, jmeVec.z);
-                    break;
-                }
-            }
-            if (pos != null) {
+            Object signal = channel.getFirstSignal();
+            if (signal instanceof ViewInputSignal vis) {
+                pos = vis.value;
+                this.targetPosition = pos;
+                break;
+            } else if (signal instanceof Vec3 vec3) {
+                pos = vec3;
+                this.targetPosition = pos;
+                break;
+            } else if (signal instanceof Vector3f jmeVec) {
+                pos = new Vec3(jmeVec.x, jmeVec.y, jmeVec.z);
                 this.targetPosition = pos;
                 break;
             }

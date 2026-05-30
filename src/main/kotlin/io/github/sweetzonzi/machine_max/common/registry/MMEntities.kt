@@ -17,6 +17,7 @@ object MMEntities {
         factory = entityTypeBuilder(::MMPartEntity, MobCategory.MISC){
             noSummon()
             noSave()
+            updateInterval(Int.MAX_VALUE)
             fireImmune() //TODO: 检查为什么放出来瞬间有可能被判定处于岩浆中
             eyeHeight(0.0F)
             setShouldReceiveVelocityUpdates(false)

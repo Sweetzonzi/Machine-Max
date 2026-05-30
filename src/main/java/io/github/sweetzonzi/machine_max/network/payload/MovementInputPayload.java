@@ -1,10 +1,9 @@
 package io.github.sweetzonzi.machine_max.network.payload;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -16,22 +15,16 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.UUID;
-
 /**
  * 载具移动控制信号数据包，包含六向输入信号和冲突输入信号(TODO:视角朝向)
  *
- * @param vehicleUUID   控制的载具UUID
- * @param partUUID      控制的载具部件UUID
- * @param subPartName   控制的子部件名称
- * @param subSystemName 控制的子系统名称
- * @param input         六向输入信号
- * @param inputConflict 输入冲突信号
+ * @param subPartId      子零件全局ID
+ * @param subSystemName  控制的子系统名称
+ * @param input          六向输入信号
+ * @param inputConflict  输入冲突信号
  */
 public record MovementInputPayload(
-        UUID vehicleUUID,
-        UUID partUUID,
-        String subPartName,
+        int subPartId,
         String subSystemName,
         byte[] input,
         byte[] inputConflict) implements CustomPacketPayload {
@@ -40,23 +33,19 @@ public record MovementInputPayload(
     public static final StreamCodec<FriendlyByteBuf, MovementInputPayload> STREAM_CODEC = new StreamCodec<>() {
         @Override
         public @NotNull MovementInputPayload decode(FriendlyByteBuf buf) {
-            UUID vehicleUUID = buf.readUUID();
-            UUID partUUID = buf.readUUID();
-            String subPartName = buf.readUtf();
+            int subPartId = buf.readInt();
             String subSystemName = buf.readUtf();
             byte[] input = buf.readByteArray();
             byte[] inputConflict = buf.readByteArray();
-            return new MovementInputPayload(vehicleUUID, partUUID, subPartName, subSystemName, input, inputConflict);
+            return new MovementInputPayload(subPartId, subSystemName, input, inputConflict);
         }
 
         @Override
-        public void encode(FriendlyByteBuf buffer, @NotNull MovementInputPayload context) {
-            buffer.writeUUID(context.vehicleUUID());
-            buffer.writeUUID(context.partUUID());
-            buffer.writeUtf(context.subPartName());
-            buffer.writeUtf(context.subSystemName());
-            buffer.writeByteArray(context.input());
-            buffer.writeByteArray(context.inputConflict());
+        public void encode(FriendlyByteBuf buffer, @NotNull MovementInputPayload payload) {
+            buffer.writeInt(payload.subPartId());
+            buffer.writeUtf(payload.subSystemName());
+            buffer.writeByteArray(payload.input());
+            buffer.writeByteArray(payload.inputConflict());
         }
     };
 
@@ -66,44 +55,30 @@ public record MovementInputPayload(
     }
 
     public static void clientHandler(final MovementInputPayload payload, final IPayloadContext context) {
-        //将其他玩家的输入同步至本机，以在客户端模拟其他玩家的操作
-        //TODO:测试操作延迟情况
-        VehicleCore vehicle = ObjectManager.clientAllVehicles.get(payload.vehicleUUID);
-        handler(vehicle, payload);
+        DestroyableObject object = ObjectManager.getDestroyableObject(context.player().level(), payload.subPartId());
+        if (object instanceof SubPart subPart) {
+            handler(subPart, payload);
+        }
     }
 
     public static void serverHandler(final MovementInputPayload payload, final IPayloadContext context) {
         Player player = context.player();
-        VehicleCore vehicle = ObjectManager.serverAllVehicles.get(payload.vehicleUUID);
-        boolean success = handler(vehicle, payload);
-        //将玩家输入转发给其他玩家，以在其他玩家客户端模拟自己的操作
+        DestroyableObject object = ObjectManager.getDestroyableObject(player.level(), payload.subPartId());
+        boolean success = false;
+        if (object instanceof SubPart subPart) {
+            success = handler(subPart, payload);
+        }
         if (success)
             PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), payload);
     }
 
-    public static boolean handler(VehicleCore vehicle, final MovementInputPayload payload) {
-        if (vehicle != null) {
-            if (vehicle.partMap.get(payload.partUUID()) instanceof Part part) {
-                if (part.subParts.get(payload.subPartName()) instanceof SubPart subPart) {
-                    if (part.subParts.get(payload.subPartName()).subsystems.get(payload.subSystemName()) instanceof AbstractControllableSubsystem subSystem) {
-                        subSystem.setMoveInputSignal(payload.input(), payload.inputConflict());
-                        return true;
-                    } else {
-                        MachineMax.LOGGER.warn("Received movement input for non-existent sub-system: {}", payload.subSystemName());
-                        return false;
-                    }
-                } else {
-                    MachineMax.LOGGER.warn("Received movement input for non-existent sub-part: {}", payload.subPartName());
-                    return false;
-                }
-            } else {
-                MachineMax.LOGGER.warn("Received movement input for non-existent part: {}", payload.partUUID());
-                return false;
-            }
+    public static boolean handler(SubPart subPart, final MovementInputPayload payload) {
+        if (subPart.subsystems.get(payload.subSystemName()) instanceof AbstractControllableSubsystem subSystem) {
+            subSystem.setMoveInputSignal(payload.input(), payload.inputConflict());
+            return true;
         } else {
-            MachineMax.LOGGER.warn("Received movement input for non-existent vehicle: {}", payload.vehicleUUID());
+            MachineMax.LOGGER.warn("收到移动输入但子系统 {} 不存在于 SubPart(id={})", payload.subSystemName(), payload.subPartId());
             return false;
         }
-
     }
 }

@@ -5,13 +5,11 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr;
 import jme3utilities.math.MyQuaternion;
-import net.minecraft.world.entity.projectile.Arrow;
-import net.minecraft.world.entity.projectile.Snowball;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
@@ -21,20 +19,15 @@ import java.util.Map;
 /**
  * 发射器子系统。<br>
  * 代表炮闩、导弹挂架、火箭发射管等单个发射口。<br>
- * 从locator位置沿其朝向发射原版Arrow弹丸，初速受子系统属性影响。<br>
+ * 从locator位置沿其朝向发射数据驱动的投射物，初速和精度受子系统属性与投射物类型共同影响。<br>
+ * 投射物类型由静态属性 {@code projectile_type} 指定，默认 {@code machine_max:20mm_ap}。<br>
  * 对外提供 getMuzzleWorldTransform/getMuzzleWorldPosition/getMuzzleDirection 用于武器控制器瞄准判定。<br>
- * TODO: 弹药消耗逻辑、弹丸类型可配置
+ * TODO: 弹药消耗逻辑
  */
 public class LauncherSubsystem extends BasicSubsystem {
 
     public final LauncherSubsystemAttr attr;
     private int fireCooldown = 0;
-
-    /** 基准初速 (m/s)，对应原版弓满弦箭矢速度 */
-    private static final float BASE_SPEED_MPS = 50.0f;
-
-    /** Arrow弹丸基础精度 (MIL)，硬编码占位值 */
-    private static final float ARROW_BASE_ACCURACY_MIL = 5.0f;
 
     public LauncherSubsystem(ISubsystemHost owner, String name, LauncherSubsystemAttr attr) {
         super(owner, name, attr);
@@ -81,44 +74,54 @@ public class LauncherSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 执行一次发射：从locator位置生成Arrow并施加初速和散布。
+     * 执行一次发射：从locator位置发射数据驱动的投射物。<br>
+     * 投射物类型从静态属性 {@code projectile_type} 获取，初速为弹丸基准初速 × 发射器初速乘子 + 发射器初速加成，<br>
+     * 散布为弹丸基础精度 × 发射器各轴精度乘子，后坐力使用弹丸质量计算。
      */
     private void fire() {
+        // 获取投射物类型
+        var typeKey = attr.staticAttribute.getProjectileTypeId();
+        ProjectileType type = ProjectileType.get(getLevel(), typeKey);
+        if (type == null) {
+            MachineMax.LOGGER.error("发射器子系统 {} 的投射物类型 {} 未找到", name, typeKey);
+            return;
+        }
+
         Transform muzzleTransform = getMuzzleWorldTransform();
         Vector3f jmePos = muzzleTransform.getTranslation();
-        Vec3 spawnPos = new Vec3(jmePos.x, jmePos.y, jmePos.z);
 
         // 从locator旋转获取发射方向（JME默认前方为-Z）
         Quaternion jmeRot = muzzleTransform.getRotation();
         Vector3f jmeForward = MyQuaternion.rotate(jmeRot, new Vector3f(0, 0, -1), null);
         Vec3 direction = new Vec3(jmeForward.x, jmeForward.y, jmeForward.z).normalize();
 
-        // 计算最终初速 (m/s → blocks/tick)
-        float speedMps = BASE_SPEED_MPS * attr.staticAttribute.getVelocityMultiplier() + attr.staticAttribute.getVelocityBonus();
-        float speedBpt = speedMps / 20f;
+        // 计算最终初速：弹丸基准初速 × 发射器初速乘子 + 发射器初速加成 (m/s)
+        float baseVel = type.getBaseVelocity();
+        float finalSpeedMps = baseVel * attr.staticAttribute.getVelocityMultiplier() + attr.staticAttribute.getVelocityBonus();
 
         // 计算有效散布：弹丸基础精度 × 发射器各轴精度乘子 (MIL → 弧度)
-        float hRad = ARROW_BASE_ACCURACY_MIL * attr.staticAttribute.getHorizontalAccuracyMultiplier() / 1000f;
-        float vRad = ARROW_BASE_ACCURACY_MIL * attr.staticAttribute.getVerticalAccuracyMultiplier() / 1000f;
+        float baseMil = type.getBaseAccuracyMil();
+        float hRad = baseMil * attr.staticAttribute.getHorizontalAccuracyMultiplier() / 1000f;
+        float vRad = baseMil * attr.staticAttribute.getVerticalAccuracyMultiplier() / 1000f;
         Vec3 spreadDir = applyEllipticSpread(direction, hRad, vRad);
 
-        // 生成弹丸并发射（仅服务端）
+        // 生成投射物并发射（仅服务端）
         if (!getLevel().isClientSide()) {
-            Snowball snowball = new Snowball(getLevel(), spawnPos.x, spawnPos.y, spawnPos.z);
-            snowball.shoot(spreadDir.x, spreadDir.y, spreadDir.z, speedBpt, 0f);
+            // 构建 JME 速度矢量：散布方向 × 最终速率 (m/s)
+            Vector3f jmeVel = new Vector3f((float) spreadDir.x, (float) spreadDir.y, (float) spreadDir.z)
+                    .multLocal(finalSpeedMps);
 
-            // 继承发射平台速度 (m/s → blocks/tick)
+            // 继承发射平台速度 (m/s)，速度已在 JME 空间，直接相加
             Vector3f platformVel = getSubPart().getLinearVelocity();
-            Vec3 inheritVel = new Vec3(platformVel.x, platformVel.y, platformVel.z).scale(1.0 / 20.0);
-            snowball.setDeltaMovement(snowball.getDeltaMovement().add(inheritVel));
+            jmeVel.addLocal(platformVel);
 
-            // TODO: 设置弹丸的发射者（从座舱玩家获取）
-            getLevel().addFreshEntity(snowball);
+            // 由 ProjectileType 自动分派创建质点或刚体投射物，发射者追踪待后续实现
+            type.create(getLevel(), jmePos, jmeVel);
 
             // 计算后坐力冲量并提交到物理线程
-            float projectileMass = 10.0f; // TODO: 从弹丸类型配置获取
+            float projectileMass = type.getMass();
             float absorption = attr.staticAttribute.getRecoilAbsorption();
-            float recoilImpulse = projectileMass * speedMps * (1.0f - absorption);
+            float recoilImpulse = projectileMass * finalSpeedMps * (1.0f - absorption);
             if (recoilImpulse > 1e-6f) {
                 Vector3f impulseWorld = new Vector3f(
                         (float) -direction.x * recoilImpulse,
