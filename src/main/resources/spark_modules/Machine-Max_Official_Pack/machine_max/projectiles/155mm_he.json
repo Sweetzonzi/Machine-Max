@@ -11,5 +11,7 @@
   "penetration_velocity_coefficient": 0,
   "damage_velocity_coefficient": 0.3,
   "max_lifetime_ticks": 400,
-  "tags": ["caliber:155mm", "ammo:he"]
+  "tags": ["caliber:155mm", "ammo:he"],
+  "tracer_color": [255, 200, 50],
+  "tracer_alpha": 160
 }

@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
@@ -51,12 +53,25 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
         this.projectileType = type;
         setPosition(position);
         setLinearVelocity(velocity);
+        transform = new Transform(position, Quaternion.IDENTITY);
+        oldTransform = transform.clone();
+    }
 
+    /**
+     * 将投射物注册到世界（两端的统一入口）。
+     * <p>
+     * {@link DestroyableObject#addToLevel()} → 注册到 {@link ObjectManager#levelDestroyableObjects}
+     * → 注册到 {@link ProjectileManager} SoA 数组
+     * → 服务端广播 {@link ProjectileSpawnPayload} 到客户端。
+     */
+    @Override
+    public void addToLevel() {
+        super.addToLevel();
+        ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
+        pm.addPointProjectile(this);
         if (!level.isClientSide()) {
-            addToLevel();
-            ObjectManager.getOrCreateProjectileManager(level).addPointProjectile(this);
-            ProjectileSpawnPayload.broadcast(level, getId(), type.getRegistryKey(),
-                position, velocity, type.getMaxLifetimeTicks(), false);
+            ProjectileSpawnPayload.broadcast(level, getId(), projectileType.getRegistryKey(),
+                getPosition(), getLinearVelocity(), projectileType.getMaxLifetimeTicks(), false);
         }
     }
 

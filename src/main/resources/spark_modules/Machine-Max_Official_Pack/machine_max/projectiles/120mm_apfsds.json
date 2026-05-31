@@ -11,5 +11,7 @@
   "penetration_velocity_coefficient": 1.2,
   "damage_velocity_coefficient": 0.5,
   "max_lifetime_ticks": 200,
-  "tags": ["caliber:120mm", "ammo:apfsds"]
+  "tags": ["caliber:120mm", "ammo:apfsds"],
+  "tracer_color": [200, 220, 255],
+  "tracer_alpha": 230
 }

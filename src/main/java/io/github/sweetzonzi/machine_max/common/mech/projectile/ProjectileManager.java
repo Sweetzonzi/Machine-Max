@@ -1,9 +1,15 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.PPhase;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Transform;
+import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer;
+import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import net.minecraft.core.BlockPos;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
@@ -11,7 +17,6 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machine_max.common.entity.ProjectileEntity;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
@@ -32,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.annotation.Nullable;
 
 /**
  * 投射物管理器（每 Level 一个实例）。
@@ -79,11 +86,11 @@ public class ProjectileManager {
     public boolean[] needsEntityRecreate;
 
     /**
-     * 关联的 {@link ProjectileEntity} 引用（下标对应 SoA 索引，可为 null）。
+     * 关联的 {@link MMProjectileEntity} 引用（下标对应 SoA 索引，可为 null）。
      * 服务端：由 {@link #createProjectileEntity(int)} 设置。
-     * 客户端：由 {@link ProjectileEntity#tryBindProjectile()} 建立关联后保留。
+     * 客户端：由 {@link MMProjectileEntity#tryBindProjectile()} 建立关联后保留。
      */
-    public ProjectileEntity[] entities;
+    public MMProjectileEntity[] entities;
 
     /** Entity 重建检查间隔（tick）。每 N tick 遍历一次 needsEntityRecreate。 */
     private static final int RECREATE_CHECK_INTERVAL = 10;
@@ -126,7 +133,7 @@ public class ProjectileManager {
         objId = new int[capacity];
         alive = new boolean[capacity];
         needsEntityRecreate = new boolean[capacity];
-        entities = new ProjectileEntity[capacity];
+        entities = new MMProjectileEntity[capacity];
         typeCache = new ProjectileType[0];
     }
 
@@ -216,7 +223,7 @@ public class ProjectileManager {
     // ========== Entity 兼容层方法 ==========
 
     /**
-     * 为 SoA 中索引为 idx 的投射物创建配套的 {@link ProjectileEntity}。
+     * 为 SoA 中索引为 idx 的投射物创建配套的 {@link MMProjectileEntity}。
      * 通过 {@link ObjectManager#levelDestroyableObjects} 实时获取 IProjectile 对象引用。
      * 仅在服务端主线程调用（内部调用了 {@code level.addFreshEntity}，需要主线程上下文）。
      *
@@ -234,7 +241,7 @@ public class ProjectileManager {
             entities[idx] = null;
         }
 
-        ProjectileEntity entity = new ProjectileEntity(MMEntities.getPROJECTILE_ENTITY().get(), level);
+        MMProjectileEntity entity = new MMProjectileEntity(MMEntities.getPROJECTILE_ENTITY().get(), level);
         entity.bindToProjectile(projectile);
         entity.setPos(posX[idx], posY[idx], posZ[idx]);
         entities[idx] = entity;
@@ -257,7 +264,7 @@ public class ProjectileManager {
 
     /**
      * 遍历所有 {@code needsEntityRecreate=true} 的条目，检查区块是否已加载。
-     * 若已加载则重建 {@link ProjectileEntity}。每 {@link #RECREATE_CHECK_INTERVAL} tick 执行一次。
+     * 若已加载则重建 {@link MMProjectileEntity}。每 {@link #RECREATE_CHECK_INTERVAL} tick 执行一次。
      * <p>
      * 在主线程 Pre 阶段由 {@link #preTick()} 调用。
      */
@@ -302,6 +309,36 @@ public class ProjectileManager {
      */
     public boolean containsProjectile(int targetObjId) {
         return projectileObjIds.contains(targetObjId);
+    }
+
+    /**
+     * 按 SoA 索引获取投射物类型。
+     * 供客户端渲染器 {@link ClientProjectileRenderer} 使用。
+     *
+     * @param index SoA 数组索引
+     * @return 投射物类型
+     */
+    public ProjectileType getProjectileTypeByIndex(int index) {
+        return typeCache[typeIndex[index]];
+    }
+
+    /**
+     * 按 DestroyableObject ID 获取投射物对象。
+     * <p>
+     * 从 {@link ObjectManager#levelDestroyableObjects} 中查找并返回。
+     * 该方法是一个方便的封装，调用方无需直接操作 Map。
+     * 返回 {@link DestroyableObject} 而非 {@link IProjectile}，
+     * 因为部分调用方（如客户端渲染器）需要调用 {@link DestroyableObject#getWorldPositionMatrix}。
+     * 调用方若需 {@link IProjectile} 接口，可自行判断 {@code instanceof}。
+     *
+     * @param objId 目标投射物的 DestroyableObject ID
+     * @return 投射物的 DestroyableObject 实例，若不存在则返回 null
+     */
+    @Nullable
+    public DestroyableObject getProjectile(int objId) {
+        Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
+        if (objMap == null) return null;
+        return objMap.get(objId);
     }
 
     /**
@@ -368,6 +405,8 @@ public class ProjectileManager {
             if (obj instanceof RigidProjectile) continue;
 
             obj.setPosition(new Vector3f(posX[i], posY[i], posZ[i]));
+            obj.oldTransform = obj.getTransform();
+            obj.transform = new Transform(obj.getPosition(), Quaternion.IDENTITY);
             obj.setLinearVelocity(new Vector3f(velX[i], velY[i], velZ[i]));
         }
     }
@@ -403,7 +442,7 @@ public class ProjectileManager {
     /**
      * 主线程 Pre 阶段。
      * 递减所有投射物寿命 + 调用各投射物的 {@code preTick()} +
-     * 尝试重建因区块卸载丢失的 {@link ProjectileEntity}。
+     * 尝试重建因区块卸载丢失的 {@link MMProjectileEntity}。
      * <p>
      * 优化：合并寿命递减和 preTick 为一趟遍历，减少 SoA 数组重复访问。
      */
@@ -665,7 +704,8 @@ public class ProjectileManager {
                         }
                     }
                     case Entity entity -> {
-                        entity.hurt(entity.damageSources().generic(), projectile.calculateCurrentDamage());
+                        float damage = projectile.calculateCurrentDamage();
+                        SparkLevel.submitImmediateTask(level, PPhase.POST, () -> entity.hurt(entity.damageSources().generic(), damage));
                         spawnHitVisualEffect(level, hitPointMc, hitNormalMc, false);
                         if (penKey != null) {
                             penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);

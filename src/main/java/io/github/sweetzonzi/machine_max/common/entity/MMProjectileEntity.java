@@ -30,13 +30,13 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
  * 网络同步：见设计文档 §8.4.3。EntityTracker 周期性位置同步被
  * {@code updateInterval(Int.MAX_VALUE)} 禁用，仅登场/退场/DataTracker。
  */
-public class ProjectileEntity extends Projectile implements IEntityWithComplexSpawn {
+public class MMProjectileEntity extends Projectile implements IEntityWithComplexSpawn {
 
     private IProjectile projectile;
     private volatile boolean orphaned;
     private int projectileObjId = -1;
 
-    public ProjectileEntity(EntityType<? extends Projectile> type, Level level) {
+    public MMProjectileEntity(EntityType<? extends Projectile> type, Level level) {
         super(type, level);
         this.noPhysics = true;
         this.noCulling = true;
@@ -67,7 +67,7 @@ public class ProjectileEntity extends Projectile implements IEntityWithComplexSp
         DestroyableObject obj = ObjectManager.getDestroyableObject(level(), projectileObjId);
         if (obj instanceof IProjectile proj) {
             this.projectile = proj;
-            MachineMax.LOGGER.debug("ProjectileEntity 成功绑定到 IProjectile(objId={})", projectileObjId);
+            MachineMax.LOGGER.debug("MMProjectileEntity 成功绑定到 IProjectile(objId={})", projectileObjId);
         }
     }
 
@@ -80,7 +80,7 @@ public class ProjectileEntity extends Projectile implements IEntityWithComplexSp
             tryBindProjectile();
             if (projectile == null) {
                 if (tickCount > 100) {
-                    MachineMax.LOGGER.warn("ProjectileEntity 未匹配到 IProjectile (objId={})，已移除", projectileObjId);
+                    MachineMax.LOGGER.warn("MMProjectileEntity 未匹配到 IProjectile (objId={})，已移除", projectileObjId);
                     markOrphaned();
                 }
                 return;
@@ -131,11 +131,6 @@ public class ProjectileEntity extends Projectile implements IEntityWithComplexSp
     @Override
     public boolean isPickable() {
         return false;
-    }
-
-    @Override
-    public boolean isAlwaysTicking() {
-        return projectile != null && projectile.isAlive() && !isRemoved();
     }
 
     public void markOrphaned() {

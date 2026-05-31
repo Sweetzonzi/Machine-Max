@@ -2,7 +2,6 @@ package io.github.sweetzonzi.machine_max.network.payload.projectile;
 
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.PointProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
@@ -104,15 +103,15 @@ public record ProjectileSpawnPayload(
             Vector3f pos = new Vector3f((float) payload.posX, (float) payload.posY, (float) payload.posZ);
             Vector3f vel = new Vector3f((float) payload.velX, (float) payload.velY, (float) payload.velZ);
 
-            ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
+            // 构造 + 覆盖 ID + addToLevel：addToLevel 内自动处理注册到 ObjectManager 和 SoA
             if (payload.isRigid) {
                 RigidProjectile rp = new RigidProjectile(level, type, pos, vel);
                 rp.setId(payload.objId);
-                pm.addRigidProjectile(rp);
+                rp.addToLevel();
             } else {
                 PointProjectile pp = new PointProjectile(level, type, pos, vel);
                 pp.setId(payload.objId);
-                pm.addPointProjectile(pp);
+                pp.addToLevel();
             }
         });
     }

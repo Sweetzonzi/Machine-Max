@@ -3,9 +3,11 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
 import lombok.Getter;
+import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
@@ -69,6 +71,12 @@ public class ProjectileType {
     /** 弹药tag列表，用于与发射器的 {@code required_tags / acceptable_tags / forbidden_tags} 匹配 */
     private final List<ResourceLocation> tags;
 
+    /** 曳光颜色（RGB），不设置则无曳光效果 */
+    private final Vec3i tracerColor;
+
+    /** 曳光透明度，0=完全透明，255=完全不透明 */
+    private final int tracerAlpha;
+
     /** 字符串↔枚举互转 Codec */
     private static final Codec<ProjectileTypeEnum> ENUM_CODEC =
         Codec.STRING.xmap(ProjectileTypeEnum::fromString, ProjectileTypeEnum::getSerializedName);
@@ -92,14 +100,19 @@ public class ProjectileType {
         Codec.INT.optionalFieldOf("max_lifetime_ticks", 200)
             .forGetter(ProjectileType::getMaxLifetimeTicks),
         ResourceLocation.CODEC.listOf().optionalFieldOf("tags", List.of())
-            .forGetter(ProjectileType::getTags)
+            .forGetter(ProjectileType::getTags),
+        Vec3i.CODEC.optionalFieldOf("tracer_color", new Vec3i(255, 255, 255))
+            .forGetter(ProjectileType::getTracerColor),
+        Codec.INT.optionalFieldOf("tracer_alpha", 200)
+            .forGetter(ProjectileType::getTracerAlpha)
     ).apply(instance, ProjectileType::new));
 
     public ProjectileType(
         ProjectileTypeEnum type, float mass, float gravityFactor, float dragFactor, float radius,
         float baseVelocity, float basePenetration, float baseDamage, float baseAccuracyMil,
         float penetrationVelocityCoefficient, float damageVelocityCoefficient,
-        int maxLifetimeTicks, List<ResourceLocation> tags
+        int maxLifetimeTicks, List<ResourceLocation> tags,
+        Vec3i tracerColor, int tracerAlpha
     ) {
         this.type = type;
         this.mass = mass;
@@ -114,6 +127,8 @@ public class ProjectileType {
         this.damageVelocityCoefficient = damageVelocityCoefficient;
         this.maxLifetimeTicks = maxLifetimeTicks;
         this.tags = tags;
+        this.tracerColor = tracerColor;
+        this.tracerAlpha = tracerAlpha;
     }
 
     /**
@@ -156,9 +171,11 @@ public class ProjectileType {
      * @return 已创建的投射物实例
      */
     public IProjectile create(Level level, Vector3f position, Vector3f velocity) {
-        return switch (type) {
+        IProjectile p = switch (type) {
             case POINT -> new PointProjectile(level, this, position, velocity);
             case RIGID -> new RigidProjectile(level, this, position, velocity);
         };
+        ((DestroyableObject) p).addToLevel();
+        return p;
     }
 }

@@ -3,6 +3,8 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
+import com.jme3.math.Quaternion;
+import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
@@ -41,8 +43,8 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
     /**
      * 创建一个刚体投射物。
      * <p>
-     * 服务端：创建球体 CompoundCollisionShape → 初始化刚体 → 设置 CCD（连续碰撞检测）
-     * → 注册到物理世界 → 注册到 ProjectileManager SoA。
+     * 构造器仅初始化内部状态和刚体属性，不注册到任何管理器。
+     * 调用方在构造后需手动调用 {@link #addToLevel()} 完成注册。
      *
      * @param level    维度
      * @param type     投射物类型定义
@@ -55,19 +57,38 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
 
         setPosition(position);
         setLinearVelocity(velocity);
+        transform = new Transform(position, Quaternion.IDENTITY);
+        oldTransform = transform.clone();
         body.setFriction(0f);
         body.setRestitution(0f);
         body.setCcdMotionThreshold(0.01f);
         body.setCcdSweptSphereRadius(type.getRadius());
+    }
 
+    /**
+     * 将投射物注册到世界（两端的统一入口）。
+     * <p>
+     * 服务端：设置刚体位姿/速度/所有者 → {@link DestroyableRigidObject#addToLevel()} 添加刚体到物理世界
+     * → 注册到 {@link ProjectileManager} SoA → 广播 {@link ProjectileSpawnPayload}。
+     * <br>
+     * 客户端：仅注册到 {@link ObjectManager#levelDestroyableObjects} 和 SoA，不添加刚体到物理世界
+     * （客户端投射物渲染走 SoA 而非刚体）。
+     */
+    @Override
+    public void addToLevel() {
         if (!level.isClientSide()) {
-            body.setPhysicsLocation(position);
-            body.setLinearVelocity(velocity);
+            body.setPhysicsLocation(getPosition());
+            body.setLinearVelocity(getLinearVelocity());
             PhysicsBodyExtensionKt.setOwner(body, this);
-            addToLevel();
-            ObjectManager.getOrCreateProjectileManager(level).addRigidProjectile(this);
-            ProjectileSpawnPayload.broadcast(level, getId(), type.getRegistryKey(),
-                position, velocity, type.getMaxLifetimeTicks(), true);
+            super.addToLevel();
+        } else {
+            ObjectManager.addDestroyableObject(this);
+        }
+        ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
+        pm.addRigidProjectile(this);
+        if (!level.isClientSide()) {
+            ProjectileSpawnPayload.broadcast(level, getId(), projectileType.getRegistryKey(),
+                getPosition(), getLinearVelocity(), projectileType.getMaxLifetimeTicks(), true);
         }
     }
 

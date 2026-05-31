@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.common.registry
 import cn.solarmoon.spark_core.entry_builder.entityTypeBuilder
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity
-import io.github.sweetzonzi.machine_max.common.entity.ProjectileEntity
+import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity
 import net.minecraft.world.entity.MobCategory
 
 object MMEntities {
@@ -29,13 +29,14 @@ object MMEntities {
     @JvmStatic
     val PROJECTILE_ENTITY = MachineMax.REGISTER.entityType{
         id = "projectile"
-        factory = entityTypeBuilder(::ProjectileEntity, MobCategory.MISC){
+        factory = entityTypeBuilder(::MMProjectileEntity, MobCategory.MISC){
             noSummon()
             noSave()
             fireImmune()
             eyeHeight(0.0F)
             setShouldReceiveVelocityUpdates(false)
             updateInterval(Int.MAX_VALUE)
+            sized(0.1f, 0.1f)
         }
     }
 

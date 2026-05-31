@@ -11,5 +11,7 @@
   "penetration_velocity_coefficient": 1.3,
   "damage_velocity_coefficient": 0.7,
   "max_lifetime_ticks": 60,
-  "tags": ["caliber:20mm", "ammo:ap"]
+  "tags": ["caliber:20mm", "ammo:ap"],
+  "tracer_color": [255, 120, 50],
+  "tracer_alpha": 220
 }
