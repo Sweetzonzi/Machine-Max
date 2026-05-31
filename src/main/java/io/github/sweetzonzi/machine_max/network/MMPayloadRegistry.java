@@ -8,7 +8,7 @@ import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationC
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationStartPayload;
-import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitEffectPayload;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpawnPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
 import net.minecraft.network.codec.StreamCodec;
@@ -155,10 +155,10 @@ public class MMPayloadRegistry {
                 ConnectorSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ConnectorSyncPayload::handler)
         );
-        sync.playToClient(//投射物命中视觉效果
-                ProjectileHitEffectPayload.TYPE,
-                ProjectileHitEffectPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ProjectileHitEffectPayload::handle)
+        sync.playToClient(//投射物命中同步（状态+视觉）
+                ProjectileHitSyncPayload.TYPE,
+                ProjectileHitSyncPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ProjectileHitSyncPayload::handle)
         );
         sync.playToClient(//投射物创建（服务端→客户端）
                 ProjectileSpawnPayload.TYPE,

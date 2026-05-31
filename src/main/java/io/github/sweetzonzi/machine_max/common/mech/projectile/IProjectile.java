@@ -1,12 +1,14 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageHandler;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+
+import javax.annotation.Nullable;
 
 /**
  * 投射物公共接口。
@@ -21,10 +23,94 @@ import net.minecraft.world.phys.Vec3;
  * </pre>
  * 系数为 0 时退化为常数值（与速度无关）。
  * <p>
- * 命中时调用 {@link #dealDamage(BFHurtTarget, Vec3, Vec3)} 直接向
- * BallisticsFramework 协议目标发起伤害，无需中间 Entity 层桥接。
+ * 扩展 {@link BFDamageHandler}，将穿甲判定后的命中行为（击穿/跳弹/停止）
+ * 封装为 {@link AfterHitResult}，由 {@link ProjectileManager} 消费后执行 SoA 操作。
+ * 具体弹种（引信、战斗部、子系统等）只需覆写对应回调方法，无需修改 Manager。
  */
-public interface IProjectile {
+public interface IProjectile extends BFDamageHandler {
+
+    // ==================== 命中结果 ====================
+
+    /**
+     * 一次命中的最终结果。
+     * <p>
+     * 由 {@link BFDamageHandler} 回调写入，{@link ProjectileManager} 消费。
+     *
+     * @param destroyed   投射物是否应销毁
+     * @param newVelocity 若未销毁，命中后的新速度矢量（JME）
+     */
+    record AfterHitResult(boolean destroyed, Vector3f newVelocity) {
+
+        /** 销毁 */
+        static final AfterHitResult DESTROYED = new AfterHitResult(true, Vector3f.ZERO);
+
+        /** 穿过后以指定保留率继续飞行 */
+        static AfterHitResult passThrough(float speedRetention, Vector3f currentVelocity) {
+            return new AfterHitResult(false, new Vector3f(currentVelocity).multLocal(speedRetention));
+        }
+
+        /** 跳弹：按法线反射后乘以能量保持率 */
+        static AfterHitResult ricochet(float retention, Vector3f velocity, Vector3f normal) {
+            Vector3f reflected = new Vector3f(velocity);
+            float dot = reflected.dot(normal);
+            Vector3f correction = new Vector3f(normal).multLocal(2 * dot);
+            reflected.subtractLocal(correction);
+            reflected.multLocal(retention);
+            return new AfterHitResult(false, reflected);
+        }
+    }
+
+    // ==================== 命中结果桥接（回调 ↔ Manager） ====================
+
+    /** 是否正等待主线程返回命中结果（物理线程暂停其积分） */
+    boolean isHitPending();
+    void setHitPending(boolean pending);
+
+    /** 读取当前命中结果（写入后由 Manager 通过 consume 消费） */
+    @Nullable
+    AfterHitResult getPendingHitResult();
+
+    /** 写入命中结果（由 BFDamageHandler 回调写入，可在物理线程或主线程调用） */
+    void setPendingHitResult(@Nullable AfterHitResult result);
+
+    /** 消费命中结果（物理线程调用，消费后清空） */
+    default @Nullable AfterHitResult consumePendingHitResult() {
+        AfterHitResult r = getPendingHitResult();
+        setPendingHitResult(null);
+        return r;
+    }
+
+    // ==================== BFDamageHandler 回调默认实现 ====================
+
+    @Override
+    default void onPenetrated(BFHurtTarget target, BFDamageContext ctx) {
+        float pen = ctx.penetration();
+        float rha = target.getRHA(ctx);
+        float residual = Math.max(0.1f, (pen - rha) / Math.max(pen, 0.001f));
+        setPendingHitResult(AfterHitResult.passThrough((float) Math.sqrt(residual), getVelocity()));
+    }
+
+    @Override
+    default void onBlocked(BFHurtTarget target, BFDamageContext ctx) {
+        setPendingHitResult(AfterHitResult.DESTROYED);
+    }
+
+    @Override
+    default void onRicochet(BFHurtTarget target, BFDamageContext ctx) {
+        Vec3 normalMc = ctx.hitNormal();
+        Vector3f normal = new Vector3f((float) normalMc.x, (float) normalMc.y, (float) normalMc.z);
+        setPendingHitResult(AfterHitResult.ricochet(0.8f, getVelocity(), normal));
+    }
+
+    @Override
+    default void onOvermatch(BFHurtTarget target, BFDamageContext ctx) {
+        setPendingHitResult(AfterHitResult.passThrough(1f, getVelocity()));
+    }
+
+    @Override
+    default void onSpall(BFHurtTarget target, BFDamageContext ctx) {}
+
+    // ==================== 物理状态协议 ====================
 
     /**
      * @return 投射物当前世界坐标（JME Vector3f）
@@ -144,15 +230,14 @@ public interface IProjectile {
     // ========== 伤害发起 ==========
 
     /**
-     * 向 {@link BFHurtTarget} 直接发起 BallisticsFramework 协议伤害。
+     * 向 {@link BFHurtTarget} 发起协议伤害，并将自身注入为 {@link BFDamageHandler}。
      * <p>
-     * 由于 {@code DestroyableObject} 自身实现了 {@code BFHurtTarget}，
-     * 命中 SubPart 时可直接将其作为 {@code target} 调用，
-     * BallisticsFramework 自动走穿甲判定管线（getRHA → modifyPenetration →
-     * resolvePenetration → calculateFinalDamage → hurt）。
+     * 穿甲管线（getRHA → modifyPenetration → resolvePenetration → calculateFinalDamage → hurt）
+     * 完成后，BallisticsFramework 自动回调 {@link #onPenetrated} / {@link #onBlocked} /
+     * {@link #onRicochet} 等，将命中结果写入 {@link #setPendingHitResult(AfterHitResult)}。
      * <p>
-     * 阶段一使用 {@code target.getBFEntity().damageSources().generic()} 构造 DamageSource，
-     * 不追踪发射者信息。
+     * 相比旧版，穿透判定不再由此方法外部的 Manager 自行计算——
+     * BallisticsFramework 管线是穿透判定的唯一权威来源。
      *
      * @param target    协议伤害目标（SubPart / Entity 等 BFHurtTarget 实现）
      * @param hitPoint  命中点世界坐标（MC Vec3）
@@ -169,6 +254,6 @@ public interface IProjectile {
             .hitPoint(hitPoint)
             .hitNormal(hitNormal)
             .build();
-        return BFDamageApi.hurt(target, ctx);
+        return BFDamageHandler.super.dealDamage(target, ctx);
     }
 }

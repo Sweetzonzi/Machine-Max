@@ -10,11 +10,17 @@ import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitSyncPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpawnPayload;
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+
+import javax.annotation.Nullable;
 
 /**
  * 刚体投射物。
@@ -33,6 +39,16 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
 
     private final ProjectileType projectileType;
     private boolean hasHit = false;
+
+    /** 是否正等待主线程返回命中结果（物理线程暂停其积分） */
+    @Getter
+    @Setter
+    private volatile boolean hitPending = false;
+
+    /** 待处理的命中结果（由 BFDamageHandler 回调写入，Manager 在物理线程消费） */
+    @Getter
+    @Setter
+    @Nullable private AfterHitResult pendingHitResult;
 
     /**
      * 缓存寿命副本，由 {@link ProjectileManager#tickAndPreTick()} 在调用 preTick() 前设置。
@@ -181,7 +197,10 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
         Vec3 hitPointMc = new Vec3(hitPointJme.x, hitPointJme.y, hitPointJme.z);
         Vec3 hitNormalMc = new Vec3(0, 1, 0);
 
-        ProjectileManager.spawnHitVisualEffect(level, hitPointMc, hitNormalMc, false);
+        if (level instanceof ServerLevel serverLevel) {
+            ProjectileHitSyncPayload.broadcast(serverLevel, getId(), hitPointMc, hitNormalMc,
+                true, new Vector3f(), false);
+        }
         markHit();
         setDestroyed();
     }

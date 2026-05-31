@@ -9,10 +9,14 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpawnPayload;
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
 
 /**
  * 质点投射物。
@@ -30,6 +34,16 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
 
     private final ProjectileType projectileType;
     private boolean hasHit = false;
+
+    /** 是否正等待主线程返回命中结果（物理线程暂停其积分） */
+    @Getter
+    @Setter
+    private volatile boolean hitPending = false;
+
+    /** 待处理的命中结果（由 BFDamageHandler 回调写入，Manager 在物理线程消费） */
+    @Getter
+    @Setter
+    @Nullable private AfterHitResult pendingHitResult;
 
     /**
      * 缓存寿命副本，由 {@link ProjectileManager#tickAndPreTick()} 在调用 preTick() 前设置。
