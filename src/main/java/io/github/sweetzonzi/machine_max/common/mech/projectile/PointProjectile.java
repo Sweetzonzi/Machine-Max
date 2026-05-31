@@ -1,5 +1,9 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
+import cn.solarmoon.spark_core.animation.anim.AnimController;
+import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -12,11 +16,14 @@ import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpa
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 质点投射物。
@@ -30,7 +37,7 @@ import javax.annotation.Nullable;
  * <p>
  * 碰撞检测在 {@link ProjectileManager#updatePointProjectiles} 中通过 JME rayTest 完成。
  */
-public class PointProjectile extends DestroyableObject implements IProjectile {
+public class PointProjectile extends DestroyableObject implements IProjectile, IAnimatable<PointProjectile> {
 
     private final ProjectileType projectileType;
     private boolean hasHit = false;
@@ -44,6 +51,12 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
     @Getter
     @Setter
     @Nullable private AfterHitResult pendingHitResult;
+
+    // ========== IAnimatable 实现 ==========
+    // 模型/动画控制器使用懒加载，确保构造完成后再初始化
+    private AnimController animController;
+    private ModelController modelController;
+    private final Map<String, Object> variables = HashMap.newHashMap(1);
 
     /**
      * 缓存寿命副本，由 {@link ProjectileManager#tickAndPreTick()} 在调用 preTick() 前设置。
@@ -210,6 +223,56 @@ public class PointProjectile extends DestroyableObject implements IProjectile {
 
     @Override
     protected void defineSyncedData(SynchedEntityData.Builder builder) {
+    }
+
+    // ========== IAnimatable 实现 ==========
+
+    @Override
+    public PointProjectile getAnimatable() {
+        return this;
+    }
+
+    @Override
+    public Level getAnimLevel() {
+        return level;
+    }
+
+    private ModelIndex defaultModelIndex;
+
+    @Override
+    public ModelIndex getDefaultModelIndex() {
+        if (defaultModelIndex == null) {
+            ResourceLocation key = projectileType.getRegistryKey();
+            defaultModelIndex = new ModelIndex("projectile", key != null ? key
+                    : ResourceLocation.fromNamespaceAndPath("machine_max", "point_default"));
+        }
+        return defaultModelIndex;
+    }
+
+    @Override
+    public AnimController getAnimController() {
+        if (animController == null) {
+            animController = new AnimController(this);
+        }
+        return animController;
+    }
+
+    @Override
+    public ModelController getModelController() {
+        if (modelController == null) {
+            modelController = new ModelController(this);
+        }
+        return modelController;
+    }
+
+    @Override
+    public Map<String, Object> getVariables() {
+        return variables;
+    }
+
+    @Override
+    public void onBoneUpdate(cn.solarmoon.spark_core.event.BoneUpdateEvent event) {
+        IAnimatable.super.onBoneUpdate(event);
     }
 
     // ========== BFHurtTarget 实现 ==========

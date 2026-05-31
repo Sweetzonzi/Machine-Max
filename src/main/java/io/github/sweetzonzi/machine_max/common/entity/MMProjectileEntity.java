@@ -1,11 +1,13 @@
 package io.github.sweetzonzi.machine_max.common.entity;
 
+import cn.solarmoon.spark_core.animation.model.ModelController;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
+import lombok.Getter;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.EntityType;
@@ -31,7 +33,7 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
  * {@code updateInterval(Int.MAX_VALUE)} 禁用，仅登场/退场/DataTracker。
  */
 public class MMProjectileEntity extends Projectile implements IEntityWithComplexSpawn {
-
+    @Getter
     private IProjectile projectile;
     private volatile boolean orphaned;
     private int projectileObjId = -1;
@@ -136,5 +138,15 @@ public class MMProjectileEntity extends Projectile implements IEntityWithComplex
     public void markOrphaned() {
         orphaned = true;
         this.remove(RemovalReason.DISCARDED);
+    }
+
+    /**
+     * @return 投射物模型控制器，委托至关联的 {@link IProjectile#getModelController()}。
+     * 投射物本身（{@link PointProjectile} / {@link RigidProjectile}）实现
+     * {@link cn.solarmoon.spark_core.animation.IAnimatable}，拥有真实的
+     * {@link ModelController}；未实现时返回 null，渲染器将跳过渲染。
+     */
+    public ModelController getModelController() {
+        return projectile != null ? projectile.getModelController() : null;
     }
 }

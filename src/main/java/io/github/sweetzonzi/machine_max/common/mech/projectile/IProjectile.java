@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
+import cn.solarmoon.spark_core.animation.model.ModelController;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageHandler;
@@ -194,6 +195,14 @@ public interface IProjectile extends BFDamageHandler {
      * @return 此投射物关联的类型定义（含全部弹道参数）
      */
     ProjectileType getProjectileType();
+
+    /**
+     * @return 投射物模型控制器，可能为 null（无模型时不渲染）。
+     * 实现类（如 {@link PointProjectile}、{@link RigidProjectile}）应
+     * 实现 {@link cn.solarmoon.spark_core.animation.IAnimatable} 接口
+     * 并返回真实的 {@link ModelController}。
+     */
+    default ModelController getModelController() { return null; }
 
     // ========== 弹道参数快捷委托（全部委托至 ProjectileType） ==========
 

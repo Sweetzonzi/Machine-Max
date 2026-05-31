@@ -100,6 +100,33 @@ public class MMRenderTypes {
                     .createCompositeState(false)
     );
 
+    /**
+     * 自发光曳光线（加法混合 + LINES 模式 + 深度测试）。
+     * <p>
+     * 适用于投射物曳光效果，自发光但会被障碍物遮挡。
+     * 不写入深度缓冲（{@link #COLOR_WRITE}），仅测试深度。
+     * 使用 2 顶点/段，变更最小。
+     * <p>
+     * 若需要带宽度的发光光束（QUADS），使用 {@link #ADD_SOLID_DEPTH} 或
+     * {@link #ADD_SOLID_ALWAYS_VISIBLE} 代替。
+     */
+    public static final RenderType TRACER_LINE = RenderType.create(
+            "machine_max_tracer_line",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.LINES,
+            1536,
+            RenderType.CompositeState.builder()
+                    .setShaderState(RENDERTYPE_LINES_SHADER)
+                    .setLineState(new LineStateShard(OptionalDouble.of(2.0)))
+                    .setLayeringState(NO_LAYERING)
+                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                    .setOutputState(ITEM_ENTITY_TARGET)
+                    .setWriteMaskState(COLOR_WRITE)
+                    .setCullState(NO_CULL)
+                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                    .createCompositeState(false)
+    );
+
     public static RenderType alwaysVisibleLines() {
         return LINES_ALWAYS_VISIBLE;
     }

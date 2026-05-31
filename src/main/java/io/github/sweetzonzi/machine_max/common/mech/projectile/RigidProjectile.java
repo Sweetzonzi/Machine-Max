@@ -1,5 +1,9 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
+import cn.solarmoon.spark_core.animation.IAnimatable;
+import cn.solarmoon.spark_core.animation.anim.AnimController;
+import cn.solarmoon.spark_core.animation.model.ModelController;
+import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
@@ -15,12 +19,15 @@ import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpa
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 刚体投射物。
@@ -35,7 +42,7 @@ import javax.annotation.Nullable;
  * <p>
  * 阶段一使用固定半径球体碰撞形状。
  */
-public class RigidProjectile extends DestroyableRigidObject implements IProjectile {
+public class RigidProjectile extends DestroyableRigidObject implements IProjectile, IAnimatable<RigidProjectile> {
 
     private final ProjectileType projectileType;
     private boolean hasHit = false;
@@ -49,6 +56,12 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
     @Getter
     @Setter
     @Nullable private AfterHitResult pendingHitResult;
+
+    // ========== IAnimatable 实现 ==========
+    // 模型/动画控制器使用懒加载，确保构造完成后再初始化
+    private AnimController animController;
+    private ModelController modelController;
+    private final Map<String, Object> variables = HashMap.newHashMap(1);
 
     /**
      * 缓存寿命副本，由 {@link ProjectileManager#tickAndPreTick()} 在调用 preTick() 前设置。
@@ -274,6 +287,56 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
     @Override
     protected void defineSyncedData(SynchedEntityData.Builder builder) {
         builder.define(IS_ACTIVE_ID, true);
+    }
+
+    // ========== IAnimatable 实现 ==========
+
+    @Override
+    public RigidProjectile getAnimatable() {
+        return this;
+    }
+
+    @Override
+    public Level getAnimLevel() {
+        return level;
+    }
+
+    private ModelIndex defaultModelIndex;
+
+    @Override
+    public ModelIndex getDefaultModelIndex() {
+        if (defaultModelIndex == null) {
+            ResourceLocation key = projectileType.getRegistryKey();
+            defaultModelIndex = new ModelIndex("projectile", key != null ? key
+                    : ResourceLocation.fromNamespaceAndPath("machine_max", "rigid_default"));
+        }
+        return defaultModelIndex;
+    }
+
+    @Override
+    public AnimController getAnimController() {
+        if (animController == null) {
+            animController = new AnimController(this);
+        }
+        return animController;
+    }
+
+    @Override
+    public ModelController getModelController() {
+        if (modelController == null) {
+            modelController = new ModelController(this);
+        }
+        return modelController;
+    }
+
+    @Override
+    public Map<String, Object> getVariables() {
+        return variables;
+    }
+
+    @Override
+    public void onBoneUpdate(cn.solarmoon.spark_core.event.BoneUpdateEvent event) {
+        IAnimatable.super.onBoneUpdate(event);
     }
 
     // ========== BFHurtTarget 实现 ==========
