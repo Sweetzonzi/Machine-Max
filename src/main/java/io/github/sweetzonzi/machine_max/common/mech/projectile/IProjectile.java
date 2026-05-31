@@ -5,6 +5,11 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageHandler;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -82,12 +87,16 @@ public interface IProjectile extends BFDamageHandler {
 
     // ==================== BFDamageHandler 回调默认实现 ====================
 
+    /** 按穿深与 RHA 的残余比例计算 passThrough 结果 */
+    private AfterHitResult passThroughByResidual(float pen, float rha) {
+        float residual = (pen - rha) / Math.max(pen, 0.001f);
+        residual = Math.max(0.1f, Math.min(1.0f, residual));
+        return AfterHitResult.passThrough((float) Math.sqrt(residual), getVelocity());
+    }
+
     @Override
     default void onPenetrated(BFHurtTarget target, BFDamageContext ctx) {
-        float pen = ctx.penetration();
-        float rha = target.getRHA(ctx);
-        float residual = Math.max(0.1f, (pen - rha) / Math.max(pen, 0.001f));
-        setPendingHitResult(AfterHitResult.passThrough((float) Math.sqrt(residual), getVelocity()));
+        setPendingHitResult(passThroughByResidual(ctx.penetration(), target.getRHA(ctx)));
     }
 
     @Override
@@ -104,11 +113,46 @@ public interface IProjectile extends BFDamageHandler {
 
     @Override
     default void onOvermatch(BFHurtTarget target, BFDamageContext ctx) {
-        setPendingHitResult(AfterHitResult.passThrough(1f, getVelocity()));
+        setPendingHitResult(passThroughByResidual(ctx.penetration(), target.getRHA(ctx)));
     }
 
     @Override
-    default void onSpall(BFHurtTarget target, BFDamageContext ctx) {}
+    default void onSpall(BFHurtTarget target, BFDamageContext ctx) {
+        setPendingHitResult(passThroughByResidual(ctx.penetration(), target.getRHA(ctx)));
+    }
+
+    /**
+     * 普通实体命中回调：根据原版属性估算等效 RHA 以决定穿透或销毁。
+     * <p>
+     * 非协议实体没有 {@link BFHurtTarget#getRHA}，改为从原版属性构造等效 RHA：
+     * <ul>
+     *   <li>{@link LivingEntity}: {@code 1 HP + 1 护甲 + 2 韧性}（mm）</li>
+     *   <li>{@link AbstractMinecart}: 固定 20mm</li>
+     *   <li>{@link Boat}: 固定 5mm</li>
+     *   <li>其他: 固定 2mm</li>
+     * </ul>
+     * 穿深远小于等效 RHA（pen ≤ 0.15 × effectiveRha）时销毁，
+     * 否则按残余比例衰减速度，公式与 {@link #onPenetrated} 一致。
+     */
+    @Override
+    default void onNormalEntityHit(Entity entity, BFDamageContext ctx,
+                             float baseDamage, boolean success) {
+        float effectiveRha = switch (entity) {
+            case LivingEntity living -> living.getMaxHealth()
+                    + living.getArmorValue() * 1.0f
+                    + (float) living.getAttributeValue(Attributes.ARMOR_TOUGHNESS) * 2.0f;
+            case AbstractMinecart ignored1 -> 20f;
+            case Boat ignored -> 5f;
+            case null, default -> 2f;
+        };
+
+        float pen = calculateCurrentPenetration();
+        if (pen <= effectiveRha * 0.15f) {
+            setPendingHitResult(AfterHitResult.DESTROYED);
+        } else {
+            setPendingHitResult(passThroughByResidual(pen, effectiveRha));
+        }
+    }
 
     // ==================== 物理状态协议 ====================
 

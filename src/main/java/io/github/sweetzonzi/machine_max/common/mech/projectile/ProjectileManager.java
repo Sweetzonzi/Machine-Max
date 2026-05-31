@@ -17,6 +17,7 @@ import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.ballistics_framework.api.BFHitResolveResult;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
@@ -31,7 +32,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -571,7 +571,7 @@ public class ProjectileManager {
      *           Manager 立即消费</li>
      *       <li>Entity BFHurtTarget：通过 {@code BFDamageApi.resolveHitTarget} 决议目标，
      *           暂停投射物，提交主线程执行 hurt，下一物理帧消费结果</li>
-     *       <li>普通 Entity：保守停止，主线程延迟 entity.hurt()</li>
+     *       <li>非协议感知 Entity → 汇入统一异步管线，onNormalEntityHit 回调决定去留</li>
      *     </ul>
      *   </li>
      * </ol>
@@ -674,6 +674,7 @@ public class ProjectileManager {
 
             List<PhysicsRayTestResult> results = world.rayTest(rayFrom, rayTo);
             boolean stopped = false;
+            label:
             for (PhysicsRayTestResult result : results) {
                 PhysicsCollisionObject collObj = result.getCollisionObject();
                 if (collObj.getCollisionGroup() != CollisionGroups.PHYSICS_BODY
@@ -724,22 +725,29 @@ public class ProjectileManager {
                 // ========================================================
                 //  分辨目标
                 // ========================================================
-                if (owner instanceof SubPart subPart) {
-                    stopped = handleSubPartHit(i, projectile, subPart, result, hitPointMc, hitNormalMc, penKey);
-                    if (stopped) break;
-
-                } else if (owner instanceof BFHurtTarget bfTarget && !(owner instanceof Entity)) {
-                    stopped = handleSyncBfHit(i, projectile, bfTarget, hitPointMc, hitNormalMc, penKey);
-                    if (stopped) break;
-
-                } else if (owner instanceof Entity entity) {
-                    stopped = handleEntityHit(i, projectile, entity, hitPointMc, hitNormalMc, dt, penKey);
+                switch (owner) {
+                    case SubPart subPart -> {
+                        stopped = handleSubPartHit(i, projectile, subPart, result, hitPointMc, hitNormalMc, penKey);
+                        if (stopped) break label;
+                    }
+                    case BFHurtTarget bfTarget when !(owner instanceof Entity) -> {
+                        stopped = handleSyncBfHit(i, projectile, bfTarget, hitPointMc, hitNormalMc, penKey);
+                        if (stopped) break label;
+                    }
+                    case Entity entity ->
+                            stopped = handleEntityHit(i, projectile, entity, hitPointMc, hitNormalMc, dt, penKey);
+                    default -> {
+                    }
                 }
 
                 if (stopped) break;
             }
 
             if (stopped) {
+                // 异步管线中等待主线程回调的投射物不要提前清理——下一 tick 的暂停恢复会处理
+                if (destroyable instanceof IProjectile proj && proj.isHitPending()) {
+                    continue;
+                }
                 DestroyableObject finalDestroyable = (objMap != null) ? objMap.get(objId[i]) : null;
                 if (finalDestroyable != null) {
                     finalDestroyable.setPosition(new Vector3f(posX[i], posY[i], posZ[i]));
@@ -796,55 +804,44 @@ public class ProjectileManager {
                                     PenetrationKey penKey) {
         Vec3 delta = new Vec3(velX[i] * dt, velY[i] * dt, velZ[i] * dt);
 
-        // 无协议感知的普通实体 → 保守停止，主线程延迟 entity.hurt()
-        if (!BFDamageApi.isProtocolAware(entity)) {
-            projectile.markHit();
-            alive[i] = false;
-            projectileObjIds.remove(objId[i]);
-            broadcastHitSync(i, hitPoint, hitNormal, true, null, false);
-            float damage = projectile.calculateCurrentDamage();
-            SparkLevel.submitImmediateTask(level, PPhase.POST,
-                () -> entity.hurt(entity.damageSources().generic(), damage));
-            return true;
+        // 命中点、法线、extensions 先赋原始值，协议感知时再修正
+        Vec3 finalPoint = hitPoint;
+        Vec3 finalNormal = hitNormal;
+        BFDamageExtensions extensions = new BFDamageExtensions();
+
+        if (BFDamageApi.isProtocolAware(entity)) {
+            BFHitResolveResult resolved = BFDamageApi.resolveHitTarget(entity, hitPoint, delta);
+            if (resolved == null) return false; // 假阳性，继续飞行
+
+            BFHurtTarget rt = resolved.actualTarget();
+            finalPoint = resolved.correctedHitPoint();
+            finalNormal = resolved.correctedHitNormal();
+            extensions = resolved.extensions().copy();
+
+            // 决议到非实体 BFHurtTarget（如 SubPart）→ 同步管线
+            if (!(rt instanceof Entity)) {
+                projectile.dealDamage(rt, finalPoint, finalNormal);
+                return applyHitResult(i, projectile, finalPoint, finalNormal, true, penKey);
+            }
         }
 
-        BFHitResolveResult resolved = BFDamageApi.resolveHitTarget(entity, hitPoint, delta);
-        if (resolved == null) return false; // BFHitResolver 判定未命中，继续飞行
+        // ===== 统一异步管线：非协议实体 + 决议到 Entity 的 BFHurtTarget =====
+        BFDamageContext ctx = BFDamageContext.builder()
+            .source(level.damageSources().generic())
+            .baseDamage(projectile.calculateCurrentDamage())
+            .penetration(projectile.calculateCurrentPenetration())
+            .hitVelocity(new Vec3(velX[i], velY[i], velZ[i]))
+            .hitPoint(finalPoint)
+            .hitNormal(finalNormal)
+            .extensions(extensions)
+            .build()
+            .withHandler(projectile);
 
-        BFHurtTarget resolvedTarget = resolved.actualTarget();
-        Vec3 resolvedPoint = resolved.correctedHitPoint();
-        Vec3 resolvedNormal = resolved.correctedHitNormal();
+        projectile.setHitPending(true);
+        if (penKey != null) pendingPenKeys.put(objId[i], penKey);
 
-        // 决议到非实体 BFHurtTarget → 回退同步管线
-        if (resolvedTarget instanceof BFHurtTarget && !(resolvedTarget instanceof Entity)) {
-            projectile.dealDamage(resolvedTarget, resolvedPoint, resolvedNormal);
-            return applyHitResult(i, projectile, resolvedPoint, resolvedNormal, true, penKey);
-        }
-
-        // 决议到 Entity BFHurtTarget：暂停投射物，主线程延迟伤害
-        if (resolvedTarget instanceof BFHurtTarget bfTarget) {
-            BFDamageContext ctx = BFDamageContext.builder()
-                .source(level.damageSources().generic())
-                .baseDamage(projectile.calculateCurrentDamage())
-                .penetration(projectile.calculateCurrentPenetration())
-                .hitVelocity(new Vec3(projectile.getVelocity().x,
-                                      projectile.getVelocity().y,
-                                      projectile.getVelocity().z))
-                .hitPoint(resolvedPoint)
-                .hitNormal(resolvedNormal)
-                .extensions(resolved.extensions().copy())
-                .build()
-                .withHandler(projectile);
-
-            projectile.setHitPending(true);
-            if (penKey != null) pendingPenKeys.put(objId[i], penKey);
-
-            SparkLevel.submitImmediateTask(level, PPhase.POST,
-                () -> BFDamageApi.hurt(bfTarget, ctx));
-            return true; // 标记为已处理（暂停）
-        }
-
-        // 理论上不可达：resolveHitTarget 返回非 null 时 actualTarget 必为某种 BFHurtTarget
+        SparkLevel.submitImmediateTask(level, PPhase.POST,
+            () -> BFDamageApi.hurt(entity, ctx));
         return true;
     }
 
