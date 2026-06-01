@@ -112,6 +112,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
             super.addToLevel();
         } else {
             ObjectManager.addDestroyableObject(this);
+            playFireSound();
         }
         ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
         pm.addRigidProjectile(this);

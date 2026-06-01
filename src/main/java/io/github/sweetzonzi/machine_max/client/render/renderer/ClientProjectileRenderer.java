@@ -81,8 +81,8 @@ public class ClientProjectileRenderer extends VisualEffectRenderer {
             float a = tracerAlpha / 255f;
 
             // 即将超时时减弱发光强度
-            if (pm.lifetime[i] < 10) {
-                a *= pm.lifetime[i] / 10f;
+            if (pm.lifetime[i] < 20) {
+                a *= pm.lifetime[i] / 20f;
             }
 
             // 方向：使用 SoA 速度矢量推算下一帧位置

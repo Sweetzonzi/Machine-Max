@@ -99,6 +99,8 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
         if (!level.isClientSide()) {
             ProjectileSpawnPayload.broadcast(level, getId(), projectileType.getRegistryKey(),
                 getPosition(), getLinearVelocity(), projectileType.getMaxLifetimeTicks(), false);
+        } else {
+            playFireSound();
         }
     }
 

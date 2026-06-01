@@ -363,5 +363,30 @@
     "sounds": [
       "machine_max:subsystem/motor/elec_3000"
     ]
+  },
+  "projectile.fire.mini": {
+    "sounds": [
+      "machine_max:projectile/fire/fire_mini"
+    ]
+  },
+  "projectile.fire.small": {
+    "sounds": [
+      "machine_max:projectile/fire/fire_small"
+    ]
+  },
+  "projectile.fire.middle": {
+    "sounds": [
+      "machine_max:projectile/fire/fire_middle"
+    ]
+  },
+  "projectile.fire.large": {
+    "sounds": [
+      "machine_max:projectile/fire/fire_large"
+    ]
+  },
+  "projectile.fire.huge": {
+    "sounds": [
+      "machine_max:projectile/fire/fire_huge"
+    ]
   }
 }

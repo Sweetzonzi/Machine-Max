@@ -3,12 +3,14 @@ package io.github.sweetzonzi.machine_max.common.mech.projectile;
 import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
 import lombok.Getter;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -77,6 +79,13 @@ public class ProjectileType {
     /** 曳光透明度，0=完全透明，255=完全不透明 */
     private final int tracerAlpha;
 
+    /** 开火音效 */
+    private final SoundEvent fireSound;
+
+    private static final SoundEvent DEFAULT_FIRE_SOUND = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectile.fire.mini"), 128f
+    );
+
     /** 字符串↔枚举互转 Codec */
     private static final Codec<ProjectileTypeEnum> ENUM_CODEC =
         Codec.STRING.xmap(ProjectileTypeEnum::fromString, ProjectileTypeEnum::getSerializedName);
@@ -104,7 +113,9 @@ public class ProjectileType {
         Vec3i.CODEC.optionalFieldOf("tracer_color", new Vec3i(255, 255, 255))
             .forGetter(ProjectileType::getTracerColor),
         Codec.INT.optionalFieldOf("tracer_alpha", 200)
-            .forGetter(ProjectileType::getTracerAlpha)
+            .forGetter(ProjectileType::getTracerAlpha),
+        SoundEvent.DIRECT_CODEC.optionalFieldOf("fire_sound", DEFAULT_FIRE_SOUND)
+            .forGetter(ProjectileType::getFireSound)
     ).apply(instance, ProjectileType::new));
 
     public ProjectileType(
@@ -112,7 +123,8 @@ public class ProjectileType {
         float baseVelocity, float basePenetration, float baseDamage, float baseAccuracyMil,
         float penetrationVelocityCoefficient, float damageVelocityCoefficient,
         int maxLifetimeTicks, List<ResourceLocation> tags,
-        Vec3i tracerColor, int tracerAlpha
+        Vec3i tracerColor, int tracerAlpha,
+        SoundEvent fireSound
     ) {
         this.type = type;
         this.mass = mass;
@@ -129,6 +141,7 @@ public class ProjectileType {
         this.tags = tags;
         this.tracerColor = tracerColor;
         this.tracerAlpha = tracerAlpha;
+        this.fireSound = fireSound;
     }
 
     /**
