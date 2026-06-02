@@ -38,6 +38,11 @@ public class KeyBinding {
     public static final String ASSEMBLY_CYCLE_RECIPE_KEY = "key.machine_max.assembly.cycle_recipe";
     public static final String SCRIPT_HOT_RELOAD_KEY = "key.machine_max.assembly.hot_reload";
 
+    public static final String CYCLE_CAMERA_KEY = "key.machine_max.general.cycle_camera";
+    public static final String CAMERA_ZOOM_KEY = "key.machine_max.general.camera_zoom";
+    public static final String CAMERA_ZOOM_IN_KEY = "key.machine_max.general.camera_zoom_in";
+    public static final String CAMERA_ZOOM_OUT_KEY = "key.machine_max.general.camera_zoom_out";
+
     /**
      * 在此注册所有按键
      */
@@ -72,6 +77,11 @@ public class KeyBinding {
         event.register(KeyBinding.assemblyCycleVariantKey);//部件循环选取变体类型
         event.register(KeyBinding.assemblyCycleRecipeKey);//循环选取使用的配方
         event.register(KeyBinding.JavascriptHotReloadKey);//脚本热更新
+
+        event.register(KeyBinding.generalCycleCameraKey);//循环切换摄像机
+        event.register(KeyBinding.generalCameraZoomKey);//一键变焦
+        event.register(KeyBinding.generalCameraZoomInKey);//连续放大
+        event.register(KeyBinding.generalCameraZoomOutKey);//连续缩小
 
     }
 
@@ -198,5 +208,33 @@ public class KeyBinding {
             InputConstants.Type.KEYSYM,//默认为键盘
             GLFW.GLFW_KEY_BACKSLASH,//默认按键是反斜杠
             KeyCategory.ASSEMBLY.getCategory()//键位类型
+    );
+
+    public static KeyMapping generalCycleCameraKey = new KeyMapping(CYCLE_CAMERA_KEY,
+            KeyCategory.GENERAL,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_V,
+            KeyCategory.GENERAL.getCategory()
+    );
+
+    public static KeyMapping generalCameraZoomKey = new KeyMapping(CAMERA_ZOOM_KEY,
+            KeyCategory.GENERAL,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_Z,
+            KeyCategory.GENERAL.getCategory()
+    );
+
+    public static KeyMapping generalCameraZoomInKey = new KeyMapping(CAMERA_ZOOM_IN_KEY,
+            KeyCategory.GENERAL,
+            InputConstants.Type.KEYSYM,
+            InputConstants.UNKNOWN.getValue(),
+            KeyCategory.GENERAL.getCategory()
+    );
+
+    public static KeyMapping generalCameraZoomOutKey = new KeyMapping(CAMERA_ZOOM_OUT_KEY,
+            KeyCategory.GENERAL,
+            InputConstants.Type.KEYSYM,
+            InputConstants.UNKNOWN.getValue(),
+            KeyCategory.GENERAL.getCategory()
     );
 }

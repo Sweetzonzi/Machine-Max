@@ -20,28 +20,31 @@ public class SeatSubsystemAttr extends BasicSubsystemDynamicAttr {
     public final String locator;
     public final ResourceLocation controlGroupPreset;
     public final Map<String, List<String>> passengerNumSignalTargets;
-    //TODO:是否无视命中情况转嫁乘客伤害到部件
+    /** 摄像机发现握手配置 */
+    public final Map<String, List<String>> cameraDiscoveryTargets;
 
     public static final MapCodec<SeatSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition").forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.optionalFieldOf("locator", "").forGetter(SeatSubsystemAttr::getLocator),
             ResourceLocation.CODEC.optionalFieldOf("control_group_preset", NO_CONTROL_GROUP_PRESET).forGetter(SeatSubsystemAttr::getControlGroupPreset),
-            SIGNAL_TARGETS_CODEC.optionalFieldOf("passenger_num_outputs", Map.of()).forGetter(SeatSubsystemAttr::getPassengerNumSignalTargets)
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("passenger_num_outputs", Map.of()).forGetter(SeatSubsystemAttr::getPassengerNumSignalTargets),
+            SIGNAL_TARGETS_CODEC.optionalFieldOf("camera_discovery_targets", Map.of()).forGetter(SeatSubsystemAttr::getCameraDiscoveryTargets)
     ).apply(instance, SeatSubsystemAttr::new));
 
     public SeatSubsystemAttr(
             ResourceLocation modelName,
             String locator,
             ResourceLocation controlGroupPreset,
-            Map<String, List<String>> passengerNumSignalTargets) {
+            Map<String, List<String>> passengerNumSignalTargets,
+            Map<String, List<String>> cameraDiscoveryTargets) {
         super(modelName);
         this.staticAttribute = (SeatSubsystemStaticAttr) getStaticAttr();
-        //合法性检查
         if (locator == null || locator.isEmpty())
             throw new IllegalStateException("error.machine_max.seat_subsystem.no_locator");
         this.locator = locator;
         this.controlGroupPreset = controlGroupPreset;
         this.passengerNumSignalTargets = passengerNumSignalTargets;
+        this.cameraDiscoveryTargets = cameraDiscoveryTargets;
     }
 
     @Override

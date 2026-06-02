@@ -5279,7 +5279,9 @@
 					"pivot": [0, 35.1, -21],
 					"locators": {
 						"gun_mass_center": [0, 35.45, -21],
-						"muzzle": [0, 35.45, -61],
+						"main_gun_muzzle": [0, 35.45, -61],
+						"mg_muzzle": [-3.75, 35.55, -25.9],
+						"gunner_sight": [5, 33.55, -21.9],
 						"gun_turret_axis": [0, 35.1, -21]
 					}
 				},

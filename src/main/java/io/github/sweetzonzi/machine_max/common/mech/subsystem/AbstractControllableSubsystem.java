@@ -5,8 +5,10 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlBinding;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.MoveInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AbstractSubsystemAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr;
@@ -19,9 +21,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Getter
@@ -29,6 +33,38 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     protected AbstractControllableSubsystem(ISubsystemHost owner, String name, BasicSubsystemDynamicAttr attr) {
         super(owner, name, attr);
+    }
+
+    // ===== 摄像机发现 =====
+
+    /** 握手发现的摄像机列表（线程安全） */
+    protected final List<CameraSubsystem> discoveredCameras = new CopyOnWriteArrayList<>();
+
+    /** 返回握手发现的摄像机列表 */
+    public List<CameraSubsystem> getDiscoveredCameras() {
+        return discoveredCameras;
+    }
+
+    /**
+     * 摄像机发现握手配置 {频道名 → [目标接收者名列表]}。
+     * 子类（SeatSubsystem 等）在构造函数中从动态属性赋值。
+     */
+    protected Map<String, List<String>> cameraDiscoveryTargets = Map.of();
+
+    /**
+     * 摄像机发现握手，向 cameraDiscoveryTargets 配置的每个频道发送空信号（带回调），
+     * CameraSubsystem 收到后通过 callback 回复，座椅在 onSignalUpdated 中缓存。
+     */
+    protected void cameraDiscoveryHandshake() {
+        for (String signalChannel : cameraDiscoveryTargets.keySet()) {
+            sendSignalToAllTargetsWithCallback(signalChannel, EmptySignal.INSTANCE, false);
+        }
+    }
+
+    @Override
+    public void onAttach() {
+        super.onAttach();
+        cameraDiscoveryHandshake();
     }
 
     /**
@@ -48,7 +84,37 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         map.putAll(controlGroupSet.getAllViewTargets());
         map.putAll(controlGroupSet.getAllBindingTargets());
         map.putAll(controlGroupSet.getAllGuiActionTargets());
+        map.putAll(cameraDiscoveryTargets);
         return map;
+    }
+
+    @Override
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        super.onSignalUpdated(channelName, sender);
+
+        if ("callback".equals(channelName) && sender instanceof CameraSubsystem camera) {
+            if (camera.getOwner().getSubPart().getPart().vehicle
+                    == this.getOwner().getSubPart().getPart().vehicle) {
+                if (!discoveredCameras.contains(camera)) {
+                    discoveredCameras.add(camera);
+                }
+            }
+        }
+        return SignalResult.PASS;
+    }
+
+    @Override
+    public List<String> getAcceptedChannels() {
+        List<String> channels = new ArrayList<>();
+        channels.add("callback");
+        return channels;
+    }
+
+    @Override
+    public void onVehicleStructureChanged() {
+        super.onVehicleStructureChanged();
+        discoveredCameras.clear();
+        cameraDiscoveryHandshake();
     }
 
     public void clearInputSignals() {

@@ -47,17 +47,36 @@
               "definition": "machine_max:fixed_back",
               "signal_targets": {
                 "weapon_control": [
-                  "subsystem.machine_max.launcher"
+                  "subsystem.machine_max.mg34",
+                  "subsystem.machine_max.50mm"
+                ],
+                "gunner_sight": [
+                  "subsystem.machine_max.gunner_sight"
                 ]
               },
               "overwrite": {}
             }
           },
           "subsystems": {
-            "subsystem.machine_max.launcher": {
+            "subsystem.machine_max.mg34": {
               "type": "machine_max:launcher",
               "definition": "machine_max:basic_launcher",
-              "locator": "muzzle"
+              "locator": "mg_muzzle"
+            },
+            "subsystem.machine_max.50mm": {
+              "type": "machine_max:launcher",
+              "definition": "machine_max:basic_launcher",
+              "locator": "main_gun_muzzle"
+            },
+            "subsystem.machine_max.gunner_sight": {
+              "type": "machine_max:camera",
+              "definition": "machine_max:gunner_sight",
+              "locator": "gunner_sight",
+              "aim_output_targets": {
+                "aim_input_p0": [
+                  "connector.machine_max.gun_turret_axis"
+                ]
+              }
             }
           }
         }

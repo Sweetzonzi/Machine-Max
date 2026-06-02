@@ -43,5 +43,8 @@
   "sub_part.machine_max.main_2": "Main 2",
   "machine_max.sdkfz234_gun": "Sdkfz234 Gun",
   "connector.machine_max.gun_turret_axis": "Gun Turret Axis",
-  "subsystem.machine_max.launcher": "Launcher"
+  "subsystem.machine_max.launcher": "Launcher",
+  "subsystem.machine_max.mg34": "Mg34",
+  "subsystem.machine_max.50mm": "50mm",
+  "subsystem.machine_max.gunner_sight": "Gunner Sight"
 }

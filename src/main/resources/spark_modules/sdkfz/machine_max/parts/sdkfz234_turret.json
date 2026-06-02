@@ -80,6 +80,11 @@
             "connector.machine_max.turret_gun_axis": {
               "locator": "turret_gun_axis",
               "definition": "machine_max:turret_elevation_axis",
+              "signal_targets": {
+                "aim_input_p0": [
+                  "subsystem.machine_max.weapon_controller"
+                ]
+              },
               "overwrite": {}
             }
           },
@@ -94,6 +99,11 @@
                   "subpart",
                   "vehicle"
                 ]
+              },
+              "camera_discovery_targets": {
+                "gunner_sight": [
+                  "connector.machine_max.turret_gun_axis"
+                ]
               }
             },
             "subsystem.machine_max.commander_seat": {
@@ -105,6 +115,11 @@
                 "passenger_num": [
                   "subpart",
                   "vehicle"
+                ]
+              },
+              "camera_discovery_targets": {
+                "gunner_sight": [
+                  "connector.machine_max.turret_gun_axis"
                 ]
               }
             },

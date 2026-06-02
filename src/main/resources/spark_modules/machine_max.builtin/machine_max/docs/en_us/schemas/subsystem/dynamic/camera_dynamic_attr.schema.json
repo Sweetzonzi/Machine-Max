@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/camera_dynamic_attr.json",
+  "title": "Camera Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the camera, defining the mounting position and aim output targets.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:camera",
+      "description": "Subsystem type, must be 'machine_max:camera'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "locator": {
+      "type": "string",
+      "default": "",
+      "description": "Camera mount locator name, the bone in the model serves as the camera position."
+    },
+    "aim_output_targets": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Aim point output channel and targets, sending ViewInputSignal to the specified channels."
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:camera",
+      "definition": "machine_max:camera/tank_gunners_sight",
+      "locator": "optics_mount",
+      "aim_output_targets": {
+        "aim_input": ["turret_weapon_controller"]
+      }
+    }
+  ]
+}

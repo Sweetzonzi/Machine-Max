@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/camera_static_attr.json",
+  "title": "摄像机子系统静态属性",
+  "description": "摄像机专用静态属性，定义光学特性、稳定模式、变焦范围和跟踪能力。",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:camera",
+      "description": "子系统类型，必须为 'machine_max:camera'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "default": 20.0,
+      "description": "基础耐久度，降至0时子系统瘫痪，修复至30%时恢复。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否传递伤害至子系统持有者。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值至剩余耐久度。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否隐藏子系统在HUD中的显示。"
+    },
+    "vertical_stabilized": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否启用垂直稳定（补偿车体俯仰晃动）。"
+    },
+    "horizontal_stabilized": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否启用水平稳定（补偿车体偏航晃动）。"
+    },
+    "base_fov": {
+      "type": "number",
+      "default": 40.0,
+      "description": "基准视场角（度），即 1× 变焦时的 FOV。"
+    },
+    "base_zoom": {
+      "type": "number",
+      "default": 1.0,
+      "description": "最小变焦倍率（默认 1.0，即基准视野）。"
+    },
+    "max_zoom": {
+      "type": "number",
+      "default": 1.0,
+      "description": "最大变焦倍率（例如 8.0 表示 8×）。"
+    },
+    "min_pitch": {
+      "type": "number",
+      "default": -10.0,
+      "description": "最小俯仰角限制（度），正值=抬头，负值=低头。"
+    },
+    "max_pitch": {
+      "type": "number",
+      "default": 10.0,
+      "description": "最大俯仰角限制（度）。"
+    },
+    "yaw_limit": {
+      "type": "number",
+      "default": 5.0,
+      "description": "偏航角张角限制（度），实际范围 [center - limit/2, center + limit/2]。"
+    },
+    "hud_components": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "摄像机 HUD 组件资源地址列表，指向 hud/ 下的 GuiAnimatable 定义。"
+    },
+    "tracking_target_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": ["tracking_target"],
+      "description": "跟踪目标的输入频道列表。"
+    },
+    "discovery_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": ["camera_discovery"],
+      "description": "摄像机被发现的握手频道列表（顺序=优先级）。"
+    },
+    "allow_cycle": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否允许在 F5 视角循环中出现。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "摄像机被摧毁时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "摄像机被激活时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_deactivate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "摄像机被禁用时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "摄像机基础音效配置。"
+    }
+  },
+  "required": ["type"],
+  "examples": [
+    {
+      "type": "machine_max:camera",
+      "basic_durability": 15.0,
+      "base_fov": 40.0,
+      "base_zoom": 1.0,
+      "max_zoom": 5.0,
+      "hud_components": [
+        "machine_max:hud/gunner_crosshair",
+        "machine_max:hud/range_finder"
+      ],
+      "discovery_inputs": ["gunner_optics"]
+    }
+  ]
+}

@@ -130,7 +130,7 @@
               "locator": "hull_turret_axis",
               "definition": "machine_max:fixed_up",
               "signal_targets": {
-                "move_input": [
+                "move_control": [
                   "subsystem.machine_max.car_controller"
                 ]
               },

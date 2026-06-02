@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/camera_static_attr.json",
+  "title": "Camera Subsystem Static Attributes",
+  "description": "Camera-specific static attributes defining optical characteristics, stabilization, zoom range, and tracking capabilities.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:camera",
+      "description": "Subsystem type, must be 'machine_max:camera'."
+    },
+    "basic_durability": {
+      "type": "number",
+      "default": 20.0,
+      "description": "Basic durability, subsystem is disabled when it drops to 0 and restored when repaired to 30%."
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to pass damage to the subsystem holder."
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to limit the damage transfer value to the remaining durability."
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to hide the subsystem in the HUD display."
+    },
+    "vertical_stabilized": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether vertical stabilization is enabled (compensates for vehicle pitch)."
+    },
+    "horizontal_stabilized": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether horizontal stabilization is enabled (compensates for vehicle yaw)."
+    },
+    "base_fov": {
+      "type": "number",
+      "default": 40.0,
+      "description": "Base field of view in degrees, i.e., the FOV at 1x zoom."
+    },
+    "base_zoom": {
+      "type": "number",
+      "default": 1.0,
+      "description": "Minimum zoom multiplier (default 1.0, i.e., base FOV)."
+    },
+    "max_zoom": {
+      "type": "number",
+      "default": 1.0,
+      "description": "Maximum zoom multiplier (e.g., 8.0 for 8x)."
+    },
+    "min_pitch": {
+      "type": "number",
+      "default": -10.0,
+      "description": "Minimum pitch angle limit in degrees, positive = looking up, negative = looking down."
+    },
+    "max_pitch": {
+      "type": "number",
+      "default": 10.0,
+      "description": "Maximum pitch angle limit in degrees."
+    },
+    "yaw_limit": {
+      "type": "number",
+      "default": 5.0,
+      "description": "Yaw angle span limit in degrees, the actual range is [center - limit/2, center + limit/2]."
+    },
+    "hud_components": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "List of camera HUD component resource locations, pointing to GuiAnimatable definitions under hud/."
+    },
+    "tracking_target_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": ["tracking_target"],
+      "description": "List of tracking target input channels."
+    },
+    "discovery_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": ["camera_discovery"],
+      "description": "List of camera discovery handshake channels (ordered by priority)."
+    },
+    "allow_cycle": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether to allow this camera to appear in the F5 camera cycle."
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the camera is destroyed.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the camera is activated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_deactivate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "Sound event when the camera is deactivated.",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Basic sound configuration for the camera."
+    }
+  },
+  "required": ["type"],
+  "examples": [
+    {
+      "type": "machine_max:camera",
+      "basic_durability": 15.0,
+      "base_fov": 40.0,
+      "base_zoom": 1.0,
+      "max_zoom": 5.0,
+      "hud_components": [
+        "machine_max:hud/gunner_crosshair",
+        "machine_max:hud/range_finder"
+      ],
+      "discovery_inputs": ["gunner_optics"]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/recipe/research_recipe.schema.json",
   "title": "Machine-Max Research Recipe",
@@ -64,4 +64,3 @@
     }
   }
 }
-

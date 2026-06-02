@@ -394,6 +394,23 @@ public class RawInputHandler {
                     .OnKeyDown(() -> PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.CYCLE_PART_RECIPES.getValue(), 0)));
 
             /*
+              摄像机控制
+             */
+            new KeyHooks.EVENT(KeyBinding.generalCycleCameraKey)
+                    .OnKeyDown(() -> CameraController.switchCamera(1));
+
+            new KeyHooks.EVENT(KeyBinding.generalCameraZoomKey)
+                    .OnKeyDown(() -> CameraController.toggleZoom());
+
+            //连续变焦：每帧按住时调整
+            if (KeyBinding.generalCameraZoomInKey.isDown()) {
+                CameraController.adjustZoom(+0.02f);
+            }
+            if (KeyBinding.generalCameraZoomOutKey.isDown()) {
+                CameraController.adjustZoom(-0.02f);
+            }
+
+            /*
               控制组按键绑定 — 从当前座椅子系统的 ControlGroupSet 动态加载
              */
             if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {

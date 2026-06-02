@@ -6,6 +6,7 @@ import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -61,6 +62,9 @@ public record ViewInputPayload(
                 if (subsystem instanceof AbstractControllableSubsystem controllable && controllable.isActive()) {
                     Vec3 aimPoint = new Vec3(payload.aimPointX(), payload.aimPointY(), payload.aimPointZ());
                     controllable.setViewInputSignal(aimPoint);
+                } else if (subsystem instanceof CameraSubsystem cam && cam.isActive()) {
+                    Vec3 aimPoint = new Vec3(payload.aimPointX(), payload.aimPointY(), payload.aimPointZ());
+                    cam.receiveClientAimInput(aimPoint);
                 } else {
                     MachineMax.LOGGER.warn("收到视角输入数据包，但子系统 {} 不存在于 SubPart(id={})", payload.subSystemName(), payload.subPartId());
                 }

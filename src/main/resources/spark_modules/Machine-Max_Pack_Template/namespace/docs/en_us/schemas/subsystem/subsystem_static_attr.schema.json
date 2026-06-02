@@ -9,6 +9,7 @@
       "type": "string",
       "enum": [
         "machine_max:basic",
+        "machine_max:camera",
         "machine_max:car_controller",
         "machine_max:engine",
         "machine_max:gearbox",
@@ -30,6 +31,18 @@
     "type"
   ],
   "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:camera"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/camera_static_attr.schema.json"
+      }
+    },
     {
       "if": {
         "properties": {

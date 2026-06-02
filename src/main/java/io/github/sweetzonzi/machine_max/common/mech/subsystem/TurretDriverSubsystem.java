@@ -176,7 +176,7 @@ public class TurretDriverSubsystem extends BasicSubsystem {
         Vector3f localDir = new Vector3f();
         try {
             MyQuaternion.rotate(bodyBRot.inverse(), worldDir, localDir);
-        } catch (NullPointerException e) {
+        } catch (Exception e) {
             MachineMax.LOGGER.error("炮塔驱动子系统 {} 无法计算目标方向，请检查输入信号 {}", name, attr.staticAttribute.getControlInputs());
         }
 

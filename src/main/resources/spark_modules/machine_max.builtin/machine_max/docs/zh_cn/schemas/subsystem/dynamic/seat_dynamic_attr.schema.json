@@ -27,6 +27,11 @@
       "$ref": "../base/signal_targets.json",
       "default": {},
       "description": "乘客数量信号输出频道及目标。"
+    },
+    "camera_discovery_targets": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "摄像机发现握手配置。在这些频道上发送握手信号即可发现本载具上可用的摄像机。例如 {\"gunner_optics\": [\"gunner_primary_sight\"]}"
     }
   },
   "required": ["type", "definition"],
