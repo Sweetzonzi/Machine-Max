@@ -1,4 +1,4 @@
-package io.github.sweetzonzi.machine_max.common.mech.vehicle;
+package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.api.SparkLevel;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
@@ -8,8 +8,9 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalReceiver;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import lombok.Getter;
+import net.minecraft.world.level.Level;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,8 +19,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 @Getter
 public class SubsystemController implements ISignalBus {
-    public final String name = "vehicle";
-    public final VehicleCore CORE;
+    public final String name = "subsystemController";
+    public final Level level;
     public final ConcurrentMap<String, SignalChannel> channels = new ConcurrentHashMap<>();//可查可改
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
     public final ConcurrentMap<String, Object> resources = new ConcurrentHashMap<>();//可查可改
@@ -29,8 +30,12 @@ public class SubsystemController implements ISignalBus {
     // 总线订阅者集合（广播时遍历此集合，运行时检查接受条件）
     private final Set<ISignalReceiver> busSubscribers = ConcurrentHashMap.newKeySet();
 
-    public SubsystemController(VehicleCore core) {
-        CORE = core;
+    public SubsystemController(Level level) {
+        this.level = level;
+    }
+
+    public SubsystemController(VehicleCore vehicle) {
+        this.level = vehicle.getLevel();
     }
 
     // ===== 现有生命周期方法（整合总线订阅） =====
@@ -169,6 +174,6 @@ public class SubsystemController implements ISignalBus {
     }
 
     private float getPhysicsTps() {
-        return SparkLevel.getPhysicsLevel(CORE.level).getTps();
+        return SparkLevel.getPhysicsLevel(getLevel()).getTps();
     }
 }

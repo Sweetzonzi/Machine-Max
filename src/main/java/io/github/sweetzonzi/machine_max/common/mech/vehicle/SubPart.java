@@ -11,7 +11,6 @@ import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.origin.OBone;
 import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.event.NeedsCollisionEvent;
-import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
@@ -36,6 +35,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
 import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.recipe.FabricatingRecipe;
 import io.github.sweetzonzi.machine_max.common.registry.MMDamageTypes;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HydrodynamicAttr;
@@ -1056,7 +1056,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @Override
     public EnergyGrid getEnergyGrid() {
         return part.vehicle != null
-                ? part.vehicle.subSystemController.getEnergyGrid()
+                ? getSubsystemController().getEnergyGrid()
                 : null;
     }
 

@@ -5,7 +5,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.VehicleAssemblyAttachm
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubsystemController;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LightingSubsystem;

@@ -80,7 +80,7 @@
 - **职责**：载具级子系统与信号/能量的统一管理
 - **描述**：每个 `VehicleCore` 持有一个 `SubsystemController`，负责：tick 所有子系统、管理信号通道（`SignalChannel`）与信号存储、维护能量网（`EnergyGrid`）、处理机械能传递路径。
 - **关键类**：
-  - `io.github.sweetzonzi.machine_max.common.mech.vehicle.SubsystemController` — 子系统控制器，管理所有子系统、信号通道、能量网
+  - `io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController` — 子系统控制器，管理所有子系统、信号通道、能量网
 
 ---
 

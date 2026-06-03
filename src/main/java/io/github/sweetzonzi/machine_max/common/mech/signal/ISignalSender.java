@@ -2,7 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.signal;
 
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubsystemController;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SubsystemController;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
@@ -196,7 +196,7 @@ public interface ISignalSender {
 
     /**
      * 获取此发送者所属的 SubPart。
-     * 没有所属 SubPart 的发送者（如 {@link io.github.sweetzonzi.machine_max.common.mech.vehicle.SubsystemController}）返回 null。
+     * 没有所属 SubPart 的发送者（如 {@link SubsystemController}）返回 null。
      */
     @Nullable
     default SubPart getSubPart(){
