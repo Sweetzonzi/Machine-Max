@@ -130,10 +130,22 @@ public interface ISignalSender {
     default SignalResult sendSignalToTarget(String signalChannel, String targetName, Object signalValue, boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
         if (getTargets().containsKey(signalChannel)) {
             ISignalReceiver signalReceiver = getTargets().get(signalChannel).get(targetName);
+            // 如果接收者为 null，尝试找到全局控制器或子部件
+            if (signalReceiver == null && (targetName.equals("vehicle") || targetName.equals("subpart"))) {
+                for (ISignalReceiver target : getTargets().get(signalChannel).values()) {
+                    if (targetName.equals("vehicle") && target instanceof SubsystemController global) {
+                        signalReceiver = global;
+                        break;
+                    } else if (targetName.equals("subpart") && target instanceof SubPart subPart) {
+                        signalReceiver = subPart;
+                        break;
+                    }
+                }
+            }
             if (signalReceiver != null) {
                 signalReceiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
-                if (signalReceiver instanceof SubsystemController vehicle) {
-                    vehicle.signalStorage.put(signalChannel, signalValue);
+                if (signalReceiver instanceof SubsystemController global) {
+                    global.signalStorage.put(signalChannel, signalValue);
                 } else if (signalReceiver instanceof SubPart subPart) {
                     subPart.signalStorage.put(signalChannel, signalValue);
                 }

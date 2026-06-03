@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/part/subpart/hit_box/modifier/condition/condition_types.json",
+  "title": "条件类型定义",
+  "description": "所有具体条件类型的定义",
+  "definitions": {
+    "Always": {
+      "properties": {
+        "type": { "const": "always" }
+      },
+      "required": ["type"],
+      "additionalProperties": false,
+      "description": "总是满足的条件，用于全局性修改器。"
+    },
+    "DamageTypeCondition": {
+      "properties": {
+        "type": { "const": "damage_type" },
+        "id": {
+          "$ref": "../../../../../base/resource_location.schema.json",
+          "description": "伤害类型的资源地址，例如：'minecraft:fly_into_wall'。"
+        }
+      },
+      "required": ["type", "id"],
+      "additionalProperties": false,
+      "description": "判断伤害是否为指定类型。"
+    },
+    "DamageTagCondition": {
+      "properties": {
+        "type": { "const": "damage_tag" },
+        "id": {
+          "$ref": "../../../../../base/resource_location.schema.json",
+          "description": "伤害标签的资源地址，例如：'machine_max:has_pen_depth'。"
+        }
+      },
+      "required": ["type", "id"],
+      "additionalProperties": false,
+      "description": "判断伤害是否含有指定标签。"
+    },
+    "EntityTypeCondition": {
+      "properties": {
+        "type": { "const": "entity_type" },
+        "id": {
+          "$ref": "../../../../../base/resource_location.schema.json",
+          "description": "实体类型的资源地址，例如：'minecraft:slime'。"
+        }
+      },
+      "required": ["type", "id"],
+      "additionalProperties": false,
+      "description": "判断造成伤害的实体是否为指定类型。"
+    },
+    "EntityTagCondition": {
+      "properties": {
+        "type": { "const": "entity_tag" },
+        "id": {
+          "$ref": "../../../../../base/resource_location.schema.json",
+          "description": "实体标签的资源地址，例如：'minecraft:skeletons'。"
+        }
+      },
+      "required": ["type", "id"],
+      "additionalProperties": false,
+      "description": "判断造成伤害的实体是否含有指定标签。"
+    },
+    "And": {
+      "properties": {
+        "type": { "const": "and" },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "condition.schema.json"},
+          "minItems": 1,
+          "description": "子条件列表，所有条件必须满足。"
+        }
+      },
+      "required": ["type", "conditions"],
+      "additionalProperties": false,
+      "description": "逻辑与条件，所有子条件都必须满足。"
+    },
+    "Or": {
+      "properties": {
+        "type": { "const": "or" },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "condition.schema.json"},
+          "minItems": 1,
+          "description": "子条件列表，任意条件满足即可。"
+        }
+      },
+      "required": ["type", "conditions"],
+      "additionalProperties": false,
+      "description": "逻辑或条件，至少一个子条件满足即可。"
+    },
+    "Not": {
+      "properties": {
+        "type": { "const": "not" },
+        "condition": {
+          "$ref": "condition.schema.json",
+          "description": "子条件，不满足此条件时返回true。"
+        }
+      },
+      "required": ["type", "condition"],
+      "additionalProperties": false,
+      "description": "逻辑非条件，反转子条件的结果。"
+    }
+  }
+}

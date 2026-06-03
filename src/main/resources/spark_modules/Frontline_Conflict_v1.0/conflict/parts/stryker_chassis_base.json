@@ -1,0 +1,90 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "conflict:textures/icon/stryker/stryker_chassis_base.png",
+  "vehicle_durability_rate": 0.6,
+  "vehicle_damage_rate": 1.0,
+  "vehicle_damage_rate_destroyed": 0.1,
+  "variants": {
+    "model": "conflict:stryker_all_base.geo",
+    "textures": "conflict:textures/part/stryker_base/stryker_all_base.png",
+    "tags": ["conflict:stryker_chassis"],
+    "sub_parts": {
+        "start_bone": "Chassis",
+        "end_bones": [],
+        "durability": 120.0,
+        "mass": 930.0,
+        "block_collision": "ground",
+        "collision_height": 1.5,
+        "hit_boxes": {
+          "ChassisBaseCollision": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:7035_aluminum_alloy",
+            "thickness": 3
+          }
+        },
+        "interact_boxes": {
+          "interact.machine_max.driver_cover_interact": {
+             "bone": "DriverBaseInteract",
+             "signal_targets": {
+              "interact": [
+                "subsystem.machine_max.driver_seat"
+               ]
+             }
+          }
+        },
+      "connectors": { //子部件用于与其他零件连接的连接点列表
+        "connector.machine_max.chassis_axis": { //连接点名称
+          "locator": "stryker_chassis_base_hull", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+          "definition": "machine_max:fixed_down"
+        },
+        "connector.machine_max.chassis_hull": { //连接点名称
+          "locator": "stryker_chassis_base_linkhull", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+          "definition": "conflict:stryker_chassic_to_hull"
+        },
+        "connector.machine_max.chassis_module": { //连接点名称
+          "locator": "stryker_chassis_base_modulehull", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+          "definition": "conflict:stryker_chassic_to_module"
+        },
+        "connector.machine_max.chassis_hatch_left": { //连接点名称
+          "locator": "stryker_chassis_base_doorhull_left", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+          "definition": "conflict:stryker_backhatch_left"
+        },
+        "connector.machine_max.chassis_hatch_right": { //连接点名称
+          "locator": "stryker_chassis_base_doorhull_right", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+          "definition": "conflict:stryker_backhatch_right"
+        },
+        "connector.machine_max.chassis_hatch_lock": { //连接点名称
+          "locator": "stryker_chassis_base_doorhull_lock", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+          "definition": "conflict:stryker_backhatch_left"
+        }
+      },
+        "subsystems": {
+          "subsystem.machine_max.car_controller": {
+            "type": "machine_max:car_controller",
+            "definition": "conflict:stryker_car_controller",
+            "control_outputs": {
+              "car_control": [
+                "connector.machine_max.chassis_axis"
+              ]
+            }
+          },
+          "subsystem.machine_max.driver_seat": {
+            "type": "machine_max:seat",
+            "definition": "machine_max:default_seat",
+            "locator": "driverseat_base_hull",
+            "control_group_preset": "machine_max:default_driver",
+            "aim_outputs": {
+              "aim": []
+            },
+            "passenger_num_outputs": {
+              "passenger_num": [
+                "subpart",
+                "vehicle"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }

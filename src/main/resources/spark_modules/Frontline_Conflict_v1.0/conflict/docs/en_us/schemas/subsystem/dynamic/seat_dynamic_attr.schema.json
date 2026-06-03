@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/seat_dynamic_attr.json",
+  "title": "Seat Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the seat, defining seat position, signal transmission targets, etc.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:seat",
+      "description": "Subsystem type, must be 'machine_max:seat'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "locator": {
+      "type": "string",
+      "default": "",
+      "description": "Seat point locator name, bones in the model will serve as seat position. If empty, use the default locator defined by the subsystem."
+    },
+    "move_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Movement control signal output channel and targets."
+    },
+    "aim_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "View control signal output channel and targets."
+    },
+    "regular_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Regular control signal output channel and targets."
+    },
+    "passenger_num_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Passenger count signal output channel and targets."
+    }
+  },
+  "required": ["type", "definition"],
+  "examples": [
+    {
+      "type": "machine_max:seat",
+      "definition": "machine_max:driver_seat",
+      "locator": "DriverSeat",
+      "move_outputs": {
+        "move_control": [
+          "car_controller",
+          "engine",
+          "left_front_wheel_driver",
+          "right_front_wheel_driver",
+          "left_back_wheel_driver",
+          "right_back_wheel_driver"
+        ]
+      },
+      "regular_outputs": { "regular_control": ["car_controller"] }
+    }
+  ]
+}

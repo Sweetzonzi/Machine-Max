@@ -18,6 +18,8 @@ import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
+import cn.solarmoon.spark_core.molang.SparkMolangContext;
+import io.github.sweetzonzi.machine_max.common.mech.molang.MechMolangContext;
 import com.jme3.bounding.BoundingBox;
 import com.jme3.bullet.collision.*;
 import com.jme3.bullet.collision.shapes.infos.ChildCollisionShape;
@@ -111,9 +113,10 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final InteractBoxes interactBoxes;//交互判定
     public final HashMap<String, AbstractSubsystem> subsystems = HashMap.newHashMap(1);
     public final HashMap<String, AbstractConnector> connectors = HashMap.newHashMap(1);
-    public static final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
+    public final ConcurrentMap<String, SignalChannel> signalInputChannels = new ConcurrentHashMap<>();
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
-    public final ConcurrentMap<String, Object> variables = new ConcurrentHashMap<>();//部件存储的molang值
+    //MoLang 求值上下文
+    private final MechMolangContext molangContext = new MechMolangContext(this);
     //物理
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
@@ -1070,6 +1073,22 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         return new ModelIndex("part", part.variant.getModel());
     }
 
+    /**
+     * 获取 MoLang 求值上下文，用于解析 subpart.* 等自定义 MoLang 表达式。
+     * 每次调用会自动重置上下文以匹配当前零件状态。
+     *
+     * @return MechMolangContext 实例
+     */
+    public SparkMolangContext<IAnimatable<SubPart>> getSparkMolangContext() {
+        molangContext.reset(this, 0);
+        return molangContext;
+    }
+
+    @Override
+    public @NotNull MechMolangContext getMolangContext() {
+        return molangContext;
+    }
+
     public Map<String, OBone> getBones() {
         return attr.getBones(part.variant);
     }
@@ -1096,5 +1115,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         return getWorldPositionMatrix(number).mul(SparkMathKt.toMatrix4f(getLocalMassCenterTransform().invert().toTransformMatrix()));
     }
 
+    @Override
+    public @NotNull Map<@NotNull String, @NotNull Object> getVariables() {
+        return signalStorage;
+    }
 }
 

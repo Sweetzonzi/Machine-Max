@@ -17,18 +17,15 @@ import static io.github.sweetzonzi.machine_max.MachineMax.MOD_ID;
 
 @Mod(MOD_ID)
 public class MachineMax {
-    //TODO:可配置的完全不受tag限制的自由改装
     //TODO:保存的蓝图在指定路径储存，可被特定方块访问蓝图库，并制作蓝图物品
     //TODO:重构网络包及各类同步系统，将拆除等事件化，特别是断开移除逻辑，使之支持移除个别零件
     //TODO:优化关节断开逻辑：Vehicle每刻/事件触发检查关节连接关系，检测到不连通再断开记录的关系；断开网络包靠id识别SubPart而非载具uuid-部件uuid-接口名的方式以节约带宽
     //TODO:限制带阻尼关节安装部件时的质量差距？
     //TODO:排查AE86AT左轮胎转动惯量计算BUG（可能已修复）
     //TODO:GUI贴图渲染
-    //TODO:受配置文件控制的销毁倒计时
     //TODO:交互系统的反馈信号以及连接多个子系统，依次互动/同时互动？
     //TODO:过载与座椅过载吸收/耐受
     //TODO:放置部件前检查空间是否足够
-    //TODO:另起模块，用于自定义实体和射线投射物
     //TODO:刀刃判定子系统
     //TODO:炮塔控制
     //TODO:通用分层作动器控制，计算期望姿态，计算所需角速度，计算所需舵面偏角/推进器推力等，见 https://chat.deepseek.com/share/pneht1jesjnjakyh9g

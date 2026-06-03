@@ -90,7 +90,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     /** 解冻延迟tick数，给地形异步构建留出时间 */
     private static final int UNFREEZE_DELAY_TICKS = 20;
     //控制
-    public SubsystemController subSystemController = new SubsystemController(this);
+    public SubsystemController subSystemController;
     private final AtomicInteger skillCount = new AtomicInteger();
     public ControlMode mode = ControlMode.GROUND;//控制模式
 
@@ -101,6 +101,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 
     public VehicleCore(Level level, Part rootPart) {
         this.level = level;
+        this.subSystemController = new SubsystemController(this);
         this.synchedData = this.createSynchedData();
         this.uuid = rootPart.uuid;
         ObjectManager.initVehicle(this);
@@ -111,6 +112,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
 
     public VehicleCore(Level level, VehicleData savedData, boolean readAdditionalData) {
         this.level = level;
+        this.subSystemController = new SubsystemController(this);
         this.synchedData = this.createSynchedData();
         this.uuid = UUID.fromString(savedData.uuid);
         this.synchedData.set(DATA_HP_ID, Math.max(savedData.hp, 0f));
@@ -162,6 +164,7 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
      */
     public VehicleCore(Level level, UUID uuid, MutableNetwork<Part, Pair<AbstractConnector, SimpleConnector>> partNet, VehicleCore oldVehicle) {
         this.level = level;
+        this.subSystemController = new SubsystemController(this);
         this.synchedData = this.createSynchedData();
         this.uuid = uuid;
         this.name = oldVehicle.name;

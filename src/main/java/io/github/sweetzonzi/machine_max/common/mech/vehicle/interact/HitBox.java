@@ -1,6 +1,8 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.interact;
 
-import cn.solarmoon.spark_core.js.molang.JSMolangValueKt;
+import cn.solarmoon.spark_core.molang.MolangContextRegistry;
+import cn.solarmoon.spark_core.molang.SparkMolangContext;
+import cn.solarmoon.spark_core.molang.runtime.MolangExpression;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.attr.HitBoxAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
@@ -15,12 +17,17 @@ public class HitBox {
     public final AbstractSubsystem subsystem;
     private boolean active = true;
     private final boolean alwaysActive;
+    /**
+     * 预编译的 HitBox condition MoLang 表达式
+     */
+    private final MolangExpression hitBoxCondition;
 
     public HitBox(SubPart subPart, HitBoxAttr attr) {
         this.subPart = subPart;
         this.attr = attr;
         this.subsystem = subPart.subsystems.getOrDefault(attr.subsystem, null);
         alwaysActive = attr.condition.isEmpty() || attr.condition.equalsIgnoreCase("true");
+        this.hitBoxCondition = alwaysActive ? null : MolangContextRegistry.compile(attr.condition, subPart.getSparkMolangContext());
     }
 
     /**
@@ -32,9 +39,8 @@ public class HitBox {
             active = true;
             return;
         }
-        String condition = attr.condition;
         try {
-            active = JSMolangValueKt.evalAsBoolean(condition, subPart);
+            active = hitBoxCondition.evaluate(subPart.getSparkMolangContext()) > 0;
         } catch (Exception e) {
             io.github.sweetzonzi.machine_max.MachineMax.LOGGER.warn(
                     "Failed to evaluate condition for HitBox '{}' in part '{}-{}': {}",
@@ -73,13 +79,16 @@ public class HitBox {
 
     /**
      * 获取碰撞箱的前向摩擦系数
+     *
      * @return 前向摩擦系数
      */
     public double getMuFront() {
         return attr.friction().y();
     }
+
     /**
      * 获取碰撞箱的侧向摩擦系数
+     *
      * @return 侧向摩擦系数
      */
     public double getMuSide() {

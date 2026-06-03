@@ -167,7 +167,7 @@
       "centered": true,
       "shadow": true,
       "scale": [0.5, 0.5, 0.5],
-      "molang_args": ["vehicle.get('gear')??'NO GBX'"]
+      "molang_args": ["vehicle.get_str('gear')??'NO GBX'"]
     },
     "kmh": {
       "key": "hud.machine_max.default_1.kmh",

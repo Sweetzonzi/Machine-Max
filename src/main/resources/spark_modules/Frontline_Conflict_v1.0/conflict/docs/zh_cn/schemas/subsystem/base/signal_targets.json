@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/base/signal_targets.json",
+  "title": "信号目标映射",
+  "description": "信号频道到目标列表的映射，用于定义子系统之间的信号传输关系。",
+  "type": "object",
+  "additionalProperties": {
+    "type": "array",
+    "items": { "type": "string" },
+    "description": "目标名称列表，可以是子系统名称、连接点名称、'part'或'vehicle'。"
+  },
+  "default": {},
+  "examples": [
+    {
+      "move_control": ["car_controller", "engine"],
+      "gear_control": ["gearbox"]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/motor_dynamic_attr.json",
+  "title": "Motor Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the motor, defining power output targets and speed signal output.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:motor",
+      "description": "Subsystem type, must be 'machine_max:motor'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "power_output": {
+      "type": "string",
+      "description": "Power output target, can be any other subsystem name within this part, part connection point name, or 'part', or 'vehicle'."
+    },
+    "speed_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Motor speed signal output channel and targets. Optional, by default sends motor speed (rad/s) to the motor_speed channel of parts and vehicles."
+    }
+  },
+  "required": ["type", "definition", "power_output"],
+  "examples": [
+    {
+      "type": "machine_max:motor",
+      "definition": "machine_max:electric_motor",
+      "power_output": "transmission",
+      "speed_outputs": { "motor_speed": ["part", "vehicle"] }
+    }
+  ]
+}

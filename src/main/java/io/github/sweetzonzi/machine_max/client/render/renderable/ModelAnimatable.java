@@ -10,11 +10,16 @@ import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
 import cn.solarmoon.spark_core.animation.model.ModelInstance;
 import cn.solarmoon.spark_core.animation.renderer.ModelRenderHelperKt;
-import cn.solarmoon.spark_core.js.molang.JSMolangValueKt;
+import cn.solarmoon.spark_core.molang.MolangContextRegistry;
+import cn.solarmoon.spark_core.molang.SparkMolangContext;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.ISubsystemHost;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
+import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -40,8 +45,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 正在将功能向SubPartAnimatable等迁移
- */
+     * 正在将功能向SubPartAnimatable等迁移
+     */
 @Getter
 @OnlyIn(Dist.CLIENT)
 @Deprecated()
@@ -51,6 +56,30 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
     private final ModelController modelController;
     private final AnimController animController;
     private final Map<String, Object> variables = HashMap.newHashMap(1);
+    private final SparkMolangContext<IAnimatable<Player>> molangContext = new SparkMolangContext<>(this);
+
+    /**
+     * 若玩家坐在载具座位上，返回座位对应的 SubPart。
+     */
+    @Nullable
+    private SubPart getRidingSubPart() {
+        Player player = getAnimatable();
+        if (player instanceof IEntityMixin mixin
+                && mixin.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat
+                && seat.getOwner() instanceof ISubsystemHost host) {
+            return host.getSubPart();
+        }
+        return null;
+    }
+
+    @Override
+    public SparkMolangContext<?> getMolangContext() {
+        SubPart sp = getRidingSubPart();
+        if (sp != null) {
+            return sp.getSparkMolangContext();  // 内部 reset 到当前零件状态
+        }
+        return molangContext;
+    }
 
     public ModelAnimatable(AnimatableParams params) {
         if (params == null) throw new NullPointerException();
@@ -113,14 +142,14 @@ public class ModelAnimatable implements IAnimatable<Player>, ITickableRenderable
             if (num > 0) {
                 df = new DecimalFormat("#." + "0".repeat(num)); // 如果num大于0，则保留相应数量的有效数字
             }
-            //利用js解析molang表达式
+            //利用Mocha引擎解析molang表达式
             for (String arg : textParams.molangArgs()) {
                 try {
-                    Object value = JSMolangValueKt.eval(arg, this);
+                    Object value = MolangContextRegistry.evalAsObject(arg, getMolangContext());
                     switch (value) {
-                        case String stringValue -> args.add(stringValue);
-                        case Number number -> args.add(df.format(number.doubleValue()));
-                        case Boolean bool -> args.add(String.valueOf(bool));
+                        case String s -> args.add(s);
+                        case Number n -> args.add(df.format(n.doubleValue()));
+                        case Boolean b -> args.add(String.valueOf(b));
                         default -> args.add("null");
                     }
                 } catch (Exception e) {

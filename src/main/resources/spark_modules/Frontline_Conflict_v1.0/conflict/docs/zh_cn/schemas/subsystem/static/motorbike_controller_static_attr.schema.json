@@ -1,0 +1,206 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/motorbike_controller_static_attr.json",
+  "title": "摩托车控制器子系统静态属性",
+  "description": "摩托车控制系统的静态属性，负责处理驾驶输入、转向控制等，包含摩托车特有的倾斜角度限制。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema引用路径，用于编辑器智能提示和验证",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:motorbike_controller",
+      "description": "子系统类型，必须为'machine_max:motorbike_controller'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度，降至0时会瘫痪，修复至30%耐久度时恢复功能。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否传递伤害至子系统持有者。若为true，子系统受到的伤害会传递给零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值至子系统剩余耐久度。例如40伤害，子系统剩余耐久度为20，则只会传递20伤害给持有者。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否隐藏子系统在HUD等处的显示，常用于纯粹提供模型部位损坏差分的无功能子系统"
+    },
+    "steering_center": {
+      "$ref": "../../base/vector_3d.schema.json",
+      "default": [0, 0, 0],
+      "description": "转向中心位置，相对于部件局部坐标系。摩托车控制辅助力的计算依赖于转向中心字段的y值。它应当填写预计的组装好后的车辆接地处相对车控子系统附着刚体质心的距离。例如，一个质心在原点处的摩托车架，这里的y应当填写负值。"
+    },
+    "min_steering_radius": {
+      "type": "number",
+      "minimum": 0,
+      "default": 3.0,
+      "description": "最小转向半径，单位米。用于低速和手刹时的转向限制。"
+    },
+    "lateral_acceleration": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "default": 8.0,
+          "description": "侧向加速度限制，单位m/s²。用于根据速度实时计算转向半径（半径 = 速度² / 加速度）。"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "速度-侧向加速度映射表，键为速度(km/h)，值为对应的侧向加速度限制(m/s²)。支持线性插值。",
+          "examples": [
+            {
+              "0": 8.0,
+              "30": 6.0,
+              "60": 4.0,
+              "100": 3.0
+            }
+          ]
+        }
+      ],
+      "default": 8.0,
+      "description": "侧向加速度限制，单位m/s²。用于根据速度实时计算转向半径（半径 = 速度² / 加速度）。"
+    },
+    "max_drift_angular_velocity": {
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "default": 1.0,
+          "description": "最大漂移角速度，单位rad/s。作为漂移时PD控制器的目标值。"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "速度-最大漂移角速度映射表，键为速度（km/h），值为对应的最大漂移角速度（rad/s）。线性插值。",
+          "examples": [
+            {
+              "0": 0.8,
+              "30": 1.0,
+              "60": 1.2,
+              "100": 1.5
+            }
+          ]
+        }
+      ],
+      "default": 1.0,
+      "description": "最大漂移角速度，单位rad/s。作为漂移时PD控制器的目标值。"
+    },
+    "manual_gear_shift": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否启用手动换挡。若为false，则自动换挡。"
+    },
+    "auto_hand_brake": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否自动启用手刹。当车辆静止且无输入时自动应用手刹。"
+    },
+    "control_inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["move_control"],
+      "description": "控制输入信号键列表，优先级从高到低。"
+    },
+    "max_angle": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 90,
+      "default": 30.0,
+      "description": "倾斜角超过此角度视作失去平衡，不再修正姿态，单位为度。"
+    },
+    "parking_angle": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90,
+      "default": 5.0,
+      "description": "摩托车静止停靠时的倾斜角度，可正可负，单位为度。正值表示向左倾斜，负值表示向右倾斜。"
+    },
+    "correction_force_multiplier": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 10.0,
+      "default": 1.0,
+      "description": "修正力倍率，用于整体缩放摩托车控制系统的平衡调节力。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被激活时的音效事件。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "子系统基本音效配置。"
+    }
+  },
+  "required": ["type"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:motorbike_controller",
+      "basic_durability": 40.0,
+      "min_steering_radius": 3.0,
+      "lateral_acceleration": 8.0,
+      "max_drift_angular_velocity": 2.0,
+      "manual_gear_shift": false,
+      "control_inputs": ["move_control"],
+      "max_angle": 45.0,
+      "parking_angle": 5.0,
+      "correction_force_multiplier": 1.2
+    },
+    {
+      "type": "machine_max:motorbike_controller",
+      "basic_durability": 35.0,
+      "min_steering_radius": 3.5,
+      "lateral_acceleration": {
+        "0": 8.0,
+        "30": 6.0,
+        "60": 4.0,
+        "100": 3.0
+      },
+      "max_drift_angular_velocity": {
+        "0": 1.5,
+        "30": 2.0,
+        "60": 2.5,
+        "100": 3.0
+      },
+      "manual_gear_shift": true,
+      "abs_enabled": true,
+      "abs_target_slip_ratio": 0.15,
+      "abs_wheel_radius": 0.3,
+      "max_angle": 35.0,
+      "parking_angle": -3.0,
+      "correction_force_multiplier": 0.8
+    }
+  ]
+}

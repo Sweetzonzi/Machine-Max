@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/dynamic/engine_dynamic_attr.json",
+  "title": "Engine Subsystem Dynamic Attributes",
+  "description": "Dynamic attributes of the engine, defining power output targets and speed signal output.",
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "machine_max:engine",
+      "description": "Subsystem type, must be 'machine_max:engine'."
+    },
+    "definition": {
+      "type": "string",
+      "description": "Resource location of the subsystem model, pointing to the corresponding subsystem static attribute definition file."
+    },
+    "power_output": {
+      "type": "string",
+      "description": "Power output target, can be any other subsystem name within this part, part connection point name, or 'part', or 'vehicle'."
+    },
+    "speed_outputs": {
+      "$ref": "../base/signal_targets.json",
+      "default": {},
+      "description": "Engine speed signal output channel and targets. Optional, by default sends engine speed (rad/s) to the engine_speed channel of parts and vehicles."
+    }
+  },
+  "required": ["type", "definition", "power_output"],
+  "examples": [
+    {
+      "type": "machine_max:engine",
+      "definition": "machine_max:ae86at_engine",
+      "power_output": "gearbox",
+      "speed_outputs": { "engine_speed": ["part", "vehicle"] }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part/subpart/connector/connector_static_attr.schema.json",
+  "type": "Simple",
+  "direction": "yp",
+  "required_tags": ["conflict:stryker_hull"],
+  "integrity": 20.0
+}

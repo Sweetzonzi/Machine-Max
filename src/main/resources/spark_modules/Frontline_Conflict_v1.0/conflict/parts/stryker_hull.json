@@ -1,0 +1,54 @@
+{
+  "$schema": "../docs/zh_cn/schemas/part_definition_schema.json",
+  "icon": "conflict:textures/icon/stryker/stryker_hull.png",
+  "vehicle_durability_rate": 0.6,
+  "vehicle_damage_rate": 1.0,
+  "vehicle_damage_rate_destroyed": 0.1,
+  "variants": {
+    "model": "conflict:stryker_all_base.geo",
+    "textures": "conflict:textures/part/stryker_base/stryker_all_base.png",
+    "tags": ["conflict:stryker_hull"],
+    "sub_parts": {
+      "sub_part.machine_max.main": {
+        "start_bone": "MainHull",
+        "end_bones": [],
+        "durability": 120.0,
+        "mass": 930.0,
+        "block_collision": "ground",
+        "collision_height": 1.5,
+        "hit_boxes": {
+          "HullCollision": {
+            "id": "part",
+            "type": "box",
+            "material": "machine_max:7035_aluminum_alloy",
+            "thickness": 3
+          }
+        },
+      "connectors": { //子部件用于与其他零件连接的连接点列表
+        "connector.machine_max.hull_axis": { //连接点名称
+          "locator": "stryker_base_hull", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+          "definition": "machine_max:fixed_down"
+        },
+        "connector.machine_max.hatch_hull_axis": { //连接点名称
+          "locator": "stryker_hatch_hull", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+          "definition": "conflict:stryker_hatch"
+        },
+        "connector.machine_max.hatch_hull_lock": { //连接点名称
+          "locator": "stryker_hatch_lock", //Locator名称, 会寻找名称匹配的Locator, 以其位置与姿态作为连接点的位置和姿态
+          "definition": "machine_max:fixed_up"
+        }
+      },
+        "subsystems": {
+          "subsystem.machine_max.glow_left_main_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          },
+          "subsystem.machine_max.glow_right_main_light": {
+            "type": "machine_max:basic", //无功能子系统, 仅用于表示是否被摧毁
+            "definition": "machine_max:default_glass"
+          }
+      }
+    }
+  }
+}
+}
