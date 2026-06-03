@@ -147,7 +147,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
         else if (actualHandBrake > 0.5f && localVel.lengthSquared() > 4) driftWeight = 1.0f; // 强制手刹起漂时漂移控制权重为 1
         else if (drifting && localVel.lengthSquared() > 4) driftWeight = 1.0f;
         else driftWeight = 0.0f;
-        if (isActive() && getOwner().getSubPart().getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
+        if (isActive()) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
                 actualSteering = actualSteering * 0.9f + (moveInput[4] / 100f) * 0.1f;
@@ -309,14 +309,14 @@ public class CarControllerSubsystem extends BasicSubsystem {
         Object signalValue = getSignalChannel(channelName).get(sender);
         if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
             if (sender instanceof WheelDriverSubsystem wheel) {
-                if (wheel.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle)
+                if (wheel.getOwner().getSubPart().getPart().assembly != this.getOwner().getSubPart().getPart().assembly)
                     wheels.remove(wheel);
                 else {
                     wheels.put(wheel, controlChannel);
                     addCallbackTarget(controlChannel, wheel);
                 }
             } else if (sender instanceof EngineSubsystem engine) {
-                if (engine.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle)
+                if (engine.getOwner().getSubPart().getPart().assembly != this.getOwner().getSubPart().getPart().assembly)
                     this.engines.remove(engine);
                 else {
                     engines.put(engine, controlChannel);
@@ -342,7 +342,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     }
                 }
             } else if (sender instanceof MotorSubsystem motor) {
-                if (motor.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle)
+                if (motor.getOwner().getSubPart().getPart().assembly != this.getOwner().getSubPart().getPart().assembly)
                     this.motors.remove(motor);
                 else {
                     motors.put(motor, controlChannel);
@@ -366,7 +366,7 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     }
                 }
             } else if (sender instanceof GearboxSubsystem gearbox) {
-                if (gearbox.getOwner().getSubPart().getPart().vehicle != this.getOwner().getSubPart().getPart().vehicle) {
+                if (gearbox.getOwner().getSubPart().getPart().assembly != this.getOwner().getSubPart().getPart().assembly) {
                     this.gearboxes.remove(gearbox);
                     overrideCountDown.remove(gearbox);
                 } else {

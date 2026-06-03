@@ -25,7 +25,7 @@ public interface VehicleCaptureItem {
 
         var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
         SubPart subPart = eyesight.getSubPart();
-        VehicleCore vehicle = subPart != null && subPart.part != null ? subPart.part.vehicle : null;
+        VehicleCore vehicle = subPart != null && subPart.part != null && subPart.part.assembly instanceof VehicleCore vc ? vc : null;
         if (vehicle == null || vehicle.isRemoved) {
             player.sendSystemMessage(Component.translatable("message.machine_max.blueprint_pass"));
             return InteractionResultHolder.pass(sourceStack);

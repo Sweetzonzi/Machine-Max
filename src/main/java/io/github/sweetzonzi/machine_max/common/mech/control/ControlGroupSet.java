@@ -49,6 +49,18 @@ public class ControlGroupSet {
     }
 
     /**
+     * 获取当前有效的控制模式。<br>
+     * 优先使用当前激活子组（若不为 INHERIT），否则回退到 baseGroup 的模式。
+     */
+    public ControlMode getEffectiveControlMode() {
+        ControlGroup active = getActiveGroup();
+        if (active != null && active.controlMode != ControlMode.INHERIT) {
+            return active.controlMode;
+        }
+        return baseGroup.controlMode;
+    }
+
+    /**
      * 切换到指定索引的子控制组。
      *
      * @param index 子控制组索引，-1 表示不激活任何子组

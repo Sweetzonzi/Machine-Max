@@ -220,7 +220,7 @@ public class VehicleAssemblyAttachment {
                     ResourceLocation newRecipe = recipeIterator.next().id();
                     if (newRecipe != subPart.part.getCustomRecipe()) {
                         subPart.part.customRecipe = newRecipe;
-                        PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), new PartChangeRecipePayload(subPart.part.vehicle.getUuid(), subPart.part.getUuid(), newRecipe));
+                        PacketDistributor.sendToPlayersInDimension((ServerLevel) player.level(), new PartChangeRecipePayload(subPart.part.assembly.getAssemblyId(), subPart.part.getUuid(), newRecipe));
                     }
                 }
             }
@@ -270,7 +270,7 @@ public class VehicleAssemblyAttachment {
                 if (connector != null && targetConnector != null && connectorName != null) {
                     if (targetConnector.conditionCheck(partType, variantName)) {//检查变体条件
                         if ((targetConnector instanceof SimpleConnector || connector.isSimpleConnector())) {//检查接口条件
-                            VehicleCore vehicleCore = targetConnector.subPart.part.vehicle;//获取目标连接点所属的载具
+                            VehicleCore vehicleCore = (VehicleCore) targetConnector.subPart.part.assembly;//获取目标连接点所属的载具
                             targetConnector.adjustTransform(part.externalConnectors.get(connectorName), attachRotation);
                             vehicleCore.attachConnector(targetConnector, part.externalConnectors.get(connectorName), part);//尝试将新部件连接至接口
                             return InteractionResultHolder.consume(stack);

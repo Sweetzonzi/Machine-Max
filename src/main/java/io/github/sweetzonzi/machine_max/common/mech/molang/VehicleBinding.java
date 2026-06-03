@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.molang;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimInstance;
 import cn.solarmoon.spark_core.js.molang.IMolangContext;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.IPartAssembly;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
@@ -52,10 +53,10 @@ public class VehicleBinding implements IMolangContext {
         var holder = getAnimatable().getAnimatable();
         if (holder instanceof LivingEntity) {
             if (((IEntityMixin) holder).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                return seat.getOwner().getSubPart().getPart().getVehicle().getSubSystemController().signalStorage.get(key);
+                return seat.getOwner().getSubPart().getPart().getAssembly().getSubsystemController().signalStorage.get(key);
             } else return null;
         } else if (holder instanceof SubPart subPart) {
-            return subPart.part.getVehicle().getSubSystemController().signalStorage.get(key);
+            return subPart.part.getAssembly().getSubsystemController().signalStorage.get(key);
         }
         else return null;
     }
@@ -64,10 +65,10 @@ public class VehicleBinding implements IMolangContext {
     private static Double getDurability(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                return (double) seat.getOwner().getSubPart().getPart().getVehicle().getHp();
+                return seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vc ? (double) vc.getHp() : 0.0;
             } else return 0.0;
         } else if (ctx.getAnimatable() instanceof SubPart subPart)
-            return (double) subPart.part.getVehicle().getHp();
+            return subPart.part.getAssembly() instanceof VehicleCore vc ? (double) vc.getHp() : 0.0;
         else return 0.0;
     }
 
@@ -75,37 +76,37 @@ public class VehicleBinding implements IMolangContext {
     private static Double getMaxDurability(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                return (double) seat.getOwner().getSubPart().getPart().getVehicle().getMaxHp();
+                return seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vc ? (double) vc.getMaxHp() : 0.0;
             } else return 0.0;
         } else if (ctx.getAnimatable() instanceof SubPart subPart)
-            return (double) subPart.part.getVehicle().getMaxHp();
+            return subPart.part.getAssembly() instanceof VehicleCore vc ? (double) vc.getMaxHp() : 0.0;
         else return 0.0;
     }
 
     @Nullable
-    private static VehicleCore getVehicle(IAnimatable<?> ctx) {
+    private static IPartAssembly getAssembly(IAnimatable<?> ctx) {
         if (ctx.getAnimatable() instanceof LivingEntity) {
             if (((IEntityMixin) ctx.getAnimatable()).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-                return seat.getOwner().getSubPart().getPart().getVehicle();
+                return seat.getOwner().getSubPart().getPart().getAssembly();
             }
         } else if (ctx.getAnimatable() instanceof SubPart subPart) {
-            return subPart.part.getVehicle();
+            return subPart.part.getAssembly();
         }
         return null;
     }
 
     private static Double getStoredEnergy(IAnimatable<?> ctx) {
-        var vehicle = getVehicle(ctx);
-        if (vehicle == null) return 0.0;
-        EnergyGrid grid = vehicle.getSubSystemController().getEnergyGrid();
+        var assembly = getAssembly(ctx);
+        if (assembly == null) return 0.0;
+        EnergyGrid grid = assembly.getSubsystemController().getEnergyGrid();
         if (grid == null) return 0.0;
         return (double) grid.getTotalStoredEnergy();
     }
 
     private static Double getMaxStoredEnergy(IAnimatable<?> ctx) {
-        var vehicle = getVehicle(ctx);
-        if (vehicle == null) return 0.0;
-        EnergyGrid grid = vehicle.getSubSystemController().getEnergyGrid();
+        var assembly = getAssembly(ctx);
+        if (assembly == null) return 0.0;
+        EnergyGrid grid = assembly.getSubsystemController().getEnergyGrid();
         if (grid == null) return 0.0;
         return (double) grid.getMaxStoredEnergy();
     }

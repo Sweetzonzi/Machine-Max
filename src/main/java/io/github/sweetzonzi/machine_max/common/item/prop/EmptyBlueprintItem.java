@@ -43,12 +43,12 @@ public class EmptyBlueprintItem extends Item implements ICustomModelItem, MenuPr
         if (!level.isClientSide()) {
             LivingEntityEyesightAttachment eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
             SubPart subPart = eyesight.getSubPart();
-            if (subPart != null && subPart.part.vehicle != null) {
+            if (subPart != null && subPart.part.assembly != null) {
                 // 打开命名GUI
                 ItemStack stack = player.getItemInHand(usedHand);
                 player.openMenu(this, buf -> {
                     buf.writeInt(player.getInventory().selected);
-                    buf.writeUtf(subPart.part.vehicle.name);
+                    buf.writeUtf(subPart.part.assembly.getAssemblyName());
                 });
                 return InteractionResultHolder.consume(stack);
             } else {

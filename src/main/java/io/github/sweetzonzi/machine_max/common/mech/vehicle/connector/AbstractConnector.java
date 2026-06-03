@@ -196,7 +196,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                 if (totalImpact > 0) {
                     if (totalImpact >= getIntegrity() && hasPart()) {
                         //强冲击，立即击落部件
-                        subPart.part.vehicle.detachConnector(this);
+                        subPart.part.assembly.disconnect(this);
                         float finalImpact = (subPart.isDestroyed() ? totalImpact : attr.getImpactAbsorption() * totalImpact);
                         SparkLevel.submitImmediateTask(subPart.level, PPhase.ALL, () -> {
                             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"), 64f);

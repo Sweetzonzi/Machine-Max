@@ -101,11 +101,12 @@ public class CameraController {
             Quaternionf seatRot = new Quaternionf();
             seat.getSubPart().getWorldPositionMatrix(partialTick).getNormalizedRotation(seatRot);
             if (!type.isFirstPerson() && seat.attr.staticAttribute.views.focusOnCenter()) {
-                VehicleCore vehicle = seat.getOwner().getSubPart().getPart().getVehicle();
-                event.setCameraPos(vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick))
-                        .add(SparkMathKt.toVec3(MMMath.localVectorToWorldVector(
-                                PhysicsHelperKt.toBVector3f(seat.attr.staticAttribute.views.thirdPersonOffset()),
-                                SparkMathKt.toBQuaternion(seatRot)))));
+                if (seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vehicle) {
+                    event.setCameraPos(vehicle.getPosition().scale(partialTick).add(vehicle.getOldPosition().scale(1 - partialTick))
+                            .add(SparkMathKt.toVec3(MMMath.localVectorToWorldVector(
+                                    PhysicsHelperKt.toBVector3f(seat.attr.staticAttribute.views.thirdPersonOffset()),
+                                    SparkMathKt.toBQuaternion(seatRot)))));
+                }
             } else {
                 Transform transform = seat.getOwner().getSubPart().getLerpedLocatorWorldTransform(seat.attr.locator, new Transform().setTranslation(new Vector3f(0, 1.1f, 0)), partialTick);
                 event.setCameraPos(SparkMathKt.toVec3(transform.getTranslation())
@@ -125,10 +126,11 @@ public class CameraController {
             return;
         }
         if (((IEntityMixin) entity).machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-            VehicleCore vehicle = seat.getOwner().getSubPart().getPart().getVehicle();
-            speedDistanceFactor = 0.8f * speedDistanceFactor + 0.2f * (float) (2 * MMMath.sigmoid(0.1 * vehicle.getVelocity().length()) - 1);
-            float newDistance = (float) ((seat.attr.staticAttribute.views.distanceScale() + 0.4 * speedDistanceFactor) * vehicle.cameraDistance);
-            event.setDistance(newDistance);
+            if (seat.getOwner().getSubPart().getPart().getAssembly() instanceof VehicleCore vehicle) {
+                speedDistanceFactor = 0.8f * speedDistanceFactor + 0.2f * (float) (2 * MMMath.sigmoid(0.1 * vehicle.getVelocity().length()) - 1);
+                float newDistance = (float) ((seat.attr.staticAttribute.views.distanceScale() + 0.4 * speedDistanceFactor) * vehicle.cameraDistance);
+                event.setDistance(newDistance);
+            }
         }
     }
 

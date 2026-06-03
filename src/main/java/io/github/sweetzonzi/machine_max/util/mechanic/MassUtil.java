@@ -23,7 +23,7 @@ public class MassUtil {
             if (connector.hasPart())
                 partMass += (0.3f * connector.attachedConnector.subPart.body.getMass());
         }
-        partMass += 0.05f * (subPart.part.vehicle.totalMass - subPart.body.getMass());
+        partMass += 0.05f * (subPart.part.assembly.getTotalMass() - subPart.body.getMass());
         return partMass;
     }
 

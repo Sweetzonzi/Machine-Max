@@ -238,16 +238,16 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
             if (sender instanceof TurretDriverSubsystem turret) {
                 // 判断是否在同一载具内（避免跨载具连接）
                 //    Check if within the same vehicle
-                if (turret.getOwner().getSubPart().getPart().vehicle
-                        != this.getOwner().getSubPart().getPart().vehicle) {
+                if (turret.getOwner().getSubPart().getPart().assembly
+                        != this.getOwner().getSubPart().getPart().assembly) {
                     turrets.remove(turret);
                 } else {
                     turrets.put(turret, controlChannel);
                     addCallbackTarget(controlChannel, turret);
                 }
             } else if (sender instanceof LauncherSubsystem launcher) {
-                if (launcher.getOwner().getSubPart().getPart().vehicle
-                        != this.getOwner().getSubPart().getPart().vehicle) {
+                if (launcher.getOwner().getSubPart().getPart().assembly
+                        != this.getOwner().getSubPart().getPart().assembly) {
                     launchers.remove(launcher);
                 } else {
                     launchers.put(launcher, controlChannel);

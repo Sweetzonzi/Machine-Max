@@ -36,7 +36,7 @@ public class MotorbikeControllerSubsystem extends CarControllerSubsystem {
         this.driftWeight = 0f;
         this.roll = SparkMathKt.toDegrees(getOwner().getSubPart().getRoll());
         this.omegaRoll = getSubPart().body.getAngularVelocityLocal(null).z;
-        if (isActive() && getOwner().getSubPart().getPart().vehicle.mode == VehicleCore.ControlMode.GROUND) {
+        if (isActive()) {
             //更新受灵敏度影响的实际控制量，油门与刹车控制在分发控制信号时进行
             if (this.moveInput != null) {
                 actualSteering = actualSteering * 0.9f + (moveInput[4] / 100f) * 0.1f;

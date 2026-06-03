@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.registry.MMItems;
 import io.github.sweetzonzi.machine_max.common.registry.MMMenus;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.VehicleDataSavedPayload;
 import lombok.Getter;
@@ -54,8 +55,8 @@ public class VehicleNamingMenu extends AbstractContainerMenu {
         var eyesight = player.getData(MMAttachments.getENTITY_EYESIGHT());
         var subPart = eyesight.getSubPart();
 
-        if (subPart != null && subPart.part.vehicle != null) {
-            VehicleData vehicleData = new VehicleData(subPart.part.vehicle);
+        if (subPart != null && subPart.part.assembly instanceof VehicleCore vehicle) {
+            VehicleData vehicleData = new VehicleData(vehicle);
 
             // 设置载具名称
             vehicleData = vehicleData.withNewName(vehicleName);

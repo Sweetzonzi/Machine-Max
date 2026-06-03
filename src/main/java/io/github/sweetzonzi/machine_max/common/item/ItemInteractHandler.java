@@ -28,7 +28,7 @@ public class ItemInteractHandler {
                 SubPart subPart = partEntity.subPart;
                 Component component = stack.get(DataComponents.CUSTOM_NAME);
                 if (component != null && !player.level().isClientSide) {
-                    subPart.part.vehicle.name = component.getString();
+                    subPart.part.assembly.setAssemblyName(component.getString());
                     stack.consume(1, player);
                     event.setCancellationResult(InteractionResult.sidedSuccess(false));
                 }

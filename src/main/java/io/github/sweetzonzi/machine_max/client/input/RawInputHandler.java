@@ -10,6 +10,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -100,7 +101,7 @@ public class RawInputHandler {
             String subSystemName = seat.name;
             MMJoystickHandler.refreshState();
 
-            switch (part.vehicle.mode) {
+            switch (((VehicleCore) part.assembly).mode) {
                 case GROUND -> {
                     boolean forward = new KeyHooks.EVENT(KeyBinding.groundForwardKey).isHover();
                     boolean backWard = new KeyHooks.EVENT(KeyBinding.groundBackWardKey).isHover();

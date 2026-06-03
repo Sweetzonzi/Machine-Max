@@ -654,7 +654,7 @@ public class CollisionHandler {
             if (connector.hasPart())
                 partMass += 0.3 * connector.attachedConnector.subPart.body.getMass();
         }
-        partMass += 0.05 * (subPart.part.vehicle.totalMass - subPart.body.getMass());
+        partMass += 0.05 * (subPart.part.assembly.getTotalMass() - subPart.body.getMass());
         float restitution = (float) Math.sqrt(subPart.body.getRestitution());
         double miu = (entityMass * partMass / (partMass + entityMass));
         double contactEnergy = 0.5 * miu * contactNormalSpeed * contactNormalSpeed

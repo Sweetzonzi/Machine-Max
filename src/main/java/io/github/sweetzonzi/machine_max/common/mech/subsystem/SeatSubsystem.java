@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.CollisionManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
@@ -95,8 +96,10 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             }
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
-            getOwner().getSubPart().getPart().vehicle.activate();
-            getOwner().getSubPart().getPart().vehicle.recalculateCameraDistance();
+            getOwner().getSubPart().getPart().assembly.activatePhysics();
+            if (getOwner().getSubPart().getPart().assembly instanceof VehicleCore vc) {
+                vc.recalculateCameraDistance();
+            }
         }
     }
 

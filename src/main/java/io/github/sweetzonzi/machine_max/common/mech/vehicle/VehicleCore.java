@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
-public class VehicleCore implements SyncedDataHolder {
+public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     private static final float COMBO_ATTACH_MAX_POS_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_POS_ERROR;
     private static final float COMBO_ATTACH_MAX_DIRECTION_ERROR = ConnectorAlignmentHelper.DEFAULT_MAX_DIRECTION_ERROR;//1°以内视为方向对齐
 
@@ -146,6 +146,12 @@ public class VehicleCore implements SyncedDataHolder {
         }
     }
 
+    /** IPartAssembly 接口要求的 getSubsystemController()，Lombok @Getter 生成的是 getSubSystemController()（大写S），需要显式声明 */
+    @Override
+    public SubsystemController getSubsystemController() {
+        return this.subSystemController;
+    }
+
     /**
      * <p>载具因拓扑结构发生变化而分裂为多个部分时使用的构造方法</p>
      * <p>Method used to create a new vehicle when the topology of the vehicle changes and splits into multiple parts</p>
@@ -168,7 +174,7 @@ public class VehicleCore implements SyncedDataHolder {
             oldVehicle.partNet.removeNode(part);
             this.partMap.put(part.uuid, part);
             this.partNet.addNode(part);
-            part.vehicle = this;
+            part.assembly = this;
             this.subSystemController.addSubsystems(subsystems);
         }
         for (Pair<AbstractConnector, SimpleConnector> edge : partNet.edges()) {
@@ -493,7 +499,7 @@ public class VehicleCore implements SyncedDataHolder {
      * @see VehicleCore#attachConnector
      */
     public void addPart(Part part) {
-        part.vehicle = this;
+        part.assembly = this;
         for (AbstractSubsystem subSystem : part.getAllSubsystems()) {//连接部件内子系统的信号传输关系
             subSystem.setTargetFromNames();
         }
@@ -581,14 +587,14 @@ public class VehicleCore implements SyncedDataHolder {
      * @param newPart    新安装的部件，可为null
      */
     public void attachConnector(AbstractConnector connector1, AbstractConnector connector2, @Nullable Part newPart) {
-        VehicleCore connectorVehicle1 = connector1.subPart.part.vehicle;
-        VehicleCore connectorVehicle2 = connector2.subPart.part.vehicle;
-        if (connectorVehicle1 == null && connectorVehicle2 == null) {
-            MachineMax.LOGGER.error("连接失败：连接点所属部件未绑定载具");
+        IPartAssembly assembly1 = connector1.subPart.part.assembly;
+        IPartAssembly assembly2 = connector2.subPart.part.assembly;
+        if (assembly1 == null && assembly2 == null) {
+            MachineMax.LOGGER.error("连接失败：连接点所属部件未绑定装配体");
             return;
         }
-        if (connectorVehicle1 != this && connectorVehicle2 != this) {
-            MachineMax.LOGGER.error("连接失败：连接点{}与{}都不属于载具{}", connector1.name, connector2.name, this.uuid);
+        if (assembly1 != this && assembly2 != this) {
+            MachineMax.LOGGER.error("连接失败：连接点{}与{}都不属于装配体{}", connector1.name, connector2.name, this.uuid);
             return;
         }
         if (connector1.subPart.part == connector2.subPart.part)
@@ -604,13 +610,18 @@ public class VehicleCore implements SyncedDataHolder {
             advancedConnector = connector2;
         } else throw new UnsupportedOperationException("连接点之一必须是SimpleConnector类型");
 
-        VehicleCore advancedVehicle = advancedConnector.subPart.part.vehicle;
-        VehicleCore simpleVehicle = simpleConnector.subPart.part.vehicle;
+        IPartAssembly advAssembly = advancedConnector.subPart.part.assembly;
+        IPartAssembly simpAssembly = simpleConnector.subPart.part.assembly;
 
-        if (advancedVehicle == simpleVehicle || (advancedVehicle == null || simpleVehicle == null)) {
+        if (advAssembly == simpAssembly || (advAssembly == null || simpAssembly == null)) {
             attachConnectorInSameVehicle(advancedConnector, simpleConnector, newPart);
         } else {
-            if (advancedVehicle.level != simpleVehicle.level || this.level != advancedVehicle.level) {
+            // 跨装配体合并：双方都必须是 VehicleCore
+            if (!(advAssembly instanceof VehicleCore advVeh) || !(simpAssembly instanceof VehicleCore simpVeh)) {
+                MachineMax.LOGGER.error("连接失败：跨装配体合并仅支持 VehicleCore");
+                return;
+            }
+            if (advVeh.level != simpVeh.level || this.level != advVeh.level) {
                 MachineMax.LOGGER.error("连接失败：跨维度载具不可连接");
                 return;
             }
@@ -618,7 +629,7 @@ public class VehicleCore implements SyncedDataHolder {
                 MachineMax.LOGGER.error("连接失败：跨载具合并不支持newPart参数");
                 return;
             }
-            VehicleCore donorVehicle = advancedVehicle == this ? simpleVehicle : advancedVehicle;
+            VehicleCore donorVehicle = advVeh == this ? simpVeh : advVeh;
             attachConnectorAcrossVehicles(advancedConnector, simpleConnector, donorVehicle);
         }
     }
@@ -709,7 +720,7 @@ public class VehicleCore implements SyncedDataHolder {
             donorVehicle.partNet.removeNode(part);
             this.partMap.put(part.uuid, part);
             this.partNet.addNode(part);
-            part.vehicle = this;
+            part.assembly = this;
             this.subSystemController.addSubsystems(subsystems);
         }
 
@@ -826,7 +837,7 @@ public class VehicleCore implements SyncedDataHolder {
     public void detachConnectors(List<AbstractConnector> connectors) {
         List<Pair<AbstractConnector, SimpleConnector>> connections = new ArrayList<>();
         for (AbstractConnector connector : connectors) {
-            if (connector.subPart.part.vehicle == this) {
+            if (connector.subPart.part.assembly == this) {
                 if (!connector.internal) {//若是与外部部件连接的接口，则需要移除载具核心中记录的连接关系
                     if (connector.hasPart()) {
                         if (connector instanceof AdvancedConnector)
@@ -1109,5 +1120,49 @@ public class VehicleCore implements SyncedDataHolder {
             }
         }
         this.cameraDistance = maxDistance;
+    }
+
+    // ========================================
+    // IPartAssembly 接口实现
+    // ========================================
+
+    @Override
+    public UUID getAssemblyId() {
+        return this.uuid;
+    }
+
+    @Override
+    public String getAssemblyName() {
+        return this.name;
+    }
+
+    @Override
+    public void setAssemblyName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public float getTotalMass() {
+        return this.totalMass;
+    }
+
+    @Override
+    public void onPartDamage(Part part, float damage) {
+        this.applyVehicleDamage(damage);
+    }
+
+    @Override
+    public void connect(AbstractConnector connector1, AbstractConnector connector2, @Nullable Part newPart) {
+        this.attachConnector(connector1, connector2, newPart);
+    }
+
+    @Override
+    public void disconnect(AbstractConnector connector) {
+        this.detachConnector(connector);
+    }
+
+    @Override
+    public void activatePhysics() {
+        this.activate();
     }
 }

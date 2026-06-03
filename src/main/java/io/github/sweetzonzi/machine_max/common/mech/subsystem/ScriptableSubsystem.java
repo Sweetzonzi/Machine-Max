@@ -55,7 +55,7 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     }
 
     public void doActionOnScriptable(String scriptName, FetchedScriptableSubsystem action) {
-        for (AbstractSubsystem subsystem : getOwner().getSubPart().getPart().getVehicle().getSubSystemController().getAllSubsystems()) {
+        for (AbstractSubsystem subsystem : getOwner().getSubPart().getPart().getAssembly().getSubsystemController().getAllSubsystems()) {
             if (subsystem instanceof ScriptableSubsystem sc && sc.script.equals(scriptName)) action.doAction(sc);
         }
     }
@@ -214,7 +214,7 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
     public void onVehicleStructureChanged() {
         Hook.run(this);
         super.onVehicleStructureChanged();
-        vehicleCoreUUID = getOwner().getSubPart().getPart().getVehicle().getUuid();
+        vehicleCoreUUID = getOwner().getSubPart().getPart().getAssembly().getAssemblyId();
     }
 
     @Override

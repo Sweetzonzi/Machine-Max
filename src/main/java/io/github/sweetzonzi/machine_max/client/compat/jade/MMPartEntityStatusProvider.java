@@ -39,8 +39,7 @@ public enum MMPartEntityStatusProvider implements IEntityComponentProvider {
         ));
 
         // 第二行展示所属整车耐久（若该子部件已挂到载具上）。
-        VehicleCore vehicle = partEntity.subPart.part.vehicle;
-        if (vehicle != null) {
+        if (partEntity.subPart.part.assembly instanceof VehicleCore vehicle) {
             tooltip.add(Component.translatable(
                     "tooltip.machine_max.jade.vehicle_durability",
                     formatDurabilityStatus(vehicle.getHp(), vehicle.getMaxHp())

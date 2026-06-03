@@ -93,8 +93,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         super.onSignalUpdated(channelName, sender);
 
         if ("callback".equals(channelName) && sender instanceof CameraSubsystem camera) {
-            if (camera.getOwner().getSubPart().getPart().vehicle
-                    == this.getOwner().getSubPart().getPart().vehicle) {
+            if (camera.getOwner().getSubPart().getPart().assembly
+                    == this.getOwner().getSubPart().getPart().assembly) {
                 if (!discoveredCameras.contains(camera)) {
                     discoveredCameras.add(camera);
                 }
@@ -133,7 +133,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             for (String signalKey : targets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, new MoveInputSignal(inputs, conflicts));
             }
-            this.getOwner().getSubPart().part.vehicle.activate();
+            this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
             for (String signalKey : targets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
@@ -147,7 +147,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             for (String signalKey : targets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
             }
-            this.getOwner().getSubPart().part.vehicle.activate();
+            this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
             for (String signalKey : targets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
@@ -168,7 +168,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
                         aimPoint != null ? new ViewInputSignal(aimPoint) : EmptySignal.INSTANCE);
             }
             if (aimPoint != null) {
-                this.getOwner().getSubPart().part.vehicle.activate();
+                this.getOwner().getSubPart().part.assembly.activatePhysics();
             }
         } else {
             for (String signalKey : targets.keySet()) {
@@ -202,7 +202,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             for (String targetName : binding.targets) {
                 this.sendSignalToTarget(binding.channel, targetName, value);
             }
-            this.getOwner().getSubPart().part.vehicle.activate();
+            this.getOwner().getSubPart().part.assembly.activatePhysics();
         }
     }
 

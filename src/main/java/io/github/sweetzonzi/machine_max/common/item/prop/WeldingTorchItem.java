@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.Part;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.util.data.RpAddReason;
@@ -84,7 +85,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                 repairStep * SUBPART_REPAIR_PER_TICK,
                                 repairStep * SUBSYSTEM_REPAIR_PER_TICK,
                                 repairStep * CONNECTOR_REPAIR_PER_TICK)
-                                || subPart.getPart().getVehicle().repair(repairStep * VEHICLE_REPAIR_PER_TICK);
+                                || (subPart.getPart().getAssembly() instanceof VehicleCore vc && vc.repair(repairStep * VEHICLE_REPAIR_PER_TICK));
                         // 尝试同时组装部件
                         float assembleStep = 5;
                         boolean assembled = part.assemble(player.getInventory(), assembleStep * ASSEMBLY_PER_TICK);
@@ -100,7 +101,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
                                 livingEntity.stopUsingItem();
                             }
                         } else { // 对0进度的部件再次潜行使用物品才会拆除
-                            part.vehicle.removePart(part);
+                            part.assembly.removePart(part);
                         }
                     }
                 } else { // 客户端仅负责音效与粒子效果
@@ -184,7 +185,7 @@ public class WeldingTorchItem extends Item implements ICustomModelItem {
     }
 
     private boolean shouldPlayEffect(SubPart subPart) {
-        boolean shouldPlayEffect = subPart.getPart().getVehicle().getHp() < subPart.getPart().getVehicle().getMaxHp();
+        boolean shouldPlayEffect = subPart.getPart().getAssembly() instanceof VehicleCore vc ? vc.getHp() < vc.getMaxHp() : false;
         if (!shouldPlayEffect) {
             shouldPlayEffect = subPart.getDurability() < subPart.getMaxDurability();
         }

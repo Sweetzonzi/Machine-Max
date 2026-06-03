@@ -215,7 +215,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         this.textureName = name;
         this.getModelController().setTextureLocation(part.variant.getTexture(name));
         //同步客户端
-        if (!getLevel().isClientSide() && part.vehicle != null)
+        if (!getLevel().isClientSide() && part.assembly != null)
             PacketDistributor.sendToPlayersInDimension((ServerLevel) getLevel(),
                     new PartPaintPayload(this.getId(), this.textureName));
     }
@@ -246,25 +246,23 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
                 return;
             }
         }
-        //同载具部件不发生碰撞
+        //同装配体零件不发生碰撞（VehicleCore 或 MechUnit 共用）
         if (ownerA instanceof SubPart subPartA && ownerB instanceof SubPart subPartB) {
-            if (subPartA.part.vehicle instanceof VehicleCore vehicleA && subPartB.part.vehicle instanceof VehicleCore vehicleB) {
-                if (vehicleA == vehicleB) {
-                    event.setShouldCollide(false);
-                    return;
-                }
+            if (subPartA.part.assembly != null && subPartA.part.assembly == subPartB.part.assembly) {
+                event.setShouldCollide(false);
+                return;
             }
         }
-        //载具不与乘客发生碰撞
+        //装配体不与乘客发生碰撞
         AbstractControllableSubsystem sub;
         if (ownerA instanceof SubPart subPart && ownerB instanceof LivingEntity livingEntity) {
             sub = ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem();
-            if (sub != null && sub.getOwner().getSubPart().getPart().getVehicle() == subPart.part.vehicle) {
+            if (sub != null && sub.getOwner().getSubPart().getPart().getAssembly() == subPart.part.assembly) {
                 event.setShouldCollide(false);
             }
         } else if (ownerB instanceof SubPart subPart && ownerA instanceof LivingEntity livingEntity) {
             sub = ((IEntityMixin) livingEntity).machine_Max$getControllingSubsystem();
-            if (sub != null && sub.getOwner().getSubPart().getPart().getVehicle() == subPart.part.vehicle) {
+            if (sub != null && sub.getOwner().getSubPart().getPart().getAssembly() == subPart.part.assembly) {
                 event.setShouldCollide(false);
             }
         }
@@ -363,7 +361,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
                             var owner = PhysicsBodyExtensionKt.getOwner(hit);
                             if (owner instanceof SubPart sp &&
-                                    sp.part.vehicle == this.part.vehicle &&
+                                    sp.part.assembly == this.part.assembly &&
                                     sp.attr.hydroPriority >= attr.hydroPriority) {
 
                                 occlusion = Math.min(occlusion, ray.getHitFraction());
@@ -538,7 +536,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             if (source.is(DamageTypeTags.IS_EXPLOSION)) knockBack *= 10.0f;
             float finalKnockBack = knockBack;
             SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-                part.vehicle.activate();
+                part.assembly.activatePhysics();
                 Vector3f contactPoint = PhysicsHelperKt.toBVector3f(sourcePos);
                 this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), contactPoint.subtract(this.body.getPhysicsLocation(null)));
                 return null;
@@ -738,9 +736,9 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
             if (totalDamage > 0) {
                 setDurability(Math.clamp(getDurability() - totalDamage, 0, getMaxDurability()));
                 part.recomputeAssemblyFromDurability();
-                if (part.vehicle != null) {
+                if (part.assembly != null) {
                     float rate = isDestroyed() ? part.type.vehicleDamageRateDestroyed : part.type.vehicleDamageRate;
-                    part.vehicle.applyVehicleDamage(Math.max(0f, totalDamage * rate));
+                    part.assembly.onPartDamage(part, Math.max(0f, totalDamage * rate));
                 }
                 if (isDestroyed() && getDestroyTime() > 20) { // 仅剩最后1秒销毁倒计时时不再额外缩减
                     int extraAdvance = Math.round(totalDamage * MMServerConfig.getSubPartDestroyAdvanceTicksPerDamage());
@@ -1055,7 +1053,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
 
     @Override
     public EnergyGrid getEnergyGrid() {
-        return part.vehicle != null
+        return part.assembly != null
                 ? getSubsystemController().getEnergyGrid()
                 : null;
     }
@@ -1063,7 +1061,7 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @NotNull
     @Override
     public SubsystemController getSubsystemController() {
-        return part.vehicle.subSystemController;
+        return part.assembly.getSubsystemController();
     }
 
     @NotNull

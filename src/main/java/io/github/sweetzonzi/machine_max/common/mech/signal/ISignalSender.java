@@ -232,8 +232,8 @@ public interface ISignalSender {
         List<ISignalReceiver> targets = new ArrayList<>();
         for (String targetName : targetNames) {
             if (targetName.equals("vehicle")) {
-                if (ownerPart.part.vehicle != null)
-                    targets.add(ownerPart.part.vehicle.subSystemController);
+                if (ownerPart.part.assembly != null)
+                    targets.add(ownerPart.part.assembly.getSubsystemController());
             } else if (targetName.equals("subpart")) {
                 targets.add(ownerPart);
             } else if (subSystems.containsKey(targetName)) {

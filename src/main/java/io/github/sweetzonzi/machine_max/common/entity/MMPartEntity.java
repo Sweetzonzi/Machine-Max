@@ -89,7 +89,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
         this.subPart = subPart;
         this.subPartName = subPart.name;
         this.partUUID = subPart.part.uuid;
-        this.vehicleUUID = subPart.part.vehicle.uuid;
+        this.vehicleUUID = subPart.part.assembly.getAssemblyId();
         this.setPos(SparkMathKt.toVec3(subPart.getPosition()));
     }
 
@@ -575,7 +575,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         if (subPart != null) {
             buffer.writeBoolean(true);
-            buffer.writeUUID(this.subPart.part.vehicle.uuid);
+            buffer.writeUUID(this.subPart.part.assembly.getAssemblyId());
             buffer.writeUUID(this.subPart.part.uuid);
             buffer.writeUtf(this.subPart.name);
         } else buffer.writeBoolean(false);

@@ -55,7 +55,8 @@ import java.util.*;
 @Getter
 public class Part {
     //常规属性 General attributes
-    public volatile VehicleCore vehicle;//所属的VehicleCore
+    /** 所属的装配体（VehicleCore、MechUnit 等） */
+    public volatile IPartAssembly assembly;
     public String name;
     public final PartType type;
     public final Level level;
@@ -788,9 +789,9 @@ public class Part {
     }
 
     private void syncAssemblyProgressToClient() {
-        if (!level.isClientSide() && vehicle != null && vehicle.inLevel) {
+        if (!level.isClientSide() && assembly != null && assembly.isInLevel()) {
             PacketDistributor.sendToPlayersInDimension((ServerLevel) level, new PartAssemblyProgressSyncPayload(
-                    vehicle.uuid,
+                    assembly.getAssemblyId(),
                     uuid,
                     assemblingProgress,
                     materialProgress,
@@ -826,7 +827,7 @@ public class Part {
     }
 
     public void setTransform(Transform transform) {
-        if (vehicle == null || !vehicle.inLevel) {
+        if (assembly == null || !assembly.isInLevel()) {
             setTransformRaw(transform);
         } else SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
             setTransformRaw(transform);

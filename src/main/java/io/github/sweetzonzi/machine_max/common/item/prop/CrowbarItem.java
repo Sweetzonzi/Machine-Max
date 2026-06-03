@@ -71,7 +71,7 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                 if (hasConnection && (player.isCrouching() || !player.isCreative())) {
                     AbstractConnector targetConnector = eyesight.getAttachedConnector();
                     if (player.isCrouching() && targetConnector != null && targetConnector.hasPart() && !targetConnector.isInternal()) {
-                        part.vehicle.detachConnector(targetConnector);
+                        part.assembly.disconnect(targetConnector);
                     } else if (subPart.entity != null) {
                         float damage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
                         float scale = player.getAttackStrengthScale(0.5f);
@@ -90,7 +90,7 @@ public class CrowbarItem extends Item implements ICustomModelItem {
                         });
                     }
                 } else {
-                    part.vehicle.removePart(part);
+                    part.assembly.removePart(part);
                     if (!player.isCreative()) {//非创造模式，则尝试获取为物品
                         ItemStack itemStack = null;
                         float assemblingProgress = part.getAssemblingProgress();
