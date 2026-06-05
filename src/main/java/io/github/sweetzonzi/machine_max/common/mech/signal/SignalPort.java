@@ -4,9 +4,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractConnector;
 import lombok.Getter;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -168,5 +166,10 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
      */
     public String translateChannel(String originalChannel) {
         return signalTranslation.getOrDefault(originalChannel, originalChannel);
+    }
+
+    @Override
+    public boolean acceptAllRoutingInput() {
+        return true;
     }
 }

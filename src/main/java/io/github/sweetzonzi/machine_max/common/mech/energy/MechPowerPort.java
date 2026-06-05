@@ -32,6 +32,11 @@ public class MechPowerPort implements IMechPowerConsumer {
         }
     }
 
+    /**
+     * 获取反馈速度。
+     * 优先从本地已解析的消费端获取；若本地无法解析，则沿连接链向上游委托。
+     * 注意防止两个对接的 MechPowerPort 均无法本地解析时形成无限递归（A→B→A→B→…）。
+     */
     @Override
     public float getFeedbackSpeed() {
         if (resolvedLocalConsumer != null) {
@@ -39,7 +44,12 @@ public class MechPowerPort implements IMechPowerConsumer {
         }
         AbstractConnector attached = owner.attachedConnector;
         if (attached != null && attached.mechanicalEnergyPort != null) {
-            return attached.mechanicalEnergyPort.getFeedbackSpeed();
+            MechPowerPort targetPort = attached.mechanicalEnergyPort;
+            // 若目标端口也无法本地解析，且两端口互为 attachedConnector，则构成循环，直接返回 0
+            if (targetPort.resolvedLocalConsumer == null && targetPort.owner.attachedConnector == this.owner) {
+                return 0;
+            }
+            return targetPort.getFeedbackSpeed();
         }
         return 0;
     }
@@ -51,6 +61,11 @@ public class MechPowerPort implements IMechPowerConsumer {
         }
     }
 
+    /**
+     * 检查动力路径是否连通。
+     * 优先通过本地已解析的消费端检查；若本地无法解析，则沿连接链向上游委托。
+     * 注意防止两个对接的 MechPowerPort 均无法本地解析时形成无限递归（A→B→A→B→…）。
+     */
     @Override
     public boolean isPowerPathConnected(String producerName) {
         if (resolvedLocalConsumer != null) {
@@ -58,7 +73,12 @@ public class MechPowerPort implements IMechPowerConsumer {
         }
         AbstractConnector attached = owner.attachedConnector;
         if (attached != null && attached.mechanicalEnergyPort != null) {
-            return attached.mechanicalEnergyPort.isPowerPathConnected(producerName);
+            MechPowerPort targetPort = attached.mechanicalEnergyPort;
+            // 若目标端口也无法本地解析，且两端口互为 attachedConnector，则构成循环，直接返回 false
+            if (targetPort.resolvedLocalConsumer == null && targetPort.owner.attachedConnector == this.owner) {
+                return false;
+            }
+            return targetPort.isPowerPathConnected(producerName);
         }
         return false;
     }
