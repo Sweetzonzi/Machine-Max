@@ -34,8 +34,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     /** 通过握手发现的发射器子系统及其对应的控制频道名 */
     private final Map<LauncherSubsystem, String> launchers = new HashMap<>();
 
-    /** 缓存的目标世界坐标，每物理tick更新 */
+    /** 从 ViewInputSignal 读到的目标世界坐标 */
     private volatile Vec3 targetPosition = null;
+    /** 完整的视角输入信号（含分轴稳定/偏移信息） */
+    private volatile ViewInputSignal currentViewSignal = null;
     /** 当前是否有开火指令 */
     private volatile boolean firing = false;
 
@@ -58,9 +60,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        // 物理线程开始时读取一次 volatile 字段到局部变量，避免与主线程写入 targetPosition 的竞态
+        // 物理线程开始时读取一次 volatile 字段到局部变量，避免竞态
+        ViewInputSignal vis = this.currentViewSignal;
         Vec3 target = this.targetPosition;
-        if (!isActive() || isDestroyed() || target == null) {
+        if (!isActive() || isDestroyed() || vis == null || target == null) {
             resetSignalOutputs();
             return;
         }
@@ -68,13 +71,35 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         var staticAttr = attr.staticAttribute;
         float tolDeg = staticAttr.getAimToleranceDeg();
 
-        // ① 向每个炮塔驱动发送目标旋转角度
+        // ① 分轴驱动每个炮塔：稳定轴位置控制(aimPoint)，无稳轴增量偏移(turret current + offset)
         for (Map.Entry<TurretDriverSubsystem, String> entry : turrets.entrySet()) {
             TurretDriverSubsystem turret = entry.getKey();
             String channel = entry.getValue();
             if (turret.isDestroyed() || !turret.isActive()) continue;
-            Vector3f aimAngles = turret.computeAimAngles(target);
-            sendCallbackToListener(channel, turret, new RotationSignal(aimAngles));
+
+            Vector3f targetAngle = new Vector3f(turret.getRelativeAngle());
+            boolean computed = false;
+            Vector3f aimAngles = null;
+
+            // 俯仰轴（x）
+            if (vis.pitchStabilized) {
+                if (!computed) { aimAngles = turret.computeAimAngles(target); computed = true; }
+                targetAngle.x = aimAngles.x;
+            } else if (vis.pitchOffsetDeg != 0) {
+                targetAngle.x += (float) Math.toRadians(vis.pitchOffsetDeg);
+            }
+            // 无稳且 offset=0 → targetAngle.x 保持当前角度（炮塔锁死）
+
+            // 偏航轴（y）
+            if (vis.yawStabilized) {
+                if (!computed) { aimAngles = turret.computeAimAngles(target); computed = true; }
+                targetAngle.y = aimAngles.y;
+            } else if (vis.yawOffsetDeg != 0) {
+                targetAngle.y += (float) Math.toRadians(vis.yawOffsetDeg);
+            }
+            // 无稳且 offset=0 → targetAngle.y 保持当前角度（炮塔锁死）
+
+            sendCallbackToListener(channel, turret, new RotationSignal(targetAngle));
         }
 
         // ② 筛选瞄准目标的发射器
@@ -144,26 +169,26 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
      * 从输入信号频道读取目标坐标和开火指令
      */
     private void readInputSignals() {
-        // 读取目标坐标：轮询 targetInputs 频道，取第一个 Vec3
+        // 读取目标坐标：优先尝试 ViewInputSignal（完整的分轴信息），否则 fallback 到 Vec3
+        ViewInputSignal newVis = null;
         Vec3 pos = null;
         for (String signalKey : attr.staticAttribute.getAimInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
             Object signal = channel.getFirstSignal();
             if (signal instanceof ViewInputSignal vis) {
-                pos = vis.value;
-                this.targetPosition = pos;
+                newVis = vis;
+                pos = vis.aimPoint;
                 break;
             } else if (signal instanceof Vec3 vec3) {
                 pos = vec3;
-                this.targetPosition = pos;
                 break;
             } else if (signal instanceof Vector3f jmeVec) {
                 pos = new Vec3(jmeVec.x, jmeVec.y, jmeVec.z);
-                this.targetPosition = pos;
                 break;
             }
         }
-        if (pos == null) this.targetPosition = null;
+        this.targetPosition = pos;
+        this.currentViewSignal = newVis;
 
         // 读取开火指令：轮询 fireInputs 频道，任一非EmptySignal即视为开火
         this.firing = false;

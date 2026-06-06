@@ -26,7 +26,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
@@ -68,8 +67,14 @@ public class CameraController {
     /** 当前激活的摄像机（null=普通座椅视角） */
     @Getter
     private static CameraSubsystem activeCamera = null;
-    /** 世界空间瞄准点（唯一真相源）。鼠标移动时在此点做世界空间平移，鼠标不动则此点不动 */
+    /** 世界空间瞄准点（唯一真相源，稳定轴使用）。鼠标不动则此点不动 */
     private static Vec3 aimPoint = null;
+    /** 本 tick 无稳俯仰轴鼠标累积偏移（度），tickCameraMode 发包后清零 */
+    private static float localPitchOffsetDeg = 0f;
+    /** 本 tick 无稳偏航轴鼠标累积偏移（度），tickCameraMode 发包后清零 */
+    private static float localYawOffsetDeg = 0f;
+    /** 无稳轴累积偏移上限（度），避免一次快速鼠标滑动造成过大偏转 */
+    private static final float LOCAL_OFFSET_LIMIT_DEG = 90f;
     /** 当前变焦倍率，在 [baseZoom, maxZoom] 之间 */
     private static float currentZoom = 1f;
     /** 连续变焦混合值（0=baseZoom, 1=maxZoom） */
@@ -117,7 +122,7 @@ public class CameraController {
     public static void updateCameraDistance(CalculateDetachedCameraDistanceEvent event) {
         Camera camera = event.getCamera();
         Entity entity = camera.getEntity();
-        if (activeCamera != null && activeCamera.isActive()) { // 炮镜模式下，相机距离设为0以完全匹配locator位置
+        if (activeCamera != null && activeCamera.isActive()) {
             event.setDistance(0f);
             return;
         }
@@ -146,7 +151,7 @@ public class CameraController {
 
         // 炮镜模式
         if (activeCamera != null && activeCamera.isActive()) {
-            if (type.isFirstPerson() || type.isMirrored()) // 强制后向第三人称，避免手臂渲染
+            if (type.isFirstPerson() || type.isMirrored())
                 client.options.setCameraType(CameraType.THIRD_PERSON_BACK);
             updateCameraRotCameraMode(event, partialTick);
             return;
@@ -174,13 +179,13 @@ public class CameraController {
     }
 
     /**
-     * 炮镜模式下的相机旋转计算（每渲染帧）。
-     * 直接让摄像机看向世界空间中的 aimPoint——aimPoint 是唯一真相源：
-     * 鼠标不动 → aimPoint 不动 → 炮塔慢慢追上来。
+     * 炮镜模式每渲染帧的相机旋转计算（60fps+）。<p>
+     * 分轴处理：稳定轴从 locator→aimPoint 反算局部角（补偿车体晃动），无稳轴固定在 0°（摄像机无内部偏转，跟 mount 走）。
      */
     private static void updateCameraRotCameraMode(ViewportEvent.ComputeCameraAngles event, float partialTick) {
         CameraSubsystem camera = activeCamera;
         Transform locator = camera.getLerpedLocatorWorldTransform(partialTick);
+        var sa = camera.attr.staticAttribute;
 
         // 若尚无瞄准点，从摄像机正前方 100 米处初始化一个
         if (aimPoint == null) {
@@ -189,28 +194,45 @@ public class CameraController {
             aimPoint = SparkMathKt.toVec3(locator.getTranslation().add(forward.mult(100)));
         }
 
-        // 直接计算 locator → aimPoint 的世界方向向量，转 MC 相机角度
-        Vector3f locatorPos = locator.getTranslation();
-        Vector3f toAim = PhysicsHelperKt.toBVector3f(aimPoint).subtract(locatorPos);
+        // 分轴计算摄像机内部偏转角：
+        //   稳定轴 → 从 locator→aimPoint 反算局部角（补偿 mount 运动）
+        //   无稳轴 → 0（摄像机固定于 mount，无内部陀螺平台）
+        float localPitch = sa.isVerticalStabilized() ?
+                computeLocalPitchToPoint(locator, aimPoint) : 0f;
+        float localYaw = sa.isHorizontalStabilized() ?
+                computeLocalYawToPoint(locator, aimPoint) : 0f;
+
+        // 从 localPitch/localYaw + locator 构建世界方向
+        Matrix3f aimMat = new Quaternion().fromAngles(localPitch, localYaw, 0).toRotationMatrix();
+        Vector3f dir = new Vector3f(0, 0, -1);
+        aimMat.mult(dir, dir);
+        locator.getRotation().toRotationMatrix().mult(dir, dir);
         Vec3 aimDir;
-        if (toAim.lengthSquared() < 0.000001f) {
+        if (dir.lengthSquared() < 0.000001f) {
             Vector3f forward = new Vector3f(0, 0, -1);
             locator.getRotation().toRotationMatrix().mult(forward, forward);
             aimDir = SparkMathKt.toVec3(forward);
         } else {
-            aimDir = SparkMathKt.toVec3(toAim.normalize());
+            aimDir = SparkMathKt.toVec3(dir.normalize());
         }
 
-        double pitchDeg = - Math.toDegrees(Math.asin(Math.clamp(aimDir.y, -1.0, 1.0)));
-        double yawDeg = - Math.toDegrees(Math.atan2(aimDir.x, aimDir.z));
+        double pitchDeg = -Math.toDegrees(Math.asin(Math.clamp(aimDir.y, -1.0, 1.0)));
+        double yawDeg = -Math.toDegrees(Math.atan2(aimDir.x, aimDir.z));
 
         event.setPitch((float) pitchDeg);
         event.setYaw((float) yawDeg);
-        // 从定位器世界旋转中提取roll角度，使车体倾斜时视角随之倾斜
+        // 从定位器世界旋转中提取 roll 角度，使车体倾斜时视角随之倾斜
         Quaternionf locatorJoml = SparkMathKt.toQuaternionf(locator.getRotation());
         org.joml.Vector3f euler = new org.joml.Vector3f();
         locatorJoml.getEulerAnglesYXZ(euler);
         event.setRoll((float) Math.toDegrees(-euler.z));
+
+        // 每帧用当前渲染方向重算 aimPoint（保持距离），供服务端开火容差判断。
+        // 稳定轴：dir 指向 aimPoint → aimPoint 不变；无稳轴：dir 随 mount 变化 → aimPoint 随之更新。
+        float dist = locator.getTranslation().distance(PhysicsHelperKt.toBVector3f(aimPoint));
+        if (dist < 1f) dist = 100f;
+        aimPoint = SparkMathKt.toVec3(locator.getTranslation().clone().addLocal(dir.clone().multLocal(dist)));
+
         aimDirection = aimDir;
     }
 
@@ -309,37 +331,57 @@ public class CameraController {
         event.setFOV(rawFov / scale);
     }
 
+    /**
+     * 炮镜模式下鼠标与摄像机交互的核心方法。<p>
+     * 分轴处理：稳定轴 → 在世界空间沿摄像机 localRight/localUp 平移 aimPoint；<br>
+     *           无稳轴 → 累积鼠标增量到 localPitch/YawOffsetDeg（每 tick 清零发包）。
+     */
     public static void turnCamera(double yRot, double xRot) {
         float f = (float) xRot * 0.15F; // 俯仰，鼠标垂直移动，xRot>0表示鼠标下移
         float f1 = (float) yRot * 0.15F; // 偏航，鼠标水平移动，yRot>0表示鼠标右移
         LocalPlayer player = client.player;
         if (player == null) return;
 
-        // 炮镜模式：鼠标在世界空间直接平移瞄准点
+        // 炮镜模式：按稳定/无稳分轴处理
         if (activeCamera != null && activeCamera.isActive()) {
-            if (aimPoint == null) return;
-            Transform locator = activeCamera.getLerpedLocatorWorldTransform(1f);
-            Vector3f camPos = locator.getTranslation();
-            Vector3f aimPos = PhysicsHelperKt.toBVector3f(aimPoint);
-            float dist = aimPos.subtract(camPos).length();
-            if (dist < 1f) dist = 1f;
+            var sa = activeCamera.attr.staticAttribute;
+            boolean vertStab = sa.isVerticalStabilized();
+            boolean horStab = sa.isHorizontalStabilized();
 
-            // 取摄像机局部坐标系的 right / up 轴（转到世界空间），这样坦克侧倾时瞄准点移动跟着摄像机姿态
-            Vector3f localRight = new Vector3f(1, 0, 0);
-            locator.getRotation().toRotationMatrix().mult(localRight, localRight);
-            Vector3f localUp = new Vector3f(0, 1, 0);
-            locator.getRotation().toRotationMatrix().mult(localUp, localUp);
+            // 变焦越高灵敏度越低：8×时鼠标量降为 1/8
+            float sens = 0.15F / Math.max(currentZoom, 0.1f);
+            f = (float) xRot * sens;
+            f1 = (float) yRot * sens;
 
-            float yawAngle = (float) Math.toRadians(f1);
-            float pitchAngle = (float) Math.toRadians(f);
-            float moveX = (float) Math.tan(yawAngle) * dist;
-            float moveY = (float) Math.tan(pitchAngle) * dist;
+            // 稳定轴：在世界空间沿摄像机局部 right/up 平移 aimPoint
+            if (horStab || vertStab) {
+                if (aimPoint == null) return;
+                Transform locator = activeCamera.getLerpedLocatorWorldTransform(1f);
+                Vector3f camPos = locator.getTranslation();
+                Vector3f aimPos = PhysicsHelperKt.toBVector3f(aimPoint);
+                float dist = aimPos.subtract(camPos).length();
+                if (dist < 1f) dist = 1f;
 
-            // 鼠标右移(f1>0)→沿+right平移；鼠标下移(f>0)→沿-up平移
-            aimPoint = aimPoint.add(
-                    localRight.x * moveX - localUp.x * moveY,
-                    localRight.y * moveX - localUp.y * moveY,
-                    localRight.z * moveX - localUp.z * moveY);
+                // 取摄像机局部坐标系的 right / up 轴（转到世界空间）
+                Vector3f localRight = new Vector3f(1, 0, 0);
+                locator.getRotation().toRotationMatrix().mult(localRight, localRight);
+                Vector3f localUp = new Vector3f(0, 1, 0);
+                locator.getRotation().toRotationMatrix().mult(localUp, localUp);
+
+                float yawAngle = (float) Math.toRadians(f1);
+                float pitchAngle = (float) Math.toRadians(f);
+                float moveX = (float) Math.tan(yawAngle) * dist;
+                float moveY = (float) Math.tan(pitchAngle) * dist;
+
+                double dx = 0, dy = 0, dz = 0;
+                if (horStab)  { dx += localRight.x * moveX; dy += localRight.y * moveX; dz += localRight.z * moveX; }
+                if (vertStab) { dx -= localUp.x * moveY;     dy -= localUp.y * moveY;     dz -= localUp.z * moveY; }
+                aimPoint = aimPoint.add(dx, dy, dz);
+            }
+
+            // 无稳轴：累积鼠标增量
+            if (!vertStab) localPitchOffsetDeg = Math.clamp(localPitchOffsetDeg - f, -LOCAL_OFFSET_LIMIT_DEG, LOCAL_OFFSET_LIMIT_DEG);
+            if (!horStab)  localYawOffsetDeg   = Math.clamp(localYawOffsetDeg   - f1, -LOCAL_OFFSET_LIMIT_DEG, LOCAL_OFFSET_LIMIT_DEG);
             return;
         }
 
@@ -378,21 +420,17 @@ public class CameraController {
                 ((IEntityMixin) client.player).machine_Max$getControllingSubsystem();
 
         if (subsystem instanceof SeatSubsystem seat) {
-            // 验证当前摄像机仍然有效
             if (activeCamera != null) {
                 if (!activeCamera.isActive() || activeCamera.isDestroyed()) {
                     exitCameraMode();
                 }
             }
 
-            // 炮镜模式
             if (activeCamera != null) {
-                activeCamera.hasViewer = true;
                 tickCameraMode(seat);
                 return;
             }
 
-            // 普通座椅视角（现有逻辑）
             tickSeatMode(seat);
         } else {
             exitCameraMode();
@@ -400,18 +438,22 @@ public class CameraController {
         }
     }
 
-    /** 炮镜模式每 tick（20tps）：发送世界空间瞄准点到服务端 */
+    /** 炮镜模式每 tick（20tps）：发送 aimPoint + 无稳轴偏移到服务端，清零本 tick 偏移 */
     private static void tickCameraMode(SeatSubsystem seat) {
         CameraSubsystem camera = activeCamera;
         if (aimPoint == null) return;
         SubPart subPart = camera.getOwner().getSubPart();
-        if (lastSentAimPoint == null
-                || aimPoint.distanceToSqr(lastSentAimPoint) > AIM_POINT_THRESHOLD_SQ) {
-            lastSentAimPoint = aimPoint;
-            PacketDistributor.sendToServer(new ViewInputPayload(
-                    subPart.getId(), camera.getName(),
-                    aimPoint.x, aimPoint.y, aimPoint.z));
-        }
+
+        PacketDistributor.sendToServer(new ViewInputPayload(
+                subPart.getId(), camera.getName(),
+                aimPoint.x, aimPoint.y, aimPoint.z,
+                localPitchOffsetDeg, localYawOffsetDeg));
+
+        lastSentAimPoint = aimPoint;
+
+        // 清零本 tick 偏移，供下一帧累积
+        localPitchOffsetDeg = 0f;
+        localYawOffsetDeg = 0f;
     }
 
     /** 座椅模式每 tick（现有逻辑） */
@@ -439,9 +481,35 @@ public class CameraController {
             PacketDistributor.sendToServer(new ViewInputPayload(
                     ownerSubPart.getId(),
                     seat.getName(),
-                    aimPoint.x, aimPoint.y, aimPoint.z
-            ));
+                    aimPoint.x, aimPoint.y, aimPoint.z,
+                    0f, 0f));
         }
+    }
+
+    // ===== 炮镜辅助方法 =====
+
+    /**
+     * 从 locator 到世界瞄准点计算局部坐标系下的俯仰角（弧度）。
+     * 稳定轴使用——用于补偿 mount 运动，使摄像机保持看向同一世界点。
+     */
+    private static float computeLocalPitchToPoint(Transform locator, Vec3 worldPoint) {
+        Vector3f toTarget = PhysicsHelperKt.toBVector3f(worldPoint).subtract(locator.getTranslation());
+        Vector3f localDir = new Vector3f();
+        locator.getRotation().inverse().toRotationMatrix().mult(toTarget, localDir);
+        float dist = (float) Math.sqrt(localDir.x * localDir.x + localDir.y * localDir.y + localDir.z * localDir.z);
+        if (dist < 0.001f) return 0f;
+        return (float) Math.asin(Math.clamp(localDir.y / dist, -1.0, 1.0));
+    }
+
+    /**
+     * 从 locator 到世界瞄准点计算局部坐标系下的偏航角（弧度）。
+     * 稳定轴使用——用于补偿 mount 运动，使摄像机保持看向同一世界点。
+     */
+    private static float computeLocalYawToPoint(Transform locator, Vec3 worldPoint) {
+        Vector3f toTarget = PhysicsHelperKt.toBVector3f(worldPoint).subtract(locator.getTranslation());
+        Vector3f localDir = new Vector3f();
+        locator.getRotation().inverse().toRotationMatrix().mult(toTarget, localDir);
+        return (float) Math.atan2(localDir.x, localDir.z);
     }
 
     /** 按方向切换摄像机 */
@@ -460,8 +528,6 @@ public class CameraController {
                 .toList();
         if (cameras.isEmpty()) return;
 
-        CameraSubsystem oldCamera = activeCamera;
-
         if (activeCamera == null || direction == 0) {
             activeCamera = cameras.getFirst();
         } else if (direction > 0) {
@@ -477,13 +543,7 @@ public class CameraController {
             }
         }
 
-        // 清除旧摄像机的观众标记
-        if (oldCamera != null && oldCamera != activeCamera) {
-            oldCamera.hasViewer = false;
-        }
-
         // 初始化瞄准点：从摄像机正前方 100 米处投射
-        activeCamera.hasViewer = true;
         Transform locator = activeCamera.getLerpedLocatorWorldTransform(1f);
         Vector3f forward = new Vector3f(0, 0, -1);
         locator.getRotation().toRotationMatrix().mult(forward, forward);
@@ -494,17 +554,18 @@ public class CameraController {
 
     /** 退出炮镜模式 */
     public static void exitCameraMode() {
-        if (activeCamera != null) {
-            activeCamera.hasViewer = false;
-        }
         activeCamera = null;
         aimPoint = null;
+        localPitchOffsetDeg = 0f;
+        localYawOffsetDeg = 0f;
         currentZoom = 1f;
         zoomBlend = 0f;
     }
 
     /** 重置炮镜模式状态（切换摄像机时调用） */
     private static void resetCameraModeState() {
+        localPitchOffsetDeg = 0f;
+        localYawOffsetDeg = 0f;
         if (activeCamera != null) {
             var sa = activeCamera.attr.staticAttribute;
             currentZoom = sa.getBaseZoom();

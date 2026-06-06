@@ -37,13 +37,12 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
 
     // ===== 摄像机发现 =====
 
-    /** 握手发现的摄像机列表（线程安全） */
+    /** 握手发现的摄像机列表（线程安全）
+     * -- GETTER --
+     * 返回握手发现的摄像机列表
+     */
+    @Getter
     protected final List<CameraSubsystem> discoveredCameras = new CopyOnWriteArrayList<>();
-
-    /** 返回握手发现的摄像机列表 */
-    public List<CameraSubsystem> getDiscoveredCameras() {
-        return discoveredCameras;
-    }
 
     /**
      * 摄像机发现握手配置 {频道名 → [目标接收者名列表]}。
@@ -165,7 +164,7 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         if (!targets.isEmpty() && this.isActive()) {
             for (String signalKey : targets.keySet()) {
                 this.sendSignalToAllTargets(signalKey,
-                        aimPoint != null ? new ViewInputSignal(aimPoint) : EmptySignal.INSTANCE);
+                        aimPoint != null ? new ViewInputSignal(aimPoint, 0f, 0f, false, false) : EmptySignal.INSTANCE);
             }
             if (aimPoint != null) {
                 this.getOwner().getSubPart().part.assembly.activatePhysics();

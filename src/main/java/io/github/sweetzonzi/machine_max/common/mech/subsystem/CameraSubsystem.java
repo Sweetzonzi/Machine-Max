@@ -23,30 +23,30 @@ import java.util.Map;
 
 /**
  * 摄像机子系统：提供炮镜视角与瞄准点输出功能。<p>
- * 服务端每 20tps 运行 onTick，将客户端注入的 lastAimPoint 以 ViewInputSignal 输出到指定频道。
- * 瞄准点由客户端 CameraController 以世界空间坐标直接维护——鼠标移动平移瞄准点，鼠标不动则瞄准点不动。
+ * 服务端每 20tps 运行 onTick，从客户端注入的信息构造 ViewInputSignal 输出到指定频道。<br>
+ * ViewInputSignal 携带有无分轴稳定的标志（从 staticAttribute 读取），
+ * 供 WeaponController 按每个轴分别采用位置控制或增量偏移驱动炮塔。
  */
 public class CameraSubsystem extends BasicSubsystem {
     public final CameraSubsystemAttr attr;
 
     /** 当前俯仰角偏移（弧度），相对于摄像机基座正前方。
-     *  由客户端 CameraController 在渲染帧中通过稳定器修正。
      *  volatile 供客户端跨线程读写。 */
     public volatile float aimPitch = 0f;
     /** 当前偏航角偏移（弧度），相对于摄像机基座正前方。
      *  volatile 供客户端跨线程读写。 */
     public volatile float aimYaw = 0f;
-    /** 客户端注入的世界空间瞄准点。
+    /** 客户端注入的世界空间瞄准点（稳定轴使用）。
      *  由 receiveClientAimInput 每网络包设置，onTick 读取后输出 ViewInputSignal。 */
     public volatile Vec3 lastAimPoint = null;
+    /** 客户端注入的本 tick 俯仰鼠标增量（度），无稳轴使用 */
+    public volatile float lastPitchOffsetDeg = 0f;
+    /** 客户端注入的本 tick 偏航鼠标增量（度），无稳轴使用 */
+    public volatile float lastYawOffsetDeg = 0f;
     /** TRACKING 模式下跟踪的外部目标世界坐标（从信号频道读取） */
     private volatile Vec3 trackingTarget = null;
     /** 当前是否处于 TRACKING 模式（由 trackingTarget 驱动，非静态属性） */
     private volatile boolean isTracking = false;
-    /** 当前是否有观众在看此摄像机。
-     *  服务端由 receiveClientAimInput 每网络包设置，onTick 末尾清除；
-     *  客户端由 CameraController 进入/退出时设置。 */
-    public volatile boolean hasViewer = false;
 
     // ===== SynchedEntityData keys（同步到客户端）=====
     public static final EntityDataAccessor<Float> DATA_AIM_PITCH =
@@ -77,13 +77,22 @@ public class CameraSubsystem extends BasicSubsystem {
             return;
         }
 
-        // 以客户端注入的 lastAimPoint 为唯一真相源，直接输出
+        // 以客户端注入的 lastAimPoint 为存在依据，构造带稳定标志的 ViewInputSignal
         if (lastAimPoint != null) {
+            var sa = attr.staticAttribute;
             synchedData.set(DATA_AIM_PITCH, aimPitch);
             synchedData.set(DATA_AIM_YAW, aimYaw);
             synchedData.set(DATA_IS_TRACKING, isTracking);
+
+            ViewInputSignal signal = new ViewInputSignal(
+                    lastAimPoint,
+                    lastPitchOffsetDeg,
+                    lastYawOffsetDeg,
+                    sa.isVerticalStabilized(),
+                    sa.isHorizontalStabilized()
+            );
             for (String channel : attr.aimOutputTargets.keySet()) {
-                sendSignalToAllTargets(channel, new ViewInputSignal(lastAimPoint));
+                sendSignalToAllTargets(channel, signal);
             }
         } else {
             resetSignalOutputs();
@@ -91,11 +100,14 @@ public class CameraSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 接收来自 ViewInputPayload 服务端 handler 的客户端瞄准点。
-     * 直接设为 lastAimPoint——客户端 CameraController 以世界空间坐标维护。
+     * 接收来自 ViewInputPayload 服务端 handler 的客户端瞄准点及无稳轴偏移。
+     * 瞄准点由客户端 CameraController 以世界空间坐标维护（稳定轴使用）；
+     * 偏移为无稳轴的本 tick 鼠标增量（度），鼠标无移动时为零。
      */
-    public void receiveClientAimInput(Vec3 aimPoint) {
+    public void receiveClientAimInput(Vec3 aimPoint, float pitchOffsetDeg, float yawOffsetDeg) {
         this.lastAimPoint = aimPoint;
+        this.lastPitchOffsetDeg = pitchOffsetDeg;
+        this.lastYawOffsetDeg = yawOffsetDeg;
     }
 
     /**
@@ -112,58 +124,13 @@ public class CameraSubsystem extends BasicSubsystem {
                 this.isTracking = true;
                 return;
             } else if (val instanceof ViewInputSignal vis) {
-                this.trackingTarget = vis.value;
+                this.trackingTarget = vis.aimPoint;
                 this.isTracking = true;
                 return;
             }
         }
         this.trackingTarget = null;
         this.isTracking = false;
-    }
-
-    /**
-     * TRACKING 模式下，从 trackingTarget 计算帧起始 aimPitch/aimYaw。
-     */
-    private void updatePitchYawFromTracking() {
-        if (trackingTarget == null) return;
-        Transform locator = getLocatorWorldTransform();
-        aimPitch = computePitchToPoint(locator, trackingTarget);
-        aimYaw = computeYawToPoint(locator, trackingTarget);
-    }
-
-    /**
-     * 从 lastAimPoint 反算当前 aimPitch/aimYaw。
-     */
-    private void updatePitchYawFromAimPoint(Vec3 aimPoint) {
-        if (aimPoint == null) return;
-        Transform locator = getLocatorWorldTransform();
-        aimPitch = computePitchToPoint(locator, aimPoint);
-        aimYaw = computeYawToPoint(locator, aimPoint);
-    }
-
-    /**
-     * 计算从 locator 到目标点的俯仰角（弧度）。
-     */
-    private float computePitchToPoint(Transform locator, Vec3 aimPoint) {
-        Vector3f locatorPos = locator.getTranslation();
-        Vector3f toTarget = PhysicsHelperKt.toBVector3f(aimPoint).subtract(locatorPos);
-        Vector3f localDir = new Vector3f();
-        locator.getRotation().inverse().toRotationMatrix().mult(toTarget, localDir);
-        float dist = (float) Math.sqrt(
-                localDir.x * localDir.x + localDir.y * localDir.y + localDir.z * localDir.z);
-        if (dist < 0.001f) return this.aimPitch;
-        return (float) Math.asin(Math.clamp(localDir.y / dist, -1.0, 1.0));
-    }
-
-    /**
-     * 计算从 locator 到目标点的偏航角（弧度）。
-     */
-    private float computeYawToPoint(Transform locator, Vec3 aimPoint) {
-        Vector3f locatorPos = locator.getTranslation();
-        Vector3f toTarget = PhysicsHelperKt.toBVector3f(aimPoint).subtract(locatorPos);
-        Vector3f localDir = new Vector3f();
-        locator.getRotation().inverse().toRotationMatrix().mult(toTarget, localDir);
-        return (float) Math.atan2(localDir.x, localDir.z);
     }
 
     @Override

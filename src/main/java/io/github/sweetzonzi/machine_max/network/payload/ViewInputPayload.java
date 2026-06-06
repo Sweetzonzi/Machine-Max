@@ -16,15 +16,18 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 视角输入数据包（客户端→服务端），携带玩家瞄准点的世界坐标。
- * 服务端通过 SubPart 的全局 ID 直接查找目标子系统，无需逐级解析载具和部件。
+ * 视角输入数据包（客户端→服务端），携带玩家瞄准点的世界坐标 + 无稳轴的鼠标增量偏移。<p>
+ * 服务端通过 SubPart 的全局 ID 直接查找目标子系统，无需逐级解析载具和部件。<br>
+ * 稳定标志不通过网络包传输——服务端从 CameraSubsystem 的 staticAttribute 直接读取。
  */
 public record ViewInputPayload(
         int subPartId,
         String subSystemName,
         double aimPointX,
         double aimPointY,
-        double aimPointZ
+        double aimPointZ,
+        float localPitchOffsetDeg,
+        float localYawOffsetDeg
 ) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ViewInputPayload> TYPE = new CustomPacketPayload.Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "view_input_payload"));
@@ -36,7 +39,9 @@ public record ViewInputPayload(
             double x = buf.readDouble();
             double y = buf.readDouble();
             double z = buf.readDouble();
-            return new ViewInputPayload(subPartId, subSystemName, x, y, z);
+            float pitchOff = buf.readFloat();
+            float yawOff = buf.readFloat();
+            return new ViewInputPayload(subPartId, subSystemName, x, y, z, pitchOff, yawOff);
         }
 
         @Override
@@ -46,6 +51,8 @@ public record ViewInputPayload(
             buffer.writeDouble(payload.aimPointX());
             buffer.writeDouble(payload.aimPointY());
             buffer.writeDouble(payload.aimPointZ());
+            buffer.writeFloat(payload.localPitchOffsetDeg());
+            buffer.writeFloat(payload.localYawOffsetDeg());
         }
     };
 
@@ -64,7 +71,7 @@ public record ViewInputPayload(
                     controllable.setViewInputSignal(aimPoint);
                 } else if (subsystem instanceof CameraSubsystem cam && cam.isActive()) {
                     Vec3 aimPoint = new Vec3(payload.aimPointX(), payload.aimPointY(), payload.aimPointZ());
-                    cam.receiveClientAimInput(aimPoint);
+                    cam.receiveClientAimInput(aimPoint, payload.localPitchOffsetDeg(), payload.localYawOffsetDeg());
                 } else {
                     MachineMax.LOGGER.warn("收到视角输入数据包，但子系统 {} 不存在于 SubPart(id={})", payload.subSystemName(), payload.subPartId());
                 }

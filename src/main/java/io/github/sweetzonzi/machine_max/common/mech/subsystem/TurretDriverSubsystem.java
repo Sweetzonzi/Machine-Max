@@ -220,7 +220,7 @@ public class TurretDriverSubsystem extends BasicSubsystem {
     /**
      * 获取关节的相对角度（弧度），返回值为局部坐标系下的角度。
      */
-    private Vector3f getRelativeAngle() {
+    public Vector3f getRelativeAngle() {
         if (connector == null || connector.joint == null) {
             return new Vector3f();
         }
