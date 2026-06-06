@@ -22,7 +22,9 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.ConnectionData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.PartData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.InteractBox;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorAttachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.ConnectorDetachPayload;
 import io.github.sweetzonzi.machine_max.network.payload.assembly.PartRemovePayload;
@@ -46,6 +48,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Getter
 public class VehicleCore implements SyncedDataHolder, IPartAssembly {
@@ -1167,5 +1170,64 @@ public class VehicleCore implements SyncedDataHolder, IPartAssembly {
     @Override
     public void activatePhysics() {
         this.activate();
+    }
+
+    // ==================== 座位查找 API ====================
+
+    /**
+     * 获取载具上所有 {@link AbstractControllableSubsystem} 实例（含 SeatSubsystem 和其他可控子系统）。
+     */
+    public List<AbstractControllableSubsystem> getAllControllableSubsystems() {
+        return subSystemController.getAllSubsystems().stream()
+                .filter(s -> s instanceof AbstractControllableSubsystem)
+                .map(s -> (AbstractControllableSubsystem) s)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取载具上所有 {@link SeatSubsystem}（座位）。
+     */
+    public List<SeatSubsystem> getAllSeats() {
+        return subSystemController.getAllSubsystems().stream()
+                .filter(s -> s instanceof SeatSubsystem)
+                .map(s -> (SeatSubsystem) s)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取载具上所有未被占用的座位。
+     */
+    public List<SeatSubsystem> getEmptySeats() {
+        return subSystemController.getAllSubsystems().stream()
+                .filter(s -> s instanceof SeatSubsystem)
+                .map(s -> (SeatSubsystem) s)
+                .filter(s -> !s.occupied)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取载具上第一个未被占用的座位，没有则返回 null。
+     */
+    @Nullable
+    public SeatSubsystem getFirstEmptySeat() {
+        for (AbstractSubsystem s : subSystemController.getAllSubsystems()) {
+            if (s instanceof SeatSubsystem seat && !seat.occupied) {
+                return seat;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 获取载具上第一个座位（无论是否被占用），没有则返回 null。
+     */
+    @Nullable
+    public SeatSubsystem getFirstSeat() {
+        for (AbstractSubsystem s : subSystemController.getAllSubsystems()) {
+            if (s instanceof SeatSubsystem seat) {
+                return seat;
+            }
+        }
+        return null;
     }
 }
