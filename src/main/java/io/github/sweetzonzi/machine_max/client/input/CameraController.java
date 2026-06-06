@@ -69,16 +69,22 @@ public class CameraController {
     private static CameraSubsystem activeCamera = null;
     /** 世界空间瞄准点（唯一真相源，稳定轴使用）。鼠标不动则此点不动 */
     private static Vec3 aimPoint = null;
-    /** 本 tick 无稳俯仰轴鼠标累积偏移（度），tickCameraMode 发包后清零 */
+    /** 无稳俯仰轴鼠标偏移累积（度），turnCamera 增加，tickCameraMode 发后衰减 */
     private static float localPitchOffsetDeg = 0f;
-    /** 本 tick 无稳偏航轴鼠标累积偏移（度），tickCameraMode 发包后清零 */
+    /** 无稳偏航轴鼠标偏移累积（度），turnCamera 增加，tickCameraMode 发后衰减 */
     private static float localYawOffsetDeg = 0f;
     /** 无稳轴累积偏移上限（度），避免一次快速鼠标滑动造成过大偏转 */
-    private static final float LOCAL_OFFSET_LIMIT_DEG = 90f;
-    /** 当前变焦倍率，在 [baseZoom, maxZoom] 之间 */
+    private static final float LOCAL_OFFSET_LIMIT_DEG = 30f;
+    /** 无稳轴偏移每 tick 衰减系数（0~1），模拟手轮回弹。0=立即停，0.85≈0.2s半衰期 */
+    private static final float LOCAL_OFFSET_DECAY = 0.35f;
+    /** 变焦目标倍率（toggleZoom/adjustZoom 修改此值），currentZoom 在渲染帧中逐渐追上 */
+    private static float targetZoom = 1f;
+    /** 当前变焦倍率（平滑过渡值），驱动 FOV 和灵敏度 */
     private static float currentZoom = 1f;
-    /** 连续变焦混合值（0=baseZoom, 1=maxZoom） */
-    private static float zoomBlend = 0f;
+    /** 变焦过渡速度（exp衰减系数），值越大越快。10≈0.3s内达95% */
+    private static final float ZOOM_SPEED = 10.0f;
+    /** 上次变焦 lerp 的纳秒时间戳，用于帧率无关平滑 */
+    private static long lastZoomLerpNanos = 0;
 
     public static boolean isCameraMode() {
         return activeCamera != null;
@@ -321,6 +327,16 @@ public class CameraController {
     @SubscribeEvent
     public static void updateCameraScale(ViewportEvent.ComputeFov event) {
         if (activeCamera != null && activeCamera.isActive()) {
+            // 渲染帧级变焦平滑过渡（FPS 无关指数衰减）
+            long now = System.nanoTime();
+            if (lastZoomLerpNanos == 0) lastZoomLerpNanos = now;
+            float dt = (now - lastZoomLerpNanos) / 1_000_000_000f;
+            lastZoomLerpNanos = now;
+            if (dt > 0 && dt < 1f) {
+                float factor = 1.0f - (float) Math.exp(-ZOOM_SPEED * dt);
+                currentZoom += (targetZoom - currentZoom) * factor;
+            }
+
             var sa = activeCamera.attr.staticAttribute;
             double fov = sa.getBaseFov() / currentZoom;
             event.setFOV(fov);
@@ -438,7 +454,7 @@ public class CameraController {
         }
     }
 
-    /** 炮镜模式每 tick（20tps）：发送 aimPoint + 无稳轴偏移到服务端，清零本 tick 偏移 */
+    /** 炮镜模式每 tick（20tps）：发送 aimPoint + 无稳轴偏移到服务端，发后按系数衰减偏移量 */
     private static void tickCameraMode(SeatSubsystem seat) {
         CameraSubsystem camera = activeCamera;
         if (aimPoint == null) return;
@@ -451,9 +467,11 @@ public class CameraController {
 
         lastSentAimPoint = aimPoint;
 
-        // 清零本 tick 偏移，供下一帧累积
-        localPitchOffsetDeg = 0f;
-        localYawOffsetDeg = 0f;
+        // 衰减偏移：模拟手轮回弹，松鼠标后炮塔逐渐减速而非立即锁死
+        localPitchOffsetDeg *= LOCAL_OFFSET_DECAY;
+        localYawOffsetDeg *= LOCAL_OFFSET_DECAY;
+        if (Math.abs(localPitchOffsetDeg) < 0.01f) localPitchOffsetDeg = 0f;
+        if (Math.abs(localYawOffsetDeg) < 0.01f) localYawOffsetDeg = 0f;
     }
 
     /** 座椅模式每 tick（现有逻辑） */
@@ -558,8 +576,9 @@ public class CameraController {
         aimPoint = null;
         localPitchOffsetDeg = 0f;
         localYawOffsetDeg = 0f;
+        targetZoom = 1f;
         currentZoom = 1f;
-        zoomBlend = 0f;
+        lastZoomLerpNanos = 0;
     }
 
     /** 重置炮镜模式状态（切换摄像机时调用） */
@@ -568,8 +587,9 @@ public class CameraController {
         localYawOffsetDeg = 0f;
         if (activeCamera != null) {
             var sa = activeCamera.attr.staticAttribute;
+            targetZoom = sa.getBaseZoom();
             currentZoom = sa.getBaseZoom();
-            zoomBlend = 0f;
+            lastZoomLerpNanos = 0;
         }
     }
 
@@ -577,10 +597,10 @@ public class CameraController {
     public static void toggleZoom() {
         if (activeCamera == null) return;
         var sa = activeCamera.attr.staticAttribute;
-        if (currentZoom <= sa.getBaseZoom() + 0.01f) {
-            currentZoom = sa.getMaxZoom();
+        if (currentZoom <= sa.getBaseZoom() + 0.2f) {
+            targetZoom = sa.getMaxZoom();
         } else {
-            currentZoom = sa.getBaseZoom();
+            targetZoom = sa.getBaseZoom();
         }
     }
 
@@ -588,8 +608,7 @@ public class CameraController {
     public static void adjustZoom(float delta) {
         if (activeCamera == null) return;
         var sa = activeCamera.attr.staticAttribute;
-        currentZoom = Math.clamp(currentZoom + delta, sa.getBaseZoom(), sa.getMaxZoom());
-        zoomBlend = (currentZoom - sa.getBaseZoom()) / (sa.getMaxZoom() - sa.getBaseZoom());
+        targetZoom = Math.clamp(targetZoom + delta, sa.getBaseZoom(), sa.getMaxZoom());
     }
 
     @SubscribeEvent
