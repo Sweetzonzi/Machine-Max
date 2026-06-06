@@ -41,6 +41,12 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     /** 当前是否有开火指令 */
     private volatile boolean firing = false;
 
+    /** 弹药切换信号（来自座座椅透传的按键信号） */
+    private volatile boolean ammoSwitchPressed = false;
+
+    /** 弹药切换防抖计数器 */
+    private int ammoSwitchCooldown = 0;
+
     /** 轮射模式下当前发射的索引 */
     private int rippleIndex = 0;
     /** 轮射模式下的tick计时器 */
@@ -55,6 +61,9 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     public void onTick() {
         super.onTick();
         readInputSignals();
+
+        // 弹药切换防抖递减
+        if (ammoSwitchCooldown > 0) ammoSwitchCooldown--;
     }
 
     @Override
@@ -124,6 +133,19 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
             }
             rippleTickCounter = 0;
             rippleIndex = 0;
+        }
+
+        // ④ 弹药选择：多供给源时响应弹药切换信号
+        if (ammoSwitchPressed && ammoSwitchCooldown <= 0) {
+            for (LauncherSubsystem launcher : launchers.keySet()) {
+                if (launcher.getSuppliers().size() > 1) {
+                    int current = launcher.getSuppliers().indexOf(launcher.getCurrentSupplier());
+                    int next = (current + 1) % launcher.getSuppliers().size();
+                    launcher.setCurrentSupplier(next);
+                }
+            }
+            ammoSwitchPressed = false;
+            ammoSwitchCooldown = 10; // 10 tick 防抖
         }
     }
 
@@ -198,6 +220,13 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
                 this.firing = true;
                 break;
             }
+        }
+
+        // 读取弹药切换指令：轮询 ammo_switch 频道
+        this.ammoSwitchPressed = false;
+        SignalChannel ammoSwitchChannel = getSignalChannel("ammo_switch");
+        if (!ammoSwitchChannel.isEmpty() && !(ammoSwitchChannel.getFirstSignal() instanceof EmptySignal)) {
+            this.ammoSwitchPressed = true;
         }
     }
 
@@ -286,9 +315,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     @Override
     public List<String> getAcceptedChannels() {
         var staticAttr = attr.staticAttribute;
-        List<String> channels = new ArrayList<>(staticAttr.getAimInputs().size() + staticAttr.getFireInputs().size());
+        List<String> channels = new ArrayList<>(staticAttr.getAimInputs().size() + staticAttr.getFireInputs().size() + 1);
         channels.addAll(staticAttr.getAimInputs());
         channels.addAll(staticAttr.getFireInputs());
+        channels.add("ammo_switch");
         return channels;
     }
 

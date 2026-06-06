@@ -4,6 +4,7 @@ import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.CustomHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.InteractHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.ResearchPointHud;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.SightHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.AssemblyHud3D;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.BlueprintResearchScreen;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScreen;
@@ -28,6 +29,7 @@ public class MMGuis {
         event.registerAboveAll(id("custom_hud"), new CustomHud());
         event.registerAboveAll(id("interact_hud"), new InteractHud());
         event.registerAboveAll(id("research_point_hud"), new ResearchPointHud());
+        event.registerAboveAll(id("sight_hud"), new SightHud());
 //        event.registerAboveAll(id("assembly_hud"), new AssemblyHud());
         Hud3DRenderer.register(new AssemblyHud3D());
     }

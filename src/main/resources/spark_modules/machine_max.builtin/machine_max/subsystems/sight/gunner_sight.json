@@ -1,6 +1,6 @@
 {
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
-  "type": "machine_max:camera",
+  "type": "machine_max:sight",
   "basic_durability": 50.0,
   "vertical_stabilized": false,
   "horizontal_stabilized": false,

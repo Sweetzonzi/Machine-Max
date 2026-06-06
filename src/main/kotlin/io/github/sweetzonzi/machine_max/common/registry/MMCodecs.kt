@@ -3,9 +3,11 @@ package io.github.sweetzonzi.machine_max.common.registry
 import io.github.sweetzonzi.machine_max.MachineMax
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.AmmoLoaderSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BasicSubsystemDynamicAttr
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenLoaderSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.BatterySubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CameraSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.CarControllerSubsystemAttr
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SightSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.EngineSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.GearboxSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.ItemStorageSubsystemAttr
@@ -22,6 +24,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WheelDriverSubsystemAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.AmmoLoaderSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.BasicSubsystemStaticAttr
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.RegenLoaderSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.BatterySubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CarControllerSubsystemStaticAttr
@@ -36,6 +39,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.M
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.MotorSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.ScriptableSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.SeatSubsystemStaticAttr
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.SightSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.TransmissionSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.TurretDriverSubsystemStaticAttr
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.WheelDriverSubsystemStaticAttr
@@ -64,6 +68,8 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("weapon_controller")) { WeaponControllerSubsystemAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("camera")) { CameraSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("sight")) { SightSubsystemAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_ATTR_CODEC.key(), id("regen_loader")) { RegenLoaderSubsystemAttr.CODEC}
 
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("basic")) { BasicSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("seat")) { SeatSubsystemStaticAttr.CODEC}
@@ -84,6 +90,8 @@ object MMCodecs {
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("ammo_loader")) { AmmoLoaderSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("weapon_controller")) { WeaponControllerSubsystemStaticAttr.CODEC}
         event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("camera")) { CameraSubsystemStaticAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("sight")) { SightSubsystemStaticAttr.CODEC}
+        event.register(MMDataRegistries.SUBSYSTEM_STATIC_ATTR_CODEC.key(), id("regen_loader")) { RegenLoaderSubsystemStaticAttr.CODEC}
     }
 
     private fun id(id: String) = ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, id)

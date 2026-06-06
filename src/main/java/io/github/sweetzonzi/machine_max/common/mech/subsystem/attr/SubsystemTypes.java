@@ -16,9 +16,11 @@ public enum SubsystemTypes {
     SEAT,//座椅子系统，可指定乘坐位置、信号输出等
     SIGNAL_CONVERT,//信号转换器子系统，可将指定名称的输入信号转换为其他名称，此外可将收到的信号进行延迟处理
     CAMERA,//摄像头子系统，可提供视角
+    SIGHT,//瞄准镜子系统，继承CameraSubsystem，提供炮镜标尺
     JAVASCRIPT,//自定义脚本子系统
     BATTERY,//电池子系统，储存电力，可充放电
     LIGHTING,//照明子系统，提供客户端体积光视觉效果
     LAUNCHER,//发射器子系统，代表炮闩、导弹挂架、火箭管等，可发射弹丸
     AMMO_LOADER,//装弹机子系统，管理弹药供给、装填时序、弹序循环
+    REGEN_LOADER,//再生装弹机子系统，能量武器/再生武器弹药供给
 }

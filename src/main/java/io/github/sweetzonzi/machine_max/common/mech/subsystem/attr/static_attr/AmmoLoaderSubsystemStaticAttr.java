@@ -8,8 +8,8 @@ import lombok.Getter;
 
 /**
  * 装弹机子系统静态属性。<br>
- * 定义装填模式（逐发/整体换弹匣）、弹药容量、装填耗时、与发射器及武器控制器的信号频道名称。<br>
- * TODO: 弹药tag过滤在 LauncherSubsystemStaticAttr 中定义，装弹机侧读取弹药 item 的 tag 进行匹配
+ * 定义装填模式（逐发/整体换弹匣）、弹药容量、装填耗时、多消费者支持等硬件参数。<br>
+ * 弹药请求与消耗通信已改为 {@code IAmmoSupplier/IAmmoConsumer} 直接接口调用，不再走信号频道。
  */
 @Getter
 public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
@@ -31,17 +31,11 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      */
     private final int reloadTimeTicks;
 
-    /** 向发射器请求弹药的信号频道名称 */
-    private final String ammoRequestChannel;
+    /** 是否允许多个消费者同时等待装填 */
+    private final boolean canSupplyMultiple;
 
-    /** 发射器响应的弹药信号频道名称 */
-    private final String ammoResponseChannel;
-
-    /** 发射器告知已消耗的信号频道名称 */
-    private final String ammoConsumedChannel;
-
-    /** 玩家/武器控制器触发主动换弹的信号频道名称 */
-    private final String reloadChannel;
+    /** 弹仓未满时是否自动向上游供给者请求补充 */
+    private final boolean autoRequestUpstream;
 
     public static final MapCodec<AmmoLoaderSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
@@ -51,14 +45,10 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 .forGetter(AmmoLoaderSubsystemStaticAttr::getMagazineCapacity),
             Codec.INT.optionalFieldOf("reload_time_ticks", 200)
                 .forGetter(AmmoLoaderSubsystemStaticAttr::getReloadTimeTicks),
-            Codec.STRING.optionalFieldOf("ammo_request_channel", "ammo_request")
-                .forGetter(AmmoLoaderSubsystemStaticAttr::getAmmoRequestChannel),
-            Codec.STRING.optionalFieldOf("ammo_response_channel", "ammo_response")
-                .forGetter(AmmoLoaderSubsystemStaticAttr::getAmmoResponseChannel),
-            Codec.STRING.optionalFieldOf("ammo_consumed_channel", "ammo_consumed")
-                .forGetter(AmmoLoaderSubsystemStaticAttr::getAmmoConsumedChannel),
-            Codec.STRING.optionalFieldOf("reload_channel", "reload")
-                .forGetter(AmmoLoaderSubsystemStaticAttr::getReloadChannel),
+            Codec.BOOL.optionalFieldOf("can_supply_multiple", false)
+                .forGetter(AmmoLoaderSubsystemStaticAttr::isCanSupplyMultiple),
+            Codec.BOOL.optionalFieldOf("auto_request_upstream", true)
+                .forGetter(AmmoLoaderSubsystemStaticAttr::isAutoRequestUpstream),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT)
                 .forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, AmmoLoaderSubsystemStaticAttr::new));
@@ -68,19 +58,15 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             boolean roundByRound,
             int magazineCapacity,
             int reloadTimeTicks,
-            String ammoRequestChannel,
-            String ammoResponseChannel,
-            String ammoConsumedChannel,
-            String reloadChannel,
+            boolean canSupplyMultiple,
+            boolean autoRequestUpstream,
             BasicSoundAttr sounds) {
         super(basicAttr, sounds);
         this.roundByRound = roundByRound;
         this.magazineCapacity = magazineCapacity;
         this.reloadTimeTicks = reloadTimeTicks;
-        this.ammoRequestChannel = ammoRequestChannel;
-        this.ammoResponseChannel = ammoResponseChannel;
-        this.ammoConsumedChannel = ammoConsumedChannel;
-        this.reloadChannel = reloadChannel;
+        this.canSupplyMultiple = canSupplyMultiple;
+        this.autoRequestUpstream = autoRequestUpstream;
     }
 
     @Override

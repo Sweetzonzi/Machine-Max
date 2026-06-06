@@ -256,6 +256,11 @@ public class RawInputHandler {
     public static void handleMouseScrollInputs(InputEvent.MouseScrollingEvent event) {
         if (client == null) client = Minecraft.getInstance();
         if (client.player == null) return;
+        // 炮镜模式下取消滚轮事件，防止原版快捷栏切换
+        if (CameraController.isCameraMode()) {
+            event.setCanceled(true);
+            return;
+        }
         // 获取窗口
         long windowHandle = Minecraft.getInstance().getWindow().getWindow();
         // 检查特定按键是否被按下（原生输入）
@@ -443,13 +448,15 @@ public class RawInputHandler {
         // 乘坐载具时屏蔽部分原版按键功能 Disable some vanilla key function when on a vehicle
         LocalPlayer player = Minecraft.getInstance().player;
         if (player instanceof IEntityMixin passenger &&
-                passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat &&
-                seat.disableVanillaActions) {
-            if (event.getKeyMapping() == Minecraft.getInstance().options.keyAttack ||
-                    event.getKeyMapping() == Minecraft.getInstance().options.keyUse ||
-                    event.getKeyMapping() == Minecraft.getInstance().options.keyPickItem) {
-                event.setSwingHand(false);
-                event.setCanceled(true);
+                passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
+            // 炮镜模式下始终屏蔽原版攻击/使用/选取按键，普通座椅模式遵循allowUseItems配置
+            if (CameraController.isCameraMode() || seat.disableVanillaActions) {
+                if (event.getKeyMapping() == Minecraft.getInstance().options.keyAttack ||
+                        event.getKeyMapping() == Minecraft.getInstance().options.keyUse ||
+                        event.getKeyMapping() == Minecraft.getInstance().options.keyPickItem) {
+                    event.setSwingHand(false);
+                    event.setCanceled(true);
+                }
             }
         }
     }
@@ -460,6 +467,9 @@ public class RawInputHandler {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player instanceof IEntityMixin passenger &&
                 passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
+            // 炮镜模式下始终屏蔽物品栏/丢弃/副手等原版功能
+            boolean blockAll = CameraController.isCameraMode() || seat.disableVanillaActions;
+
             //很奇怪，必须套一层if判断，屏蔽效果才能生效 Wired, must have a if to work
             if (Minecraft.getInstance().options.keyUp.consumeClick()) {
                 Minecraft.getInstance().options.keyUp.setDown(false);
@@ -471,15 +481,24 @@ public class RawInputHandler {
                 Minecraft.getInstance().options.keyRight.setDown(false);
             } else if (Minecraft.getInstance().options.keyShift.consumeClick()) {
                 Minecraft.getInstance().options.keyShift.setDown(false);
-            } else if (Minecraft.getInstance().options.keyInventory.isDown() && seat.disableVanillaActions) {
+            } else if (Minecraft.getInstance().options.keyInventory.isDown() && blockAll) {
                 Minecraft.getInstance().options.keyInventory.consumeClick();
                 Minecraft.getInstance().options.keyInventory.setDown(false);
-            } else if (Minecraft.getInstance().options.keyDrop.isDown() && seat.disableVanillaActions) {
+            } else if (Minecraft.getInstance().options.keyDrop.isDown() && blockAll) {
                 Minecraft.getInstance().options.keyDrop.consumeClick();
                 Minecraft.getInstance().options.keyDrop.setDown(false);
-            } else if (Minecraft.getInstance().options.keySwapOffhand.isDown() && seat.disableVanillaActions) {
+            } else if (Minecraft.getInstance().options.keySwapOffhand.isDown() && blockAll) {
                 Minecraft.getInstance().options.keySwapOffhand.consumeClick();
                 Minecraft.getInstance().options.keySwapOffhand.setDown(false);
+            }
+
+            // 炮镜模式下屏蔽快捷栏切换键（数字键1-9）
+            if (CameraController.isCameraMode()) {
+                for (int i = 0; i < 9; i++) {
+                    if (Minecraft.getInstance().options.keyHotbarSlots[i].consumeClick()) {
+                        Minecraft.getInstance().options.keyHotbarSlots[i].setDown(false);
+                    }
+                }
             }
         }
     }

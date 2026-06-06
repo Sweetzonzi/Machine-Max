@@ -1,0 +1,49 @@
+package io.github.sweetzonzi.machine_max.common.mech.subsystem;
+
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
+/**
+ * 弹药消费者接口。<br>
+ * 发射器、下游装弹机等需要从供给者获取弹药的子系统实现此接口。
+ * 兼容性校验由消费者在运行时逐发执行。
+ */
+public interface IAmmoConsumer {
+
+    /** 消费者当前是否可以接收弹药 */
+    boolean canAcceptAmmo();
+
+    /** 剩余弹药容量。-1 表示无容量限制 */
+    int getFreeCapacity();
+
+    /**
+     * 接收一发弹药。<br>
+     * 由供给者在完成装填后调用，将弹药存入消费者。
+     *
+     * @return true 表示成功接收
+     */
+    boolean receiveAmmo(ProjectileType type);
+
+    /** 获取当前选中的供给者 */
+    @Nullable IAmmoSupplier getCurrentSupplier();
+
+    /** 获取所有已注册的供给者列表 */
+    List<IAmmoSupplier> getSuppliers();
+
+    /** 设置当前选中的供给者索引 */
+    void setCurrentSupplier(int index);
+
+    /**
+     * 由供给者在握手中调用，将自身注册到消费者的可选供给者列表中。<br>
+     * 若消费者此前没有供给者，自动选定此供给者。
+     */
+    void addSupplier(IAmmoSupplier supplier);
+
+    /**
+     * 判断此消费者是否可以接受指定弹药类型。<br>
+     * 兼容性校验由消费者端在运行时逐发执行。
+     */
+    boolean canAccept(ProjectileType type);
+}

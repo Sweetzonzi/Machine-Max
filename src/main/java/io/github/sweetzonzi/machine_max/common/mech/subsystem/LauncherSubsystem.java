@@ -7,11 +7,15 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
+import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
+import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr;
 import jme3utilities.math.MyQuaternion;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,14 +24,30 @@ import java.util.Map;
  * 发射器子系统。<br>
  * 代表炮闩、导弹挂架、火箭发射管等单个发射口。<br>
  * 从locator位置沿其朝向发射数据驱动的投射物，初速和精度受子系统属性与投射物类型共同影响。<br>
- * 投射物类型由静态属性 {@code projectile_type} 指定，默认 {@code machine_max:20mm_ap}。<br>
- * 对外提供 getMuzzleWorldTransform/getMuzzleWorldPosition/getMuzzleDirection 用于武器控制器瞄准判定。<br>
- * TODO: 弹药消耗逻辑
+ * 实现 {@link IAmmoConsumer} 接口以支持弹药消耗与供给，膛内弹药状态由 chamberedType 管理。<br>
+ * 投射物类型由当前供给者提供，而非静态属性直接指定。
  */
-public class LauncherSubsystem extends BasicSubsystem {
+public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
 
     public final LauncherSubsystemAttr attr;
+
+    /** 发射冷却（tick） */
     private int fireCooldown = 0;
+
+    // ——— 弹药状态 ———
+
+    /** 膛内当前弹药类型。null = 空膛 */
+    @Nullable
+    private ProjectileType chamberedType;
+
+    /** 当前选中的供给来源索引 */
+    private int selectedSupplierIndex = 0;
+
+    /** 由供给者通过 {@link #addSupplier(IAmmoSupplier)} 填充的供给者列表 */
+    private final List<IAmmoSupplier> suppliers = new ArrayList<>();
+
+    /** 当前是否正在等待装填（requestRound 已调用但弹药未就绪） */
+    private boolean reloading = false;
 
     public LauncherSubsystem(ISubsystemHost owner, String name, LauncherSubsystemAttr attr) {
         super(owner, name, attr);
@@ -36,6 +56,99 @@ public class LauncherSubsystem extends BasicSubsystem {
             MachineMax.LOGGER.error("发射器子系统 {} 未配置发射点locator", name);
         }
     }
+
+    // ——— IAmmoConsumer 实现 ———
+
+    @Override
+    public boolean canAcceptAmmo() {
+        return chamberedType == null || isActive();
+    }
+
+    @Override
+    public int getFreeCapacity() {
+        return chamberedType == null ? 1 : 0;
+    }
+
+    @Override
+    public boolean receiveAmmo(ProjectileType type) {
+        if (chamberedType == null && isActive()) {
+            chamberedType = type;
+            reloading = false;
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    @Nullable
+    public IAmmoSupplier getCurrentSupplier() {
+        if (suppliers.isEmpty()) return null;
+        if (selectedSupplierIndex < 0 || selectedSupplierIndex >= suppliers.size()) return null;
+        return suppliers.get(selectedSupplierIndex);
+    }
+
+    @Override
+    public List<IAmmoSupplier> getSuppliers() {
+        return suppliers;
+    }
+
+    @Override
+    public void setCurrentSupplier(int index) {
+        if (index >= 0 && index < suppliers.size()) {
+            selectedSupplierIndex = index;
+        }
+    }
+
+    @Override
+    public void addSupplier(IAmmoSupplier supplier) {
+        suppliers.add(supplier);
+        if (suppliers.size() == 1) {
+            selectedSupplierIndex = 0;
+        }
+    }
+
+    @Override
+    public boolean canAccept(ProjectileType type) {
+        return attr.staticAttribute.isAmmoCompatible(type);
+    }
+
+    /**
+     * 直接装填一发弹药到膛内。<br>
+     * 由外部调用（如 AmmoLoader 直接压弹），绕过 requestRound 流程。
+     *
+     * @return true 表示装填成功
+     */
+    public boolean loadRound(ProjectileType type) {
+        if (chamberedType != null || !isActive()) return false;
+        if (!canAccept(type)) return false;
+        chamberedType = type;
+        reloading = false;
+        return true;
+    }
+
+    /**
+     * 退膛：返回膛内弹药并清空。<br>
+     * 若当前供给者可接收退弹则归还，否则返回 null（后续可扩展为生成 ItemEntity）。
+     *
+     * @return 退出的弹药类型，空膛返回 null
+     */
+    @Nullable
+    public ProjectileType ejectRound() {
+        ProjectileType round = chamberedType;
+        if (round == null) return null;
+        chamberedType = null;
+        reloading = false;
+
+        // 尝试归还给当前供给者
+        IAmmoSupplier supplier = getCurrentSupplier();
+        if (supplier != null && supplier.canEject()) {
+            supplier.returnRound(round);
+        }
+        // TODO: 若无法归还，生成 ItemEntity 掉落于发射器 locator 位置
+        return round;
+    }
+
+    // ——— 发射逻辑 ———
 
     @Override
     public void onTick() {
@@ -74,19 +187,46 @@ public class LauncherSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 执行一次发射：从locator位置发射数据驱动的投射物。<br>
-     * 投射物类型从静态属性 {@code projectile_type} 获取，初速为弹丸基准初速 × 发射器初速乘子 + 发射器初速加成，<br>
-     * 散布为弹丸基础精度 × 发射器各轴精度乘子，后坐力使用弹丸质量计算。
+     * 执行一次发射。<br>
+     * 使用膛内弹药 chamberedType 发射，弹药不足时从当前供给者取弹。
+     * 流程参见设计文档 §5.2：取弹 → 兼容性校验 → 装膛 → 发射 → 清膛。
      */
     private void fire() {
-        // 获取投射物类型
-        var typeKey = attr.staticAttribute.getProjectileTypeId();
-        ProjectileType type = ProjectileType.get(getLevel(), typeKey);
-        if (type == null) {
-            MachineMax.LOGGER.error("发射器子系统 {} 的投射物类型 {} 未找到", name, typeKey);
-            return;
+        // ① 如果膛内无弹药，尝试从当前供给者取弹
+        if (chamberedType == null) {
+            IAmmoSupplier supplier = getCurrentSupplier();
+            if (supplier == null) return;
+
+            if (supplier.isRoundReady(this)) {
+                // 弹药已就绪，取弹
+                ProjectileType offered = supplier.consumeReadyRound(this);
+                if (offered != null && canAccept(offered)) {
+                    // 弹药兼容，装膛
+                    chamberedType = offered;
+                    reloading = false;
+                } else {
+                    // 弹药不兼容 → 归还后处理
+                    if (offered != null && supplier.canEject()) {
+                        supplier.returnRound(offered);
+                    }
+                    handleIncompatibleAmmo(supplier);
+                    return;
+                }
+            } else if (!reloading) {
+                // 弹药尚未就绪且未在装填中 → 发起请求
+                supplier.requestRound(this);
+                reloading = true;
+                return;
+            } else {
+                // 装填中，等待下一 tick
+                return;
+            }
         }
 
+        // ② 发射膛内弹药
+        if (chamberedType == null) return; // 安全检查
+
+        ProjectileType type = chamberedType;
         Transform muzzleTransform = getMuzzleWorldTransform();
         Vector3f jmePos = muzzleTransform.getTranslation();
 
@@ -115,7 +255,7 @@ public class LauncherSubsystem extends BasicSubsystem {
             Vector3f platformVel = getSubPart().getLinearVelocity();
             jmeVel.addLocal(platformVel);
 
-            // 由 ProjectileType 自动分派创建质点或刚体投射物，发射者追踪待后续实现
+            // 由 ProjectileType 创建投射物
             type.create(getLevel(), jmePos, jmeVel);
 
             // 计算后坐力冲量并提交到物理线程
@@ -137,7 +277,35 @@ public class LauncherSubsystem extends BasicSubsystem {
                 });
             }
         }
+
+        // ③ 发射后清膛
+        chamberedType = null;
     }
+
+    /**
+     * 处理不兼容弹药的情况。<br>
+     * 多供给者时切换到下一个供给者重新请求；仅一个供给者时从同一供给者取下一发。
+     */
+    private void handleIncompatibleAmmo(IAmmoSupplier supplier) {
+        if (suppliers.size() > 1) {
+            // 有多个供给者 → 切换到下一个
+            selectedSupplierIndex = (selectedSupplierIndex + 1) % suppliers.size();
+            reloading = false;
+            // 向新供给者请求
+            IAmmoSupplier next = getCurrentSupplier();
+            if (next != null) {
+                next.requestRound(this);
+                reloading = true;
+            }
+        } else {
+            // 仅一个供给者 → 继续从同一供给者取下一发
+            reloading = false;
+            supplier.requestRound(this);
+            reloading = true;
+        }
+    }
+
+    // ——— 公共查询方法 ———
 
     /**
      * 获取发射点在世界空间中的位姿。
@@ -165,39 +333,29 @@ public class LauncherSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 判断发射器当前指向是否已对准目标。<br>
-     * 使用发射点枪口位姿直接计算方向偏差，与炮塔关节转角反馈无关。<br>
-     * 瞄准偏差角度 = arccos(dot(muzzleDir, toTarget))，单位度。
+     * 判断发射器当前指向是否已对准目标。
      *
      * @param target       目标世界坐标
-     * @param toleranceDeg 容差角度（度），偏差小于此值时认为已瞄准
+     * @param toleranceDeg 容差角度（度）
      * @return true 表示发射器已对准目标
      */
     public boolean isAimedAt(Vec3 target, float toleranceDeg) {
         Vec3 muzzlePos = getMuzzleWorldPosition();
         Vec3 toTarget = target.subtract(muzzlePos).normalize();
         Vec3 muzzleDir = getMuzzleDirection();
-        // 计算两个单位向量的夹角
         double dot = toTarget.dot(muzzleDir);
         double angleRad = Math.acos(Math.clamp(dot, -1.0, 1.0));
         return Math.toDegrees(angleRad) <= toleranceDeg;
     }
 
     /**
-     * 在水平/垂直方向分别应用椭圆锥散布。<br>
-     * 沿direction方向构建局部正交基，水平方向散布hRad，垂直方向散布vRad。
-     *
-     * @param direction 原始发射方向（已归一化）
-     * @param hRad      水平方向散布 (弧度)
-     * @param vRad      垂直方向散布 (弧度)
-     * @return 散布后的方向
+     * 在水平/垂直方向分别应用椭圆锥散布。
      */
     private Vec3 applyEllipticSpread(Vec3 direction, float hRad, float vRad) {
         if (hRad <= 0f && vRad <= 0f) return direction;
 
         var random = getLevel().random;
 
-        // 构建局部正交基：right(水平) × up(垂直) × forward(发射方向)
         Vec3 up;
         if (Math.abs(direction.y) < 0.99) {
             up = new Vec3(0, 1, 0);
@@ -207,20 +365,16 @@ public class LauncherSubsystem extends BasicSubsystem {
         Vec3 right = direction.cross(up).normalize();
         Vec3 localUp = right.cross(direction).normalize();
 
-        // 在水平/垂直椭圆锥内均匀采样
         double theta = random.nextDouble() * 2 * Math.PI;
 
-        // 椭圆锥：水平半径 = hRad, 垂直半径 = vRad
         double hOffset = Math.cos(theta) * hRad;
         double vOffset = Math.sin(theta) * vRad;
         double radialDist = Math.sqrt(hOffset * hOffset + vOffset * vOffset);
         double cosRadial = Math.cos(radialDist);
         double sinRadial = Math.sin(radialDist);
 
-        // 如果散布极小（趋近0），跳过避免除零
         if (radialDist < 1e-10) return direction;
 
-        // 在椭圆锥内旋转原方向
         return direction.scale(cosRadial)
                 .add(right.scale((float)(sinRadial * hOffset / radialDist)))
                 .add(localUp.scale((float)(sinRadial * vOffset / radialDist)))
@@ -229,7 +383,10 @@ public class LauncherSubsystem extends BasicSubsystem {
 
     @Override
     public List<String> getAcceptedChannels() {
-        return attr.staticAttribute.getControlInputs();
+        List<String> channels = new ArrayList<>(attr.staticAttribute.getControlInputs());
+        // 弹药发现频道，供供给者发现此消费者
+        channels.add("ammo_discovery");
+        return channels;
     }
 
     @Override
@@ -237,5 +394,22 @@ public class LauncherSubsystem extends BasicSubsystem {
         Map<String, List<String>> result = new HashMap<>(2);
         result.putAll(attr.ammoCountOutputs);
         return result;
+    }
+
+    @Override
+    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
+        // 弹药发现频道回调处理：供给者通过 callback 发现此 Launcher
+        if (channelName.equals("callback") && sender instanceof IAmmoSupplier supplier) {
+            // 校验是否在同一载具内
+            if (supplier instanceof AbstractSubsystem sub) {
+                if (sub.getOwner().getSubPart().getPart().assembly
+                        != this.getOwner().getSubPart().getPart().assembly) {
+                    return SignalResult.PASS;
+                }
+            }
+            addSupplier(supplier);
+            return SignalResult.CONSUME;
+        }
+        return super.onSignalUpdated(channelName, sender);
     }
 }
