@@ -4,7 +4,6 @@
   "basic_durability": 8.0,
   "vertical_stabilized": true,
   "horizontal_stabilized": true,
-  "base_fov": 50.0,
   "base_zoom": 1.0,
   "max_zoom": 16.7,
   "min_pitch": -80.0,

@@ -25,8 +25,6 @@ public class SightSubsystemStaticAttr extends CameraSubsystemStaticAttr {
                     .forGetter(CameraSubsystemStaticAttr::isVerticalStabilized),
             Codec.BOOL.optionalFieldOf("horizontal_stabilized", false)
                     .forGetter(CameraSubsystemStaticAttr::isHorizontalStabilized),
-            Codec.FLOAT.optionalFieldOf("base_fov", 40.0f)
-                    .forGetter(CameraSubsystemStaticAttr::getBaseFov),
             Codec.FLOAT.optionalFieldOf("base_zoom", 1.0f)
                     .forGetter(CameraSubsystemStaticAttr::getBaseZoom),
             Codec.FLOAT.optionalFieldOf("max_zoom", 1.0f)
@@ -54,7 +52,6 @@ public class SightSubsystemStaticAttr extends CameraSubsystemStaticAttr {
             BasicSoundAttr soundAttr,
             boolean verticalStabilized,
             boolean horizontalStabilized,
-            float baseFov,
             float baseZoom,
             float maxZoom,
             float minPitch,
@@ -66,7 +63,7 @@ public class SightSubsystemStaticAttr extends CameraSubsystemStaticAttr {
             boolean allowCycle
     ) {
         super(basicAttr, soundAttr, verticalStabilized, horizontalStabilized,
-                baseFov, baseZoom, maxZoom, minPitch, maxPitch, yawLimit,
+                baseZoom, maxZoom, minPitch, maxPitch, yawLimit,
                 hudComponents, trackingTargetInputs, discoveryInputs, allowCycle);
     }
 

@@ -22,8 +22,8 @@ public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     /** 水平方向是否世界稳定（补偿车体偏航晃动） */
     public final boolean horizontalStabilized;
 
-    /** 基准视场角（度），即 1× 变焦时的 FOV */
-    public final float baseFov;
+    /** 参考视场角（度），固定 70° 作为 1× 基准。所有炮镜缩放均基于此计算：实际FOV = REFERENCE_FOV / currentZoom */
+    public static final float REFERENCE_FOV = 70f;
 
     /** 最小变焦倍率（默认 1.0，即基准视野） */
     public final float baseZoom;
@@ -61,8 +61,6 @@ public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                     .forGetter(CameraSubsystemStaticAttr::isVerticalStabilized),
             Codec.BOOL.optionalFieldOf("horizontal_stabilized", false)
                     .forGetter(CameraSubsystemStaticAttr::isHorizontalStabilized),
-            Codec.FLOAT.optionalFieldOf("base_fov", 40.0f)
-                    .forGetter(CameraSubsystemStaticAttr::getBaseFov),
             Codec.FLOAT.optionalFieldOf("base_zoom", 1.0f)
                     .forGetter(CameraSubsystemStaticAttr::getBaseZoom),
             Codec.FLOAT.optionalFieldOf("max_zoom", 1.0f)
@@ -90,7 +88,6 @@ public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicSoundAttr soundAttr,
             boolean verticalStabilized,
             boolean horizontalStabilized,
-            float baseFov,
             float baseZoom,
             float maxZoom,
             float minPitch,
@@ -104,7 +101,6 @@ public class CameraSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         super(basicAttr, soundAttr);
         this.verticalStabilized = verticalStabilized;
         this.horizontalStabilized = horizontalStabilized;
-        this.baseFov = baseFov;
         this.baseZoom = baseZoom;
         this.maxZoom = maxZoom;
         this.minPitch = minPitch;

@@ -5,6 +5,7 @@ import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -529,13 +530,13 @@ public class ProjectileManager {
             float mass = type.getMass();
             float gravityFactor = type.getGravityFactor();
             float dragFactor = type.getDragFactor();
-
+            float radius = type.getRadius();
             float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
 
             float gravityAccY = -gravityFactor * 9.81f;
             float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
             if (dragFactor > 1e-8f && speed > 1e-8f) {
-                float dragForce = dragFactor * speed * speed;
+                float dragForce = dragFactor * speed * speed * radius * radius * 3.14159f;
                 float dragAcc = dragForce / mass;
                 float invSpeed = 1f / speed;
                 dragAccX = dragAcc * (-velX[i] * invSpeed);
@@ -645,14 +646,14 @@ public class ProjectileManager {
             float mass = type.getMass();
             float gravityFactor = type.getGravityFactor();
             float dragFactor = type.getDragFactor();
-
+            float radius = type.getRadius();
             float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
 
             // 半隐式 Euler 积分
             float gravityAccY = -gravityFactor * 9.81f;
             float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
             if (dragFactor > 1e-8f && speed > 1e-8f) {
-                float dragForce = dragFactor * speed * speed;
+                float dragForce = dragFactor * speed * speed * radius * radius * 3.14159f;
                 float dragAcc = dragForce / mass;
                 float invSpeed = 1f / speed;
                 dragAccX = dragAcc * (-velX[i] * invSpeed);
@@ -703,7 +704,7 @@ public class ProjectileManager {
                 Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
 
                 // 地形碰撞：永远停止
-                if (owner == null) {
+                if (owner instanceof PhysicsChunkSection || owner == null) {
                     broadcastTerrainHit(i, hitPointMc);
                     alive[i] = false;
                     projectileObjIds.remove(objId[i]);

@@ -14,6 +14,7 @@ import io.github.sweetzonzi.machine_max.common.attachment.ControlPreference;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.CameraSubsystemStaticAttr;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
@@ -337,8 +338,7 @@ public class CameraController {
                 currentZoom += (targetZoom - currentZoom) * factor;
             }
 
-            var sa = activeCamera.attr.staticAttribute;
-            double fov = sa.getBaseFov() / currentZoom;
+            double fov = CameraSubsystemStaticAttr.REFERENCE_FOV / currentZoom;
             event.setFOV(fov);
             return;
         }
@@ -550,7 +550,13 @@ public class CameraController {
             activeCamera = cameras.getFirst();
         } else if (direction > 0) {
             int idx = cameras.indexOf(activeCamera);
-            activeCamera = cameras.get((idx + 1) % cameras.size());
+            if (idx >= cameras.size() - 1) {
+                // 超出最后一个炮镜 → 回到座椅原始视角
+                exitCameraMode();
+                return;
+            } else {
+                activeCamera = cameras.get(idx + 1);
+            }
         } else {
             int idx = cameras.indexOf(activeCamera);
             if (idx <= 0) {

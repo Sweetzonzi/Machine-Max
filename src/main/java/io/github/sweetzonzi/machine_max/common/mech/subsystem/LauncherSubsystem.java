@@ -192,7 +192,8 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
      * 流程参见设计文档 §5.2：取弹 → 兼容性校验 → 装膛 → 发射 → 清膛。
      */
     private void fire() {
-        // ① 如果膛内无弹药，尝试从当前供给者取弹
+        // ① 如果膛内无弹药，尝试从当前供给者取弹\
+        if (getLevel().isClientSide()) return;
         if (chamberedType == null) {
             IAmmoSupplier supplier = getCurrentSupplier();
             if (supplier == null) return;
@@ -252,7 +253,6 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
             // 继承发射平台速度 (m/s)，速度已在 JME 空间，直接相加
             Vector3f platformVel = getSubPart().getLinearVelocity();
             jmeVel.addLocal(platformVel);
-
             // 由 ProjectileType 创建投射物
             type.create(getLevel(), jmePos, jmeVel);
 
@@ -278,6 +278,12 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
 
         // ③ 发射后清膛
         chamberedType = null;
+        IAmmoSupplier supplier = getCurrentSupplier();
+        if (supplier != null && !reloading) {
+            // 弹药尚未就绪且未在装填中 → 发起请求
+            supplier.requestRound(this);
+            reloading = true;
+        }
     }
 
     /**

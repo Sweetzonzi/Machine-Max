@@ -13,5 +13,9 @@
   "max_lifetime_ticks": 40,
   "tags": ["machine_max:caliber/7_92mm", "machine_max:ammo/ap"],
   "tracer_color": [255, 200, 100],
-  "tracer_alpha": 180
+  "tracer_alpha": 180,
+  "fire_sound": {
+    "sound_id": "machine_max:projectile.fire.small",
+    "range": 128.0
+  }
 }

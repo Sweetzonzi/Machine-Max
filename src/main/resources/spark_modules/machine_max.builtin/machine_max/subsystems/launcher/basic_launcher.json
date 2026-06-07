@@ -7,7 +7,6 @@
   "velocity_bonus": 0, //(可选, 默认0)初速线性加成(m/s)
   "horizontal_accuracy_multiplier": 1.0, //(可选, 默认1.0)水平精度乘子
   "vertical_accuracy_multiplier": 1.0, //(可选, 默认1.0)垂直精度乘子
-  "projectile_type": "machine_max:20mm_ap", //(可选, 默认machine_max:20mm_ap)投射物类型ID
   "required_tags": [], //(可选, 默认空列表)弹药必须全部具备的tag，待AmmoLoader实现后启用
   "acceptable_tags": [], //(可选, 默认空列表)弹药至少具备其一即可的tag，待AmmoLoader实现后启用
   "forbidden_tags": [], //(可选, 默认空列表)弹药不能包含的tag，待AmmoLoader实现后启用

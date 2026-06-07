@@ -13,5 +13,9 @@
   "max_lifetime_ticks": 100,
   "tags": ["machine_max:caliber/50mm", "machine_max:ammo/ap", "machine_max:ammo/apcbc"],
   "tracer_color": [200, 220, 100],
-  "tracer_alpha": 200
+  "tracer_alpha": 200,
+  "fire_sound": {
+    "sound_id": "machine_max:projectile.fire.middle",
+    "range": 128.0
+  }
 }

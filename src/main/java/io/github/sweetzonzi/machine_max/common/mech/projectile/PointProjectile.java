@@ -242,7 +242,7 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
     private ModelIndex defaultModelIndex;
 
     @Override
-    public ModelIndex getDefaultModelIndex() {
+    public @NotNull ModelIndex getDefaultModelIndex() {
         if (defaultModelIndex == null) {
             ResourceLocation key = projectileType.getRegistryKey();
             defaultModelIndex = new ModelIndex("projectile", key != null ? key
@@ -252,7 +252,7 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
     }
 
     @Override
-    public AnimController getAnimController() {
+    public @NotNull AnimController getAnimController() {
         if (animController == null) {
             animController = new AnimController(this);
         }
@@ -260,7 +260,7 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
     }
 
     @Override
-    public ModelController getModelController() {
+    public @NotNull ModelController getModelController() {
         if (modelController == null) {
             modelController = new ModelController(this);
         }
@@ -268,13 +268,8 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
     }
 
     @Override
-    public Map<String, Object> getVariables() {
+    public @NotNull Map<String, Object> getVariables() {
         return variables;
-    }
-
-    @Override
-    public void onBoneUpdate(cn.solarmoon.spark_core.event.BoneUpdateEvent event) {
-        IAnimatable.super.onBoneUpdate(event);
     }
 
     // ========== BFHurtTarget 实现 ==========

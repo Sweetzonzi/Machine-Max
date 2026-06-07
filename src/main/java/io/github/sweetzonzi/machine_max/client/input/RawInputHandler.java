@@ -406,7 +406,7 @@ public class RawInputHandler {
                     .OnKeyDown(() -> CameraController.switchCamera(1));
 
             new KeyHooks.EVENT(KeyBinding.generalCameraZoomKey)
-                    .OnKeyDown(() -> CameraController.toggleZoom());
+                    .OnKeyDown(CameraController::toggleZoom);
 
             //连续变焦：每帧按住时调整
             if (KeyBinding.generalCameraZoomInKey.isDown()) {
@@ -493,13 +493,13 @@ public class RawInputHandler {
             }
 
             // 炮镜模式下屏蔽快捷栏切换键（数字键1-9）
-//            if (CameraController.isCameraMode()) {
-//                for (int i = 0; i < 9; i++) {
-//                    if (Minecraft.getInstance().options.keyHotbarSlots[i].consumeClick()) {
-//                        Minecraft.getInstance().options.keyHotbarSlots[i].setDown(false);
-//                    }
-//                }
-//            }
+            if (CameraController.isCameraMode()) {
+                for (int i = 0; i < 9; i++) {
+                    if (Minecraft.getInstance().options.keyHotbarSlots[i].consumeClick()) {
+                        Minecraft.getInstance().options.keyHotbarSlots[i].setDown(false);
+                    }
+                }
+            }
         }
     }
 }

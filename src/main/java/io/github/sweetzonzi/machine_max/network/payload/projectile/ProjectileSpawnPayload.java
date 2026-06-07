@@ -104,15 +104,7 @@ public record ProjectileSpawnPayload(
             Vector3f vel = new Vector3f((float) payload.velX, (float) payload.velY, (float) payload.velZ);
 
             // 构造 + 覆盖 ID + addToLevel：addToLevel 内自动处理注册到 ObjectManager 和 SoA
-            if (payload.isRigid) {
-                RigidProjectile rp = new RigidProjectile(level, type, pos, vel);
-                rp.setId(payload.objId);
-                rp.addToLevel();
-            } else {
-                PointProjectile pp = new PointProjectile(level, type, pos, vel);
-                pp.setId(payload.objId);
-                pp.addToLevel();
-            }
+            type.create(level, pos, vel);
         });
     }
 }

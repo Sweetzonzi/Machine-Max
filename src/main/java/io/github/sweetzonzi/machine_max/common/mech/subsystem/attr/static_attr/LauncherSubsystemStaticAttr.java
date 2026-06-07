@@ -29,10 +29,6 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     private final float recoilAbsorption;
     /** 开火信号输入频道列表，优先级从高到低 */
     private final List<String> controlInputs;
-    /** 投射物类型ID，指向 {@code projectiles/*.json} 中定义的投射物类型 */
-    private final ResourceLocation projectileTypeId;
-
-    // TODO: 弹药tag过滤 —— 预留占位，待 AmmoLoaderSubsystem 实现后用于弹药兼容性检查
     /** 弹药必须全部具备的tag，空列表表示不要求 */
     private final List<ResourceLocation> requiredTags;
     /** 弹药至少具备其一即可的tag，空列表表示接受任意 */
@@ -56,9 +52,6 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Codec.FLOAT.optionalFieldOf("vertical_accuracy_multiplier", 1.0f).forGetter(LauncherSubsystemStaticAttr::getVerticalAccuracyMultiplier),
             Codec.FLOAT.optionalFieldOf("recoil_absorption", 0.0f).forGetter(LauncherSubsystemStaticAttr::getRecoilAbsorption),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of("weapon_control")).forGetter(LauncherSubsystemStaticAttr::getControlInputs),
-            ResourceLocation.CODEC.optionalFieldOf("projectile_type", ResourceLocation.parse("machine_max:20mm_ap"))
-                .forGetter(LauncherSubsystemStaticAttr::getProjectileTypeId),
-            // TODO: 弹药tag过滤 —— 占位，待 AmmoLoaderSubsystem 集成后启用
             ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags", List.of())
                 .forGetter(LauncherSubsystemStaticAttr::getRequiredTags),
             ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags", List.of())
@@ -79,7 +72,6 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float verticalAccuracyMultiplier,
             float recoilAbsorption,
             List<String> controlInputs,
-            ResourceLocation projectileTypeId,
             List<ResourceLocation> requiredTags,
             List<ResourceLocation> acceptableTags,
             List<ResourceLocation> forbiddenTags,
@@ -93,7 +85,6 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.verticalAccuracyMultiplier = verticalAccuracyMultiplier;
         this.recoilAbsorption = recoilAbsorption;
         this.controlInputs = controlInputs;
-        this.projectileTypeId = projectileTypeId;
         this.requiredTags = requiredTags;
         this.acceptableTags = acceptableTags;
         this.forbiddenTags = forbiddenTags;

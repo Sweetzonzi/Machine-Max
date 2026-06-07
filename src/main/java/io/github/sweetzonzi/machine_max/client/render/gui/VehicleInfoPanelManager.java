@@ -5,6 +5,7 @@ import com.sighs.apricityui.event.MouseEvent;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.client.render.gui.panel.GroupStripRenderer;
 import io.github.sweetzonzi.machine_max.common.mech.control.*;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
@@ -55,10 +56,7 @@ public class VehicleInfoPanelManager {
      * 获取 baseGroup + 全部子组的列表，用于卡片构建。
      */
     private static List<ControlGroup> getAllControlGroups(ControlGroupSet set) {
-        List<ControlGroup> all = new ArrayList<>(1 + set.groups.size());
-        all.add(set.baseGroup);
-        all.addAll(set.groups);
-        return all;
+        return GroupStripRenderer.getAllGroups(set);
     }
 
     @SubscribeEvent
