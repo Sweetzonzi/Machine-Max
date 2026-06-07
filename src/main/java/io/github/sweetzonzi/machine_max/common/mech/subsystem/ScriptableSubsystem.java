@@ -224,6 +224,18 @@ public class ScriptableSubsystem extends AbstractControllableSubsystem {
         return result;
     }
 
+    /**
+     * 代理覆写：调用默认的 respondCallbackToSender（自动回调），再触发脚本 Hook。
+     */
+    @Override
+    public void respondCallbackToSender(
+            String channelName, ISignalSender sender, Object value,
+            boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
+        super.respondCallbackToSender(channelName, sender, value,
+                requiresImmediateCallback, callbackReturnsSignalValue);
+        Hook.run(this, channelName, sender);
+    }
+
     @Override
     public SignalChannel getSignalChannel(String channelName) {
         if (Hook.run(this, channelName) instanceof SignalChannel hooked) {

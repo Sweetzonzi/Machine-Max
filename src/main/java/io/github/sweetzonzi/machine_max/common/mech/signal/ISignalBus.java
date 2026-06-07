@@ -14,6 +14,10 @@ import java.util.Set;
  *   <li>broadcast()：将信号转发给所有订阅者中接受此频道的接收者，保留原始发送者身份</li>
  * </ul>
  * <p>
+ * 广播不负责回调——回调由 {@link ISignalReceiver#respondCallbackToSender} 在广播前由
+ * sendSignalToTarget → SubsystemController.respondCallbackToSender 路径处理。
+ * 广播时回调已完成。
+ * <p>
  * 订阅由总线自动管理：子系统初始化时自动注册为订阅者。
  * broadcast() 在运行时检查每个订阅者的 {@link ISignalReceiver#acceptAllBroadcastInput()}
  * 和 {@link ISignalReceiver#getAcceptedChannels()}，决定是否转发。

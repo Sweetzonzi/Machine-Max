@@ -172,4 +172,31 @@ public class SignalPort implements ISignalReceiver, ISignalSender {
     public boolean acceptAllRoutingInput() {
         return true;
     }
+
+    /**
+     * 递归穿透到对侧端口的下一跳目标，触发它们的 respondCallbackToSender。
+     * <p>
+     * SignalPort 自身不作为终端发声，但必须将回调请求传递给信号路径上的最终接收者。
+     * 因为 Port 内部转发走 {@link #onSignalUpdated}，绕过 {@link ISignalSender#sendSignalToTarget}，
+     * 所以需要在此处手动穿透到下一跳。
+     */
+    @Override
+    public void respondCallbackToSender(
+            String channelName, ISignalSender sender, Object value,
+            boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
+        if (!requiresImmediateCallback) return;
+        // 穿透到对侧端口的下一跳目标，递归触发它们的 respondCallbackToSender
+        if (owner instanceof AbstractConnector ownerConnector
+                && ownerConnector.attachedConnector != null
+                && ownerConnector.attachedConnector.signalPort instanceof SignalPort otherPort) {
+            String translated = otherPort.translateChannel(channelName);
+            Map<String, ISignalReceiver> targets = otherPort.getTargets().get(translated);
+            if (targets != null) {
+                for (ISignalReceiver target : targets.values()) {
+                    target.respondCallbackToSender(channelName, sender, value,
+                            requiresImmediateCallback, callbackReturnsSignalValue);
+                }
+            }
+        }
+    }
 }

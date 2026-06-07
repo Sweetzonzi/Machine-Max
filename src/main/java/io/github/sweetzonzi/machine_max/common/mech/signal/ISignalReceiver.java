@@ -1,6 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.mech.signal;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
+
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 public interface ISignalReceiver {
@@ -55,5 +59,62 @@ public interface ISignalReceiver {
      */
     default boolean acceptAllBroadcastInput() {
         return false;
+    }
+
+    // ===== 回调机制 =====
+
+    /**
+     * 防止 respondCallbackToSender → sendCallbackToListener → onSignalUpdated → … 形成循环
+     */
+    ThreadLocal<Set<ISignalSender>> CALLBACK_GUARD = ThreadLocal.withInitial(HashSet::new);
+
+    /**
+     * 接收到信号后、onSignalUpdated 之前，按需向发送者回传 callback。
+     * <p>
+     * 默认行为：若 requiresImmediateCallback=true 且发送者/接收者均为有效的
+     * ISignalReceiver/ISignalSender，则通过 sendCallbackToListener 向发送者回传 "callback"。
+     * <p>
+     * 覆写规则：
+     * <ul>
+     *   <li>普通子系统：不覆写，默认自动回传</li>
+     *   <li>SignalPort：覆写为空（端口仅是信道，不应作为终端发声）</li>
+     *   <li>SubsystemController：覆写，转发到所有订阅者</li>
+     * </ul>
+     *
+     * @param channelName              信号频道名
+     * @param sender                   原始发送者
+     * @param value                    信号值
+     * @param requiresImmediateCallback 是否需要即时回传 callback
+     * @param callbackReturnsSignalValue true: 回传信号值，false: 回传信号频道名
+     */
+    default void respondCallbackToSender(
+            String channelName, ISignalSender sender, Object value,
+            boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
+        if (!requiresImmediateCallback) return;
+
+        // 不是 ISignalSender 的接收者无法回传 callback，也不需要循环防护
+        if (!(this instanceof ISignalSender cbSender)) return;
+
+        // 循环防护：同一线程中同一接收者被二次要求回传时跳过
+        Set<ISignalSender> guard = CALLBACK_GUARD.get();
+        if (!guard.add((ISignalSender) this)) {
+            MachineMax.LOGGER.error(
+                    "信号回调循环触发！channel={}, sender={}, receiver={}, guard={}。" +
+                            "同一调用链中 {} 被重复要求回传 callback，跳过以避免栈溢出。" +
+                            "当前调用栈如下（供定位循环路径）：",
+                    channelName, sender.getClass().getSimpleName(), this.getClass().getSimpleName(),
+                    guard.stream().map(Object::getClass).map(Class::getSimpleName).toList(),
+                    this.getClass().getSimpleName(),
+                    new Exception("回调循环调用栈"));
+            return;
+        }
+        try {
+            if (sender instanceof ISignalReceiver cbTarget) {
+                Object cbValue = callbackReturnsSignalValue ? value : channelName;
+                cbSender.sendCallbackToListener("callback", cbTarget, cbValue);
+            }
+        } finally {
+            guard.remove((ISignalSender) this);
+        }
     }
 }

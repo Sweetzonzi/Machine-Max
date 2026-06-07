@@ -136,6 +136,30 @@ public class SubsystemController implements ISignalBus {
         return SignalResult.PASS;
     }
 
+    // ===== 直送模式回调：respondCallbackToSender =====
+
+    /**
+     * 转发回调请求给所有接受此频道且可作为发送者的订阅者。
+     * <p>
+     * 当 SubsystemController 作为路由目标收到带回调的信号时（"vehicle" 目标名），
+     * 在 onSignalUpdated / broadcast 之前遍历所有订阅者，让每个订阅者
+     * 自主决定是否向原始发送者回传 callback。
+     * <p>
+     * 这样 Engine 等终端子系统直接回调到 CarController，sender 是 Engine 而非 Controller。
+     */
+    @Override
+    public void respondCallbackToSender(
+            String channelName, ISignalSender sender, Object value,
+            boolean requiresImmediateCallback, boolean callbackReturnsSignalValue) {
+        if (!requiresImmediateCallback) return;
+        for (ISignalReceiver sub : getAllSubscribers()) {
+            if (sub.acceptAllBroadcastInput() || sub.getAcceptedChannels().contains(channelName)) {
+                sub.respondCallbackToSender(channelName, sender, value,
+                        requiresImmediateCallback, callbackReturnsSignalValue);
+            }
+        }
+    }
+
     // ===== ISignalBus 实现 =====
 
     @Override

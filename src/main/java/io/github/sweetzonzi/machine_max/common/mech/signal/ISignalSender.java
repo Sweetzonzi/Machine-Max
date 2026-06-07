@@ -149,21 +149,10 @@ public interface ISignalSender {
                 } else if (signalReceiver instanceof SubPart subPart) {
                     subPart.signalStorage.put(signalChannel, signalValue);
                 }
-                SignalResult result = signalReceiver.onSignalUpdated(signalChannel, this);
-                if (requiresImmediateCallback && this instanceof ISignalReceiver) {
-                    // 递归收集信号传播链上最终到达的终端接收者，支持多跳传递和频道转译
-                    Set<ISignalReceiver> terminalTargets = new HashSet<>();
-                    collectTerminalTargets(signalReceiver, signalChannel, terminalTargets, new HashSet<>());
-                    for (ISignalReceiver target : terminalTargets) {
-                        if (target instanceof ISignalSender callbackSender) {
-                            if (callbackReturnsSignalValue)
-                                callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalValue);
-                            else
-                                callbackSender.sendCallbackToListener("callback", (ISignalReceiver) this, signalChannel);
-                        }
-                    }
-                }
-                return result;
+                // 先让接收者自主决定是否回传 callback，再触发 onSignalUpdated
+                signalReceiver.respondCallbackToSender(signalChannel, this, signalValue,
+                        requiresImmediateCallback, callbackReturnsSignalValue);
+                return signalReceiver.onSignalUpdated(signalChannel, this);
             }
         }
         return SignalResult.PASS;
@@ -197,41 +186,6 @@ public interface ISignalSender {
         if (this instanceof ISignalReceiver) {
             receiver.getSignalInputChannels().computeIfAbsent(signalChannel, k -> new SignalChannel()).put(this, signalValue);
             receiver.onSignalUpdated(signalChannel, this);
-        }
-    }
-
-    /**
-     * 递归收集信号经过 SignalPort 传播链后实际到达的终端接收者。
-     * 沿着 {@link SignalPort#onSignalUpdated} 的转发逻辑（含频道转译）追踪信号路径，
-     * 使反馈信号能够跨越多跳连接点传递到最终的信号消费方。
-     *
-     * @param receiver      当前信号接收者
-     * @param channel       当前频道名称（已被转译后的名称）
-     * @param terminals     输出参数：收集到的终端接收者集合
-     * @param visited       防止循环的已访问集合
-     */
-    default void collectTerminalTargets(
-            ISignalReceiver receiver,
-            String channel,
-            Set<ISignalReceiver> terminals,
-            Set<ISignalReceiver> visited
-    ) {
-        if (receiver == null || !visited.add(receiver)) return;
-
-        if (receiver instanceof SignalPort port
-                && port.getOwner() instanceof AbstractConnector ownerConnector
-                && ownerConnector.attachedConnector != null
-                && ownerConnector.attachedConnector.signalPort instanceof SignalPort otherPort) {
-            // 遵循 SignalPort.onSignalUpdated() 的实际转发逻辑：先转译频道，再查找目标
-            String translated = otherPort.translateChannel(channel);
-            Map<String, ISignalReceiver> targets = otherPort.getTargets().get(translated);
-            if (targets != null) {
-                for (ISignalReceiver target : targets.values()) {
-                    collectTerminalTargets(target, translated, terminals, visited);
-                }
-            }
-        } else {
-            terminals.add(receiver);
         }
     }
 
