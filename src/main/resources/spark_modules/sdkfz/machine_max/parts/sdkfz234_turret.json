@@ -143,6 +143,20 @@
                   "connector.machine_max.turret_gun_axis"
                 ]
               }
+            },
+            "subsystem.machine_max.50mm_ammo_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "machine_max:sdkfz_50mm_ammo_loader",
+              "discovery_outputs": {
+                "ammo_50mm": ["vehicle"]
+              }
+            },
+            "subsystem.machine_max.mg34_ammo_loader": {
+              "type": "machine_max:regen_loader",
+              "definition": "machine_max:sdkfz_mg34_regen_loader",
+              "discovery_outputs": {
+                "ammo_7_92mm": ["vehicle"]
+              }
             }
           }
         }

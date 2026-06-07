@@ -14,7 +14,7 @@ import java.util.Set;
 
 /**
  * 发射器子系统静态属性。<br>
- * 定义射速、初速加成、精度修正、开火信号输入频道等硬件参数。<br>
+ * 定义射速、初速加成、精度修正、开火信号输入频道、弹药输入频道等硬件参数。<br>
  * 一个子系统代表一个发射管/挂架/炮闩。
  */
 @Getter
@@ -40,6 +40,13 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     /** 弹药不能包含的tag，空列表表示不禁止 */
     private final List<ResourceLocation> forbiddenTags;
 
+    /**
+     * 弹药供给发现频道列表。<br>
+     * 发射器通过此列表中的频道接收来自 IAmmoSupplier 的握手信号。<br>
+     * <b>空列表表示接受任意频道信号</b>（万能接收模式）。
+     */
+    private final List<String> ammoInputs;
+
     public static final MapCodec<LauncherSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.FLOAT.fieldOf("fire_rate").forGetter(LauncherSubsystemStaticAttr::getFireRate),
@@ -58,6 +65,8 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 .forGetter(LauncherSubsystemStaticAttr::getAcceptableTags),
             ResourceLocation.CODEC.listOf().optionalFieldOf("forbidden_tags", List.of())
                 .forGetter(LauncherSubsystemStaticAttr::getForbiddenTags),
+            Codec.STRING.listOf().optionalFieldOf("ammo_inputs", List.of())
+                .forGetter(LauncherSubsystemStaticAttr::getAmmoInputs),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, LauncherSubsystemStaticAttr::new));
 
@@ -74,6 +83,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             List<ResourceLocation> requiredTags,
             List<ResourceLocation> acceptableTags,
             List<ResourceLocation> forbiddenTags,
+            List<String> ammoInputs,
             BasicSoundAttr sounds) {
         super(basicAttr, sounds);
         this.fireRate = fireRate;
@@ -87,6 +97,7 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.requiredTags = requiredTags;
         this.acceptableTags = acceptableTags;
         this.forbiddenTags = forbiddenTags;
+        this.ammoInputs = ammoInputs;
     }
 
     /**

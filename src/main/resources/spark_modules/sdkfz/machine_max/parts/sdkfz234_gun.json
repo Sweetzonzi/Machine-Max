@@ -60,12 +60,12 @@
           "subsystems": {
             "subsystem.machine_max.mg34": {
               "type": "machine_max:launcher",
-              "definition": "machine_max:basic_launcher",
+              "definition": "machine_max:sdkfz_mg34_launcher",
               "locator": "mg_muzzle"
             },
             "subsystem.machine_max.50mm": {
               "type": "machine_max:launcher",
-              "definition": "machine_max:basic_launcher",
+              "definition": "machine_max:sdkfz_50mm_launcher",
               "locator": "main_gun_muzzle"
             },
             "subsystem.machine_max.gunner_sight": {

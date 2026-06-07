@@ -470,7 +470,7 @@ public class RawInputHandler {
             // 炮镜模式下始终屏蔽物品栏/丢弃/副手等原版功能
             boolean blockAll = CameraController.isCameraMode() || seat.disableVanillaActions;
 
-            //很奇怪，必须套一层if判断，屏蔽效果才能生效 Wired, must have a if to work
+            //很奇怪，必须套一层if判断，屏蔽效果才能生效
             if (Minecraft.getInstance().options.keyUp.consumeClick()) {
                 Minecraft.getInstance().options.keyUp.setDown(false);
             } else if (Minecraft.getInstance().options.keyDown.consumeClick()) {
@@ -493,13 +493,13 @@ public class RawInputHandler {
             }
 
             // 炮镜模式下屏蔽快捷栏切换键（数字键1-9）
-            if (CameraController.isCameraMode()) {
-                for (int i = 0; i < 9; i++) {
-                    if (Minecraft.getInstance().options.keyHotbarSlots[i].consumeClick()) {
-                        Minecraft.getInstance().options.keyHotbarSlots[i].setDown(false);
-                    }
-                }
-            }
+//            if (CameraController.isCameraMode()) {
+//                for (int i = 0; i < 9; i++) {
+//                    if (Minecraft.getInstance().options.keyHotbarSlots[i].consumeClick()) {
+//                        Minecraft.getInstance().options.keyHotbarSlots[i].setDown(false);
+//                    }
+//                }
+//            }
         }
     }
 }

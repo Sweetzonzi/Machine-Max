@@ -414,16 +414,18 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     // ==================== 信号 ====================
 
     @Override
-    public List<String> getAcceptedChannels() {
-        List<String> channels = new ArrayList<>();
-        channels.addAll(attr.discoveryOutputs.keySet());
-        return channels;
+    public boolean acceptAllRoutingInput() {
+        return true;
+    }
+
+    @Override
+    public boolean acceptAllBroadcastInput() {
+        return acceptAllRoutingInput();
     }
 
     @Override
     public Map<String, List<String>> getTargetNames() {
-        Map<String, List<String>> result = new HashMap<>(attr.discoveryOutputs);
-        return result;
+        return attr.discoveryOutputs;
     }
 
     @Override

@@ -300,10 +300,13 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     // ==================== 信号 ====================
 
     @Override
-    public List<String> getAcceptedChannels() {
-        List<String> channels = new ArrayList<>();
-        channels.addAll(attr.discoveryOutputs.keySet());
-        return channels;
+    public boolean acceptAllRoutingInput() {
+        return true;
+    }
+
+    @Override
+    public boolean acceptAllBroadcastInput() {
+        return acceptAllRoutingInput();
     }
 
     @Override

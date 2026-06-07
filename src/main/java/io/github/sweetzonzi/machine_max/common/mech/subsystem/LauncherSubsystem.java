@@ -224,8 +224,6 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         }
 
         // ② 发射膛内弹药
-        if (chamberedType == null) return; // 安全检查
-
         ProjectileType type = chamberedType;
         Transform muzzleTransform = getMuzzleWorldTransform();
         Vector3f jmePos = muzzleTransform.getTranslation();
@@ -384,9 +382,18 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
     @Override
     public List<String> getAcceptedChannels() {
         List<String> channels = new ArrayList<>(attr.staticAttribute.getControlInputs());
-        // 弹药发现频道，供供给者发现此消费者
-        channels.add("ammo_discovery");
+        channels.addAll(attr.staticAttribute.getAmmoInputs());
         return channels;
+    }
+
+    @Override
+    public boolean acceptAllBroadcastInput() {
+        return acceptAllRoutingInput();
+    }
+
+    @Override
+    public boolean acceptAllRoutingInput() {
+        return attr.staticAttribute.getControlInputs().isEmpty() || attr.staticAttribute.getAmmoInputs().isEmpty();
     }
 
     @Override
@@ -394,22 +401,5 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         Map<String, List<String>> result = new HashMap<>(2);
         result.putAll(attr.ammoCountOutputs);
         return result;
-    }
-
-    @Override
-    public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        // 弹药发现频道回调处理：供给者通过 callback 发现此 Launcher
-        if (channelName.equals("callback") && sender instanceof IAmmoSupplier supplier) {
-            // 校验是否在同一载具内
-            if (supplier instanceof AbstractSubsystem sub) {
-                if (sub.getOwner().getSubPart().getPart().assembly
-                        != this.getOwner().getSubPart().getPart().assembly) {
-                    return SignalResult.PASS;
-                }
-            }
-            addSupplier(supplier);
-            return SignalResult.CONSUME;
-        }
-        return super.onSignalUpdated(channelName, sender);
     }
 }

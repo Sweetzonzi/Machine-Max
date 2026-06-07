@@ -1,0 +1,11 @@
+{
+  "type": "machine_max:regen_loader",
+  "basic_durability": 80,
+  "magazine_capacity": 40,
+  "regen_per_minute": 10,
+  "regen_round_by_round": true,
+  "energy_cost_per_round": 0,
+  "projectile_type": "machine_max:50mm_pzgr39",
+  "reload_time_ticks": 40,
+  "can_supply_multiple": false
+}

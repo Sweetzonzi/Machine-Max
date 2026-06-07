@@ -1,0 +1,17 @@
+{
+  "type": "point",
+  "mass": 0.013,
+  "gravity_factor": 1.0,
+  "drag_factor": 0.001,
+  "radius": 0.004,
+  "base_velocity": 755,
+  "base_penetration": 5,
+  "base_damage": 8,
+  "base_accuracy_mil": 3.0,
+  "penetration_velocity_coefficient": 1.0,
+  "damage_velocity_coefficient": 0.5,
+  "max_lifetime_ticks": 40,
+  "tags": ["machine_max:caliber/7_92mm", "machine_max:ammo/ap"],
+  "tracer_color": [255, 200, 100],
+  "tracer_alpha": 180
+}
