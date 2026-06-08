@@ -39,6 +39,10 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     public final boolean manualGearShift;
     public final boolean autoHandBrake;
     public final boolean driftAssist;
+    /** 漂移时前外轮额外制动增益（0~1），抑制spin-out并增强前轴抓地，默认0.3 */
+    public final float driftFrontOuterBrakeGain;
+    /** 漂移时后内轮额外制动增益（0~1），辅助车尾甩入弯心，默认0.1 */
+    public final float driftRearInnerBrakeGain;
     public final List<String> controlInputKeys;
     public final HandBrakeSoundAttr sounds;//音效配置
 
@@ -88,6 +92,8 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             Codec.BOOL.optionalFieldOf("manual_gear_shift", false).forGetter(CarControllerSubsystemStaticAttr::isManualGearShift),
             Codec.BOOL.optionalFieldOf("auto_hand_brake", true).forGetter(CarControllerSubsystemStaticAttr::isAutoHandBrake),
             Codec.BOOL.optionalFieldOf("drift_assist", true).forGetter(CarControllerSubsystemStaticAttr::isDriftAssist),
+            Codec.FLOAT.optionalFieldOf("drift_front_outer_brake_gain", 0.3f).forGetter(CarControllerSubsystemStaticAttr::getDriftFrontOuterBrakeGain),
+            Codec.FLOAT.optionalFieldOf("drift_rear_inner_brake_gain", 0.1f).forGetter(CarControllerSubsystemStaticAttr::getDriftRearInnerBrakeGain),
             Codec.STRING.listOf().optionalFieldOf("control_inputs", List.of(
                     "move_input_p0", "regular_input_p0",
                     "move_input_p1", "regular_input_p1",
@@ -118,6 +124,8 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             boolean manualGearShift,
             boolean autoHandBrake,
             boolean driftAssist,
+            float driftFrontOuterBrakeGain,
+            float driftRearInnerBrakeGain,
             List<String> controlInputKeys,
             HandBrakeSoundAttr sounds) {
         super(basicAttr, sounds.basicSounds());
@@ -127,6 +135,8 @@ public class CarControllerSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.manualGearShift = manualGearShift;
         this.autoHandBrake = autoHandBrake;
         this.driftAssist = driftAssist;
+        this.driftFrontOuterBrakeGain = driftFrontOuterBrakeGain;
+        this.driftRearInnerBrakeGain = driftRearInnerBrakeGain;
         this.controlInputKeys = controlInputKeys;
         this.sounds = sounds;
     }

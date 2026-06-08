@@ -48,7 +48,9 @@ public class MotorbikeControllerSubsystemStaticAttr extends CarControllerSubsyst
                 maxDriftAngularVelocityMap,
                 manualGearShift,
                 autoHandBrake,
-                false,
+                false,   // driftAssist — 摩托车不启用漂移辅助
+                0f,      // driftFrontOuterBrakeGain
+                0f,      // driftRearInnerBrakeGain
                 controlInputKeys,
                 sounds);
         this.maxAngle = maxAngle;

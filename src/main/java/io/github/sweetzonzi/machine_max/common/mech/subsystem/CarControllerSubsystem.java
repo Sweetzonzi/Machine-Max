@@ -515,7 +515,10 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     WheelDriverSubsystem wheel = entry.getKey();
                     if (wheel.connector.joint != null) {
                         float steeringInput = steering(actualSteering, wheel.connector);
-                        float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
+                        // 漂移差动制动偏置：叠加到驾驶员刹车后走 ABS
+                        float driftBrakeBias = calculateDriftBrakeBias(wheel, getWheelCarLocalPivot(wheel));
+                        float effectiveBrake = calculateEffectiveBrake(wheel,
+                                Math.clamp(actualBrake + driftBrakeBias, 0f, 1f));
                         sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                     }
                 }
@@ -565,7 +568,10 @@ public class CarControllerSubsystem extends BasicSubsystem {
                     WheelDriverSubsystem wheel = entry.getKey();
                     if (wheel.connector.joint != null) {
                         float steeringInput = steering(actualSteering, wheel.connector);
-                        float effectiveBrake = calculateEffectiveBrake(wheel, actualBrake);
+                        // 漂移差动制动偏置：叠加到驾驶员刹车后走 ABS
+                        float driftBrakeBias = calculateDriftBrakeBias(wheel, getWheelCarLocalPivot(wheel));
+                        float effectiveBrake = calculateEffectiveBrake(wheel,
+                                Math.clamp(actualBrake + driftBrakeBias, 0f, 1f));
                         sendCallbackToListener(channel, wheel, new WheelControlSignal(effectiveBrake, actualHandBrake, steeringInput));
                     }
                 }
@@ -599,7 +605,10 @@ public class CarControllerSubsystem extends BasicSubsystem {
                 WheelDriverSubsystem wheel = entry.getKey();
                 if (wheel.connector.joint != null) {
                     float steeringInput = steering(actualSteering, wheel.connector);
-                    sendCallbackToListener(channel, wheel, new WheelControlSignal(actualBrake, actualHandBrake, steeringInput));
+                    // 漂移差动制动偏置（在 actualBrake 基础上叠加）
+                    float driftBrakeBias = calculateDriftBrakeBias(wheel, getWheelCarLocalPivot(wheel));
+                    sendCallbackToListener(channel, wheel,
+                            new WheelControlSignal(Math.clamp(actualBrake + driftBrakeBias, 0f, 1f), actualHandBrake, steeringInput));
                 }
             }
         }
@@ -803,6 +812,55 @@ public class CarControllerSubsystem extends BasicSubsystem {
         }
 
         return Math.max(0f, Math.min(1f, effectiveBrake));
+    }
+
+    /**
+     * 获取轮子关节在车体局部坐标系下的枢轴位置。
+     * 与 ackermannSteering / recalculateSteeringCenter 取值方式一致。
+     *
+     * @param wheel 轮胎驱动子系统
+     * @return 轮子枢轴在车体刚体局部坐标系下的位置
+     */
+    private Vector3f getWheelCarLocalPivot(WheelDriverSubsystem wheel) {
+        New6Dof joint = wheel.connector.joint;
+        Vector3f pivotLocal = new Vector3f();
+        if (wheel.connector.subPart.body == joint.getBodyA()) {
+            joint.getPivotA(pivotLocal);
+        } else {
+            joint.getPivotB(pivotLocal);
+        }
+        Vector3f worldPivot = MMMath.relPointWorldPos(pivotLocal, wheel.connector.subPart.body);
+        return MMMath.worldPointLocalPos(worldPivot, getOwner().getSubPart().body);
+    }
+
+    /**
+     * 计算漂移差动制动的刹车偏置量。
+     * 漂移时前外轮额外制动以抑制 spin-out 并增强前轴抓地，
+     * 后内轮轻刹辅助车尾甩入弯心。
+     * <p>受 {@link ControlPreference#shouldDriftAssist} 和漂移静态属性增益双重控制。</p>
+     *
+     * @param wheel          轮胎驱动子系统
+     * @param carLocalPivot  轮子在车体局部坐标下的枢轴位置
+     * @return 刹车偏置量（0~1），叠加到驾驶员刹车输入上
+     */
+    private float calculateDriftBrakeBias(WheelDriverSubsystem wheel, Vector3f carLocalPivot) {
+        if (driftWeight <= 1e-4f || Math.abs(driftRad) <= 0.05f) {
+            return 0f;
+        }
+
+        boolean isFront = carLocalPivot.z <= computedSteeringCenter.z;
+        boolean isOuter = Math.signum(carLocalPivot.x) == Math.signum(driftRad);
+
+        float driftIntensity = driftWeight * Math.abs(driftRad) / (float) Math.PI;
+
+        if (isFront && isOuter) {
+            // 前外轮：抑制 spin-out，增强前轴摩擦
+            return driftIntensity * attr.staticAttribute.getDriftFrontOuterBrakeGain();
+        } else if (!isFront && !isOuter) {
+            // 后内轮：辅助车尾外摆
+            return driftIntensity * attr.staticAttribute.getDriftRearInnerBrakeGain();
+        }
+        return 0f;
     }
 
     protected float calculateSlipRatio(WheelDriverSubsystem wheel) {
