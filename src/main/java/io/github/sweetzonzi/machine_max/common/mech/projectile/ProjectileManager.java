@@ -12,6 +12,7 @@ import com.jme3.math.Transform;
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer;
 import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -27,6 +28,7 @@ import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileBatchSpawnPayload;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitSyncPayload;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
@@ -34,6 +36,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.annotation.Nullable;
 
@@ -123,7 +127,20 @@ public class ProjectileManager {
     private final Map<Integer, PenetrationKey> pendingPenKeys = new HashMap<>();
 
     /** 该维度所有已加载的投射物类型，typeIndex 映射到此数组 */
-    private ProjectileType[] typeCache;
+    private volatile ProjectileType[] typeCache;
+
+    /**
+     * 待主线程创建 Entity 的投射物队列。
+     * <p>
+     * <b>生产者：</b>物理线程（{@link #addProjectileInternal(IProjectile, Vector3f, Vector3f)}）
+     * — 写入 SoA 后在 volatile count++ 之前入队。<br>
+     * <b>消费者：</b>主线程（{@link #flushProjectileEntities()} 清空）。<br>
+     * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
+     * <p>
+     * 缓存 {@link IProjectile} 引用而非 objId——防止同一物理 tick 内投射物出膛即命中、
+     * 已从 {@link ObjectManager} 和 SoA 移除后主线程无法找到对象。
+     */
+    private final ConcurrentLinkedQueue<IProjectile> pendingProjectiles = new ConcurrentLinkedQueue<>();
 
     /** 复用 Vector3f 避免热路径中重复分配 */
     private final Vector3f rayFrom = new Vector3f();
@@ -168,8 +185,18 @@ public class ProjectileManager {
         addProjectileInternal(r, r.getPosition(), r.getLinearVelocity());
     }
 
-    /** 内部：将投射物的位置/速度/类型写入 SoA，并在服务端创建配套 Entity */
+    /**
+     * 内部：将投射物的位置/速度/类型写入 SoA。
+     * <p>
+     * <b>调用线程：</b>物理线程（{@link PointProjectile}/{@link RigidProjectile} 构造链）。
+     * 写入后通过 volatile count++ 保证 happens-before，主线程可在 {@link #preTick()} 中安全读取。
+     * <p>
+     * 不再在此方法内创建 Entity 或发包——改为入队 {@link #pendingProjectiles}，
+     * 由主线程 {@link #flushProjectileEntities()} 统一处理。
+     */
     private void addProjectileInternal(IProjectile proj, Vector3f pos, Vector3f vel) {
+        if (proj instanceof DestroyableObject projectile)
+            ObjectManager.addDestroyableObject(projectile);
         ensureCapacity(count + 1);
         int i = count++;
         int id = ((DestroyableObject) proj).getId();
@@ -185,13 +212,9 @@ public class ProjectileManager {
         alive[i] = true;
         projectileObjIds.add(id);
 
-        // 服务端：发射位置区块已加载则立即创建 Entity，否则标记延迟创建
+        // 服务端：入队 pendingProjectiles，由主线程 flushProjectileEntities 统一处理
         if (!level.isClientSide()) {
-            if (isChunkLoadedAt(pos)) {
-                createProjectileEntity(i);
-            } else {
-                needsEntityRecreate[i] = true;
-            }
+            pendingProjectiles.add(proj);
         }
     }
 
@@ -451,6 +474,62 @@ public class ProjectileManager {
     // ================================================================
 
     /**
+     * 冲刷待创建 Entity 的投射物（主线程）。
+     * <p>
+     * 清空 {@link #pendingProjectiles} 队列，对每个待创建投射物（无论是否已销毁）：
+     * <ol>
+     *   <li>通过 {@link #findIndexByObjId(int)} 找到 SoA 索引，区块已加载则创建 {@link MMProjectileEntity}</li>
+     * </ol>
+     * 最后将整批 {@link IProjectile} 引用传给 {@link ProjectileBatchSpawnPayload#broadcast}
+     * 统一发包。即使投射物已销毁，引用的字段（pos/vel/typeKey）仍可读。
+     * <p>
+     * <b>调用线程：</b>仅主线程（在 {@link #postTick()} 开头调用）。
+     */
+    public void flushProjectileEntities() {
+        if (pendingProjectiles.isEmpty()) return;
+
+        // ① 清空队列，收集本批所有投射物（含已销毁的——客户端需要生成视觉效果）
+        List<IProjectile> projs = new ArrayList<>();
+        IProjectile proj;
+        while ((proj = pendingProjectiles.poll()) != null) {
+            projs.add(proj);
+        }
+        if (projs.isEmpty()) return;
+
+        // ② 逐个创建 Entity（仅存活 + 区块已加载的投射物）
+        for (IProjectile p : projs) {
+            int objId = ((DestroyableObject) p).getId();
+            int idx = findIndexByObjId(objId);
+            if (idx < 0) continue;
+
+            if (isChunkLoadedAt(p.getPosition())) {
+                createProjectileEntity(idx);
+                needsEntityRecreate[idx] = false;
+            }
+        }
+
+        // ③ 一次批量发包（broadcast 内部从 IProjectile 引用构造 SpawnEntry）
+        if (level instanceof ServerLevel serverLevel) {
+            ProjectileBatchSpawnPayload.broadcast(serverLevel, projs);
+        }
+    }
+
+    /**
+     * 按 SoA 索引获取投射物类型的注册键。
+     * <p>
+     * 工具方法，供批量发包等外部调用方回退读取使用。
+     *
+     * @param idx SoA 数组索引
+     * @return 投射物类型的 {@link ResourceLocation} 注册键，索引无效时返回 null
+     */
+    @Nullable
+    public ResourceLocation getTypeKeyByIndex(int idx) {
+        if (idx < 0 || idx >= count || typeIndex[idx] < 0 || typeIndex[idx] >= typeCache.length) return null;
+        ProjectileType type = typeCache[typeIndex[idx]];
+        return type != null ? type.getRegistryKey() : null;
+    }
+
+    /**
      * 主线程 Pre 阶段。
      * 递减所有投射物寿命 + 调用各投射物的 {@code preTick()} +
      * 尝试重建因区块卸载丢失的 {@link MMProjectileEntity}。
@@ -464,11 +543,13 @@ public class ProjectileManager {
 
     /**
      * 主线程 Post 阶段。
-     * 调用各投射物的 {@code postTick()}，然后将 SoA 位置/速度回写到 SynchedEntityData。
+     * 先冲刷本帧物理线程新增的投射物 Entity 创建与发包，保证新生投射物发送其创建时的位姿，
+     * 再调用各投射物的 {@code postTick()}，然后将 SoA 位置/速度回写到 SynchedEntityData。
      * <p>
      * 优化：合并 postTick 和 syncToSyncedData 为一趟遍历。
      */
     public void postTick() {
+        flushProjectileEntities();
         postTickAndSync();
     }
 

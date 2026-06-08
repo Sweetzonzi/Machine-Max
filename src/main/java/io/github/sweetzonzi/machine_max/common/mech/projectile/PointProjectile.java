@@ -4,7 +4,9 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
+import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
+import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -12,7 +14,8 @@ import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpawnPayload;
+// 旧单个发包已废弃，由 ProjectileManager.flushProjectileEntities 批量发包替代
+// import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpawnPayload;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -88,19 +91,22 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
      * 将投射物注册到世界（两端的统一入口）。
      * <p>
      * {@link DestroyableObject#addToLevel()} → 注册到 {@link ObjectManager#levelDestroyableObjects}
-     * → 注册到 {@link ProjectileManager} SoA 数组
-     * → 服务端广播 {@link ProjectileSpawnPayload} 到客户端。
+     * → 注册到 {@link ProjectileManager} SoA 数组。
+     * <p>
+     * <b>服务端：</b>Entity 创建与网络广播已移至
+     * {@link ProjectileManager#flushProjectileEntities()}（主线程 preTick），
+     * 改由批量包 {@code ProjectileBatchSpawnPayload} 发送。<br>
+     * <b>客户端：</b>直接播放开火音效。
+     * <p>
+     * <b>调用线程：</b>物理线程（由 {@link ProjectileType#create} → addToLevel 链调用）。
      */
     @Override
     public void addToLevel() {
         super.addToLevel();
         ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
         pm.addPointProjectile(this);
-        if (!level.isClientSide()) {
-            ProjectileSpawnPayload.broadcast(level, getId(), projectileType.getRegistryKey(),
-                getPosition(), getLinearVelocity(), projectileType.getMaxLifetimeTicks(), false);
-        } else {
-            playFireSound();
+        if (level.isClientSide()) {
+            SparkLevel.submitImmediateTask(getLevel(), PPhase.PRE, this::playFireSound);
         }
     }
 

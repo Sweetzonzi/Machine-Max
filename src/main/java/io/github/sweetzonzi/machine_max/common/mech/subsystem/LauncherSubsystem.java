@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
-import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -19,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * 发射器子系统。<br>
@@ -31,8 +31,47 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
 
     public final LauncherSubsystemAttr attr;
 
-    /** 发射冷却（tick） */
-    private int fireCooldown = 0;
+    // ——— 计时器累积发射（物理线程重构） ———
+
+    /**
+     * 发射计时器累积（秒）。
+     * <p>
+     * 每 tick 累积 0.05s，除以单发间隔得到应发射数。
+     * 停止开火时清零，防止"蓄力"。
+     * <p>
+     * <b>调用线程：</b>仅主线程（{@link #onTick()} 内部读写）。
+     */
+    private double fireAccumulator = 0.0;
+
+    /**
+     * 上一 tick 是否正在开火。
+     * <p>
+     * 用于检测"刚按下开火键"的首帧——首帧将 accumulator 预填充为
+     * {@code intervalSec} 而非从 0 累积 0.05s，确保 RPM < 1200 的武器立即发射第一发。
+     * <p>
+     * <b>调用线程：</b>仅主线程（{@link #onTick()} 内部读写）。
+     */
+    private boolean wasFiring = false;
+
+    /**
+     * 上次成功开火的 tick 数（{@link #tickCount} 的值）。
+     * <p>
+     * 防止连按超射：首帧预填充仅在距离上次开火已过至少 {@code intervalSec} 时允许。
+     * 连按（间隔不足）时拒绝预填充，退回正常累积。
+     * 初始 -1 表示从未开火，允许首帧无条件预填充。
+     * <p>
+     * <b>调用线程：</b>仅主线程（{@link #onTick()} 内部读写）。
+     */
+    private int lastFireTick = -1;
+
+    /**
+     * 待物理线程发射的弹药类型队列。
+     * <p>
+     * <b>生产者：</b>主线程 onTick（弹药消费循环）。<br>
+     * <b>消费者：</b>物理线程 {@link #onPrePhysicsTick()}（{@link #fireSingle(ProjectileType)}）。<br>
+     * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
+     */
+    private final ConcurrentLinkedQueue<ProjectileType> pendingFires = new ConcurrentLinkedQueue<>();
 
     // ——— 弹药状态 ———
 
@@ -150,18 +189,209 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
 
     // ——— 发射逻辑 ———
 
+    /**
+     * 主线程 tick：计时器累积 + 弹药消费 + 入队 pendingFires。
+     * <p>
+     * <b>调用线程：</b>主线程（20tps）。
+     * <p>
+     * 逻辑：
+     * <ol>
+     *   <li>若停止开火 → {@code fireAccumulator = 0}，防止蓄力</li>
+     *   <li>刚按下开火键的首帧 → 预填充 accumulator 为 {@code intervalSec}，保证立即发射</li>
+     *   <li>后续帧 → 正常 {@code fireAccumulator += 0.05s}，计算应发射数 {@code N}</li>
+     *   <li>弹药消费循环（最多 N 发）：取弹 → 兼容校验 → 膛内 → 入队 {@link #pendingFires} → 装填下一发</li>
+     *   <li>扣除已发射数对应的时间：{@code fireAccumulator -= N × intervalSec}</li>
+     * </ol>
+     */
     @Override
     public void onTick() {
         super.onTick();
-        if (fireCooldown > 0) {
-            fireCooldown--;
+
+        if (!isActive() || isDestroyed() || getLevel().isClientSide()) {
+            fireAccumulator = 0.0;
+            wasFiring = false;
+            return;
         }
 
-        if (!isActive() || isDestroyed()) return;
+        if (!isFiring()) {
+            // 停止开火 → 清零累积，防止下次开火"蓄力"
+            fireAccumulator = 0.0;
+            wasFiring = false;
+            return;
+        }
 
-        if (isFiring() && fireCooldown == 0) {
-            fire();
-            fireCooldown = Math.max(0, calcFireInterval() - 1);
+        float intervalSec = 60f / attr.staticAttribute.getFireRate();
+
+        // ① 计时器累积：首帧预填充 intervalSec 以立即发射，后续帧正常 +0.05s
+        if (!wasFiring) {
+            // 刚按下开火键 → 检查距离上次开火是否足够远，防止连按超射
+            int elapsed = tickCount - lastFireTick;
+            float elapsedSec = elapsed * 0.05f;
+            if (lastFireTick < 0 || elapsedSec >= intervalSec) {
+                // 从未开火或距离上次开火已超过间隔 → 允许预填充
+                fireAccumulator = intervalSec;
+            } else {
+                // 连按（间隔不足 intervalSec）→ 正常累积，不预填充
+                fireAccumulator = 0.05;
+            }
+        } else {
+            fireAccumulator += 0.05; // 1 tick = 0.05s
+        }
+        wasFiring = true;
+        int rounds = (int) (fireAccumulator / intervalSec);
+
+        if (rounds < 1) return;
+
+        // ② 弹药消费循环
+        int firedCount = 0;
+        for (int i = 0; i < rounds; i++) {
+            // 若膛内无弹，尝试从供给者取弹
+            if (chamberedType == null) {
+                IAmmoSupplier supplier = getCurrentSupplier();
+                if (supplier == null) break;
+
+                if (supplier.isRoundReady(this)) {
+                    ProjectileType offered = supplier.consumeReadyRound(this);
+                    if (offered != null && canAccept(offered)) {
+                        chamberedType = offered;
+                        reloading = false;
+                    } else {
+                        // 不兼容弹药 → 归还后切换供给者
+                        if (offered != null && supplier.canEject()) {
+                            supplier.returnRound(offered);
+                        }
+                        handleIncompatibleAmmo(supplier);
+                        break;
+                    }
+                } else if (!reloading) {
+                    supplier.requestRound(this);
+                    reloading = true;
+                    break;
+                } else {
+                    // 装填中，等待下一 tick
+                    break;
+                }
+            }
+
+            // ③ 入队 pendingFires（物理线程将消费）
+            pendingFires.add(chamberedType);
+            firedCount++;
+            chamberedType = null;
+
+            // ④ 装填下一发
+            IAmmoSupplier supplier = getCurrentSupplier();
+            if (supplier != null && supplier.isRoundReady(this)) {
+                ProjectileType next = supplier.consumeReadyRound(this);
+                if (next != null && canAccept(next)) {
+                    chamberedType = next;
+                    reloading = false;
+                } else {
+                    if (next != null && supplier.canEject()) {
+                        supplier.returnRound(next);
+                    }
+                    handleIncompatibleAmmo(supplier);
+                    break;
+                }
+            } else if (supplier != null && !reloading) {
+                supplier.requestRound(this);
+                reloading = true;
+                break;
+            } else {
+                break;
+            }
+        }
+
+        // ⑤ 扣除已发射数对应的时间
+        fireAccumulator -= firedCount * intervalSec;
+        if (fireAccumulator < 0) fireAccumulator = 0;
+        // 记录上次开火 tick（用于防连按超射）
+        if (firedCount > 0) lastFireTick = tickCount;
+    }
+
+    /**
+     * 物理线程 pre-tick：从 {@link #pendingFires} 逐发出队并执行发射。
+     * <p>
+     * <b>调用线程：</b>物理线程（Bullet 物理步进前）。
+     * <p>
+     * 每发调用 {@link #fireSingle(ProjectileType)}，在该方法内完成：
+     * <ul>
+     *   <li>读取刚体实时枪口位姿（物理线程，与物理体同步无延迟）</li>
+     *   <li>散布 + 初速计算</li>
+     *   <li>投射物 SoA 写入 + 刚体注册</li>
+     *   <li>后坐力 applyImpulse（直接操作物理体）</li>
+     * </ul>
+     */
+    @Override
+    public void onPrePhysicsTick() {
+        super.onPrePhysicsTick();
+        if (getLevel().isClientSide() || getOwner() == null) return;
+
+        ProjectileType type;
+        while ((type = pendingFires.poll()) != null) {
+            fireSingle(type);
+        }
+    }
+
+    /**
+     * 物理线程单发发射。
+     * <p>
+     * <b>调用线程：</b>物理线程（由 {@link #onPrePhysicsTick()} 调用）。
+     * <p>
+     * 逻辑：
+     * <ol>
+     *   <li>读取刚体实时 {@link #getMuzzleWorldTransform()} 获取枪口位姿（与物理体同步）</li>
+     *   <li>散布 + 最终初速计算</li>
+     *   <li>继承发射平台速度</li>
+     *   <li>调用 {@link ProjectileType#create} 创建投射物（内部进入 SoA 写入）</li>
+     *   <li>后坐力 {@code applyImpulse} 直接作用到发射平台刚体</li>
+     * </ol>
+     */
+    private void fireSingle(ProjectileType type) {
+        // ① 读取实时枪口位姿（物理线程，刚体位姿已最新，无 1 tick 延迟）
+        Transform muzzleTransform = getMuzzleWorldTransform();
+        Vector3f jmePos = muzzleTransform.getTranslation();
+
+        // 从 locator 旋转获取发射方向（JME 默认前方为 -Z）
+        Quaternion jmeRot = muzzleTransform.getRotation();
+        Vector3f jmeForward = MyQuaternion.rotate(jmeRot, new Vector3f(0, 0, -1), null);
+        Vec3 direction = new Vec3(jmeForward.x, jmeForward.y, jmeForward.z).normalize();
+
+        // ② 计算最终初速
+        float baseVel = type.getBaseVelocity();
+        float finalSpeedMps = baseVel * attr.staticAttribute.getVelocityMultiplier()
+                + attr.staticAttribute.getVelocityBonus();
+
+        // ③ 计算散布（MIL → 弧度）
+        float baseMil = type.getBaseAccuracyMil();
+        float hRad = baseMil * attr.staticAttribute.getHorizontalAccuracyMultiplier() / 1000f;
+        float vRad = baseMil * attr.staticAttribute.getVerticalAccuracyMultiplier() / 1000f;
+        Vec3 spreadDir = applyEllipticSpread(direction, hRad, vRad);
+
+        // ④ 创建投射物（物理线程：SoA 写入 + 刚体注册）
+        Vector3f jmeVel = new Vector3f(
+                (float) spreadDir.x, (float) spreadDir.y, (float) spreadDir.z
+        ).multLocal(finalSpeedMps);
+
+        // 继承发射平台速度 (m/s)
+        Vector3f platformVel = getSubPart().getLinearVelocity();
+        jmeVel.addLocal(platformVel);
+
+        type.create(getLevel(), jmePos, jmeVel);
+
+        // ⑤ 后坐力（直接操作物理体，无需 submitImmediateTask）
+        float projectileMass = type.getMass();
+        float absorption = attr.staticAttribute.getRecoilAbsorption();
+        float recoilImpulse = projectileMass * finalSpeedMps * (1.0f - absorption);
+        if (recoilImpulse > 1e-6f) {
+            Vector3f impulseWorld = new Vector3f(
+                    (float) -direction.x * recoilImpulse,
+                    (float) -direction.y * recoilImpulse,
+                    (float) -direction.z * recoilImpulse
+            );
+            Vector3f muzzleWorldPos = jmePos.clone();
+            var body = getSubPart().getBody();
+            Vector3f bodyWorldPos = body.getPhysicsLocation(new Vector3f());
+            body.applyImpulse(impulseWorld, muzzleWorldPos.subtract(bodyWorldPos));
         }
     }
 
@@ -176,114 +406,6 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
             }
         }
         return false;
-    }
-
-    /**
-     * 计算发射间隔（tick数）。
-     * RPM → 1200 / RPM，最小1tick。
-     */
-    private int calcFireInterval() {
-        return Math.max(1, (int) (1200f / attr.staticAttribute.getFireRate()));
-    }
-
-    /**
-     * 执行一次发射。<br>
-     * 使用膛内弹药 chamberedType 发射，弹药不足时从当前供给者取弹。
-     * 流程参见设计文档 §5.2：取弹 → 兼容性校验 → 装膛 → 发射 → 清膛。
-     */
-    private void fire() {
-        // ① 如果膛内无弹药，尝试从当前供给者取弹\
-        if (getLevel().isClientSide()) return;
-        if (chamberedType == null) {
-            IAmmoSupplier supplier = getCurrentSupplier();
-            if (supplier == null) return;
-
-            if (supplier.isRoundReady(this)) {
-                // 弹药已就绪，取弹
-                ProjectileType offered = supplier.consumeReadyRound(this);
-                if (offered != null && canAccept(offered)) {
-                    // 弹药兼容，装膛
-                    chamberedType = offered;
-                    reloading = false;
-                } else {
-                    // 弹药不兼容 → 归还后处理
-                    if (offered != null && supplier.canEject()) {
-                        supplier.returnRound(offered);
-                    }
-                    handleIncompatibleAmmo(supplier);
-                    return;
-                }
-            } else if (!reloading) {
-                // 弹药尚未就绪且未在装填中 → 发起请求
-                supplier.requestRound(this);
-                reloading = true;
-                return;
-            } else {
-                // 装填中，等待下一 tick
-                return;
-            }
-        }
-
-        // ② 发射膛内弹药
-        ProjectileType type = chamberedType;
-        Transform muzzleTransform = getMuzzleWorldTransform();
-        Vector3f jmePos = muzzleTransform.getTranslation();
-
-        // 从locator旋转获取发射方向（JME默认前方为-Z）
-        Quaternion jmeRot = muzzleTransform.getRotation();
-        Vector3f jmeForward = MyQuaternion.rotate(jmeRot, new Vector3f(0, 0, -1), null);
-        Vec3 direction = new Vec3(jmeForward.x, jmeForward.y, jmeForward.z).normalize();
-
-        // 计算最终初速：弹丸基准初速 × 发射器初速乘子 + 发射器初速加成 (m/s)
-        float baseVel = type.getBaseVelocity();
-        float finalSpeedMps = baseVel * attr.staticAttribute.getVelocityMultiplier() + attr.staticAttribute.getVelocityBonus();
-
-        // 计算有效散布：弹丸基础精度 × 发射器各轴精度乘子 (MIL → 弧度)
-        float baseMil = type.getBaseAccuracyMil();
-        float hRad = baseMil * attr.staticAttribute.getHorizontalAccuracyMultiplier() / 1000f;
-        float vRad = baseMil * attr.staticAttribute.getVerticalAccuracyMultiplier() / 1000f;
-        Vec3 spreadDir = applyEllipticSpread(direction, hRad, vRad);
-
-        // 生成投射物并发射（仅服务端）
-        if (!getLevel().isClientSide()) {
-            // 构建 JME 速度矢量：散布方向 × 最终速率 (m/s)
-            Vector3f jmeVel = new Vector3f((float) spreadDir.x, (float) spreadDir.y, (float) spreadDir.z)
-                    .multLocal(finalSpeedMps);
-
-            // 继承发射平台速度 (m/s)，速度已在 JME 空间，直接相加
-            Vector3f platformVel = getSubPart().getLinearVelocity();
-            jmeVel.addLocal(platformVel);
-            // 由 ProjectileType 创建投射物
-            type.create(getLevel(), jmePos, jmeVel);
-
-            // 计算后坐力冲量并提交到物理线程
-            float projectileMass = type.getMass();
-            float absorption = attr.staticAttribute.getRecoilAbsorption();
-            float recoilImpulse = projectileMass * finalSpeedMps * (1.0f - absorption);
-            if (recoilImpulse > 1e-6f) {
-                Vector3f impulseWorld = new Vector3f(
-                        (float) -direction.x * recoilImpulse,
-                        (float) -direction.y * recoilImpulse,
-                        (float) -direction.z * recoilImpulse
-                );
-                Vector3f muzzleWorldPos = jmePos.clone();
-                getPhysicsLevel().submitImmediateTask(PPhase.PRE, () -> {
-                    var body = getSubPart().getBody();
-                    Vector3f bodyWorldPos = body.getPhysicsLocation(new Vector3f());
-                    body.applyImpulse(impulseWorld, muzzleWorldPos.subtract(bodyWorldPos));
-                    return null;
-                });
-            }
-        }
-
-        // ③ 发射后清膛
-        chamberedType = null;
-        IAmmoSupplier supplier = getCurrentSupplier();
-        if (supplier != null && !reloading) {
-            // 弹药尚未就绪且未在装填中 → 发起请求
-            supplier.requestRound(this);
-            reloading = true;
-        }
     }
 
     /**
@@ -354,11 +476,15 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
 
     /**
      * 在水平/垂直方向分别应用椭圆锥散布。
+     * <p>
+     * <b>调用线程：</b>物理线程（{@link #fireSingle} 调用）。
+     * 使用 {@link java.util.concurrent.ThreadLocalRandom} 避免访问 Minecraft 主线程
+     * {@link net.minecraft.world.level.Level#random} 导致的线程检测异常。
      */
     private Vec3 applyEllipticSpread(Vec3 direction, float hRad, float vRad) {
         if (hRad <= 0f && vRad <= 0f) return direction;
 
-        var random = getLevel().random;
+        var random = java.util.concurrent.ThreadLocalRandom.current();
 
         Vec3 up;
         if (Math.abs(direction.y) < 0.99) {
