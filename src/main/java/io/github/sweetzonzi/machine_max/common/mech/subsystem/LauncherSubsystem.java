@@ -187,8 +187,6 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         return round;
     }
 
-    // ——— 发射逻辑 ———
-
     /**
      * 主线程 tick：计时器累积 + 弹药消费 + 入队 pendingFires。
      * <p>
@@ -208,15 +206,13 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         super.onTick();
 
         if (!isActive() || isDestroyed() || getLevel().isClientSide()) {
-            fireAccumulator = 0.0;
-            wasFiring = false;
+            resetFireState();
             return;
         }
 
         if (!isFiring()) {
             // 停止开火 → 清零累积，防止下次开火"蓄力"
-            fireAccumulator = 0.0;
-            wasFiring = false;
+            resetFireState();
             return;
         }
 
@@ -247,29 +243,8 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         for (int i = 0; i < rounds; i++) {
             // 若膛内无弹，尝试从供给者取弹
             if (chamberedType == null) {
-                IAmmoSupplier supplier = getCurrentSupplier();
-                if (supplier == null) break;
-
-                if (supplier.isRoundReady(this)) {
-                    ProjectileType offered = supplier.consumeReadyRound(this);
-                    if (offered != null && canAccept(offered)) {
-                        chamberedType = offered;
-                        reloading = false;
-                    } else {
-                        // 不兼容弹药 → 归还后切换供给者
-                        if (offered != null && supplier.canEject()) {
-                            supplier.returnRound(offered);
-                        }
-                        handleIncompatibleAmmo(supplier);
-                        break;
-                    }
-                } else if (!reloading) {
-                    supplier.requestRound(this);
-                    reloading = true;
-                    break;
-                } else {
-                    // 装填中，等待下一 tick
-                    break;
+                if (!tryLoadChamber()) {
+                    break; // 弹药未就绪，等待下一 tick
                 }
             }
 
@@ -278,26 +253,10 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
             firedCount++;
             chamberedType = null;
 
-            // ④ 装填下一发
-            IAmmoSupplier supplier = getCurrentSupplier();
-            if (supplier != null && supplier.isRoundReady(this)) {
-                ProjectileType next = supplier.consumeReadyRound(this);
-                if (next != null && canAccept(next)) {
-                    chamberedType = next;
-                    reloading = false;
-                } else {
-                    if (next != null && supplier.canEject()) {
-                        supplier.returnRound(next);
-                    }
-                    handleIncompatibleAmmo(supplier);
-                    break;
-                }
-            } else if (supplier != null && !reloading) {
-                supplier.requestRound(this);
-                reloading = true;
-                break;
-            } else {
-                break;
+            // ④ 预请求下一发弹药：射击后立即向供给者发起请求，
+            //    使输送计时器与射击并发运行，避免单膛室阻塞射速。
+            if (!tryRequestNextRound()) {
+                break; // 供给者无法接受请求（无弹药且无再生能力）
             }
         }
 
@@ -306,6 +265,74 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         if (fireAccumulator < 0) fireAccumulator = 0;
         // 记录上次开火 tick（用于防连按超射）
         if (firedCount > 0) lastFireTick = tickCount;
+    }
+
+    /**
+     * 重置发射相关状态。
+     */
+    private void resetFireState() {
+        fireAccumulator = 0.0;
+        wasFiring = false;
+    }
+
+    /**
+     * 尝试从供给者装填一发弹药到膛室。
+     *
+     * @return true 表示膛室已有弹药（可立即发射）
+     */
+    private boolean tryLoadChamber() {
+        IAmmoSupplier supplier = getCurrentSupplier();
+        if (supplier == null) return false;
+
+        if (supplier.isRoundReady(this)) {
+            ProjectileType offered = supplier.consumeReadyRound(this);
+            if (offered != null && canAccept(offered)) {
+                chamberedType = offered;
+                reloading = false;
+                return true;
+            } else {
+                // 不兼容弹药 → 归还后切换供给者
+                if (offered != null && supplier.canEject()) {
+                    supplier.returnRound(offered);
+                }
+                handleIncompatibleAmmo(supplier);
+                return false;
+            }
+        }
+
+        // 弹药未就绪 → 若未在装填中则发起请求
+        if (!reloading) {
+            // ★ 仅当 requestRound 成功接受时才设 reloading=true，
+            //    防止供给者无弹药时陷入死锁（reloading 永远不会变为 false）
+            boolean accepted = supplier.requestRound(this);
+            if (accepted) {
+                reloading = true;
+            }
+            // 无论是否成功，等待下一 tick 重试
+        }
+        return false;
+    }
+
+    /**
+     * 预请求下一发弹药。<br>
+     * 在每发射击后立即调用，启动供给者的输送计时器，使弹药输送与射击并发进行。<br>
+     * 对于 {@code reloadTimeTicks > 0} 的供给者，这能显著减少有效射击间隔。
+     *
+     * @return true 表示预请求成功（或已在装填中），false 表示供给者拒绝请求
+     */
+    private boolean tryRequestNextRound() {
+        if (reloading) return true; // 已在装填中，供给者的请求幂等
+
+        IAmmoSupplier supplier = getCurrentSupplier();
+        if (supplier == null) return false;
+
+        boolean accepted = supplier.requestRound(this);
+        if (accepted) {
+            reloading = true;
+        }
+        // 即使请求被拒绝（供给者无弹药），也不阻塞：下个 tick 会重试
+        // 若供给者为 RegenLoader，弹药再生产后 requestRound 会重新成功
+        return accepted;
     }
 
     /**

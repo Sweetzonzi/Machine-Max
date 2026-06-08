@@ -33,6 +33,7 @@ import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHit
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -923,7 +924,11 @@ public class ProjectileManager {
         if (penKey != null) pendingPenKeys.put(objId[i], penKey);
 
         SparkLevel.submitImmediateTask(level, PPhase.POST,
-            () -> BFDamageApi.hurt(entity, ctx));
+            () -> {
+                if (entity instanceof LivingEntity livingEntity)
+                    livingEntity.invulnerableTime = 0; // 重置无敌时间
+                BFDamageApi.hurt(entity, ctx);
+            });
         return true;
     }
 
