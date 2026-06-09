@@ -73,10 +73,8 @@ public class SubsystemController implements ISignalBus {
      */
     public void initAllSubsystems() {
         rebuildAllEnergyPaths();
-        allSubsystems.forEach(sub -> {
-            sub.onAttach();
-            subscribe(sub);
-        });
+        allSubsystems.forEach(this::subscribe);
+        allSubsystems.forEach(AbstractSubsystem::onAttach);
     }
 
     /**
