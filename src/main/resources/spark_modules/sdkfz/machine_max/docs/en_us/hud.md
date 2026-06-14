@@ -55,11 +55,13 @@ The HUD configuration file is the core of the HUD system, defining basic HUD pro
   "texts": {
     // Text configuration
   },
-  "enable_scissor": false,
-  "scissor_x": 0,
-  "scissor_y": 0,
-  "scissor_width": 0,
-  "scissor_height": 0
+  "scissor": {
+    "enable": false,
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  }
 }
 ```
 

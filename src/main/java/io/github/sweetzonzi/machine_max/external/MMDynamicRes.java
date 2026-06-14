@@ -15,7 +15,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr.A
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.AssemblyData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.BlueprintData;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.VehicleData;
-import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams;
+import io.github.sweetzonzi.machine_max.common.visual.HudAttr;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -56,7 +56,7 @@ public class MMDynamicRes {
     public static ConcurrentMap<ResourceLocation, BlueprintData> BLUEPRINTS = new ConcurrentHashMap<>(); // 蓝图数据
     public static ConcurrentMap<ResourceLocation, AssemblyData> ASSEMBLIES = new ConcurrentHashMap<>(); // 装配体数据
     public static ConcurrentMap<ResourceLocation, String> TOOLTIPS = new ConcurrentHashMap<>(); //蓝图或装配体物品对应的描述信息
-    public static ConcurrentMap<ResourceLocation, AnimatableParams> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
+    public static ConcurrentMap<ResourceLocation, HudAttr> CUSTOM_HUD = new ConcurrentHashMap<>(); // 自定义HUD配置文件
     public static ConcurrentMap<ResourceLocation, ControlGroupSet> CONTROL_GROUP_PRESETS = new ConcurrentHashMap<>(); // 控制组预设
     public static HashMap<ResourceLocation, LinkedHashSet<RecipeHolder<FabricatingRecipe>>> PART_RECIPES = new HashMap<>(); // 零件配方
     public static HashMap<ResourceLocation, RecipeHolder<FabricatingRecipe>> ALL_FABRICATING_RECIPES = new HashMap<>(); // 所有制造配方

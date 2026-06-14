@@ -18,9 +18,14 @@ import java.awt.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * HUD 属性类。定义了 HUD 组件的模型、动画、纹理、变换、
+ * 文本覆盖、裁剪区域等全部渲染参数。
+ * 通过 JSON 内容包加载，存储在 {@link io.github.sweetzonzi.machine_max.external.MMDynamicRes#CUSTOM_HUD} 中。
+ */
 @Getter
 @Setter
-public class AnimatableParams {
+public class HudAttr {
     public ModelIndex modelIndex;
     public ResourceLocation animation;
     public ResourceLocation texture;
@@ -29,13 +34,55 @@ public class AnimatableParams {
     public Vec3i color;
     public int transparency;
     public boolean perspective;
-    public Map<String, TextParams> textAttr;
-    public boolean enableScissor;
-    public int scissorX;
-    public int scissorY;
-    public int scissorWidth;
-    public int scissorHeight;
 
+    /**
+     * 炮镜模式下 HUD 元素的跟随行为。
+     * 控制正交元素的原点位置和旋转变换，以及透视元素的摄像机基准。
+     * 仅在 SightHud 渲染管线中生效，普通 CustomHud 忽略（全部视为 SCREEN_FIXED）。
+     */
+    public enum ScopeBehavior {
+        /** 屏幕固定：原点=屏幕中心，无旋转 */
+        SCREEN_FIXED,
+        /** 跟随位置：原点=炮镜投影中心，不旋转（默认） */
+        FOLLOW_POSITION,
+        /** 跟随姿态：原点=炮镜投影中心，叠加 scope 的 pitch/yaw 偏移旋转 */
+        FOLLOW_TRANSFORM
+    }
+
+    /** 炮镜行为，默认 FOLLOW_POSITION */
+    public ScopeBehavior scopeBehavior = ScopeBehavior.FOLLOW_POSITION;
+    /** 炮镜变焦时是否忽略缩放。true=元素尺寸不随 zoom 变化（遮罩、数显等用），false=随 zoom 放大（分划标记用） */
+    public boolean ignoreZoom = false;
+
+    /** 裁剪区域参数 */
+    public ScissorParams scissor = ScissorParams.DEFAULT;
+
+    public Map<String, TextParams> textAttr;
+
+    /**
+     * 裁剪区域参数记录。控制 GUI 渲染时的裁剪矩形。
+     */
+    public record ScissorParams(
+            boolean enable,
+            int x,
+            int y,
+            int width,
+            int height
+    ) {
+        public static final ScissorParams DEFAULT = new ScissorParams(false, 0, 0, 0, 0);
+
+        public static final Codec<ScissorParams> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.BOOL.optionalFieldOf("enable", false).forGetter(ScissorParams::enable),
+                Codec.INT.optionalFieldOf("x", 0).forGetter(ScissorParams::x),
+                Codec.INT.optionalFieldOf("y", 0).forGetter(ScissorParams::y),
+                Codec.INT.optionalFieldOf("width", 0).forGetter(ScissorParams::width),
+                Codec.INT.optionalFieldOf("height", 0).forGetter(ScissorParams::height)
+        ).apply(instance, ScissorParams::new));
+    }
+
+    /**
+     * 文本参数记录。描述一个附着在骨骼上的文本标签。
+     */
     public record TextParams(
             String key,
             boolean centered,
@@ -74,32 +121,34 @@ public class AnimatableParams {
         }
     }
 
-    public static final Codec<AnimatableParams> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.STRING.optionalFieldOf("type", "hud").forGetter(AnimatableParams::getType),
-            ResourceLocation.CODEC.fieldOf("model").forGetter(AnimatableParams::getModel),
-            ResourceLocation.CODEC.fieldOf("animation").forGetter(AnimatableParams::getAnimation),
-            ResourceLocation.CODEC.fieldOf("texture").forGetter(AnimatableParams::getTexture),
-            Vec3.CODEC.optionalFieldOf("offset", Vec3.ZERO).forGetter(AnimatableParams::getOffset),
-            Vec3.CODEC.optionalFieldOf("rotation", Vec3.ZERO).forGetter(AnimatableParams::getRotation),
-            Vec3.CODEC.optionalFieldOf("scale", new Vec3(20, 20, 20)).forGetter(AnimatableParams::getScale),
-            Vec3i.CODEC.optionalFieldOf("color", new Vec3i(255, 255, 255)).forGetter(AnimatableParams::getColor),
-            Codec.INT.optionalFieldOf("alpha", 255).forGetter(AnimatableParams::getTransparency),
-            Codec.BOOL.optionalFieldOf("perspective", true).forGetter(AnimatableParams::isPerspective),
-            TextParams.MAP_CODEC.optionalFieldOf("texts", Map.of()).forGetter(AnimatableParams::getTextAttr),
-            Codec.BOOL.optionalFieldOf("enable_scissor", false).forGetter(AnimatableParams::isEnableScissor),
-            Codec.INT.optionalFieldOf("scissor_x", 0).forGetter(AnimatableParams::getScissorX),
-            Codec.INT.optionalFieldOf("scissor_y", 0).forGetter(AnimatableParams::getScissorY),
-            Codec.INT.optionalFieldOf("scissor_width", 0).forGetter(AnimatableParams::getScissorWidth),
-            Codec.INT.optionalFieldOf("scissor_height", 0).forGetter(AnimatableParams::getScissorHeight)
-    ).apply(instance, AnimatableParams::new));
+    public static final Codec<HudAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            ResourceLocation.CODEC.fieldOf("model").forGetter(HudAttr::getModel),
+            ResourceLocation.CODEC.fieldOf("animation").forGetter(HudAttr::getAnimation),
+            ResourceLocation.CODEC.fieldOf("texture").forGetter(HudAttr::getTexture),
+            Vec3.CODEC.optionalFieldOf("offset", Vec3.ZERO).forGetter(HudAttr::getOffset),
+            Vec3.CODEC.optionalFieldOf("rotation", Vec3.ZERO).forGetter(HudAttr::getRotation),
+            Vec3.CODEC.optionalFieldOf("scale", new Vec3(1, 1, 1)).forGetter(HudAttr::getScale),
+            Vec3i.CODEC.optionalFieldOf("color", new Vec3i(255, 255, 255)).forGetter(HudAttr::getColor),
+            Codec.INT.optionalFieldOf("alpha", 255).forGetter(HudAttr::getTransparency),
+            Codec.BOOL.optionalFieldOf("perspective", true).forGetter(HudAttr::isPerspective),
+            Codec.STRING.xmap(
+                    s -> ScopeBehavior.valueOf(s.toUpperCase()),
+                    v -> v.name().toLowerCase()
+            ).optionalFieldOf("scope_behavior", ScopeBehavior.FOLLOW_POSITION).forGetter(HudAttr::getScopeBehavior),
+            Codec.BOOL.optionalFieldOf("ignore_zoom", false).forGetter(HudAttr::isIgnoreZoom),
+            ScissorParams.CODEC.optionalFieldOf("scissor", ScissorParams.DEFAULT).forGetter(HudAttr::getScissor),
+            TextParams.MAP_CODEC.optionalFieldOf("texts", Map.of()).forGetter(HudAttr::getTextAttr)
+    ).apply(instance, HudAttr::new));
 
-    public AnimatableParams(String type, ResourceLocation model, ResourceLocation animation, ResourceLocation texture,
-                            Vec3 offset, Vec3 rotation, Vec3 scale,
-                            Vec3i color, int transparency,
-                            boolean perspective,
-                            Map<String, TextParams> textAttr,
-                            boolean enableScissor, int scissorX, int scissorY, int scissorWidth, int scissorHeight) {
-        this.modelIndex = new ModelIndex(type, model);
+    public HudAttr(ResourceLocation model, ResourceLocation animation, ResourceLocation texture,
+                   Vec3 offset, Vec3 rotation, Vec3 scale,
+                   Vec3i color, int transparency,
+                   boolean perspective,
+                   ScopeBehavior scopeBehavior,
+                   boolean ignoreZoom,
+                   ScissorParams scissor,
+                   Map<String, TextParams> textAttr) {
+        this.modelIndex = new ModelIndex("hud", model);
         this.animation = animation;
         this.texture = texture;
         this.transform.setTranslation(PhysicsHelperKt.toBVector3f(offset));
@@ -110,27 +159,23 @@ public class AnimatableParams {
         this.color = color;
         this.transparency = transparency;
         this.perspective = perspective;
+        this.scopeBehavior = scopeBehavior;
+        this.ignoreZoom = ignoreZoom;
+        this.scissor = scissor;
         this.textAttr = textAttr;
-        this.enableScissor = enableScissor;
-        this.scissorX = scissorX;
-        this.scissorY = scissorY;
-        this.scissorWidth = scissorWidth;
-        this.scissorHeight = scissorHeight;
     }
 
-    public AnimatableParams(ModelIndex model, ResourceLocation animation, ResourceLocation texture) {
+    public HudAttr(ModelIndex model, ResourceLocation animation, ResourceLocation texture) {
         this.modelIndex = model;
         this.animation = animation;
         this.texture = texture;
         this.color = new Vec3i(255, 255, 255);
         this.transparency = 255;
         this.perspective = true;
+        this.scopeBehavior = ScopeBehavior.FOLLOW_POSITION;
+        this.ignoreZoom = false;
+        this.scissor = ScissorParams.DEFAULT;
         this.textAttr = Map.of();
-        this.enableScissor = false;
-        this.scissorX = 0;
-        this.scissorY = 0;
-        this.scissorWidth = 0;
-        this.scissorHeight = 0;
     }
 
     private ResourceLocation getModel() {

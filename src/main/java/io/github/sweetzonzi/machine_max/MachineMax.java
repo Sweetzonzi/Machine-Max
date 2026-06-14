@@ -23,11 +23,9 @@ public class MachineMax {
     //TODO:限制带阻尼关节安装部件时的质量差距？
     //TODO:排查AE86AT左轮胎转动惯量计算BUG（可能已修复）
     //TODO:GUI贴图渲染
-    //TODO:交互系统的反馈信号以及连接多个子系统，依次互动/同时互动？
     //TODO:过载与座椅过载吸收/耐受
     //TODO:放置部件前检查空间是否足够
     //TODO:刀刃判定子系统
-    //TODO:炮塔控制
     //TODO:通用分层作动器控制，计算期望姿态，计算所需角速度，计算所需舵面偏角/推进器推力等，见 https://chat.deepseek.com/share/pneht1jesjnjakyh9g
     //TODO:外骨骼与机甲，穿戴外骨骼时仍可乘坐载具
     //TODO:方块/方块实体代理子系统（存在于一个FakeLevel），互动以及tick时有对应方块的功能
@@ -35,7 +33,6 @@ public class MachineMax {
     //TODO:把拼好的载具保存为微缩模型，分不同可选比例
     //TODO:使用蓝图快速重新组装部分零件缺失的载具，需要图匹配算法
     //TODO:显示内含物品的fast_item_storage子系统，容量为1，互动立刻和手中物品交换，无GUI
-    //TODO:预制装配体的可动态保存生成
     //TODO:改装件，改变部件或子系统属性
     //TODO:molang驱动的实时属性？护甲水平，摩擦等（性能问题？）
     public static final String MOD_ID = "machine_max";

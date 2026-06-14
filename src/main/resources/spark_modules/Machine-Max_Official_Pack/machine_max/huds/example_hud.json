@@ -97,9 +97,11 @@
       "significand": 0 //(可选，默认0) Molang参数计算结果为数字时，保留的小数点后位数
     }
   },
-  "enable_scissor": false, //(可选，默认false) 是否启用剪裁矩形，范围外的部分将被裁剪，不渲染
-  "scissor_x": 0, //(可选，默认0) 剪裁矩形中心x坐标(像素)
-  "scissor_y": 0,//(可选，默认0) 剪裁矩形中心y坐标(像素)
-  "scissor_width": 0,//(可选，默认0) 剪裁矩形宽度(像素)
-  "scissor_height": 0 //(可选，默认0) 剪裁矩形高度(像素)
+  "scissor": {
+    "enable": false,
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  }
 }

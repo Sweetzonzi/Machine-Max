@@ -12,8 +12,9 @@ dependencies {
         implementation(project(':BallisticsFramework'))
         jarJar(project(':BallisticsFramework'))
     } catch (Exception ignore) { // 失败，说明是单独作为项目时运行
-        implementation("io.github.sweetzonzi:ballistics_framework-${minecraft_version}:${ballistics_framework_version}")
-        jarJar("io.github.sweetzonzi:ballistics_framework-${minecraft_version}:${ballistics_framework_version}")
+        // artifactId 规则：ballistics_framework-<mc版本>-<加载器>
+        implementation("io.github.sweetzonzi:ballistics_framework-${minecraft_version}-${mod_loader}:${ballistics_framework_version}")
+        jarJar("io.github.sweetzonzi:ballistics_framework-${minecraft_version}-${mod_loader}:${ballistics_framework_version}")
     }
     // jei
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"

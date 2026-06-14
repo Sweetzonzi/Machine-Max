@@ -65,4 +65,67 @@ public final class ScreenProjectionUtil {
 
         return new float[]{offsetX, offsetY};
     }
+
+    /**
+     * 将世界坐标点转换到摄像机局部坐标系（不投影到像素）。
+     * <p>
+     * 用于透视渲染时直接在相机空间摆放元素，无需经过 FOV→像素 转换。
+     * 正交渲染中配合正交投影矩阵使用也可能需要。
+     *
+     * @param worldPoint 世界空间目标点
+     * @param camera     Minecraft 渲染摄像机
+     * @return float[3] {localX, localY, localZ}，localZ 为深度；
+     *         目标在摄像机后方时 localZ ≤ 0
+     */
+    public static float[] worldToCameraLocal(Vec3 worldPoint, Camera camera) {
+        Vec3 camPos = camera.getPosition();
+
+        Vector3f camForward = new Vector3f(0, 0, -1);
+        camera.rotation().transform(camForward);
+        Vector3f camRight = new Vector3f(1, 0, 0);
+        camera.rotation().transform(camRight);
+        Vector3f camUp = new Vector3f(0, 1, 0);
+        camera.rotation().transform(camUp);
+
+        double dx = worldPoint.x - camPos.x;
+        double dy = worldPoint.y - camPos.y;
+        double dz = worldPoint.z - camPos.z;
+
+        float localX = (float) (camRight.x * dx + camRight.y * dy + camRight.z * dz);
+        float localY = (float) (camUp.x * dx + camUp.y * dy + camUp.z * dz);
+        float localZ = (float) (camForward.x * dx + camForward.y * dy + camForward.z * dz);
+
+        return new float[]{localX, localY, localZ};
+    }
+
+    /**
+     * 计算世界方向向量相对于摄像机朝向的 pitch/yaw 角差（弧度）。
+     * <p>
+     * 用于 FOLLOW_TRANSFORM 元素的 poseStack 旋转：
+     * 将世界方向（如 scope locator 的前方指向）与摄像机朝向做差，
+     * 得到"炮镜偏离屏幕中心的角差"，直接作为 poseStack 旋转量。
+     *
+     * @param worldDir 世界空间方向向量（需归一化或至少方向正确）
+     * @param camera   Minecraft 渲染摄像机
+     * @return float[2] {pitchDiff, yawDiff}（弧度），pitch 正=上，yaw 正=右
+     */
+    public static float[] worldDirToCameraAngles(Vec3 worldDir, Camera camera) {
+        Vector3f camForward = new Vector3f(0, 0, -1);
+        camera.rotation().transform(camForward);
+        Vector3f camRight = new Vector3f(1, 0, 0);
+        camera.rotation().transform(camRight);
+        Vector3f camUp = new Vector3f(0, 1, 0);
+        camera.rotation().transform(camUp);
+
+        // 投影到摄像机局部坐标系
+        float lx = (float) (camRight.x * worldDir.x + camRight.y * worldDir.y + camRight.z * worldDir.z);
+        float ly = (float) (camUp.x * worldDir.x + camUp.y * worldDir.y + camUp.z * worldDir.z);
+        float lz = (float) (camForward.x * worldDir.x + camForward.y * worldDir.y + camForward.z * worldDir.z);
+
+        float yawDiff = (float) Math.atan2(lx, lz);
+        float len = (float) Math.sqrt(lx * lx + ly * ly + lz * lz);
+        float pitchDiff = (float) Math.asin(Math.clamp(ly / len, -1.0, 1.0));
+
+        return new float[]{pitchDiff, yawDiff};
+    }
 }

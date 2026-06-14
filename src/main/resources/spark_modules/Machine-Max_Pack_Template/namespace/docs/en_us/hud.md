@@ -55,11 +55,13 @@ The HUD configuration file is the core of the HUD system, defining basic HUD pro
   "texts": {
     // Text configuration
   },
-  "enable_scissor": false,
-  "scissor_x": 0,
-  "scissor_y": 0,
-  "scissor_width": 0,
-  "scissor_height": 0
+  "scissor": {
+    "enable": false,
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0
+  }
 }
 ```
 
@@ -101,11 +103,12 @@ The HUD configuration file is the core of the HUD system, defining basic HUD pro
 - **significand**: Number of decimal places to keep when Molang parameter results are numbers, default 0
 
 #### Clipping Region
-- **enable_scissor**: Whether to enable clipping rectangle, parts outside the range will be clipped, default false
-- **scissor_x**: Clipping rectangle center x coordinate (pixels)
-- **scissor_y**: Clipping rectangle center y coordinate (pixels)
-- **scissor_width**: Clipping rectangle width (pixels)
-- **scissor_height**: Clipping rectangle height (pixels)
+- **scissor**: Clipping rectangle configuration (optional, disabled by default)
+  - **enable**: Whether to enable clipping rectangle
+  - **x**: Clipping rectangle center x coordinate (pixels)
+  - **y**: Clipping rectangle center y coordinate (pixels)
+  - **width**: Clipping rectangle width (pixels)
+  - **height**: Clipping rectangle height (pixels)
 
 ## Model and Animation Requirements
 

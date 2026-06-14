@@ -6,7 +6,7 @@ import cn.solarmoon.spark_core.pack.modules.SparkPackModule
 import com.google.gson.JsonParser
 import com.mojang.serialization.JsonOps
 import io.github.sweetzonzi.machine_max.MachineMax
-import io.github.sweetzonzi.machine_max.common.visual.AnimatableParams
+import io.github.sweetzonzi.machine_max.common.visual.HudAttr
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
@@ -35,7 +35,7 @@ class HudModule : SparkPackModule {
             val id = ResourceLocation.fromNamespaceAndPath(namespace, path)
             try {
                 val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
-                val hud = AnimatableParams.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
+                val hud = HudAttr.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
                 MMDynamicRes.CUSTOM_HUD[id] = hud
             } catch (e: Exception) {
                 MMDynamicRes.exceptions.add(e)

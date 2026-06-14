@@ -9,7 +9,7 @@
   "min_pitch": -15.0,
   "max_pitch": 15.0,
   "yaw_limit": 30.0,
-  "hud_components": [],
+  "hud_components": ["machine_max:gun_sight_hud"],
   "tracking_target_inputs": [],
   "discovery_inputs": ["gunner_sight"],
   "allow_cycle": true
