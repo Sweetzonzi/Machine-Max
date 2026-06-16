@@ -428,12 +428,16 @@ public class RawInputHandler {
                     int index = i;
                     InputConstants.Key inputKey = InputConstants.getKey(binding.trigger);
                     new KeyHooks.EVENT(inputKey)
-                            .OnKeyDown(() -> PacketDistributor.sendToServer(
-                                    new ControlBindingPayload(subPartId, subSystemName, index, 0)))
+                            .OnKeyDown(() -> {
+                                PacketDistributor.sendToServer(
+                                        new ControlBindingPayload(subPartId, subSystemName, index, 0));
+                                sub.sendBindingSignal(index, 0);
+                            })
                             .OnKeyUp(() -> {
                                 if (binding.action != BindingAction.TOGGLE) {
                                     PacketDistributor.sendToServer(
                                             new ControlBindingPayload(subPartId, subSystemName, index, 1));
+                                    sub.sendBindingSignal(index, 1);
                                 }
                             });
                 }

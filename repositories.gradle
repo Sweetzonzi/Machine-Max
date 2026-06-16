@@ -25,8 +25,8 @@ dependencies {
     localRuntime "maven.modrinth:jade:${jade_version}"
     // Kotlin
     implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
-    // js
-    compileOnly "org.mozilla:rhino:1.8.0"
+    // js（通过 KubeJS 的 Rhino fork 统一提供）
+    implementation "dev.latvian.mods:rhino:${rhino_version}"
     // GraalVM polyglot（Spark-Core 通过 jarJar 嵌入，运行时由 Spark-Core 提供，此处仅编译需要）
     compileOnly "org.graalvm.polyglot:polyglot:${graalvm_version}"
     // 暴雪粒子
@@ -43,6 +43,8 @@ dependencies {
     implementation("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
     runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
+    // KubeJS（编译 + 运行时依赖）
+    implementation "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
     // 其他mod
     runtimeOnly files(fileTree(dir: 'mods', includes: ['*.jar']))
     // Lombok 配置
@@ -131,6 +133,15 @@ repositories {
     maven {
         name = "Sighs Maven"
         url = "https://maven.sighs.cc/repository/maven-releases/"
+    }
+    // KubeJS 仓库
+    maven {
+        name = "Latvian"
+        url = "https://maven.latvian.dev/releases"
+        content {
+            includeGroup "dev.latvian.mods"
+            includeGroup "dev.latvian.apps"
+        }
     }
     flatDir {
         dir 'libs'

@@ -29,7 +29,7 @@ public interface IAmmoSupplier {
     /** 剩余弹药计数。-1 表示无计数概念（如再生装弹机） */
     int getRemainingCount();
 
-    /** 当前将提供的弹药类型，null = 未准备好 */
+    /** 当前将提供的弹药类型，null = 无弹药 */
     @Nullable ProjectileType getSuppliedType();
 
     /** 是否为逐发装填模式 */

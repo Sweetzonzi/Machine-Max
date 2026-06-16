@@ -106,11 +106,11 @@ public class AmmoHud implements LayeredDraw.Layer {
                 if (selected != null) {
                     IAmmoSupplier supplier = launcher.getCurrentSupplier();
                     boolean roundByRound = supplier != null && supplier.isRoundByRound();
-                    curCount = roundByRound ? 1 : selected.remaining();
+                    curCount = roundByRound ? Math.min(1, selected.remaining()) : selected.remaining();
                     if (ammoType != null) {
-                        totalCount = summaries.getTotalOf(ammoType.getRegistryKey());
+                        totalCount = summaries.getTotalOf(ammoType.getRegistryKey()) - curCount;
                     } else {
-                        totalCount = selected.remaining();
+                        totalCount = selected.remaining() - curCount;
                     }
                     status = selected.status();
                     progress = selected.statusProgress();
