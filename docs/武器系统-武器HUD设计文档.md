@@ -239,10 +239,33 @@ record SupplierSummary(
 ) {}
 
 /**
- * 供给者摘要集合 record，提供便捷的聚合查询方法。
- * 替代裸 {@code List&lt;SupplierSummary&gt;}，作为 IAmmoConsumer 的内部 record。
+ * 供给者摘要集合 record，提供便捷的聚合查询方法。<br>
+ * 替代裸 {@code List&lt;SupplierSummary&gt;}，作为 IAmmoConsumer 的内部 record。<br>
+ * {@code totalByType} 在构造时一次性计算并缓存，避免高频查询重复迭代。
  */
-record SupplierSummaries(List<SupplierSummary> summaries) {
+record SupplierSummaries(
+        List<SupplierSummary> summaries,
+        Map<ResourceLocation, Integer> totalByType
+) {
+
+    /**
+     * 便捷构造：仅传入摘要列表，自动计算按弹种汇总余量。
+     */
+    SupplierSummaries(List<SupplierSummary> summaries) {
+        this(summaries, computeTotalByType(summaries));
+    }
+
+    /** 计算按弹种汇总余量 */
+    private static Map<ResourceLocation, Integer> computeTotalByType(List<SupplierSummary> summaries) {
+        if (summaries.isEmpty()) return Map.of();
+        Map<ResourceLocation, Integer> map = new HashMap<>();
+        for (SupplierSummary s : summaries) {
+            if (s.type != null) {
+                map.merge(s.type, s.remaining, Integer::sum);
+            }
+        }
+        return Map.copyOf(map);
+    }
 
     /** 获取当前选中的供给者，无选中返回 null */
     @Nullable
@@ -259,26 +282,9 @@ record SupplierSummaries(List<SupplierSummary> summaries) {
         return s != null ? s.status : SupplierStatus.EMPTY;
     }
 
-    /** 按弹种汇总余量 */
-    public Map<ResourceLocation, Integer> getTotalByType() {
-        Map<ResourceLocation, Integer> map = new HashMap<>();
-        for (SupplierSummary s : summaries) {
-            if (s.type != null) {
-                map.merge(s.type, s.remaining, Integer::sum);
-            }
-        }
-        return map;
-    }
-
-    /** 某弹种的总余量 */
+    /** 某弹种的总余量（从缓存 map 直接查） */
     public int getTotalOf(ResourceLocation type) {
-        int total = 0;
-        for (SupplierSummary s : summaries) {
-            if (type.equals(s.type)) {
-                total += s.remaining;
-            }
-        }
-        return total;
+        return totalByType.getOrDefault(type, 0);
     }
 
     /** 是否有多于一个供给者（需要显示切换 UI） */
@@ -463,6 +469,10 @@ WeaponControllerSubsystem、LauncherSubsystem 等子系统同时存在于逻辑�
 **无需新增网络载荷**。现有的实体同步管道已覆盖弹药余量（NBT 持久化在
 `AmmoLoaderSubsystem.saveData/loadData`、`RegenLoaderSubsystem.saveData/loadData`）、
 装填状态、膛内弹药等字段。
+
+**性能优化**：`LauncherSubsystem` 在 `onTick()` 中每 tick 调用 `refreshCachedSummaries()` 预计算
+`SupplierSummaries`，将列表迭代和对象分配开销迁移到 20tps 的 tick 线程，避免 HUD 渲染帧重复分配。
+HUD 通过 `launcher.getSupplierSummaries()` 获取的是已缓存的不可变快照，零分配零迭代。
 
 ---
 
