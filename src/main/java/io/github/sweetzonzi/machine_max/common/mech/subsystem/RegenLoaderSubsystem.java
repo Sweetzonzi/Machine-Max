@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
@@ -7,6 +8,9 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenLoaderSubsystemAttr;
 import lombok.Getter;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -28,9 +32,9 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     public final RegenLoaderSubsystemAttr attr;
 
-    /** 当前弹药计数 */
-    @Getter
-    private int ammoCount = 0;
+    /** 当前弹药计数（网络同步） */
+    private static final EntityDataAccessor<Integer> AMMO_COUNT_ID =
+            SynchedEntityData.defineId(RegenLoaderSubsystem.class, EntityDataSerializers.INT);
 
     /** 再生进度（0.0 ~ 1.0+，累积超过 1.0 时产出一发） */
     private float regenProgress = 0f;
@@ -54,28 +58,43 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         this.attr = attr;
     }
 
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(AMMO_COUNT_ID, 0);
+    }
+
+    /** 获取当前弹药计数 */
+    public int getAmmoCount() {
+        return getSynchedData().get(AMMO_COUNT_ID);
+    }
+
+    /** 设置当前弹药计数 */
+    private void setAmmoCount(int count) {
+        getSynchedData().set(AMMO_COUNT_ID, count);
+    }
+
     // ==================== IAmmoSupplier 实现 ====================
 
     @Override
     public boolean hasAmmo() {
-        return ammoCount > 0;
+        return getAmmoCount() > 0;
     }
 
     @Override
     public int getRemainingCount() {
-        return ammoCount;
+        return getAmmoCount();
     }
 
     @Override
     @Nullable
     public ProjectileType getSuppliedType() {
-        if (ammoCount <= 0) return null;
         return ProjectileType.get(getLevel(), attr.staticAttribute.getProjectileType());
     }
 
     @Override
     public boolean isRoundByRound() {
-        return false; // RegenLoader 不区分逐发/弹链，所有交付均为瞬时+输送延迟
+        return attr.staticAttribute.getReloadTimeTicks() > 0;
     }
 
     @Override
@@ -99,7 +118,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             return true; // 幂等
         }
 
-        if (ammoCount <= 0) return false;
+        if (getAmmoCount() <= 0) return false;
 
         // 启动输送计时器
         int tickTime = attr.staticAttribute.getReloadTimeTicks();
@@ -114,7 +133,14 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public boolean isRoundReady(IAmmoConsumer consumer) {
-        return readyConsumers.contains(consumer);
+        if (readyConsumers.contains(consumer)) {
+            return true;
+        } else if (deliveryTimers.containsKey(consumer)) {
+            return false; // 未完成输送
+        } else {
+            requestRound(consumer);
+            return false; // 未请求
+        }
     }
 
     @Override
@@ -123,9 +149,9 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (!readyConsumers.contains(consumer)) return null;
         readyConsumers.remove(consumer);
 
-        if (ammoCount <= 0) return null;
-        ammoCount--;
-
+        if (getAmmoCount() <= 0) return null;
+        if (!getLevel().isClientSide()) // 仅服务端更新弹药计数
+            setAmmoCount(getAmmoCount() - 1);
         // 随打随产模式：弹药消耗后立即开始再生
         if (attr.staticAttribute.isRegenRoundByRound() && attr.staticAttribute.getRegenPerMinute() > 0) {
             // regenProgress 在 onTick 中累积，触发自动再生
@@ -141,8 +167,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public SupplierStatus getStatus(IAmmoConsumer consumer) {
-        if (isBatchReloading) return SupplierStatus.RELOADING;
-        if (ammoCount <= 0) return SupplierStatus.EMPTY;
+        if (isBatchReloading || deliveryTimers.containsKey(consumer)) return SupplierStatus.RELOADING;
+        if (getAmmoCount() <= 0) return SupplierStatus.EMPTY;
         return SupplierStatus.READY;
     }
 
@@ -156,8 +182,12 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             int totalTicks = rpm > 0 ? (int) (cap / rpm * 1200) : 1;
             return 1f - (float) batchCooldownTicks / totalTicks;
         }
+        if (attr.staticAttribute.getReloadTimeTicks() > 0) {
+            if (deliveryTimers.containsKey(consumer))
+                return 1f - (float) deliveryTimers.get(consumer) / attr.staticAttribute.getReloadTimeTicks();
+        }
         // 非 batch 模式：当前余量 / 总容量
-        return (float) ammoCount / cap;
+        return (float) getAmmoCount() / cap;
     }
 
     @Override
@@ -167,8 +197,9 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public void returnRound(ProjectileType type) {
-        if (ammoCount < attr.staticAttribute.getMagazineCapacity()) {
-            ammoCount++;
+        // 仅服务端更新弹药计数
+        if (!getLevel().isClientSide() && getAmmoCount() < attr.staticAttribute.getMagazineCapacity()) {
+            setAmmoCount(getAmmoCount() + 1);
         }
     }
 
@@ -209,11 +240,11 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         float regenPerMinute = attr.staticAttribute.getRegenPerMinute();
         if (regenPerMinute <= 0f) return;
 
-        if (ammoCount < attr.staticAttribute.getMagazineCapacity()) {
+        if (getAmmoCount() < attr.staticAttribute.getMagazineCapacity()) {
             // 20 tick/s × 60 s = 1200 tick/min
             regenProgress += regenPerMinute / 1200f;
 
-            while (regenProgress >= 1.0f && ammoCount < attr.staticAttribute.getMagazineCapacity()) {
+            while (regenProgress >= 1.0f && getAmmoCount() < attr.staticAttribute.getMagazineCapacity()) {
                 // 尝试消耗能量
                 float energyCost = attr.staticAttribute.getEnergyCostPerRound();
                 if (energyCost > 0f) {
@@ -221,7 +252,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
                         break; // 能量不足，暂停再生
                     }
                 }
-                ammoCount++;
+                if (!getLevel().isClientSide()) // 仅服务端更新弹药计数
+                    setAmmoCount(getAmmoCount() + 1);
                 regenProgress -= 1.0f;
             }
         }
@@ -231,7 +263,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      * 批量产出模式：弹仓全空后触发冷却，冷却结束后一次性回满。
      */
     private void tickBatchReload() {
-        if (ammoCount == 0 && !isBatchReloading) {
+        if (getAmmoCount() == 0 && !isBatchReloading) {
             // 触发批量再生
             float regenPerMinute = attr.staticAttribute.getRegenPerMinute();
             if (regenPerMinute <= 0f) return;
@@ -254,7 +286,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             batchCooldownTicks--;
             if (batchCooldownTicks <= 0) {
                 isBatchReloading = false;
-                ammoCount = attr.staticAttribute.getMagazineCapacity();
+                setAmmoCount(attr.staticAttribute.getMagazineCapacity());
             }
         }
     }
@@ -276,7 +308,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
      * 获取剩余容量。
      */
     private int getFreeCapacity() {
-        return attr.staticAttribute.getMagazineCapacity() - ammoCount;
+        return attr.staticAttribute.getMagazineCapacity() - getAmmoCount();
     }
 
     // ==================== 握手机制 ====================
@@ -308,7 +340,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     public void loadData(net.minecraft.nbt.CompoundTag data) {
         super.loadData(data);
-        if (data.contains("ammo_count")) ammoCount = data.getInt("ammo_count");
+        if (data.contains("ammo_count")) setAmmoCount(data.getInt("ammo_count"));
         if (data.contains("regen_progress")) regenProgress = data.getFloat("regen_progress");
         if (data.contains("batch_cooldown")) batchCooldownTicks = data.getInt("batch_cooldown");
         if (data.contains("is_batch_reloading")) isBatchReloading = data.getBoolean("is_batch_reloading");
@@ -317,7 +349,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     public net.minecraft.nbt.CompoundTag saveData(net.minecraft.nbt.CompoundTag data) {
         super.saveData(data);
-        data.putInt("ammo_count", ammoCount);
+        data.putInt("ammo_count", getAmmoCount());
         data.putFloat("regen_progress", regenProgress);
         data.putInt("batch_cooldown", batchCooldownTicks);
         data.putBoolean("is_batch_reloading", isBatchReloading);

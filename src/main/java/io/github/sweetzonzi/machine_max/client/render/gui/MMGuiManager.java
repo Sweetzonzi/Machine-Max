@@ -3,8 +3,18 @@ package io.github.sweetzonzi.machine_max.client.render.gui;
 import cn.solarmoon.spark_core.event.PhysicsLevelTickEvent;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.client.input.CameraController;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.AmmoHud;
 import io.github.sweetzonzi.machine_max.client.render.gui.hud.CustomHud;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.InteractHud;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.ResearchPointHud;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud.SightHud;
+import io.github.sweetzonzi.machine_max.client.render.gui.hud3d.AssemblyHud3D;
+import io.github.sweetzonzi.machine_max.client.render.gui.screen.BlueprintResearchScreen;
+import io.github.sweetzonzi.machine_max.client.render.gui.screen.FabricatingScreen;
+import io.github.sweetzonzi.machine_max.client.render.gui.screen.ItemStorageSubsystemScreen;
+import io.github.sweetzonzi.machine_max.client.render.gui.screen.VehicleNamingScreen;
 import io.github.sweetzonzi.machine_max.client.render.renderable.ITickableRenderable;
+import io.github.sweetzonzi.machine_max.client.render.renderer.Hud3DRenderer;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
@@ -14,6 +24,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
@@ -23,12 +35,39 @@ import java.lang.ref.WeakReference;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import static io.github.sweetzonzi.machine_max.common.registry.MMMenus.*;
+import static io.github.sweetzonzi.machine_max.common.registry.MMMenus.ITEM_STORAGE_SUBSYSTEM_MENU;
+
 @OnlyIn(Dist.CLIENT)
-@EventBusSubscriber(modid = MachineMax.MOD_ID, value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class MMGuiManager {
     public static Set<WeakReference<ITickableRenderable>> animatableWidgets = new CopyOnWriteArraySet<>();
     public static ReferenceQueue<ITickableRenderable> referenceQueue = new ReferenceQueue<>();
     public static CustomHud customHud = null;
+
+
+    @SubscribeEvent
+    public static void registerHud(RegisterGuiLayersEvent event){
+        event.registerAboveAll(id("custom_hud"), new CustomHud());
+        event.registerAboveAll(id("interact_hud"), new InteractHud());
+        event.registerAboveAll(id("research_point_hud"), new ResearchPointHud());
+        event.registerAboveAll(id("sight_hud"), new SightHud());
+        event.registerAboveAll(id("ammo_hud"), new AmmoHud());
+//        event.registerAboveAll(id("assembly_hud"), new AssemblyHud());
+        Hud3DRenderer.register(new AssemblyHud3D());
+    }
+
+    private static ResourceLocation id(String path){
+        return ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, path);
+    }
+
+    @SubscribeEvent
+    private static void registerScreens(RegisterMenuScreensEvent event) {
+        event.register(FABRICATING_MENU.get(), FabricatingScreen::new);
+        event.register(BLUEPRINT_RESEARCH_MENU.get(), BlueprintResearchScreen::new);
+        event.register(VEHICLE_NAMING_MENU.get(), VehicleNamingScreen::new);
+        event.register(ITEM_STORAGE_SUBSYSTEM_MENU.get(), ItemStorageSubsystemScreen::new);
+    }
 
     /** 炮镜模式下需要隐藏的 HUD 图层（被这些遮挡瞄具视野） */
     private static final Set<ResourceLocation> CAMERA_MODE_HIDDEN_LAYERS = Set.of(

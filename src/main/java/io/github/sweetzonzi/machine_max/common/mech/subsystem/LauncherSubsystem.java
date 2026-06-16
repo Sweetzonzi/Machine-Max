@@ -5,6 +5,7 @@ import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import lombok.Getter;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import net.minecraft.resources.ResourceLocation;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
@@ -78,6 +79,7 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
 
     /** 膛内当前弹药类型。null = 空膛 */
     @Nullable
+    @Getter
     private ProjectileType chamberedType;
 
     /** 当前选中的供给来源索引 */
@@ -212,7 +214,7 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         // 每 tick 刷新缓存摘要，供 HUD 无分配读取
         refreshCachedSummaries();
 
-        if (!isActive() || isDestroyed() || getLevel().isClientSide()) {
+        if (!isActive() || isDestroyed()) {
             resetFireState();
             return;
         }
@@ -470,6 +472,19 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
     @Override
     public IAmmoConsumer.SupplierSummaries getSupplierSummaries() {
         return cachedSummaries;
+    }
+
+    /**
+     * 获取当前弹药类型（按优先级）。<br>
+     * 优先返回膛内已装填的弹药类型；若空膛则尝试从当前选中的供给者获取正在装填的弹药类型。
+     *
+     * @return 当前弹药类型，完全无弹药信息时返回 null
+     */
+    @Nullable
+    public ProjectileType getCurrentAmmoType() {
+        if (chamberedType != null) return chamberedType;
+        IAmmoSupplier supplier = getCurrentSupplier();
+        return supplier != null ? supplier.getSuppliedType() : null;
     }
 
     /**
