@@ -10,6 +10,19 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface IAmmoSupplier {
 
+    /**
+     * 供给者当前工作状态枚举。<br>
+     * 由供给者自行报告，消除消费者侧的 instanceof 分支。
+     */
+    enum SupplierStatus {
+        /** 正常可用，有弹药待交付 */
+        READY,
+        /** 弹药耗尽 */
+        EMPTY,
+        /** 装填或冷却中 */
+        RELOADING
+    }
+
     /** 当前是否有可用弹药 */
     boolean hasAmmo();
 
@@ -49,6 +62,36 @@ public interface IAmmoSupplier {
      * @return 弹药类型，若未就绪则返回 null
      */
     @Nullable ProjectileType consumeReadyRound(IAmmoConsumer consumer);
+
+    /**
+     * 供给者的最大容量。-1 表示无容量概念（如无限供给）。
+     * 由 AmmoLoaderSubsystem / RegenLoaderSubsystem 等具体实现类重写返回各自容量。
+     */
+    default int getCapacity() {
+        return -1;
+    }
+
+    /**
+     * 供给者当前工作状态（per-consumer）。<br>
+     * 由具体供给者自行报告，无需消费者做 instanceof 判断。
+     *
+     * @param consumer 请求状态的消费者
+     * @return 当前状态
+     */
+    default SupplierStatus getStatus(IAmmoConsumer consumer) {
+        return getRemainingCount() > 0 ? SupplierStatus.READY : SupplierStatus.EMPTY;
+    }
+
+    /**
+     * 装填/再生进度（0~1）。<br>
+     * AmmoLoader 按 consumer 区分装填计时器；RegenLoader 使用共享弹药池。
+     *
+     * @param consumer 请求进度的消费者
+     * @return 进度值 0.0~1.0
+     */
+    default float getReloadProgress(IAmmoConsumer consumer) {
+        return 0f;
+    }
 
     /** 是否支持退弹（接收弹药归还） */
     boolean canEject();

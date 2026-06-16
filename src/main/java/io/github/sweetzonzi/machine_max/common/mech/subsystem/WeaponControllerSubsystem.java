@@ -230,6 +230,24 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         }
     }
 
+    /**
+     * 获取已瞄准目标的发射器数量。
+     *
+     * @param target 目标世界坐标
+     * @param tolDeg 瞄准容差（度）
+     * @return 已瞄准且可用的发射器数量
+     */
+    public int getAimedLauncherCount(Vec3 target, float tolDeg) {
+        if (target == null) return 0;
+        int count = 0;
+        for (LauncherSubsystem launcher : launchers.keySet()) {
+            if (!launcher.isDestroyed() && launcher.isActive() && launcher.isAimedAt(target, tolDeg)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     @Override
     public void loadData(CompoundTag data) {
         super.loadData(data);

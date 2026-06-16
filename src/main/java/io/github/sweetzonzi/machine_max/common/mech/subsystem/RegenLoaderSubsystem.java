@@ -6,7 +6,7 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.RegenLoaderSubsystemAttr;
-import net.minecraft.resources.ResourceLocation;
+import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -29,6 +29,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     public final RegenLoaderSubsystemAttr attr;
 
     /** 当前弹药计数 */
+    @Getter
     private int ammoCount = 0;
 
     /** 再生进度（0.0 ~ 1.0+，累积超过 1.0 时产出一发） */
@@ -131,6 +132,32 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         }
 
         return ProjectileType.get(getLevel(), attr.staticAttribute.getProjectileType());
+    }
+
+    @Override
+    public int getCapacity() {
+        return attr.staticAttribute.getMagazineCapacity();
+    }
+
+    @Override
+    public SupplierStatus getStatus(IAmmoConsumer consumer) {
+        if (isBatchReloading) return SupplierStatus.RELOADING;
+        if (ammoCount <= 0) return SupplierStatus.EMPTY;
+        return SupplierStatus.READY;
+    }
+
+    @Override
+    public float getReloadProgress(IAmmoConsumer consumer) {
+        int cap = attr.staticAttribute.getMagazineCapacity();
+        if (cap <= 0) return 0f;
+        if (isBatchReloading) {
+            // 批量冷却模式：计算总冷却 tick 数，返回剩余比例
+            float rpm = attr.staticAttribute.getRegenPerMinute();
+            int totalTicks = rpm > 0 ? (int) (cap / rpm * 1200) : 1;
+            return 1f - (float) batchCooldownTicks / totalTicks;
+        }
+        // 非 batch 模式：当前余量 / 总容量
+        return (float) ammoCount / cap;
     }
 
     @Override

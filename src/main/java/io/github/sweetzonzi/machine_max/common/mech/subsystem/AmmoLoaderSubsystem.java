@@ -184,7 +184,25 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         }
     }
 
-    // ==================== IAmmoConsumer 实现 ====================
+    @Override
+    public int getCapacity() {
+        return attr.staticAttribute.getMagazineCapacity();
+    }
+
+    @Override
+    public SupplierStatus getStatus(IAmmoConsumer consumer) {
+        if (reloadTimers.containsKey(consumer)) return SupplierStatus.RELOADING;
+        if (getAmmoCount() <= 0) return SupplierStatus.EMPTY;
+        return SupplierStatus.READY;
+    }
+
+    @Override
+    public float getReloadProgress(IAmmoConsumer consumer) {
+        Integer remaining = reloadTimers.get(consumer);
+        if (remaining == null) return 0f;
+        int total = attr.staticAttribute.getReloadTimeTicks();
+        return total > 0 ? 1f - (float) remaining / total : 1f;
+    }
 
     @Override
     public boolean canAcceptAmmo() {
@@ -276,7 +294,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     /**
      * 获取容器内弹药数量。
      */
-    private int getAmmoCount() {
+    public int getAmmoCount() {
         int count = 0;
         for (int i = 0; i < container.getContainerSize(); i++) {
             if (!container.getItem(i).isEmpty()) count++;

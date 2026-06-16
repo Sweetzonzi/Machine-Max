@@ -3,6 +3,7 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 import com.mojang.serialization.Codec;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlBinding;
+import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroup;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
@@ -23,8 +24,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 abstract public class AbstractControllableSubsystem extends BasicSubsystem {
@@ -60,10 +64,87 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         }
     }
 
+    // ===== 武器控制器发现 =====
+
+    /**
+     * 按控制组索引的武器控制器发现结果。<br>
+     * key = 控制组名（baseGroup 固定 "base"，子组用 group.name），
+     * value = 该控制组通过握手发现的 WeaponController 列表。
+     * <p>
+     * 握手通过遍历控制组全部输出频道，以控制组名作为回调信号值来实现精确归类。
+     * 一个 WeaponController 可能被多个控制组共用，此时出现在多个组列表中。
+     */
+    @Getter
+    protected final Map<String, List<WeaponControllerSubsystem>> weaponControllersByGroup =
+            new ConcurrentHashMap<>();
+
+    /**
+     * 武器控制器发现握手：遍历所有控制组的全部输出频道，通过回调发现 WeaponController。<br>
+     * 利用回调的信号值携带控制组名，实现精确归属归类。
+     */
+    protected void weaponControllerDiscoveryHandshake() {
+        weaponControllersByGroup.clear();
+        // baseGroup 固定 key = "base"
+        discoverWeaponControllersForGroup("base", controlGroupSet.baseGroup);
+        // 子控制组 key = 组名
+        for (ControlGroup group : controlGroupSet.groups) {
+            discoverWeaponControllersForGroup(group.name, group);
+        }
+    }
+
+    /**
+     * 对单个控制组执行武器控制器发现握手。
+     *
+     * @param groupKey 控制组标识（"base" 或子组名）
+     * @param group    控制组对象
+     */
+    private void discoverWeaponControllersForGroup(String groupKey, ControlGroup group) {
+        weaponControllersByGroup.put(groupKey, new ArrayList<>());
+
+        // 收集该控制组全部输出频道
+        Set<String> channels = new HashSet<>();
+        channels.addAll(group.moveTargets.keySet());
+        channels.addAll(group.viewTargets.keySet());
+        channels.addAll(group.regularTargets.keySet());
+        for (ControlBinding binding : group.bindings) {
+            channels.add(binding.channel);
+        }
+
+        // ★ 以控制组名作为信号值，callbackReturnsSignalValue=true，
+        //    回调中拿到的 callbackValue 就是 groupKey，从而精确归类
+        for (String channel : channels) {
+            if (channel.isEmpty()) continue;
+            sendSignalToAllTargetsWithCallback(channel, groupKey, true);
+        }
+    }
+
+    /**
+     * 获取当前激活控制组对应的 WeaponController 列表（HUD 显示用）。<br>
+     * 合并 baseGroup 和当前激活子组的 WeaponController，去重。
+     *
+     * @return 当前应显示的 WeaponController 列表
+     */
+    public List<WeaponControllerSubsystem> getActiveWeaponControllers() {
+        List<WeaponControllerSubsystem> base =
+                weaponControllersByGroup.getOrDefault("base", List.of());
+        List<WeaponControllerSubsystem> result = new ArrayList<>(base);
+
+        ControlGroup active = controlGroupSet.getActiveGroup();
+        if (active != null) {
+            List<WeaponControllerSubsystem> sub =
+                    weaponControllersByGroup.getOrDefault(active.name, List.of());
+            for (WeaponControllerSubsystem wc : sub) {
+                if (!result.contains(wc)) result.add(wc);
+            }
+        }
+        return result;
+    }
+
     @Override
     public void onAttach() {
         super.onAttach();
         cameraDiscoveryHandshake();
+        weaponControllerDiscoveryHandshake();
     }
 
     /**
@@ -98,6 +179,19 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
                     discoveredCameras.add(camera);
                 }
             }
+        } else if (channelName.equals("callback") && sender instanceof WeaponControllerSubsystem wc) {
+            if (wc.getOwner().getSubPart().getPart().assembly
+                    == this.getOwner().getSubPart().getPart().assembly) {
+                // 从回调信号值中取出控制组名
+                Object callbackValue = getSignalChannel("callback").get(sender);
+                if (callbackValue instanceof String groupKey) {
+                    List<WeaponControllerSubsystem> list =
+                            weaponControllersByGroup.computeIfAbsent(groupKey, k -> new ArrayList<>());
+                    if (!list.contains(wc)) {
+                        list.add(wc);
+                    }
+                }
+            }
         }
         return SignalResult.PASS;
     }
@@ -107,6 +201,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         super.onVehicleStructureChanged();
         discoveredCameras.clear();
         cameraDiscoveryHandshake();
+        weaponControllersByGroup.clear();
+        weaponControllerDiscoveryHandshake();
     }
 
     public void clearInputSignals() {
