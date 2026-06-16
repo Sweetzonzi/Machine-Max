@@ -6,6 +6,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
+import net.minecraft.resources.ResourceLocation;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
@@ -87,6 +88,10 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
 
     /** 当前是否正在等待装填（requestRound 已调用但弹药未就绪） */
     private boolean reloading = false;
+
+    /** 每 tick 刷新的供给者摘要缓存，供 HUD 无分配读取 */
+    private volatile IAmmoConsumer.SupplierSummaries cachedSummaries =
+            new IAmmoConsumer.SupplierSummaries(List.of());
 
     public LauncherSubsystem(ISubsystemHost owner, String name, LauncherSubsystemAttr attr) {
         super(owner, name, attr);
@@ -204,6 +209,8 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
     @Override
     public void onTick() {
         super.onTick();
+        // 每 tick 刷新缓存摘要，供 HUD 无分配读取
+        refreshCachedSummaries();
 
         if (!isActive() || isDestroyed() || getLevel().isClientSide()) {
             resetFireState();
@@ -459,6 +466,33 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
     }
 
     // ——— 公共查询方法 ———
+
+    @Override
+    public IAmmoConsumer.SupplierSummaries getSupplierSummaries() {
+        return cachedSummaries;
+    }
+
+    /**
+     * 刷新供给者摘要缓存，在每 tick onTick 中调用。<br>
+     * 将迭代+分配开销从渲染线程迁移到 20tps 的 tick 线程。
+     */
+    private void refreshCachedSummaries() {
+        List<IAmmoConsumer.SupplierSummary> result = new ArrayList<>(suppliers.size());
+        IAmmoSupplier selected = getCurrentSupplier();
+        for (IAmmoSupplier supplier : suppliers) {
+            ProjectileType suppliedType = supplier.getSuppliedType();
+            ResourceLocation typeKey = suppliedType != null ? suppliedType.getRegistryKey() : null;
+            result.add(new IAmmoConsumer.SupplierSummary(
+                    typeKey,
+                    supplier.getRemainingCount(),
+                    supplier.getCapacity(),
+                    supplier == selected,
+                    supplier.getStatus(this),
+                    supplier.getReloadProgress(this)
+            ));
+        }
+        this.cachedSummaries = new IAmmoConsumer.SupplierSummaries(result);
+    }
 
     /**
      * 获取发射点在世界空间中的位姿。

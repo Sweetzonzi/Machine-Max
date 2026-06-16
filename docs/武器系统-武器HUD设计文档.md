@@ -97,6 +97,7 @@ WeaponControllerSubsystem.launchers       → Map<LauncherSubsystem, String>
 | 元素 | 内容 | 数据来源 |
 |------|------|----------|
 | 武器站数量 | "武器站: 2" | 缓存列表大小 |
+| 当前弹种总余量 | "APFSDS: 20" | `summaries.getSelected().type` + `summaries.getTotalOf()` |
 
 ---
 
@@ -213,18 +214,18 @@ public float getReloadProgress(IAmmoConsumer consumer) {
 }
 ```
 
-### 5.3 IAmmoConsumer — 新增 `SupplierSummary` + 聚合方法
+### 5.3 IAmmoConsumer — 新增 `SupplierSummary` + `SupplierSummaries` 包装类
 
-`getSupplierSummaries()` 不再需要 instanceof，直接调用供给者自身的方法。
+`getSupplierSummaries()` 返回一个包装类而非裸 List，提供便捷查询方法。
 
 ```java
 /**
- * 供给者摘要，供 HUD 一次性获取全部弹药信息。
+ * 单个供给者摘要。
  * 字段值来自 IAmmoSupplier 自身报告的方法，不做 instanceof 分支。
  */
 record SupplierSummary(
-    /** 弹种标签，如 "APFSDS"、"HEAT" */
-    String label,
+    /** 弹种注册名，如 "machine_max:apfsds" */
+    @Nullable ResourceLocation type,
     /** 当前弹药数量 */
     int remaining,
     /** 最大容量，-1 表示无上限 */
@@ -233,38 +234,76 @@ record SupplierSummary(
     boolean isSelected,
     /** 供给者当前状态（由供给者自行报告） */
     SupplierStatus status,
-    /** 状态数值（装填进度 0~1、再生进度 0~1 等） */
-    float statusProgress
+    /** 装填进度（0~1） */
+    float reloadProgress
 ) {}
 
-/** 供给者工作状态 */
-enum SupplierStatus {
-    /** 正常可用 */
-    READY,
-    /** 弹药耗尽 */
-    EMPTY,
-    /** 装填/冷却中 */
-    RELOADING
+/**
+ * 供给者摘要集合 record，提供便捷的聚合查询方法。
+ * 替代裸 {@code List&lt;SupplierSummary&gt;}，作为 IAmmoConsumer 的内部 record。
+ */
+record SupplierSummaries(List<SupplierSummary> summaries) {
+
+    /** 获取当前选中的供给者，无选中返回 null */
+    @Nullable
+    public SupplierSummary getSelected() {
+        for (SupplierSummary s : summaries) {
+            if (s.isSelected) return s;
+        }
+        return null;
+    }
+
+    /** 当前选中供给者的状态，无选中返回 EMPTY */
+    public SupplierStatus getSelectedStatus() {
+        SupplierSummary s = getSelected();
+        return s != null ? s.status : SupplierStatus.EMPTY;
+    }
+
+    /** 按弹种汇总余量 */
+    public Map<ResourceLocation, Integer> getTotalByType() {
+        Map<ResourceLocation, Integer> map = new HashMap<>();
+        for (SupplierSummary s : summaries) {
+            if (s.type != null) {
+                map.merge(s.type, s.remaining, Integer::sum);
+            }
+        }
+        return map;
+    }
+
+    /** 某弹种的总余量 */
+    public int getTotalOf(ResourceLocation type) {
+        int total = 0;
+        for (SupplierSummary s : summaries) {
+            if (type.equals(s.type)) {
+                total += s.remaining;
+            }
+        }
+        return total;
+    }
+
+    /** 是否有多于一个供给者（需要显示切换 UI） */
+    public boolean hasMultiple() {
+        return summaries.size() > 1;
+    }
 }
 
 /**
- * 获取所有已连接供给者的摘要列表，供 HUD 直接使用。
- * 数据全部来自 IAmmoSupplier 自身方法，不依赖具体实现类。
+ * 获取所有已连接供给者的摘要集合，供 HUD 直接使用。
  */
-default List<SupplierSummary> getSupplierSummaries() {
-    List<SupplierSummary> result = new ArrayList<>();
+default SupplierSummaries getSupplierSummaries() {
+    List<SupplierSummary> list = new ArrayList<>();
     IAmmoSupplier selected = getCurrentSupplier();
     for (IAmmoSupplier supplier : getSuppliers()) {
-        result.add(new SupplierSummary(
-             supplier.getLabel(),
-             supplier.getRemainingCount(),
-             supplier.getCapacity(),
-             supplier == selected,
-             supplier.getStatus(this),
-             supplier.getReloadProgress(this)
-         ));
+        list.add(new SupplierSummary(
+            supplier.getSuppliedType() != null ? supplier.getSuppliedType().getRegistryKey() : null,
+            supplier.getRemainingCount(),
+            supplier.getCapacity(),
+            supplier == selected,
+            supplier.getStatus(this),
+            supplier.getReloadProgress(this)
+        ));
     }
-    return result;
+    return new SupplierSummaries(list);
 }
 ```
 

@@ -5,7 +5,9 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 弹药消费者接口。<br>
@@ -69,12 +71,67 @@ public interface IAmmoConsumer {
     boolean canAccept(ProjectileType type);
 
     /**
+     * 所有供给者摘要的包装记录。<br>
+     * 替代裸 {@code List&lt;SupplierSummary&gt;}，提供便捷的聚合查询方法。<br>
+     * {@code totalByType} 在构造时一次性计算并缓存，避免高频查询重复迭代。
+     */
+    record SupplierSummaries(
+            List<SupplierSummary> summaries,
+            Map<ResourceLocation, Integer> totalByType
+    ) {
+
+        /**
+         * 便捷构造：仅传入摘要列表，自动计算按弹种汇总余量。
+         */
+        SupplierSummaries(List<SupplierSummary> summaries) {
+            this(summaries, computeTotalByType(summaries));
+        }
+
+        /** 计算按弹种汇总余量 */
+        private static Map<ResourceLocation, Integer> computeTotalByType(List<SupplierSummary> summaries) {
+            if (summaries.isEmpty()) return Map.of();
+            Map<ResourceLocation, Integer> map = new HashMap<>();
+            for (SupplierSummary s : summaries) {
+                if (s.type != null) {
+                    map.merge(s.type, s.remaining, Integer::sum);
+                }
+            }
+            return Map.copyOf(map);
+        }
+
+        /** 获取当前选中的供给者，无选中返回 null */
+        @Nullable
+        public SupplierSummary getSelected() {
+            for (SupplierSummary s : summaries) {
+                if (s.isSelected) return s;
+            }
+            return null;
+        }
+
+        /** 当前选中供给者的状态，无选中返回 EMPTY */
+        public IAmmoSupplier.SupplierStatus getSelectedStatus() {
+            SupplierSummary s = getSelected();
+            return s != null ? s.status : IAmmoSupplier.SupplierStatus.EMPTY;
+        }
+
+        /** 某弹种的总余量（从缓存 map 直接查） */
+        public int getTotalOf(ResourceLocation type) {
+            return totalByType.getOrDefault(type, 0);
+        }
+
+        /** 是否有多于一个供给者（需要显示切换 UI） */
+        public boolean hasMultiple() {
+            return summaries.size() > 1;
+        }
+    }
+
+    /**
      * 获取所有已连接供给者的摘要列表，供 HUD 直接使用。<br>
      * 数据全部来自 {@link IAmmoSupplier} 自身方法，不依赖具体实现类。
      *
-     * @return 供给者摘要列表
+     * @return 供给者摘要包装
      */
-    default List<SupplierSummary> getSupplierSummaries() {
+    default SupplierSummaries getSupplierSummaries() {
         List<SupplierSummary> result = new ArrayList<>();
         IAmmoSupplier selected = getCurrentSupplier();
         for (IAmmoSupplier supplier : getSuppliers()) {
@@ -89,6 +146,6 @@ public interface IAmmoConsumer {
                     supplier.getReloadProgress(this)
             ));
         }
-        return result;
+        return new SupplierSummaries(result);
     }
 }
