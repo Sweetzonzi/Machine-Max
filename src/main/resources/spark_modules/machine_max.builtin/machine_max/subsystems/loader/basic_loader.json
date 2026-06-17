@@ -4,7 +4,7 @@
   "basic_durability": 40, //(可选, 默认20.0)子系统基础耐久度
   "round_by_round": false, //(可选, 默认false)逐发模式: false=整体换弹匣, true=逐发压入
   "magazine_capacity": 30, //(可选, 默认30)弹匣容量
-  "reload_time_ticks": 200, //(可选, 默认200)装填耗时(tick): round_by_round=false=换弹匣总耗时, true=装填一发耗时
+  "reload_time": 10.0, //(可选, 默认10.0)装填耗时(秒): round_by_round=false=换弹匣总耗时, true=装填一发耗时
   "ammo_request_channel": "ammo_request", //(可选, 默认ammo_request)弹药请求信号频道
   "ammo_response_channel": "ammo_response", //(可选, 默认ammo_response)弹药响应信号频道
   "ammo_consumed_channel": "ammo_consumed", //(可选, 默认ammo_consumed)弹药消耗确认信号频道

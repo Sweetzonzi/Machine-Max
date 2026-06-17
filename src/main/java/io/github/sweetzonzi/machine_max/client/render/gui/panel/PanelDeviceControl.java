@@ -6,6 +6,7 @@ import com.sighs.apricityui.init.Element;
 import com.mojang.logging.LogUtils;
 import io.github.sweetzonzi.machine_max.common.mech.control.*;
 import io.github.sweetzonzi.machine_max.common.mech.control.AbstractGuiAction;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.slf4j.Logger;
@@ -127,9 +128,8 @@ public class PanelDeviceControl {
             if (!(e instanceof MouseEvent me) || me.button != 0) return;
             btn.setAttribute("class", "btn-pulse active");
             LOGGER.debug("[DeviceControl] PULSE #{} '{}'", index, action.label);
-            // TODO: 发送网络包 — GuiActionPayload
-            // new GuiActionPayload(subPartId, subSystemName, index, GuiActionType.PULSE, 0f)
-            // 服务端收到后执行对应脉冲信号
+            // 发送 PULSE 信号到服务端
+            ControlDataAccessor.sendGuiAction(Minecraft.getInstance(), index, GuiActionType.PULSE, 0f);
         });
         btn.addEventListener("mouseup", e -> {
             btn.setAttribute("class", "btn-pulse");
@@ -184,9 +184,8 @@ public class PanelDeviceControl {
                     : "left:17px;background:#fff;");
             LOGGER.debug("[DeviceControl] TOGGLE #{} '{}' {} -> {}",
                     index, action.label, wasOn ? "ON" : "OFF", wasOn ? "OFF" : "ON");
-            // TODO: 发送网络包 — GuiActionPayload
-            // new GuiActionPayload(subPartId, subSystemName, index, GuiActionType.TOGGLE, wasOn ? 0f : 1f)
-            // 服务端收到后更新 ToggleAction 的 isActive 状态
+            // 发送 TOGGLE 状态到服务端
+            ControlDataAccessor.sendGuiAction(Minecraft.getInstance(), index, GuiActionType.TOGGLE, wasOn ? 0f : 1f);
         });
 
         wrapper.append(label);
@@ -267,7 +266,7 @@ public class PanelDeviceControl {
 
     /**
      * Body 级鼠标释放事件：结束滑条拖拽。<br>
-     * TODO: 发送网络包 GuiActionPayload 同步滑条最终值
+     * 将最终百分比值通过 GuiActionPayload 发送到服务端。
      */
     private static void onVSliderMouseUp(com.sighs.apricityui.init.Event e) {
         if (dragTrack != null && dragActionIndex >= 0) {
@@ -281,9 +280,8 @@ public class PanelDeviceControl {
                 } catch (NumberFormatException ignored) {}
             }
             LOGGER.debug("[DeviceControl] SLIDER #{} finalPct={}", dragActionIndex, finalPct);
-            // TODO: 发送网络包 — GuiActionPayload
-            // new GuiActionPayload(subPartId, subSystemName, dragActionIndex, GuiActionType.SLIDER, (float)finalPct)
-            // 服务端收到后更新 SliderAction 的 value 字段
+            // 发送 SLIDER 最终值到服务端
+            ControlDataAccessor.sendGuiAction(Minecraft.getInstance(), dragActionIndex, GuiActionType.SLIDER, (float)finalPct);
         }
         dragTrack = null;
         dragFill = null;

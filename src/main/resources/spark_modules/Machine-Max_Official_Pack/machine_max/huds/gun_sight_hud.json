@@ -5,7 +5,7 @@
   "scale": [25, 25, 25], //(可选，默认[1, 1, 1]) 缩放比例
   "perspective": false, //(可选，默认true) 是否采用透视投影渲染
   "ignore_zoom": true, //(可选，默认false) 是否忽略炮镜/摄像机视野下的缩放效果
-  "scope_behavior": "follow_transform", //(可选，默认"follow_position")
+  "scope_behavior": "follow_position", //(可选，默认"follow_position")
   "texts": {
   }
 }

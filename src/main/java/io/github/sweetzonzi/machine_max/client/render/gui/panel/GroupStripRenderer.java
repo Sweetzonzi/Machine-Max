@@ -4,6 +4,7 @@ import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroup;
 import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -145,9 +146,8 @@ public class GroupStripRenderer {
                     }
                     // 更新数据模型的 activeIndex
                     data.activate(newIndex);
-                    // TODO: 发送网络包同步控制组切换
-                    // 需要新建 ControlGroupSetEditPayload.subPartId 等字段
-                    // 这里更新了本地 data.activeIndex，应通过 ControlDataAccessor.saveControlSet() 同步到服务端
+                    // 同步控制组切换状态到服务端
+                    ControlDataAccessor.saveControlSet(Minecraft.getInstance(), data);
                 });
             }
 

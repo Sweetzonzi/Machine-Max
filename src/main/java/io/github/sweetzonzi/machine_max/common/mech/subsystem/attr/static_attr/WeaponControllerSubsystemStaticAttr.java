@@ -32,8 +32,8 @@ public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAtt
 
     /** 默认射击模式（齐射） */
     private final FireMode defaultFireMode;
-    /** 轮射模式下每两次发射之间的间隔（tick数） */
-    private final int rippleIntervalTick;
+    /** 轮射模式下每两次发射之间的间隔（秒） */
+    private final float rippleInterval;
     /** 瞄准容差角度（度），发射器指向与目标方向偏差小于此值时允许开火。<br>
      * 设为大于 180 的值（如 360）等效于禁用容差检查。 */
     private final float aimToleranceDeg;
@@ -45,7 +45,7 @@ public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAtt
     public static final MapCodec<WeaponControllerSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             FIRE_MODE_CODEC.optionalFieldOf("fire_mode", FireMode.SALVO).forGetter(WeaponControllerSubsystemStaticAttr::getDefaultFireMode),
-            Codec.INT.optionalFieldOf("ripple_interval_tick", 2).forGetter(WeaponControllerSubsystemStaticAttr::getRippleIntervalTick),
+            Codec.FLOAT.optionalFieldOf("ripple_interval", 0.1f).forGetter(WeaponControllerSubsystemStaticAttr::getRippleInterval),
             Codec.FLOAT.optionalFieldOf("aim_tolerance_deg", 3.0f).forGetter(WeaponControllerSubsystemStaticAttr::getAimToleranceDeg),
             Codec.STRING.listOf().optionalFieldOf("aim_inputs", List.of("aim_input_p0", "aim_input_p1", "aim_input_p2", "aim_input_p3", "aim_input")).forGetter(WeaponControllerSubsystemStaticAttr::getAimInputs),
             Codec.STRING.listOf().optionalFieldOf("fire_inputs", List.of("fire_input_p0", "fire_input_p1", "fire_input_p2", "fire_input_p3", "fire_input")).forGetter(WeaponControllerSubsystemStaticAttr::getFireInputs),
@@ -55,14 +55,14 @@ public class WeaponControllerSubsystemStaticAttr extends BasicSubsystemStaticAtt
     public WeaponControllerSubsystemStaticAttr(
             BasicAttr basicAttr,
             FireMode defaultFireMode,
-            int rippleIntervalTick,
+            float rippleInterval,
             float aimToleranceDeg,
             List<String> aimInputs,
             List<String> fireInputs,
             BasicSoundAttr sounds) {
         super(basicAttr, sounds);
         this.defaultFireMode = defaultFireMode;
-        this.rippleIntervalTick = rippleIntervalTick;
+        this.rippleInterval = rippleInterval;
         this.aimToleranceDeg = aimToleranceDeg;
         this.aimInputs = aimInputs;
         this.fireInputs = fireInputs;

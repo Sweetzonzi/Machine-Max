@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",
+  "title": "再生装弹机子系统静态属性",
+  "description": "再生装弹机子系统的静态属性，定义弹仓容量、再生速率、每发能耗和弹药供给行为。用于能量武器（激光、爆能束）和街机风格再生武器（导弹冷却再生）。",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema 引用路径，用于编辑器的智能提示和校验",
+      "default": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
+    },
+    "type": {
+      "type": "string",
+      "const": "machine_max:regen_loader",
+      "description": "子系统类型，必须为 'machine_max:regen_loader'。"
+    },
+    "basic_durability": {
+      "type": "number",
+      "minimum": 0,
+      "default": 20.0,
+      "description": "子系统基础耐久度。降为 0 时瘫痪，修复至 30% 时恢复功能。"
+    },
+    "pass_damage": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否将伤害传递给子系统持有者。为 true 时子系统受到的伤害会传递给零件。"
+    },
+    "limit_damage": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否限制伤害传递值不超过子系统剩余耐久度。例如 40 伤害、剩余 20，则只传递 20。"
+    },
+    "hidden": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否在 HUD 中隐藏该子系统，常用于仅提供模型零件伤害区分的非功能子系统。"
+    },
+    "magazine_capacity": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "弹仓容量，最大可存储的弹药数量。"
+    },
+    "regen_per_minute": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0,
+      "description": "每分钟再生数量。regenRoundByRound=true 时为弹药恢复速率（发/分钟）；false 时为完整装填次数（次/分钟）。0 = 无自动再生（静态弹仓）。"
+    },
+    "regen_round_by_round": {
+      "type": "boolean",
+      "default": true,
+      "description": "再生模式。true = 随打随产（每消耗一发即开始再生下一发）；false = 批量产出（弹仓全空后一次性回满）。"
+    },
+    "energy_cost_per_round": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0,
+      "description": "每发再生消耗的能量（焦耳）。0 = 免费再生。"
+    },
+    "projectile_type": {
+      "$ref": "../../base/resource_location.schema.json",
+      "description": "此装弹机供给的投射物类型的资源路径。"
+    },
+    "reload_time": { "type": "number", "minimum": 0, "description": "输送一发弹药所需时间（秒）。" },
+    "can_supply_multiple": {
+      "type": "boolean",
+      "default": false,
+      "description": "是否允许多个消费者同时从此装弹机接收弹药。"
+    },
+    "regen_delay": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0,
+      "description": "输送弹药后的再生启动延迟（秒）。0 = 边产边供，无延迟。"
+    },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统被摧毁时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        },
+        "on_activate": {
+          "$ref": "../../base/sound_event.schema.json",
+          "description": "子系统激活时的音效。",
+          "default": {
+            "sound_id": "machine_max:empty_sound",
+            "range": 16
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "再生装弹机子系统的音效配置。"
+    }
+  },
+  "required": ["type", "magazine_capacity", "projectile_type", "reload_time"],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "type": "machine_max:regen_loader",
+      "magazine_capacity": 100,
+      "projectile_type": "machine_max:some_projectile",
+      "reload_time": 0,
+      "description": "最简示例——仅必需字段"
+    },
+    {
+      "type": "machine_max:regen_loader",
+      "basic_durability": 40,
+      "magazine_capacity": 150,
+      "regen_per_minute": 800,
+      "regen_round_by_round": true,
+      "energy_cost_per_round": 0,
+      "projectile_type": "machine_max:7_92mm_smk",
+      "reload_time": 0,
+      "can_supply_multiple": false,
+      "regen_delay": 0.5,
+      "description": "随打随产示例——MG34 机枪，150 发弹仓，800 发/分钟，0.5 秒再生延迟"
+    },
+    {
+      "type": "machine_max:regen_loader",
+      "basic_durability": 80,
+      "magazine_capacity": 40,
+      "regen_per_minute": 10,
+      "regen_round_by_round": true,
+      "energy_cost_per_round": 0,
+      "projectile_type": "machine_max:50mm_pzgr39",
+      "reload_time": 2.0,
+      "can_supply_multiple": false,
+      "description": "慢速再生示例——50mm 火炮，40 发，10 发/分钟，带输送延迟"
+    }
+  ]
+}

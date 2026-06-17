@@ -45,6 +45,9 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     /** 是否正在批量冷却中 */
     private boolean isBatchReloading = false;
 
+    /** 再生延迟剩余 tick，上次输送弹药后需等待此时间才恢复再生 */
+    private int regenDelayRemainingTicks = 0;
+
     // ——— 多消费者支持 ———
 
     /** 每个消费者的输送计时器 */
@@ -94,12 +97,12 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public boolean isRoundByRound() {
-        return attr.staticAttribute.getReloadTimeTicks() > 0;
+        return attr.staticAttribute.getReloadTime() > 0;
     }
 
     @Override
     public int getReloadTimeTicks() {
-        return attr.staticAttribute.getReloadTimeTicks();
+        return (int) (attr.staticAttribute.getReloadTime() * 20f); // 秒 → tick
     }
 
     @Override
@@ -120,8 +123,8 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
         if (getAmmoCount() <= 0) return false;
 
-        // 启动输送计时器
-        int tickTime = attr.staticAttribute.getReloadTimeTicks();
+        // 启动输送计时器（秒 → tick）
+        int tickTime = (int) (attr.staticAttribute.getReloadTime() * 20f);
         if (tickTime > 0) {
             deliveryTimers.put(consumer, tickTime);
         } else {
@@ -152,9 +155,15 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (getAmmoCount() <= 0) return null;
         if (!getLevel().isClientSide()) // 仅服务端更新弹药计数
             setAmmoCount(getAmmoCount() - 1);
-        // 随打随产模式：弹药消耗后立即开始再生
-        if (attr.staticAttribute.isRegenRoundByRound() && attr.staticAttribute.getRegenPerMinute() > 0) {
-            // regenProgress 在 onTick 中累积，触发自动再生
+
+        // 弹药已输送，启动再生延迟计时器（若 regenDelay > 0）
+        float delay = attr.staticAttribute.getRegenDelay();
+        if (delay > 0f) {
+            regenDelayRemainingTicks = (int) (delay * 20f); // 秒 → tick
+            // 延迟刷新时重置再生进度；但弹药已为0时保留已有进度（避免空仓丢进度）
+            if (getAmmoCount() > 0) {
+                regenProgress = 0f;
+            }
         }
 
         return ProjectileType.get(getLevel(), attr.staticAttribute.getProjectileType());
@@ -182,9 +191,10 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             int totalTicks = rpm > 0 ? (int) (cap / rpm * 1200) : 1;
             return 1f - (float) batchCooldownTicks / totalTicks;
         }
-        if (attr.staticAttribute.getReloadTimeTicks() > 0) {
+        float reloadTicks = attr.staticAttribute.getReloadTime() * 20f;
+        if (reloadTicks > 0) {
             if (deliveryTimers.containsKey(consumer))
-                return 1f - (float) deliveryTimers.get(consumer) / attr.staticAttribute.getReloadTimeTicks();
+                return 1f - (float) deliveryTimers.get(consumer) / reloadTicks;
         }
         // 非 batch 模式：当前余量 / 总容量
         return (float) getAmmoCount() / cap;
@@ -223,13 +233,20 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             }
         }
 
-        // ② 弹药再生
-        if (attr.staticAttribute.isRegenRoundByRound()) {
-            // 随打随产模式
-            tickRegenRoundByRound();
-        } else {
-            // 批量产出模式
-            tickBatchReload();
+        // ② 推进再生延迟计时器
+        if (regenDelayRemainingTicks > 0) {
+            regenDelayRemainingTicks--;
+        }
+
+        // ③ 弹药再生（延迟计时未结束时暂停再生）
+        if (regenDelayRemainingTicks <= 0) {
+            if (attr.staticAttribute.isRegenRoundByRound()) {
+                // 随打随产模式
+                tickRegenRoundByRound();
+            } else {
+                // 批量产出模式
+                tickBatchReload();
+            }
         }
     }
 
@@ -344,6 +361,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         if (data.contains("regen_progress")) regenProgress = data.getFloat("regen_progress");
         if (data.contains("batch_cooldown")) batchCooldownTicks = data.getInt("batch_cooldown");
         if (data.contains("is_batch_reloading")) isBatchReloading = data.getBoolean("is_batch_reloading");
+        if (data.contains("regen_delay_remaining")) regenDelayRemainingTicks = data.getInt("regen_delay_remaining");
     }
 
     @Override
@@ -353,6 +371,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         data.putFloat("regen_progress", regenProgress);
         data.putInt("batch_cooldown", batchCooldownTicks);
         data.putBoolean("is_batch_reloading", isBatchReloading);
+        data.putInt("regen_delay_remaining", regenDelayRemainingTicks);
         return data;
     }
 

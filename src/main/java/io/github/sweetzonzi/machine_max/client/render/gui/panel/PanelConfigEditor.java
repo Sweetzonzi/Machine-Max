@@ -5,6 +5,7 @@ import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import com.mojang.logging.LogUtils;
 import io.github.sweetzonzi.machine_max.common.mech.control.*;
+import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.slf4j.Logger;
@@ -295,6 +296,19 @@ public class PanelConfigEditor {
         Element middle = doc.getElementById("config-middle");
         if (middle == null) return;
         while (!middle.children.isEmpty()) middle.children.getFirst().remove();
+
+        // ── 顶部保存工具栏 ──
+        Element saveBar = doc.createElement("div");
+        saveBar.setAttribute("class", "config-middle-savebar");
+        Element saveBtn = doc.createElement("div");
+        saveBtn.setAttribute("class", "config-save-btn");
+        saveBtn.innerText = "SAVE TO VEHICLE";
+        saveBtn.addEventListener("mousedown", e -> {
+            if (!(e instanceof MouseEvent me) || me.button != 0) return;
+            onSaveConfig(doc);
+        });
+        saveBar.append(saveBtn);
+        middle.append(saveBar);
 
         if (selGroup < 0 || selGroup >= groupList.size()) return;
         GroupEditData g = groupList.get(selGroup);
@@ -909,6 +923,105 @@ public class PanelConfigEditor {
         actionList.remove(index);
         if (selAction >= actionList.size()) selAction = actionList.size() - 1;
         LOGGER.debug("[ConfigEditor] Deleted GUI action #{}", index);
+    }
+
+    // ============================================================
+    //  保存：EditData → ControlGroupSet → 网络包
+    // ============================================================
+
+    /**
+     * 保存当前编辑配置到服务端。<br>
+     * 将内部 EditData 转换为 ControlGroupSet 并通过 ControlGroupSetEditPayload 发送。
+     */
+    private static void onSaveConfig(Document doc) {
+        if (groupList == null || groupList.isEmpty()) return;
+        ControlGroupSet saved = buildControlGroupSet();
+        ControlDataAccessor.saveControlSet(Minecraft.getInstance(), saved);
+        LOGGER.debug("[ConfigEditor] Saved config to server, groups={}, actions={}",
+                groupList.size(), actionList.size());
+        showToast(doc, "SAVED");
+    }
+
+    /**
+     * 从当前编辑器的 EditData 构建不可变的 ControlGroupSet。
+     */
+    private static ControlGroupSet buildControlGroupSet() {
+        // baseGroup (groupList[0])
+        GroupEditData baseEdit = groupList.get(0);
+        ControlGroup baseGroup = new ControlGroup(
+                baseEdit.name,
+                ControlMode.valueOf(baseEdit.controlMode),
+                buildBindings(baseEdit.bindings)
+        );
+
+        // sub groups
+        List<ControlGroup> subGroups = new ArrayList<>();
+        for (int i = 1; i < groupList.size(); i++) {
+            GroupEditData g = groupList.get(i);
+            subGroups.add(new ControlGroup(
+                    g.name,
+                    ControlMode.valueOf(g.controlMode),
+                    buildBindings(g.bindings)
+            ));
+        }
+
+        // GUI actions
+        List<AbstractGuiAction> guiActions = new ArrayList<>();
+        for (ActionEditData a : actionList) {
+            AbstractGuiAction action = switch (a.type) {
+                case "PULSE" -> new GuiPulseAction(a.label, a.channel, List.copyOf(a.targets));
+                case "TOGGLE" -> {
+                    GuiToggleAction ta = new GuiToggleAction(a.label, a.channel, List.copyOf(a.targets));
+                    ta.setActive(a.active);
+                    yield ta;
+                }
+                case "SLIDER" -> new GuiSliderAction(a.label, a.channel, List.copyOf(a.targets),
+                        a.min, a.max, a.step, a.value);
+                default -> throw new IllegalArgumentException("Unknown action type: " + a.type);
+            };
+            guiActions.add(action);
+        }
+
+        return new ControlGroupSet(baseGroup, subGroups, guiActions, editActiveIndex);
+    }
+
+    /**
+     * 从 BindingEditData 列表构建 ControlBinding 列表。
+     */
+    private static List<ControlBinding> buildBindings(List<BindingEditData> bindings) {
+        List<ControlBinding> result = new ArrayList<>();
+        for (BindingEditData b : bindings) {
+            ControlBinding cb = new ControlBinding(
+                    b.trigger, BindingAction.valueOf(b.action), b.channel, List.copyOf(b.targets)
+            );
+            cb.setToggleState(b.toggleState);
+            result.add(cb);
+        }
+        return result;
+    }
+
+    /**
+     * 显示 Toast 提示消息。<br>
+     * 查找文档中的 #toast 元素，若不存在则创建一个。3 秒后自动隐藏。
+     */
+    private static void showToast(Document doc, String message) {
+        Element toast = doc.getElementById("toast");
+        if (toast == null) {
+            // 文档中无 toast 元素时动态创建并追加到 body
+            Element newToast = doc.createElement("div");
+            newToast.setAttribute("id", "toast");
+            newToast.setAttribute("class", "toast");
+            if (doc.body != null) doc.body.append(newToast);
+            toast = newToast;
+        }
+        final Element finalToast = toast; // lambda 需要 effectively final
+        finalToast.innerText = message;
+        finalToast.setAttribute("class", "toast show");
+        // 3 秒后自动隐藏
+        new Thread(() -> {
+            try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+            finalToast.setAttribute("class", "toast");
+        }).start();
     }
 
     // ============================================================

@@ -40,11 +40,18 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
     /** 生成的投射物类型 ID */
     private final ResourceLocation projectileType;
 
-    /** 供给一发弹药的耗时（tick）。再生模式下为弹药诞生到可用的延迟 */
-    private final int reloadTimeTicks;
+    /** 供给一发弹药的耗时（秒）。再生模式下为弹药诞生到可用的延迟 */
+    private final float reloadTime;
 
     /** 是否允许多消费者并行 */
     private final boolean canSupplyMultiple;
+
+    /**
+     * 再生启动延迟（秒）。<br>
+     * 上次输送弹药给消费者后，经过此延迟才开始下一发弹药再生。<br>
+     * 0 = 边产边供，无延迟。
+     */
+    private final float regenDelay;
 
     public static final MapCodec<RegenLoaderSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
@@ -58,10 +65,12 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 .forGetter(RegenLoaderSubsystemStaticAttr::getEnergyCostPerRound),
             ResourceLocation.CODEC.fieldOf("projectile_type")
                 .forGetter(RegenLoaderSubsystemStaticAttr::getProjectileType),
-            Codec.INT.fieldOf("reload_time_ticks")
-                .forGetter(RegenLoaderSubsystemStaticAttr::getReloadTimeTicks),
+            Codec.FLOAT.fieldOf("reload_time")
+                .forGetter(RegenLoaderSubsystemStaticAttr::getReloadTime),
             Codec.BOOL.optionalFieldOf("can_supply_multiple", false)
                 .forGetter(RegenLoaderSubsystemStaticAttr::isCanSupplyMultiple),
+            Codec.FLOAT.optionalFieldOf("regen_delay", 0f)
+                .forGetter(RegenLoaderSubsystemStaticAttr::getRegenDelay),
             BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT)
                 .forGetter(BasicSubsystemStaticAttr::getSoundAttr)
     ).apply(instance, RegenLoaderSubsystemStaticAttr::new));
@@ -73,8 +82,9 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             boolean regenRoundByRound,
             float energyCostPerRound,
             ResourceLocation projectileType,
-            int reloadTimeTicks,
+            float reloadTime,
             boolean canSupplyMultiple,
+            float regenDelay,
             BasicSoundAttr sounds) {
         super(basicAttr, sounds);
         this.magazineCapacity = magazineCapacity;
@@ -82,8 +92,9 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.regenRoundByRound = regenRoundByRound;
         this.energyCostPerRound = energyCostPerRound;
         this.projectileType = projectileType;
-        this.reloadTimeTicks = reloadTimeTicks;
+        this.reloadTime = reloadTime;
         this.canSupplyMultiple = canSupplyMultiple;
+        this.regenDelay = regenDelay;
     }
 
     @Override

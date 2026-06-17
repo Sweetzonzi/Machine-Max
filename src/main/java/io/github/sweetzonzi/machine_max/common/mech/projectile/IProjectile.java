@@ -69,6 +69,33 @@ public interface IProjectile extends BFDamageHandler {
         }
     }
 
+    // ==================== 穿透速度工具 ====================
+
+    /**
+     * 计算穿透目标后的速度衰减（基于穿深残量反算新速率）。
+     * <pre>
+     * residualRatio = max(0, (pen - targetArmor) / pen)
+     * coeff ≠ 0 → newSpeed = speed × residualRatio^(1/coeff)
+     * coeff = 0 → newSpeed = speed × √residualRatio
+     * </pre>
+     *
+     * @param currentSpeed  当前速率（m/s）
+     * @param currentPen    当前穿深（mm RHA）
+     * @param targetArmor   目标等效护甲（mm RHA）
+     * @param penCoeff      穿深速度系数
+     * @return 穿透后的新速率 ≥ 0
+     */
+    static float speedAfterPenetration(float currentSpeed, float currentPen, float targetArmor, float penCoeff) {
+        float residualPen = Math.max(0, currentPen - targetArmor);
+        float residualRatio = residualPen / Math.max(currentPen, 0.001f);
+        if (Math.abs(penCoeff) > 1e-6f) {
+            return currentSpeed * (float) Math.pow(residualRatio, 1.0f / penCoeff);
+        } else {
+            // 系数为 0 时退化为平方根衰减
+            return currentSpeed * (float) Math.sqrt(residualRatio);
+        }
+    }
+
     // ==================== 命中结果桥接（回调 ↔ Manager） ====================
 
     /** 是否正等待主线程返回命中结果（物理线程暂停其积分） */

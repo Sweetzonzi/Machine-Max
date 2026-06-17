@@ -16,8 +16,8 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
 
     /**
      * 装填是否为逐发模式。<br>
-     * {@code true}=逐发压入（火炮、霰弹枪），此时 {@link #reloadTimeTicks} 表示装填一发耗时；<br>
-     * {@code false}=整体换弹匣（机炮），此时 {@link #reloadTimeTicks} 表示换弹匣总耗时。
+     * {@code true}=逐发压入（火炮、霰弹枪），此时 {@link #reloadTime} 表示装填一发耗时；<br>
+     * {@code false}=整体换弹匣（机炮），此时 {@link #reloadTime} 表示换弹匣总耗时。
      */
     private final boolean roundByRound;
 
@@ -29,7 +29,7 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      * {@code roundByRound=false} 时表示整体换弹匣耗时；<br>
      * {@code roundByRound=true} 时表示装填一发耗时。
      */
-    private final int reloadTimeTicks;
+    private final float reloadTime;
 
     /** 是否允许多个消费者同时等待装填 */
     private final boolean canSupplyMultiple;
@@ -43,8 +43,8 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 .forGetter(AmmoLoaderSubsystemStaticAttr::isRoundByRound),
             Codec.INT.optionalFieldOf("magazine_capacity", 30)
                 .forGetter(AmmoLoaderSubsystemStaticAttr::getMagazineCapacity),
-            Codec.INT.optionalFieldOf("reload_time_ticks", 200)
-                .forGetter(AmmoLoaderSubsystemStaticAttr::getReloadTimeTicks),
+            Codec.FLOAT.optionalFieldOf("reload_time", 10.0f)
+                .forGetter(AmmoLoaderSubsystemStaticAttr::getReloadTime),
             Codec.BOOL.optionalFieldOf("can_supply_multiple", false)
                 .forGetter(AmmoLoaderSubsystemStaticAttr::isCanSupplyMultiple),
             Codec.BOOL.optionalFieldOf("auto_request_upstream", true)
@@ -57,14 +57,14 @@ public class AmmoLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             BasicAttr basicAttr,
             boolean roundByRound,
             int magazineCapacity,
-            int reloadTimeTicks,
+            float reloadTime,
             boolean canSupplyMultiple,
             boolean autoRequestUpstream,
             BasicSoundAttr sounds) {
         super(basicAttr, sounds);
         this.roundByRound = roundByRound;
         this.magazineCapacity = magazineCapacity;
-        this.reloadTimeTicks = reloadTimeTicks;
+        this.reloadTime = reloadTime;
         this.canSupplyMultiple = canSupplyMultiple;
         this.autoRequestUpstream = autoRequestUpstream;
     }

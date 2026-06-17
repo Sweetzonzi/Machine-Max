@@ -6,6 +6,7 @@ import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.PenetrationKey;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
+import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -23,9 +24,12 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.ballistics_framework.api.BFHitResolveResult;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
+import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
+import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
+import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileBatchSpawnPayload;
@@ -34,7 +38,9 @@ import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -785,8 +791,59 @@ public class ProjectileManager {
                 result.getHitNormalLocal(hitNormalJme);
                 Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
 
-                // 地形碰撞：永远停止
-                if (owner instanceof PhysicsChunkSection || owner == null) {
+                // 地形碰撞：尝试穿透或停止
+                if (owner instanceof PhysicsChunkSection terrain) {
+                    BlockPos blockPos = terrain.getBlockPosFromContactPoint(hitPointJme, hitNormalJme, 0);
+                    SectionSnapshot.BlockSnapshot blockSnap = terrain.getBlockSnapshot(blockPos);
+                    if (blockSnap == null || terrain.isRemoved(blockPos)) continue;
+
+                    BlockState blockState = blockSnap.getState();
+                    float blockArmor = ArmorUtil.getBlockArmor(level, blockState, BlockPos.ZERO);
+                    float pen = destroyable instanceof IProjectile proj ? proj.calculateCurrentPenetration() : 0;
+
+                    if (pen > blockArmor && destroyable instanceof IProjectile) {
+                        // 击穿方块，继续飞行
+                        ProjectileType pType = types[typeIndex[i]];
+                        float impactSpeed = (float) Math.sqrt(velX[i]*velX[i] + velY[i]*velY[i] + velZ[i]*velZ[i]);
+                        float newSpeed = IProjectile.speedAfterPenetration(
+                                impactSpeed, pen, blockArmor, pType.getPenetrationVelocityCoefficient());
+                        float scale = newSpeed / Math.max(impactSpeed, 0.001f);
+                        velX[i] *= scale;
+                        velY[i] *= scale;
+                        velZ[i] *= scale;
+
+                        // 记录穿透密钥，防同帧重复判定
+                        if (penKey != null) {
+                            penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
+                        }
+
+                        // 是否实际破坏方块（受 ServerConfig + blockDamageFactor 双重控制）
+                        if (MMServerConfig.projectileDestroyBlocks()
+                                && pType.getBlockDamageFactor() > 0
+                                && !level.isClientSide()) {
+                            float kineticEnergy = 0.5f * pType.getMass() * impactSpeed * impactSpeed;
+                            float blockDurability = DamageUtil.getMaxBlockDurability(
+                                    EmptyBlockGetter.INSTANCE, blockState, BlockPos.ZERO);
+                            if (pType.getBlockDamageFactor() * kineticEnergy > 250f * blockDurability) {
+                                terrain.markRemoved(blockPos);
+                                SparkLevel.submitDeduplicatedTask(level, blockPos.toShortString(), PPhase.PRE,
+                                        () -> level.destroyBlock(blockPos, false));
+                            }
+                        }
+
+                        // 广播命中同步（携带新速度，非销毁）
+                        broadcastHitSync(i, hitPointMc, hitNormalMc, false,
+                                new Vector3f(velX[i], velY[i], velZ[i]), false);
+                    } else {
+                        // 无法击穿，停止
+                        broadcastTerrainHit(i, hitPointMc);
+                        alive[i] = false;
+                        projectileObjIds.remove(objId[i]);
+                        stopped = true;
+                        break;
+                    }
+                } else if (owner == null) {
+                    // null owner 直接停止（无地形信息）
                     broadcastTerrainHit(i, hitPointMc);
                     alive[i] = false;
                     projectileObjIds.remove(objId[i]);

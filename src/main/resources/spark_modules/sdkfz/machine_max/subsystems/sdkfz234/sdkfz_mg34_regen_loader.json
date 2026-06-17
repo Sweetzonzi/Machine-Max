@@ -3,9 +3,10 @@
   "basic_durability": 40,
   "magazine_capacity": 150,
   "regen_per_minute": 800,
+  "regen_delay": 1,
   "regen_round_by_round": true,
   "energy_cost_per_round": 0,
   "projectile_type": "machine_max:7_92mm_smk",
-  "reload_time_ticks": 0,
+  "reload_time": 0,
   "can_supply_multiple": false
 }

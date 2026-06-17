@@ -1,6 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
-import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
@@ -91,7 +90,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     @Override
     public int getReloadTimeTicks() {
-        return attr.staticAttribute.getReloadTimeTicks();
+        return (int) (attr.staticAttribute.getReloadTime() * 20f); // 秒 → tick
     }
 
     @Override
@@ -115,9 +114,9 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         if (reloadTimers.containsKey(consumer)) return true;
         if (readyConsumers.contains(consumer)) return true;
 
-        // 有弹药 → 启动装填计时器
+        // 有弹药 → 启动装填计时器（秒 → tick）
         if (hasAmmo()) {
-            reloadTimers.put(consumer, attr.staticAttribute.getReloadTimeTicks());
+            reloadTimers.put(consumer, (int) (attr.staticAttribute.getReloadTime() * 20f));
             return true;
         }
 
@@ -200,7 +199,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     public float getReloadProgress(IAmmoConsumer consumer) {
         Integer remaining = reloadTimers.get(consumer);
         if (remaining == null) return 0f;
-        int total = attr.staticAttribute.getReloadTimeTicks();
+        float total = attr.staticAttribute.getReloadTime() * 20f;
         return total > 0 ? 1f - (float) remaining / total : 1f;
     }
 

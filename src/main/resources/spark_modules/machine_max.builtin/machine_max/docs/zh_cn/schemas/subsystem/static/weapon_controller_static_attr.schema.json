@@ -41,11 +41,11 @@
       "default": "SALVO",
       "description": "射击模式：SALVO(齐射) — 所有已瞄准的发射器同时开火；RIPPLE(轮射) — 发射器按顺序依次开火。"
     },
-    "ripple_interval_tick": {
-      "type": "integer",
+    "ripple_interval": {
+      "type": "number",
       "minimum": 1,
-      "default": 2,
-      "description": "轮射模式下每两次发射之间的间隔（tick数）。仅在fire_mode为RIPPLE时生效。"
+      "default": 0.1,
+      "description": "轮射模式下每两次发射之间的间隔（秒）。仅在fire_mode为RIPPLE时生效。"
     },
     "aim_tolerance_deg": {
       "type": "number",
@@ -109,7 +109,7 @@
       "type": "machine_max:weapon_controller",
       "basic_durability": 80,
       "fire_mode": "RIPPLE",
-      "ripple_interval_tick": 5,
+      "ripple_interval": 0.25,
       "aim_tolerance_deg": 2.0,
       "aim_inputs": ["view_target", "radar_target"],
       "fire_inputs": ["fire_command", "auto_fire"],

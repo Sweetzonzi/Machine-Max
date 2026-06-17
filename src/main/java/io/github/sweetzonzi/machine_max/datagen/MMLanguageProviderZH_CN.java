@@ -276,6 +276,8 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         // 服务器配置
         this.add("machine_max.configuration.should_destroy_blocks", "允许碰撞破坏方块");
         this.add("machine_max.configuration.should_destroy_blocks.tooltip", "是否允许部件在冲击力足够大时破坏方块。默认值：true");
+        this.add("machine_max.configuration.projectile_destroy_blocks", "允许投射物破坏方块");
+        this.add("machine_max.configuration.projectile_destroy_blocks.tooltip", "是否允许投射物在击穿方块时破坏方块。默认值：true");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements", "忽略组装Tag要求");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "使用零件组装载具时是否忽视连接点的Tag要求。默认值：false");
         this.add("machine_max.configuration.auto_override_official_pack", "自动覆盖官方内容包");

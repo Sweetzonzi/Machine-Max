@@ -40,11 +40,9 @@ public class BlueprintResearchRecipeCategory implements IRecipeCategory<RecipeHo
     private static final int RP_TEXT_X = 6;
     private static final int RP_TEXT_Y = 58;
 
-    private final IDrawable background;
     private final IDrawable icon;
 
     public BlueprintResearchRecipeCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createBlankDrawable(WIDTH, HEIGHT);
         this.icon = guiHelper.createDrawableItemStack(new ItemStack(MMItems.getRESEARCH_TABLE_BLOCK_ITEM().get()));
     }
 
@@ -59,8 +57,13 @@ public class BlueprintResearchRecipeCategory implements IRecipeCategory<RecipeHo
     }
 
     @Override
-    public @NotNull IDrawable getBackground() {
-        return background;
+    public int getWidth() {
+        return WIDTH;
+    }
+
+    @Override
+    public int getHeight() {
+        return HEIGHT;
     }
 
     @Override

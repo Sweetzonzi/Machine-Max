@@ -252,6 +252,8 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         // Server Configuration
         this.add("machine_max.configuration.should_destroy_blocks", "Allow Collision Destroy Blocks");
         this.add("machine_max.configuration.should_destroy_blocks.tooltip", "Whether or not the parts should destroy blocks when the impact is big enough. Default: true");
+        this.add("machine_max.configuration.projectile_destroy_blocks", "Allow Projectile Destroy Blocks");
+        this.add("machine_max.configuration.projectile_destroy_blocks.tooltip", "Whether or not projectiles should destroy blocks when penetrating them. Default: true");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements", "Ignore Assembly Tag Requirements");
         this.add("machine_max.configuration.ignore_assembly_tag_requirements.tooltip", "Whether to ignore connector tag requirements when assembling vehicles. Default: false");
         this.add("machine_max.configuration.auto_override_official_pack", "Auto Override Official Pack");

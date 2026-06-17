@@ -34,11 +34,9 @@ public class FabricatingRecipeCategory implements IRecipeCategory<RecipeHolder<F
     private static final int TIME_X = 80;
     private static final int TIME_Y = 58;
 
-    private final IDrawable background;
     private final IDrawable icon;
 
     public FabricatingRecipeCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createBlankDrawable(WIDTH, HEIGHT);
         // Fabricator block currently has no guaranteed BlockItem, use a stable item icon.
         this.icon = guiHelper.createDrawableItemStack(new ItemStack(MMItems.getFABRICATING_BLUEPRINT().get()));
     }
@@ -54,8 +52,13 @@ public class FabricatingRecipeCategory implements IRecipeCategory<RecipeHolder<F
     }
 
     @Override
-    public @NotNull IDrawable getBackground() {
-        return background;
+    public int getWidth() {
+        return WIDTH;
+    }
+
+    @Override
+    public int getHeight() {
+        return HEIGHT;
     }
 
     @Override

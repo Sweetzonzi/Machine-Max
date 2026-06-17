@@ -8,6 +8,7 @@ import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
 import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -79,6 +80,16 @@ public class ProjectileType {
     /** 曳光透明度，0=完全透明，255=完全不透明 */
     private final int tracerAlpha;
 
+    /**
+     * 方块破坏因子（0~1）。
+     * <p>穿透方块时，动能×此因子与方块耐久对比，决定是否实际破坏方块。
+     * 0 = 永远不破坏方块（仅穿透）。默认值 1。</p>
+     * <p>此字段由 {@link io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule}
+     * 在 JSON 加载时额外写入，CODEC 仅包含 16 个基础字段。</p>
+     */
+    @Setter
+    public float blockDamageFactor;
+
     /** 开火音效 */
     private final SoundEvent fireSound;
 
@@ -141,11 +152,12 @@ public class ProjectileType {
         this.tags = tags;
         this.tracerColor = tracerColor;
         this.tracerAlpha = tracerAlpha;
+        this.blockDamageFactor = 1f; // 默认值 1，由 ProjectileModule 在加载时从 JSON 额外读取
         this.fireSound = fireSound;
     }
 
     /**
-     * 设置注册键，由 {@link ProjectileModule} 在加载时调用。
+     * 设置注册键，由 {@link io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule} 在加载时调用。
      * 每个 ProjectileType 仅可被注册一次。
      *
      * @param registryKey 资源键（如 {@code machine_max:20mm_ap}）

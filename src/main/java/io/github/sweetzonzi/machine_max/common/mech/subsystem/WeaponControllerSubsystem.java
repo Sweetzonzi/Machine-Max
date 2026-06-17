@@ -165,7 +165,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     private void fireRipple(List<LauncherSubsystem> aimedLaunchers) {
         if (aimedLaunchers.isEmpty()) return;
 
-        int interval = attr.staticAttribute.getRippleIntervalTick();
+        int interval = (int) (attr.staticAttribute.getRippleInterval() * 20f); // 秒 → tick
 
         if (rippleTickCounter <= 0) {
             // 发送空信号给所有发射器，先停止上轮射击

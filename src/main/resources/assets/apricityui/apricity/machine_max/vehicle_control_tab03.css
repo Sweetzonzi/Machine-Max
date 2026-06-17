@@ -693,3 +693,62 @@
     color: rgba(255,255,255,0.30);
     letter-spacing: 0.3px;
 }
+
+/* ---------- 保存工具栏 ---------- */
+
+/* 中栏顶部保存工具栏 */
+.config-middle-savebar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 8px;
+    border-bottom: 1px solid #333333;
+    flex-shrink: 0;
+}
+
+/* 保存按钮 */
+.config-save-btn {
+    padding: 4px 12px;
+    background: #8A2A2A;
+    border: 1px solid #8A2A2A;
+    color: #FFFFFF;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-align: center;
+    text-transform: uppercase;
+}
+.config-save-btn:hover {
+    background: #A03434;
+    border-color: #A03434;
+}
+.config-save-btn:active {
+    background: #6E1E1E;
+    border-color: #6E1E1E;
+}
+
+/* ---------- Toast 提示 ---------- */
+
+/* Toast 容器：固定在 body 底部居中 */
+.toast {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 12px;
+    background: rgba(8,8,8,0.85);
+    border: 1px solid rgba(138,42,42,0.50);
+    color: #c8c8d0;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 100;
+    white-space: nowrap;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
+}

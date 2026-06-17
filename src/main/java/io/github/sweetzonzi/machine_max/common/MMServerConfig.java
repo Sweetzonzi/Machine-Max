@@ -6,6 +6,7 @@ public class MMServerConfig {
     public static final ModConfigSpec SERVER_SPEC;
 
     private static final ModConfigSpec.BooleanValue SHOULD_DESTROY_BLOCKS;
+    private static final ModConfigSpec.BooleanValue PROJECTILE_DESTROY_BLOCKS;
     private static final ModConfigSpec.BooleanValue IGNORE_ASSEMBLY_TAG_REQUIREMENTS;
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_TICKS_PER_DURABILITY;
     private static final ModConfigSpec.IntValue SUBPART_DESTROY_MIN_TICKS;
@@ -17,6 +18,10 @@ public class MMServerConfig {
         SHOULD_DESTROY_BLOCKS = builder
                 .comment("Whether or not the parts should destroy blocks when the impact is big enough.")
                 .define("should_destroy_blocks", true);
+
+        PROJECTILE_DESTROY_BLOCKS = builder
+                .comment("Whether or not projectiles should destroy blocks when penetrating them.")
+                .define("projectile_destroy_blocks", true);
 
         IGNORE_ASSEMBLY_TAG_REQUIREMENTS = builder
                 .comment("Whether to ignore connector and part tag requirements when assembling vehicles.")
@@ -39,6 +44,10 @@ public class MMServerConfig {
 
     public static boolean shouldDestroyBlocks() {
         return SHOULD_DESTROY_BLOCKS.get();
+    }
+
+    public static boolean projectileDestroyBlocks() {
+        return PROJECTILE_DESTROY_BLOCKS.get();
     }
 
     public static boolean ignoreAssemblyTagRequirements() {

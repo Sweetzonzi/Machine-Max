@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://machine_max.io/schemas/subsystem/static/regen_loader_static_attr.json",
+  "title": "Regen Loader Subsystem Static Attributes",
+  "description": "Static attributes of the regen loader subsystem, defining magazine capacity, regen rate, energy cost per round, and ammo supply behavior.",
+  "properties": {
+    "$schema": { "type": "string", "description": "JSON Schema reference path", "default": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json" },
+    "type": { "type": "string", "const": "machine_max:regen_loader", "description": "Subsystem type, must be 'machine_max:regen_loader'." },
+    "basic_durability": { "type": "number", "minimum": 0, "default": 20.0, "description": "Subsystem basic durability." },
+    "pass_damage": { "type": "boolean", "default": true, "description": "Whether to pass damage to the subsystem holder." },
+    "limit_damage": { "type": "boolean", "default": false, "description": "Whether to limit damage transfer to remaining durability." },
+    "hidden": { "type": "boolean", "default": false, "description": "Whether to hide the subsystem in HUD." },
+    "magazine_capacity": { "type": "integer", "minimum": 1, "description": "Magazine capacity." },
+    "regen_per_minute": { "type": "number", "minimum": 0, "default": 0, "description": "Regeneration rate (rounds/min). 0 = no auto-regeneration." },
+    "regen_round_by_round": { "type": "boolean", "default": true, "description": "true = round-by-round, false = batch reload." },
+    "energy_cost_per_round": { "type": "number", "minimum": 0, "default": 0, "description": "Energy per round (Joules). 0 = free." },
+    "projectile_type": { "$ref": "../../base/resource_location.schema.json", "description": "Projectile type resource location." },
+    "reload_time": { "type": "number", "minimum": 0, "description": "Delivery time per round (seconds)." },
+    "can_supply_multiple": { "type": "boolean", "default": false, "description": "Allow multiple consumers." },
+    "regen_delay": { "type": "number", "minimum": 0, "default": 0, "description": "Delay (seconds) after delivering a round before regen starts. 0 = immediate." },
+    "sounds": {
+      "type": "object",
+      "properties": {
+        "on_destroyed": { "$ref": "../../base/sound_event.schema.json", "description": "Sound on destroyed.", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } },
+        "on_activate": { "$ref": "../../base/sound_event.schema.json", "description": "Sound on activate.", "default": { "sound_id": "machine_max:empty_sound", "range": 16 } }
+      },
+      "additionalProperties": false,
+      "description": "Sound configuration."
+    }
+  },
+  "required": ["type", "magazine_capacity", "projectile_type", "reload_time"],
+  "additionalProperties": false,
+  "examples": [
+    { "type": "machine_max:regen_loader", "magazine_capacity": 100, "projectile_type": "machine_max:some_projectile", "reload_time": 0, "description": "Minimal example" },
+    { "type": "machine_max:regen_loader", "magazine_capacity": 150, "regen_per_minute": 800, "regen_round_by_round": true, "projectile_type": "machine_max:7_92mm_smk", "reload_time": 0, "regen_delay": 0.5, "description": "With regen delay" }
+  ]
+}
