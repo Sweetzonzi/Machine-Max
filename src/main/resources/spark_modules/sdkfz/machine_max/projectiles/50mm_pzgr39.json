@@ -1,21 +1,27 @@
 {
   "type": "point",
-  "mass": 2.06,
-  "gravity_factor": 1.0,
-  "drag_factor": 0.0005,
-  "radius": 0.025,
-  "base_velocity": 835,
-  "base_penetration": 55,
-  "base_damage": 100,
-  "base_accuracy_mil": 1.0,
-  "penetration_velocity_coefficient": 1.2,
-  "damage_velocity_coefficient": 0.6,
-  "max_lifetime_ticks": 100,
   "tags": ["machine_max:caliber/50mm", "machine_max:ammo/ap", "machine_max:ammo/apcbc"],
-  "tracer_color": [200, 220, 100],
-  "tracer_alpha": 200,
-  "fire_sound": {
-    "sound_id": "machine_max:projectile.fire.middle",
-    "range": 128.0
+  "max_lifetime": 5.0,
+  "external": {
+    "mass": 2.06,
+    "gravity_factor": 1.0,
+    "drag_factor": 0.0005,
+    "radius": 0.025,
+    "base_velocity": 835,
+    "base_accuracy_mil": 1.0
+  },
+  "terminal": {
+    "base_penetration": 55,
+    "base_damage": 100,
+    "penetration_velocity_coefficient": 1.2,
+    "damage_velocity_coefficient": 0.6
+  },
+  "visual": {
+    "tracer_color": [200, 220, 100],
+    "tracer_alpha": 200,
+    "fire_sound": {
+      "sound_id": "machine_max:projectile.fire.middle",
+      "range": 128.0
+    }
   }
 }

@@ -1,17 +1,23 @@
 {
   "type": "point",
-  "mass": 4.5,
-  "gravity_factor": 1.0,
-  "drag_factor": 0.00008,
-  "radius": 0.013,
-  "base_velocity": 1650,
-  "base_penetration": 550,
-  "base_damage": 200,
-  "base_accuracy_mil": 0.8,
-  "penetration_velocity_coefficient": 1.2,
-  "damage_velocity_coefficient": 0.5,
-  "max_lifetime_ticks": 200,
-  "tags": ["caliber:120mm", "ammo:apfsds"],
-  "tracer_color": [200, 220, 255],
-  "tracer_alpha": 230
+  "tags": ["machine_max:caliber/120mm", "machine_max:ammo/apfsds"],
+  "max_lifetime": 10.0,
+  "external": {
+    "mass": 4.5,
+    "gravity_factor": 1.0,
+    "drag_factor": 0.00008,
+    "radius": 0.013,
+    "base_velocity": 1650,
+    "base_accuracy_mil": 0.8
+  },
+  "terminal": {
+    "base_penetration": 550,
+    "base_damage": 200,
+    "penetration_velocity_coefficient": 1.2,
+    "damage_velocity_coefficient": 0.5
+  },
+  "visual": {
+    "tracer_color": [200, 220, 255],
+    "tracer_alpha": 230
+  }
 }

@@ -1,13 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
 import cn.solarmoon.spark_core.animation.model.ModelController;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageHandler;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -338,24 +335,5 @@ public interface IProjectile extends BFDamageHandler {
             .hitNormal(hitNormal)
             .build();
         return BFDamageHandler.super.dealDamage(target, ctx);
-    }
-
-    /**
-     * 播放此投射物类型对应的开火音效。
-     * 由发射调用方（如 {@link io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem}、
-     * {@link io.github.sweetzonzi.machine_max.common.item.prop.ProjectileTestItem}）在发射投射物后调用。
-     */
-    default void playFireSound() {
-        SoundEvent sound = getProjectileType().getFireSound();
-        if (sound == null) return;
-        var random = getLevel().random;
-        float pitch = 1.0f + 0.2f * (random.nextFloat() - 0.5f);
-        float volume = 1.0f + 0.1f * (random.nextFloat() - 0.5f);
-        Vector3f jmePos = getPosition();
-        SpreadingSoundHelper.playSpreadingSound(
-                getLevel(), sound, SoundSource.NEUTRAL,
-                new Vec3(jmePos.x, jmePos.y, jmePos.z),
-                Vec3.ZERO, pitch, volume
-        );
     }
 }

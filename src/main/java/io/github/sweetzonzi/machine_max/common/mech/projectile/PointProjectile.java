@@ -4,9 +4,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
-import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
-import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
@@ -105,9 +103,6 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
         super.addToLevel();
         ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
         pm.addPointProjectile(this);
-        if (level.isClientSide()) {
-            SparkLevel.submitImmediateTask(getLevel(), PPhase.PRE, this::playFireSound);
-        }
     }
 
     @Override

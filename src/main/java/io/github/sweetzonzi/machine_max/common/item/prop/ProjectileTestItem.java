@@ -48,6 +48,7 @@ public class ProjectileTestItem extends Item {
 
         // 由 ProjectileType 自动分派创建质点或刚体投射物
         type.create(level, jmePos, jmeVel);
+        type.playFireSound(level, jmePos);
 
         player.getCooldowns().addCooldown(this, 10);
         return InteractionResultHolder.success(stack);

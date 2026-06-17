@@ -61,13 +61,6 @@ class ProjectileModule : SparkPackModule {
             try {
                 val json = JsonParser.parseString(String(content, StandardCharsets.UTF_8))
                 val projectileType = ProjectileType.CODEC.decode(JsonOps.INSTANCE, json).orThrow.first
-                // 额外读取 block_damage_factor（不在 CODEC 中以避免 group 参数超限）
-                if (json.isJsonObject) {
-                    val obj = json.asJsonObject
-                    if (obj.has("block_damage_factor")) {
-                        projectileType.blockDamageFactor = obj.get("block_damage_factor").asFloat
-                    }
-                }
                 projectileType.setRegistryKey(id)
                 if (isClientSide)
                     MMDynamicRes.PROJECTILE_TYPES[id] = projectileType

@@ -4,6 +4,7 @@ import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import lombok.Getter;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
@@ -360,7 +361,7 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
-        if (getLevel().isClientSide() || getOwner() == null) return;
+        if (getOwner() == null) return;
 
         ProjectileType type;
         while ((type = pendingFires.poll()) != null) {
@@ -383,51 +384,39 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
      * </ol>
      */
     private void fireSingle(ProjectileType type) {
-        // ① 读取实时枪口位姿（物理线程，刚体位姿已最新，无 1 tick 延迟）
+        // ① 枪口位姿
         Transform muzzleTransform = getMuzzleWorldTransform();
         Vector3f jmePos = muzzleTransform.getTranslation();
-
-        // 从 locator 旋转获取发射方向（JME 默认前方为 -Z）
         Quaternion jmeRot = muzzleTransform.getRotation();
-        Vector3f jmeForward = MyQuaternion.rotate(jmeRot, new Vector3f(0, 0, -1), null);
-        Vec3 direction = new Vec3(jmeForward.x, jmeForward.y, jmeForward.z).normalize();
+        Vector3f direction = MyQuaternion.rotate(jmeRot, new Vector3f(0, 0, -1), null).normalize();
 
-        // ② 计算最终初速
-        float baseVel = type.getBaseVelocity();
-        float finalSpeedMps = baseVel * attr.staticAttribute.getVelocityMultiplier()
-                + attr.staticAttribute.getVelocityBonus();
+        // ② 客户端：仅播放音效（不创建投射物，不应用后坐力）
+        if (getLevel().isClientSide()) {
+            type.playFireSound(getLevel(), jmePos);
+            return;
+        }
 
-        // ③ 计算散布（MIL → 弧度）
-        float baseMil = type.getBaseAccuracyMil();
-        float hRad = baseMil * attr.staticAttribute.getHorizontalAccuracyMultiplier() / 1000f;
-        float vRad = baseMil * attr.staticAttribute.getVerticalAccuracyMultiplier() / 1000f;
-        Vec3 spreadDir = applyEllipticSpread(direction, hRad, vRad);
+        // ③ 服务端：开火——ProjectileType 内部处理 bullet_num、散布、速度
+        List<IProjectile> projectiles = type.fire(
+            getLevel(), jmePos, direction,
+            attr.staticAttribute.getVelocityMultiplier(),
+            attr.staticAttribute.getVelocityBonus(),
+            attr.staticAttribute.getHorizontalAccuracyMultiplier(),
+            attr.staticAttribute.getVerticalAccuracyMultiplier(),
+            getSubPart().getLinearVelocity()
+        );
 
-        // ④ 创建投射物（物理线程：SoA 写入 + 刚体注册）
-        Vector3f jmeVel = new Vector3f(
-                (float) spreadDir.x, (float) spreadDir.y, (float) spreadDir.z
-        ).multLocal(finalSpeedMps);
-
-        // 继承发射平台速度 (m/s)
-        Vector3f platformVel = getSubPart().getLinearVelocity();
-        jmeVel.addLocal(platformVel);
-
-        type.create(getLevel(), jmePos, jmeVel);
-
-        // ⑤ 后坐力（直接操作物理体，无需 submitImmediateTask）
-        float projectileMass = type.getMass();
+        // ④ 后坐力——总弹丸质量 × 速度
+        float finalSpeed = type.getBaseVelocity() * attr.staticAttribute.getVelocityMultiplier()
+                         + attr.staticAttribute.getVelocityBonus();
+        float totalMass = type.getMass() * projectiles.size();
         float absorption = attr.staticAttribute.getRecoilAbsorption();
-        float recoilImpulse = projectileMass * finalSpeedMps * (1.0f - absorption);
+        float recoilImpulse = totalMass * finalSpeed * (1.0f - absorption);
         if (recoilImpulse > 1e-6f) {
-            Vector3f impulseWorld = new Vector3f(
-                    (float) -direction.x * recoilImpulse,
-                    (float) -direction.y * recoilImpulse,
-                    (float) -direction.z * recoilImpulse
-            );
-            Vector3f muzzleWorldPos = jmePos.clone();
+            Vector3f impulseWorld = direction.mult(-recoilImpulse);
             var body = getSubPart().getBody();
             Vector3f bodyWorldPos = body.getPhysicsLocation(new Vector3f());
-            body.applyImpulse(impulseWorld, muzzleWorldPos.subtract(bodyWorldPos));
+            body.applyImpulse(impulseWorld, jmePos.subtract(bodyWorldPos));
         }
     }
 
@@ -557,36 +546,6 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
      * 使用 {@link java.util.concurrent.ThreadLocalRandom} 避免访问 Minecraft 主线程
      * {@link net.minecraft.world.level.Level#random} 导致的线程检测异常。
      */
-    private Vec3 applyEllipticSpread(Vec3 direction, float hRad, float vRad) {
-        if (hRad <= 0f && vRad <= 0f) return direction;
-
-        var random = java.util.concurrent.ThreadLocalRandom.current();
-
-        Vec3 up;
-        if (Math.abs(direction.y) < 0.99) {
-            up = new Vec3(0, 1, 0);
-        } else {
-            up = new Vec3(1, 0, 0);
-        }
-        Vec3 right = direction.cross(up).normalize();
-        Vec3 localUp = right.cross(direction).normalize();
-
-        double theta = random.nextDouble() * 2 * Math.PI;
-
-        double hOffset = Math.cos(theta) * hRad;
-        double vOffset = Math.sin(theta) * vRad;
-        double radialDist = Math.sqrt(hOffset * hOffset + vOffset * vOffset);
-        double cosRadial = Math.cos(radialDist);
-        double sinRadial = Math.sin(radialDist);
-
-        if (radialDist < 1e-10) return direction;
-
-        return direction.scale(cosRadial)
-                .add(right.scale((float)(sinRadial * hOffset / radialDist)))
-                .add(localUp.scale((float)(sinRadial * vOffset / radialDist)))
-                .normalize();
-    }
-
     @Override
     public List<String> getAcceptedChannels() {
         List<String> channels = new ArrayList<>(attr.staticAttribute.getControlInputs());

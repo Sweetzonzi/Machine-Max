@@ -4,9 +4,7 @@ import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.anim.AnimController;
 import cn.solarmoon.spark_core.animation.model.ModelController;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
-import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
-import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.bullet.collision.shapes.CompoundCollisionShape;
 import com.jme3.bullet.collision.shapes.SphereCollisionShape;
 import com.jme3.math.Quaternion;
@@ -119,9 +117,6 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
         ObjectManager.addDestroyableObject(this);
         ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
         pm.addRigidProjectile(this);
-        if (level.isClientSide()) {
-            SparkLevel.submitImmediateTask(getLevel(), PPhase.PRE, this::playFireSound);
-        }
     }
 
     /** 创建固定半径球体碰撞形状 */

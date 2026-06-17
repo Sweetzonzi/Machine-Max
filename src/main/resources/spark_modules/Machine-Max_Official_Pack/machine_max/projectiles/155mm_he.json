@@ -1,17 +1,23 @@
 {
   "type": "rigid",
-  "mass": 45,
-  "gravity_factor": 1.0,
-  "drag_factor": 0.001,
-  "radius": 0.078,
-  "base_velocity": 600,
-  "base_penetration": 80,
-  "base_damage": 500,
-  "base_accuracy_mil": 12.0,
-  "penetration_velocity_coefficient": 0,
-  "damage_velocity_coefficient": 0.3,
-  "max_lifetime_ticks": 400,
-  "tags": ["caliber:155mm", "ammo:he"],
-  "tracer_color": [255, 200, 50],
-  "tracer_alpha": 160
+  "tags": ["machine_max:caliber/155mm", "machine_max:ammo/he"],
+  "max_lifetime": 20.0,
+  "external": {
+    "mass": 45,
+    "gravity_factor": 1.0,
+    "drag_factor": 0.001,
+    "radius": 0.078,
+    "base_velocity": 600,
+    "base_accuracy_mil": 12.0
+  },
+  "terminal": {
+    "base_penetration": 80,
+    "base_damage": 500,
+    "penetration_velocity_coefficient": 0,
+    "damage_velocity_coefficient": 0.3
+  },
+  "visual": {
+    "tracer_color": [255, 200, 50],
+    "tracer_alpha": 160
+  }
 }
