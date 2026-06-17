@@ -14,10 +14,12 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,7 +88,7 @@ public class AmmoHud implements LayeredDraw.Layer {
         for (WeaponControllerSubsystem wc : wcs) {
             if (wc.isDestroyed() || !wc.isActive()) continue;
 
-            lines.add(new Line(wc.name, true, 0, 0, null, 0f));
+            lines.add(new Line(Component.translatable(wc.name).getString(), true, 0, 0, null, 0f));
 
             for (var entry : wc.getLaunchers().entrySet()) {
                 LauncherSubsystem launcher = entry.getKey();
@@ -129,14 +131,14 @@ public class AmmoHud implements LayeredDraw.Layer {
 
         int line1Width = 0;  // "弹种名  cur/total" 最大宽度
         for (Line line : lines) {
+            int w;
             if (line.header) {
-                int w = font.width(line.text);
-                if (w > line1Width) line1Width = w;
+                w = font.width(line.text);
             } else {
                 // 第一行：弹种名 + 计数
-                int w = font.width(line.text) + LABEL_COUNT_GAP + font.width(line.countText());
-                if (w > line1Width) line1Width = w;
+                w = font.width(line.text) + LABEL_COUNT_GAP + font.width(line.countText());
             }
+            if (w > line1Width) line1Width = w;
         }
 
         // 第二行最大宽度（进度条+百分比 / READY / EMPTY）
@@ -185,8 +187,8 @@ public class AmmoHud implements LayeredDraw.Layer {
 
                 curY += LINE_HEIGHT + INNER_LINE_GAP;
 
-                // ========== 第二行：状态指示（进度条 / READY / EMPTY） ==========
-                int bx = x + font.width(line.text) + LABEL_COUNT_GAP;
+                // ========== 第二行：状态指示（进度条 / READY / EMPTY），左对齐 ==========
+                int bx = x;
                 if (line.status == SupplierStatus.RELOADING) {
                     int by = curY + (LINE_HEIGHT - BAR_HEIGHT) / 2;
                     gui.fill(bx, by, bx + BAR_WIDTH, by + BAR_HEIGHT, COLOR_PROGRESS_BG);

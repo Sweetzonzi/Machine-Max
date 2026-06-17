@@ -13,6 +13,12 @@
                 "action": "hold",
                 "channel": "fire_input_p1",
                 "targets": ["vehicle"]
+            },
+            {
+                "trigger": "key.keyboard.space",
+                "action": "hold",
+                "channel": "secondary_fire_input_p1",
+                "targets": ["vehicle"]
             }
         ]
     }

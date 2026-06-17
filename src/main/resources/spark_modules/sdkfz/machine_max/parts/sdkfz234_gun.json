@@ -47,11 +47,13 @@
               "definition": "machine_max:fixed_back",
               "signal_targets": {
                 "weapon_control": [
-                  "subsystem.machine_max.mg34",
                   "subsystem.machine_max.50mm"
                 ],
                 "gunner_sight": [
                   "subsystem.machine_max.gunner_sight"
+                ],
+                "secondary_weapon_control": [
+                  "subsystem.machine_max.mg34"
                 ]
               },
               "overwrite": {}

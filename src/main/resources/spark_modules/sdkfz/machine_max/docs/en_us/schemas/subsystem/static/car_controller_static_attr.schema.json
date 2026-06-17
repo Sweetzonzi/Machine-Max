@@ -112,20 +112,6 @@
       "default": true,
       "description": "Whether to enable drift assist. Automatically assists in maintaining drift state when the vehicle is turning."
     },
-    "drift_front_outer_brake_gain": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "default": 0.3,
-      "description": "Drift front-outer wheel additional brake gain (0~1). Suppresses spin-out and enhances front axle grip. Higher values provide more controllable drifting but increase understeer risk. Only effective when drift assist is enabled."
-    },
-    "drift_rear_inner_brake_gain": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "default": 0.1,
-      "description": "Drift rear-inner wheel additional brake gain (0~1). Assists rear-end swing into apex. Higher values provide smoother drift entry but increase over-rotation risk. Only effective when drift assist is enabled."
-    },
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
@@ -188,8 +174,6 @@
       "manual_gear_shift": true,
       "auto_hand_brake": true,
       "drift_assist": true,
-      "drift_front_outer_brake_gain": 0.3,
-      "drift_rear_inner_brake_gain": 0.1,
       "control_inputs": ["move_input", "regular_input"],
       "description": "Complete example - includes all optional fields"
     },
@@ -212,8 +196,6 @@
       "manual_gear_shift": false,
       "auto_hand_brake": true,
       "drift_assist": false,
-      "drift_front_outer_brake_gain": 0.0,
-      "drift_rear_inner_brake_gain": 0.0,
       "control_inputs": ["move_input"],
       "description": "Advanced example - using mapping tables, drift assist disabled"
     }

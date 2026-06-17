@@ -10,6 +10,11 @@ import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
+import io.github.sweetzonzi.ballistics_framework.api.trajectory.BallisticConfig;
+import io.github.sweetzonzi.ballistics_framework.api.trajectory.DensityFunction;
+import io.github.sweetzonzi.ballistics_framework.api.trajectory.RealisticTrajectory;
+import io.github.sweetzonzi.ballistics_framework.api.trajectory.TrajectoryResult;
+import io.github.sweetzonzi.ballistics_framework.api.trajectory.TrajectorySample;
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer;
 import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import net.minecraft.core.BlockPos;
@@ -38,6 +43,7 @@ import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -47,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,9 +86,20 @@ import javax.annotation.Nullable;
  */
 public class ProjectileManager {
 
-    /** 所属维度 */
+    /**
+     * 所属维度
+     */
     @Getter
     private final Level level;
+
+    /**
+     * 空气密度函数，用于阻力计算和弹道预测。
+     * <p>
+     * 使用归一化指数衰减模型：ρ(y) = exp(-(y - 62) / 8500)。
+     * 海平面(Y=62)密度 = 1.0，与现有 dragFactor 配平值兼容。
+     * 与 {@link RealisticTrajectory#forwardSolve} 共享同一函数，确保预测与模拟一致。
+     */
+    private final DensityFunction densityFunction;
 
     // ========== SoA 数组：统一存放质点 & 刚体投射物数据 ==========
     public float[] posX, posY, posZ;    // 世界坐标 (JME)
@@ -107,10 +125,14 @@ public class ProjectileManager {
      */
     public MMProjectileEntity[] entities;
 
-    /** Entity 重建检查间隔（tick）。每 N tick 遍历一次 needsEntityRecreate。 */
+    /**
+     * Entity 重建检查间隔（tick）。每 N tick 遍历一次 needsEntityRecreate。
+     */
     private static final int RECREATE_CHECK_INTERVAL = 10;
 
-    /** 重建检查计数器 */
+    /**
+     * 重建检查计数器
+     */
     private int recreateCheckCounter = 0;
 
     /**
@@ -133,7 +155,9 @@ public class ProjectileManager {
      */
     private final Map<Integer, PenetrationKey> pendingPenKeys = new HashMap<>();
 
-    /** 该维度所有已加载的投射物类型，typeIndex 映射到此数组 */
+    /**
+     * 该维度所有已加载的投射物类型，typeIndex 映射到此数组
+     */
     private volatile ProjectileType[] typeCache;
 
     /**
@@ -149,7 +173,9 @@ public class ProjectileManager {
      */
     private final ConcurrentLinkedQueue<IProjectile> pendingProjectiles = new ConcurrentLinkedQueue<>();
 
-    /** 复用 Vector3f 避免热路径中重复分配 */
+    /**
+     * 复用 Vector3f 避免热路径中重复分配
+     */
     private final Vector3f rayFrom = new Vector3f();
     private final Vector3f rayTo = new Vector3f();
     private final Vector3f hitPointJme = new Vector3f();
@@ -157,6 +183,7 @@ public class ProjectileManager {
 
     public ProjectileManager(Level level) {
         this.level = level;
+        this.densityFunction = createDensityFunction();
         posX = new float[capacity];
         posY = new float[capacity];
         posZ = new float[capacity];
@@ -170,6 +197,20 @@ public class ProjectileManager {
         needsEntityRecreate = new boolean[capacity];
         entities = new MMProjectileEntity[capacity];
         typeCache = new ProjectileType[0];
+    }
+
+    /**
+     * 创建归一化空气密度函数，用于阻力计算和弹道预测。
+     * <p>
+     * 使用指数衰减模型：ρ(y) = exp(-(y - 62) / 8500)。
+     * 海平面(Y=62)密度归一化为 1.0，高空逐渐衰减。
+     * 与 {@link RealisticTrajectory#forwardSolve} 共享同一函数，确保预测与模拟一致。
+     * <p>
+     * 选用归一化模型而非 {@link DensityFunction#MC_OVERWORLD}（ρ₀=1.225），
+     * 是为了保持现有投射物的 dragFactor 配平值不变（dragFactor 在 ρ≈1 的环境下调试）。
+     */
+    private static DensityFunction createDensityFunction() {
+        return pos -> (float) Math.exp(-(pos.y - 62.0) / 8500.0);
     }
 
     /**
@@ -222,10 +263,14 @@ public class ProjectileManager {
         // 服务端：入队 pendingProjectiles，由主线程 flushProjectileEntities 统一处理
         if (!level.isClientSide()) {
             pendingProjectiles.add(proj);
+            // 预测弹道路径上的区块，预约地形刚体加载，确保投射物能检测到地形碰撞
+            preloadTrajectoryTerrain(pos, vel, proj.getProjectileType());
         }
     }
 
-    /** 检查世界坐标位置的区块是否已加载（仅服务端） */
+    /**
+     * 检查世界坐标位置的区块是否已加载（仅服务端）
+     */
     private boolean isChunkLoadedAt(Vector3f pos) {
         if (!(level instanceof ServerLevel serverLevel)) return false;
         return serverLevel.isPositionEntityTicking(BlockPos.containing(pos.x, pos.y, pos.z));
@@ -327,8 +372,8 @@ public class ProjectileManager {
      * 仅更新位置和速度字段；寿命由 {@link #tickAndPreTick()} 统一管理。
      *
      * @param targetObjId 刚体投射物的 DestroyableObject ID
-     * @param pos   刚体当前世界坐标（JME）
-     * @param vel   刚体当前速度（JME）
+     * @param pos         刚体当前世界坐标（JME）
+     * @param vel         刚体当前速度（JME）
      */
     public void writebackRigidState(int targetObjId, Vector3f pos, Vector3f vel) {
         for (int i = 0; i < count; i++) {
@@ -452,7 +497,9 @@ public class ProjectileManager {
         }
     }
 
-    /** 单趟遍历：prePhysicsTick（缓存本层 Map 引用） */
+    /**
+     * 单趟遍历：prePhysicsTick（缓存本层 Map 引用）
+     */
     private void forEachPrePhysicsTick() {
         Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
         if (objMap == null) return;
@@ -464,7 +511,9 @@ public class ProjectileManager {
         }
     }
 
-    /** 单趟遍历：postPhysicsTick（缓存本层 Map 引用） */
+    /**
+     * 单趟遍历：postPhysicsTick（缓存本层 Map 引用）
+     */
     private void forEachPostPhysicsTick() {
         Map<Integer, DestroyableObject> objMap = ObjectManager.levelDestroyableObjects.get(level);
         if (objMap == null) return;
@@ -624,7 +673,9 @@ public class ProjectileManager {
             float gravityAccY = -gravityFactor * 9.81f;
             float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
             if (dragFactor > 1e-8f && speed > 1e-8f) {
-                float dragForce = dragFactor * speed * speed * radius * radius * 3.14159f;
+                float rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
+                // F_drag = ½ · ρ · Cd · A · v²，其中 Cd=dragFactor, A=π·r²
+                float dragForce = 0.5f * rho * dragFactor * (float) Math.PI * radius * radius * speed * speed;
                 float dragAcc = dragForce / mass;
                 float invSpeed = 1f / speed;
                 dragAccX = dragAcc * (-velX[i] * invSpeed);
@@ -710,8 +761,8 @@ public class ProjectileManager {
                     alive[i] = false;
                     projectileObjIds.remove(objId[i]);
                     broadcastHitSync(i,
-                        new Vec3(posX[i], posY[i], posZ[i]),
-                        new Vec3(0, 1, 0), true, result);
+                            new Vec3(posX[i], posY[i], posZ[i]),
+                            new Vec3(0, 1, 0), true, result);
                     destroyable.destroy();
                     swapRemove(i);
                 } else {
@@ -723,8 +774,8 @@ public class ProjectileManager {
                         penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
                     }
                     broadcastHitSync(i,
-                        new Vec3(posX[i], posY[i], posZ[i]),
-                        new Vec3(0, 1, 0), true, result);
+                            new Vec3(posX[i], posY[i], posZ[i]),
+                            new Vec3(0, 1, 0), true, result);
                 }
                 continue;
             }
@@ -741,7 +792,9 @@ public class ProjectileManager {
             float gravityAccY = -gravityFactor * 9.81f;
             float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
             if (dragFactor > 1e-8f && speed > 1e-8f) {
-                float dragForce = dragFactor * speed * speed * radius * radius * 3.14159f;
+                float rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
+                // F_drag = ½ · ρ · Cd · A · v²，其中 Cd=dragFactor, A=π·r²
+                float dragForce = 0.5f * rho * dragFactor * (float) Math.PI * radius * radius * speed * speed;
                 float dragAcc = dragForce / mass;
                 float invSpeed = 1f / speed;
                 dragAccX = dragAcc * (-velX[i] * invSpeed);
@@ -768,12 +821,27 @@ public class ProjectileManager {
                 PhysicsCollisionObject collObj = result.getCollisionObject();
                 if (collObj.getCollisionGroup() != CollisionGroups.PHYSICS_BODY
                         && collObj.getCollisionGroup() != CollisionGroups.TERRAIN
-                            && collObj.getCollisionGroup() != CollisionGroups.PAWN)
+                        && collObj.getCollisionGroup() != CollisionGroups.PAWN)
                     continue;
                 if (!(collObj instanceof PhysicsRigidBody body)) continue;
 
+                Object owner = PhysicsBodyExtensionKt.getOwner(body);
+
+                float hitFrac = result.getHitFraction();
+                hitPointJme.set(
+                        rayFrom.x + (rayTo.x - rayFrom.x) * hitFrac,
+                        rayFrom.y + (rayTo.y - rayFrom.y) * hitFrac,
+                        rayFrom.z + (rayTo.z - rayFrom.z) * hitFrac);
+                Vec3 hitPointMc = new Vec3(hitPointJme.x, hitPointJme.y, hitPointJme.z);
+                result.getHitNormalLocal(hitNormalJme);
+                Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
+
                 // 穿透去重检查
-                PenetrationKey penKey = PenetrationKey.fromCollision(collObj, result.triangleIndex());
+                PenetrationKey penKey;
+                if (owner instanceof PhysicsChunkSection terrain) {
+                    penKey = new PenetrationKey(terrain, terrain.getBlockPosFromContactPoint(hitPointJme, hitNormalJme, -0.01f).toShortString());
+                } else
+                    penKey = PenetrationKey.fromCollision(collObj, result.triangleIndex());
                 if (penKey != null) {
                     Set<PenetrationKey> penetrated = penetratedKeys.get(objId[i]);
                     if (penetrated != null && penetrated.contains(penKey)) {
@@ -781,19 +849,9 @@ public class ProjectileManager {
                     }
                 }
 
-                Object owner = PhysicsBodyExtensionKt.getOwner(body);
-                float hitFrac = result.getHitFraction();
-                hitPointJme.set(
-                    rayFrom.x + (rayTo.x - rayFrom.x) * hitFrac,
-                    rayFrom.y + (rayTo.y - rayFrom.y) * hitFrac,
-                    rayFrom.z + (rayTo.z - rayFrom.z) * hitFrac);
-                Vec3 hitPointMc = new Vec3(hitPointJme.x, hitPointJme.y, hitPointJme.z);
-                result.getHitNormalLocal(hitNormalJme);
-                Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
-
                 // 地形碰撞：尝试穿透或停止
                 if (owner instanceof PhysicsChunkSection terrain) {
-                    BlockPos blockPos = terrain.getBlockPosFromContactPoint(hitPointJme, hitNormalJme, 0);
+                    BlockPos blockPos = terrain.getBlockPosFromContactPoint(hitPointJme, hitNormalJme, -0.01f);
                     SectionSnapshot.BlockSnapshot blockSnap = terrain.getBlockSnapshot(blockPos);
                     if (blockSnap == null || terrain.isRemoved(blockPos)) continue;
 
@@ -804,7 +862,7 @@ public class ProjectileManager {
                     if (pen > blockArmor && destroyable instanceof IProjectile) {
                         // 击穿方块，继续飞行
                         ProjectileType pType = types[typeIndex[i]];
-                        float impactSpeed = (float) Math.sqrt(velX[i]*velX[i] + velY[i]*velY[i] + velZ[i]*velZ[i]);
+                        float impactSpeed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
                         float newSpeed = IProjectile.speedAfterPenetration(
                                 impactSpeed, pen, blockArmor, pType.getPenetrationVelocityCoefficient());
                         float scale = newSpeed / Math.max(impactSpeed, 0.001f);
@@ -813,18 +871,16 @@ public class ProjectileManager {
                         velZ[i] *= scale;
 
                         // 记录穿透密钥，防同帧重复判定
-                        if (penKey != null) {
-                            penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
-                        }
+                        penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
 
                         // 是否实际破坏方块（受 ServerConfig + blockDamageFactor 双重控制）
                         if (MMServerConfig.projectileDestroyBlocks()
                                 && pType.getBlockDamageFactor() > 0
                                 && !level.isClientSide()) {
-                            float kineticEnergy = 0.5f * pType.getMass() * impactSpeed * impactSpeed;
-                            float blockDurability = DamageUtil.getMaxBlockDurability(
+                            float damage = (float) (pType.getBaseDamage() * Math.pow(impactSpeed / pType.getBaseVelocity(), pType.getDamageVelocityCoefficient()));
+                            float blockDurability = 0.2f * DamageUtil.getMaxBlockDurability(
                                     EmptyBlockGetter.INSTANCE, blockState, BlockPos.ZERO);
-                            if (pType.getBlockDamageFactor() * kineticEnergy > 250f * blockDurability) {
+                            if (blockDurability > 0 && pType.getBlockDamageFactor() * damage > blockDurability) {
                                 terrain.markRemoved(blockPos);
                                 SparkLevel.submitDeduplicatedTask(level, blockPos.toShortString(), PPhase.PRE,
                                         () -> level.destroyBlock(blockPos, false));
@@ -967,25 +1023,25 @@ public class ProjectileManager {
 
         // ===== 统一异步管线：非协议实体 + 决议到 Entity 的 BFHurtTarget =====
         BFDamageContext ctx = BFDamageContext.builder()
-            .source(level.damageSources().generic())
-            .baseDamage(projectile.calculateCurrentDamage())
-            .penetration(projectile.calculateCurrentPenetration())
-            .hitVelocity(new Vec3(velX[i], velY[i], velZ[i]))
-            .hitPoint(finalPoint)
-            .hitNormal(finalNormal)
-            .extensions(extensions)
-            .build()
-            .withHandler(projectile);
+                .source(level.damageSources().generic())
+                .baseDamage(projectile.calculateCurrentDamage())
+                .penetration(projectile.calculateCurrentPenetration())
+                .hitVelocity(new Vec3(velX[i], velY[i], velZ[i]))
+                .hitPoint(finalPoint)
+                .hitNormal(finalNormal)
+                .extensions(extensions)
+                .build()
+                .withHandler(projectile);
 
         projectile.setHitPending(true);
         if (penKey != null) pendingPenKeys.put(objId[i], penKey);
 
         SparkLevel.submitImmediateTask(level, PPhase.POST,
-            () -> {
-                if (entity instanceof LivingEntity livingEntity)
-                    livingEntity.invulnerableTime = 0; // 重置无敌时间
-                BFDamageApi.hurt(entity, ctx);
-            });
+                () -> {
+                    if (entity instanceof LivingEntity livingEntity)
+                        livingEntity.invulnerableTime = 0; // 重置无敌时间
+                    BFDamageApi.hurt(entity, ctx);
+                });
         return true;
     }
 
@@ -1017,7 +1073,9 @@ public class ProjectileManager {
         return false;
     }
 
-    /** 广播命中同步包（服务端→客户端），携带 SoA 状态更新 */
+    /**
+     * 广播命中同步包（服务端→客户端），携带 SoA 状态更新
+     */
     private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, boolean isArmorHit, @Nullable IProjectile.AfterHitResult result) {
         if (level instanceof ServerLevel serverLevel) {
             boolean destroyed = result == null || result.destroyed();
@@ -1033,11 +1091,13 @@ public class ProjectileManager {
     private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, boolean destroyed, @Nullable Vector3f newVel, boolean isArmorHit) {
         if (level instanceof ServerLevel serverLevel) {
             ProjectileHitSyncPayload.broadcast(serverLevel, objId[i], hitPoint, hitNormal, destroyed,
-                destroyed ? new Vector3f() : newVel, isArmorHit);
+                    destroyed ? new Vector3f() : newVel, isArmorHit);
         }
     }
 
-    /** 命中地形时的命中同步（服务端广播） */
+    /**
+     * 命中地形时的命中同步（服务端广播）
+     */
     private void broadcastTerrainHit(int i, Vec3 hitPoint) {
         broadcastHitSync(i, hitPoint, new Vec3(0, 1, 0), true, null, false);
     }
@@ -1065,7 +1125,87 @@ public class ProjectileManager {
         }
     }
 
-    /** O(1) swap-with-last 移除（联动交换 Entity 数组，清理穿透记录） */
+    /**
+     * 在发射时预测投射物弹道经过的区块，并预约地形刚体加载。
+     * <p>
+     * 使用 {@link RealisticTrajectory#forwardSolve} 进行弹道正解，
+     * 物理模型与 {@link #updatePointProjectiles} 统一（相同的阻力公式+密度函数），
+     * 确保预测轨迹与实际飞行轨迹一致。
+     * <p>
+     * 预测长度 = 投射物最大寿命（{@link ProjectileType#getMaxLifetimeTicks}），
+     * 遍历所有采样点，按 {@link ChunkPos} 分组收集 Y 范围，
+     * 对每个唯一区块调用 {@link SparkLevel#scheduleChunkLoad} 预约地形加载。
+     * <p>
+     * 性能：单次发射约 200~600 次浮点运算（取决于寿命），
+     * 最多预加载 200 个区块，去重后通常远小于此值。
+     *
+     * @param startPos 发射位置（JME 世界坐标，米）
+     * @param startVel 初速度（m/s，JME）
+     * @param type     投射物类型（提供质量、阻力系数、重力等物理参数）
+     */
+    private void preloadTrajectoryTerrain(Vector3f startPos, Vector3f startVel, ProjectileType type) {
+        // ProjectileType 与 BallisticConfig 1:1 映射（阻力公式统一为 ½·ρ·Cd·A·v²）
+        // dragFactor = Cd, π·r² = A, gravityFactor·9.81 = g
+        BallisticConfig config = new BallisticConfig(
+                type.getDragFactor(),                                    // Cd（阻力系数）
+                type.getMass(),                                          // 质量 (kg)
+                (float) (Math.PI * type.getRadius() * type.getRadius()), // A = π·r² (m²)
+                type.getGravityFactor() * 9.81f,                         // 重力加速度 (m/s²)
+                1f / SparkLevel.getPhysicsLevel(getLevel()).getTps(),    // 时间步长 = 1 物理 tick
+                type.getMaxLifetimeTicks()                               // 预测长度 = 投射物寿命
+        );
+
+        // JME Vector3f → MC Vec3（坐标轴一致，都是米制右手系 Y-up）
+        Vec3 startMc = new Vec3(startPos.x, startPos.y, startPos.z);
+        Vec3 velMc = new Vec3(startVel.x, startVel.y, startVel.z);
+
+        // 弹道正解（使用与 updatePointProjectiles 相同的密度函数）
+        TrajectoryResult result = RealisticTrajectory.forwardSolve(startMc, velMc, config, densityFunction);
+
+        // 按 ChunkPos 分组，收集每个区块的到达 tick 和 Y 范围
+        LinkedHashMap<ChunkPos, int[]> chunkInfo = new LinkedHashMap<>(); // int[3]: [arrivalTick, minY, maxY]
+        int maxChunks = 200; // 最多预加载 200 个区块，防止极端情况
+
+        for (int tick = 0; tick < result.samples().size(); tick++) {
+            TrajectorySample sample = result.samples().get(tick);
+            Vec3 p = sample.position();
+
+            // 出界检查：超出 MC 世界 Y 范围则停止预测
+            if (p.y < -64 || p.y > 320) break;
+
+            ChunkPos cp = new ChunkPos((int) Math.floor(p.x / 16.0), (int) Math.floor(p.z / 16.0));
+            int y = (int) p.y;
+
+            chunkInfo.merge(cp, new int[]{tick, y, y}, (old, cur) -> {
+                old[0] = Math.min(old[0], cur[0]); // 最早到达 tick
+                old[1] = Math.min(old[1], cur[1]); // 最低 Y
+                old[2] = Math.max(old[2], cur[2]); // 最高 Y
+                return old;
+            });
+
+            if (chunkInfo.size() >= maxChunks) break;
+        }
+
+        // 为每个预测区块预约地形加载
+        int yPadding = 8;   // Y 方向扩展，覆盖预测偏差和弹道弧度
+        int leadTicks = 20;  // 提前 1 秒开始加载，留足异步碰撞形状构建时间
+        int holdTicks = 60;  // 加载后保持 3 秒，覆盖穿透/跳弹后的残余飞行
+
+        for (var entry : chunkInfo.entrySet()) {
+            ChunkPos cp = entry.getKey();
+            int[] info = entry.getValue();
+            int arrivalTick = info[0];
+            int minY = info[1] - yPadding;
+            int maxY = info[2] + yPadding;
+
+            int delayTicks = Math.max(0, arrivalTick - leadTicks);
+            SparkLevel.scheduleChunkLoad(level, cp, minY, maxY, delayTicks, holdTicks);
+        }
+    }
+
+    /**
+     * O(1) swap-with-last 移除（联动交换 Entity 数组，清理穿透记录）
+     */
     private void swapRemove(int index) {
         // 先清理被移除条目的 Entity
         if (entities[index] != null) {
@@ -1093,7 +1233,9 @@ public class ProjectileManager {
         count--;
     }
 
-    /** ×2 动态扩容（联动扩容 Entity 数组） */
+    /**
+     * ×2 动态扩容（联动扩容 Entity 数组）
+     */
     private void ensureCapacity(int required) {
         if (required <= capacity) return;
         int newCap = Math.max(required, capacity * 2);

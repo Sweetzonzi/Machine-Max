@@ -112,20 +112,6 @@
       "default": true,
       "description": "是否启用漂移辅助。当车辆转向时自动辅助维持漂移状态。"
     },
-    "drift_front_outer_brake_gain": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "default": 0.3,
-      "description": "漂移时前外轮额外制动增益（0~1），抑制spin-out并增强前轴抓地。值越大前外轮刹车越强，漂移越可控但推头风险也越高。需要漂移辅助启用时生效。"
-    },
-    "drift_rear_inner_brake_gain": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "default": 0.1,
-      "description": "漂移时后内轮额外制动增益（0~1），辅助车尾甩入弯心。值越大后内轮刹车越强，漂移进入更顺畅但过度旋转风险也越高。需要漂移辅助启用时生效。"
-    },
     "control_inputs": {
       "type": "array",
       "items": { "type": "string" },
@@ -188,8 +174,6 @@
       "manual_gear_shift": true,
       "auto_hand_brake": true,
       "drift_assist": true,
-      "drift_front_outer_brake_gain": 0.3,
-      "drift_rear_inner_brake_gain": 0.1,
       "control_inputs": ["move_input", "regular_input"],
       "description": "完整示例 - 包含所有可选字段"
     },
@@ -212,8 +196,6 @@
       "manual_gear_shift": false,
       "auto_hand_brake": true,
       "drift_assist": false,
-      "drift_front_outer_brake_gain": 0.0,
-      "drift_rear_inner_brake_gain": 0.0,
       "control_inputs": ["move_input"],
       "description": "高级示例 - 使用映射表配置，禁用漂移辅助"
     }

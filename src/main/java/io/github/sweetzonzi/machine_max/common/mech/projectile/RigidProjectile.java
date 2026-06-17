@@ -17,8 +17,6 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitSyncPayload;
-// 旧单个发包已废弃，由 ProjectileManager.flushProjectileEntities 批量发包替代
-// import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpawnPayload;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.SynchedEntityData;

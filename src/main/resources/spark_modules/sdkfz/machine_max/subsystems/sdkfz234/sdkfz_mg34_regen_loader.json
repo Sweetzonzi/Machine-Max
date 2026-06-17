@@ -8,5 +8,6 @@
   "energy_cost_per_round": 0,
   "projectile_type": "machine_max:7_92mm_smk",
   "reload_time": 0,
-  "can_supply_multiple": false
+  "can_supply_multiple": false,
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }

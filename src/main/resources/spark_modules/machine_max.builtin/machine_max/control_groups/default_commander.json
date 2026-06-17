@@ -13,7 +13,13 @@
         },
         "bindings": [
             {
-                "trigger": "key.keyboard.1",
+                "trigger": "key.keyboard.space",
+                "action": "hold",
+                "channel": "secondary_fire_input",
+                "targets": ["vehicle"]
+            },
+            {
+                "trigger": "key.mouse.left",
                 "action": "hold",
                 "channel": "fire_input",
                 "targets": ["vehicle"]

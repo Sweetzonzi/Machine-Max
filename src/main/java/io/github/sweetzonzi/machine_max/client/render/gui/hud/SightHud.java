@@ -67,22 +67,22 @@ public class SightHud implements LayeredDraw.Layer {
 
         // 屏幕中心绘制圆环（视角参考点），炮管位置绘制十字线
         renderCenterRing(guiGraphics, centerX, centerY);
-        // 获取炮管世界瞄准点（唯一真相源），投影到屏幕空间
-        float partialTick = mc.getTimer().getGameTimeDeltaPartialTick(false);
-        Vec3 barrelAimPoint = CameraController.getCameraAimPointWorld(partialTick);
-        if (barrelAimPoint == null) return;
-
-        Camera mcCam = mc.gameRenderer.getMainCamera();
-        float vFov = CameraSubsystemStaticAttr.REFERENCE_FOV / CameraController.getCurrentZoom();
-
-        float[] offset = ScreenProjectionUtil.worldToScreenOffset(
-                barrelAimPoint, mcCam, vFov, screenW, screenH);
-        if (offset == null) return;
-
-        int crossX = Math.clamp(centerX + Math.round(offset[0]), EDGE_MARGIN, screenW - EDGE_MARGIN);
-        int crossY = Math.clamp(centerY + Math.round(offset[1]), EDGE_MARGIN, screenH - EDGE_MARGIN);
-
-        renderCrosshair(guiGraphics, crossX, crossY);
+//        // 获取炮管世界瞄准点（唯一真相源），投影到屏幕空间
+//        float partialTick = mc.getTimer().getGameTimeDeltaPartialTick(false);
+//        Vec3 barrelAimPoint = CameraController.getCameraAimPointWorld(partialTick);
+//        if (barrelAimPoint == null) return;
+//
+//        Camera mcCam = mc.gameRenderer.getMainCamera();
+//        float vFov = CameraSubsystemStaticAttr.REFERENCE_FOV / CameraController.getCurrentZoom();
+//
+//        float[] offset = ScreenProjectionUtil.worldToScreenOffset(
+//                barrelAimPoint, mcCam, vFov, screenW, screenH);
+//        if (offset == null) return;
+//
+//        int crossX = Math.clamp(centerX + Math.round(offset[0]), EDGE_MARGIN, screenW - EDGE_MARGIN);
+//        int crossY = Math.clamp(centerY + Math.round(offset[1]), EDGE_MARGIN, screenH - EDGE_MARGIN);
+//
+//        renderCrosshair(guiGraphics, crossX, crossY);
     }
 
     private void renderCrosshair(GuiGraphics guiGraphics, int cx, int cy) {

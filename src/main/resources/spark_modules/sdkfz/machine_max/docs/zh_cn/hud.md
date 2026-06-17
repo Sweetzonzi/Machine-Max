@@ -56,13 +56,11 @@ HUD配置文件是HUD系统的核心，定义了HUD的基本属性和显示行�
   "texts": {
     // 文本配置
   },
-  "scissor": {
-    "enable": false,
-    "x": 0,
-    "y": 0,
-    "width": 0,
-    "height": 0
-  }
+  "enable_scissor": false,
+  "scissor_x": 0,
+  "scissor_y": 0,
+  "scissor_width": 0,
+  "scissor_height": 0
 }
 ```
 
@@ -105,12 +103,11 @@ HUD配置文件是HUD系统的核心，定义了HUD的基本属性和显示行�
 - **significand**: Molang参数计算结果为数字时，保留的小数点后位数，默认0
 
 #### 剪裁区域
-- **scissor**: 剪裁矩形配置（可选，默认不启用）
-  - **enable**: 是否启用剪裁矩形
-  - **x**: 剪裁矩形中心 x 坐标（像素）
-  - **y**: 剪裁矩形中心 y 坐标（像素）
-  - **width**: 剪裁矩形宽度（像素）
-  - **height**: 剪裁矩形高度（像素）
+- **enable_scissor**: 是否启用剪裁矩形，范围外的部分将被裁剪，默认false
+- **scissor_x**: 剪裁矩形中心x坐标(像素)
+- **scissor_y**: 剪裁矩形中心y坐标(像素)
+- **scissor_width**: 剪裁矩形宽度(像素)
+- **scissor_height**: 剪裁矩形高度(像素)
 
 ## 模型和动画要求
 

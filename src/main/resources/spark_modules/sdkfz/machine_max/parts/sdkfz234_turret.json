@@ -82,7 +82,8 @@
               "definition": "machine_max:turret_elevation_axis",
               "signal_targets": {
                 "aim_input_p0": [
-                  "subsystem.machine_max.weapon_controller"
+                  "subsystem.machine_max.main_weapon",
+                  "subsystem.machine_max.secondary_weapon"
                 ]
               },
               "overwrite": {}
@@ -133,13 +134,22 @@
               "definition": "machine_max:basic_elevation_driver",
               "connector": "connector.machine_max.turret_gun_axis"
             },
-            "subsystem.machine_max.weapon_controller": {
+            "subsystem.machine_max.main_weapon": {
               "type": "machine_max:weapon_controller",
-              "definition": "machine_max:basic_weapon_controller",
+              "definition": "machine_max:main_weapon_controller",
               "control_outputs": {
                 "weapon_control": [
                   "subsystem.machine_max.elevation_driver",
                   "subsystem.machine_max.azimuth_driver",
+                  "connector.machine_max.turret_gun_axis"
+                ]
+              }
+            },
+            "subsystem.machine_max.secondary_weapon": {
+              "type": "machine_max:weapon_controller",
+              "definition": "machine_max:secondary_weapon_controller",
+              "control_outputs": {
+                "secondary_weapon_control": [
                   "connector.machine_max.turret_gun_axis"
                 ]
               }

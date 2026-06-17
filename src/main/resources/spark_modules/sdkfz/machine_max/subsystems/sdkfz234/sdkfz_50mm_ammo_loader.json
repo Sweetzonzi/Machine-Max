@@ -6,6 +6,7 @@
   "regen_round_by_round": true,
   "energy_cost_per_round": 0,
   "projectile_type": "machine_max:50mm_pzgr39",
-  "reload_time": 2.0,
-  "can_supply_multiple": false
+  "reload_time": 2,
+  "can_supply_multiple": false,
+  "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }
