@@ -1,8 +1,5 @@
 package io.github.sweetzonzi.machine_max.common.mech.projectile;
 
-import cn.solarmoon.spark_core.api.SparkLevel;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
-import cn.solarmoon.spark_core.util.PPhase;
 import com.jme3.math.Vector3f;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -14,12 +11,9 @@ import lombok.Getter;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.Vec3;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -61,8 +55,11 @@ public class ProjectileType {
     /** 终点效应属性 — 决定投射物命中后发生什么 */
     private final TerminalProperties terminal;
 
-    /** 视觉/音效属性 — 决定投射物在客户端如何呈现 */
+    /** 视觉属性 — 决定投射物在客户端如何呈现（曳光等） */
     private final VisualProperties visual;
+
+    /** 音效属性 — 开火、停火、弹壳等音效 */
+    private final ProjectileSoundAttr sounds;
 
     /** 注册键，由 {@link ProjectileModule} 加载时赋值 */
     private ResourceLocation registryKey;
@@ -90,7 +87,9 @@ public class ProjectileType {
         TerminalProperties.CODEC.fieldOf("terminal")
             .forGetter(ProjectileType::getTerminal),
         VisualProperties.CODEC.optionalFieldOf("visual", VisualProperties.DEFAULT)
-            .forGetter(ProjectileType::getVisual)
+            .forGetter(ProjectileType::getVisual),
+        ProjectileSoundAttr.CODEC.optionalFieldOf("sounds", ProjectileSoundAttr.DEFAULT)
+            .forGetter(ProjectileType::getSounds)
     ).apply(instance, ProjectileType::new));
 
 
@@ -103,7 +102,8 @@ public class ProjectileType {
         int bulletNum,
         ExternalProperties external,
         TerminalProperties terminal,
-        VisualProperties visual
+        VisualProperties visual,
+        ProjectileSoundAttr sounds
     ) {
         this.type = type;
         this.tags = tags;
@@ -112,6 +112,7 @@ public class ProjectileType {
         this.external = external;
         this.terminal = terminal;
         this.visual = visual;
+        this.sounds = sounds;
     }
 
 
@@ -143,7 +144,20 @@ public class ProjectileType {
 
     public Vec3i getTracerColor() { return visual.tracerColor(); }
     public int getTracerAlpha() { return visual.tracerAlpha(); }
-    public SoundEvent getFireSound() { return visual.fireSound(); }
+
+    // -- 音效委托（→ ProjectileSoundAttr） --
+
+    /** 获取音效属性 */
+    public ProjectileSoundAttr getSounds() { return sounds; }
+
+    /** 获取开火音效映射（key=RPM阈值, value=音效） */
+    public Map<String, SoundEvent> getFireSounds() { return sounds.fireSounds(); }
+
+    /** 获取停火尾音，可能为 NO_SOUND */
+    public SoundEvent getCeaseFireSound() { return sounds.ceaseFireSound(); }
+
+    /** 获取弹壳音效映射 */
+    public Map<String, SoundEvent> getShellSounds() { return sounds.shellSounds(); }
 
 
     // ==================== 注册键管理 ====================
@@ -209,7 +223,7 @@ public class ProjectileType {
      * 开火：根据发射参数创建 bullet_num 颗投射物。
      * <p>
      * 自动处理散布（椭圆锥采样）、速度计算。
-     * 不在此方法内播放音效——调用方应在合适的时机调用 {@link #playFireSound}。
+     * 音效由 {@code LauncherSubsystem} 在客户端管理，不在此方法内播放。
      * <p>
      * <b>仅服务端调用。</b>客户端不将投射物加入世界，不应用后坐力。
      * <p>
@@ -246,37 +260,6 @@ public class ProjectileType {
             projectiles.add(create(level, muzzlePosition, vel));
         }
         return projectiles;
-    }
-
-    /**
-     * 播放开火音效（仅客户端有效）。
-     * <p>
-     * 通过 {@link SparkLevel#submitDeduplicatedTask} 投递到主线程执行，
-     * 以 registryKey 为去重键，避免高频开火时堆积音效任务。
-     * 不内检 isClientSide，由调用方自行判断。
-     * <p>
-     * <b>可在任意线程调用。</b>
-     *
-     * @param level    维度
-     * @param position 音源世界坐标（JME Vector3f）
-     */
-    public void playFireSound(Level level, Vector3f position) {
-        SoundEvent sound = visual.fireSound();
-        // 随机参数在调用线程计算（避免主线程访问 level.random 的竞争）
-        var rng = ThreadLocalRandom.current();
-        float pitch = 1.0f + 0.2f * (rng.nextFloat() - 0.5f);
-        float volume = 1.0f + 0.1f * (rng.nextFloat() - 0.5f);
-
-        SparkLevel.submitDeduplicatedTask(
-            level,
-            "proj_fire_sound_" + (registryKey != null ? registryKey : "unnamed"),
-            PPhase.PRE,
-            () -> SpreadingSoundHelper.playSpreadingSound(
-                level, sound, SoundSource.NEUTRAL,
-                new Vec3(position.x, position.y, position.z),
-                Vec3.ZERO, pitch, volume
-            )
-        );
     }
 
     /**
@@ -400,36 +383,87 @@ public class ProjectileType {
     }
 
     /**
-     * 视觉/音效属性 — 决定投射物在客户端如何呈现。
+     * 视觉属性 — 决定投射物在客户端如何呈现。
      * <p>
      * 整个 {@code visual} 对象在 JSON 中是可选的，缺失时使用 {@link #DEFAULT}。
+     * 音效相关字段已独立为 {@link ProjectileSoundAttr}。
      * 未来可扩展字段：枪口闪光（muzzle_flash）、命中粒子（impact_particle）、弹道烟迹（ribbon_trail）等。
      */
     public record VisualProperties(
         /** 曳光颜色（RGB），不设置则无曳光效果 */
         Vec3i tracerColor,
         /** 曳光透明度，0=完全透明，255=完全不透明 */
-        int tracerAlpha,
-        /** 开火音效 {@link SoundEvent} */
-        SoundEvent fireSound
+        int tracerAlpha
     ) {
-        /** 默认开火音效 */
-        public static final SoundEvent DEFAULT_FIRE_SOUND = SoundEvent.createFixedRangeEvent(
-            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectile.fire.mini"), 128f
-        );
-
         /** 完整默认视觉属性 */
         public static final VisualProperties DEFAULT = new VisualProperties(
-            new Vec3i(255, 255, 255), 200, DEFAULT_FIRE_SOUND
+            new Vec3i(255, 255, 255), 200
         );
 
         public static final Codec<VisualProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Vec3i.CODEC.optionalFieldOf("tracer_color", DEFAULT.tracerColor)
                 .forGetter(VisualProperties::tracerColor),
             Codec.INT.optionalFieldOf("tracer_alpha", DEFAULT.tracerAlpha)
-                .forGetter(VisualProperties::tracerAlpha),
-            SoundEvent.DIRECT_CODEC.optionalFieldOf("fire_sound", DEFAULT_FIRE_SOUND)
-                .forGetter(VisualProperties::fireSound)
+                .forGetter(VisualProperties::tracerAlpha)
         ).apply(instance, VisualProperties::new));
+    }
+
+    /**
+     * 投射物音效属性 — 定义开火、停火、弹壳等多种音效。
+     * <p>
+     * 与 {@link VisualProperties} 平级，在 JSON 中通过 {@code "sounds"} 字段配置。
+     * </p>
+     *
+     * <h3>开火音效映射 {@code fire_sounds}</h3>
+     * key 为 RPM 阈值字符串（如 {@code "0.0"} 表示单发，{@code "300.0"} 表示300RPM档位），
+     * value 为对应的音效事件。运行时按实际射速匹配最近的档位：
+     * <ul>
+     *   <li>本 burst 首发射击 → 使用 {@code "0.0"} 键的单发音效（不循环）</li>
+     *   <li>后续连射 → 使用匹配的 RPM 档位循环音效，pitch 按 actualRPM / designRPM 调制</li>
+     *   <li>若仅配置了 {@code "0.0"} 而无其他 key → 全程逐发播放单发音效</li>
+     * </ul>
+     *
+     * <h3>弹壳音效映射 {@code shell_sounds}</h3>
+     * 与开火音效同理，key 为 RPM 阈值字符串。
+     *
+     * <h3>停火音效 {@code cease_fire_sound}</h3>
+     * 连射停止时播放的一次性尾音。若为 {@link #NO_SOUND} 则跳过。
+     *
+     * @param fireSounds      开火音效映射（key=RPM阈值, value=音效）
+     * @param ceaseFireSound  停火尾音
+     * @param shellSounds     弹壳音效映射
+     */
+    public record ProjectileSoundAttr(
+        Map<String, SoundEvent> fireSounds,
+        SoundEvent ceaseFireSound,
+        Map<String, SoundEvent> shellSounds
+    ) {
+        /** 空音效占位符，表示未配置该音效 */
+        public static final SoundEvent NO_SOUND = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "empty_sound"), 0
+        );
+
+        /** 默认开火音效（单发） */
+        public static final SoundEvent DEFAULT_FIRE_SOUND = SoundEvent.createFixedRangeEvent(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectile.fire.mini"), 128f
+        );
+
+        /** 默认音效属性 */
+        public static final ProjectileSoundAttr DEFAULT = new ProjectileSoundAttr(
+            Map.of("0.0", DEFAULT_FIRE_SOUND),
+            NO_SOUND,
+            Map.of()
+        );
+
+        public static final Codec<ProjectileSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
+                .optionalFieldOf("fire_sounds", DEFAULT.fireSounds)
+                .forGetter(ProjectileSoundAttr::fireSounds),
+            SoundEvent.DIRECT_CODEC.optionalFieldOf("cease_fire_sound", NO_SOUND)
+                .forGetter(ProjectileSoundAttr::ceaseFireSound),
+            Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
+                .optionalFieldOf("shell_sounds", DEFAULT.shellSounds)
+                .forGetter(ProjectileSoundAttr::shellSounds)
+        ).apply(instance, ProjectileSoundAttr::new));
     }
 }

@@ -1,11 +1,15 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import cn.solarmoon.spark_core.sound.ISoundSpreader;
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
+import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import net.minecraft.resources.ResourceLocation;
@@ -14,13 +18,15 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr;
 import jme3utilities.math.MyQuaternion;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -30,7 +36,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * 实现 {@link IAmmoConsumer} 接口以支持弹药消耗与供给，膛内弹药状态由 chamberedType 管理。<br>
  * 投射物类型由当前供给者提供，而非静态属性直接指定。
  */
-public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
+public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, ISoundSpreader {
 
     public final LauncherSubsystemAttr attr;
 
@@ -75,6 +81,27 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
      * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
      */
     private final ConcurrentLinkedQueue<ProjectileType> pendingFires = new ConcurrentLinkedQueue<>();
+
+    // ——— 音效状态（仅客户端有效，由 onTick 管理） ———
+
+    /** 当前活跃的连射循环音效UUID */
+    @Nullable
+    private UUID currentAutoFireUuid;
+
+    /** 当前活跃的弹壳循环音效UUID */
+    @Nullable
+    private UUID currentShellSoundUuid;
+
+    /** 当前连射音效档位key（用于检测RPM档位变化） */
+    @Nullable
+    private String currentFireRateTierKey;
+
+    /** 当前弹壳音效档位key */
+    @Nullable
+    private String currentShellRateTierKey;
+
+    /** 本轮连射已打的弹数（用于检测首发射击） */
+    private int roundsFiredThisBurst = 0;
 
     // ——— 弹药状态 ———
 
@@ -196,16 +223,17 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
     }
 
     /**
-     * 主线程 tick：计时器累积 + 弹药消费 + 入队 pendingFires。
+     * 主线程 tick：计时器累积 + 弹药消费 + 入队 pendingFires + 客户端音效管理。
      * <p>
      * <b>调用线程：</b>主线程（20tps）。
      * <p>
      * 逻辑：
      * <ol>
-     *   <li>若停止开火 → {@code fireAccumulator = 0}，防止蓄力</li>
+     *   <li>若停止开火 → 处理停火音效，{@code fireAccumulator = 0}，防止蓄力</li>
      *   <li>刚按下开火键的首帧 → 预填充 accumulator 为 {@code intervalSec}，保证立即发射</li>
      *   <li>后续帧 → 正常 {@code fireAccumulator += 0.05s}，计算应发射数 {@code N}</li>
      *   <li>弹药消费循环（最多 N 发）：取弹 → 兼容校验 → 膛内 → 入队 {@link #pendingFires} → 装填下一发</li>
+     *   <li>客户端音效处理：遍历 pendingFires，首发射击用单发音效，后续连射启动/维持循环音效</li>
      *   <li>扣除已发射数对应的时间：{@code fireAccumulator -= N × intervalSec}</li>
      * </ol>
      */
@@ -216,15 +244,22 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         refreshCachedSummaries();
 
         if (!isActive() || isDestroyed()) {
+            handleCeaseFire();
             resetFireState();
             return;
         }
 
         if (!isFiring()) {
-            // 停止开火 → 清零累积，防止下次开火"蓄力"
+            // 停止开火 → 处理停火音效 + 清零累积，防止下次开火"蓄力"
+            if (wasFiring) {
+                handleCeaseFire();
+            }
             resetFireState();
             return;
         }
+
+        // ★ 记录是否为本burst首帧（在 wasFiring 被置 true 之前）
+        boolean burstJustStarted = !wasFiring;
 
         float intervalSec = 60f / attr.staticAttribute.getFireRate();
 
@@ -270,7 +305,12 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
             }
         }
 
-        // ⑤ 扣除已发射数对应的时间
+        // ⑤ 客户端音效处理（主线程，遍历即将发射的弹药队列）
+        if (getLevel().isClientSide() && firedCount > 0) {
+            handleFiringSounds(burstJustStarted);
+        }
+
+        // ⑥ 扣除已发射数对应的时间
         fireAccumulator -= firedCount * intervalSec;
         if (fireAccumulator < 0) fireAccumulator = 0;
         // 记录上次开火 tick（用于防连按超射）
@@ -390,9 +430,8 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         Quaternion jmeRot = muzzleTransform.getRotation();
         Vector3f direction = MyQuaternion.rotate(jmeRot, new Vector3f(0, 0, -1), null).normalize();
 
-        // ② 客户端：仅播放音效（不创建投射物，不应用后坐力）
+        // ② 客户端：不创建投射物，音效已在 onTick() 中处理
         if (getLevel().isClientSide()) {
-            type.playFireSound(getLevel(), jmePos);
             return;
         }
 
@@ -456,7 +495,209 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer {
         }
     }
 
-    // ——— 公共查询方法 ———
+    // ——— 音效管理（仅在客户端 onTick 中调用） ———
+
+    /**
+     * 处理停火：淡出循环音效，播放停火尾音，重置计数。
+     * <p>
+     * <b>调用线程：</b>主线程（{@link #onTick()}）。
+     * </p>
+     */
+    private void handleCeaseFire() {
+        if (!getLevel().isClientSide()) return;
+
+        // 淡出连射循环音效
+        if (currentAutoFireUuid != null) {
+            SpreadingSoundHelper.fadeSound(getLevel(), currentAutoFireUuid);
+            currentAutoFireUuid = null;
+            currentFireRateTierKey = null;
+        }
+
+        // 淡出弹壳循环音效
+        if (currentShellSoundUuid != null) {
+            SpreadingSoundHelper.fadeSound(getLevel(), currentShellSoundUuid);
+            currentShellSoundUuid = null;
+            currentShellRateTierKey = null;
+        }
+
+        // 播放停火尾音
+        ProjectileType ammo = getCurrentAmmoType();
+        if (ammo != null) {
+            SoundEvent ceaseSound = ammo.getCeaseFireSound();
+            if (ceaseSound != null && ceaseSound != ProjectileType.ProjectileSoundAttr.NO_SOUND) {
+                playSpreadingSound(getLevel(), ceaseSound, SoundSource.NEUTRAL);
+            }
+
+            // 停火时播放最后一枚弹壳音效（单发）
+            SoundEvent shellSound = ammo.getShellSounds().get("0.0");
+            if (shellSound != null) {
+                playSpreadingSound(getLevel(), shellSound, SoundSource.NEUTRAL);
+            }
+        }
+
+        roundsFiredThisBurst = 0;
+    }
+
+    /**
+     * 处理开火音效：遍历 pendingFires 中的每发弹药，按首发/连发分别播放音效。
+     * <p>
+     * <b>调用线程：</b>主线程（{@link #onTick()}）。
+     * </p>
+     *
+     * @param burstJustStarted 是否为本 burst 首帧
+     */
+    private void handleFiringSounds(boolean burstJustStarted) {
+        for (ProjectileType type : pendingFires) {
+            if (type == null) continue;
+
+            roundsFiredThisBurst++;
+            boolean isFirstRound = burstJustStarted && roundsFiredThisBurst == 1;
+
+            tickFireSound(type, isFirstRound);
+            tickShellSound(type, isFirstRound);
+        }
+    }
+
+    /**
+     * 处理单发/连发开火音效。
+     * <p>
+     * 首发射击（或未配置循环音效）→ 逐发播放 {@code "0.0"} 键的单发音效（不循环）。<br>
+     * 后续连射 → 启动/维持循环音效，通过 {@link ISoundSpreader} 追踪枪口，RPM 跨档位时交叉淡入。
+     * </p>
+     *
+     * @param type         弹药类型
+     * @param isFirstRound 是否为首发
+     */
+    private void tickFireSound(ProjectileType type, boolean isFirstRound) {
+        Map<String, SoundEvent> fireSounds = type.getFireSounds();
+        if (fireSounds.isEmpty()) return;
+
+        // 检查是否有非0.0的循环音效key
+        boolean hasAutoKeys = fireSounds.keySet().stream().anyMatch(k -> !"0.0".equals(k));
+
+        if (isFirstRound || !hasAutoKeys) {
+            // ★ 首发射击 或 无循环音效配置 → 逐发播放单发音效
+            SoundEvent singleSound = fireSounds.get("0.0");
+            if (singleSound != null) {
+                this.playSpreadingSound(getLevel(), singleSound, SoundSource.NEUTRAL);
+            }
+        } else {
+            // ★ 连射 → 循环音效（通过 ISoundSpreader 追踪枪口位置/速度）
+            String tierKey = findBestFireSoundKey(fireSounds);
+            SoundEvent autoSound = fireSounds.get(tierKey);
+            if (autoSound == null) return;
+
+            if (currentAutoFireUuid == null) {
+                // 首次连射：创建循环实例
+                currentAutoFireUuid = playSpreadingSound(getLevel(), autoSound, SoundSource.NEUTRAL, 0, 0, true);
+                currentFireRateTierKey = tierKey;
+            } else if (!tierKey.equals(currentFireRateTierKey)) {
+                // RPM 跨档位：交叉淡入新音效
+                currentAutoFireUuid = transitionSound(getLevel(), currentAutoFireUuid, autoSound,
+                    SoundSource.NEUTRAL, 0, 0, true);
+                currentFireRateTierKey = tierKey;
+            }
+        }
+    }
+
+    /**
+     * 处理弹壳音效，逻辑与开火音效相同。
+     */
+    private void tickShellSound(ProjectileType type, boolean isFirstRound) {
+        Map<String, SoundEvent> shellSounds = type.getShellSounds();
+        if (shellSounds.isEmpty()) return;
+
+        boolean hasAutoKeys = shellSounds.keySet().stream().anyMatch(k -> !"0.0".equals(k));
+
+        if (isFirstRound || !hasAutoKeys) {
+            SoundEvent singleSound = shellSounds.get("0.0");
+            if (singleSound != null) {
+                playSpreadingSound(getLevel(), singleSound, SoundSource.NEUTRAL);
+            }
+        } else {
+            String tierKey = findBestFireSoundKey(shellSounds);
+            SoundEvent autoSound = shellSounds.get(tierKey);
+            if (autoSound == null) return;
+
+            if (currentShellSoundUuid == null) {
+                currentShellSoundUuid = playSpreadingSound(getLevel(), autoSound, SoundSource.NEUTRAL, 0, 5, true);
+                currentShellRateTierKey = tierKey;
+            } else if (!tierKey.equals(currentShellRateTierKey)) {
+                currentShellSoundUuid = transitionSound(getLevel(), currentShellSoundUuid, autoSound,
+                    SoundSource.NEUTRAL, 0, 5, true);
+                currentShellRateTierKey = tierKey;
+            }
+        }
+    }
+
+    /**
+     * 根据当前发射器射速，查找最匹配的音效档位key。
+     * <p>
+     * 排除 {@code "0.0"} 键，在剩余key中找数值 ≤ 当前RPM 的最大者。
+     * 若无匹配则回退到 {@code "0.0"}。
+     * </p>
+     *
+     * @param sounds 音效映射（key=RPM字符串）
+     * @return 最佳匹配的档位key
+     */
+    private String findBestFireSoundKey(Map<String, SoundEvent> sounds) {
+        float rpm = attr.staticAttribute.getFireRate();
+        return sounds.keySet().stream()
+            .filter(k -> !"0.0".equals(k))
+            .map(k -> new AbstractMap.SimpleEntry<>(k, parseRpm(k)))
+            .filter(e -> !Float.isNaN(e.getValue()) && e.getValue() <= rpm)
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
+            .orElse("0.0");
+    }
+
+    /** 安全解析RPM字符串 */
+    private static float parseRpm(String key) {
+        try {
+            return Float.parseFloat(key);
+        } catch (NumberFormatException e) {
+            return Float.NaN;
+        }
+    }
+
+    // ——— ISoundSpreader 实现 ———
+
+    @Override
+    @NotNull
+    public Vec3 getPosition(UUID uuid, SoundEvent event) {
+        return getMuzzleWorldPosition();
+    }
+
+    @Override
+    @NotNull
+    public Vec3 getSpeed(UUID uuid, SoundEvent event) {
+        return SparkMathKt.toVec3(getSubPart().getLinearVelocity());
+    }
+
+    @Override
+    public float getPitch(UUID uuid, SoundEvent event) {
+        // 根据当前RPM与档位设计RPM的比值调制音高
+        String tierKey = null;
+        if (uuid.equals(currentAutoFireUuid)) {
+            tierKey = currentFireRateTierKey;
+        } else if (uuid.equals(currentShellSoundUuid)) {
+            tierKey = currentShellRateTierKey;
+        }
+        if (tierKey != null) {
+            float designRPM = parseRpm(tierKey);
+            if (!Float.isNaN(designRPM) && designRPM > 0) {
+                float actualRPM = attr.staticAttribute.getFireRate();
+                return Math.clamp(actualRPM / designRPM, 0.5f, 2.0f);
+            }
+        }
+        return 1.0f;
+    }
+
+    @Override
+    public boolean shouldApplyInteriorEffect(@Nullable Entity listener, SoundEvent event, boolean isFirstPerson) {
+        if (listener == null || !isFirstPerson) return false;
+        return ((IEntityMixin) listener).machine_Max$getControllingSubsystem() != null;
+    }
 
     @Override
     public IAmmoConsumer.SupplierSummaries getSupplierSummaries() {

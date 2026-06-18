@@ -1,15 +1,19 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * 投射物测试物品。
@@ -48,7 +52,15 @@ public class ProjectileTestItem extends Item {
 
         // 由 ProjectileType 自动分派创建质点或刚体投射物
         type.create(level, jmePos, jmeVel);
-        type.playFireSound(level, jmePos);
+
+        // 播放单发开火音效
+        SoundEvent fireSound = type.getFireSounds().get("0.0");
+        if (fireSound != null) {
+            SpreadingSoundHelper.playSpreadingSound(
+                level, fireSound, SoundSource.NEUTRAL,
+                new Vec3(jmePos.x, jmePos.y, jmePos.z),
+                Vec3.ZERO, 1.0f, 1.0f);
+        }
 
         player.getCooldowns().addCooldown(this, 10);
         return InteractionResultHolder.success(stack);

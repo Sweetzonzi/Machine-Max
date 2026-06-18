@@ -388,5 +388,46 @@
     "sounds": [
       "machine_max:projectile/fire/fire_huge"
     ]
+  },
+  "projectile.fire.mg34_loop": {
+    "sounds": [
+      "machine_max:projectile/fire/mg34_loop"
+    ]
+  },
+  "projectile.fire.mg34_loop_interior": {
+    "sounds": [
+      "machine_max:projectile/fire/mg34_loop_interior"
+    ]
+  },
+  "projectile.fire.mg34_release": {
+    "sounds": [
+      "machine_max:projectile/fire/mg34_release"
+    ]
+  },
+  "projectile.fire.mg34_release_interior": {
+    "sounds": [
+      "machine_max:projectile/fire/mg34_release_interior"
+    ]
+  },
+  "projectile.fire.50mm_kwk": {
+    "sounds": [
+      "machine_max:projectile/fire/50mm_kwk"
+    ]
+  },
+  "projectile.fire.50mm_kwk_interior": {
+    "sounds": [
+      "machine_max:projectile/fire/50mm_kwk_interior"
+    ]
+  },
+  "projectile.shell.fall_interior": {
+    "sounds": [
+      "machine_max:projectile/shell/shell_fall_interior",
+      "machine_max:projectile/shell/shell_fall_2_interior"
+    ]
+  },
+  "projectile.shell.shells_fall_interior": {
+    "sounds": [
+      "machine_max:projectile/shell/shells_fall_interior"
+    ]
   }
 }

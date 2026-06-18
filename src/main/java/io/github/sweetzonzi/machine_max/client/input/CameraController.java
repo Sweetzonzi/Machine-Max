@@ -220,8 +220,8 @@ public class CameraController {
 
         // 炮镜模式
         if (activeCamera != null && activeCamera.isActive()) {
-            if (type.isFirstPerson() || type.isMirrored()) // 强制后向第三人称，避免手臂渲染
-                client.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            if (!type.isFirstPerson()) // 强制第一人称
+                client.options.setCameraType(CameraType.FIRST_PERSON);
             updateCameraRotCameraMode(event, partialTick);
             return;
         }
@@ -422,7 +422,7 @@ public class CameraController {
     public static void onRenderArm(RenderHandEvent event) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (player instanceof IEntityMixin passenger && passenger.machine_Max$getControllingSubsystem() instanceof SeatSubsystem seat) {
-            if (!seat.attr.staticAttribute.allowUseItems) event.setCanceled(true);
+            if (!seat.attr.staticAttribute.allowUseItems || isCameraMode()) event.setCanceled(true);
             PoseStack poseStack = event.getPoseStack();
             float partialTicks = event.getPartialTick();
             float f3 = Mth.lerp(partialTicks, player.yBobO, player.yBob);

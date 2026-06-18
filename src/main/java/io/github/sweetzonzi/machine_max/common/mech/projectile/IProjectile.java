@@ -13,6 +13,17 @@ import net.minecraft.world.entity.vehicle.AbstractMinecart;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.world.level.block.state.BlockState;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
+import io.github.sweetzonzi.ballistics_framework.api.BFHitResolveResult;
+import io.github.sweetzonzi.machine_max.common.MMServerConfig;
+import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
+import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
+import cn.solarmoon.spark_core.api.SparkLevel;
+import cn.solarmoon.spark_core.util.PPhase;
 
 import javax.annotation.Nullable;
 
@@ -180,6 +191,154 @@ public interface IProjectile extends BFDamageHandler {
         } else {
             setPendingHitResult(passThroughByResidual(pen, effectiveRha));
         }
+    }
+
+    // ==================== 地形/实体/零件命中解析 ====================
+
+    /**
+     * 处理地形命中。计算方块等效护甲，判定穿透/停住，可选方块破坏。
+     * 由 Manager（质点 rayTest）或碰撞回调（刚体）调用。
+     * <p>
+     * 调用方应在调用此方法之前检查穿透密钥（通过
+     * {@link ProjectileManager#hasPenetrated}），若已穿透则跳过；
+     * 穿透后由调用方写入密钥。
+     *
+     * @param level               维度
+     * @param blockPos            命中方块坐标
+     * @param blockState          方块状态（调用方预先获取）
+     * @param currentPenetration  当前速度下的穿深（mm RHA）
+     * @param currentSpeed        当前速度（m/s）
+     * @param hitPoint            命中点世界坐标（MC Vec3）
+     * @param hitNormal           命中面法线（指向投射物）
+     * @return AfterHitResult — passThrough(速率保留率) / DESTROYED
+     */
+    default AfterHitResult onTerrainHit(
+        Level level, BlockPos blockPos, BlockState blockState,
+        float currentPenetration, float currentSpeed,
+        Vec3 hitPoint, Vec3 hitNormal
+    ) {
+        // 获取方块等效护甲（mm RHA）
+        float blockArmor = ArmorUtil.getBlockArmor(level, blockState, BlockPos.ZERO);
+
+        if (currentPenetration > blockArmor) {
+            // 穿透：计算穿透后速度
+            float penCoeff = getPenetrationVelocityCoefficient();
+            float newSpeed = speedAfterPenetration(currentSpeed, currentPenetration, blockArmor, penCoeff);
+            float velocityRetention = newSpeed / Math.max(currentSpeed, 0.001f);
+
+            // 方块破坏判定（服务端）
+            if (!level.isClientSide() && MMServerConfig.projectileDestroyBlocks()
+                    && getProjectileType().getBlockDamageFactor() > 0) {
+                float damage = calculateCurrentDamage();
+                float blockDurability = 0.2f * DamageUtil.getMaxBlockDurability(
+                        EmptyBlockGetter.INSTANCE, blockState, BlockPos.ZERO);
+                if (blockDurability > 0 && getProjectileType().getBlockDamageFactor() * damage > blockDurability) {
+                    SparkLevel.submitDeduplicatedTask(level, blockPos.toShortString(), PPhase.PRE,
+                            () -> level.destroyBlock(blockPos, false));
+                }
+            }
+
+            return AfterHitResult.passThrough(velocityRetention, getVelocity());
+        }
+
+        // 无法穿透 → 销毁
+        return AfterHitResult.DESTROYED;
+    }
+
+    /**
+     * 处理零件或 BFHurtTarget（非 Entity）命中。同步执行 BFDamageApi 管线。
+     * <p>
+     * 调用方负责在调用前过滤掉 {@code MMPartEntity} 和 {@code MMProjectileEntity}
+     * （它们仅是渲染代理，不应触发命中）。
+     *
+     * @param level               维度
+     * @param target              命中目标（SubPart 或其他 BFHurtTarget）
+     * @param currentPenetration  当前穿深（mm RHA）
+     * @param currentDamage       当前伤害
+     * @param hitPoint            命中点世界坐标
+     * @param hitNormal           命中面法线
+     * @return AfterHitResult — passThrough / DESTROYED / ricochet
+     */
+    default AfterHitResult onPartHit(
+        Level level, BFHurtTarget target,
+        float currentPenetration, float currentDamage,
+        Vec3 hitPoint, Vec3 hitNormal
+    ) {
+        dealDamage(target, hitPoint, hitNormal);
+        return consumePendingHitResult();
+    }
+
+    /**
+     * 处理实体命中。委托 BFDamageApi 管线，异步完成后由 BFDamageHandler 回调写入结果。
+     * <p>
+     * 先通过 {@link BFDamageApi#resolveHitTarget} 决议实际目标：
+     * <ul>
+     *   <li>决议到非实体 BFHurtTarget（如 SubPart）→ 同步管线，立即返回结果</li>
+     *   <li>决议到 Entity 或非协议实体 → 异步管线，暂停投射物，提交主线程执行伤害</li>
+     *   <li>决议失败 → 假阳性，返回 null（继续飞行）</li>
+     * </ul>
+     * <p>
+     * 调用方应在下一帧通过 {@link #consumePendingHitResult()} 消费异步结果。
+     *
+     * @param level               维度
+     * @param entity              命中实体
+     * @param currentPenetration  当前穿深（mm RHA）
+     * @param currentDamage       当前伤害
+     * @param hitPoint            命中点世界坐标
+     * @param hitNormal           命中面法线
+     * @return AfterHitResult — 同步路径返回即时结果；异步路径返回 null，结果由回调链写入 pendingHitResult
+     */
+    @Nullable
+    default AfterHitResult onEntityHit(
+        Level level, Entity entity,
+        float currentPenetration, float currentDamage,
+        Vec3 hitPoint, Vec3 hitNormal
+    ) {
+        // 使用当前速度×物理 tick 构造搜索 delta
+        Vector3f velJme = getVelocity();
+        Vec3 delta = new Vec3(velJme.x, velJme.y, velJme.z).scale(1.0 / 20.0);
+
+        Vec3 finalPoint = hitPoint;
+        Vec3 finalNormal = hitNormal;
+        BFDamageExtensions exts = new BFDamageExtensions();
+
+        if (BFDamageApi.isProtocolAware(entity)) {
+            BFHitResolveResult resolved = BFDamageApi.resolveHitTarget(entity, hitPoint, delta);
+            if (resolved == null) return null; // 假阳性，继续飞行
+
+            BFHurtTarget rt = resolved.actualTarget();
+            finalPoint = resolved.correctedHitPoint();
+            finalNormal = resolved.correctedHitNormal();
+            exts = resolved.extensions().copy();
+
+            // 决议到非实体 BFHurtTarget（如 SubPart）→ 同步管线
+            if (!(rt instanceof Entity)) {
+                dealDamage(rt, finalPoint, finalNormal);
+                return consumePendingHitResult();
+            }
+        }
+
+        // ===== 异步管线：非协议实体 + 决议到 Entity 的 BFHurtTarget =====
+        BFDamageContext ctx = BFDamageContext.builder()
+                .source(level.damageSources().generic())
+                .baseDamage(currentDamage)
+                .penetration(currentPenetration)
+                .hitVelocity(new Vec3(velJme.x, velJme.y, velJme.z))
+                .hitPoint(finalPoint)
+                .hitNormal(finalNormal)
+                .extensions(exts)
+                .build()
+                .withHandler(this);
+
+        setHitPending(true);
+
+        SparkLevel.submitImmediateTask(level, PPhase.POST,
+                () -> {
+                    if (entity instanceof LivingEntity livingEntity)
+                        livingEntity.invulnerableTime = 0;
+                    BFDamageApi.hurt(entity, ctx);
+                });
+        return null;
     }
 
     // ==================== 物理状态协议 ====================

@@ -4,6 +4,7 @@ import cn.solarmoon.spark_core.api.SparkLevel;
 import cn.solarmoon.spark_core.physics.body.CollisionGroups;
 import cn.solarmoon.spark_core.physics.body.PhysicsBodyExtensionKt;
 import cn.solarmoon.spark_core.physics.PenetrationKey;
+import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
 import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
@@ -395,6 +396,43 @@ public class ProjectileManager {
      */
     public boolean containsProjectile(int targetObjId) {
         return projectileObjIds.contains(targetObjId);
+    }
+
+    // ==================== 穿透去重公共 API ====================
+
+    /**
+     * 查询指定投射物是否已穿透了给定方块位置。
+     * <p>
+     * 用于穿透去重：在调用 {@link IProjectile#onTerrainHit} 之前检查，
+     * 若已穿透则跳过。仅用于地形穿透。
+     *
+     * @param projectileId 投射物的 DestroyableObject ID
+     * @param pos          目标方块位置
+     * @return true 表示该方块已被穿透
+     */
+    public boolean hasPenetrated(int projectileId, BlockPos pos) {
+        Set<PenetrationKey> set = penetratedKeys.get(projectileId);
+        if (set == null) return false;
+        String zoneId = pos.toShortString();
+        for (PenetrationKey key : set) {
+            if (zoneId.equals(key.getZoneId())) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 记录指定投射物已穿透了给定方块。
+     * <p>
+     * 在 {@link IProjectile#onTerrainHit} 返回 {@link IProjectile.AfterHitResult.PassThrough}
+     * 后由调用方写入。仅用于地形穿透。
+     *
+     * @param projectileId 投射物的 DestroyableObject ID
+     * @param pos          目标方块位置
+     * @param terrainOwner 地形的 PhysicsHost（PhysicsChunkSection）
+     */
+    public void markPenetrated(int projectileId, BlockPos pos, PhysicsHost terrainOwner) {
+        PenetrationKey key = new PenetrationKey(terrainOwner, pos.toShortString());
+        penetratedKeys.computeIfAbsent(projectileId, k -> new HashSet<>()).add(key);
     }
 
     /**
@@ -849,47 +887,35 @@ public class ProjectileManager {
                     }
                 }
 
-                // 地形碰撞：尝试穿透或停止
+                // 地形碰撞：调用 IProjectile.onTerrainHit()
                 if (owner instanceof PhysicsChunkSection terrain) {
+                    if (!(destroyable instanceof IProjectile proj)) {
+                        broadcastTerrainHit(i, hitPointMc);
+                        alive[i] = false;
+                        projectileObjIds.remove(objId[i]);
+                        stopped = true;
+                        break;
+                    }
                     BlockPos blockPos = terrain.getBlockPosFromContactPoint(hitPointJme, hitNormalJme, -0.01f);
                     SectionSnapshot.BlockSnapshot blockSnap = terrain.getBlockSnapshot(blockPos);
                     if (blockSnap == null || terrain.isRemoved(blockPos)) continue;
 
                     BlockState blockState = blockSnap.getState();
-                    float blockArmor = ArmorUtil.getBlockArmor(level, blockState, BlockPos.ZERO);
-                    float pen = destroyable instanceof IProjectile proj ? proj.calculateCurrentPenetration() : 0;
+                    float currentPen = proj.calculateCurrentPenetration();
+                    float currentSpeed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
 
-                    if (pen > blockArmor && destroyable instanceof IProjectile) {
-                        // 击穿方块，继续飞行
-                        ProjectileType pType = types[typeIndex[i]];
-                        float impactSpeed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
-                        float newSpeed = IProjectile.speedAfterPenetration(
-                                impactSpeed, pen, blockArmor, pType.getPenetrationVelocityCoefficient());
-                        float scale = newSpeed / Math.max(impactSpeed, 0.001f);
-                        velX[i] *= scale;
-                        velY[i] *= scale;
-                        velZ[i] *= scale;
+                    IProjectile.AfterHitResult hitResult = proj.onTerrainHit(level, blockPos, blockState,
+                            currentPen, currentSpeed, hitPointMc, hitNormalMc);
 
-                        // 记录穿透密钥，防同帧重复判定
+                    if (hitResult != null && !hitResult.destroyed()) {
+                        // 穿透：更新速度，记录穿透密钥，广播
+                        velX[i] = hitResult.newVelocity().x;
+                        velY[i] = hitResult.newVelocity().y;
+                        velZ[i] = hitResult.newVelocity().z;
+
                         penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
 
-                        // 是否实际破坏方块（受 ServerConfig + blockDamageFactor 双重控制）
-                        if (MMServerConfig.projectileDestroyBlocks()
-                                && pType.getBlockDamageFactor() > 0
-                                && !level.isClientSide()) {
-                            float damage = (float) (pType.getBaseDamage() * Math.pow(impactSpeed / pType.getBaseVelocity(), pType.getDamageVelocityCoefficient()));
-                            float blockDurability = 0.2f * DamageUtil.getMaxBlockDurability(
-                                    EmptyBlockGetter.INSTANCE, blockState, BlockPos.ZERO);
-                            if (blockDurability > 0 && pType.getBlockDamageFactor() * damage > blockDurability) {
-                                terrain.markRemoved(blockPos);
-                                SparkLevel.submitDeduplicatedTask(level, blockPos.toShortString(), PPhase.PRE,
-                                        () -> level.destroyBlock(blockPos, false));
-                            }
-                        }
-
-                        // 广播命中同步（携带新速度，非销毁）
-                        broadcastHitSync(i, hitPointMc, hitNormalMc, false,
-                                new Vector3f(velX[i], velY[i], velZ[i]), false);
+                        broadcastHitSync(i, hitPointMc, hitNormalMc, false, hitResult.newVelocity(), false);
                     } else {
                         // 无法击穿，停止
                         broadcastTerrainHit(i, hitPointMc);
@@ -918,16 +944,29 @@ public class ProjectileManager {
                     break;
                 }
 
+                // 缓存当前穿深与伤害，避免重复计算
+                float currentPen = projectile.calculateCurrentPenetration();
+                float currentDmg = projectile.calculateCurrentDamage();
+
                 // ========================================================
-                //  分辨目标
+                //  分辨目标 → 统一调用 IProjectile 接口方法
                 // ========================================================
                 switch (owner) {
                     case SubPart subPart -> {
-                        stopped = handleSubPartHit(i, projectile, subPart, result, hitPointMc, hitNormalMc, penKey);
+                        HitBox hitBox = subPart.getHitBox(result.triangleIndex());
+                        if (hitBox.isActive()) {
+                            stopped = applyAfterHitResult(i, projectile,
+                                    projectile.onPartHit(level, subPart,
+                                            currentPen, currentDmg, hitPointMc, hitNormalMc),
+                                    hitPointMc, hitNormalMc, penKey);
+                        }
                         if (stopped) break label;
                     }
                     case BFHurtTarget bfTarget when !(owner instanceof Entity) -> {
-                        stopped = handleSyncBfHit(i, projectile, bfTarget, hitPointMc, hitNormalMc, penKey);
+                        stopped = applyAfterHitResult(i, projectile,
+                                projectile.onPartHit(level, bfTarget,
+                                        currentPen, currentDmg, hitPointMc, hitNormalMc),
+                                hitPointMc, hitNormalMc, penKey);
                         if (stopped) break label;
                     }
                     case Entity entity ->
@@ -957,120 +996,70 @@ public class ProjectileManager {
     }
 
     /**
-     * 处理命中 SubPart（物理原生，同步管线）。
+     * 应用已消费的 AfterHitResult（通过 onPartHit 返回值获得），
+     * 执行 SoA 操作并广播命中同步包。
      * <p>
-     * {@code dealDamage} 在物理线程同步走完 BallisticsFramework 全管线，
-     * 回调立即写入 {@link IProjectile.AfterHitResult}，Manager 消费后即时调整弹道。
-     *
-     * @return true 表示投射物已停止（需要销毁）
-     */
-    private boolean handleSubPartHit(int i, IProjectile projectile, SubPart subPart,
-                                     PhysicsRayTestResult result, Vec3 hitPoint, Vec3 hitNormal,
-                                     PenetrationKey penKey) {
-        HitBox hitBox = subPart.getHitBox(result.triangleIndex());
-        if (!hitBox.isActive()) return false;
-
-        projectile.dealDamage(subPart, hitPoint, hitNormal);
-        return applyHitResult(i, projectile, hitPoint, hitNormal, true, penKey);
-    }
-
-    /**
-     * 处理命中非实体的 BFHurtTarget（同步管线）。
-     */
-    private boolean handleSyncBfHit(int i, IProjectile projectile, BFHurtTarget target,
-                                    Vec3 hitPoint, Vec3 hitNormal, PenetrationKey penKey) {
-        projectile.dealDamage(target, hitPoint, hitNormal);
-        return applyHitResult(i, projectile, hitPoint, hitNormal, true, penKey);
-    }
-
-    /**
-     * 处理命中实体目标。
-     * <p>
-     * 先通过 {@code BFDamageApi.resolveHitTarget} 决议实际目标。
-     * 若决议到 SubPart 或非实体 BFHurtTarget → 回退同步处理。
-     * 若决议到 Entity / BFHurtTarget → 暂停投射物，提交主线程延迟伤害。
-     * 若决议失败（null）→ 假阳性，继续飞行。
-     * 若无协议感知（普通 Entity）→ 保守停止。
-     *
-     * @param dt 本帧时间步长（用于构造 search delta）
-     * @return true 表示已停止（或已标记暂停）
-     */
-    private boolean handleEntityHit(int i, IProjectile projectile, Entity entity,
-                                    Vec3 hitPoint, Vec3 hitNormal, float dt,
-                                    PenetrationKey penKey) {
-        Vec3 delta = new Vec3(velX[i] * dt, velY[i] * dt, velZ[i] * dt);
-
-        // 命中点、法线、extensions 先赋原始值，协议感知时再修正
-        Vec3 finalPoint = hitPoint;
-        Vec3 finalNormal = hitNormal;
-        BFDamageExtensions extensions = new BFDamageExtensions();
-
-        if (BFDamageApi.isProtocolAware(entity)) {
-            BFHitResolveResult resolved = BFDamageApi.resolveHitTarget(entity, hitPoint, delta);
-            if (resolved == null) return false; // 假阳性，继续飞行
-
-            BFHurtTarget rt = resolved.actualTarget();
-            finalPoint = resolved.correctedHitPoint();
-            finalNormal = resolved.correctedHitNormal();
-            extensions = resolved.extensions().copy();
-
-            // 决议到非实体 BFHurtTarget（如 SubPart）→ 同步管线
-            if (!(rt instanceof Entity)) {
-                projectile.dealDamage(rt, finalPoint, finalNormal);
-                return applyHitResult(i, projectile, finalPoint, finalNormal, true, penKey);
-            }
-        }
-
-        // ===== 统一异步管线：非协议实体 + 决议到 Entity 的 BFHurtTarget =====
-        BFDamageContext ctx = BFDamageContext.builder()
-                .source(level.damageSources().generic())
-                .baseDamage(projectile.calculateCurrentDamage())
-                .penetration(projectile.calculateCurrentPenetration())
-                .hitVelocity(new Vec3(velX[i], velY[i], velZ[i]))
-                .hitPoint(finalPoint)
-                .hitNormal(finalNormal)
-                .extensions(extensions)
-                .build()
-                .withHandler(projectile);
-
-        projectile.setHitPending(true);
-        if (penKey != null) pendingPenKeys.put(objId[i], penKey);
-
-        SparkLevel.submitImmediateTask(level, PPhase.POST,
-                () -> {
-                    if (entity instanceof LivingEntity livingEntity)
-                        livingEntity.invulnerableTime = 0; // 重置无敌时间
-                    BFDamageApi.hurt(entity, ctx);
-                });
-        return true;
-    }
-
-    /**
-     * 消费投射物的命中结果，执行对应的 SoA 操作并广播命中同步包。
+     * 与 {@link #applyHitResult} 的区别在于不调用 {@code consumePendingHitResult()}，
+     * 因为 onPartHit 已在内部消费。
      *
      * @param i      SoA 索引
      * @param proj   投射物实例
+     * @param result 已消费的命中结果（来自 onPartHit 返回值）
      * @param penKey 穿透密钥（可为 null）
      * @return true 表示投射物应销毁
      */
-    private boolean applyHitResult(int i, IProjectile proj, Vec3 hitPoint, Vec3 hitNormal, boolean isArmorHit, PenetrationKey penKey) {
-        IProjectile.AfterHitResult result = proj.consumePendingHitResult();
-        broadcastHitSync(i, hitPoint, hitNormal, isArmorHit, result);
-        if (result == null || result.destroyed()) {
+    private boolean applyAfterHitResult(int i, IProjectile proj, @Nullable IProjectile.AfterHitResult result,
+                                         Vec3 hitPoint, Vec3 hitNormal, PenetrationKey penKey) {
+        if (result == null) return false;
+        broadcastHitSync(i, hitPoint, hitNormal, true, result);
+        if (result.destroyed()) {
             proj.markHit();
             alive[i] = false;
             projectileObjIds.remove(objId[i]);
             return true;
         }
-
         velX[i] = result.newVelocity().x;
         velY[i] = result.newVelocity().y;
         velZ[i] = result.newVelocity().z;
-
         if (penKey != null) {
             penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
         }
         return false;
+    }
+
+    /**
+     * 通过 consumePendingHitResult() 消费后应用命中结果。
+     *
+     * @see #applyAfterHitResult
+     */
+    private boolean applyHitResult(int i, IProjectile proj, Vec3 hitPoint, Vec3 hitNormal, boolean isArmorHit, PenetrationKey penKey) {
+        return applyAfterHitResult(i, proj, proj.consumePendingHitResult(), hitPoint, hitNormal, penKey);
+    }
+
+    /**
+     * 处理实体命中。委托 {@link IProjectile#onEntityHit} 统一管线。
+     * <p>
+     * 同步路径（决议到非实体 BFHurtTarget）：onEntityHit 返回即时结果，直接 apply。
+     * 异步路径（Entity / 非协议实体）：onEntityHit 返回 null，Manager 保存穿透密钥以待后续帧消费。
+     *
+     * @return true 表示投射物已停止或被标记为暂停（hitPending）
+     */
+    private boolean handleEntityHit(int i, IProjectile projectile, Entity entity,
+                                    Vec3 hitPoint, Vec3 hitNormal, float dt,
+                                    PenetrationKey penKey) {
+        IProjectile.AfterHitResult result = projectile.onEntityHit(level, entity,
+                projectile.calculateCurrentPenetration(),
+                projectile.calculateCurrentDamage(),
+                hitPoint, hitNormal);
+
+        if (result == null) {
+            // 异步路径：保存穿透密钥，投射物已由 onEntityHit 标记 hitPending
+            if (penKey != null) pendingPenKeys.put(objId[i], penKey);
+            return true;
+        }
+
+        // 同步路径（决议到非实体 BFHurtTarget）：直接应用结果
+        return applyAfterHitResult(i, projectile, result, hitPoint, hitNormal, penKey);
     }
 
     /**

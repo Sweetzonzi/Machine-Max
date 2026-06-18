@@ -3,10 +3,12 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.static_attr;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 
 import java.util.HashSet;
 import java.util.List;
@@ -19,6 +21,32 @@ import java.util.Set;
  */
 @Getter
 public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
+
+    /**
+     * 发射器音效属性 — 包含基础音效和发射器特有音效。
+     * <p>
+     * 仿 {@code GearboxSubsystemStaticAttr.GearBoxSoundAttr} 的组织模式。
+     * </p>
+     *
+     * @param basicSounds  基础音效（onDestroyed / onActivated / onDeactivated）
+     * @param dryFireSound 空膛击发音效（扣扳机但无弹药）
+     */
+    public record LauncherSoundAttr(
+        BasicSoundAttr basicSounds,
+        SoundEvent dryFireSound
+    ) {
+        public static final LauncherSoundAttr DEFAULT = new LauncherSoundAttr(
+            BasicSoundAttr.DEFAULT,
+            SoundEvent.createFixedRangeEvent(
+                ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "subsystem.launcher.dry_fire"), 16)
+        );
+
+        public static final Codec<LauncherSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            BasicSoundAttr.basicSounds(LauncherSoundAttr::basicSounds),
+            SoundEvent.DIRECT_CODEC.optionalFieldOf("dry_fire", DEFAULT.dryFireSound)
+                .forGetter(LauncherSoundAttr::dryFireSound)
+        ).apply(instance, LauncherSoundAttr::new));
+    }
 
     private final float fireRate;                       // 射速 (RPM)
     private final float velocityMultiplier;             // 初速乘数，先应用此
@@ -60,8 +88,12 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 .forGetter(LauncherSubsystemStaticAttr::getForbiddenTags),
             Codec.STRING.listOf().optionalFieldOf("ammo_inputs", List.of())
                 .forGetter(LauncherSubsystemStaticAttr::getAmmoInputs),
-            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT).forGetter(BasicSubsystemStaticAttr::getSoundAttr)
+            LauncherSoundAttr.CODEC.optionalFieldOf("sounds", LauncherSoundAttr.DEFAULT)
+                .forGetter(LauncherSubsystemStaticAttr::getLauncherSounds)
     ).apply(instance, LauncherSubsystemStaticAttr::new));
+
+    /** 发射器专属音效属性 */
+    private final LauncherSoundAttr launcherSoundAttr;
 
     public LauncherSubsystemStaticAttr(
             BasicAttr basicAttr,
@@ -76,8 +108,9 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             List<ResourceLocation> acceptableTags,
             List<ResourceLocation> forbiddenTags,
             List<String> ammoInputs,
-            BasicSoundAttr sounds) {
-        super(basicAttr, sounds);
+            LauncherSoundAttr sounds) {
+        super(basicAttr, sounds.basicSounds());
+        this.launcherSoundAttr = sounds;
         this.fireRate = fireRate;
         this.velocityMultiplier = velocityMultiplier;
         this.velocityBonus = velocityBonus;
@@ -89,6 +122,16 @@ public class LauncherSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.acceptableTags = acceptableTags;
         this.forbiddenTags = forbiddenTags;
         this.ammoInputs = ammoInputs;
+    }
+
+    /** 获取发射器完整音效属性 */
+    public LauncherSoundAttr getLauncherSounds() {
+        return launcherSoundAttr;
+    }
+
+    /** 获取空膛击发音效 */
+    public SoundEvent getDryFireSound() {
+        return launcherSoundAttr.dryFireSound();
     }
 
     /**
