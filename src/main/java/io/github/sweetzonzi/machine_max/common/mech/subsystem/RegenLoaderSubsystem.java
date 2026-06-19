@@ -1,5 +1,9 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
+import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.SparkMathKt;
+import cn.solarmoon.spark_core.util.TaskSubmitOffice;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.energy.EnergyGrid;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
@@ -11,6 +15,8 @@ import lombok.Getter;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -47,6 +53,18 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     /** 再生延迟剩余 tick，上次输送弹药后需等待此时间才恢复再生 */
     private int regenDelayRemainingTicks = 0;
+
+    // ——— 装填进度音效状态（仅客户端有效） ———
+
+    /** 每个消费者上次已播放音效的进度阈值（0.0~1.0），避免同段重复触发 */
+    private final Map<IAmmoConsumer, Float> lastPlayedProgressKeys = new HashMap<>();
+
+    /** 批量冷却模式下上次已播放音效的进度阈值 */
+    @Nullable
+    private Float lastPlayedBatchProgressKey;
+
+    /** 批量冷却的总tick数（用于计算进度百分比） */
+    private int batchTotalTicks = 0;
 
     // ——— 多消费者支持 ———
 
@@ -151,6 +169,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     public ProjectileType consumeReadyRound(IAmmoConsumer consumer) {
         if (!readyConsumers.contains(consumer)) return null;
         readyConsumers.remove(consumer);
+        lastPlayedProgressKeys.remove(consumer); // 弹药已消费，清理该消费者的音效追踪
 
         if (getAmmoCount() <= 0) return null;
         if (!getLevel().isClientSide()) // 仅服务端更新弹药计数
@@ -228,6 +247,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             if (remaining <= 0) {
                 iter.remove();
                 readyConsumers.add(entry.getKey());
+                lastPlayedProgressKeys.remove(entry.getKey()); // 输送完成，清理该消费者的音效追踪
             } else {
                 entry.setValue(remaining);
             }
@@ -247,6 +267,11 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
                 // 批量产出模式
                 tickBatchReload();
             }
+        }
+
+        // ④ 装填进度分段音效（仅客户端）
+        if (getLevel().isClientSide()) {
+            tickProgressSounds();
         }
     }
 
@@ -296,16 +321,119 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
             // 计算冷却时间：弹仓容量 / 每分钟再生次数 × 1200 tick
             batchCooldownTicks = (int) (attr.staticAttribute.getMagazineCapacity() / regenPerMinute * 1200);
             if (batchCooldownTicks < 1) batchCooldownTicks = 1;
+            batchTotalTicks = batchCooldownTicks;
             isBatchReloading = true;
+            lastPlayedBatchProgressKey = null; // 新一批冷却开始，重置音效进度追踪
         }
 
         if (isBatchReloading) {
             batchCooldownTicks--;
+
+            // 批量冷却进度音效（在isBatchReloading翻转为false之前检查，确保播放到"1.0"）
+            if (getLevel().isClientSide()) {
+                checkBatchProgressSound();
+            }
+
             if (batchCooldownTicks <= 0) {
                 isBatchReloading = false;
                 setAmmoCount(attr.staticAttribute.getMagazineCapacity());
+                lastPlayedBatchProgressKey = null;
             }
         }
+    }
+
+    // ==================== 装填进度音效 ====================
+
+    /**
+     * 处理每消费者的装填进度分段音效。<br>
+     * 遍历 {@link #deliveryTimers} 中的每个消费者，按当前输送进度查找匹配的
+     * 进度阈值key，跨越阈值时播放对应音效。
+     * <p>
+     * <b>调用线程：</b>主线程（{@link #onTick()}）。
+     * </p>
+     */
+    private void tickProgressSounds() {
+        Map<String, SoundEvent> sounds = attr.staticAttribute.getProgressSounds();
+        if (sounds.isEmpty()) return;
+
+        float totalTicks = attr.staticAttribute.getReloadTime() * 20f;
+        if (totalTicks <= 0) return; // 瞬时交付无需进度音效
+
+        for (Map.Entry<IAmmoConsumer, Integer> entry : deliveryTimers.entrySet()) {
+            IAmmoConsumer consumer = entry.getKey();
+            float progress = 1f - (float) entry.getValue() / totalTicks;
+            Float lastKey = lastPlayedProgressKeys.get(consumer);
+            Float matchedKey = findBestProgressKey(sounds, progress);
+            if (matchedKey != null && !matchedKey.equals(lastKey)) {
+                lastPlayedProgressKeys.put(consumer, matchedKey);
+                playProgressSound(sounds.get(String.valueOf(matchedKey)));
+            }
+        }
+
+        // 清理已不在输送中的消费者追踪记录
+        lastPlayedProgressKeys.keySet().removeIf(c -> !deliveryTimers.containsKey(c));
+    }
+
+    /**
+     * 检查批量冷却模式下的进度音效。<br>
+     * 由 {@link #tickBatchReload()} 在 batchCooldownTicks 递减后、
+     * isBatchReloading 翻转前调用，确保跨越"1.0"阈值时能播放完成音效。
+     * <p>
+     * <b>调用线程：</b>主线程（{@link #onTick()} → {@link #tickBatchReload()}）。
+     * </p>
+     */
+    private void checkBatchProgressSound() {
+        Map<String, SoundEvent> sounds = attr.staticAttribute.getProgressSounds();
+        if (sounds.isEmpty() || batchTotalTicks <= 0) return;
+
+        float progress = 1f - (float) batchCooldownTicks / batchTotalTicks;
+        Float matchedKey = findBestProgressKey(sounds, progress);
+        if (matchedKey != null && !matchedKey.equals(lastPlayedBatchProgressKey)) {
+            lastPlayedBatchProgressKey = matchedKey;
+            playProgressSound(sounds.get(String.valueOf(matchedKey)));
+        }
+    }
+
+    /**
+     * 在进度音效映射中查找 ≤ 当前进度的最大key。
+     *
+     * @param sounds          进度音效映射（key=进度浮点字符串）
+     * @param currentProgress 当前进度（0.0~1.0）
+     * @return 最佳匹配的进度阈值，无匹配时返回 null
+     */
+    @Nullable
+    private static Float findBestProgressKey(Map<String, SoundEvent> sounds, float currentProgress) {
+        return sounds.keySet().stream()
+            .map(k -> {
+                try { return Float.parseFloat(k); }
+                catch (NumberFormatException e) { return Float.NaN; }
+            })
+            .filter(k -> !Float.isNaN(k) && k <= currentProgress)
+            .max(Float::compareTo)
+            .orElse(null);
+    }
+
+    /**
+     * 播放单次进度音效。<br>
+     * 使用 {@link SpreadingSoundHelper#playSpreadingSound} 在子系统位置播放，
+     * 带多普勒速度传播。
+     *
+     * @param sound 要播放的音效，null 时静默跳过
+     */
+    private void playProgressSound(@Nullable SoundEvent sound) {
+        if (sound == null || !getLevel().isClientSide()) return;
+        ((TaskSubmitOffice) getLevel()).submitImmediateTask(
+            PPhase.ALL,
+            () -> {
+                SpreadingSoundHelper.playSpreadingSound(
+                    getLevel(), sound, SoundSource.NEUTRAL,
+                    SparkMathKt.toVec3(getSubPart().getPosition()),
+                    SparkMathKt.toVec3(getSubPart().getLinearVelocity()),
+                    1.0f, 1.0f
+                );
+                return null;
+            }
+        );
     }
 
     /**

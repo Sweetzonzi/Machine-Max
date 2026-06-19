@@ -8,5 +8,21 @@
   "projectile_type": "machine_max:50mm_pzgr39",
   "reload_time": 2,
   "can_supply_multiple": false,
+  "sounds": {
+    "progress_sounds": {
+      "0.0": {
+        "sound_id": "machine_max:subsystem.loader.reload_start",
+        "range": 16.0
+      },
+      "0.5": {
+        "sound_id": "machine_max:subsystem.loader.reload_shell",
+        "range": 16.0
+      },
+      "0.9": {
+        "sound_id": "machine_max:subsystem.loader.reload_close",
+        "range": 16.0
+      }
+    }
+  },
   "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json"
 }

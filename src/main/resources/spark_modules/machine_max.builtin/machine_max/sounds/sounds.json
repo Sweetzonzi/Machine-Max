@@ -364,6 +364,22 @@
       "machine_max:subsystem/motor/elec_3000"
     ]
   },
+  "subsystem.loader.reload_start": {
+    "sounds": [
+      "machine_max:subsystem/loader/reload_start"
+    ]
+  },
+  "subsystem.loader.reload_close": {
+    "sounds": [
+      "machine_max:subsystem/loader/reload_close"
+    ]
+  },
+  "subsystem.loader.reload_shell": {
+    "sounds": [
+      "machine_max:subsystem/loader/reload_shell_1",
+      "machine_max:subsystem/loader/reload_shell_2"
+    ]
+  },
   "projectile.fire.mini": {
     "sounds": [
       "machine_max:projectile/fire/fire_mini"

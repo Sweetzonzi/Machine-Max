@@ -6,6 +6,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.SubsystemTypes;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+
+import java.util.Map;
 
 /**
  * 再生装弹机子系统静态属性。<br>
@@ -15,6 +18,32 @@ import net.minecraft.resources.ResourceLocation;
  */
 @Getter
 public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
+
+    /**
+     * 再生装弹机音效属性 — 包含基础音效和进度分段装填音效。
+     * <p>
+     * 仿 {@code LauncherSubsystemStaticAttr.LauncherSoundAttr} 的组织模式。
+     * </p>
+     *
+     * @param basicSounds    基础音效（onDestroyed / onActivated / onDeactivated）
+     * @param progressSounds 装填进度分段音效映射（key=进度浮点字符串如"0.0","0.25","0.5","0.75","1.0"，value=音效）
+     */
+    public record RegenLoaderSoundAttr(
+        BasicSoundAttr basicSounds,
+        Map<String, SoundEvent> progressSounds
+    ) {
+        public static final RegenLoaderSoundAttr DEFAULT = new RegenLoaderSoundAttr(
+            BasicSoundAttr.DEFAULT,
+            Map.of()
+        );
+
+        public static final Codec<RegenLoaderSoundAttr> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            BasicSoundAttr.basicSounds(RegenLoaderSoundAttr::basicSounds),
+            Codec.unboundedMap(Codec.STRING, SoundEvent.DIRECT_CODEC)
+                .optionalFieldOf("progress_sounds", Map.of())
+                .forGetter(RegenLoaderSoundAttr::progressSounds)
+        ).apply(instance, RegenLoaderSoundAttr::new));
+    }
 
     /** 弹仓容量 */
     private final int magazineCapacity;
@@ -53,6 +82,9 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
      */
     private final float regenDelay;
 
+    /** 再生装弹机专属音效属性 */
+    private final RegenLoaderSoundAttr regenLoaderSoundAttr;
+
     public static final MapCodec<RegenLoaderSubsystemStaticAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BasicAttr.CODEC.forGetter(BasicSubsystemStaticAttr::getBasicAttr),
             Codec.INT.fieldOf("magazine_capacity")
@@ -71,8 +103,8 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
                 .forGetter(RegenLoaderSubsystemStaticAttr::isCanSupplyMultiple),
             Codec.FLOAT.optionalFieldOf("regen_delay", 0f)
                 .forGetter(RegenLoaderSubsystemStaticAttr::getRegenDelay),
-            BasicSoundAttr.CODEC.codec().optionalFieldOf("sounds", BasicSoundAttr.DEFAULT)
-                .forGetter(BasicSubsystemStaticAttr::getSoundAttr)
+            RegenLoaderSoundAttr.CODEC.optionalFieldOf("sounds", RegenLoaderSoundAttr.DEFAULT)
+                .forGetter(RegenLoaderSubsystemStaticAttr::getRegenLoaderSounds)
     ).apply(instance, RegenLoaderSubsystemStaticAttr::new));
 
     public RegenLoaderSubsystemStaticAttr(
@@ -85,8 +117,9 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
             float reloadTime,
             boolean canSupplyMultiple,
             float regenDelay,
-            BasicSoundAttr sounds) {
-        super(basicAttr, sounds);
+            RegenLoaderSoundAttr sounds) {
+        super(basicAttr, sounds.basicSounds());
+        this.regenLoaderSoundAttr = sounds;
         this.magazineCapacity = magazineCapacity;
         this.regenPerMinute = regenPerMinute;
         this.regenRoundByRound = regenRoundByRound;
@@ -95,6 +128,16 @@ public class RegenLoaderSubsystemStaticAttr extends BasicSubsystemStaticAttr {
         this.reloadTime = reloadTime;
         this.canSupplyMultiple = canSupplyMultiple;
         this.regenDelay = regenDelay;
+    }
+
+    /** 获取再生装弹机完整音效属性 */
+    public RegenLoaderSoundAttr getRegenLoaderSounds() {
+        return regenLoaderSoundAttr;
+    }
+
+    /** 获取装填进度分段音效映射（key=进度浮点字符串如"0.0"~"1.0"） */
+    public Map<String, SoundEvent> getProgressSounds() {
+        return regenLoaderSoundAttr.progressSounds();
     }
 
     @Override
