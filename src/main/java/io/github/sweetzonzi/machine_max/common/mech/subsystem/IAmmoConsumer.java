@@ -11,7 +11,7 @@ import java.util.Map;
 
 /**
  * 弹药消费者接口。<br>
- * 发射器、下游装弹机等需要从供给者获取弹药的子系统实现此接口。
+ * 发射器等需要从供给者获取弹药的子系统实现此接口。
  * 兼容性校验由消费者在运行时逐发执行。
  */
 public interface IAmmoConsumer {
@@ -19,7 +19,11 @@ public interface IAmmoConsumer {
     /**
      * 供给者摘要，供 HUD 一次性获取全部弹药信息。<br>
      * 字段值来自 {@link IAmmoSupplier} 自身报告的方法，不做 instanceof 分支。
+     *
+     * @deprecated WeaponController 接管弹药管理后，HUD 应从 Controller 的 {@code getAmmoPool()} 读取，
+     * 不再需要此 record。保留以兼容过渡期代码。
      */
+    @Deprecated
     record SupplierSummary(
             /** 弹种注册名，如 "machine_max:apfsds" */
             @Nullable ResourceLocation type,
@@ -52,17 +56,38 @@ public interface IAmmoConsumer {
     /** 获取当前选中的供给者 */
     @Nullable IAmmoSupplier getCurrentSupplier();
 
+    /** 设置当前选中的供给者（直接引用，null 表示无供给者） */
+    void setCurrentSupplier(@Nullable IAmmoSupplier supplier);
+
     /** 获取所有已注册的供给者列表 */
     List<IAmmoSupplier> getSuppliers();
 
-    /** 设置当前选中的供给者索引 */
-    void setCurrentSupplier(int index);
+    /**
+     * 获取按频道分组的供给者映射。<br>
+     * 频道名对应 LauncherStaticAttr.ammo_inputs 中声明的发现频道。
+     * LinkedHashMap 保证迭代顺序与 ammo_inputs 一致。
+     *
+     * @return 频道名 → 该频道下的供给者列表
+     */
+    Map<String, List<IAmmoSupplier>> getSupplierChannels();
 
     /**
      * 由供给者在握手中调用，将自身注册到消费者的可选供给者列表中。<br>
      * 若消费者此前没有供给者，自动选定此供给者。
+     * 默认实现转发到 {@link #addSupplier(IAmmoSupplier, String)}，频道名为 "unknown"。
      */
-    void addSupplier(IAmmoSupplier supplier);
+    default void addSupplier(IAmmoSupplier supplier) {
+        addSupplier(supplier, "unknown");
+    }
+
+    /**
+     * 带频道名的供给者注册。<br>
+     * 频道名由 Loader 在 handshake 回调中传递，对应 Launcher 的 ammo_inputs 声明顺序。
+     *
+     * @param supplier    供给者实例
+     * @param channelName 发现频道名，用于按频道分组
+     */
+    void addSupplier(IAmmoSupplier supplier, String channelName);
 
     /**
      * 判断此消费者是否可以接受指定弹药类型。<br>
@@ -74,7 +99,10 @@ public interface IAmmoConsumer {
      * 所有供给者摘要的包装记录。<br>
      * 替代裸 {@code List&lt;SupplierSummary&gt;}，提供便捷的聚合查询方法。<br>
      * {@code totalByType} 在构造时一次性计算并缓存，避免高频查询重复迭代。
+     *
+     * @deprecated WeaponController 接管弹药管理后，HUD 应从 Controller 读取聚合视图。
      */
+    @Deprecated
     record SupplierSummaries(
             List<SupplierSummary> summaries,
             Map<ResourceLocation, Integer> totalByType
@@ -129,8 +157,10 @@ public interface IAmmoConsumer {
      * 获取所有已连接供给者的摘要列表，供 HUD 直接使用。<br>
      * 数据全部来自 {@link IAmmoSupplier} 自身方法，不依赖具体实现类。
      *
+     * @deprecated WeaponController 接管弹药管理后不再需要，保留以兼容过渡期代码。
      * @return 供给者摘要包装
      */
+    @Deprecated
     default SupplierSummaries getSupplierSummaries() {
         List<SupplierSummary> result = new ArrayList<>();
         IAmmoSupplier selected = getCurrentSupplier();

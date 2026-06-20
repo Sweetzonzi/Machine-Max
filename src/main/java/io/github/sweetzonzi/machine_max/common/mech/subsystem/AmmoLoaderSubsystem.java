@@ -17,8 +17,8 @@ import java.util.*;
 
 /**
  * 装弹机子系统。<br>
- * 管理弹药供给、装填时序和弹序循环，同时实现 {@link IAmmoSupplier} 和 {@link IAmmoConsumer} 双接口。<br>
- * 作为 IAmmoSupplier 向下游（Launcher、其他 AmmoLoader）提供弹药；作为 IAmmoConsumer 从上游供给者补充弹药。<br>
+ * 管理物理弹药供给、装填时序和弹序循环，仅实现 {@link IAmmoSupplier} 接口。<br>
+ * 不再实现 {@link IAmmoConsumer}（已移除多级弹药链支持）。<br>
  * <p>
  * 两种装填模式：
  * <ul>
@@ -28,7 +28,7 @@ import java.util.*;
  * <p>
  * 状态机：IDLE → RELOADING(consumer, remainingTicks) → READY → consume → IDLE
  */
-public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier, IAmmoConsumer {
+public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier {
 
     public final AmmoLoaderSubsystemAttr attr;
 
@@ -40,17 +40,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     /** 每个消费者弹药是否已就绪 */
     private final Set<IAmmoConsumer> readyConsumers = new HashSet<>();
-
-    // ——— IAmmoConsumer 字段 ———
-
-    /** 当前选中的上游供给者索引 */
-    private int selectedSupplierIndex = 0;
-
-    /** 上游供给者列表（串联模式用） */
-    private final List<IAmmoSupplier> upstreamSuppliers = new ArrayList<>();
-
-    /** 当前是否正在等待上游装填 */
-    private boolean waitingUpstream = false;
 
     public AmmoLoaderSubsystem(ISubsystemHost owner, String name, AmmoLoaderSubsystemAttr attr) {
         super(owner, name, attr);
@@ -108,6 +97,33 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return "empty";
     }
 
+    /**
+     * 获取弹药明细拆解。<br>
+     * 遍历 FIFO 容器统计每种弹药类型的数量。
+     *
+     * @return 弹种 → 可用数量，空映射表示无弹药
+     */
+    @Override
+    public Map<ProjectileType, Integer> getAmmoBreakdown() {
+        Map<ProjectileType, Integer> result = new LinkedHashMap<>();
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            ItemStack stack = container.getItem(i);
+            if (stack.isEmpty()) continue;
+            ProjectileType type = getProjectileTypeFromItem(stack);
+            if (type != null) {
+                result.merge(type, stack.getCount(), Integer::sum);
+            }
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    /**
+     * 请求一发弹药，启动非阻塞装填计时器。<br>
+     * 仅在本地有弹药时启动装填，无弹药直接返回 false（不再向上游请求补充）。
+     * 幂等性：同一 consumer 多次调用不会创建重复计时器。
+     *
+     * @return true 表示请求已接受（首次请求或已在装填中）
+     */
     @Override
     public boolean requestRound(IAmmoConsumer consumer) {
         // 幂等性：已在装填中则直接返回 true
@@ -118,16 +134,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         if (hasAmmo()) {
             reloadTimers.put(consumer, (int) (attr.staticAttribute.getReloadTime() * 20f));
             return true;
-        }
-
-        // 无弹药且有上游供给者 → 向上游请求补充
-        if (autoRequestUpstream() && !upstreamSuppliers.isEmpty()) {
-            IAmmoSupplier upstream = getCurrentUpstream();
-            if (upstream != null) {
-                waitingUpstream = true;
-                upstream.requestRound(this);
-                return true;
-            }
         }
 
         return false;
@@ -203,63 +209,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         return total > 0 ? 1f - (float) remaining / total : 1f;
     }
 
-    @Override
-    public boolean canAcceptAmmo() {
-        return isActive() && !isDestroyed();
-    }
-
-    @Override
-    public int getFreeCapacity() {
-        return getFreeCapacityInternal();
-    }
-
-    @Override
-    public boolean receiveAmmo(ProjectileType type) {
-        if (getFreeCapacityInternal() <= 0) return false;
-        // 存入第一个空槽位
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            if (container.getItem(i).isEmpty()) {
-                ItemStack stack = new ItemStack(getAmmoItem(type), 1);
-                container.setItem(i, stack);
-                waitingUpstream = false;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    @Nullable
-    public IAmmoSupplier getCurrentSupplier() {
-        return getCurrentUpstream();
-    }
-
-    @Override
-    public List<IAmmoSupplier> getSuppliers() {
-        return upstreamSuppliers;
-    }
-
-    @Override
-    public void setCurrentSupplier(int index) {
-        if (index >= 0 && index < upstreamSuppliers.size()) {
-            selectedSupplierIndex = index;
-        }
-    }
-
-    @Override
-    public void addSupplier(IAmmoSupplier supplier) {
-        upstreamSuppliers.add(supplier);
-        if (upstreamSuppliers.size() == 1) {
-            selectedSupplierIndex = 0;
-        }
-    }
-
-    @Override
-    public boolean canAccept(ProjectileType type) {
-        // 装弹机接受任何弹药（由下游 Launcher 最终校验兼容性）
-        return true;
-    }
-
     // ==================== 核心逻辑 ====================
 
     @Override
@@ -267,7 +216,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
         super.onTick();
         if (!isActive() || isDestroyed()) return;
 
-        // ① 推进装填计时器
+        // ① 推进装填计时器（已移除向上游自动请求补充逻辑）
         Iterator<Map.Entry<IAmmoConsumer, Integer>> iter = reloadTimers.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry<IAmmoConsumer, Integer> entry = iter.next();
@@ -278,14 +227,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
                 readyConsumers.add(entry.getKey());
             } else {
                 entry.setValue(remaining);
-            }
-        }
-
-        // ② 弹仓未满时自动向上游请求补充
-        if (autoRequestUpstream() && getFreeCapacityInternal() > 0 && !waitingUpstream) {
-            IAmmoSupplier upstream = getCurrentUpstream();
-            if (upstream != null && upstream.hasAmmo()) {
-                waitingUpstream = upstream.requestRound(this);
             }
         }
     }
@@ -306,23 +247,6 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
      */
     private int getFreeCapacityInternal() {
         return container.getContainerSize() - getAmmoCount();
-    }
-
-    /**
-     * 是否启用自动向上游请求补充。
-     */
-    private boolean autoRequestUpstream() {
-        return attr.staticAttribute.isAutoRequestUpstream() && !upstreamSuppliers.isEmpty();
-    }
-
-    /**
-     * 获取当前选中的上游供给者（IAmmoSupplier 模式的 downstream AmmoLoader 用此获取弹药）。
-     */
-    @Nullable
-    private IAmmoSupplier getCurrentUpstream() {
-        if (upstreamSuppliers.isEmpty()) return null;
-        if (selectedSupplierIndex < 0 || selectedSupplierIndex >= upstreamSuppliers.size()) return null;
-        return upstreamSuppliers.get(selectedSupplierIndex);
     }
 
     /**
@@ -368,13 +292,13 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
     @Override
     public void onVehicleStructureChanged() {
         super.onVehicleStructureChanged();
-        upstreamSuppliers.clear();
         handShake();
     }
 
     /**
      * 弹药链握手：向发现频道发送空信号，通过回调发现同一载具内的 IAmmoConsumer。<br>
-     * 下游消费者（Launcher、其他 AmmoLoader）收到回调后通过 addSupplier() 注册此供给者。
+     * 下游消费者（Launcher）收到回调后通过 addSupplier() 注册此供给者。
+     * 回调携带频道名，供 Launcher 按 ammo_inputs 频道分组。
      */
     protected void handShake() {
         for (String signalChannel : attr.discoveryOutputs.keySet()) {
@@ -447,7 +371,7 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
 
     @Override
     public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        // 弹药发现频道回调：供给者发现下游消费者
+        // 弹药发现频道回调：供给者发现下游消费者，从回调值读取频道名后注册
         if (channelName.equals("callback") && sender instanceof IAmmoConsumer consumer) {
             if (consumer instanceof AbstractSubsystem sub) {
                 if (sub.getOwner().getSubPart().getPart().assembly
@@ -455,8 +379,10 @@ public class AmmoLoaderSubsystem extends BasicSubsystem implements IAmmoSupplier
                     return SignalResult.PASS;
                 }
             }
-            // 注册自身到消费者的供给者列表
-            consumer.addSupplier(this);
+            // 从信号频道读取回调携带的频道名，若无法获取则使用 "unknown"
+            Object callbackValue = getSignalChannel("callback").get(sender);
+            String discoveryChannel = callbackValue instanceof String s ? s : "unknown";
+            consumer.addSupplier(this, discoveryChannel);
             return SignalResult.CONSUME;
         }
         return super.onSignalUpdated(channelName, sender);

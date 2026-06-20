@@ -2,6 +2,7 @@ package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import com.jme3.math.Vector3f;
 
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
@@ -11,17 +12,17 @@ import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 武器控制器子系统。<br>
  * 接收目标坐标和开火指令，控制炮塔驱动子系统指向目标，
  * 并控制发射器子系统在瞄准完毕后开火。<br>
+ * 弹药管理：接管弹种选择与路由决策，维护统一的聚合弹药池视图。<br>
  * 通过握手（callback）自动发现并绑定同载具内的 TurretDriver 和 Launcher 子系统。
  */
 @Getter
@@ -41,7 +42,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     /** 当前是否有开火指令 */
     private volatile boolean firing = false;
 
-    /** 弹药切换信号（来自座座椅透传的按键信号） */
+    /** 弹药切换信号（来自座椅透传的按键信号） */
     private volatile boolean ammoSwitchPressed = false;
 
     /** 弹药切换防抖计数器 */
@@ -52,6 +53,44 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     /** 轮射模式下的tick计时器 */
     private int rippleTickCounter = 0;
 
+    // ==================== 弹药管理（新增） ====================
+
+    /**
+     * 用户当前选中的弹种注册名，null = 无选择（不装填但可发射膛内已有弹药）。
+     */
+    @Nullable
+    private ResourceLocation selectedProjectileType = null;
+
+    /**
+     * 聚合弹药池快照。<br>
+     * key = 弹种注册名，value = 提供该弹种的所有 Loader 条目（按装填速度升序）。
+     * 载具结构变化时由 onVehicleStructureChanged 触发完整重建，volatile 保证跨线程可见。
+     */
+    private volatile Map<ResourceLocation, List<LoaderEntry>> ammoPool = Map.of();
+
+    /**
+     * 自上次完整重建以来的 tick 计数，用于每 10 tick 轻量刷新 availableCount。
+     */
+    private int tickSincePoolRebuild = 0;
+
+    /**
+     * 是否需要重建弹药池。<br>
+     * 载具结构变化或发现新 Launcher 时设为 true，在下一个 onTick() 中执行实际重建。<br>
+     * 延迟重建确保 handshake 回调（Loader → Launcher 注册）已完成，
+     * 避免路由时 supplierChannels 为空。
+     */
+    private boolean needsAmmoPoolUpdate = true;
+
+    /**
+     * Loader 条目（弹药池视图中的元素，供 HUD 和路由使用）。
+     */
+    public record LoaderEntry(
+            IAmmoSupplier loader,
+            int availableCount,      // 该 Loader 中此弹种的可用数量
+            int reloadTimeTicks,     // 装填耗时
+            String channel           // 所属频道名（HUD 显示用，不影响路由）
+    ) {}
+
     public WeaponControllerSubsystem(ISubsystemHost owner, String name, WeaponControllerSubsystemAttr attr) {
         super(owner, name, attr);
         this.attr = attr;
@@ -60,15 +99,33 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     @Override
     public void onTick() {
         super.onTick();
+
+        // 延迟重建弹药池：确保 handshake 回调已完成，supplierChannels 已就绪
+        if (needsAmmoPoolUpdate) {
+            rebuildAmmoPool();
+            needsAmmoPoolUpdate = false;
+        }
+
         readInputSignals();
 
         // 弹药切换防抖递减
         if (ammoSwitchCooldown > 0) ammoSwitchCooldown--;
+
+        // 每 10 tick 轻量刷新弹药池 availableCount
+        tickSincePoolRebuild++;
+        if (tickSincePoolRebuild >= 10) {
+            tickSincePoolRebuild = 0;
+            refreshAmmoPoolCounts();
+        }
     }
 
     @Override
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
+
+        // 0) 弹药路由：在瞄准/开火之前执行
+        routeAmmoToLaunchers();
+
         // 物理线程开始时读取一次 volatile 字段到局部变量，避免竞态
         ViewInputSignal vis = this.currentViewSignal;
         Vec3 target = this.targetPosition;
@@ -137,20 +194,229 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
             rippleTickCounter = 0;
             rippleIndex = 0;
         }
+    }
 
-        // ④ 弹药选择：多供给源时响应弹药切换信号
-        if (ammoSwitchPressed && ammoSwitchCooldown <= 0) {
-            for (LauncherSubsystem launcher : launchers.keySet()) {
-                if (launcher.getSuppliers().size() > 1) {
-                    int current = launcher.getSuppliers().indexOf(launcher.getCurrentSupplier());
-                    int next = (current + 1) % launcher.getSuppliers().size();
-                    launcher.setCurrentSupplier(next);
+    // ==================== 弹药管理 ====================
+
+    /**
+     * 弹药池完整重建。<br>
+     * 由 onVehicleStructureChanged() 和首次初始化触发，
+     * 遍历所有 launcher 的 supplierChannels 重建 ammoPool。
+     */
+    private void rebuildAmmoPool() {
+        Map<ResourceLocation, List<LoaderEntry>> pool = new HashMap<>();
+        for (LauncherSubsystem launcher : launchers.keySet()) {
+            if (launcher.isDestroyed() || !launcher.isActive()) continue;
+            for (Map.Entry<String, List<IAmmoSupplier>> channelEntry : launcher.getSupplierChannels().entrySet()) {
+                String channel = channelEntry.getKey();
+                for (IAmmoSupplier loader : channelEntry.getValue()) {
+                    Map<ProjectileType, Integer> breakdown = loader.getAmmoBreakdown();
+                    for (Map.Entry<ProjectileType, Integer> ammoEntry : breakdown.entrySet()) {
+                        ProjectileType type = ammoEntry.getKey();
+                        ResourceLocation typeKey = type.getRegistryKey();
+                        if (typeKey == null) continue;
+                        int count = ammoEntry.getValue();
+                        // 每个弹种内按 reloadTimeTicks 升序排序
+                        pool.computeIfAbsent(typeKey, k -> new ArrayList<>())
+                                .add(new LoaderEntry(loader, count, loader.getReloadTimeTicks(), channel));
+                    }
                 }
             }
+        }
+        // 每个弹种内：按 reloadTimeTicks 升序排序
+        for (Map.Entry<ResourceLocation, List<LoaderEntry>> entry : pool.entrySet()) {
+            entry.getValue().sort(Comparator.comparingInt(LoaderEntry::reloadTimeTicks));
+        }
+        this.ammoPool = Collections.unmodifiableMap(pool);
+        this.tickSincePoolRebuild = 0;
+    }
+
+    /**
+     * 轻量刷新弹药池 availableCount（不改变结构，仅更新数量）。
+     * 每 10 tick 调用一次。
+     */
+    private void refreshAmmoPoolCounts() {
+        Map<ResourceLocation, List<LoaderEntry>> pool = this.ammoPool;
+        if (pool.isEmpty()) return;
+        Map<ResourceLocation, List<LoaderEntry>> updated = new HashMap<>();
+        for (Map.Entry<ResourceLocation, List<LoaderEntry>> entry : pool.entrySet()) {
+            List<LoaderEntry> updatedEntries = new ArrayList<>(entry.getValue().size());
+            for (LoaderEntry le : entry.getValue()) {
+                Map<ProjectileType, Integer> breakdown = le.loader().getAmmoBreakdown();
+                // 找到 loader 中此弹种的数量
+                int count = 0;
+                for (Map.Entry<ProjectileType, Integer> ammoEntry : breakdown.entrySet()) {
+                    if (entry.getKey().equals(ammoEntry.getKey().getRegistryKey())) {
+                        count = ammoEntry.getValue();
+                        break;
+                    }
+                }
+                updatedEntries.add(new LoaderEntry(
+                        le.loader(), count, le.reloadTimeTicks(), le.channel()));
+            }
+            updated.put(entry.getKey(), Collections.unmodifiableList(updatedEntries));
+        }
+        this.ammoPool = Collections.unmodifiableMap(updated);
+    }
+
+    /**
+     * 在可用弹种列表中循环切换选中的弹种。<br>
+     * 弹种按 ResourceLocation 自然顺序排列，保证可预测的切换顺序。
+     */
+    private void cycleSelectedType() {
+        List<ResourceLocation> available = getAvailableProjectileTypes();
+        if (available.isEmpty()) {
+            selectedProjectileType = null;
+            return;
+        }
+        if (selectedProjectileType == null) {
+            // 无选中 → 选第一个
+            selectedProjectileType = available.getFirst();
+            return;
+        }
+        int index = available.indexOf(selectedProjectileType);
+        int next = (index + 1) % available.size();
+        selectedProjectileType = available.get(next);
+    }
+
+    /**
+     * 为指定 launcher 查找能提供 selectedType 的最优 Loader。<br>
+     * 按 launcher.supplierChannels 的迭代顺序（= LauncherStaticAttr.ammo_inputs 列表顺序），
+     * 在第一个有匹配弹种的频道中选 reloadTimeTicks 最小的 Loader。
+     *
+     * @return 最优 Loader，若无任何 loader 能提供选中弹种则返回 null
+     */
+    @Nullable
+    private IAmmoSupplier findBestLoaderFor(LauncherSubsystem launcher) {
+        if (selectedProjectileType == null) return null;
+        for (Map.Entry<String, List<IAmmoSupplier>> channelEntry :
+                launcher.getSupplierChannels().entrySet()) {
+            List<IAmmoSupplier> channelLoaders = channelEntry.getValue();
+            IAmmoSupplier best = null;
+            int bestReloadTicks = Integer.MAX_VALUE;
+            for (IAmmoSupplier loader : channelLoaders) {
+                if (!(loader instanceof AbstractSubsystem sub) || !sub.isActive()) continue;
+                Map<ProjectileType, Integer> breakdown = loader.getAmmoBreakdown();
+                for (ProjectileType type : breakdown.keySet()) {
+                    if (type != null && selectedProjectileType.equals(type.getRegistryKey())) {
+                        int reloadTicks = loader.getReloadTimeTicks();
+                        if (reloadTicks < bestReloadTicks) {
+                            bestReloadTicks = reloadTicks;
+                            best = loader;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (best != null) return best; // 高优先级频道优先
+        }
+        return null;
+    }
+
+    /**
+     * 弹药路由：为每个 launcher 设置最优 currentSupplier。<br>
+     * 若膛内弹种与 selectedType 不匹配，自动退膛。<br>
+     * 在 onPrePhysicsTick 中瞄准/开火逻辑之前调用。
+     */
+    private void routeAmmoToLaunchers() {
+        if (!isActive() || isDestroyed()) return;
+
+        // 弹药池尚未重建（handshake 未完成），跳过路由，等待 onTick 中重建
+        if (needsAmmoPoolUpdate) return;
+
+        // 处理弹药切换输入
+        if (ammoSwitchPressed && ammoSwitchCooldown <= 0) {
+            cycleSelectedType();
             ammoSwitchPressed = false;
             ammoSwitchCooldown = 10; // 10 tick 防抖
         }
+
+        for (LauncherSubsystem launcher : launchers.keySet()) {
+            if (launcher.isDestroyed() || !launcher.isActive()) continue;
+
+            if (selectedProjectileType == null) {
+                // 无选中弹种：保留 handshake 建立的默认供给关系
+                // 若 currentSupplier 为 null 但 supplierChannels 有 loader，自动选第一个
+                if (launcher.getCurrentSupplier() == null) {
+                    IAmmoSupplier first = findFirstLoader(launcher);
+                    if (first != null) {
+                        launcher.setCurrentSupplier(first);
+                    }
+                }
+                // currentSupplier 已有值 → 不动，保持默认弹药供给
+                continue;
+            }
+
+            IAmmoSupplier best = findBestLoaderFor(launcher);
+            if (best == null) {
+                // 该 launcher 没有能提供选中弹种的 loader → 退膛
+                if (launcher.getChamberedType() != null) launcher.ejectRound();
+                launcher.setCurrentSupplier(null);
+            } else if (launcher.getCurrentSupplier() != best) {
+                // 膛内弹种不匹配 → 退膛后由 Launcher 下次 tryLoadChamber 从新 supplier 取
+                ProjectileType chambered = launcher.getChamberedType();
+                if (chambered != null
+                        && !selectedProjectileType.equals(chambered.getRegistryKey())) {
+                    launcher.ejectRound();
+                }
+                launcher.setCurrentSupplier(best);
+            }
+        }
     }
+
+    /**
+     * 查找 launcher 的第一个可用 Loader。<br>
+     * 按 supplierChannels 迭代顺序返回第一个频道的第一个 loader，无可用时返回 null。
+     */
+    @Nullable
+    private IAmmoSupplier findFirstLoader(LauncherSubsystem launcher) {
+        for (List<IAmmoSupplier> channelLoaders : launcher.getSupplierChannels().values()) {
+            for (IAmmoSupplier loader : channelLoaders) {
+                if (loader instanceof AbstractSubsystem sub && sub.isActive()) {
+                    return loader;
+                }
+            }
+        }
+        return null;
+    }
+
+    // ==================== 公开查询方法 ====================
+
+    /**
+     * 当前选中的弹种，null = 无选择。
+     */
+    @Nullable
+    public ResourceLocation getSelectedProjectileType() {
+        return selectedProjectileType;
+    }
+
+    /**
+     * 可用弹种列表（排序后），供 HUD 弹种选择菜单。
+     */
+    public List<ResourceLocation> getAvailableProjectileTypes() {
+        return ammoPool.keySet().stream().sorted().toList();
+    }
+
+    /**
+     * 静态工具方法：聚合多个 WC 的弹药池，按弹种汇总总数。<br>
+     * 可用于总览面板或 HUD 多 WC 聚合场景。
+     *
+     * @param controllers 武器控制器列表
+     * @return 弹种注册名 → 跨所有 WC 的总弹药数
+     */
+    public static Map<ResourceLocation, Integer> aggregateTotalByType(
+            List<WeaponControllerSubsystem> controllers) {
+        Map<ResourceLocation, Integer> result = new HashMap<>();
+        for (var wc : controllers) {
+            for (var entry : wc.getAmmoPool().entrySet()) {
+                int sum = entry.getValue().stream().mapToInt(LoaderEntry::availableCount).sum();
+                result.merge(entry.getKey(), sum, Integer::sum);
+            }
+        }
+        return result;
+    }
+
+    // ==================== 齐射/轮射 ====================
 
     /**
      * 齐射：所有已瞄准的发射器同时开火
@@ -189,6 +455,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
             rippleTickCounter--;
         }
     }
+
+    // ==================== 输入信号 ====================
 
     /**
      * 从输入信号频道读取目标坐标和开火指令
@@ -286,6 +554,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         turrets.clear();
         launchers.clear();
         handShake();
+        // 载具结构变化后标记重建弹药池，实际重建延迟到下一个 onTick
+        needsAmmoPoolUpdate = true;
     }
 
     /**
@@ -311,23 +581,13 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         Object signalValue = getSignalChannel(channelName).get(sender);
         if (channelName.equals("callback") && signalValue instanceof String controlChannel) {
             if (sender instanceof TurretDriverSubsystem turret) {
-                // 判断是否在同一载具内（避免跨载具连接）
-                //    Check if within the same vehicle
-                if (turret.getOwner().getSubPart().getPart().assembly
-                        != this.getOwner().getSubPart().getPart().assembly) {
-                    turrets.remove(turret);
-                } else {
-                    turrets.put(turret, controlChannel);
-                    addCallbackTarget(controlChannel, turret);
-                }
+                turrets.put(turret, controlChannel);
+                addCallbackTarget(controlChannel, turret);
             } else if (sender instanceof LauncherSubsystem launcher) {
-                if (launcher.getOwner().getSubPart().getPart().assembly
-                        != this.getOwner().getSubPart().getPart().assembly) {
-                    launchers.remove(launcher);
-                } else {
-                    launchers.put(launcher, controlChannel);
-                    addCallbackTarget(controlChannel, launcher);
-                }
+                launchers.put(launcher, controlChannel);
+                addCallbackTarget(controlChannel, launcher);
+                // 发现新 launcher → 标记弹药池待重建，实际在 onTick 中执行
+                needsAmmoPoolUpdate = true;
             }
         }
         return SignalResult.PASS;

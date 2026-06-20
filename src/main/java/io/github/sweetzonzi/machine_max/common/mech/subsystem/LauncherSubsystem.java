@@ -32,7 +32,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * 代表炮闩、导弹挂架、火箭发射管等单个发射口。<br>
  * 从locator位置沿其朝向发射数据驱动的投射物，初速和精度受子系统属性与投射物类型共同影响。<br>
  * 实现 {@link IAmmoConsumer} 接口以支持弹药消耗与供给，膛内弹药状态由 chamberedType 管理。<br>
- * 投射物类型由当前供给者提供，而非静态属性直接指定。
+ * 投射物类型由当前供给者提供，而非静态属性直接指定。<br>
+ * 弹药管理已由 {@link WeaponControllerSubsystem} 接管——Controller 负责弹种选择和路由决策，
+ * Launcher 仅执行 currentSupplier 上的装填和发射。
  */
 public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, ISoundSpreader {
 
@@ -108,18 +110,22 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
     @Getter
     private ProjectileType chamberedType;
 
-    /** 当前选中的供给来源索引 */
-    private int selectedSupplierIndex = 0;
+    /**
+     * 当前选中的供给者引用（由 WeaponController 的路由决策设置）。<br>
+     * null 表示无供给者（不装填，可发射膛内已有弹药）。
+     */
+    @Nullable
+    private IAmmoSupplier currentSupplier = null;
 
-    /** 由供给者通过 {@link #addSupplier(IAmmoSupplier)} 填充的供给者列表 */
-    private final List<IAmmoSupplier> suppliers = new ArrayList<>();
+    /**
+     * 按频道分组的供给者映射。<br>
+     * key = 发现频道名（对应 LauncherStaticAttr.ammo_inputs 声明顺序）。<br>
+     * LinkedHashMap 保证迭代顺序与 ammo_inputs 一致。
+     */
+    private final Map<String, List<IAmmoSupplier>> supplierChannels = new LinkedHashMap<>();
 
     /** 当前是否正在等待装填（requestRound 已调用但弹药未就绪） */
     private boolean reloading = false;
-
-    /** 每 tick 刷新的供给者摘要缓存，供 HUD 无分配读取 */
-    private volatile IAmmoConsumer.SupplierSummaries cachedSummaries =
-            new IAmmoConsumer.SupplierSummaries(List.of());
 
     public LauncherSubsystem(ISubsystemHost owner, String name, LauncherSubsystemAttr attr) {
         super(owner, name, attr);
@@ -154,28 +160,44 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
     @Override
     @Nullable
     public IAmmoSupplier getCurrentSupplier() {
-        if (suppliers.isEmpty()) return null;
-        if (selectedSupplierIndex < 0 || selectedSupplierIndex >= suppliers.size()) return null;
-        return suppliers.get(selectedSupplierIndex);
+        return currentSupplier;
+    }
+
+    @Override
+    public void setCurrentSupplier(@Nullable IAmmoSupplier supplier) {
+        this.currentSupplier = supplier;
     }
 
     @Override
     public List<IAmmoSupplier> getSuppliers() {
-        return suppliers;
+        // 返回所有频道的扁平列表
+        List<IAmmoSupplier> all = new ArrayList<>();
+        for (List<IAmmoSupplier> channelList : supplierChannels.values()) {
+            all.addAll(channelList);
+        }
+        return all;
     }
 
     @Override
-    public void setCurrentSupplier(int index) {
-        if (index >= 0 && index < suppliers.size()) {
-            selectedSupplierIndex = index;
-        }
+    public Map<String, List<IAmmoSupplier>> getSupplierChannels() {
+        return supplierChannels;
     }
 
     @Override
     public void addSupplier(IAmmoSupplier supplier) {
-        suppliers.add(supplier);
-        if (suppliers.size() == 1) {
-            selectedSupplierIndex = 0;
+        addSupplier(supplier, "unknown");
+    }
+
+    /**
+     * 带频道名的供给者注册。<br>
+     * 由 Loader 在 handshake 回调中调用。
+     * 频道名对应 LauncherStaticAttr.ammo_inputs 中声明的发现频道。
+     */
+    @Override
+    public void addSupplier(IAmmoSupplier supplier, String channelName) {
+        supplierChannels.computeIfAbsent(channelName, k -> new ArrayList<>()).add(supplier);
+        if (currentSupplier == null) {
+            currentSupplier = supplier;
         }
     }
 
@@ -237,11 +259,9 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
      */
     @Override
     public void onTick() {
-        super.onTick();        
+        super.onTick();
         // 若膛内无弹，尝试从供给者取弹
         if (chamberedType == null) tryLoadChamber();
-        // 每 tick 刷新缓存摘要，供 HUD 无分配读取
-        refreshCachedSummaries();
 
         if (!isActive() || isDestroyed()) {
             handleCeaseFire();
@@ -336,7 +356,9 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
     }
 
     /**
-     * 尝试从供给者装填一发弹药到膛室。
+     * 尝试从供给者装填一发弹药到膛室。<br>
+     * 已移除 handleIncompatibleAmmo 逻辑——Controller 负责路由决策，
+     * 若收到不兼容弹药则防御性归还并等待 Controller 下 tick 重路由。
      *
      * @return true 表示膛室已有弹药（可立即发射）
      */
@@ -351,11 +373,12 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
                 reloading = false;
                 return true;
             } else {
-                // 不兼容弹药 → 归还后切换供给者
+                // 防御性处理：Controller 不应选不兼容的 Loader
                 if (offered != null && supplier.canEject()) {
+                    MachineMax.LOGGER.warn("Launcher {} 收到不兼容弹药 {}，归还并等待 Controller 重路由", name, offered);
                     supplier.returnRound(offered);
                 }
-                handleIncompatibleAmmo(supplier);
+                reloading = false;
                 return false;
             }
         }
@@ -480,29 +503,6 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
             }
         }
         return false;
-    }
-
-    /**
-     * 处理不兼容弹药的情况。<br>
-     * 多供给者时切换到下一个供给者重新请求；仅一个供给者时从同一供给者取下一发。
-     */
-    private void handleIncompatibleAmmo(IAmmoSupplier supplier) {
-        if (suppliers.size() > 1) {
-            // 有多个供给者 → 切换到下一个
-            selectedSupplierIndex = (selectedSupplierIndex + 1) % suppliers.size();
-            reloading = false;
-            // 向新供给者请求
-            IAmmoSupplier next = getCurrentSupplier();
-            if (next != null) {
-                next.requestRound(this);
-                reloading = true;
-            }
-        } else {
-            // 仅一个供给者 → 继续从同一供给者取下一发
-            reloading = false;
-            supplier.requestRound(this);
-            reloading = true;
-        }
     }
 
     // ——— 音效管理（仅在客户端 onTick 中调用） ———
@@ -714,11 +714,6 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
         return ((IEntityMixin) listener).machine_Max$getControllingSubsystem() != null;
     }
 
-    @Override
-    public IAmmoConsumer.SupplierSummaries getSupplierSummaries() {
-        return cachedSummaries;
-    }
-
     /**
      * 获取当前弹药类型（按优先级）。<br>
      * 优先返回膛内已装填的弹药类型；若空膛则尝试从当前选中的供给者获取正在装填的弹药类型。
@@ -730,28 +725,6 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
         if (chamberedType != null) return chamberedType;
         IAmmoSupplier supplier = getCurrentSupplier();
         return supplier != null ? supplier.getSuppliedType() : null;
-    }
-
-    /**
-     * 刷新供给者摘要缓存，在每 tick onTick 中调用。<br>
-     * 将迭代+分配开销从渲染线程迁移到 20tps 的 tick 线程。
-     */
-    private void refreshCachedSummaries() {
-        List<IAmmoConsumer.SupplierSummary> result = new ArrayList<>(suppliers.size());
-        IAmmoSupplier selected = getCurrentSupplier();
-        for (IAmmoSupplier supplier : suppliers) {
-            ProjectileType suppliedType = supplier.getSuppliedType();
-            ResourceLocation typeKey = suppliedType != null ? suppliedType.getRegistryKey() : null;
-            result.add(new IAmmoConsumer.SupplierSummary(
-                    typeKey,
-                    supplier.getRemainingCount(),
-                    supplier.getCapacity(),
-                    supplier == selected,
-                    supplier.getStatus(this),
-                    supplier.getReloadProgress(this)
-            ));
-        }
-        this.cachedSummaries = new IAmmoConsumer.SupplierSummaries(result);
     }
 
     /**

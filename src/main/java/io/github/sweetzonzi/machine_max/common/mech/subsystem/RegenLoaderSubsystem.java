@@ -342,6 +342,13 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
         }
     }
 
+    @Override
+    public Map<ProjectileType, Integer> getAmmoBreakdown() {
+        if (getSuppliedType()!=null)
+            return Map.of(getSuppliedType(), getAmmoCount());
+        else return Map.of(); // 无弹药时返回空
+    }
+
     // ==================== 装填进度音效 ====================
 
     /**
@@ -473,6 +480,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     /**
      * 弹药链握手：向发现频道发送空信号，通过回调发现同一载具内的 IAmmoConsumer。<br>
      * 下游消费者（Launcher 等）收到回调后通过 addSupplier() 注册此供给者。
+     * 回调携带频道名，供 Launcher 按 ammo_inputs 频道分组。
      */
     protected void handShake() {
         for (String signalChannel : attr.discoveryOutputs.keySet()) {
@@ -523,7 +531,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
 
     @Override
     public SignalResult onSignalUpdated(String channelName, ISignalSender sender) {
-        // 弹药发现频道回调：供给者发现下游消费者并注册自身
+        // 弹药发现频道回调：供给者发现下游消费者并注册自身，从回调值读取频道名
         if (channelName.equals("callback") && sender instanceof IAmmoConsumer consumer) {
             if (consumer instanceof AbstractSubsystem sub) {
                 if (sub.getOwner().getSubPart().getPart().assembly
@@ -531,7 +539,10 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
                     return SignalResult.PASS;
                 }
             }
-            consumer.addSupplier(this);
+            // 从信号频道读取回调携带的频道名，若无法获取则使用 "unknown"
+            Object callbackValue = getSignalChannel("callback").get(sender);
+            String discoveryChannel = callbackValue instanceof String s ? s : "unknown";
+            consumer.addSupplier(this, discoveryChannel);
             return SignalResult.CONSUME;
         }
         return super.onSignalUpdated(channelName, sender);

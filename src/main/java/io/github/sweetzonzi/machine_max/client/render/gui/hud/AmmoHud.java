@@ -1,12 +1,12 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.hud;
 
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoConsumer;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.IAmmoSupplier.SupplierStatus;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.LauncherSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.WeaponControllerSubsystem.LoaderEntry;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -15,6 +15,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 弹药 HUD。<br>
@@ -29,7 +31,10 @@ import java.util.List;
  * - 按武器控制器分组，依次展示其下所有发射器的当前弹种、弹药余量、工作状态。<br>
  * - 逐发装填的供给者显示为 1，整体装填显示为供给者余量。<br>
  * - 总剩余弹药为该弹种在所有供给者中的合计。<br>
- * - 第一行显示弹种名 + 计数，第二行仅在装填中时显示进度条 + 百分比。
+ * - 第一行显示弹种名 + 计数，第二行仅在装填中时显示进度条 + 百分比。<br>
+ * <p>
+ * 数据源：从 WeaponController 的 getAmmoPool() / getSelectedProjectileType() 读取，
+ * 而非从 Launcher 的 getSupplierSummaries() 读取。
  */
 @OnlyIn(Dist.CLIENT)
 public class AmmoHud implements LayeredDraw.Layer {
@@ -97,26 +102,27 @@ public class AmmoHud implements LayeredDraw.Layer {
                 ProjectileType ammoType = launcher.getCurrentAmmoType();
                 String ammoLabel = ammoType != null ? ammoType.getRegistryKey().getPath() : "---";
 
-                IAmmoConsumer.SupplierSummaries summaries = launcher.getSupplierSummaries();
-                IAmmoConsumer.SupplierSummary selected = summaries.getSelected();
+                IAmmoSupplier supplier = launcher.getCurrentSupplier();
 
-                int curCount = 0;
+                // 从 Controller 的 ammoPool 获取该弹种总数
                 int totalCount = 0;
-                SupplierStatus status = null;
-                float progress = 0f;
-
-                if (selected != null) {
-                    IAmmoSupplier supplier = launcher.getCurrentSupplier();
-                    boolean roundByRound = supplier != null && supplier.isRoundByRound();
-                    curCount = roundByRound ? Math.min(1, selected.remaining()) : selected.remaining();
-                    if (ammoType != null) {
-                        totalCount = summaries.getTotalOf(ammoType.getRegistryKey()) - curCount;
-                    } else {
-                        totalCount = selected.remaining() - curCount;
+                if (ammoType != null) {
+                    ResourceLocation typeKey = ammoType.getRegistryKey();
+                    if (typeKey != null) {
+                        var entries = wc.getAmmoPool().get(typeKey);
+                        if (entries != null) {
+                            totalCount = entries.stream().mapToInt(LoaderEntry::availableCount).sum();
+                        }
                     }
-                    status = selected.status();
-                    progress = selected.statusProgress();
                 }
+
+                // 当前数量和状态直接从 supplier 读取（不需要 SupplierSummary）
+                int curCount = supplier != null && supplier.isRoundByRound() ? 1
+                        : (supplier != null ? supplier.getRemainingCount() : 0);
+                SupplierStatus status = supplier != null
+                        ? supplier.getStatus(launcher) : SupplierStatus.EMPTY;
+                float progress = supplier != null
+                        ? supplier.getReloadProgress(launcher) : 0f;
 
                 lines.add(new Line(ammoLabel, false, curCount, totalCount, status, progress));
             }
