@@ -8,10 +8,13 @@ import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
 import lombok.Getter;
+import cn.solarmoon.spark_core.particle.common.ParticleEffects;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -309,6 +312,26 @@ public class ProjectileType {
     }
 
 
+    // ==================== 开火粒子特效 ====================
+
+    /**
+     * 在指定位置和旋转播放开火粒子特效。
+     * <p>
+     * 使用 {@link VisualProperties#fireParticle()} 中配置的粒子效果 ID，
+     * 通过 {@link ParticleEffects#burst} 在客户端触发。
+     * <p>
+     * <b>调用线程：</b>主线程（渲染线程/客户端 tick）。
+     * <b>仅在客户端调用。</b>
+     *
+     * @param level    维度（客户端）
+     * @param position 开火位置（世界坐标）
+     * @param rotation 开火朝向（四元数）
+     */
+    public void playFireEffect(Level level, Vec3 position, Quaternionf rotation) {
+        ParticleEffects.burst(level, visual.fireParticle(), position, rotation);
+    }
+
+
     // ==================== 嵌套类 ====================
 
     /**
@@ -393,18 +416,23 @@ public class ProjectileType {
         /** 曳光颜色（RGB），不设置则无曳光效果 */
         Vec3i tracerColor,
         /** 曳光透明度，0=完全透明，255=完全不透明 */
-        int tracerAlpha
+        int tracerAlpha,
+        /** 开火粒子效果ID，在客户端播放枪口火焰/炮口焰 */
+        ResourceLocation fireParticle
     ) {
         /** 完整默认视觉属性 */
         public static final VisualProperties DEFAULT = new VisualProperties(
-            new Vec3i(255, 255, 255), 200
+            new Vec3i(255, 255, 255), 200,
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium")
         );
 
         public static final Codec<VisualProperties> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Vec3i.CODEC.optionalFieldOf("tracer_color", DEFAULT.tracerColor)
                 .forGetter(VisualProperties::tracerColor),
             Codec.INT.optionalFieldOf("tracer_alpha", DEFAULT.tracerAlpha)
-                .forGetter(VisualProperties::tracerAlpha)
+                .forGetter(VisualProperties::tracerAlpha),
+            ResourceLocation.CODEC.optionalFieldOf("fire_particle", DEFAULT.fireParticle)
+                .forGetter(VisualProperties::fireParticle)
         ).apply(instance, VisualProperties::new));
     }
 

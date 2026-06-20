@@ -419,7 +419,8 @@ public class RawInputHandler {
             /*
               控制组按键绑定 — 从当前座椅子系统的 ControlGroupSet 动态加载
              */
-            if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
+            if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub
+            && !(client.screen instanceof VehicleControlScreen)) { // 载具信息面板开启时屏蔽输入
                 int subPartId = sub.getOwner().getSubPart().getId();
                 String subSystemName = sub.name;
                 List<ControlBinding> bindings = sub.getControlGroupSet().getMergedBindings();

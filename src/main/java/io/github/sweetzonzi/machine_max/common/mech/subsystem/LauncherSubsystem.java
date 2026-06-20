@@ -13,18 +13,16 @@ import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import lombok.Getter;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import net.minecraft.resources.ResourceLocation;
-import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
-import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.LauncherSubsystemAttr;
 import jme3utilities.math.MyQuaternion;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -287,6 +285,9 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
 
         // ② 弹药消费循环
         int firedCount = 0;
+        // 本地快照：缓存本 tick 发射的弹药类型，供客户端特效处理使用。
+        // 不直接遍历 pendingFires（物理线程可能同时 poll 消费），避免并发遍历问题。
+        List<ProjectileType> firedTypes = new ArrayList<>(rounds);
         for (int i = 0; i < rounds; i++) {
             // 若膛内无弹，尝试从供给者取弹
             if (chamberedType == null) {
@@ -297,6 +298,7 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
 
             // ③ 入队 pendingFires（物理线程将消费）
             pendingFires.add(chamberedType);
+            firedTypes.add(chamberedType);
             firedCount++;
             chamberedType = null;
 
@@ -307,9 +309,15 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
             }
         }
 
-        // ⑤ 客户端音效处理（主线程，遍历即将发射的弹药队列）
+        // ⑤ 客户端音效特效处理（主线程，使用本地快照避免与物理线程并发访问 pendingFires）
         if (getLevel().isClientSide() && firedCount > 0) {
-            handleFiringSounds(burstJustStarted);
+            handleFiringSounds(firedTypes, burstJustStarted);
+            Transform muzzleTransform = getMuzzleWorldTransform();
+            Quaternionf muzzleQuat = SparkMathKt.toQuaternionf(muzzleTransform.getRotation());
+            Vec3 muzzlePos = SparkMathKt.toVec3(muzzleTransform.getTranslation());
+            for (ProjectileType type : firedTypes) {
+                type.playFireEffect(getLevel(), muzzlePos, muzzleQuat);
+            }
         }
 
         // ⑥ 扣除已发射数对应的时间
@@ -541,15 +549,20 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
     }
 
     /**
-     * 处理开火音效：遍历 pendingFires 中的每发弹药，按首发/连发分别播放音效。
+     * 处理开火音效：遍历本 tick 发射的弹药类型，按首发/连发分别播放音效。
+     * <p>
+     * 使用调用方传入的本地快照列表 {@code firedTypes}，而非直接遍历
+     * {@link #pendingFires}，避免与物理线程的并发 poll 冲突。
+     * </p>
      * <p>
      * <b>调用线程：</b>主线程（{@link #onTick()}）。
      * </p>
      *
+     * @param firedTypes      本 tick 发射的弹药类型快照
      * @param burstJustStarted 是否为本 burst 首帧
      */
-    private void handleFiringSounds(boolean burstJustStarted) {
-        for (ProjectileType type : pendingFires) {
+    private void handleFiringSounds(List<ProjectileType> firedTypes, boolean burstJustStarted) {
+        for (ProjectileType type : firedTypes) {
             if (type == null) continue;
 
             roundsFiredThisBurst++;
