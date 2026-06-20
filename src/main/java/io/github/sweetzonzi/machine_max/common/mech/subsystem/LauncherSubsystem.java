@@ -239,7 +239,9 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
      */
     @Override
     public void onTick() {
-        super.onTick();
+        super.onTick();        
+        // 若膛内无弹，尝试从供给者取弹
+        if (chamberedType == null) tryLoadChamber();
         // 每 tick 刷新缓存摘要，供 HUD 无分配读取
         refreshCachedSummaries();
 
@@ -778,6 +780,28 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
         double dot = toTarget.dot(muzzleDir);
         double angleRad = Math.acos(Math.clamp(dot, -1.0, 1.0));
         return Math.toDegrees(angleRad) <= toleranceDeg;
+    }
+
+    // ==================== 持久化 ====================
+
+    @Override
+    public void loadData(net.minecraft.nbt.CompoundTag data) {
+        super.loadData(data);
+        if (data.contains("chambered_type")) {
+            ResourceLocation key = ResourceLocation.parse(data.getString("chambered_type"));
+            chamberedType = ProjectileType.get(getLevel(), key);
+        } else {
+            chamberedType = null;
+        }
+    }
+
+    @Override
+    public net.minecraft.nbt.CompoundTag saveData(net.minecraft.nbt.CompoundTag data) {
+        super.saveData(data);
+        if (chamberedType != null) {
+            data.putString("chambered_type", chamberedType.getRegistryKey().toString());
+        }
+        return data;
     }
 
     /**
