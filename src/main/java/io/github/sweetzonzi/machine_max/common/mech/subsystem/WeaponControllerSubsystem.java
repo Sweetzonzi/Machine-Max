@@ -92,7 +92,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
 
             // 俯仰轴（x）
             if (vis.pitchStabilized) {
-                if (!computed) { aimAngles = turret.computeAimAngles(target); computed = true; }
+                aimAngles = turret.computeAimAngles(target);
+                computed = true;
                 targetAngle.x = aimAngles.x;
             } else if (vis.pitchOffsetDeg != 0) {
                 targetAngle.x += (float) Math.toRadians(vis.pitchOffsetDeg);
@@ -101,7 +102,9 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
 
             // 偏航轴（y）
             if (vis.yawStabilized) {
-                if (!computed) { aimAngles = turret.computeAimAngles(target); computed = true; }
+                if (!computed) {
+                    aimAngles = turret.computeAimAngles(target);
+                }
                 targetAngle.y = aimAngles.y;
             } else if (vis.yawOffsetDeg != 0) {
                 targetAngle.y += (float) Math.toRadians(vis.yawOffsetDeg);

@@ -596,6 +596,7 @@ public class CameraController {
                 subPart.getId(), camera.getName(),
                 aimPoint.x, aimPoint.y, aimPoint.z,
                 pendingLocalPitchOffsetDeg, pendingLocalYawOffsetDeg));
+        camera.receiveClientAimInput(aimPoint, pendingLocalPitchOffsetDeg, pendingLocalYawOffsetDeg);
 
         // 清空待发送旋转量
         pendingLocalPitchOffsetDeg = 0;
