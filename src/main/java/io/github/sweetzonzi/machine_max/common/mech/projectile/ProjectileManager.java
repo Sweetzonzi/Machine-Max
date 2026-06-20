@@ -19,6 +19,7 @@ import io.github.sweetzonzi.ballistics_framework.api.trajectory.TrajectorySample
 import io.github.sweetzonzi.machine_max.client.render.renderer.ClientProjectileRenderer;
 import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceLocation;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
@@ -853,8 +854,10 @@ public class ProjectileManager {
             rayTo.set(posX[i], posY[i], posZ[i]);
 
             List<PhysicsRayTestResult> results = world.rayTest(rayFrom, rayTo);
-            boolean stopped = false;
-            label:
+
+            // ===== 阶段1：收集所有命中条目到统一列表 =====
+            List<HitEntry> allHits = new ArrayList<>();
+
             for (PhysicsRayTestResult result : results) {
                 PhysicsCollisionObject collObj = result.getCollisionObject();
                 if (collObj.getCollisionGroup() != CollisionGroups.PHYSICS_BODY
@@ -874,108 +877,132 @@ public class ProjectileManager {
                 result.getHitNormalLocal(hitNormalJme);
                 Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
 
-                // 穿透去重检查
-                PenetrationKey penKey;
                 if (owner instanceof PhysicsChunkSection terrain) {
-                    penKey = new PenetrationKey(terrain, terrain.getBlockPosFromContactPoint(hitPointJme, hitNormalJme, -0.01f).toShortString());
-                } else
-                    penKey = PenetrationKey.fromCollision(collObj, result.triangleIndex());
-                if (penKey != null) {
-                    Set<PenetrationKey> penetrated = penetratedKeys.get(objId[i]);
-                    if (penetrated != null && penetrated.contains(penKey)) {
-                        continue;
+                    // 地形：DDA遍历展开为逐方块条目，每个方块携带独立的hitFraction
+                    List<BlockHitEntry> blocks = walkBlocksAlongRay(rayFrom, rayTo, terrain);
+                    for (BlockHitEntry be : blocks) {
+                        PenetrationKey pk = new PenetrationKey(terrain, be.blockPos().toShortString());
+                        Vec3 bp = new Vec3(be.blockPos().getX() + 0.5, be.blockPos().getY() + 0.5, be.blockPos().getZ() + 0.5);
+                        allHits.add(new HitEntry(be.hitFraction(), result, body, terrain,
+                                be.blockPos(), terrain, bp, hitNormalMc, pk));
                     }
+                } else if (owner == null) {
+                    // null owner：无属主命中，作为停止条目参与排序
+                    allHits.add(new HitEntry(hitFrac, result, body, null,
+                            null, null, hitPointMc, hitNormalMc, null));
+                } else if (owner instanceof MMPartEntity || owner instanceof MMProjectileEntity) {
+                    // 渲染代理，跳过
+                } else {
+                    // 非地形命中（实体/零件）：收集阶段做穿透去重
+                    PenetrationKey pk = PenetrationKey.fromCollision(collObj, result.triangleIndex());
+                    if (pk != null) {
+                        Set<PenetrationKey> penetrated = penetratedKeys.get(objId[i]);
+                        if (penetrated != null && penetrated.contains(pk)) {
+                            continue; // 已穿透，跳过此非地形命中
+                        }
+                    }
+                    allHits.add(new HitEntry(hitFrac, result, body, owner,
+                            null, null, hitPointMc, hitNormalMc, pk));
                 }
+            }
 
-                // 地形碰撞：调用 IProjectile.onTerrainHit()
-                if (owner instanceof PhysicsChunkSection terrain) {
+            // ===== 阶段2：按hitFraction升序排序，确保命中严格按射线方向处理 =====
+            allHits.sort(java.util.Comparator.comparingDouble(HitEntry::hitFraction));
+
+            // ===== 阶段3：按序遍历处理所有命中 =====
+            boolean stopped = false;
+            for (HitEntry entry : allHits) {
+                if (stopped) break;
+
+                if (entry.terrain() != null) {
+                    // ---- 地形方块命中 ----
+                    PhysicsChunkSection terrain = entry.terrain();
+                    BlockPos blockPos = entry.blockPos();
+
                     if (!(destroyable instanceof IProjectile proj)) {
-                        broadcastTerrainHit(i, hitPointMc);
+                        broadcastTerrainHit(i, entry.hitPoint());
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
                         stopped = true;
                         break;
                     }
-                    BlockPos blockPos = terrain.getBlockPosFromContactPoint(hitPointJme, hitNormalJme, -0.01f);
-                    SectionSnapshot.BlockSnapshot blockSnap = terrain.getBlockSnapshot(blockPos);
-                    if (blockSnap == null || terrain.isRemoved(blockPos)) continue;
 
-                    BlockState blockState = blockSnap.getState();
+                    // 逐方块穿透去重
+                    PenetrationKey pk = entry.penKey();
+                    if (pk != null) {
+                        Set<PenetrationKey> penetrated = penetratedKeys.get(objId[i]);
+                        if (penetrated != null && penetrated.contains(pk)) {
+                            continue; // 已穿透此方块，跳过
+                        }
+                    }
+
+                    SectionSnapshot.BlockSnapshot snap = terrain.getBlockSnapshot(blockPos);
+                    if (snap == null || terrain.isRemoved(blockPos)) continue;
+
+                    BlockState state = snap.getState();
                     float currentPen = proj.calculateCurrentPenetration();
                     float currentSpeed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
 
-                    IProjectile.AfterHitResult hitResult = proj.onTerrainHit(level, blockPos, blockState,
-                            currentPen, currentSpeed, hitPointMc, hitNormalMc);
+                    IProjectile.AfterHitResult hitResult = proj.onTerrainHit(level, blockPos, state,
+                            currentPen, currentSpeed, entry.hitPoint(), entry.hitNormal());
 
                     if (hitResult != null && !hitResult.destroyed()) {
                         // 穿透：更新速度，记录穿透密钥，广播
                         velX[i] = hitResult.newVelocity().x;
                         velY[i] = hitResult.newVelocity().y;
                         velZ[i] = hitResult.newVelocity().z;
-
-                        penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(penKey);
-
-                        broadcastHitSync(i, hitPointMc, hitNormalMc, false, hitResult.newVelocity(), false);
+                        penetratedKeys.computeIfAbsent(objId[i], k -> new HashSet<>()).add(pk);
+                        broadcastHitSync(i, entry.hitPoint(), entry.hitNormal(), false, hitResult.newVelocity(), false);
                     } else {
                         // 无法击穿，停止
-                        broadcastTerrainHit(i, hitPointMc);
+                        broadcastTerrainHit(i, entry.hitPoint());
+                        alive[i] = false;
+                        projectileObjIds.remove(objId[i]);
+                        stopped = true;
+                    }
+                } else if (entry.owner() == null) {
+                    // null owner：直接停止（无属主信息）
+                    broadcastTerrainHit(i, entry.hitPoint());
+                    alive[i] = false;
+                    projectileObjIds.remove(objId[i]);
+                    stopped = true;
+                } else {
+                    // ---- 非地形命中（实体/零件） ----
+                    if (!(destroyable instanceof IProjectile projectile)) {
                         alive[i] = false;
                         projectileObjIds.remove(objId[i]);
                         stopped = true;
                         break;
                     }
-                } else if (owner == null) {
-                    // null owner 直接停止（无地形信息）
-                    broadcastTerrainHit(i, hitPointMc);
-                    alive[i] = false;
-                    projectileObjIds.remove(objId[i]);
-                    stopped = true;
-                    break;
-                }
 
-                // MM*Entity：渲染代理，跳过
-                if (owner instanceof MMPartEntity || owner instanceof MMProjectileEntity) continue;
+                    float currentPen = projectile.calculateCurrentPenetration();
+                    float currentDmg = projectile.calculateCurrentDamage();
+                    PhysicsRayTestResult result = entry.rayResult();
+                    Vec3 hp = entry.hitPoint();
+                    Vec3 hn = entry.hitNormal();
+                    PenetrationKey pk = entry.penKey();
 
-                // 获取投射物实例
-                if (!(destroyable instanceof IProjectile projectile)) {
-                    alive[i] = false;
-                    projectileObjIds.remove(objId[i]);
-                    stopped = true;
-                    break;
-                }
-
-                // 缓存当前穿深与伤害，避免重复计算
-                float currentPen = projectile.calculateCurrentPenetration();
-                float currentDmg = projectile.calculateCurrentDamage();
-
-                // ========================================================
-                //  分辨目标 → 统一调用 IProjectile 接口方法
-                // ========================================================
-                switch (owner) {
-                    case SubPart subPart -> {
-                        HitBox hitBox = subPart.getHitBox(result.triangleIndex());
-                        if (hitBox.isActive()) {
-                            stopped = applyAfterHitResult(i, projectile,
-                                    projectile.onPartHit(level, subPart,
-                                            currentPen, currentDmg, hitPointMc, hitNormalMc),
-                                    hitPointMc, hitNormalMc, penKey);
+                    switch (entry.owner()) {
+                        case SubPart subPart -> {
+                            HitBox hitBox = subPart.getHitBox(result.triangleIndex());
+                            if (hitBox.isActive()) {
+                                stopped = applyAfterHitResult(i, projectile,
+                                        projectile.onPartHit(level, subPart,
+                                                currentPen, currentDmg, hp, hn),
+                                        hp, hn, pk);
+                            }
                         }
-                        if (stopped) break label;
-                    }
-                    case BFHurtTarget bfTarget when !(owner instanceof Entity) -> {
-                        stopped = applyAfterHitResult(i, projectile,
-                                projectile.onPartHit(level, bfTarget,
-                                        currentPen, currentDmg, hitPointMc, hitNormalMc),
-                                hitPointMc, hitNormalMc, penKey);
-                        if (stopped) break label;
-                    }
-                    case Entity entity ->
-                            stopped = handleEntityHit(i, projectile, entity, hitPointMc, hitNormalMc, dt, penKey);
-                    default -> {
+                        case BFHurtTarget bfTarget when !(entry.owner() instanceof Entity) -> {
+                            stopped = applyAfterHitResult(i, projectile,
+                                    projectile.onPartHit(level, bfTarget,
+                                            currentPen, currentDmg, hp, hn),
+                                    hp, hn, pk);
+                        }
+                        case Entity entity ->
+                                stopped = handleEntityHit(i, projectile, entity, hp, hn, dt, pk);
+                        default -> {}
                     }
                 }
-
-                if (stopped) break;
             }
 
             if (stopped) {
@@ -1191,6 +1218,198 @@ public class ProjectileManager {
             SparkLevel.scheduleChunkLoad(level, cp, minY, maxY, delayTicks, holdTicks);
         }
     }
+
+    /**
+     * DDA体素遍历产生的单一方块命中条目，携带沿射线的hitFraction用于跨命中源排序。
+     *
+     * @param hitFraction 沿全射线(rayFrom→rayTo)的参数t值 [0, 1]
+     * @param blockPos    命中的方块世界坐标
+     */
+    private record BlockHitEntry(float hitFraction, BlockPos blockPos) {}
+
+    /**
+     * 使用3D DDA（Amanatides-Woo）体素遍历算法，获取射线在指定PhysicsChunkSection内经过的所有有效方块。
+     * <p>
+     * 解决JME Bullet rayTest对同一刚体仅返回最近命中点的问题：
+     * PhysicsChunkSection内部是CompoundCollisionShape（多子形状），但rayTest按碰撞体粒度报告，
+     * 高速投射物在一帧内穿过section内多个方块时，只会检测到最近的那个。
+     * 本方法通过纯数学的体素遍历，枚举射线路径上section内的所有方块，
+     * 并计算每个方块的hitFraction，用于与非地形rayTest结果统一排序。
+     * <p>
+     * 算法步骤：
+     * <ol>
+     *   <li>用slab法裁剪射线到section的AABB范围（16×16×16），得到进入/离开参数tMin/tMax</li>
+     *   <li>在裁剪后的区间内执行Amanatides-Woo 3D DDA遍历</li>
+     *   <li>跟踪每个体素的进入参数t值，映射为全射线的hitFraction（tMin + minT）</li>
+     *   <li>每步检查方块是否有效（非空气、未被移除），有效则加入结果列表</li>
+     * </ol>
+     * <p>
+     * 性能：section最大尺寸16×16×16，单条射线最多遍历~48个网格步，开销可忽略。
+     *
+     * @param rayFrom 射线起点（世界坐标，JME）
+     * @param rayTo   射线终点（世界坐标，JME）
+     * @param terrain 目标地形section
+     * @return 射线在section内经过的有效方块列表（按命中顺序，含hitFraction）
+     */
+    private static List<BlockHitEntry> walkBlocksAlongRay(Vector3f rayFrom, Vector3f rayTo, PhysicsChunkSection terrain) {
+        List<BlockHitEntry> blocks = new ArrayList<>();
+
+        SectionPos sectionPos = terrain.getSectionPos();
+        // section的世界坐标范围（方块坐标：min ~ min+15，浮点边界用于裁剪：min ~ min+16）
+        int secMinX = sectionPos.x() * 16;
+        int secMinY = sectionPos.y() * 16;
+        int secMinZ = sectionPos.z() * 16;
+        float secMaxX = secMinX + 16.0f;
+        float secMaxY = secMinY + 16.0f;
+        float secMaxZ = secMinZ + 16.0f;
+
+        float dx = rayTo.x - rayFrom.x;
+        float dy = rayTo.y - rayFrom.y;
+        float dz = rayTo.z - rayFrom.z;
+
+        // slab法裁剪射线到section AABB，计算进入/离开的t参数
+        float tMin = 0f;
+        float tMax = 1f;
+
+        // X轴裁剪
+        if (dx != 0) {
+            float t1 = (secMinX - rayFrom.x) / dx;
+            float t2 = (secMaxX - rayFrom.x) / dx;
+            if (t1 > t2) { float tmp = t1; t1 = t2; t2 = tmp; }
+            tMin = Math.max(tMin, t1);
+            tMax = Math.min(tMax, t2);
+        } else if (rayFrom.x < secMinX || rayFrom.x >= secMaxX) {
+            return blocks; // 射线平行于X轴且不在section范围内
+        }
+
+        // Y轴裁剪
+        if (dy != 0) {
+            float t1 = (secMinY - rayFrom.y) / dy;
+            float t2 = (secMaxY - rayFrom.y) / dy;
+            if (t1 > t2) { float tmp = t1; t1 = t2; t2 = tmp; }
+            tMin = Math.max(tMin, t1);
+            tMax = Math.min(tMax, t2);
+        } else if (rayFrom.y < secMinY || rayFrom.y >= secMaxY) {
+            return blocks;
+        }
+
+        // Z轴裁剪
+        if (dz != 0) {
+            float t1 = (secMinZ - rayFrom.z) / dz;
+            float t2 = (secMaxZ - rayFrom.z) / dz;
+            if (t1 > t2) { float tmp = t1; t1 = t2; t2 = tmp; }
+            tMin = Math.max(tMin, t1);
+            tMax = Math.min(tMax, t2);
+        } else if (rayFrom.z < secMinZ || rayFrom.z >= secMaxZ) {
+            return blocks;
+        }
+
+        if (tMin > tMax) return blocks; // 射线与section不相交
+
+        // 裁剪后的射线起点和终点
+        float startX = rayFrom.x + dx * tMin;
+        float startY = rayFrom.y + dy * tMin;
+        float startZ = rayFrom.z + dz * tMin;
+        float endX = rayFrom.x + dx * tMax;
+        float endY = rayFrom.y + dy * tMax;
+        float endZ = rayFrom.z + dz * tMax;
+
+        // DDA起始体素
+        int curX = (int) Math.floor(startX);
+        int curY = (int) Math.floor(startY);
+        int curZ = (int) Math.floor(startZ);
+
+        // DDA终点体素
+        int endXi = (int) Math.floor(endX);
+        int endYi = (int) Math.floor(endY);
+        int endZi = (int) Math.floor(endZ);
+
+        // 步进方向
+        int stepX = (dx > 0) ? 1 : (dx < 0 ? -1 : 0);
+        int stepY = (dy > 0) ? 1 : (dy < 0 ? -1 : 0);
+        int stepZ = (dz > 0) ? 1 : (dz < 0 ? -1 : 0);
+
+        // tDelta：跨一个体素所需的参数步长
+        float tDeltaX = (dx != 0) ? Math.abs(1.0f / dx) : Float.MAX_VALUE;
+        float tDeltaY = (dy != 0) ? Math.abs(1.0f / dy) : Float.MAX_VALUE;
+        float tDeltaZ = (dz != 0) ? Math.abs(1.0f / dz) : Float.MAX_VALUE;
+
+        // tMax：到达下一个体素边界的参数值（相对于裁剪起点startX）
+        float tMaxX = (dx != 0) ? ((stepX > 0 ? (curX + 1) : curX) - startX) / dx : Float.MAX_VALUE;
+        float tMaxY = (dy != 0) ? ((stepY > 0 ? (curY + 1) : curY) - startY) / dy : Float.MAX_VALUE;
+        float tMaxZ = (dz != 0) ? ((stepZ > 0 ? (curZ + 1) : curZ) - startZ) / dz : Float.MAX_VALUE;
+
+        // 当前体素进入时的全射线参数t值。第一个体素从裁剪进入点tMin开始。
+        float currentEntryT = tMin;
+
+        // Amanatides-Woo 3D DDA主循环
+        int maxSteps = 48; // 16+16+16 最坏情况
+        for (int step = 0; step < maxSteps; step++) {
+            BlockPos bp = new BlockPos(curX, curY, curZ);
+            // 仅记录有效方块（非空气、未被移除），携带其命中参数t值
+            SectionSnapshot.BlockSnapshot snap = terrain.getBlockSnapshot(bp);
+            if (snap != null && !terrain.isRemoved(bp)) {
+                blocks.add(new BlockHitEntry(currentEntryT, bp));
+            }
+
+            // 到达终点体素则停止
+            if (curX == endXi && curY == endYi && curZ == endZi) break;
+
+            // 选择tMax最小的轴步进，并记录步进前的minT作为下一体素的进入t
+            float minT;
+            if (tMaxX < tMaxY) {
+                if (tMaxX < tMaxZ) {
+                    minT = tMaxX;
+                    curX += stepX;
+                    tMaxX += tDeltaX;
+                } else {
+                    minT = tMaxZ;
+                    curZ += stepZ;
+                    tMaxZ += tDeltaZ;
+                }
+            } else {
+                if (tMaxY < tMaxZ) {
+                    minT = tMaxY;
+                    curY += stepY;
+                    tMaxY += tDeltaY;
+                } else {
+                    minT = tMaxZ;
+                    curZ += stepZ;
+                    tMaxZ += tDeltaZ;
+                }
+            }
+            // 下一体素的进入t = 裁剪起点tMin + 离开当前体素的参数偏移
+            currentEntryT = tMin + minT;
+        }
+
+        return blocks;
+    }
+
+    /**
+     * 统一命中条目。收集阶段由rayTest非地形结果或DDA地形遍历展开产生，
+     * 按 hitFraction 排序后统一逐条处理。
+     *
+     * @param hitFraction 沿全射线(rayFrom→rayTo)的参数t值 [0, 1]
+     * @param rayResult   原始射线检测结果（非null）
+     * @param body        碰撞刚体
+     * @param owner       碰撞体所有者（PhysicsChunkSection / SubPart / Entity / BFHurtTarget）
+     * @param blockPos    地形方块位置（仅地形命中非null）
+     * @param terrain     地形section引用（仅地形命中非null）
+     * @param hitPoint    命中点世界坐标（MC Vec3）
+     * @param hitNormal   命中法线（MC Vec3）
+     * @param penKey      穿透去重密钥（可为null）
+     */
+    private record HitEntry(
+            float hitFraction,
+            PhysicsRayTestResult rayResult,
+            PhysicsRigidBody body,
+            Object owner,
+            @Nullable BlockPos blockPos,
+            @Nullable PhysicsChunkSection terrain,
+            Vec3 hitPoint,
+            Vec3 hitNormal,
+            @Nullable PenetrationKey penKey
+    ) {}
 
     /**
      * O(1) swap-with-last 移除（联动交换 Entity 数组，清理穿透记录）
