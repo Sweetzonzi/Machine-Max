@@ -2,10 +2,9 @@ package io.github.sweetzonzi.machine_max.client.compat.jei.handler;
 
 import io.github.sweetzonzi.machine_max.client.render.gui.renderable.TabbedMaterialWidget;
 import io.github.sweetzonzi.machine_max.client.render.gui.screen.BlueprintResearchScreen;
-import lombok.Setter;
 import mezz.jei.api.constants.VanillaTypes;
+import mezz.jei.api.gui.builder.IClickableIngredientFactory;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
-import mezz.jei.api.runtime.IIngredientManager;
 import mezz.jei.api.runtime.IClickableIngredient;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.world.item.ItemStack;
@@ -18,18 +17,11 @@ import java.util.Optional;
 /**
  * JEI GUI 容器处理器，使 BlueprintResearchScreen 中自定义渲染的物品支持 JEI 查询
  */
-@Setter
 public class BlueprintResearchJeiHandler implements IGuiContainerHandler<BlueprintResearchScreen> {
 
-    /**
-     * 由 MMJeiPlugin 在运行时注入 IIngredientManager
-     */
-    private IIngredientManager ingredientManager;
-
     @Override
-    public @NotNull Optional<IClickableIngredient<?>> getClickableIngredientUnderMouse(
-            BlueprintResearchScreen screen, double mouseX, double mouseY) {
-        if (ingredientManager == null) return Optional.empty();
+    public @NotNull Optional<? extends IClickableIngredient<?>> getClickableIngredientUnderMouse(
+            IClickableIngredientFactory builder, BlueprintResearchScreen screen, double mouseX, double mouseY) {
 
         /* 检查材料 Widget 区域 */
         TabbedMaterialWidget materialWidget = screen.getMaterialWidget();
@@ -37,9 +29,7 @@ public class BlueprintResearchJeiHandler implements IGuiContainerHandler<Bluepri
             ItemStack stack = materialWidget.getIngredientAt(mouseX, mouseY);
             if (!stack.isEmpty()) {
                 Rect2i area = getSlotArea(materialWidget, mouseX, mouseY);
-                return ingredientManager
-                        .createClickableIngredient(VanillaTypes.ITEM_STACK, stack, area, false)
-                        .map(clickable -> (IClickableIngredient<?>) clickable);
+                return builder.createBuilder(VanillaTypes.ITEM_STACK, stack).buildWithArea(area);
             }
         }
 
@@ -48,9 +38,7 @@ public class BlueprintResearchJeiHandler implements IGuiContainerHandler<Bluepri
         if (!product.isEmpty()) {
             int infoX = screen.getGuiLeft() + 175;
             int infoY = screen.getGuiTop() + 8;
-            return ingredientManager
-                    .createClickableIngredient(VanillaTypes.ITEM_STACK, product, new Rect2i(infoX, infoY, 18, 18), false)
-                    .map(clickable -> (IClickableIngredient<?>) clickable);
+            return builder.createBuilder(VanillaTypes.ITEM_STACK, product).buildWithArea(new Rect2i(infoX, infoY, 18, 18));
         }
 
         return Optional.empty();

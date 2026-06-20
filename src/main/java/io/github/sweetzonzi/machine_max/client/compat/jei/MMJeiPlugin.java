@@ -110,11 +110,6 @@ public class MMJeiPlugin implements IModPlugin {
     }
 
     @Override
-    public void onRuntimeAvailable(@NotNull IJeiRuntime jeiRuntime) {
-        researchJeiHandler.setIngredientManager(jeiRuntime.getIngredientManager());
-    }
-
-    @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         ItemStack fabricatorCatalyst = new ItemStack(MMBlocks.getFABRICATOR_BLOCK().get());
         if (isValidJeiIngredient(fabricatorCatalyst)) {
@@ -227,8 +222,9 @@ public class MMJeiPlugin implements IModPlugin {
                 return builder.build(ingredient, context);
             }
 
+            // 接口仍要求实现此抽象方法，即使已被废弃
+            @SuppressWarnings("DeprecatedIsStillUsed")
             @Override
-            @Deprecated(since = "19.9.0")
             public @NotNull String getLegacyStringSubtypeInfo(ItemStack ingredient, UidContext context) {
                 Object data = builder.build(ingredient, context);
                 return data == null ? "" : data.toString();
