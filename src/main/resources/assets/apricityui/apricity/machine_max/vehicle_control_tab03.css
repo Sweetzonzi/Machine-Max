@@ -236,7 +236,7 @@
 .gli-del-btn {
     width: 14px;
     height: 14px;
-    display: none;
+    display: flex;                   /* 始终可见，不用 display:none */
     align-items: center;
     justify-content: center;
     background: transparent;
@@ -245,9 +245,10 @@
     font-size: 8px;
     cursor: pointer;
     flex-shrink: 0;
+    opacity: 0.35;                   /* 默认半透明，hover 时增亮 */
 }
 .group-list-item:hover .gli-del-btn {
-    display: flex;
+    opacity: 1;
 }
 .gli-del-btn:hover {
     background: #9E3434;
@@ -279,7 +280,8 @@
     border-left: 2px solid #335D9C;
 }
 .group-list-item.base-item .gli-del-btn {
-    display: none !important;
+    opacity: 0 !important;           /* 不占位的隐藏，保持布局稳定 */
+    pointer-events: none;
 }
 .gli-base-badge {
     font-size: 7px;
@@ -471,7 +473,7 @@
 .config-item-row .ci-del-btn {
     width: 12px;
     height: 12px;
-    display: none;
+    display: flex;                   /* 始终可见 */
     align-items: center;
     justify-content: center;
     background: transparent;
@@ -480,9 +482,10 @@
     font-size: 7px;
     cursor: pointer;
     flex-shrink: 0;
+    opacity: 0.3;
 }
 .config-item-row:hover .ci-del-btn {
-    display: flex;
+    opacity: 1;
 }
 .config-item-row .ci-del-btn:hover {
     color: #ff4444;

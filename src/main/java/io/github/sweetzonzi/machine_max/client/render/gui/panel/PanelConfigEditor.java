@@ -5,13 +5,17 @@ import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import com.mojang.logging.LogUtils;
 import io.github.sweetzonzi.machine_max.common.mech.control.*;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
+import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Tab 03 编辑配置面板。<br>
@@ -43,6 +47,13 @@ public class PanelConfigEditor {
     /** 是否已初始化（从 ControlGroupSet 加载了一次数据） */
     private static boolean initialized = false;
 
+    /**
+     * 数据变更回调，由 {@code VehicleControlScreen} 在 {@code init()} 中设置。<br>
+     * 编辑器保存配置后调用此回调，通知 Screen 刷新其 {@code controlSet} 引用，
+     * 避免客户端数据引用陈旧。
+     */
+    private static java.util.function.Consumer<ControlGroupSet> onDataChange;
+
     // ============================================================
     //  内部可变数据类
     // ============================================================
@@ -51,11 +62,20 @@ public class PanelConfigEditor {
     private static class GroupEditData {
         String name;
         String controlMode;         // "INHERIT"/"GROUND"/"FLIGHT"/"SPACE"/"NAUTICAL"
+        Map<String, List<String>> moveTargets;
+        Map<String, List<String>> viewTargets;
+        Map<String, List<String>> regularTargets;
         List<BindingEditData> bindings = new ArrayList<>();
 
-        GroupEditData(String name, String controlMode) {
+        GroupEditData(String name, String controlMode,
+                      Map<String, List<String>> moveTargets,
+                      Map<String, List<String>> viewTargets,
+                      Map<String, List<String>> regularTargets) {
             this.name = name;
             this.controlMode = controlMode;
+            this.moveTargets = moveTargets;
+            this.viewTargets = viewTargets;
+            this.regularTargets = regularTargets;
         }
     }
 
@@ -111,7 +131,10 @@ public class PanelConfigEditor {
         // baseGroup
         GroupEditData base = new GroupEditData(
                 data.getBaseGroup().name,
-                data.getBaseGroup().controlMode.name()
+                data.getBaseGroup().controlMode.name(),
+                data.getBaseGroup().moveTargets,
+                data.getBaseGroup().viewTargets,
+                data.getBaseGroup().regularTargets
         );
         for (ControlBinding b : data.getBaseGroup().bindings) {
             base.bindings.add(new BindingEditData(
@@ -122,7 +145,10 @@ public class PanelConfigEditor {
 
         // sub groups
         for (ControlGroup g : data.getGroups()) {
-            GroupEditData ged = new GroupEditData(g.name, g.controlMode.name());
+            GroupEditData ged = new GroupEditData(
+                    g.name, g.controlMode.name(),
+                    g.moveTargets, g.viewTargets, g.regularTargets
+            );
             for (ControlBinding b : g.bindings) {
                 ged.bindings.add(new BindingEditData(
                         b.trigger, b.action.name(), b.channel, b.targets
@@ -205,6 +231,8 @@ public class PanelConfigEditor {
             boolean isSelected = i == selGroup;
 
             Element item = doc.createElement("div");
+            String itemId = "config-left-item-" + i;
+            item.setAttribute("id", itemId);
             String itemClass = "group-list-item";
             if (isBase) itemClass += " base-item";
             if (isSelected) itemClass += " selected";
@@ -217,6 +245,7 @@ public class PanelConfigEditor {
 
             Element nameEl = doc.createElement("span");
             nameEl.setAttribute("class", "gli-name");
+            nameEl.setAttribute("id", "gli-name-" + i);
             nameEl.innerText = g.name;
 
             Element numEl = doc.createElement("span");
@@ -244,6 +273,7 @@ public class PanelConfigEditor {
             // 下排元信息
             Element metaEl = doc.createElement("div");
             metaEl.setAttribute("class", "gli-meta");
+            metaEl.setAttribute("id", "gli-meta-" + i);
             if (isBase) {
                 Element badge = doc.createElement("span");
                 badge.setAttribute("class", "gli-base-badge");
@@ -272,11 +302,16 @@ public class PanelConfigEditor {
         footer.setAttribute("class", "config-left-footer");
         Element resetBtn = doc.createElement("div");
         resetBtn.setAttribute("class", "config-reset-btn");
-        resetBtn.innerText = "RESET PRESET";
+        resetBtn.innerText = "\u21BA RESET TO DEFAULT";
         resetBtn.addEventListener("mousedown", e -> {
             if (!(e instanceof MouseEvent me) || me.button != 0) return;
             onResetDefaults();
-            render(doc, null);
+            // 从子系统重新加载预设并同步到服务端
+            Minecraft mc = Minecraft.getInstance();
+            ControlGroupSet freshData = restoreAndFetchPreset(mc);
+            if (freshData != null) {
+                render(doc, freshData);
+            }
         });
         footer.append(resetBtn);
         left.append(footer);
@@ -321,12 +356,15 @@ public class PanelConfigEditor {
         nameRow.setAttribute("class", "form-row");
         Element nameLabel = doc.createElement("label");
         nameLabel.innerText = "NAME";
+        int currentGroupIdx = selGroup;
         Element nameInput = doc.createElement("input");
         nameInput.setAttribute("type", "text");
         nameInput.setAttribute("value", g.name);
         nameInput.addEventListener("change", e -> {
             g.name = nameInput.value;
-            render(doc, null);
+            // 直接更新左栏对应项的名称文本，避免全量重建
+            Element nameEl = doc.getElementById("gli-name-" + currentGroupIdx);
+            if (nameEl != null) nameEl.innerText = g.name;
         });
         nameRow.append(nameLabel);
         nameRow.append(nameInput);
@@ -350,7 +388,11 @@ public class PanelConfigEditor {
         }
         modeSelect.addEventListener("change", e -> {
             g.controlMode = modeSelect.value;
-            render(doc, null);
+            // 直接更新左栏对应项的元信息文本
+            Element metaEl = doc.getElementById("gli-meta-" + currentGroupIdx);
+            if (metaEl != null) {
+                metaEl.innerText = g.bindings.size() + " BINDINGS  ·  " + g.controlMode;
+            }
         });
         modeRow.append(modeLabel);
         modeRow.append(modeSelect);
@@ -573,8 +615,9 @@ public class PanelConfigEditor {
                 val -> b.action = val);
         // channel
         addDetailField(doc, form, "CHANNEL", b.channel, val -> b.channel = val);
-        // targets
-        addDetailTags(doc, form, "TARGETS", b.targets);
+        // targets（逗号分隔的可编辑输入）
+        addDetailField(doc, form, "TARGETS", String.join(", ", b.targets),
+                val -> b.targets = parseCommaList(val));
 
         body.append(form);
     }
@@ -602,8 +645,9 @@ public class PanelConfigEditor {
         addDetailField(doc, form, "LABEL", a.label, val -> a.label = val);
         // channel
         addDetailField(doc, form, "CHANNEL", a.channel, val -> a.channel = val);
-        // targets
-        addDetailTags(doc, form, "TARGETS", a.targets);
+        // targets（逗号分隔的可编辑输入）
+        addDetailField(doc, form, "TARGETS", String.join(", ", a.targets),
+                val -> a.targets = parseCommaList(val));
 
         switch (a.type) {
             case "TOGGLE" -> {
@@ -860,7 +904,10 @@ public class PanelConfigEditor {
     /** 添加新控制组 */
     private static void onAddGroup() {
         String name = "NEW_GROUP_" + (groupList.size());
-        GroupEditData g = new GroupEditData(name, "INHERIT");
+        GroupEditData g = new GroupEditData(name, "INHERIT",
+                java.util.Collections.emptyMap(),
+                java.util.Collections.emptyMap(),
+                java.util.Collections.emptyMap());
         groupList.add(g);
         selGroup = groupList.size() - 1;
         selBinding = -1;
@@ -889,11 +936,11 @@ public class PanelConfigEditor {
         LOGGER.debug("[ConfigEditor] Reset to defaults");
     }
 
-    /** 添加按键绑定到当前选中的组 */
+    /** 添加空按键绑定到当前选中的组 */
     private static void onAddBinding(int groupIdx) {
         if (groupIdx < 0 || groupIdx >= groupList.size()) return;
         GroupEditData g = groupList.get(groupIdx);
-        g.bindings.add(new BindingEditData("key.", "PRESS", "channel", List.of("vehicle")));
+        g.bindings.add(new BindingEditData("", "PRESS", "", List.of("")));
         selBinding = g.bindings.size() - 1;
         selAction = -1;
         LOGGER.debug("[ConfigEditor] Added binding to group '{}'", g.name);
@@ -925,6 +972,27 @@ public class PanelConfigEditor {
         LOGGER.debug("[ConfigEditor] Deleted GUI action #{}", index);
     }
 
+    /**
+     * 从子系统恢复 JSON 预设的控制组配置，并同步到服务端。<br>
+     * 返回恢复后的新鲜 {@link ControlGroupSet}，调用方传入 {@code render()} 以重绘编辑器。
+     *
+     * @return 恢复后的 ControlGroupSet，玩家未在座椅中时返回 null
+     */
+    @Nullable
+    private static ControlGroupSet restoreAndFetchPreset(Minecraft mc) {
+        if (mc.player instanceof IEntityMixin mixin
+                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
+            // 从 JSON 预设恢复控制组配置
+            sub.restoreControlGroupPreset();
+            ControlGroupSet fresh = sub.getControlGroupSet();
+            // 同步到服务端（saveControlSet 内部会发包并更新本地副本）
+            ControlDataAccessor.saveControlSet(mc, fresh);
+            LOGGER.debug("[ConfigEditor] Restored control group preset from subsystem");
+            return fresh;
+        }
+        return null;
+    }
+
     // ============================================================
     //  保存：EditData → ControlGroupSet → 网络包
     // ============================================================
@@ -937,6 +1005,8 @@ public class PanelConfigEditor {
         if (groupList == null || groupList.isEmpty()) return;
         ControlGroupSet saved = buildControlGroupSet();
         ControlDataAccessor.saveControlSet(Minecraft.getInstance(), saved);
+        // 通知 VehicleControlScreen 刷新其 controlSet 引用
+        if (onDataChange != null) onDataChange.accept(saved);
         LOGGER.debug("[ConfigEditor] Saved config to server, groups={}, actions={}",
                 groupList.size(), actionList.size());
         showToast(doc, "SAVED");
@@ -951,6 +1021,9 @@ public class PanelConfigEditor {
         ControlGroup baseGroup = new ControlGroup(
                 baseEdit.name,
                 ControlMode.valueOf(baseEdit.controlMode),
+                baseEdit.moveTargets,
+                baseEdit.viewTargets,
+                baseEdit.regularTargets,
                 buildBindings(baseEdit.bindings)
         );
 
@@ -961,6 +1034,9 @@ public class PanelConfigEditor {
             subGroups.add(new ControlGroup(
                     g.name,
                     ControlMode.valueOf(g.controlMode),
+                    g.moveTargets,
+                    g.viewTargets,
+                    g.regularTargets,
                     buildBindings(g.bindings)
             ));
         }
@@ -1077,9 +1153,29 @@ public class PanelConfigEditor {
         return null;
     }
 
+    /**
+     * 将逗号分隔的字符串解析为字符串列表，自动去除首尾空格并过滤空条目。<br>
+     * 例如 {@code "vehicle, weapon.primary"} → {@code ["vehicle", "weapon.primary"]}
+     */
+    private static List<String> parseCommaList(String input) {
+        if (input == null || input.isBlank()) return List.of();
+        return java.util.Arrays.stream(input.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
     // ============================================================
     //  重置（Screen 关闭时调用）
     // ============================================================
+
+    /**
+     * 设置数据变更回调，由 {@code VehicleControlScreen} 在 {@code init()} 中调用。<br>
+     * 编辑器保存配置后通过此回调通知 Screen 刷新其数据引用。
+     */
+    public static void setOnDataChange(java.util.function.Consumer<ControlGroupSet> callback) {
+        onDataChange = callback;
+    }
 
     /**
      * 重置所有静态状态。<br>
@@ -1099,6 +1195,7 @@ public class PanelConfigEditor {
         hDragVal = null;
         hDragOnChange = null;
         hDragDoc = null;
+        onDataChange = null; // 清除回调，避免悬挂引用
         LOGGER.debug("[ConfigEditor] Reset static state");
     }
 }

@@ -19,6 +19,11 @@
     src: url("microgrammadbolext.ttf");
 }
 
+/* ---------- 根元素高度基准 ---------- */
+html {
+    height: 100%;                          /* 为 body 的 height:100% 提供参考基准 */
+}
+
 /* ---------- 全局重置 ---------- */
 * {
     margin: 0;

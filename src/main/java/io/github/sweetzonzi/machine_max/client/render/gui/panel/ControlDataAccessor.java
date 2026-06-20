@@ -17,23 +17,48 @@ import java.util.Map;
 /**
  * 控制数据获取适配器。<br>
  * 封装从客户端 Player 到 ControlGroupSet 的读写链路。<br>
- * 当前阶段使用 Mock 数据进行 GUI 调试，后续阶段切换到真实子系统数据。
+ * 优先从当前控制的子系统获取真实数据，玩家未乘坐时回退到 Mock 数据用于 UI 调试。
  */
 @OnlyIn(Dist.CLIENT)
 public class ControlDataAccessor {
 
-    /** 用于 GUI 测试的预置控制组集合，包含丰富的多组数据 */
+    /** 用于 GUI 测试的预置控制组集合（仅在无真实数据时使用） */
     private static ControlGroupSet FOR_GUI_TEST;
 
+    /** 最近一次加载的 ControlGroupSet 快照，用于编辑器未保存时的本地回显 */
+    private static ControlGroupSet cachedSnapshot;
+
     /**
-     * 获取当前控制组集合（调试阶段返回 Mock 数据）。
+     * 获取当前控制组集合。<br>
+     * <ol>
+     *   <li>如果玩家正在控制某子系统（在座椅中），返回该子系统的真实 {@link ControlGroupSet}</li>
+     *   <li>否则返回 Mock 数据用于调试</li>
+     * </ol>
      */
     @Nullable
     public static ControlGroupSet getCurrentControlSet(Minecraft mc) {
+        // 1. 尝试获取真实数据
+        if (mc.player instanceof IEntityMixin mixin
+                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
+            ControlGroupSet real = sub.getControlGroupSet();
+            if (real != null && real != ControlGroupSet.EMPTY) {
+                cachedSnapshot = real;
+                return real;
+            }
+        }
+        // 2. 无真实数据时用 Mock 数据
         if (FOR_GUI_TEST == null) {
             buildMockData();
         }
         return FOR_GUI_TEST;
+    }
+
+    /**
+     * 判断玩家当前是否在控制座位上（是否有真实数据来源）。
+     */
+    public static boolean hasRealControlSet(Minecraft mc) {
+        return mc.player instanceof IEntityMixin mixin
+                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem;
     }
 
     /**
@@ -127,17 +152,31 @@ public class ControlDataAccessor {
     }
 
     /**
-     * 保存 ControlGroupSet 到服务端。
+     * 保存 ControlGroupSet 到服务端，同时更新本地子系统副本。<br>
+     * 发包后直接修改本地子系统的 {@code controlGroupSet}，避免等服务端回传导致的延迟。
+     * 如果玩家未在座椅中（无真实子系统），则仅更新本地 Mock 缓存。
      */
     public static void saveControlSet(Minecraft mc, ControlGroupSet modified) {
+        // 1. 立即更新本地子系统副本（发包前改，确保即时生效）
+        if (mc.player instanceof IEntityMixin mixin
+                && mixin.machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub) {
+            sub.setControlGroupSet(modified);
+        }
+        // 2. 发送网络包到服务端
         int subPartId = getCurrentSubPartId(mc);
         String subSystemName = getCurrentSubSystemName(mc);
-        if (subPartId < 0 || subSystemName == null) return;
-        PacketDistributor.sendToServer(new ControlGroupSetEditPayload(subPartId, subSystemName, modified));
+        if (subPartId >= 0 && subSystemName != null) {
+            PacketDistributor.sendToServer(new ControlGroupSetEditPayload(subPartId, subSystemName, modified));
+            cachedSnapshot = modified;
+        } else {
+            // 无座椅时：更新本地 Mock 数据
+            FOR_GUI_TEST = modified;
+        }
     }
 
     /**
-     * 发送 GUI 控件操作到服务端。
+     * 发送 GUI 控件操作到服务端。<br>
+     * 如果玩家未在座椅中则不发送（静默丢弃）。
      */
     public static void sendGuiAction(Minecraft mc, int actionIndex, GuiActionType type, float value) {
         int subPartId = getCurrentSubPartId(mc);

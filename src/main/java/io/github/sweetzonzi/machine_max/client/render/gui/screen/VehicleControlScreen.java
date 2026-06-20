@@ -69,6 +69,10 @@ public class VehicleControlScreen extends Screen {
             if (auiDocument == null) {
                 onClose();
             } else {
+                // 注册数据变更回调：编辑器保存后刷新本 Screen 的数据引用
+                PanelConfigEditor.setOnDataChange(updated -> {
+                    controlSet = updated;
+                });
                 initPanels();
                 // 注册 body "load" 事件：热重载后 Document.refresh() 末尾会触发此事件。
                 // body 的 EventListener 列表会在 refresh() 中被保留并转移到新 body，
