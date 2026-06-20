@@ -34,15 +34,21 @@
     "impact_multiplier": {
       "type": "number",
       "minimum": 0,
-      "default": 1.5,
+      "default": 1.0,
       "description": "连接点的冲击吸收率，在计算部件击落前，应用冲击减免后应用，大于1将使连接点更容易断开。"
     },
     "impact_absorption": {
       "type": "number",
       "minimum": 0,
       "maximum": 1,
-      "default": 0.2,
-      "description": "连接点受到冲击但未被击落时，冲击转为结构完整性损耗的比例。例如0.2表示20%的冲击会转化为结构完整性的损耗。"
+      "default": 0.5,
+      "description": "连接点受到冲击但未被击落时，冲击转为结构完整性损耗的比例。例如0.5表示50%的冲击会转化为结构完整性的损耗。"
+    },
+    "impact_absorption_destroyed": {
+      "type": "number",
+      "minimum": 0,
+      "default": 2.0,
+      "description": "SubPart已摧毁时，冲击转为连接点完整性损耗的比例。例如2.0表示200%的冲击会转化为结构完整性的损耗（用于残骸快速解体）。"
     },
     "required_tags": {
       "type": "array",

@@ -34,15 +34,21 @@
     "impact_multiplier": {
       "type": "number",
       "minimum": 0,
-      "default": 1.5,
+      "default": 1.0,
       "description": "Impact absorption rate of the connection point, applied after impact reduction before calculating part detachment, greater than 1 will make the connection point easier to break."
     },
     "impact_absorption": {
       "type": "number",
       "minimum": 0,
       "maximum": 1,
-      "default": 0.2,
-      "description": "The proportion of impact converted to structural integrity loss when the connection point is impacted but not detached. For example, 0.2 means 20% of the impact will be converted to structural integrity loss."
+      "default": 0.5,
+      "description": "The proportion of impact converted to structural integrity loss when the connection point is impacted but not detached. For example, 0.5 means 50% of the impact will be converted to structural integrity loss."
+    },
+    "impact_absorption_destroyed": {
+      "type": "number",
+      "minimum": 0,
+      "default": 2.0,
+      "description": "The proportion of impact converted to connector integrity loss when the SubPart is destroyed. For example, 2.0 means 200% of the impact will be converted to integrity loss (for rapid wreck disassembly)."
     },
     "required_tags": {
       "type": "array",

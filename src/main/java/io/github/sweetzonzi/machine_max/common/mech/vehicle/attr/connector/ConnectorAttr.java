@@ -46,24 +46,26 @@ public class ConnectorAttr {
     }
 
     /**
-     * @param type                连接点类型
-     * @param direction           连接点的法线方向
-     * @param integrity           连接点结构完整性，受到大于此数值的伤害时会断开连接的关节
-     * @param impactAbsorption    连接点受到冲击，但未超过剩余结构完整性即未能断开连接时，冲击转化为结构完整性损耗的比例
-     * @param impactReduction     连接点受到冲击时减少的冲击量
-     * @param impactMultiplier    连接点受到冲击时的伤害倍率(与内部零件相连接的连接点恒定不可破坏，不受此影响)
-     * @param collideBetweenParts 连接点是否允许部件间碰撞
-     * @param requiredTags        连接点的必需标签
-     * @param acceptableTags      连接点的可接受标签
-     * @param forbiddenTags       连接点的禁止标签
-     * @param jointAttrs          连接点的关节属性(限制，刚性与阻尼)
-     * @param powerTarget         连接点的机械能输出目标（子系统名）
+     * @param type                     连接点类型
+     * @param direction                连接点的法线方向
+     * @param integrity                连接点结构完整性，受到大于此数值的伤害时会断开连接的关节
+     * @param impactAbsorption         连接点受到冲击，但未超过剩余结构完整性即未能断开连接时，冲击转化为结构完整性损耗的比例
+     * @param impactAbsorptionDestroyed SubPart已摧毁时，冲击转化为连接点完整性损耗的比例
+     * @param impactReduction          连接点受到冲击时减少的冲击量
+     * @param impactMultiplier         连接点受到冲击时的伤害倍率(与内部零件相连接的连接点恒定不可破坏，不受此影响)
+     * @param collideBetweenParts      连接点是否允许部件间碰撞
+     * @param requiredTags             连接点的必需标签
+     * @param acceptableTags           连接点的可接受标签
+     * @param forbiddenTags            连接点的禁止标签
+     * @param jointAttrs               连接点的关节属性(限制，刚性与阻尼)
+     * @param powerTarget              连接点的机械能输出目标（子系统名）
      */
     public record OverwriteAttr(
             Optional<String> type,
             Optional<Axis> direction,
             Optional<Float> integrity,
             Optional<Float> impactAbsorption,
+            Optional<Float> impactAbsorptionDestroyed,
             Optional<Float> impactReduction,
             Optional<Float> impactMultiplier,
             Optional<Boolean> collideBetweenParts,
@@ -78,6 +80,7 @@ public class ConnectorAttr {
                 Axis.CODEC.optionalFieldOf("direction").forGetter(OverwriteAttr::direction),
                 Codec.FLOAT.optionalFieldOf("integrity").forGetter(OverwriteAttr::integrity),
                 Codec.FLOAT.optionalFieldOf("impact_absorption").forGetter(OverwriteAttr::impactAbsorption),
+                Codec.FLOAT.optionalFieldOf("impact_absorption_destroyed").forGetter(OverwriteAttr::impactAbsorptionDestroyed),
                 Codec.FLOAT.optionalFieldOf("impact_reduction").forGetter(OverwriteAttr::impactReduction),
                 Codec.FLOAT.optionalFieldOf("impact_multiplier").forGetter(OverwriteAttr::impactMultiplier),
                 Codec.BOOL.optionalFieldOf("collide_between_parts").forGetter(OverwriteAttr::collideBetweenParts),
@@ -171,6 +174,7 @@ public class ConnectorAttr {
                 overwrite.direction().isPresent() ? overwrite.direction().get() : baseAttr.direction(),
                 overwrite.integrity().isPresent() ? overwrite.integrity().get() : baseAttr.integrity(),
                 overwrite.impactAbsorption().isPresent() ? overwrite.impactAbsorption().get() : baseAttr.impactAbsorption(),
+                overwrite.impactAbsorptionDestroyed().isPresent() ? overwrite.impactAbsorptionDestroyed().get() : baseAttr.impactAbsorptionDestroyed(),
                 overwrite.impactReduction().isPresent() ? overwrite.impactReduction().get() : baseAttr.impactReduction(),
                 overwrite.impactMultiplier().isPresent() ? overwrite.impactMultiplier().get() : baseAttr.impactMultiplier(),
                 overwrite.collideBetweenParts().isPresent() ? overwrite.collideBetweenParts().get() : baseAttr.collideBetweenParts(),
@@ -195,6 +199,13 @@ public class ConnectorAttr {
 
     public float getImpactAbsorption() {
         return attr.impactAbsorption();
+    }
+
+    /**
+     * @return SubPart已摧毁时，冲击转化为连接点完整性损耗的比例
+     */
+    public float getImpactAbsorptionDestroyed() {
+        return attr.impactAbsorptionDestroyed();
     }
 
     public float getImpactReduction() {

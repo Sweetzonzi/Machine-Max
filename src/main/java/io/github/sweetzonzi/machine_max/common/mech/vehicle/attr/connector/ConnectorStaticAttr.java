@@ -12,9 +12,10 @@ import java.util.Map;
  * @param type              连接点类型
  * @param direction         连接点的法线方向
  * @param integrity         连接点结构完整性，受到大于此数值的伤害时会断开连接的关节
- * @param impactAbsorption  连接点受到冲击，但未超过剩余结构完整性即未能断开连接时，冲击转化为结构完整性损耗的比例
- * @param impactReduction   连接点受到冲击时减少的冲击量
- * @param impactMultiplier  连接点受到冲击时的伤害倍率
+ * @param impactAbsorption        连接点受到冲击，但未超过剩余结构完整性即未能断开连接时，冲击转化为结构完整性损耗的比例
+ * @param impactAbsorptionDestroyed  SubPart已摧毁时，冲击转化为连接点完整性损耗的比例
+ * @param impactReduction         连接点受到冲击时减少的冲击量
+ * @param impactMultiplier        连接点受到冲击时的伤害倍率
  * @param collideBetweenParts 连接点是否允许部件间碰撞
  * @param requiredTags      连接点的必需标签
  * @param acceptableTags    连接点的可接受标签
@@ -26,6 +27,7 @@ public record ConnectorStaticAttr(
         Axis direction,
         float integrity,
         float impactAbsorption,
+        float impactAbsorptionDestroyed,
         float impactReduction,
         float impactMultiplier,
         boolean collideBetweenParts,
@@ -38,9 +40,10 @@ public record ConnectorStaticAttr(
             Codec.STRING.optionalFieldOf("type", "simple").forGetter(ConnectorStaticAttr::type),
             Axis.CODEC.optionalFieldOf("direction", Axis.YP).forGetter(ConnectorStaticAttr::direction),
             Codec.FLOAT.optionalFieldOf("integrity", 20f).forGetter(ConnectorStaticAttr::integrity),
-            Codec.FLOAT.optionalFieldOf("impact_absorption", 0.2f).forGetter(ConnectorStaticAttr::impactAbsorption),
+            Codec.FLOAT.optionalFieldOf("impact_absorption", 0.5f).forGetter(ConnectorStaticAttr::impactAbsorption),
+            Codec.FLOAT.optionalFieldOf("impact_absorption_destroyed", 2.0f).forGetter(ConnectorStaticAttr::impactAbsorptionDestroyed),
             Codec.FLOAT.optionalFieldOf("impact_reduction", 2f).forGetter(ConnectorStaticAttr::impactReduction),
-            Codec.FLOAT.optionalFieldOf("impact_multiplier", 1.5f).forGetter(ConnectorStaticAttr::impactMultiplier),
+            Codec.FLOAT.optionalFieldOf("impact_multiplier", 1.0f).forGetter(ConnectorStaticAttr::impactMultiplier),
             Codec.BOOL.optionalFieldOf("collide_between_parts", false).forGetter(ConnectorStaticAttr::collideBetweenParts),
             ResourceLocation.CODEC.listOf().optionalFieldOf("required_tags", List.of()).forGetter(ConnectorStaticAttr::requiredTags),
             ResourceLocation.CODEC.listOf().optionalFieldOf("acceptable_tags", List.of()).forGetter(ConnectorStaticAttr::acceptableTags),

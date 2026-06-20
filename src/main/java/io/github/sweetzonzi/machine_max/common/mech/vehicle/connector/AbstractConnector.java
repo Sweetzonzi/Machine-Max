@@ -197,7 +197,7 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                     if (totalImpact >= getIntegrity() && hasPart()) {
                         //强冲击，立即击落部件
                         subPart.part.assembly.disconnect(this);
-                        float finalImpact = (subPart.isDestroyed() ? totalImpact : attr.getImpactAbsorption() * totalImpact);
+                        float finalImpact = (subPart.isDestroyed() ? attr.getImpactAbsorptionDestroyed() * totalImpact : attr.getImpactAbsorption() * totalImpact);
                         SparkLevel.submitImmediateTask(subPart.level, PPhase.ALL, () -> {
                             SoundEvent sound = SoundEvent.createFixedRangeEvent(ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "part.torn_apart"), 64f);
                             SpreadingSoundHelper.playSpreadingSound(subPart.level, sound, SoundSource.NEUTRAL, SparkMathKt.toVec3(subPart.getPosition()), Vec3.ZERO,
@@ -205,8 +205,8 @@ public abstract class AbstractConnector implements PhysicsHost, SyncedDataHolder
                                     0.2f + 0.8f * Math.min(getBasicIntegrity(), finalImpact) / getBasicIntegrity());
                         });
                     }
-                    //削减部件完整性
-                    setIntegrityInternal(Math.clamp(getIntegrity() - (subPart.isDestroyed() ? totalImpact : 0.2f * totalImpact), 0, getBasicIntegrity()));
+                    //削减连接的完整性, 使用对应状态下的冲击吸收比例
+                    setIntegrityInternal(Math.clamp(getIntegrity() - (subPart.isDestroyed() ? attr.getImpactAbsorptionDestroyed() * totalImpact : attr.getImpactAbsorption() * totalImpact), 0, getBasicIntegrity()));
                 }
                 accumulatedImpact.clear();
             }
