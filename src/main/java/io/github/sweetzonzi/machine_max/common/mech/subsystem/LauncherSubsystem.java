@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;

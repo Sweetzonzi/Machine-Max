@@ -3,7 +3,7 @@ package io.github.sweetzonzi.machine_max.common.item.prop;
 import cn.solarmoon.spark_core.animation.IAnimatable;
 import cn.solarmoon.spark_core.animation.ItemAnimatable;
 import cn.solarmoon.spark_core.animation.model.ModelIndex;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.attachment.LivingEntityEyesightAttachment;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;

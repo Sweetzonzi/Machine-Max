@@ -8,7 +8,7 @@ import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.common.resource.modules.ProjectileModule;
 import lombok.Getter;
-import cn.solarmoon.spark_core.particle.common.ParticleEffects;
+import cn.solarmoon.spark_core.api.ParticleEffects;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;

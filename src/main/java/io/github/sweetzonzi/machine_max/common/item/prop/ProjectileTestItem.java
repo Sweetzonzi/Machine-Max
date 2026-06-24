@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.item.prop;
 
 import cn.solarmoon.spark_core.physics.PhysicsHelperKt;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.registry.MMDataComponents;
 import net.minecraft.resources.ResourceLocation;

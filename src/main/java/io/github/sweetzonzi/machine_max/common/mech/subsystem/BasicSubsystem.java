@@ -1,6 +1,6 @@
 package io.github.sweetzonzi.machine_max.common.mech.subsystem;
 
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import cn.solarmoon.spark_core.util.TaskSubmitOffice;

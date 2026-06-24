@@ -1,7 +1,7 @@
 package io.github.sweetzonzi.machine_max.common.mech.vehicle.collision;
 
 import cn.solarmoon.spark_core.sound.ISoundSpreader;
-import cn.solarmoon.spark_core.sound.SpreadingSoundHelper;
+import cn.solarmoon.spark_core.api.SpreadingSoundHelper;
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
