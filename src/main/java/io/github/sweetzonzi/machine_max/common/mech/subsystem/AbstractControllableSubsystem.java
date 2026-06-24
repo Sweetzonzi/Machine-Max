@@ -281,7 +281,11 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         Map<String, List<String>> targets = controlGroupSet.getMergedMainWeaponTargets();
         if (!targets.isEmpty() && this.isActive()) {
             for (String signalKey : targets.keySet()) {
-                this.sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
+                // hold 类型按键松开时(tickCount!=0)发送 EmptySignal 清除频道，防止走火
+                Object signal = (inputType == KeyInputMapping.MAIN_FIRE && tickCount != 0)
+                        ? EmptySignal.INSTANCE
+                        : new RegularInputSignal(inputType, tickCount);
+                this.sendSignalToAllTargets(signalKey, signal);
             }
             this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
@@ -303,7 +307,11 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         Map<String, List<String>> targets = controlGroupSet.getMergedSecondaryWeaponTargets();
         if (!targets.isEmpty() && this.isActive()) {
             for (String signalKey : targets.keySet()) {
-                this.sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
+                // hold 类型按键松开时(tickCount!=0)发送 EmptySignal 清除频道，防止走火
+                Object signal = (inputType == KeyInputMapping.SECONDARY_FIRE && tickCount != 0)
+                        ? EmptySignal.INSTANCE
+                        : new RegularInputSignal(inputType, tickCount);
+                this.sendSignalToAllTargets(signalKey, signal);
             }
             this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {

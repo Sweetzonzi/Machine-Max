@@ -1,10 +1,10 @@
 package io.github.sweetzonzi.machine_max.common.util.sound
 
 import cn.solarmoon.spark_core.sound.SoundData
+import cn.solarmoon.spark_core.util.SoundHelper
 import cn.solarmoon.spark_core.util.sound.WaveEffects
 import cn.solarmoon.spark_core.util.sound.WaveGenerators
 import cn.solarmoon.spark_core.util.sound.filter.MonoFilter
-import cn.solarmoon.spark_core.util.toSoundData
 
 /**
  * 无刷电机音效合成器
@@ -56,7 +56,7 @@ object MotorSoundSynthesizer {
         )
 
         // 应用随速变化的低通滤波器
-        return applySpeedDependentFilter(mixed, load, config).toSoundData()
+        return SoundHelper.toSoundData(applySpeedDependentFilter(mixed, load, config))
     }
 
     /**
