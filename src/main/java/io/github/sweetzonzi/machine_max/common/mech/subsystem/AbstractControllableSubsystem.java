@@ -106,6 +106,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         channels.addAll(group.moveTargets.keySet());
         channels.addAll(group.viewTargets.keySet());
         channels.addAll(group.regularTargets.keySet());
+        channels.addAll(group.mainWeaponTargets.keySet());
+        channels.addAll(group.secondaryWeaponTargets.keySet());
         for (ControlBinding binding : group.bindings) {
             channels.add(binding.channel);
         }
@@ -162,6 +164,8 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         map.putAll(controlGroupSet.getAllMoveTargets());
         map.putAll(controlGroupSet.getAllRegularTargets());
         map.putAll(controlGroupSet.getAllViewTargets());
+        map.putAll(controlGroupSet.getAllMainWeaponTargets());
+        map.putAll(controlGroupSet.getAllSecondaryWeaponTargets());
         map.putAll(controlGroupSet.getAllBindingTargets());
         map.putAll(controlGroupSet.getAllGuiActionTargets());
         map.putAll(cameraDiscoveryTargets);
@@ -258,6 +262,50 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
             if (aimPoint != null) {
                 this.getOwner().getSubPart().part.assembly.activatePhysics();
             }
+        } else {
+            for (String signalKey : targets.keySet()) {
+                this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
+            }
+        }
+    }
+
+    /**
+     * 设置主武器控制信号，发送到当前控制组的 mainWeaponTargets 频道。<br>
+     * 复用 RegularInputSignal，支持 MAIN_FIRE / NEXT_AMMO_TYPE 等按键语义。<br>
+     * 可被 AI 实体直接调用而不需经过控制组绑定。
+     *
+     * @param inputType 武器控制按键类型（如 MAIN_FIRE、NEXT_AMMO_TYPE）
+     * @param tickCount 0=按下/按下中, 非0=松开
+     */
+    public void setMainWeaponInputSignal(KeyInputMapping inputType, int tickCount) {
+        Map<String, List<String>> targets = controlGroupSet.getMergedMainWeaponTargets();
+        if (!targets.isEmpty() && this.isActive()) {
+            for (String signalKey : targets.keySet()) {
+                this.sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
+            }
+            this.getOwner().getSubPart().part.assembly.activatePhysics();
+        } else {
+            for (String signalKey : targets.keySet()) {
+                this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
+            }
+        }
+    }
+
+    /**
+     * 设置副武器控制信号，发送到当前控制组的 secondaryWeaponTargets 频道。<br>
+     * 复用 RegularInputSignal，支持 SECONDARY_FIRE / NEXT_AMMO_TYPE 等按键语义。<br>
+     * 可被 AI 实体直接调用而不需经过控制组绑定。
+     *
+     * @param inputType 武器控制按键类型（如 SECONDARY_FIRE、NEXT_AMMO_TYPE）
+     * @param tickCount 0=按下/按下中, 非0=松开
+     */
+    public void setSecondaryWeaponInputSignal(KeyInputMapping inputType, int tickCount) {
+        Map<String, List<String>> targets = controlGroupSet.getMergedSecondaryWeaponTargets();
+        if (!targets.isEmpty() && this.isActive()) {
+            for (String signalKey : targets.keySet()) {
+                this.sendSignalToAllTargets(signalKey, new RegularInputSignal(inputType, tickCount));
+            }
+            this.getOwner().getSubPart().part.assembly.activatePhysics();
         } else {
             for (String signalKey : targets.keySet()) {
                 this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);

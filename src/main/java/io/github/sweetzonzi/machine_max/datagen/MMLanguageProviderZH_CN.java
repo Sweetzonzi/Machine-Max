@@ -39,6 +39,15 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("key.machine_max.general.interact", "交互");
         this.add("key.machine_max.general.leave_vehicle", "离开载具");
         this.add("key.machine_max.general.toggle_light", "灯光开关");
+        this.add("key.machine_max.general.vehicle_info", "载具信息面板");
+        this.add("key.machine_max.general.cycle_camera", "切换摄像机");
+        this.add("key.machine_max.general.camera_zoom", "一键变焦");
+        this.add("key.machine_max.general.camera_zoom_in", "放大");
+        this.add("key.machine_max.general.camera_zoom_out", "缩小");
+        this.add("key.machine_max.general.main_weapon_fire", "主武器开火");
+        this.add("key.machine_max.general.secondary_weapon_fire", "副武器开火");
+        this.add("key.machine_max.general.next_ammo_type", "下一个弹种");
+        this.add("key.machine_max.general.prev_ammo_type", "上一个弹种");
         // 按键名称-地面载具
         this.add("key.machine_max.ground.forward", "前进");
         this.add("key.machine_max.ground.backward", "后退");

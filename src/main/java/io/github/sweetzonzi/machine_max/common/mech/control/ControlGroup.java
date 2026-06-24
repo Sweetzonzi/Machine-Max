@@ -30,6 +30,12 @@ public class ControlGroup {
     /** 常规按键输入输出映射 {频道名: [目标名称列表]}，如离合/换挡/灯光等 KeyInputMapping 事件 */
     public final Map<String, List<String>> regularTargets;
 
+    /** 主武器控制输出映射 {频道名: [目标名称列表]}，用于路由主武器开火/换弹等指令 */
+    public final Map<String, List<String>> mainWeaponTargets;
+
+    /** 副武器控制输出映射 {频道名: [目标名称列表]}，用于路由副武器开火/换弹等指令 */
+    public final Map<String, List<String>> secondaryWeaponTargets;
+
     /** 离散按键绑定列表 */
     public final List<ControlBinding> bindings;
 
@@ -37,20 +43,25 @@ public class ControlGroup {
                         Map<String, List<String>> moveTargets,
                         Map<String, List<String>> viewTargets,
                         Map<String, List<String>> regularTargets,
+                        Map<String, List<String>> mainWeaponTargets,
+                        Map<String, List<String>> secondaryWeaponTargets,
                         List<ControlBinding> bindings) {
         this.name = name;
         this.controlMode = controlMode != null ? controlMode : ControlMode.INHERIT;
         this.moveTargets = moveTargets != null ? Map.copyOf(moveTargets) : Collections.emptyMap();
         this.viewTargets = viewTargets != null ? Map.copyOf(viewTargets) : Collections.emptyMap();
         this.regularTargets = regularTargets != null ? Map.copyOf(regularTargets) : Collections.emptyMap();
+        this.mainWeaponTargets = mainWeaponTargets != null ? Map.copyOf(mainWeaponTargets) : Collections.emptyMap();
+        this.secondaryWeaponTargets = secondaryWeaponTargets != null ? Map.copyOf(secondaryWeaponTargets) : Collections.emptyMap();
         this.bindings = bindings != null ? List.copyOf(bindings) : Collections.emptyList();
     }
 
     /**
-     * 便捷构造：适用于纯离散按键的控制组（无移动/视角/常规输出）。
+     * 便捷构造：适用于纯离散按键的控制组（无移动/视角/常规/武器输出）。
      */
     public ControlGroup(String name, ControlMode controlMode, List<ControlBinding> bindings) {
-        this(name, controlMode, Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), bindings);
+        this(name, controlMode, Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
+                Collections.emptyMap(), Collections.emptyMap(), bindings);
     }
 
     private static final Codec<Map<String, List<String>>> TARGET_MAP_CODEC = Codec.unboundedMap(
@@ -64,6 +75,8 @@ public class ControlGroup {
             TARGET_MAP_CODEC.optionalFieldOf("move_targets", Collections.emptyMap()).forGetter(g -> g.moveTargets),
             TARGET_MAP_CODEC.optionalFieldOf("view_targets", Collections.emptyMap()).forGetter(g -> g.viewTargets),
             TARGET_MAP_CODEC.optionalFieldOf("regular_targets", Collections.emptyMap()).forGetter(g -> g.regularTargets),
+            TARGET_MAP_CODEC.optionalFieldOf("main_weapon_targets", Collections.emptyMap()).forGetter(g -> g.mainWeaponTargets),
+            TARGET_MAP_CODEC.optionalFieldOf("secondary_weapon_targets", Collections.emptyMap()).forGetter(g -> g.secondaryWeaponTargets),
             ControlBinding.CODEC.listOf().optionalFieldOf("bindings", Collections.emptyList()).forGetter(g -> g.bindings)
     ).apply(instance, ControlGroup::new));
 
@@ -97,13 +110,32 @@ public class ControlGroup {
         }
     };
 
-    public static final StreamCodec<ByteBuf, ControlGroup> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.STRING_UTF8, g -> g.name,
-            ControlMode.STREAM_CODEC, g -> g.controlMode,
-            TARGET_MAP_STREAM_CODEC, g -> g.moveTargets,
-            TARGET_MAP_STREAM_CODEC, g -> g.viewTargets,
-            TARGET_MAP_STREAM_CODEC, g -> g.regularTargets,
-            ControlBinding.STREAM_CODEC.apply(ByteBufCodecs.list()), g -> g.bindings,
-            ControlGroup::new
-    );
+    /** 手动实现 StreamCodec，因为 8 个字段超过 composite(Function6) 的参数上限 */
+    public static final StreamCodec<ByteBuf, ControlGroup> STREAM_CODEC = new StreamCodec<>() {
+        @Override
+        public ControlGroup decode(ByteBuf buf) {
+            String name = ByteBufCodecs.STRING_UTF8.decode(buf);
+            ControlMode controlMode = ControlMode.STREAM_CODEC.decode(buf);
+            Map<String, List<String>> moveTargets = TARGET_MAP_STREAM_CODEC.decode(buf);
+            Map<String, List<String>> viewTargets = TARGET_MAP_STREAM_CODEC.decode(buf);
+            Map<String, List<String>> regularTargets = TARGET_MAP_STREAM_CODEC.decode(buf);
+            Map<String, List<String>> mainWeaponTargets = TARGET_MAP_STREAM_CODEC.decode(buf);
+            Map<String, List<String>> secondaryWeaponTargets = TARGET_MAP_STREAM_CODEC.decode(buf);
+            List<ControlBinding> bindings = ControlBinding.STREAM_CODEC.apply(ByteBufCodecs.list()).decode(buf);
+            return new ControlGroup(name, controlMode, moveTargets, viewTargets, regularTargets,
+                    mainWeaponTargets, secondaryWeaponTargets, bindings);
+        }
+
+        @Override
+        public void encode(ByteBuf buf, ControlGroup g) {
+            ByteBufCodecs.STRING_UTF8.encode(buf, g.name);
+            ControlMode.STREAM_CODEC.encode(buf, g.controlMode);
+            TARGET_MAP_STREAM_CODEC.encode(buf, g.moveTargets);
+            TARGET_MAP_STREAM_CODEC.encode(buf, g.viewTargets);
+            TARGET_MAP_STREAM_CODEC.encode(buf, g.regularTargets);
+            TARGET_MAP_STREAM_CODEC.encode(buf, g.mainWeaponTargets);
+            TARGET_MAP_STREAM_CODEC.encode(buf, g.secondaryWeaponTargets);
+            ControlBinding.STREAM_CODEC.apply(ByteBufCodecs.list()).encode(buf, g.bindings);
+        }
+    };
 }

@@ -168,6 +168,34 @@ public class ControlGroupSet {
     }
 
     /**
+     * 获取当前有效的主武器控制输出目标：以 baseGroup 为基准，激活子组同频道覆盖合并。
+     * 用于实际信号发送。
+     */
+    public Map<String, List<String>> getMergedMainWeaponTargets() {
+        ControlGroup active = getActiveGroup();
+        if (active == null || active.mainWeaponTargets.isEmpty()) {
+            return baseGroup.mainWeaponTargets;
+        }
+        Map<String, List<String>> result = new HashMap<>(baseGroup.mainWeaponTargets);
+        result.putAll(active.mainWeaponTargets);
+        return result;
+    }
+
+    /**
+     * 获取当前有效的副武器控制输出目标：以 baseGroup 为基准，激活子组同频道覆盖合并。
+     * 用于实际信号发送。
+     */
+    public Map<String, List<String>> getMergedSecondaryWeaponTargets() {
+        ControlGroup active = getActiveGroup();
+        if (active == null || active.secondaryWeaponTargets.isEmpty()) {
+            return baseGroup.secondaryWeaponTargets;
+        }
+        Map<String, List<String>> result = new HashMap<>(baseGroup.secondaryWeaponTargets);
+        result.putAll(active.secondaryWeaponTargets);
+        return result;
+    }
+
+    /**
      * 获取所有控制组的常规按键输出目标并集（baseGroup + 全部子组）。
      * 用于注册和显示所有可能的目标名称，实际发送信号时应使用 getMergedRegularTargets()。
      */
@@ -175,6 +203,46 @@ public class ControlGroupSet {
         Map<String, List<String>> result = new HashMap<>(baseGroup.regularTargets);
         for (ControlGroup group : groups) {
             for (Map.Entry<String, List<String>> entry : group.regularTargets.entrySet()) {
+                result.merge(entry.getKey(), entry.getValue(), (a, b) -> {
+                    List<String> merged = new ArrayList<>(a);
+                    for (String s : b) {
+                        if (!merged.contains(s)) merged.add(s);
+                    }
+                    return merged;
+                });
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 获取所有控制组的主武器控制输出目标并集（baseGroup + 全部子组）。
+     * 用于注册和显示所有可能的目标名称，实际发送信号时应使用 getMergedMainWeaponTargets()。
+     */
+    public Map<String, List<String>> getAllMainWeaponTargets() {
+        Map<String, List<String>> result = new HashMap<>(baseGroup.mainWeaponTargets);
+        for (ControlGroup group : groups) {
+            for (Map.Entry<String, List<String>> entry : group.mainWeaponTargets.entrySet()) {
+                result.merge(entry.getKey(), entry.getValue(), (a, b) -> {
+                    List<String> merged = new ArrayList<>(a);
+                    for (String s : b) {
+                        if (!merged.contains(s)) merged.add(s);
+                    }
+                    return merged;
+                });
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 获取所有控制组的副武器控制输出目标并集（baseGroup + 全部子组）。
+     * 用于注册和显示所有可能的目标名称，实际发送信号时应使用 getMergedSecondaryWeaponTargets()。
+     */
+    public Map<String, List<String>> getAllSecondaryWeaponTargets() {
+        Map<String, List<String>> result = new HashMap<>(baseGroup.secondaryWeaponTargets);
+        for (ControlGroup group : groups) {
+            for (Map.Entry<String, List<String>> entry : group.secondaryWeaponTargets.entrySet()) {
                 result.merge(entry.getKey(), entry.getValue(), (a, b) -> {
                     List<String> merged = new ArrayList<>(a);
                     for (String s : b) {
@@ -268,6 +336,7 @@ public class ControlGroupSet {
     public static final ControlGroupSet EMPTY = new ControlGroupSet(
             new ControlGroup("base", ControlMode.INHERIT,
                     Collections.emptyMap(), Collections.emptyMap(),
+                    Collections.emptyMap(), Collections.emptyMap(),
                     Collections.emptyMap(), Collections.emptyList()),
             Collections.emptyList(),
             Collections.emptyList(),
@@ -282,6 +351,8 @@ public class ControlGroupSet {
                 && baseGroup.moveTargets.isEmpty()
                 && baseGroup.viewTargets.isEmpty()
                 && baseGroup.regularTargets.isEmpty()
+                && baseGroup.mainWeaponTargets.isEmpty()
+                && baseGroup.secondaryWeaponTargets.isEmpty()
                 && baseGroup.bindings.isEmpty();
     }
 

@@ -5,11 +5,13 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import io.github.sweetzonzi.machine_max.common.mech.signal.EmptySignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ISignalSender;
+import io.github.sweetzonzi.machine_max.common.mech.signal.RegularInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.RotationSignal;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalChannel;
 import io.github.sweetzonzi.machine_max.common.mech.signal.SignalResult;
 import io.github.sweetzonzi.machine_max.common.mech.signal.ViewInputSignal;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.WeaponControllerSubsystemAttr;
+import io.github.sweetzonzi.machine_max.util.data.KeyInputMapping;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -123,7 +125,10 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
     public void onPrePhysicsTick() {
         super.onPrePhysicsTick();
 
-        // 0) 弹药路由：在瞄准/开火之前执行
+        // 0) 读取标准化的武器控制指令（AI/脚本可直接发送 RegularInputSignal 至此）
+        updateRegularInputs();
+
+        // 1) 弹药路由：在瞄准/开火之前执行
         routeAmmoToLaunchers();
 
         // 物理线程开始时读取一次 volatile 字段到局部变量，避免竞态
@@ -277,6 +282,24 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         int index = available.indexOf(selectedProjectileType);
         int next = (index + 1) % available.size();
         selectedProjectileType = available.get(next);
+    }
+
+    /**
+     * 反向循环切换选中的弹种（向前一个而非后一个）。
+     */
+    private void cycleSelectedTypeReverse() {
+        List<ResourceLocation> available = getAvailableProjectileTypes();
+        if (available.isEmpty()) {
+            selectedProjectileType = null;
+            return;
+        }
+        if (selectedProjectileType == null) {
+            selectedProjectileType = available.getLast();
+            return;
+        }
+        int index = available.indexOf(selectedProjectileType);
+        int prev = (index - 1 + available.size()) % available.size();
+        selectedProjectileType = available.get(prev);
     }
 
     /**
@@ -483,7 +506,7 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         this.targetPosition = pos;
         this.currentViewSignal = newVis;
 
-        // 读取开火指令：轮询 fireInputs 频道，任一非EmptySignal即视为开火
+        // 读取开火指令：轮询 fireInputs 频道，任一非RegularInputSignal且非EmptySignal即视为开火
         this.firing = false;
         for (String signalKey : attr.staticAttribute.getFireInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
@@ -498,6 +521,58 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         SignalChannel ammoSwitchChannel = getSignalChannel("ammo_switch");
         if (!ammoSwitchChannel.isEmpty() && !(ammoSwitchChannel.getFirstSignal() instanceof EmptySignal)) {
             this.ammoSwitchPressed = true;
+        }
+    }
+
+    /**
+     * 从 fireInputs 频道读取标准化的 RegularInputSignal 武器控制指令。<br>
+     * 在 readInputSignals() 之后调用，由 onPrePhysicsTick() 驱动。<br>
+     * AI 实体可通过发送 RegularInputSignal 到此子系统直接控制武器，
+     * 无需经过控制组绑定。
+     */
+    private void updateRegularInputs() {
+        RegularInputSignal activeRegular = null;
+        SignalChannel activeChannel = null;
+        ISignalSender activeSender = null;
+
+        for (String signalKey : attr.staticAttribute.getFireInputs()) {
+            SignalChannel channel = getSignalChannel(signalKey);
+            for (Map.Entry<ISignalSender, Object> entry : channel.entrySet()) {
+                if (entry.getValue() instanceof RegularInputSignal ris) {
+                    activeRegular = ris;
+                    activeChannel = channel;
+                    activeSender = entry.getKey();
+                    break;
+                }
+            }
+            if (activeRegular != null) break;
+        }
+
+        if (activeRegular != null) {
+            int tickCount = activeRegular.getInputTickCount();
+            switch (activeRegular.getInputType()) {
+                case MAIN_FIRE:
+                case SECONDARY_FIRE:
+                    // hold 语义：tickCount==0 表示按下中，非0表示松开
+                    this.firing = tickCount == 0;
+                    break;
+                case NEXT_AMMO_TYPE:
+                    // 一次性事件：仅 tickCount==0（按下瞬间）触发
+                    if (tickCount == 0) {
+                        cycleSelectedType();
+                        activeChannel.put(activeSender, EmptySignal.INSTANCE);
+                    }
+                    break;
+                case PREV_AMMO_TYPE:
+                    // 循环反向切换弹种
+                    if (tickCount == 0) {
+                        cycleSelectedTypeReverse();
+                        activeChannel.put(activeSender, EmptySignal.INSTANCE);
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

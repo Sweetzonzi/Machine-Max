@@ -417,6 +417,35 @@ public class RawInputHandler {
             }
 
             /*
+              武器控制 — 标准化 RegularInputPayload 通道（与 ControlBinding 并存，AI 也能使用）
+             */
+            if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem) {
+                // 主武器开火（hold 类型）
+                new KeyHooks.EVENT(KeyBinding.generalMainWeaponFireKey)
+                        .OnKeyDown(() -> PacketDistributor.sendToServer(
+                                new RegularInputPayload(KeyInputMapping.MAIN_FIRE.getValue(), 0)))
+                        .OnKeyUp(() -> PacketDistributor.sendToServer(
+                                new RegularInputPayload(KeyInputMapping.MAIN_FIRE.getValue(), 1)));
+
+                // 副武器开火（hold 类型）
+                new KeyHooks.EVENT(KeyBinding.generalSecondaryWeaponFireKey)
+                        .OnKeyDown(() -> PacketDistributor.sendToServer(
+                                new RegularInputPayload(KeyInputMapping.SECONDARY_FIRE.getValue(), 0)))
+                        .OnKeyUp(() -> PacketDistributor.sendToServer(
+                                new RegularInputPayload(KeyInputMapping.SECONDARY_FIRE.getValue(), 1)));
+
+                // 下一个弹种（单次触发）
+                new KeyHooks.EVENT(KeyBinding.generalNextAmmoTypeKey)
+                        .OnKeyDown(() -> PacketDistributor.sendToServer(
+                                new RegularInputPayload(KeyInputMapping.NEXT_AMMO_TYPE.getValue(), 0)));
+
+                // 上一个弹种（单次触发）
+                new KeyHooks.EVENT(KeyBinding.generalPrevAmmoTypeKey)
+                        .OnKeyDown(() -> PacketDistributor.sendToServer(
+                                new RegularInputPayload(KeyInputMapping.PREV_AMMO_TYPE.getValue(), 0)));
+            }
+
+            /*
               控制组按键绑定 — 从当前座椅子系统的 ControlGroupSet 动态加载
              */
             if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub

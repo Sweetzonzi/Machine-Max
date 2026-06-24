@@ -77,6 +77,8 @@ public class ControlDataAccessor {
                 Map.of(
                         "handbrake", List.of("brake_system")
                 ),
+                Map.of(),
+                Map.of(),
                 List.of(
                         new ControlBinding("key.w", BindingAction.HOLD, "forward", List.of("main_engine")),
                         new ControlBinding("key.s", BindingAction.HOLD, "brake", List.of("main_engine")),
@@ -87,7 +89,7 @@ public class ControlDataAccessor {
         );
 
         var combat = new ControlGroup("COMBAT", ControlMode.INHERIT,
-                Map.of(), Map.of(), Map.of(),
+                Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
                 List.of(
                         new ControlBinding("mouse.left", BindingAction.PRESS, "fire_primary", List.of("turret")),
                         new ControlBinding("mouse.right", BindingAction.TOGGLE, "aim_mode", List.of("turret")),
@@ -97,7 +99,7 @@ public class ControlDataAccessor {
         );
 
         var mining = new ControlGroup("MINING", ControlMode.INHERIT,
-                Map.of(), Map.of(), Map.of(),
+                Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
                 List.of(
                         new ControlBinding("mouse.left", BindingAction.HOLD, "drill_activate", List.of("mining_head")),
                         new ControlBinding("key.q", BindingAction.TOGGLE, "drill_mode", List.of("mining_head"))
@@ -105,7 +107,7 @@ public class ControlDataAccessor {
         );
 
         var utility = new ControlGroup("UTILITY", ControlMode.INHERIT,
-                Map.of(), Map.of(), Map.of(),
+                Map.of(), Map.of(), Map.of(), Map.of(), Map.of(),
                 List.of(
                         new ControlBinding("key.l", BindingAction.TOGGLE, "lights", List.of("lighting")),
                         new ControlBinding("key.h", BindingAction.PRESS, "horn", List.of("vehicle"))

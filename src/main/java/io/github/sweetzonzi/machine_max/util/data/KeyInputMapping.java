@@ -19,7 +19,14 @@ public enum KeyInputMapping {
     SUB_PART_ATTACH_ANGLE(501),
     CYCLE_PART_CONNECTORS(502),
     CYCLE_PART_VARIANTS(503),
-    CYCLE_PART_RECIPES(504);
+    CYCLE_PART_RECIPES(504),
+
+    /* 武器控制 (200号段) */
+    MAIN_FIRE(200),              // 主武器开火（hold 类型）
+    SECONDARY_FIRE(201),         // 副武器开火（hold 类型）
+    NEXT_AMMO_TYPE(202),         // 下一个弹种
+    PREV_AMMO_TYPE(203);         // 上一个弹种
+
     private final int value;
 
     KeyInputMapping(int value) {

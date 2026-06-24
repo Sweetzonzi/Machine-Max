@@ -117,8 +117,7 @@ public class AmmoHud implements LayeredDraw.Layer {
                 }
 
                 // 当前数量和状态直接从 supplier 读取（不需要 SupplierSummary）
-                int curCount = supplier != null && supplier.isRoundByRound() ? 1
-                        : (supplier != null ? supplier.getRemainingCount() : 0);
+                int curCount = supplier != null ? supplier.getRemainingCount() : 0;
                 SupplierStatus status = supplier != null
                         ? supplier.getStatus(launcher) : SupplierStatus.EMPTY;
                 float progress = supplier != null

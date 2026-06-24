@@ -39,6 +39,15 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("key.machine_max.general.interact", "Interact with Vehicle");
         this.add("key.machine_max.general.leave_vehicle", "Leave Vehicle");
         this.add("key.machine_max.general.toggle_light", "Toggle Light");
+        this.add("key.machine_max.general.vehicle_info", "Vehicle Info Panel");
+        this.add("key.machine_max.general.cycle_camera", "Cycle Camera");
+        this.add("key.machine_max.general.camera_zoom", "Toggle Zoom");
+        this.add("key.machine_max.general.camera_zoom_in", "Zoom In");
+        this.add("key.machine_max.general.camera_zoom_out", "Zoom Out");
+        this.add("key.machine_max.general.main_weapon_fire", "Main Weapon Fire");
+        this.add("key.machine_max.general.secondary_weapon_fire", "Secondary Weapon Fire");
+        this.add("key.machine_max.general.next_ammo_type", "Next Ammo Type");
+        this.add("key.machine_max.general.prev_ammo_type", "Previous Ammo Type");
         //Key names-Ground
         this.add("key.machine_max.ground.forward", "Forward");
         this.add("key.machine_max.ground.backward", "Backward");

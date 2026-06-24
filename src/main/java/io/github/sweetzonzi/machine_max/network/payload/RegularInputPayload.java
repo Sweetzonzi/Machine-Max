@@ -85,6 +85,15 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
                 handleRegularInputForSeatSubsystem(player, KeyInputMapping.fromValue(payload.key()), payload.tick_count());
                 break;
             /*
+             *  武器控制 — 路由到控制组的 mainWeaponTargets / secondaryWeaponTargets
+             */
+            case MAIN_FIRE, NEXT_AMMO_TYPE, PREV_AMMO_TYPE:
+                handleWeaponInputForSeatSubsystem(player, KeyInputMapping.fromValue(payload.key()), payload.tick_count(), true);
+                break;
+            case SECONDARY_FIRE:
+                handleWeaponInputForSeatSubsystem(player, KeyInputMapping.fromValue(payload.key()), payload.tick_count(), false);
+                break;
+            /*
              *  载具组装
              */
             case ADD_PART_ATTACH_ANGLE://切换部件安装角度
@@ -125,6 +134,18 @@ public record RegularInputPayload(int key, int tick_count) implements CustomPack
             AbstractControllableSubsystem subsystem = ((IEntityMixin) player).machine_Max$getControllingSubsystem();
             if (subsystem != null) {
                 subsystem.setRegularInputSignal(key, tickCount);
+            }
+        }
+    }
+
+    /** 将武器控制按键路由到控制组的主武器或副武器目标频道 */
+    private static void handleWeaponInputForSeatSubsystem(Player player, KeyInputMapping key, int tickCount, boolean isMain) {
+        AbstractControllableSubsystem subsystem = ((IEntityMixin) player).machine_Max$getControllingSubsystem();
+        if (subsystem != null) {
+            if (isMain) {
+                subsystem.setMainWeaponInputSignal(key, tickCount);
+            } else {
+                subsystem.setSecondaryWeaponInputSignal(key, tickCount);
             }
         }
     }

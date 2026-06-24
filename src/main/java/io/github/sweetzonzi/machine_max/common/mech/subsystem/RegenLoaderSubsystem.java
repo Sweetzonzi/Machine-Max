@@ -343,7 +343,7 @@ public class RegenLoaderSubsystem extends BasicSubsystem implements IAmmoSupplie
     @Override
     public Map<ProjectileType, Integer> getAmmoBreakdown() {
         if (getSuppliedType()!=null)
-            return Map.of(getSuppliedType(), getAmmoCount());
+            return Map.of(getSuppliedType(), attr.getStaticAttribute().getMagazineCapacity());
         else return Map.of(); // 无弹药时返回空
     }
 

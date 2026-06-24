@@ -11,19 +11,13 @@
         "regular_targets": {
             "regular_input": ["vehicle"]
         },
+        "main_weapon_targets": {
+            "fire_input": ["vehicle"]
+        },
+        "secondary_weapon_targets": {
+            "secondary_fire_input": ["vehicle"]
+        },
         "bindings": [
-            {
-                "trigger": "key.keyboard.space",
-                "action": "hold",
-                "channel": "secondary_fire_input",
-                "targets": ["vehicle"]
-            },
-            {
-                "trigger": "key.mouse.left",
-                "action": "hold",
-                "channel": "fire_input",
-                "targets": ["vehicle"]
-            }
         ]
     }
 }

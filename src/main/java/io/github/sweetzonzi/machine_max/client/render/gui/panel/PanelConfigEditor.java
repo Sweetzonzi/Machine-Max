@@ -65,17 +65,23 @@ public class PanelConfigEditor {
         Map<String, List<String>> moveTargets;
         Map<String, List<String>> viewTargets;
         Map<String, List<String>> regularTargets;
+        Map<String, List<String>> mainWeaponTargets;
+        Map<String, List<String>> secondaryWeaponTargets;
         List<BindingEditData> bindings = new ArrayList<>();
 
         GroupEditData(String name, String controlMode,
                       Map<String, List<String>> moveTargets,
                       Map<String, List<String>> viewTargets,
-                      Map<String, List<String>> regularTargets) {
+                      Map<String, List<String>> regularTargets,
+                      Map<String, List<String>> mainWeaponTargets,
+                      Map<String, List<String>> secondaryWeaponTargets) {
             this.name = name;
             this.controlMode = controlMode;
             this.moveTargets = moveTargets;
             this.viewTargets = viewTargets;
             this.regularTargets = regularTargets;
+            this.mainWeaponTargets = mainWeaponTargets;
+            this.secondaryWeaponTargets = secondaryWeaponTargets;
         }
     }
 
@@ -134,7 +140,9 @@ public class PanelConfigEditor {
                 data.getBaseGroup().controlMode.name(),
                 data.getBaseGroup().moveTargets,
                 data.getBaseGroup().viewTargets,
-                data.getBaseGroup().regularTargets
+                data.getBaseGroup().regularTargets,
+                data.getBaseGroup().mainWeaponTargets,
+                data.getBaseGroup().secondaryWeaponTargets
         );
         for (ControlBinding b : data.getBaseGroup().bindings) {
             base.bindings.add(new BindingEditData(
@@ -147,7 +155,8 @@ public class PanelConfigEditor {
         for (ControlGroup g : data.getGroups()) {
             GroupEditData ged = new GroupEditData(
                     g.name, g.controlMode.name(),
-                    g.moveTargets, g.viewTargets, g.regularTargets
+                    g.moveTargets, g.viewTargets, g.regularTargets,
+                    g.mainWeaponTargets, g.secondaryWeaponTargets
             );
             for (ControlBinding b : g.bindings) {
                 ged.bindings.add(new BindingEditData(
@@ -907,6 +916,8 @@ public class PanelConfigEditor {
         GroupEditData g = new GroupEditData(name, "INHERIT",
                 java.util.Collections.emptyMap(),
                 java.util.Collections.emptyMap(),
+                java.util.Collections.emptyMap(),
+                java.util.Collections.emptyMap(),
                 java.util.Collections.emptyMap());
         groupList.add(g);
         selGroup = groupList.size() - 1;
@@ -1024,6 +1035,8 @@ public class PanelConfigEditor {
                 baseEdit.moveTargets,
                 baseEdit.viewTargets,
                 baseEdit.regularTargets,
+                baseEdit.mainWeaponTargets,
+                baseEdit.secondaryWeaponTargets,
                 buildBindings(baseEdit.bindings)
         );
 
@@ -1037,6 +1050,8 @@ public class PanelConfigEditor {
                     g.moveTargets,
                     g.viewTargets,
                     g.regularTargets,
+                    g.mainWeaponTargets,
+                    g.secondaryWeaponTargets,
                     buildBindings(g.bindings)
             ));
         }
