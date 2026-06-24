@@ -329,7 +329,7 @@ public class ProjectileManager {
             entities[idx] = null;
         }
 
-        MMProjectileEntity entity = new MMProjectileEntity(MMEntities.getPROJECTILE_ENTITY().get(), level);
+        MMProjectileEntity entity = new MMProjectileEntity(MMEntities.PROJECTILE_ENTITY.get(), level);
         entity.bindToProjectile(projectile);
         entity.setPos(posX[idx], posY[idx], posZ[idx]);
         entities[idx] = entity;

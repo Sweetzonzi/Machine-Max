@@ -21,7 +21,6 @@ public class MachineMax {
     //TODO:重构网络包及各类同步系统，将拆除等事件化，特别是断开移除逻辑，使之支持移除个别零件
     //TODO:优化关节断开逻辑：Vehicle每刻/事件触发检查关节连接关系，检测到不连通再断开记录的关系；断开网络包靠id识别SubPart而非载具uuid-部件uuid-接口名的方式以节约带宽
     //TODO:限制带阻尼关节安装部件时的质量差距？
-    //TODO:排查AE86AT左轮胎转动惯量计算BUG（可能已修复）
     //TODO:GUI贴图渲染
     //TODO:过载与座椅过载吸收/耐受
     //TODO:放置部件前检查空间是否足够
@@ -43,9 +42,9 @@ public class MachineMax {
         REGISTER.register(bus);
         MMDataRegistries.register();//注册所有自定义注册器
         MMBlocks.register();//注册所有方块
-        MMEntities.register();//注册所有实体
+        MMEntities.register(bus);//注册所有实体
         MMBlockEntities.register();//注册所有方块实体
-        MMDataComponents.register();//注册所有物品数据组件
+        MMDataComponents.register(bus);//注册所有物品数据组件
         MMAttachments.register();//注册所有附件类型
         MMCodecs.register(bus);//注册所有编解码器
         MMCommands.register();//注册所有指令

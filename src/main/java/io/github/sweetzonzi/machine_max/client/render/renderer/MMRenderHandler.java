@@ -17,8 +17,8 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 public class MMRenderHandler {
     @SubscribeEvent//注册每个实体渲染器
     public static void onEntityRendererRegistry(EntityRenderersEvent.RegisterRenderers event){
-        event.registerEntityRenderer(MMEntities.getPART_ENTITY().get(), PartEntityRenderer::new);
-        event.registerEntityRenderer(MMEntities.getPROJECTILE_ENTITY().get(), ProjectileEntityRenderer::new);
+        event.registerEntityRenderer(MMEntities.PART_ENTITY.get(), PartEntityRenderer::new);
+        event.registerEntityRenderer(MMEntities.PROJECTILE_ENTITY.get(), ProjectileEntityRenderer::new);
         event.registerBlockEntityRenderer(MMBlockEntities.getFABRICATOR_BLOCK_ENTITY().get(), FabricatorBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(MMBlockEntities.getRESEARCH_TABLE_BLOCK_ENTITY().get(), ResearchTableBlockEntityRenderer::new);
         event.registerBlockEntityRenderer(MMBlockEntities.getTOTAL_STATION_BLOCK_ENTITY().get(), TotalStationBlockEntityRenderer::new);

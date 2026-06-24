@@ -84,7 +84,7 @@ public class MMPartEntity extends VehicleEntity implements IEntityAnimatable<MMP
     }
 
     public MMPartEntity(Level level, SubPart subPart) {
-        this(MMEntities.getPART_ENTITY().get(), level);
+        this(MMEntities.PART_ENTITY.get(), level);
         this.setNoGravity(true);
         this.subPart = subPart;
         this.subPartName = subPart.name;
