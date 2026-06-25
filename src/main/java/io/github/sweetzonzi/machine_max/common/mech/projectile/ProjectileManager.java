@@ -1189,7 +1189,7 @@ public class ProjectileManager {
             // 出界检查：超出 MC 世界 Y 范围则停止预测
             if (p.y < -64 || p.y > 320) break;
 
-            ChunkPos cp = new ChunkPos((int) Math.floor(p.x / 16.0), (int) Math.floor(p.z / 16.0));
+            ChunkPos cp = new ChunkPos((int) Math.floor(p.x) >> 4, (int) Math.floor(p.z) >> 4);
             int y = (int) p.y;
 
             chunkInfo.merge(cp, new int[]{tick, y, y}, (old, cur) -> {
