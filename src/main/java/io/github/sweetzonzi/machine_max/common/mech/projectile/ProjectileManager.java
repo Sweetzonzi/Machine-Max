@@ -9,6 +9,7 @@ import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
 import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
 import cn.solarmoon.spark_core.util.PPhase;
+import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
 import io.github.sweetzonzi.ballistics_framework.api.trajectory.BallisticConfig;
@@ -906,6 +907,33 @@ public class ProjectileManager {
                 }
             }
 
+            // ===== 阶段1补充：若 rayFrom 在地形方块内部，rayTest 无法检测到地形命中 =====
+            // Bullet 的 GJK/SubSimplex 算法声明"起点不应在凸体内部，否则结果未定义"。
+            // 当投射物穿透方块后继续飞行，下一物理帧的 rayFrom 埋在地形内部，
+            // 尤其是水平射线 + 同 Y 层贪心合并大 BoxShape 场景下，rayTest 会完全 miss。
+            // 此时通过 DDA 直接遍历射线路径上的方块，手动构造 HitEntry 补充地形命中条目。
+            // 实体命中仍由上方 rayTest 正常检测，不受影响。
+            BlockPos fromBP = BlockPos.containing(prevX, prevY, prevZ);
+            var terrainMgr = physicsLevel.getTerrainManager();
+            if (terrainMgr.getBlockSnapshotAt(fromBP) != null) {
+                // 射线起点在地形方块内部，获取起点所在 section 并做 DDA 遍历
+                PhysicsChunkSection startSection = terrainMgr.getSectionForBlockPos(fromBP);
+                if (startSection != null && !startSection.isEmpty()) {
+                    List<BlockHitEntry> ddaBlocks = walkBlocksAlongRay(rayFrom, rayTo, startSection);
+                    // 法线取射线反方向（DDA 步进面法线的近似）
+                    Vec3 ddaNormal = SparkMathKt.toVec3(rayTo.subtract(rayFrom).normalize());
+                    for (BlockHitEntry be : ddaBlocks) {
+                        PenetrationKey pk = new PenetrationKey(startSection, be.blockPos().toShortString());
+                        Vec3 bp = new Vec3(be.blockPos().getX() + 0.5,
+                                be.blockPos().getY() + 0.5,
+                                be.blockPos().getZ() + 0.5);
+                        allHits.add(new HitEntry(be.hitFraction(), null,
+                                startSection.getPhysicsBody(), startSection,
+                                be.blockPos(), startSection, bp, ddaNormal, pk));
+                    }
+                }
+            }
+
             // ===== 阶段2：按hitFraction升序排序，确保命中严格按射线方向处理 =====
             allHits.sort(java.util.Comparator.comparingDouble(HitEntry::hitFraction));
 
@@ -1388,10 +1416,13 @@ public class ProjectileManager {
     /**
      * 统一命中条目。收集阶段由rayTest非地形结果或DDA地形遍历展开产生，
      * 按 hitFraction 排序后统一逐条处理。
+     * <p>
+     * rayResult 和 body 可为 null——当射线起点在地形内部时，rayTest 无法检测到命中，
+     * 此时由 DDA 遍历直接构造 HitEntry，不经过 Bullet 射线检测结果。
      *
      * @param hitFraction 沿全射线(rayFrom→rayTo)的参数t值 [0, 1]
-     * @param rayResult   原始射线检测结果（非null）
-     * @param body        碰撞刚体
+     * @param rayResult   原始射线检测结果（DDA补充条目为null）
+     * @param body        碰撞刚体（DDA补充条目为null）
      * @param owner       碰撞体所有者（PhysicsChunkSection / SubPart / Entity / BFHurtTarget）
      * @param blockPos    地形方块位置（仅地形命中非null）
      * @param terrain     地形section引用（仅地形命中非null）
@@ -1401,8 +1432,8 @@ public class ProjectileManager {
      */
     private record HitEntry(
             float hitFraction,
-            PhysicsRayTestResult rayResult,
-            PhysicsRigidBody body,
+            @Nullable PhysicsRayTestResult rayResult,
+            @Nullable PhysicsRigidBody body,
             Object owner,
             @Nullable BlockPos blockPos,
             @Nullable PhysicsChunkSection terrain,
