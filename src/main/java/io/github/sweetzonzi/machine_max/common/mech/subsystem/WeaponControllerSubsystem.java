@@ -506,11 +506,14 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         this.targetPosition = pos;
         this.currentViewSignal = newVis;
 
-        // 读取开火指令：轮询 fireInputs 频道，任一非RegularInputSignal且非EmptySignal即视为开火
+        // 读取开火指令：仅接受 RegularInputSignal（控制组/AI按键）或 Number（ControlBinding HOLD/PRESS），
+        // 过滤握手信号（String 类型的 groupKey）防止误触发
         this.firing = false;
         for (String signalKey : attr.staticAttribute.getFireInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
-            if (!channel.isEmpty() && !(channel.getFirstSignal() instanceof EmptySignal)) {
+            if (channel.isEmpty()) continue;
+            Object signal = channel.getFirstSignal();
+            if (signal instanceof RegularInputSignal || signal instanceof Number) {
                 this.firing = true;
                 break;
             }

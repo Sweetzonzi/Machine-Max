@@ -269,7 +269,7 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
             return;
         }
 
-        if (!isFiring()) {
+        if (!isFiring() || chamberedType == null) {
             // 停止开火 → 处理停火音效 + 清零累积，防止下次开火"蓄力"
             if (wasFiring) {
                 handleCeaseFire();
@@ -280,7 +280,6 @@ public class LauncherSubsystem extends BasicSubsystem implements IAmmoConsumer, 
 
         // ★ 记录是否为本burst首帧（在 wasFiring 被置 true 之前）
         boolean burstJustStarted = !wasFiring;
-
         float intervalSec = 60f / attr.staticAttribute.getFireRate();
 
         // ① 计时器累积：首帧预填充 intervalSec 以立即发射，后续帧正常 +0.05s
