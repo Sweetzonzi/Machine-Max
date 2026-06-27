@@ -47,6 +47,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.connector.AbstractCo
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.data.MMDamageExtensions;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
+import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.ballistics_framework.api.PenetrationResult;
 import net.minecraft.world.phys.Vec3;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.event.subpart.SubPartDamageEvent;
@@ -527,24 +528,37 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         if (event.isCanceled()) return false;
         ctx = event.getCtx();
         amount = event.getDamageAmount(); // 以事件最终结果为准
-        Vector3f worldContactSpeed = PhysicsHelperKt.toBVector3f(ctx.hitVelocity());
         Vec3 sourcePos = ctx.hitPoint();
         HitBox hitBox = findHitBox(ctx);
-        // 击退动量
-        if (!source.is(MMDamageTypes.PART_COLLISION) && worldContactSpeed.lengthSquared() > 1e-6f) {
-            float knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(amount / getMaxDurability()))) * 250f);
-            if (source.getDirectEntity() != null && source.getWeaponItem() != null) {
-                knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, source.getWeaponItem(), source.getDirectEntity(), source, 1.0f);
-            }
-            if (source.is(DamageTypeTags.IS_EXPLOSION)) knockBack *= 10.0f;
-            float finalKnockBack = knockBack;
-            SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
-                part.assembly.activatePhysics();
-                Vector3f contactPoint = PhysicsHelperKt.toBVector3f(sourcePos);
-                this.body.applyImpulse(worldContactSpeed.normalize().mult(finalKnockBack), contactPoint.subtract(this.body.getPhysicsLocation(null)));
+        // 击退动量 — 捕获 ctx，延迟到物理任务中决定用 IMPULSE 还是回退公式
+        final BFDamageContext capCtx = ctx;
+        final DamageSource capSource = source;
+        final float capAmount = amount;
+        SparkLevel.getPhysicsLevel(level).submitImmediateTask(PPhase.PRE, () -> {
+            float knockBack;
+            if (capCtx.extensions().contains(BFDamageExtensions.IMPULSE)) {
+                // 弹道框架显式提供了冲量（N·s），直接取用（可能为 0 表示明确不击退）
+                knockBack = capCtx.extensions().get(BFDamageExtensions.IMPULSE);
+            } else if (!capSource.is(MMDamageTypes.PART_COLLISION)) {
+                // 未提供 IMPULSE：回退到伤害基公式
+                Vector3f contactSpeed = PhysicsHelperKt.toBVector3f(capCtx.hitVelocity());
+                if (contactSpeed.lengthSquared() <= 1e-6f) return null;
+                knockBack = (float) (Math.log10(Math.max(1.01, 10 * Math.sqrt(capAmount / getMaxDurability()))) * 250f);
+                if (capSource.getDirectEntity() != null && capSource.getWeaponItem() != null) {
+                    knockBack *= EnchantmentHelper.modifyKnockback((ServerLevel) level, capSource.getWeaponItem(), capSource.getDirectEntity(), capSource, 1.0f);
+                }
+                if (capSource.is(DamageTypeTags.IS_EXPLOSION)) knockBack *= 10.0f;
+            } else { // 一般碰撞伤害不需要额外冲量，物理引擎负责处理
                 return null;
-            });
-        }
+            }
+            if (knockBack <= 1e-6f) return null;
+            Vector3f contactSpeed = PhysicsHelperKt.toBVector3f(capCtx.hitVelocity());
+            part.assembly.activatePhysics();
+            Vector3f contactPoint = PhysicsHelperKt.toBVector3f(capCtx.hitPoint());
+            this.body.applyImpulse(contactSpeed.normalize().mult(knockBack),
+                    contactPoint.subtract(this.body.getPhysicsLocation(null)));
+            return null;
+        });
         // 连接点冲击分配
         float impactDamage = hitBox.modifyImpact(source, amount);
         if (impactDamage > 0) {

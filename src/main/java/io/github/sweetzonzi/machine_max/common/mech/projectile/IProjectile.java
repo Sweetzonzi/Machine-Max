@@ -337,6 +337,23 @@ public interface IProjectile extends BFDamageHandler {
                     if (entity instanceof LivingEntity livingEntity)
                         livingEntity.invulnerableTime = 0;
                     BFDamageApi.hurt(entity, ctx);
+
+                    // 根据穿透结果计算冲量，对实体施加击退
+                    if (!entity.isRemoved()) {
+                        AfterHitResult result = getPendingHitResult();
+                        float impactSpeed = (float) ctx.hitVelocity().length();
+                        float residualSpeed = (result != null && !result.destroyed())
+                                ? result.newVelocity().length() : 0f;
+                        float impulse = getMass() * (impactSpeed - residualSpeed);
+                        if (impulse > 1e-6f) {
+                            Vec3 dir = ctx.hitVelocity().normalize();
+                            // 冲量转换为速度变化：Δv = impulse / 100 (假设实体等效质量 ~100kg)
+                            // 系数可通过 MMServerConfig 调节
+                            entity.setDeltaMovement(entity.getDeltaMovement().add(
+                                    dir.scale(impulse * 0.01)));
+                            entity.hurtMarked = true;
+                        }
+                    }
                 });
         return null;
     }
@@ -485,6 +502,8 @@ public interface IProjectile extends BFDamageHandler {
      */
     default float dealDamage(BFHurtTarget target, Vec3 hitPoint, Vec3 hitNormal) {
         DamageSource source = getLevel().damageSources().generic();
+        // 创建扩展容器，供穿透管线内外传递数据
+        BFDamageExtensions exts = new BFDamageExtensions();
         BFDamageContext ctx = BFDamageContext.builder()
             .source(source)
             .baseDamage(calculateCurrentDamage())
@@ -492,7 +511,22 @@ public interface IProjectile extends BFDamageHandler {
             .hitVelocity(new Vec3(getVelocity().x, getVelocity().y, getVelocity().z))
             .hitPoint(hitPoint)
             .hitNormal(hitNormal)
+            .extensions(exts)
             .build();
-        return BFDamageHandler.super.dealDamage(target, ctx);
+        float dmg = BFDamageHandler.super.dealDamage(target, ctx);
+
+        // 根据穿透后剩余速度计算动量转移冲量（N·s），写入扩展容器
+        // SubPart.hurt() 中的延迟击退任务会读取此值
+        AfterHitResult hitResult = getPendingHitResult();
+        float impactSpeed = getSpeed();
+        if (hitResult != null && !hitResult.destroyed()) {
+            // 穿透：部分动量转移 = mass × (impactSpeed - residualSpeed)
+            float residualSpeed = hitResult.newVelocity().length();
+            exts.set(BFDamageExtensions.IMPULSE, Math.max(0f, getMass() * (impactSpeed - residualSpeed)));
+        } else {
+            // 拦截/击毁：全部动量转移
+            exts.set(BFDamageExtensions.IMPULSE, getMass() * impactSpeed);
+        }
+        return dmg;
     }
 }
