@@ -5,7 +5,6 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageHandler;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -176,20 +175,61 @@ public interface IProjectile extends BFDamageHandler {
     @Override
     default void onNormalEntityHit(Entity entity, BFDamageContext ctx,
                              float baseDamage, boolean success) {
-        float effectiveRha = switch (entity) {
-            case LivingEntity living -> living.getMaxHealth()
-                    + living.getArmorValue() * 1.0f
-                    + (float) living.getAttributeValue(Attributes.ARMOR_TOUGHNESS) * 2.0f;
-            case AbstractMinecart ignored1 -> 20f;
-            case Boat ignored -> 5f;
-            case null, default -> 2f;
-        };
-
+        float effectiveRha = computeEntityEffectiveRha(entity);
         float pen = calculateCurrentPenetration();
         if (pen <= effectiveRha * 0.15f) {
             setPendingHitResult(AfterHitResult.DESTROYED);
         } else {
             setPendingHitResult(passThroughByResidual(pen, effectiveRha));
+        }
+    }
+
+    // ==================== 伤害前回调：在 hurt() 前写入冲量 ====================
+    // 利用 BF pipeline 的 before* 回调（resolvePenetration 后、hurt 前触发），
+    // 在此时计算冲量并写入扩展容器，确保 SubPart.hurt() 的延迟任务在读取时值已就绪。
+
+    @Override
+    default void beforePenetrated(BFHurtTarget target, BFDamageContext ctx) {
+        float rha = target.getRHA(ctx);
+        ctx.extensions().set(BFDamageExtensions.IMPULSE,
+                computePenetrationImpulse(ctx.penetration(), rha, (float) ctx.hitVelocity().length()));
+    }
+
+    @Override
+    default void beforeBlocked(BFHurtTarget target, BFDamageContext ctx) {
+        ctx.extensions().set(BFDamageExtensions.IMPULSE,
+                getMass() * (float) ctx.hitVelocity().length());
+    }
+
+    @Override
+    default void beforeRicochet(BFHurtTarget target, BFDamageContext ctx) {
+        // 跳弹冲量：弹体以 0.8 倍速率反射，转移约 20% 动量
+        ctx.extensions().set(BFDamageExtensions.IMPULSE,
+                getMass() * (float) ctx.hitVelocity().length() * 0.2f);
+    }
+
+    @Override
+    default void beforeOvermatch(BFHurtTarget target, BFDamageContext ctx) {
+        float rha = target.getRHA(ctx);
+        ctx.extensions().set(BFDamageExtensions.IMPULSE,
+                computePenetrationImpulse(ctx.penetration(), rha, (float) ctx.hitVelocity().length()));
+    }
+
+    @Override
+    default void beforeSpall(BFHurtTarget target, BFDamageContext ctx) {
+        // 破片场景：parent beforePenetrated/Blocked 已写冲量，此处无需额外操作
+    }
+
+    @Override
+    default void beforeNormalEntityHit(Entity entity, BFDamageContext ctx, float baseDamage) {
+        float impactSpeed = (float) ctx.hitVelocity().length();
+        float pen = calculateCurrentPenetration();
+        float effectiveRha = computeEntityEffectiveRha(entity);
+        if (pen > effectiveRha) {
+            ctx.extensions().set(BFDamageExtensions.IMPULSE,
+                    computePenetrationImpulse(pen, effectiveRha, impactSpeed));
+        } else {
+            ctx.extensions().set(BFDamageExtensions.IMPULSE, getMass() * impactSpeed);
         }
     }
 
@@ -294,66 +334,32 @@ public interface IProjectile extends BFDamageHandler {
         float currentPenetration, float currentDamage,
         Vec3 hitPoint, Vec3 hitNormal
     ) {
-        // 使用当前速度×物理 tick 构造搜索 delta
+        // 一次 JME→MC 转换，delta 通过缩放得到
         Vector3f velJme = getVelocity();
-        Vec3 delta = new Vec3(velJme.x, velJme.y, velJme.z).scale(1.0 / 20.0);
+        Vec3 hitVel = new Vec3(velJme.x, velJme.y, velJme.z);
 
-        Vec3 finalPoint = hitPoint;
-        Vec3 finalNormal = hitNormal;
-        BFDamageExtensions exts = new BFDamageExtensions();
-
+        // 协议实体先决议实际命中目标
         if (BFDamageApi.isProtocolAware(entity)) {
-            BFHitResolveResult resolved = BFDamageApi.resolveHitTarget(entity, hitPoint, delta);
+            BFHitResolveResult resolved = BFDamageApi.resolveHitTarget(
+                    entity, hitPoint, hitVel.scale(1.0 / 20.0));
             if (resolved == null) return null; // 假阳性，继续飞行
 
             BFHurtTarget rt = resolved.actualTarget();
-            finalPoint = resolved.correctedHitPoint();
-            finalNormal = resolved.correctedHitNormal();
-            exts = resolved.extensions().copy();
 
-            // 决议到非实体 BFHurtTarget（如 SubPart）→ 同步管线
+            // 决议到非实体 BFHurtTarget → 同步管线，立即返回
             if (!(rt instanceof Entity)) {
-                dealDamage(rt, finalPoint, finalNormal);
+                dealDamage(rt, resolved.correctedHitPoint(), resolved.correctedHitNormal());
                 return consumePendingHitResult();
             }
         }
 
-        // ===== 异步管线：非协议实体 + 决议到 Entity 的 BFHurtTarget =====
-        BFDamageContext ctx = BFDamageContext.builder()
-                .source(level.damageSources().generic())
-                .baseDamage(currentDamage)
-                .penetration(currentPenetration)
-                .hitVelocity(new Vec3(velJme.x, velJme.y, velJme.z))
-                .hitPoint(finalPoint)
-                .hitNormal(finalNormal)
-                .extensions(exts)
-                .build()
-                .withHandler(this);
-
+        // 异步管线：提交主线程执行伤害，穿透/击退由 dealDamage 内部统一处理
         setHitPending(true);
-
         SparkLevel.submitImmediateTask(level, PPhase.POST,
                 () -> {
                     if (entity instanceof LivingEntity livingEntity)
                         livingEntity.invulnerableTime = 0;
-                    BFDamageApi.hurt(entity, ctx);
-
-                    // 根据穿透结果计算冲量，对实体施加击退
-                    if (!entity.isRemoved()) {
-                        AfterHitResult result = getPendingHitResult();
-                        float impactSpeed = (float) ctx.hitVelocity().length();
-                        float residualSpeed = (result != null && !result.destroyed())
-                                ? result.newVelocity().length() : 0f;
-                        float impulse = getMass() * (impactSpeed - residualSpeed);
-                        if (impulse > 1e-6f) {
-                            Vec3 dir = ctx.hitVelocity().normalize();
-                            // 冲量转换为速度变化：Δv = impulse / 100 (假设实体等效质量 ~100kg)
-                            // 系数可通过 MMServerConfig 调节
-                            entity.setDeltaMovement(entity.getDeltaMovement().add(
-                                    dir.scale(impulse * 0.01)));
-                            entity.hurtMarked = true;
-                        }
-                    }
+                    dealDamage(entity, hitPoint, hitNormal);
                 });
         return null;
     }
@@ -486,47 +492,100 @@ public interface IProjectile extends BFDamageHandler {
     // ========== 伤害发起 ==========
 
     /**
-     * 向 {@link BFHurtTarget} 发起协议伤害，并将自身注入为 {@link BFDamageHandler}。
+     * 向目标发起协议伤害，并将自身注入为 {@link BFDamageHandler}。
      * <p>
      * 穿甲管线（getRHA → modifyPenetration → resolvePenetration → calculateFinalDamage → hurt）
      * 完成后，BallisticsFramework 自动回调 {@link #onPenetrated} / {@link #onBlocked} /
      * {@link #onRicochet} 等，将命中结果写入 {@link #setPendingHitResult(AfterHitResult)}。
      * <p>
-     * 相比旧版，穿透判定不再由此方法外部的 Manager 自行计算——
+     * 目标可以是 {@link BFHurtTarget}（完整协议管线）、带护甲的实体（适配器管线）、
+     * 或普通实体（回退原版 hurt）。穿透判定不由 Manager 自行计算——
      * BallisticsFramework 管线是穿透判定的唯一权威来源。
      *
-     * @param target    协议伤害目标（SubPart / Entity 等 BFHurtTarget 实现）
+     * @param target    伤害目标（BFHurtTarget / Entity 等，传入 {@link BFDamageApi#hurt}）
      * @param hitPoint  命中点世界坐标（MC Vec3）
      * @param hitNormal 命中面法线（MC Vec3）
      * @return 实际造成的伤害量（协议层计算值，可能被原版护甲二次减免）
      */
-    default float dealDamage(BFHurtTarget target, Vec3 hitPoint, Vec3 hitNormal) {
-        DamageSource source = getLevel().damageSources().generic();
+    default float dealDamage(Object target, Vec3 hitPoint, Vec3 hitNormal) {
         // 创建扩展容器，供穿透管线内外传递数据
         BFDamageExtensions exts = new BFDamageExtensions();
-        BFDamageContext ctx = BFDamageContext.builder()
-            .source(source)
-            .baseDamage(calculateCurrentDamage())
-            .penetration(calculateCurrentPenetration())
-            .hitVelocity(new Vec3(getVelocity().x, getVelocity().y, getVelocity().z))
-            .hitPoint(hitPoint)
-            .hitNormal(hitNormal)
-            .extensions(exts)
-            .build();
+        Vector3f vel = getVelocity();
+        Vec3 hitVel = new Vec3(vel.x, vel.y, vel.z);
+        BFDamageContext ctx = buildHurtContext(getLevel(), calculateCurrentDamage(),
+                calculateCurrentPenetration(), hitVel, hitPoint, hitNormal, exts);
+
+        // 先执行伤害管线（before* 回调已在 hurt 前写入 IMPULSE）
         float dmg = BFDamageHandler.super.dealDamage(target, ctx);
 
-        // 根据穿透后剩余速度计算动量转移冲量（N·s），写入扩展容器
-        // SubPart.hurt() 中的延迟击退任务会读取此值
-        AfterHitResult hitResult = getPendingHitResult();
-        float impactSpeed = getSpeed();
-        if (hitResult != null && !hitResult.destroyed()) {
-            // 穿透：部分动量转移 = mass × (impactSpeed - residualSpeed)
-            float residualSpeed = hitResult.newVelocity().length();
-            exts.set(BFDamageExtensions.IMPULSE, Math.max(0f, getMass() * (impactSpeed - residualSpeed)));
-        } else {
-            // 拦截/击毁：全部动量转移
-            exts.set(BFDamageExtensions.IMPULSE, getMass() * impactSpeed);
+        // 对实体直接施加击退（SubPart 由延迟任务读取 IMPULSE 自处理）
+        if (target instanceof Entity entity) {
+            float impulse = exts.get(BFDamageExtensions.IMPULSE);
+            if (impulse > 1e-6f) {
+                Vec3 dir = ctx.hitVelocity().normalize();
+                // 冲量转换为速度变化：Δv = impulse / 60（假设实体等效质量 ~60kg）
+                if (entity instanceof LivingEntity livingEntity)
+                    livingEntity.knockback(impulse / 60.0f, dir.x, dir.z);
+                else
+                    entity.setDeltaMovement(entity.getDeltaMovement().add(dir.scale(impulse / 60.0f)));
+            }
         }
         return dmg;
+    }
+
+    // ========== 私有辅助 ==========
+
+    /**
+     * 构造带 handler 的 {@link BFDamageContext}，由 {@link #dealDamage} 调用。
+     * <p>
+     * 集中管理上下文构造逻辑，避免 builder 链在多处重复。
+     *
+     * @param level       维度（用于获取通用 DamageSource）
+     * @param damage      伤害量（已按速度衰减的当前值）
+     * @param penetration 穿深 mm RHA
+     * @param hitVel      命中速度矢量（MC Vec3，m/s）
+     * @param hitPoint    命中点世界坐标
+     * @param hitNormal   命中面法线
+     * @param exts        扩展容器
+     * @return 已注入当前投射物为 handler 的上下文
+     */
+    private BFDamageContext buildHurtContext(Level level, float damage, float penetration,
+                                             Vec3 hitVel, Vec3 hitPoint, Vec3 hitNormal,
+                                             BFDamageExtensions exts) {
+        return BFDamageContext.builder()
+                .source(level.damageSources().generic())
+                .baseDamage(damage)
+                .penetration(penetration)
+                .hitVelocity(hitVel)
+                .hitPoint(hitPoint)
+                .hitNormal(hitNormal)
+                .extensions(exts)
+                .build()
+                .withHandler(this);
+    }
+
+    /** 根据穿深和 RHA 计算穿透后的动量转移冲量（N·s），公式与 {@link #passThroughByResidual} 一致 */
+    private float computePenetrationImpulse(float pen, float rha, float impactSpeed) {
+        float residual = (pen - rha) / Math.max(pen, 0.001f);
+        residual = Math.max(0.1f, Math.min(1.0f, residual));
+        float residualSpeed = impactSpeed * (float) Math.sqrt(residual);
+        return Math.max(0f, getMass() * (impactSpeed - residualSpeed));
+    }
+
+    /**
+     * 根据原版属性估算实体等效 RHA（mm），供普通实体（非协议感知）冲量计算使用。
+     * <p>
+     * {@link LivingEntity}: {@code 1 HP + 1 护甲 + 2 韧性}（mm）；
+     * {@link AbstractMinecart}: 20mm；{@link Boat}: 5mm；其他: 2mm。
+     */
+    private static float computeEntityEffectiveRha(Entity entity) {
+        return switch (entity) {
+            case LivingEntity living -> living.getMaxHealth()
+                    + living.getArmorValue() * 1.0f
+                    + (float) living.getAttributeValue(Attributes.ARMOR_TOUGHNESS) * 2.0f;
+            case AbstractMinecart ignored1 -> 20f;
+            case Boat ignored -> 5f;
+            case null, default -> 2f;
+        };
     }
 }
