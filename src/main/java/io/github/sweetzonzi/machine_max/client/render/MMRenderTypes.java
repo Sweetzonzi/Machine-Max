@@ -2,9 +2,11 @@ package io.github.sweetzonzi.machine_max.client.render;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderType;
 
 import java.util.OptionalDouble;
+import java.util.function.Function;
 
 import static net.minecraft.client.renderer.RenderStateShard.*;
 
@@ -101,31 +103,38 @@ public class MMRenderTypes {
     );
 
     /**
-     * 自发光曳光线（加法混合 + LINES 模式 + 深度测试）。
+     * 自发光曳光线（加法混合 + LINES 模式 + 深度测试），按线宽缓存。
+     * <p>
+     * 使用 {@link Util#memoize} 按 {@code width} 参数缓存 RenderType 实例，
+     * 相同宽度返回同一实例，与 vanilla {@code RenderType.outline(ResourceLocation)} 同模式。
      * <p>
      * 适用于投射物曳光效果，自发光但会被障碍物遮挡。
-     * 不写入深度缓冲（{@link #COLOR_WRITE}），仅测试深度。
-     * 使用 2 顶点/段，变更最小。
-     * <p>
-     * 若需要带宽度的发光光束（QUADS），使用 {@link #ADD_SOLID_DEPTH} 或
-     * {@link #ADD_SOLID_ALWAYS_VISIBLE} 代替。
+     * 线宽通过 {@link LineStateShard} 传递给 OpenGL glLineWidth。
+     *
+     * @param width 线宽（像素），默认 2.0
      */
-    public static final RenderType TRACER_LINE = RenderType.create(
+    private static final Function<Double, RenderType> TRACER_LINE = Util.memoize(width ->
+        RenderType.create(
             "machine_max_tracer_line",
             DefaultVertexFormat.POSITION_COLOR,
             VertexFormat.Mode.LINES,
             1536,
             RenderType.CompositeState.builder()
-                    .setShaderState(RENDERTYPE_LINES_SHADER)
-                    .setLineState(new LineStateShard(OptionalDouble.of(2.0)))
-                    .setLayeringState(NO_LAYERING)
-                    .setTransparencyState(ADDITIVE_TRANSPARENCY)
-                    .setOutputState(ITEM_ENTITY_TARGET)
-                    .setWriteMaskState(COLOR_WRITE)
-                    .setCullState(NO_CULL)
-                    .setDepthTestState(LEQUAL_DEPTH_TEST)
-                    .createCompositeState(false)
+                .setShaderState(RENDERTYPE_LINES_SHADER)
+                .setLineState(new LineStateShard(OptionalDouble.of(width)))
+                .setLayeringState(NO_LAYERING)
+                .setTransparencyState(ADDITIVE_TRANSPARENCY)
+                .setOutputState(ITEM_ENTITY_TARGET)
+                .setWriteMaskState(COLOR_WRITE)
+                .setCullState(NO_CULL)
+                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                .createCompositeState(false)
+        )
     );
+
+    public static RenderType tracerLine(double width) {
+        return TRACER_LINE.apply(width);
+    }
 
     public static RenderType alwaysVisibleLines() {
         return LINES_ALWAYS_VISIBLE;

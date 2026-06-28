@@ -54,8 +54,6 @@ public class ClientProjectileRenderer extends VisualEffectRenderer {
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
-        var buffer = bufferSource.getBuffer(MMRenderTypes.TRACER_LINE);
-
         // 复用 Vector3f 避免热路径重复分配
         Vector3f tmpPos = new Vector3f();
 
@@ -85,10 +83,13 @@ public class ClientProjectileRenderer extends VisualEffectRenderer {
                 a *= pm.lifetime[i] / 20f;
             }
 
-            // 方向：使用 SoA 速度矢量推算下一帧位置
-            float dirX = pm.velX[i] * 0.05f;
-            float dirY = pm.velY[i] * 0.05f;
-            float dirZ = pm.velZ[i] * 0.05f;
+            // 按投射物类型配置获取线宽和拖尾长度
+            var buffer = bufferSource.getBuffer(MMRenderTypes.tracerLine(type.getTracerWidth()));
+
+            // 拖尾方向：使用 SoA 速度矢量 × 可配置长度乘子
+            float dirX = pm.velX[i] * (float) type.getTracerLength();
+            float dirY = pm.velY[i] * (float) type.getTracerLength();
+            float dirZ = pm.velZ[i] * (float) type.getTracerLength();
 
             float endX = tmpPos.x + dirX;
             float endY = tmpPos.y + dirY;

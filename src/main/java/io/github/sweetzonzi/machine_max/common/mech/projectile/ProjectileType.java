@@ -147,6 +147,8 @@ public class ProjectileType {
 
     public Vec3i getTracerColor() { return visual.tracerColor(); }
     public int getTracerAlpha() { return visual.tracerAlpha(); }
+    public double getTracerWidth() { return visual.tracerWidth(); }
+    public double getTracerLength() { return visual.tracerLength(); }
 
     // -- 音效委托（→ ProjectileSoundAttr） --
 
@@ -417,12 +419,24 @@ public class ProjectileType {
         Vec3i tracerColor,
         /** 曳光透明度，0=完全透明，255=完全不透明 */
         int tracerAlpha,
+        /**
+         * 曳光线宽（像素）。默认 2.0，与旧版行为一致。
+         * 值存入 {@link net.minecraft.client.renderer.RenderStateShard.LineStateShard}，
+         * 通过 OpenGL glLineWidth 控制 LINES 模式下的线宽。
+         */
+        double tracerWidth,
+        /**
+         * 拖尾长度乘子（无量纲）。实际拖尾长度 = 当前速度 × 此值（米）。
+         * 默认 0.05 对应旧版行为。
+         */
+        double tracerLength,
         /** 开火粒子效果ID，在客户端播放枪口火焰/炮口焰 */
         ResourceLocation fireParticle
     ) {
         /** 完整默认视觉属性 */
         public static final VisualProperties DEFAULT = new VisualProperties(
             new Vec3i(255, 255, 255), 200,
+            2.0, 0.02,
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "fire_medium")
         );
 
@@ -431,6 +445,10 @@ public class ProjectileType {
                 .forGetter(VisualProperties::tracerColor),
             Codec.INT.optionalFieldOf("tracer_alpha", DEFAULT.tracerAlpha)
                 .forGetter(VisualProperties::tracerAlpha),
+            Codec.DOUBLE.optionalFieldOf("tracer_width", DEFAULT.tracerWidth)
+                .forGetter(VisualProperties::tracerWidth),
+            Codec.DOUBLE.optionalFieldOf("tracer_length", DEFAULT.tracerLength)
+                .forGetter(VisualProperties::tracerLength),
             ResourceLocation.CODEC.optionalFieldOf("fire_particle", DEFAULT.fireParticle)
                 .forGetter(VisualProperties::fireParticle)
         ).apply(instance, VisualProperties::new));
