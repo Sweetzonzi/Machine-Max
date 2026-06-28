@@ -1059,8 +1059,11 @@ public class ProjectileManager {
                                             currentPen, currentDmg, hp, hn),
                                     hp, hn, pk);
                         }
-                        case Entity entity ->
-                                stopped = handleEntityHit(i, projectile, entity, hp, hn, dt, pk);
+                        case Entity entity -> {
+                            if (entity.isRemoved() || (entity instanceof LivingEntity living && living.isDeadOrDying()))
+                                continue; // 实体已死亡，跳过
+                            stopped = handleEntityHit(i, projectile, entity, hp, hn, dt, pk);
+                        }
                         default -> {}
                     }
                 }
