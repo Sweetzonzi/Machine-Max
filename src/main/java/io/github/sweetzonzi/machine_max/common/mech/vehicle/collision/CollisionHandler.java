@@ -701,9 +701,7 @@ public class CollisionHandler {
                                 net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_KNOCKBACK,
                                 net.minecraft.sounds.SoundSource.AMBIENT, 1f, 1f);
                     }
-                    livingEntity.addDeltaMovement(
-                            SparkMathKt.toVec3(impulseVec.mult((float) (0.05 / entityMass))
-                                    .add(0, 0.1f, 0)));
+                    livingEntity.knockback(impulse / entityMass, normal.x, normal.z);
                 });
     }
 

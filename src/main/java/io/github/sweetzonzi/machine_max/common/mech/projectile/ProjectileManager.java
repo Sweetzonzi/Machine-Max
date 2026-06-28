@@ -52,14 +52,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -164,10 +157,21 @@ public class ProjectileManager {
     private volatile ProjectileType[] typeCache;
 
     /**
+     * 待主线程清理的代理实体队列。
+     * <p>
+     * <b>生产者：</b>物理线程（{@link #swapRemove(int)} — 物理线程命中/清理时不可调用
+     * {@link MMProjectileEntity#markOrphaned()}，会通过 {@code entity.remove()} 修改
+     * {@code ChunkMap.entityMap}，与主线程 {@code ChunkMap.tick()} 遍历冲突）。<br>
+     * <b>消费者：</b>主线程（{@link #postTick()} 开头清空，在 {@code ChunkMap.tick()} 之后执行）。<br>
+     * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
+     */
+    private final ConcurrentLinkedQueue<MMProjectileEntity> orphanedEntities = new ConcurrentLinkedQueue<>();
+
+    /**
      * 待主线程创建 Entity 的投射物队列。
      * <p>
      * <b>生产者：</b>物理线程（{@link #addProjectileInternal(IProjectile, Vector3f, Vector3f)}）
-     * — 写入 SoA 后在 volatile count++ 之前入队。<br>
+     * — 写入 SoA 后在 volatile count 写入之前入队。<br>
      * <b>消费者：</b>主线程（{@link #flushProjectileEntities()} 清空）。<br>
      * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
      * <p>
@@ -240,7 +244,8 @@ public class ProjectileManager {
      * 内部：将投射物的位置/速度/类型写入 SoA。
      * <p>
      * <b>调用线程：</b>物理线程（{@link PointProjectile}/{@link RigidProjectile} 构造链）。
-     * 写入后通过 volatile count++ 保证 happens-before，主线程可在 {@link #preTick()} 中安全读取。
+     * 所有 SoA 数组写入完成后才执行 volatile count 写入，保证 happens-before：
+     * 主线程读取 count 后必定能看到完整的 SoA 数据。
      * <p>
      * 不再在此方法内创建 Entity 或发包——改为入队 {@link #pendingProjectiles}，
      * 由主线程 {@link #flushProjectileEntities()} 统一处理。
@@ -249,7 +254,8 @@ public class ProjectileManager {
         if (proj instanceof DestroyableObject projectile)
             ObjectManager.addDestroyableObject(projectile);
         ensureCapacity(count + 1);
-        int i = count++;
+        // ★ 先读取 count 作为索引，所有数组写入完成后再通过 volatile write 发布
+        int i = count;
         int id = ((DestroyableObject) proj).getId();
         posX[i] = pos.x;
         posY[i] = pos.y;
@@ -262,6 +268,8 @@ public class ProjectileManager {
         objId[i] = id;
         alive[i] = true;
         projectileObjIds.add(id);
+        // volatile write 必须在所有 SoA 数组写入之后，确保主线程读取 count 时数据已完整
+        count = i + 1;
 
         // 服务端：入队 pendingProjectiles，由主线程 flushProjectileEntities 统一处理
         if (!level.isClientSide()) {
@@ -639,14 +647,39 @@ public class ProjectileManager {
 
     /**
      * 主线程 Post 阶段。
-     * 先冲刷本帧物理线程新增的投射物 Entity 创建与发包，保证新生投射物发送其创建时的位姿，
-     * 再调用各投射物的 {@code postTick()}，然后将 SoA 位置/速度回写到 SynchedEntityData。
+     * <ol>
+     *   <li>清理物理线程延迟的代理实体（{@link #orphanedEntities}），
+     *       确保在 {@code ChunkMap.tick()} 之后执行，不会并发修改 {@code entityMap}</li>
+     *   <li>冲刷本帧物理线程新增的投射物 Entity 创建与发包</li>
+     *   <li>调用各投射物的 {@code postTick()}，回写 SoA 到 SynchedEntityData</li>
+     * </ol>
      * <p>
      * 优化：合并 postTick 和 syncToSyncedData 为一趟遍历。
      */
     public void postTick() {
+        // ★ 物理线程延迟的代理实体清理（必须在 ChunkMap.tick() 之后执行）
+        cleanOrphanedEntities();
         flushProjectileEntities();
         postTickAndSync();
+    }
+
+    /**
+     * 清理物理线程 {@link #swapRemove(int)} 延迟的代理实体。
+     * <p>
+     * <b>调用线程：</b>仅主线程（由 {@link #postTick()} 调用，在 {@code LevelTickEvent.Post} 阶段，
+     * 即 {@code ChunkMap.tick()} 之后）。
+     * <p>
+     * 物理线程不可直接调用 {@link MMProjectileEntity#markOrphaned()}，
+     * 否则会通过 {@code entity.remove()} 修改 {@code ChunkMap.entityMap}，
+     * 与主线程 {@code ChunkMap.tick()} 中正在遍历的 {@code entityMap.values()} 迭代器冲突。
+     */
+    private void cleanOrphanedEntities() {
+        MMProjectileEntity entity;
+        while ((entity = orphanedEntities.poll()) != null) {
+            if (!entity.isRemoved()) {
+                entity.markOrphaned();
+            }
+        }
     }
 
     /**
@@ -935,7 +968,7 @@ public class ProjectileManager {
             }
 
             // ===== 阶段2：按hitFraction升序排序，确保命中严格按射线方向处理 =====
-            allHits.sort(java.util.Comparator.comparingDouble(HitEntry::hitFraction));
+            allHits.sort(Comparator.comparingDouble(HitEntry::hitFraction));
 
             // ===== 阶段3：按序遍历处理所有命中 =====
             boolean stopped = false;
@@ -1443,12 +1476,17 @@ public class ProjectileManager {
     ) {}
 
     /**
-     * O(1) swap-with-last 移除（联动交换 Entity 数组，清理穿透记录）
+     * O(1) swap-with-last 移除（联动交换 Entity 数组，清理穿透记录）。
+     * <p>
+     * <b>代理实体清理延迟到主线程：</b>物理线程不可调用 {@link MMProjectileEntity#markOrphaned()}，
+     * 否则 {@code entity.remove()} 会修改 {@code ChunkMap.entityMap}，
+     * 与主线程 {@code ChunkMap.tick()} 中的 {@code entityMap.values()} 遍历产生并发修改。
+     * 改为将实体引用入队 {@link #orphanedEntities}，由 {@link #postTick()} 在主线程统一清理。
      */
     private void swapRemove(int index) {
-        // 先清理被移除条目的 Entity
+        // ★ 物理线程安全：延迟 Entity 清理到主线程，避免修改 ChunkMap.entityMap
         if (entities[index] != null) {
-            entities[index].markOrphaned();
+            orphanedEntities.add(entities[index]);
             entities[index] = null;
         }
         // 清理穿透记录
@@ -1467,6 +1505,9 @@ public class ProjectileManager {
             objId[index] = objId[last];
             alive[index] = alive[last];
             needsEntityRecreate[index] = needsEntityRecreate[last];
+            // ★ entities 数组交换：将 last 位置的引用搬到 index 位置
+            //    注意：last 位置的 entity 可能已在上一次 swapRemove 中被标记为待清理
+            //    但尚未被主线程处理，此时将其转移到 index 位置继续等待即可
             entities[index] = entities[last];
         }
         count--;

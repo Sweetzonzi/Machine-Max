@@ -408,16 +408,6 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
         return 1;
     }
 
-    @Override
-    public void destroy() {
-        super.destroy();
-    }
-
-    @Override
-    protected void defineSyncedData(SynchedEntityData.Builder builder) {
-        builder.define(IS_ACTIVE_ID, true);
-    }
-
     // ========== IAnimatable 实现 ==========
 
     @Override

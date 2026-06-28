@@ -5,6 +5,7 @@ import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageHandler;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
+import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -270,7 +271,7 @@ public interface IProjectile extends BFDamageHandler {
             if (!level.isClientSide() && MMServerConfig.projectileDestroyBlocks()
                     && getProjectileType().getBlockDamageFactor() > 0) {
                 float damage = calculateCurrentDamage();
-                float blockDurability = 0.2f * DamageUtil.getMaxBlockDurability(
+                float blockDurability = DamageUtil.getMaxBlockDurability(
                         EmptyBlockGetter.INSTANCE, blockState, BlockPos.ZERO);
                 if (blockDurability > 0 && getProjectileType().getBlockDamageFactor() * damage > blockDurability) {
                     SparkLevel.submitDeduplicatedTask(level, blockPos.toShortString(), PPhase.PRE,
@@ -523,11 +524,11 @@ public interface IProjectile extends BFDamageHandler {
             float impulse = exts.get(BFDamageExtensions.IMPULSE);
             if (impulse > 1e-6f) {
                 Vec3 dir = ctx.hitVelocity().normalize();
-                // 冲量转换为速度变化：Δv = impulse / 60（假设实体等效质量 ~60kg）
+                // 冲量转换为速度变化
                 if (entity instanceof LivingEntity livingEntity)
-                    livingEntity.knockback(impulse / 60.0f, dir.x, dir.z);
+                    livingEntity.knockback(impulse / MassUtil.getEntityMass(entity), -dir.x, -dir.z);
                 else
-                    entity.setDeltaMovement(entity.getDeltaMovement().add(dir.scale(impulse / 60.0f)));
+                    entity.setDeltaMovement(entity.getDeltaMovement().add(dir.scale(impulse / MassUtil.getEntityMass(entity))));
             }
         }
         return dmg;
