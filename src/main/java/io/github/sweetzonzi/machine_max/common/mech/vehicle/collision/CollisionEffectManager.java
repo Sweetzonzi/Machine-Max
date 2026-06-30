@@ -199,8 +199,9 @@ public class CollisionEffectManager implements ISoundSpreader {
             spawnCollisionParticles(wheelSnap);
             updateContinuousSound(wheelSnap, true);
 
-            //滑移率超过0.4时叠加额外漂移音效
-            if (wheelSnap.slipRatio() > 0.4f && wheelSnap.contactVel().length() > 1) {
+            // 漂移音效同样需要有效速度守卫：静止时不应维持循环音效
+            float effectiveSpeed = getEffectiveSpeed(wheelSnap);
+            if (effectiveSpeed >= 0.5f && wheelSnap.slipRatio() > 0.4f) {
                 updateSlipSound(level, wheelSnap);
                 spawnDriftSmoke(level, wheelSnap);
             } else {
@@ -262,11 +263,22 @@ public class CollisionEffectManager implements ISoundSpreader {
         Level level = subPart.getLevel();
         if (!level.isClientSide()) return;
 
+        UUID currentUuid = isWheel ? activeWheelSoundUuid : activeBodySoundUuid;
+
+        // 静止或极低速时不应维持循环碰撞音效，主动淡出以释放OpenAL通道
+        float effectiveSpeed = getEffectiveSpeed(snap);
+        if (effectiveSpeed < 0.5f) {
+            if (currentUuid != null) {
+                if (isWheel) fadeOutWheelSoundIfNeeded(level);
+                else fadeOutBodySoundIfNeeded(level);
+            }
+            return;
+        }
+
         //以方块注册名作为材质标识键，检测地面是否切换
         String blockKey = snap.blockState().getBlock().getDescriptionId();
         SoundEvent sound = getFrictionSound(isWheel, snap.blockState());
 
-        UUID currentUuid = isWheel ? activeWheelSoundUuid : activeBodySoundUuid;
         String currentKey = isWheel ? activeWheelBlockKey : activeBodyBlockKey;
 
         boolean materialChanged = !blockKey.equals(currentKey);
@@ -285,6 +297,31 @@ public class CollisionEffectManager implements ISoundSpreader {
     }
 
     /**
+     * 计算碰撞的有效接触速度（m/s），综合考虑滑移与碾压。
+     * <p>用于判断是否需要播放/维持碰撞音效：低于0.5m/s视为静止，不需音效。</p>
+     *
+     * @param snap 碰撞快照
+     * @return 有效接触速度，取滑移速度与零件切向速度的较大值
+     */
+    private float getEffectiveSpeed(CollisionSnapshot snap) {
+        Vector3f normal = snap.normal();
+        Vector3f contactVel = snap.contactVel();
+
+        // 接触平面上的滑移速度 = contactVel 减去法线分量
+        float normalContactVel = contactVel.dot(normal);
+        tmpSlip.set(contactVel).subtractLocal(normal.mult(normalContactVel));
+        float slipSpeed = tmpSlip.length();
+
+        // 零件本体相对接触平面的切向速度
+        Vector3f bodyVel = subPart.getLinearVelocity();
+        float normalBodyVel = bodyVel.dot(normal);
+        tmpBodyTangential.set(bodyVel).subtractLocal(normal.mult(normalBodyVel));
+        float bodyTangentialSpeed = tmpBodyTangential.length() * 0.1f;
+
+        return Math.max(slipSpeed, bodyTangentialSpeed);
+    }
+
+    /**
      * 根据碰撞速度与零件自身速度更新音效音量和音高。
      * <p>综合考虑两种速度来源，确保碾压声和摩擦声都能驱动音效：</p>
      * <ol>
@@ -294,26 +331,11 @@ public class CollisionEffectManager implements ISoundSpreader {
      * </ol>
      */
     private void updateSoundLevel(boolean isWheel, CollisionSnapshot snap) {
-        Vector3f normal = snap.normal();
-        Vector3f contactVel = snap.contactVel();
+        float effectiveSpeed = getEffectiveSpeed(snap);
 
-        //接触平面上的滑移速度 = contactVel 减去法线分量
-        float normalContactVel = contactVel.dot(normal);
-        tmpSlip.set(contactVel).subtractLocal(normal.mult(normalContactVel));
-        float slipSpeed = tmpSlip.length();
-
-        //零件本体相对接触平面的切向速度
-        Vector3f bodyVel = subPart.getLinearVelocity();
-        float normalBodyVel = bodyVel.dot(normal);
-        tmpBodyTangential.set(bodyVel).subtractLocal(normal.mult(normalBodyVel));
-        float bodyTangentialSpeed = tmpBodyTangential.length() * 0.1f;
-
-        //取较大者作为有效速度
-        float effectiveSpeed = Math.max(slipSpeed, bodyTangentialSpeed);
-
-        //音量：0~20 m/s 映射到 0~0.8，低于 0.5 m/s 时静音
+        // 音量：0~20 m/s 映射到 0~0.8，低于 0.5 m/s 时静音
         float volume = effectiveSpeed < 0.5f ? 0f : Math.clamp(effectiveSpeed / 20f, 0f, 1f) * 0.5f;
-        //音高：0~20 m/s 映射到 0.8~1.2
+        // 音高：0~20 m/s 映射到 0.8~1.2
         float pitch = 0.8f + 0.4f * Math.clamp(effectiveSpeed / 20f, 0f, 1f);
 
         if (isWheel) {
