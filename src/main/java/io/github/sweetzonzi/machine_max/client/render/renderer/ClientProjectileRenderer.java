@@ -58,8 +58,7 @@ public class ClientProjectileRenderer extends VisualEffectRenderer {
         Vector3f tmpPos = new Vector3f();
 
         for (int i = 0; i < pm.count; i++) {
-            if (!pm.alive[i]) continue;
-
+            // 就算投射物已销毁，也尝试渲染，避免创建即命中销毁的投射物不渲染
             ProjectileType type = pm.getProjectileTypeByIndex(i);
             Vec3i tracerColor = type.getTracerColor();
             int tracerAlpha = type.getTracerAlpha();

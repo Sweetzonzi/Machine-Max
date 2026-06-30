@@ -8,9 +8,8 @@ import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationC
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectAllPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationCollectPayload;
 import io.github.sweetzonzi.machine_max.network.payload.fabrication.FabricationStartPayload;
-import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitSyncPayload;
-import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileBatchSpawnPayload;
-import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpawnPayload;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesSpawnPayload;
 import io.github.sweetzonzi.machine_max.network.payload.research.*;
 import net.minecraft.network.codec.StreamCodec;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -156,20 +155,15 @@ public class MMPayloadRegistry {
                 ConnectorSyncPayload.STREAM_CODEC,
                 new MainThreadPayloadHandler<>(ConnectorSyncPayload::handler)
         );
-        sync.playToClient(//投射物命中同步（状态+视觉）
-                ProjectileHitSyncPayload.TYPE,
-                ProjectileHitSyncPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ProjectileHitSyncPayload::handle)
+        sync.playToClient(//投射物批量命中同步（服务端→客户端），替换旧单发包
+                ProjectilesHitPayload.TYPE,
+                ProjectilesHitPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ProjectilesHitPayload::handle)
         );
         sync.playToClient(//投射物批量创建（服务端→客户端），替代单发包
-                ProjectileBatchSpawnPayload.TYPE,
-                ProjectileBatchSpawnPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ProjectileBatchSpawnPayload::handle)
-        );
-        sync.playToClient(//投射物创建（服务端→客户端，旧单发包，保留兼容）
-                ProjectileSpawnPayload.TYPE,
-                ProjectileSpawnPayload.STREAM_CODEC,
-                new MainThreadPayloadHandler<>(ProjectileSpawnPayload::handle)
+                ProjectilesSpawnPayload.TYPE,
+                ProjectilesSpawnPayload.STREAM_CODEC,
+                new MainThreadPayloadHandler<>(ProjectilesSpawnPayload::handle)
         );
         sync.playToClient(//向客户端发送载具数据，由客户端保存到本地文件
                 VehicleDataSavedPayload.TYPE,

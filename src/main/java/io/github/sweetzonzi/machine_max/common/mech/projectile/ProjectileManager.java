@@ -8,7 +8,6 @@ import cn.solarmoon.spark_core.physics.PhysicsHost;
 import cn.solarmoon.spark_core.physics.level.PhysicsLevel;
 import cn.solarmoon.spark_core.physics.terrain.PhysicsChunkSection;
 import cn.solarmoon.spark_core.physics.terrain.SectionSnapshot;
-import cn.solarmoon.spark_core.util.PPhase;
 import cn.solarmoon.spark_core.util.SparkMathKt;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Transform;
@@ -26,28 +25,20 @@ import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.objects.PhysicsRigidBody;
 import com.jme3.math.Vector3f;
-import io.github.sweetzonzi.ballistics_framework.api.BFDamageApi;
-import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
-import io.github.sweetzonzi.ballistics_framework.api.BFDamageExtensions;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
-import io.github.sweetzonzi.ballistics_framework.api.BFHitResolveResult;
 import io.github.sweetzonzi.machine_max.common.entity.MMPartEntity;
-import io.github.sweetzonzi.machine_max.common.MMServerConfig;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
-import io.github.sweetzonzi.machine_max.util.mechanic.ArmorUtil;
-import io.github.sweetzonzi.machine_max.util.mechanic.DamageUtil;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.interact.HitBox;
 import io.github.sweetzonzi.machine_max.common.registry.MMEntities;
-import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileBatchSpawnPayload;
-import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitSyncPayload;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesHitPayload;
+import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectilesSpawnPayload;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -168,17 +159,34 @@ public class ProjectileManager {
     private final ConcurrentLinkedQueue<MMProjectileEntity> orphanedEntities = new ConcurrentLinkedQueue<>();
 
     /**
-     * 待主线程创建 Entity 的投射物队列。
+     * 待主线程创建 Entity 并广播的投射物快照队列。
      * <p>
      * <b>生产者：</b>物理线程（{@link #addProjectileInternal(IProjectile, Vector3f, Vector3f)}）
-     * — 写入 SoA 后在 volatile count 写入之前入队。<br>
+     * — 写入 SoA 后，立即捕获炮口位置和初速的快照入队。<br>
      * <b>消费者：</b>主线程（{@link #flushProjectileEntities()} 清空）。<br>
      * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
      * <p>
-     * 缓存 {@link IProjectile} 引用而非 objId——防止同一物理 tick 内投射物出膛即命中、
-     * 已从 {@link ObjectManager} 和 SoA 移除后主线程无法找到对象。
+     * 存快照而非 {@link IProjectile} 引用——物理线程在入队后会继续修改
+     * 投射物的 position/velocity，主线程 flush 时若读引用将得到已被积分的值，
+     * 导致客户端接收到错误的生成位置（非炮口）。快照在构造瞬间凝固数据。
      */
-    private final ConcurrentLinkedQueue<IProjectile> pendingProjectiles = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<PendingSpawn> pendingProjectiles = new ConcurrentLinkedQueue<>();
+
+    /**
+     * 待主线程批量广播的命中同步事件队列。
+     * <p>
+     * <b>生产者：</b>物理线程（{@link #updatePointProjectiles} 中所有
+     * {@code broadcastHitSync/broadcastTerrainHit} 调用，
+     * 以及 {@link RigidProjectile#applyHitResultAfterCollision} 通过
+     * {@link #enqueueHitSync} 入队）。<br>
+     * <b>消费者：</b>主线程（{@link #flushPendingHitSyncs()}，
+     * 在 {@link #flushProjectileEntities()} 发包之后调用）。<br>
+     * 使用 {@link ConcurrentLinkedQueue} 保证无锁安全。
+     * <p>
+     * 不加区分地缓冲所有物理线程命中事件，统一到主线程批量发送。
+     * 代价是命中特效延迟最多 1 tick（50ms），换取严格保序（创建包→命中包）和带宽节约。
+     */
+    private final ConcurrentLinkedQueue<PendingHitSync> pendingHitSyncs = new ConcurrentLinkedQueue<>();
 
     /**
      * 复用 Vector3f 避免热路径中重复分配
@@ -271,9 +279,13 @@ public class ProjectileManager {
         // volatile write 必须在所有 SoA 数组写入之后，确保主线程读取 count 时数据已完整
         count = i + 1;
 
-        // 服务端：入队 pendingProjectiles，由主线程 flushProjectileEntities 统一处理
+        // 服务端：入队快照（炮口位置和初速，cloned 防止后续物理积分覆盖）
+        // 由主线程 flushProjectileEntities 统一处理 Entity 创建和发包
         if (!level.isClientSide()) {
-            pendingProjectiles.add(proj);
+            pendingProjectiles.add(new PendingSpawn(id,
+                    proj.getProjectileType().getRegistryKey(),
+                    pos.clone(),   // ★ 必须 clone：Vector3f 会被后续物理积分修改
+                    vel.clone()));
             // 预测弹道路径上的区块，预约地形刚体加载，确保投射物能检测到地形碰撞
             preloadTrajectoryTerrain(pos, vel, proj.getProjectileType());
         }
@@ -578,43 +590,87 @@ public class ProjectileManager {
     // ================================================================
 
     /**
-     * 冲刷待创建 Entity 的投射物（主线程）。
+     * 冲刷待创建 Entity 的投射物并批量广播生成包（主线程）。
      * <p>
-     * 清空 {@link #pendingProjectiles} 队列，对每个待创建投射物（无论是否已销毁）：
+     * 清空 {@link #pendingProjectiles} 队列（每个条目是创建时的快照，而非 IProjectile 引用）。
      * <ol>
      *   <li>通过 {@link #findIndexByObjId(int)} 找到 SoA 索引，区块已加载则创建 {@link MMProjectileEntity}</li>
+     *   <li>将快照转换为 {@link ProjectilesSpawnPayload.SpawnEntry} 列表，批量广播</li>
      * </ol>
-     * 最后将整批 {@link IProjectile} 引用传给 {@link ProjectileBatchSpawnPayload#broadcast}
-     * 统一发包。即使投射物已销毁，引用的字段（pos/vel/typeKey）仍可读。
+     * 用快照而非引用——物理线程入队后会继续修改投射物 position/velocity，
+     * 主线程 flush 时若读引用将得到已被积分的值（非炮口位置）。
      * <p>
      * <b>调用线程：</b>仅主线程（在 {@link #postTick()} 开头调用）。
      */
     public void flushProjectileEntities() {
         if (pendingProjectiles.isEmpty()) return;
 
-        // ① 清空队列，收集本批所有投射物（含已销毁的——客户端需要生成视觉效果）
-        List<IProjectile> projs = new ArrayList<>();
-        IProjectile proj;
-        while ((proj = pendingProjectiles.poll()) != null) {
-            projs.add(proj);
+        // ① 清空队列，收集本批所有快照（含已销毁的投射物——客户端需要生成视觉效果）
+        List<PendingSpawn> spawns = new ArrayList<>();
+        PendingSpawn s;
+        while ((s = pendingProjectiles.poll()) != null) {
+            spawns.add(s);
         }
-        if (projs.isEmpty()) return;
+        if (spawns.isEmpty()) return;
 
         // ② 逐个创建 Entity（仅存活 + 区块已加载的投射物）
-        for (IProjectile p : projs) {
-            int objId = ((DestroyableObject) p).getId();
-            int idx = findIndexByObjId(objId);
+        for (PendingSpawn spawn : spawns) {
+            int idx = findIndexByObjId(spawn.objId());
             if (idx < 0) continue;
 
-            if (isChunkLoadedAt(p.getPosition())) {
+            Vector3f pos = spawn.position();
+            if (isChunkLoadedAt(pos)) {
                 createProjectileEntity(idx);
                 needsEntityRecreate[idx] = false;
             }
         }
 
-        // ③ 一次批量发包（broadcast 内部从 IProjectile 引用构造 SpawnEntry）
+        // ③ 批量发包（从快照构造 SpawnEntry，初速/炮口位置精确）
         if (level instanceof ServerLevel serverLevel) {
-            ProjectileBatchSpawnPayload.broadcast(serverLevel, projs);
+            List<ProjectilesSpawnPayload.SpawnEntry> entries = new ArrayList<>(spawns.size());
+            for (PendingSpawn spawn : spawns) {
+                Vector3f p = spawn.position();
+                Vector3f v = spawn.velocity();
+                entries.add(new ProjectilesSpawnPayload.SpawnEntry(
+                        spawn.objId(), spawn.typeKey(),
+                        p.x, p.y, p.z, v.x, v.y, v.z));
+            }
+            ProjectilesSpawnPayload.broadcast(serverLevel, entries);
+        }
+    }
+
+    /**
+     * 清空 {@link #pendingHitSyncs} 队列，批量发送命中同步包。
+     * <p>
+     * 将物理线程缓冲的所有 {@link PendingHitSync} 转换为
+     * {@link ProjectilesHitPayload.HitEntry} 列表，通过
+     * {@link ProjectilesHitPayload#broadcast} 一次发包。
+     * <p>
+     * <b>调用线程：</b>仅主线程（在 {@link #postTick()} 中
+     * {@link #flushProjectileEntities()} 之后调用），保证创建包先于命中包到达客户端。
+     * <p>
+     * 客户端收到后会逐条更新 SoA 状态并播放粒子特效。
+     */
+    private void flushPendingHitSyncs() {
+        if (pendingHitSyncs.isEmpty()) return;
+
+        List<ProjectilesHitPayload.HitEntry> entries = new ArrayList<>();
+        PendingHitSync h;
+        while ((h = pendingHitSyncs.poll()) != null) {
+            entries.add(new ProjectilesHitPayload.HitEntry(
+                    h.objId(),
+                    h.hitPoint().x, h.hitPoint().y, h.hitPoint().z,
+                    h.hitNormal().x, h.hitNormal().y, h.hitNormal().z,
+                    h.destroyed(),
+                    h.newVelocity() != null ? h.newVelocity().x : 0,
+                    h.newVelocity() != null ? h.newVelocity().y : 0,
+                    h.newVelocity() != null ? h.newVelocity().z : 0,
+                    h.isArmorHit()));
+        }
+        if (entries.isEmpty()) return;
+
+        if (level instanceof ServerLevel serverLevel) {
+            ProjectilesHitPayload.broadcast(serverLevel, entries);
         }
     }
 
@@ -637,12 +693,17 @@ public class ProjectileManager {
      * 主线程 Pre 阶段。
      * 递减所有投射物寿命 + 调用各投射物的 {@code preTick()} +
      * 尝试重建因区块卸载丢失的 {@link MMProjectileEntity}。
+     * 客户端额外执行质点投射物外推（5 子步 semi-implicit Euler）。
      * <p>
      * 优化：合并寿命递减和 preTick 为一趟遍历，减少 SoA 数组重复访问。
      */
     public void preTick() {
         tickAndPreTick();
         tryRecreateEntities();
+        // 客户端：主线程自主外推质点投射物，消除物理线程与渲染线程的 SoA 并发读写竞争
+        if (level.isClientSide()) {
+            clientExtrapolate();
+        }
     }
 
     /**
@@ -659,7 +720,8 @@ public class ProjectileManager {
     public void postTick() {
         // ★ 物理线程延迟的代理实体清理（必须在 ChunkMap.tick() 之后执行）
         cleanOrphanedEntities();
-        flushProjectileEntities();
+        flushProjectileEntities();   // ① 先发创建包，确保客户端 SoA 中有该投射物
+        flushPendingHitSyncs();      // ② 再发命中包，保证创建包严格先于命中包到达
         postTickAndSync();
     }
 
@@ -684,17 +746,13 @@ public class ProjectileManager {
 
     /**
      * 物理线程 Pre 阶段。
-     * 调用各投射物的 {@code prePhysicsTick()}，然后：
-     * <ul>
-     *   <li>服务端：执行质点投射物批量积分+碰撞检测</li>
-     *   <li>客户端：执行简化积分外推（无碰撞检测）</li>
-     * </ul>
+     * 调用各投射物的 {@code prePhysicsTick()}，服务端执行质点投射物批量积分+碰撞检测。
+     * <p>
+     * 客户端不再在此阶段外推——已迁移至主线程 {@link #preTick()}。
      */
     public void prePhysicsTick(PhysicsLevel physicsLevel) {
         forEachPrePhysicsTick();
-        if (level.isClientSide()) {
-            clientExtrapolate(physicsLevel);
-        } else {
+        if (!level.isClientSide()) {
             updatePointProjectiles(physicsLevel);
         }
     }
@@ -712,57 +770,67 @@ public class ProjectileManager {
     // ================================================================
 
     /**
-     * 客户端自主外推所有投射物（质点+刚体的简化积分，无碰撞检测）。
+     * 客户端自主外推所有质点投射物（Semi-implicit Euler 5 子步积分，无碰撞检测）。
      * <p>
      * 服务端仅广播关键事件（创建/命中/超时），客户端依赖自主外推来维持帧间
      * 位置连续性，供 {@code ClientProjectileRenderer} 读取。
      * <p>
-     * 优化：在热路径中缓存 typeCache 引用，一次提取 ProjectileType 代替三次数组访问。
-     *
-     * @param physicsLevel 客户端物理世界
+     * 5 子步推进，每子步 dt = 0.01s（匹配服务端 100Hz 物理步进），
+     * 消除大步长 Euler 积分在非线性阻力下的精度损失。
+     * 刚体投射物跳过——状态由服务端 {@link #writebackRigidState} 同步，客户端不双重积分。
+     * <p>
+     * <b>调用线程：</b>主线程（由 {@link #preTick()} 调用）。
      */
-    private void clientExtrapolate(PhysicsLevel physicsLevel) {
+    private void clientExtrapolate() {
+        ProjectileType[] types = this.typeCache;
         for (int i = count - 1; i >= 0; i--) {
-            if (!alive[i]) {
+            if (!alive[i] && lifetime[i] < types[typeIndex[i]].getMaxLifetimeTicks()) { // 至少保证存在1tick
                 projectileObjIds.remove(objId[i]);
                 swapRemove(i);
             }
         }
         if (count == 0) return;
 
-        float dt = 1.0f / physicsLevel.getTps();
-        ProjectileType[] types = this.typeCache;
+        // 5 子步 = 服务端 100Hz / 主线程 20tps，每子步 0.01s
+        final int SUBSTEPS = 5;
+        final float dt = 0.05f / SUBSTEPS;
 
-        for (int i = 0; i < count; i++) {
-            if (!alive[i]) continue;
+        for (int sub = 0; sub < SUBSTEPS; sub++) {
+            for (int i = 0; i < count; i++) {
+                if (!alive[i]) continue;
 
-            ProjectileType type = types[typeIndex[i]];
-            float mass = type.getMass();
-            float gravityFactor = type.getGravityFactor();
-            float dragFactor = type.getDragFactor();
-            float radius = type.getRadius();
-            float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
+                ProjectileType type = types[typeIndex[i]];
+                // 刚体投射物跳过客户端外推（状态由服务端 writebackRigidState 同步）
+                if (type.getType().isRigid()) continue;
 
-            float gravityAccY = -gravityFactor * 9.81f;
-            float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
-            if (dragFactor > 1e-8f && speed > 1e-8f) {
-                float rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
-                // F_drag = ½ · ρ · Cd · A · v²，其中 Cd=dragFactor, A=π·r²
-                float dragForce = 0.5f * rho * dragFactor * (float) Math.PI * radius * radius * speed * speed;
-                float dragAcc = dragForce / mass;
-                float invSpeed = 1f / speed;
-                dragAccX = dragAcc * (-velX[i] * invSpeed);
-                dragAccY = dragAcc * (-velY[i] * invSpeed);
-                dragAccZ = dragAcc * (-velZ[i] * invSpeed);
+                float mass = type.getMass();
+                float gravityFactor = type.getGravityFactor();
+                float dragFactor = type.getDragFactor();
+                float radius = type.getRadius();
+                float speed = (float) Math.sqrt(velX[i] * velX[i] + velY[i] * velY[i] + velZ[i] * velZ[i]);
+
+                float gravityAccY = -gravityFactor * 9.81f;
+                float dragAccX = 0, dragAccY = 0, dragAccZ = 0;
+                if (dragFactor > 1e-8f && speed > 1e-8f) {
+                    float rho = densityFunction.getDensity(new Vec3(posX[i], posY[i], posZ[i]));
+                    // F_drag = ½ · ρ · Cd · A · v²，其中 Cd=dragFactor, A=π·r²
+                    float dragForce = 0.5f * rho * dragFactor * (float) Math.PI * radius * radius * speed * speed;
+                    float dragAcc = dragForce / mass;
+                    float invSpeed = 1f / speed;
+                    dragAccX = dragAcc * (-velX[i] * invSpeed);
+                    dragAccY = dragAcc * (-velY[i] * invSpeed);
+                    dragAccZ = dragAcc * (-velZ[i] * invSpeed);
+                }
+
+                // Semi-implicit Euler：先更新速度，再用新速度更新位置
+                velX[i] += dragAccX * dt;
+                velY[i] += (gravityAccY + dragAccY) * dt;
+                velZ[i] += dragAccZ * dt;
+
+                posX[i] += velX[i] * dt;
+                posY[i] += velY[i] * dt;
+                posZ[i] += velZ[i] * dt;
             }
-
-            velX[i] += dragAccX * dt;
-            velY[i] += (gravityAccY + dragAccY) * dt;
-            velZ[i] += dragAccZ * dt;
-
-            posX[i] += velX[i] * dt;
-            posY[i] += velY[i] * dt;
-            posZ[i] += velZ[i] * dt;
         }
     }
 
@@ -1154,32 +1222,49 @@ public class ProjectileManager {
     }
 
     /**
-     * 广播命中同步包（服务端→客户端），携带 SoA 状态更新
+     * 入队命中同步数据（物理线程），等待主线程批量广播。
+     * <p>
+     * 替代原先的直接 {@code ProjectileHitSyncPayload.broadcast()} 调用。
+     * 所有命中事件统一走此方法 → {@link #pendingHitSyncs} 队列 →
+     * 主线程 {@link #flushPendingHitSyncs()} 批量发包。
+     * <p>
+     * <b>调用线程：</b>物理线程（{@link #updatePointProjectiles} 内部广播方法，
+     * 以及 {@link RigidProjectile} 碰撞回调）。
+     *
+     * @param objId      投射物 DestroyableObject ID
+     * @param hitPoint   命中点世界坐标
+     * @param hitNormal  命中面法线
+     * @param destroyed  投射物是否已销毁
+     * @param newVelocity 销毁后的剩余速度（destroyed=true 时可为 null）
+     * @param isArmorHit 是否为装甲命中（影响客户端粒子类型）
      */
-    private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, boolean isArmorHit, @Nullable IProjectile.AfterHitResult result) {
-        if (level instanceof ServerLevel serverLevel) {
-            boolean destroyed = result == null || result.destroyed();
-            Vector3f newVel = destroyed ? new Vector3f() : result.newVelocity();
-            ProjectileHitSyncPayload.broadcast(serverLevel, objId[i], hitPoint, hitNormal, destroyed, newVel, isArmorHit);
-        }
+    public void enqueueHitSync(int objId, Vec3 hitPoint, Vec3 hitNormal,
+                               boolean destroyed, @Nullable Vector3f newVelocity, boolean isArmorHit) {
+        pendingHitSyncs.add(new PendingHitSync(objId, hitPoint, hitNormal, destroyed, newVelocity, isArmorHit));
     }
 
     /**
-     * 广播命中同步包（显式指定销毁状态和速度）。
+     * 广播命中同步（携带 AfterHitResult），改为入队缓冲。
+     */
+    private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, boolean isArmorHit, @Nullable IProjectile.AfterHitResult result) {
+        boolean destroyed = result == null || result.destroyed();
+        Vector3f newVel = destroyed ? new Vector3f() : result.newVelocity();
+        pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, hitNormal, destroyed, newVel, isArmorHit));
+    }
+
+    /**
+     * 广播命中同步（显式指定销毁状态和速度），改为入队缓冲。
      * 用于 suspend/resume 路径等已确定结果但无 HitResult 的场景。
      */
     private void broadcastHitSync(int i, Vec3 hitPoint, Vec3 hitNormal, boolean destroyed, @Nullable Vector3f newVel, boolean isArmorHit) {
-        if (level instanceof ServerLevel serverLevel) {
-            ProjectileHitSyncPayload.broadcast(serverLevel, objId[i], hitPoint, hitNormal, destroyed,
-                    destroyed ? new Vector3f() : newVel, isArmorHit);
-        }
+        pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, hitNormal, destroyed, newVel, isArmorHit));
     }
 
     /**
-     * 命中地形时的命中同步（服务端广播）
+     * 命中地形时的命中同步，改为入队缓冲。
      */
     private void broadcastTerrainHit(int i, Vec3 hitPoint) {
-        broadcastHitSync(i, hitPoint, new Vec3(0, 1, 0), true, null, false);
+        pendingHitSyncs.add(new PendingHitSync(objId[i], hitPoint, new Vec3(0, 1, 0), true, null, false));
     }
 
     /**
@@ -1290,6 +1375,48 @@ public class ProjectileManager {
      * @param blockPos    命中的方块世界坐标
      */
     private record BlockHitEntry(float hitFraction, BlockPos blockPos) {}
+
+    /**
+     * 物理线程缓冲的命中同步数据，等待主线程批量广播。
+     * <p>
+     * 所有命中同步不再从物理线程直接发包，而是打包为此记录入队到
+     * {@link #pendingHitSyncs}，由主线程 {@link #flushPendingHitSyncs()}
+     * 统一转换为 {@link ProjectilesHitPayload.HitEntry} 并批量发送。
+     *
+     * @param objId      投射物 DestroyableObject ID
+     * @param hitPoint   命中点世界坐标（MC Vec3，不可变值类型）
+     * @param hitNormal  命中面法线（MC Vec3，不可变值类型）
+     * @param destroyed  投射物是否已销毁
+     * @param newVelocity 穿透后剩余速度（destroyed=true 时为 null）
+     * @param isArmorHit 是否为装甲命中（影响客户端粒子类型）
+     */
+    private record PendingHitSync(
+            int objId,
+            Vec3 hitPoint,
+            Vec3 hitNormal,
+            boolean destroyed,
+            @Nullable Vector3f newVelocity,
+            boolean isArmorHit
+    ) {}
+
+    /**
+     * 物理线程捕获的投射物创建快照，等待主线程创建 Entity 并广播。
+     * <p>
+     * 物理线程创建投射物后立即捕获炮口位置、初速和类型键，
+     * 入队到 {@link #pendingProjectiles}。主线程 flush 时读取快照中的凝固数据，
+     * 而非从 {@link IProjectile} 引用读取已被物理积分覆盖的当前值。
+     *
+     * @param objId    DestroyableObject ID
+     * @param typeKey  投射物类型注册键
+     * @param position 炮口世界坐标（JME Vector3f，已 clone 独立副本）
+     * @param velocity 初速矢量（JME Vector3f，已 clone 独立副本）
+     */
+    private record PendingSpawn(
+            int objId,
+            ResourceLocation typeKey,
+            Vector3f position,
+            Vector3f velocity
+    ) {}
 
     /**
      * 使用3D DDA（Amanatides-Woo）体素遍历算法，获取射线在指定PhysicsChunkSection内经过的所有有效方块。

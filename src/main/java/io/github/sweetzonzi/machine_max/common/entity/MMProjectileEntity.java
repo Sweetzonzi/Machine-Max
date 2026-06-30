@@ -69,7 +69,6 @@ public class MMProjectileEntity extends Projectile implements IEntityWithComplex
         DestroyableObject obj = ObjectManager.getDestroyableObject(level(), projectileObjId);
         if (obj instanceof IProjectile proj) {
             this.projectile = proj;
-            MachineMax.LOGGER.debug("MMProjectileEntity 成功绑定到 IProjectile(objId={})", projectileObjId);
         }
     }
 

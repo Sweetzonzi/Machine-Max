@@ -23,12 +23,11 @@ import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.ballistics_framework.api.BFHurtTarget;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableRigidObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileHitSyncPayload;
+
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -116,7 +115,7 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
      * <p>
      * <b>服务端网络广播：</b>已移至
      * {@link ProjectileManager#flushProjectileEntities()}（主线程 preTick），
-     * 改由批量包 {@code ProjectileBatchSpawnPayload} 发送。
+     * 改由批量包 {@code ProjectilesSpawnPayload} 发送。
      * <p>
      * <b>调用线程：</b>物理线程（由 {@link io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType#create} → addToLevel 链调用）。
      */
@@ -315,15 +314,11 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
             Vector3f newVel = result.newVelocity();
             setLinearVelocity(newVel);
             body.setLinearVelocity(newVel);
-            if (level instanceof ServerLevel serverLevel) {
-                ProjectileHitSyncPayload.broadcast(serverLevel, getId(),
-                    hitPointMc, hitNormalMc, false, newVel, false);
-            }
+            ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
+            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, false, newVel, false);
         } else {
-            if (level instanceof ServerLevel serverLevel) {
-                ProjectileHitSyncPayload.broadcast(serverLevel, getId(),
-                    hitPointMc, hitNormalMc, true, new Vector3f(), false);
-            }
+            ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
+            pm.enqueueHitSync(getId(), hitPointMc, hitNormalMc, true, new Vector3f(), false);
             markHit();
             destroy();
         }
@@ -340,10 +335,8 @@ public class RigidProjectile extends DestroyableRigidObject implements IProjecti
     @Override
     public AfterHitResult onEntityHit(Level level, Entity entity,
         float currentPen, float currentDamage, Vec3 hitPoint, Vec3 hitNormal) {
-        if (level instanceof ServerLevel serverLevel) {
-            ProjectileHitSyncPayload.broadcast(serverLevel, getId(),
-                hitPoint, hitNormal, true, new Vector3f(), false);
-        }
+        ProjectileManager pm = ObjectManager.getOrCreateProjectileManager(level);
+        pm.enqueueHitSync(getId(), hitPoint, hitNormal, true, new Vector3f(), false);
         return AfterHitResult.DESTROYED;
     }
 

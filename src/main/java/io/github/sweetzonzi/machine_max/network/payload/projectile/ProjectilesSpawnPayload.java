@@ -2,8 +2,7 @@ package io.github.sweetzonzi.machine_max.network.payload.projectile;
 
 import com.jme3.math.Vector3f;
 import io.github.sweetzonzi.machine_max.MachineMax;
-import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
-import io.github.sweetzonzi.machine_max.common.mech.projectile.IProjectile;
+import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileManager;
 import io.github.sweetzonzi.machine_max.common.mech.projectile.ProjectileType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -20,8 +19,7 @@ import java.util.List;
 /**
  * 批量投射物生成网络包（服务端→客户端）。
  * <p>
- * 替代旧 {@link ProjectileSpawnPayload} 的单发模式，将一帧内同一发射器产生的
- * 多发投射物合并为一个包广播，减少网络帧头开销。
+ * 将一帧内同一发射器产生的多发投射物合并为一个包广播，减少网络帧头开销。
  * <p>
  * 不携带 {@code maxLifetime} 和 {@code isRigid}——客户端从 {@link ProjectileType} 本地读取。
  * <p>
@@ -29,12 +27,12 @@ import java.util.List;
  *
  * @see ProjectileManager#flushProjectileEntities()
  */
-public record ProjectileBatchSpawnPayload(
+public record ProjectilesSpawnPayload(
         List<SpawnEntry> entries
 ) implements CustomPacketPayload {
 
-    public static final Type<ProjectileBatchSpawnPayload> TYPE = new Type<>(
-            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectile_batch_spawn"));
+    public static final Type<ProjectilesSpawnPayload> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "projectiles_spawn"));
 
     /**
      * 单个投射物生成条目。
@@ -55,10 +53,10 @@ public record ProjectileBatchSpawnPayload(
             double velX, double velY, double velZ
     ) {}
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ProjectileBatchSpawnPayload> STREAM_CODEC =
+    public static final StreamCodec<RegistryFriendlyByteBuf, ProjectilesSpawnPayload> STREAM_CODEC =
             new StreamCodec<>() {
                 @Override
-                public ProjectileBatchSpawnPayload decode(RegistryFriendlyByteBuf buf) {
+                public ProjectilesSpawnPayload decode(RegistryFriendlyByteBuf buf) {
                     int count = buf.readVarInt();
                     List<SpawnEntry> entries = new ArrayList<>(count);
                     for (int i = 0; i < count; i++) {
@@ -69,11 +67,11 @@ public record ProjectileBatchSpawnPayload(
                                 buf.readDouble(), buf.readDouble(), buf.readDouble()
                         ));
                     }
-                    return new ProjectileBatchSpawnPayload(entries);
+                    return new ProjectilesSpawnPayload(entries);
                 }
 
                 @Override
-                public void encode(RegistryFriendlyByteBuf buf, ProjectileBatchSpawnPayload pkt) {
+                public void encode(RegistryFriendlyByteBuf buf, ProjectilesSpawnPayload pkt) {
                     buf.writeVarInt(pkt.entries.size());
                     for (SpawnEntry e : pkt.entries) {
                         buf.writeVarInt(e.objId);
@@ -98,27 +96,15 @@ public record ProjectileBatchSpawnPayload(
      * <p>
      * <b>调用线程：</b>主线程（{@link ProjectileManager#flushProjectileEntities()} 内部调用）。
      * <p>
-     * 从 {@link IProjectile} 引用列表内部构造 {@link SpawnEntry}，调用方不需要接触 SpawnEntry 类型。
-     * 即使投射物已销毁（{@code isAlive() == false}），持有的 Java 引用仍可读取 pos/vel/typeKey，
-     * 保证出膛即命中的投射物也能正确在客户端生成视觉效果。
+     * 调用方从 {@code PendingSpawn} 快照构造 {@link SpawnEntry} 列表传入，
+     * 确保初速和炮口位置是创建时刻的快照，而非物理积分后的当前值。
      *
-     * @param level       服务端维度
-     * @param projectiles 本批待广播的 {@link IProjectile} 引用列表
+     * @param level   服务端维度
+     * @param entries 本批生成条目（已从创建快照转换）
      */
-    public static void broadcast(ServerLevel level, List<IProjectile> projectiles) {
-        List<SpawnEntry> entries = new ArrayList<>(projectiles.size());
-        for (IProjectile p : projectiles) {
-            Vector3f pos = p.getPosition();
-            Vector3f vel = p.getVelocity();
-            ResourceLocation typeKey = p.getProjectileType().getRegistryKey();
-            entries.add(new SpawnEntry(
-                    ((DestroyableObject) p).getId(), typeKey,
-                    pos.x, pos.y, pos.z, vel.x, vel.y, vel.z));
-        }
-        if (!entries.isEmpty()) {
-            PacketDistributor.sendToPlayersInDimension(level,
-                    new ProjectileBatchSpawnPayload(entries));
-        }
+    public static void broadcast(ServerLevel level, List<SpawnEntry> entries) {
+        PacketDistributor.sendToPlayersInDimension(level,
+                new ProjectilesSpawnPayload(entries));
     }
 
     /**
@@ -126,7 +112,7 @@ public record ProjectileBatchSpawnPayload(
      * <p>
      * <b>调用线程：</b>主线程（NeoForge 网络处理器）。
      */
-    public static void handle(final ProjectileBatchSpawnPayload payload, final IPayloadContext context) {
+    public static void handle(final ProjectilesSpawnPayload payload, final IPayloadContext context) {
         context.enqueueWork(() -> {
             Level level = context.player().level();
             for (SpawnEntry entry : payload.entries) {
@@ -138,8 +124,9 @@ public record ProjectileBatchSpawnPayload(
                 Vector3f vel = new Vector3f(
                         (float) entry.velX, (float) entry.velY, (float) entry.velZ);
 
-                // create → addToLevel：ObjectManager 注册 + SoA 写入 + 客户端音效
-                type.create(level, pos, vel);
+                // createWithId → setId(服务端objId) → addToLevel：
+                // ObjectManager 注册 + SoA 写入使用服务端 ID，确保后续命中包可匹配
+                type.createWithId(level, pos, vel, entry.objId);
             }
         });
     }

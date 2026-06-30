@@ -12,8 +12,6 @@ import io.github.sweetzonzi.ballistics_framework.api.ArmorLevel;
 import io.github.sweetzonzi.ballistics_framework.api.BFDamageContext;
 import io.github.sweetzonzi.machine_max.common.mech.DestroyableObject;
 import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
-// 旧单个发包已废弃，由 ProjectileManager.flushProjectileEntities 批量发包替代
-// import io.github.sweetzonzi.machine_max.network.payload.projectile.ProjectileSpawnPayload;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -93,7 +91,7 @@ public class PointProjectile extends DestroyableObject implements IProjectile, I
      * <p>
      * <b>服务端：</b>Entity 创建与网络广播已移至
      * {@link ProjectileManager#flushProjectileEntities()}（主线程 preTick），
-     * 改由批量包 {@code ProjectileBatchSpawnPayload} 发送。<br>
+     * 改由批量包 {@code ProjectilesSpawnPayload} 发送。<br>
      * <b>客户端：</b>直接播放开火音效。
      * <p>
      * <b>调用线程：</b>物理线程（由 {@link ProjectileType#create} → addToLevel 链调用）。

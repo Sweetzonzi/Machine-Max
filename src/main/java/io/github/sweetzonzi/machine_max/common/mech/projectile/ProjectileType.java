@@ -221,6 +221,32 @@ public class ProjectileType {
         return p;
     }
 
+    /**
+     * 按指定 ID 创建投射物（服务端→客户端同步专用）。
+     * <p>
+     * 客户端从 {@code ProjectilesSpawnPayload} 收到服务端分配的 objId 后调用此方法，
+     * 在 {@link DestroyableObject#addToLevel()} 之前覆写自动生成的本地 ID，
+     * 确保客户端 SoA / ObjectManager 中的 objId 与服务端一致，
+     * 后续命中包才能通过 objId 匹配到正确的投射物。
+     * <p>
+     * <b>仅客户端调用。</b>服务端使用 {@link #create}。
+     *
+     * @param level    维度
+     * @param position 初始世界坐标（JME）
+     * @param velocity 初始速度矢量（JME，单位 m/s）
+     * @param objId    服务端分配的 DestroyableObject ID
+     * @return 已创建并注册的投射物实例
+     */
+    public IProjectile createWithId(Level level, Vector3f position, Vector3f velocity, int objId) {
+        IProjectile p = switch (type) {
+            case POINT -> new PointProjectile(level, this, position, velocity);
+            case RIGID -> new RigidProjectile(level, this, position, velocity);
+        };
+        ((DestroyableObject) p).setId(objId); // ★ 在 addToLevel 之前覆写，ObjectManager 和 SoA 均用此 ID
+        ((DestroyableObject) p).addToLevel();
+        return p;
+    }
+
 
     // ==================== 开火 / 音效 / 散布 ====================
 
