@@ -118,6 +118,8 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final ConcurrentMap<String, Object> signalStorage = new ConcurrentHashMap<>();//部件内供Molang查询的信号
     //MoLang 求值上下文
     private final MechMolangContext molangContext = new MechMolangContext(this);
+    /** 子系统额外质量映射表（子系统名称 → 额外质量值 kg），由 ISubsystemHost.updateExtraMass() 管理 */
+    private final ConcurrentHashMap<String, Float> extraMassMap = new ConcurrentHashMap<>();
     //物理
     public final boolean GROUND_COLLISION_ONLY;//是否仅和零件之下的地面方块碰撞
     public final float stepHeight;
@@ -1079,6 +1081,25 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     @Override
     public SubsystemController getSubsystemController() {
         return part.assembly.getSubsystemController();
+    }
+
+    @NotNull
+    @Override
+    public Map<String, Float> getExtraMass() {
+        return extraMassMap;
+    }
+
+    @Override
+    public void onMassChange(float totalExtraMass) {
+        // 在物理线程安全地更新刚体质量
+        var physLevel = getPhysicsLevel();
+        float newMass = getAttr().getMass() + totalExtraMass;
+        if (physLevel != null) {
+            physLevel.submitImmediateTask(PPhase.ALL, () -> {
+                body.setMass(newMass);
+                return null;
+            });
+        }
     }
 
     @NotNull

@@ -12,6 +12,7 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.attr.dynamic_attr.SeatSubsystemAttr;
 import io.github.sweetzonzi.machine_max.external.MMDynamicRes;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
+import io.github.sweetzonzi.machine_max.util.mechanic.MassUtil;
 import lombok.Getter;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -96,6 +97,8 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             }
             this.passenger = passenger;
             ((IEntityMixin) passenger).machine_Max$setControllingSubsystem(this);
+            // 上报乘客体重作为额外质量
+            setExtraMass((float) MassUtil.getEntityMass(passenger));
             getOwner().getSubPart().getPart().assembly.activatePhysics();
             if (getOwner().getSubPart().getPart().assembly instanceof VehicleCore vc) {
                 vc.recalculateCameraDistance();
@@ -115,6 +118,8 @@ public class SeatSubsystem extends AbstractControllableSubsystem {
             passenger = null;
         }
         occupied = false;
+        // 乘客离去，清除额外质量
+        setExtraMass(0f);
         for (String channel : attr.passengerNumSignalTargets.keySet()) {
             sendSignalToAllTargets(channel, 0f);
         }

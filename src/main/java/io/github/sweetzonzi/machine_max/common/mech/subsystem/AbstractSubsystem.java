@@ -55,6 +55,9 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
     protected static final EntityDataAccessor<Boolean> DATA_DESTROYED_ID = SynchedEntityData.defineId(AbstractSubsystem.class, EntityDataSerializers.BOOLEAN);
     protected final SynchedEntityData synchedData;
 
+    /** 当前子系统为其宿主贡献的额外质量（kg），由子类通过 setExtraMass 管理 */
+    private float extraMass = 0f;
+
     public int tickCount = 0;
     public int physicsTickCount = 0;
 
@@ -271,6 +274,27 @@ abstract public class AbstractSubsystem implements ISignalReceiver, ISignalSende
 
     public PhysicsLevel getPhysicsLevel() {
         return SparkLevel.getPhysicsLevel(getLevel());
+    }
+
+    /**
+     * 获取此子系统当前贡献的额外质量。
+     * @return 额外质量（kg）
+     */
+    public float getExtraMass() {
+        return extraMass;
+    }
+
+    /**
+     * 设置此子系统的额外质量，自动同步到宿主映射表并触发质量回调。
+     * 子类在内部状态变化时调用（如物品增减、弹药变化、乘员上下）。
+     *
+     * @param extraMass 新的额外质量值（kg），≤0 表示无额外贡献
+     */
+    public void setExtraMass(float extraMass) {
+        this.extraMass = Math.max(extraMass, 0f);
+        if (owner != null) {
+            owner.updateExtraMass(this, this.extraMass);
+        }
     }
 
 }
