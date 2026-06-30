@@ -129,6 +129,18 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
     public final LocalHeightField heightField = new LocalHeightField(3);//爬坡辅助用高度场
     public final CollisionHandler collisionHandler;
 
+    // === 性能优化缓存：getShapeMinY ===
+    /** 缓存的相对偏移量：刚体中心Y - 碰撞形状最低点Y（仅随旋转变化） */
+    private float cachedRelativeMinYOffset = Float.NaN;
+    /** 上次计算 relativeMinYOffset 时的刚体旋转，用于判断旋转是否变化 */
+    private final Quaternion cachedRotationForMinY = new Quaternion();
+
+    // === 性能优化缓存：LocalHeightField.rebuild ===
+    /** 上次重建高度场时的中心方块X坐标 */
+    private int lastHFBlockX = Integer.MIN_VALUE;
+    /** 上次重建高度场时的中心方块Z坐标 */
+    private int lastHFBlockZ = Integer.MIN_VALUE;
+
     public SubPart(String name, Part part, SubPartAttr attr) {
         super(part.level, attr.getCollisionShape(part.variant), attr.mass);
         this.part = part;
@@ -403,10 +415,27 @@ public class SubPart extends DestroyableRigidObject implements IAnimatable<SubPa
         //攀爬辅助处理
         climbableBlocks.clear();
         if (!level.isClientSide() && attr.blockCollision == SubPartAttr.BlockCollisionType.GROUND) {
-            bodyMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
+            // 获取刚体旋转，用于判断是否需要重新计算 getShapeMinY
+            Quaternion currentRot = body.getPhysicsRotation(null);
+            // 旋转变化时重新计算相对偏移量（相对偏移量仅受旋转影响，平动不影响）
+            if (Float.isNaN(cachedRelativeMinYOffset)
+                    || MyQuaternion.dot(cachedRotationForMinY, currentRot) < 0.9999f) {
+                float absoluteMinY = ShapeHelper.getShapeMinY(this.body, 0.1f);
+                cachedRelativeMinYOffset = body.getPhysicsLocation(null).y - absoluteMinY;
+                cachedRotationForMinY.set(currentRot);
+            }
+            // 用缓存的相对偏移量快速计算当前世界坐标下的 bodyMinY
+            bodyMinY = body.getPhysicsLocation(null).y - cachedRelativeMinYOffset;
+
             Vector3f pos = body.getPhysicsLocation(null);
-            // 更新爬坡辅助用高度场
-            heightField.rebuild(getPhysicsLevel(), (int) pos.x, (int) pos.z, bodyMinY);
+            int blockX = (int) pos.x;
+            int blockZ = (int) pos.z;
+            // 仅在中心方块发生变化时重建高度场
+            if (blockX != lastHFBlockX || blockZ != lastHFBlockZ) {
+                heightField.rebuild(getPhysicsLevel(), blockX, blockZ, bodyMinY);
+                lastHFBlockX = blockX;
+                lastHFBlockZ = blockZ;
+            }
             //遍历范围内的方块
             AABB aabb = SparkMathKt.toAABB(PhysicsBodyExtensionKt.stateOf(this.body).getCachedBoundingBox())
                     .expandTowards(new Vec3(tmpWorldVel.x, 0, tmpWorldVel.z).scale(0.1f));
