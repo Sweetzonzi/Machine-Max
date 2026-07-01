@@ -189,6 +189,7 @@
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+    width: 100%; /* 确保撑满父容器宽度 */
 }
 
 /* 左栏列表项：含上排行（名称+编号+删除按钮）和下排元信息 */
@@ -200,6 +201,8 @@
     flex-direction: column;
     gap: 1px;
     position: relative;
+    width: 100%;           /* 确保撑满父容器宽度 */
+    box-sizing: border-box; /* 内边距纳入宽度计算 */
 }
 .group-list-item:hover {
     background: rgba(138,42,42,0.10);
@@ -578,6 +581,36 @@
     border-color: #8A2A2A;
 }
 
+/* 按键绑定按钮 — 替代文本输入框，点击后进入按键捕获模式 */
+.keybind-btn {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 2px;
+    padding: 2px 4px;
+    color: #c8c8d0;
+    font-size: 9px;
+    cursor: pointer;
+    text-align: center;
+}
+.keybind-btn:hover {
+    border-color: rgba(255,255,255,0.30);
+    background: rgba(255,255,255,0.10);
+}
+/* 按键捕获模式中 — 脉冲闪烁效果 */
+.keybind-btn.capturing {
+    border-color: #8A2A2A;
+    background: rgba(138,42,42,0.15);
+    color: #d4a0a0;
+    font-weight: 600;
+    animation: keybind-pulse 1s linear infinite;
+}
+@keyframes keybind-pulse {
+    0%   { opacity: 1.0; }
+    50%  { opacity: 0.5; }
+    100% { opacity: 1.0; }
+}
+
 /* 详情表单中的toggle行 */
 .detail-toggle-row {
     display: flex;
@@ -730,28 +763,4 @@
     border-color: #6E1E1E;
 }
 
-/* ---------- Toast 提示 ---------- */
-
-/* Toast 容器：固定在 body 底部居中 */
-.toast {
-    position: absolute;
-    bottom: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 4px 12px;
-    background: rgba(8,8,8,0.85);
-    border: 1px solid rgba(138,42,42,0.50);
-    color: #c8c8d0;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    z-index: 100;
-    white-space: nowrap;
-}
-.toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(-4px);
-}
+/* Toast 提示已迁移至 AUI 内置的 ToastManager，不再使用手动 DOM toast */

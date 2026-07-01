@@ -606,7 +606,8 @@ public class CameraController {
     }
 
     /**
-     * 座椅模式每 tick（现有逻辑）
+     * 座椅模式每 tick。<br>
+     * 同时向服务端发包（驱动实际武器逻辑）和客户端本地派发瞄准点信号（驱动特效播放）。
      */
     private static void tickSeatMode(SeatSubsystem seat) {
         while ((!seat.attr.staticAttribute.views.enableFirstPerson() && client.options.getCameraType() == CameraType.FIRST_PERSON) ||
@@ -626,6 +627,10 @@ public class CameraController {
                 aimDirection.y * AIM_MAX_DISTANCE,
                 aimDirection.z * AIM_MAX_DISTANCE
         );
+
+        // 向客户端本地子系统派发瞄准点信号，驱动 WeaponController 等收到信号以播放特效
+        seat.setViewInputSignal(aimPoint);
+
         if (lastSentAimPoint == null || aimPoint.distanceToSqr(lastSentAimPoint) > AIM_POINT_THRESHOLD_SQ) {
             lastSentAimPoint = aimPoint;
             SubPart ownerSubPart = seat.getOwner().getSubPart();
@@ -698,6 +703,9 @@ public class CameraController {
             }
         }
 
+        // 进入炮镜模式：清除客户端座椅信号，防止与炮镜信号同时存在于 WeaponController 频道
+        seat.setViewInputSignal(null);
+
         // 初始化瞄准点：从摄像机正前方 100 米处投射
         Transform locator = activeCamera.getLerpedLocatorWorldTransform(1f);
         Vector3f forward = new Vector3f(0, 0, -1);
@@ -711,6 +719,10 @@ public class CameraController {
      * 退出炮镜模式
      */
     public static void exitCameraMode() {
+        // 清除客户端摄像机残留信号，防止退出炮镜后与座椅信号竞争同一频道
+        if (activeCamera != null) {
+            activeCamera.receiveClientAimInput(null, 0f, 0f);
+        }
         activeCamera = null;
         aimPoint = null;
         localPitchOffsetDeg = 0f;

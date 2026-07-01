@@ -14,6 +14,8 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.VehicleCore;
 import io.github.sweetzonzi.machine_max.common.registry.MMAttachments;
 import io.github.sweetzonzi.machine_max.external.js.hook.KeyHooks;
 import io.github.sweetzonzi.machine_max.mixin_interface.IEntityMixin;
+import io.github.sweetzonzi.machine_max.common.mech.control.ControlGroupSet;
+import io.github.sweetzonzi.machine_max.network.payload.ControlGroupSetEditPayload;
 import io.github.sweetzonzi.machine_max.network.payload.ControlBindingPayload;
 import io.github.sweetzonzi.machine_max.network.payload.MovementInputPayload;
 import io.github.sweetzonzi.machine_max.network.payload.RegularInputPayload;
@@ -336,18 +338,57 @@ public class RawInputHandler {
                         PacketDistributor.sendToServer(new RegularInputPayload(KeyInputMapping.TOGGLE_LIGHT.getValue(), vehicleLightsOn ? 1 : 0));
                     });
 
-            //车辆信息面板开关（Tab键）— 打开/关闭 VehicleControlScreen，含 200ms 防抖
-            new KeyHooks.EVENT(KeyBinding.generalVehicleInfoKey)
-                    .OnKeyDown(() -> {
-                        long now = System.currentTimeMillis();
-                        if (now - lastTabPressTime < TAB_DEBOUNCE_MS) return;
-                        lastTabPressTime = now;
+            // TODO: 车辆信息面板按键 — 暂时禁用，Tab 键被重新分配给控制组轮换
+            //new KeyHooks.EVENT(KeyBinding.generalVehicleInfoKey)
+            //        .OnKeyDown(() -> {
+            //            long now = System.currentTimeMillis();
+            //            if (now - lastTabPressTime < TAB_DEBOUNCE_MS) return;
+            //            lastTabPressTime = now;
+            //
+            //            if (client.screen instanceof VehicleControlScreen) {
+            //                client.setScreen(null);
+            //            } else if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem) {
+            //                client.setScreen(new VehicleControlScreen());
+            //            }
+            //        });
 
-                        if (client.screen instanceof VehicleControlScreen) {
-                            client.setScreen(null);
-                        } else if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem) {
-                            client.setScreen(new VehicleControlScreen());
+            /*
+              控制组轮换 — 按下后顺次激活下一个控制组，到末尾时回到 base（-1）。
+              base 控制组始终激活，不会因轮换被关闭。
+             */
+            new KeyHooks.EVENT(KeyBinding.generalCycleControlGroupKey)
+                    .OnKeyDown(() -> {
+                        if (!(((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub))
+                            return;
+                        ControlGroupSet current = sub.getControlGroupSet();
+                        if (current == null || current == ControlGroupSet.EMPTY) return;
+
+                        int totalGroups = current.groups.size();
+                        if (totalGroups == 0) return; // 无子控制组可切换
+
+                        int currentIdx = current.getActiveIndex();
+                        int nextIdx;
+                        // 当前在末尾或 base（-1）时，从第一个子组开始；否则顺次 +1
+                        if (currentIdx >= totalGroups - 1) {
+                            nextIdx = -1; // 轮回到 base
+                        } else {
+                            nextIdx = currentIdx + 1;
                         }
+
+                        // 构建更新后的 ControlGroupSet（activeIndex 变更）
+                        ControlGroupSet modified = new ControlGroupSet(
+                                current.baseGroup,
+                                current.groups,
+                                current.getGuiActions(),
+                                nextIdx
+                        );
+                        // 立即更新本地 + 发送网络包到服务端
+                        sub.setControlGroupSet(modified);
+                        PacketDistributor.sendToServer(new ControlGroupSetEditPayload(
+                                sub.getOwner().getSubPart().getId(),
+                                sub.name,
+                                modified
+                        ));
                     });
 
         /*
@@ -449,7 +490,7 @@ public class RawInputHandler {
               控制组按键绑定 — 从当前座椅子系统的 ControlGroupSet 动态加载
              */
             if (((IEntityMixin) client.player).machine_Max$getControllingSubsystem() instanceof AbstractControllableSubsystem sub
-            && !(client.screen instanceof VehicleControlScreen)) { // 载具信息面板开启时屏蔽输入
+                    && !(client.screen instanceof VehicleControlScreen)) { // 载具信息面板开启时屏蔽输入
                 int subPartId = sub.getOwner().getSubPart().getId();
                 String subSystemName = sub.name;
                 List<ControlBinding> bindings = sub.getControlGroupSet().getMergedBindings();

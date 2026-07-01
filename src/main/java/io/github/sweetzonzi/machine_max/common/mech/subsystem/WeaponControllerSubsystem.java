@@ -32,27 +32,45 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
 
     public final WeaponControllerSubsystemAttr attr;
 
-    /** 通过握手发现的炮塔驱动子系统及其对应的控制频道名 */
+    /**
+     * 通过握手发现的炮塔驱动子系统及其对应的控制频道名
+     */
     private final Map<TurretDriverSubsystem, String> turrets = new HashMap<>();
-    /** 通过握手发现的发射器子系统及其对应的控制频道名 */
+    /**
+     * 通过握手发现的发射器子系统及其对应的控制频道名
+     */
     private final Map<LauncherSubsystem, String> launchers = new HashMap<>();
 
-    /** 从 ViewInputSignal 读到的目标世界坐标 */
+    /**
+     * 从 ViewInputSignal 读到的目标世界坐标
+     */
     private volatile Vec3 targetPosition = null;
-    /** 完整的视角输入信号（含分轴稳定/偏移信息） */
+    /**
+     * 完整的视角输入信号（含分轴稳定/偏移信息）
+     */
     private volatile ViewInputSignal currentViewSignal = null;
-    /** 当前是否有开火指令 */
+    /**
+     * 当前是否有开火指令
+     */
     private volatile boolean firing = false;
 
-    /** 弹药切换信号（来自座椅透传的按键信号） */
+    /**
+     * 弹药切换信号（来自座椅透传的按键信号）
+     */
     private volatile boolean ammoSwitchPressed = false;
 
-    /** 弹药切换防抖计数器 */
+    /**
+     * 弹药切换防抖计数器
+     */
     private int ammoSwitchCooldown = 0;
 
-    /** 轮射模式下当前发射的索引 */
+    /**
+     * 轮射模式下当前发射的索引
+     */
     private int rippleIndex = 0;
-    /** 轮射模式下的tick计时器 */
+    /**
+     * 轮射模式下的tick计时器
+     */
     private int rippleTickCounter = 0;
 
     // ==================== 弹药管理（新增） ====================
@@ -91,7 +109,8 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
             int availableCount,      // 该 Loader 中此弹种的可用数量
             int reloadTimeTicks,     // 装填耗时
             String channel           // 所属频道名（HUD 显示用，不影响路由）
-    ) {}
+    ) {
+    }
 
     public WeaponControllerSubsystem(ISubsystemHost owner, String name, WeaponControllerSubsystemAttr attr) {
         super(owner, name, attr);
@@ -488,19 +507,20 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         // 读取目标坐标：优先尝试 ViewInputSignal（完整的分轴信息），否则 fallback 到 Vec3
         ViewInputSignal newVis = null;
         Vec3 pos = null;
-        for (String signalKey : attr.staticAttribute.getAimInputs()) {
+        aim: for (String signalKey : attr.staticAttribute.getAimInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
-            Object signal = channel.getFirstSignal();
-            if (signal instanceof ViewInputSignal vis) {
-                newVis = vis;
-                pos = vis.aimPoint;
-                break;
-            } else if (signal instanceof Vec3 vec3) {
-                pos = vec3;
-                break;
-            } else if (signal instanceof Vector3f jmeVec) {
-                pos = new Vec3(jmeVec.x, jmeVec.y, jmeVec.z);
-                break;
+            for (Object signal : channel.values()) {
+                if (signal instanceof ViewInputSignal vis) {
+                    newVis = vis;
+                    pos = vis.aimPoint;
+                    break aim;
+                } else if (signal instanceof Vec3 vec3) {
+                    pos = vec3;
+                    break aim;
+                } else if (signal instanceof Vector3f jmeVec) {
+                    pos = new Vec3(jmeVec.x, jmeVec.y, jmeVec.z);
+                    break aim;
+                }
             }
         }
         this.targetPosition = pos;
@@ -509,13 +529,13 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         // 读取开火指令：仅接受 RegularInputSignal（控制组/AI按键）或 Number（ControlBinding HOLD/PRESS），
         // 过滤握手信号（String 类型的 groupKey）防止误触发
         this.firing = false;
-        for (String signalKey : attr.staticAttribute.getFireInputs()) {
+        fire: for (String signalKey : attr.staticAttribute.getFireInputs()) {
             SignalChannel channel = getSignalChannel(signalKey);
-            if (channel.isEmpty()) continue;
-            Object signal = channel.getFirstSignal();
-            if (signal instanceof RegularInputSignal || signal instanceof Number) {
-                this.firing = true;
-                break;
+            for (Object signal : channel.values()) {
+                if (signal instanceof RegularInputSignal || signal instanceof Number) {
+                    this.firing = true;
+                    break fire;
+                }
             }
         }
 
@@ -602,9 +622,9 @@ public class WeaponControllerSubsystem extends BasicSubsystem {
         super.loadData(data);
         if (data.contains("target_x") && data.contains("target_y") && data.contains("target_z")) {
             this.targetPosition = new Vec3(
-                data.getDouble("target_x"),
-                data.getDouble("target_y"),
-                data.getDouble("target_z")
+                    data.getDouble("target_x"),
+                    data.getDouble("target_y"),
+                    data.getDouble("target_z")
             );
         }
     }

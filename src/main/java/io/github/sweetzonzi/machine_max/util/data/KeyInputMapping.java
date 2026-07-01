@@ -25,7 +25,10 @@ public enum KeyInputMapping {
     MAIN_FIRE(200),              // 主武器开火（hold 类型）
     SECONDARY_FIRE(201),         // 副武器开火（hold 类型）
     NEXT_AMMO_TYPE(202),         // 下一个弹种
-    PREV_AMMO_TYPE(203);         // 上一个弹种
+    PREV_AMMO_TYPE(203),         // 上一个弹种
+
+    /* 控制组轮换 (300号段) */
+    CYCLE_CONTROL_GROUP(300);    // 轮换激活控制组
 
     private final int value;
 

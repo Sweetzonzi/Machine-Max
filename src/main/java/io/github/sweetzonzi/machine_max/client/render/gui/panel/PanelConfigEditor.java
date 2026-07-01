@@ -1,5 +1,7 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.panel;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import com.sighs.apricityui.dev.ToastManager;
 import com.sighs.apricityui.event.MouseEvent;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
@@ -46,6 +48,25 @@ public class PanelConfigEditor {
 
     /** 是否已初始化（从 ControlGroupSet 加载了一次数据） */
     private static boolean initialized = false;
+
+    // ============================================================
+    //  按键捕获模式状态
+    //  当用户点击 TRIGGER 字段时进入此模式，等待用户按下实际按键
+    // ============================================================
+
+    /** 是否正在等待用户按下按键 */
+    private static volatile boolean keyCapturing = false;
+    /** 按键捕获模式下，正在被编辑的绑定数据 */
+    @Nullable
+    private static BindingEditData capturingBinding;
+    /** 按键捕获模式下，显示"按下按键..."的元素引用（用于更新显示文本） */
+    @Nullable
+    private static Element capturingElement;
+    /** 按键捕获模式下，当前 Document 引用（用于重新渲染） */
+    @Nullable
+    private static Document capturingDoc;
+    /** 进入捕获模式前的原始 trigger 值（ESC 取消时恢复） */
+    private static String preCaptureTrigger = "";
 
     /**
      * 数据变更回调，由 {@code VehicleControlScreen} 在 {@code init()} 中设置。<br>
@@ -259,7 +280,7 @@ public class PanelConfigEditor {
 
             Element numEl = doc.createElement("span");
             numEl.setAttribute("class", "gli-number");
-            numEl.innerText = isBase ? "BASE" : "GROUP " + String.format("%02d", i - 1);
+            numEl.innerText = "GROUP " + String.format("%02d", i);
 
             // 删除按钮（base 组没有）
             Element delBtn = doc.createElement("div");
@@ -610,14 +631,15 @@ public class PanelConfigEditor {
     // ── 按键绑定详情表单 ──
 
     /**
-     * 构建按键绑定编辑表单：trigger / action / channel / targets。
+     * 构建按键绑定编辑表单：trigger / action / channel / targets。<br>
+     * TRIGGER 字段使用可点击的按键绑定按钮，点击后进入按键捕获模式。
      */
     private static void buildBindingForm(Document doc, Element body, BindingEditData b) {
         Element form = doc.createElement("div");
         form.setAttribute("class", "detail-form");
 
-        // trigger
-        addDetailField(doc, form, "TRIGGER", b.trigger, val -> b.trigger = val);
+        // trigger — 按键绑定按钮（替代文本输入）
+        addDetailKeyBindField(doc, form, "TRIGGER", b);
         // action (select)
         addDetailSelect(doc, form, "ACTION", b.action,
                 new String[]{"PRESS", "HOLD", "TOGGLE"},
@@ -703,6 +725,42 @@ public class PanelConfigEditor {
         }
         field.append(lbl);
         field.append(input);
+        parent.append(field);
+    }
+
+    /**
+     * 添加一个按键绑定按钮字段。<br>
+     * 替代普通文本输入框，显示当前绑定的按键名。<br>
+     * 点击后进入按键捕获模式（{@link #startKeyCapture}），等待用户按下实际按键。
+     */
+    private static void addDetailKeyBindField(Document doc, Element parent,
+                                               String label, BindingEditData binding) {
+        Element field = doc.createElement("div");
+        field.setAttribute("class", "detail-field");
+        Element lbl = doc.createElement("span");
+        lbl.setAttribute("class", "detail-field-label");
+        lbl.innerText = label;
+
+        // 按键绑定按钮 — 点击进入捕获模式
+        Element btn = doc.createElement("div");
+        String displayText = binding.trigger.isEmpty() ? "\u2318 点击绑定按键" : binding.trigger;
+        btn.setAttribute("class", "keybind-btn");
+        btn.innerText = displayText;
+
+        btn.addEventListener("mousedown", e -> {
+            if (!(e instanceof MouseEvent me) || me.button != 0) return;
+            e.stopPropagation();
+            // 如果已在捕获模式，取消
+            if (keyCapturing) {
+                cancelKeyCapture();
+                return;
+            }
+            // 进入按键捕获模式
+            startKeyCapture(btn, binding, doc);
+        });
+
+        field.append(lbl);
+        field.append(btn);
         parent.append(field);
     }
 
@@ -983,6 +1041,100 @@ public class PanelConfigEditor {
         LOGGER.debug("[ConfigEditor] Deleted GUI action #{}", index);
     }
 
+    // ============================================================
+    //  按键捕获模式（由 VehicleControlScreen.keyPressed() 驱动）
+    // ============================================================
+
+    /**
+     * 是否正处于按键捕获模式。<br>
+     * 由 {@code VehicleControlScreen.keyPressed()} 在每次键盘事件时查询。
+     */
+    public static boolean isKeyCapturing() {
+        return keyCapturing;
+    }
+
+    /**
+     * 进入按键捕获模式。<br>
+     * 在 TRIGGER 字段被点击时调用，将显示文本改为"按下按键..."。
+     *
+     * @param displayEl 显示当前 trigger 值的 AUI 元素
+     * @param binding   被编辑的绑定数据
+     * @param doc       当前 Document 引用
+     */
+    public static void startKeyCapture(Element displayEl, BindingEditData binding, Document doc) {
+        preCaptureTrigger = binding.trigger;
+        keyCapturing = true;
+        capturingBinding = binding;
+        capturingElement = displayEl;
+        capturingDoc = doc;
+        displayEl.innerText = "\u2318 按下按键..."; // ⌘ 按下按键...
+        displayEl.setAttribute("class", "keybind-btn capturing");
+        LOGGER.debug("[ConfigEditor] Key capture started for binding '{}'", binding.channel);
+    }
+
+    /**
+     * 将 GLFW keyCode 转换为 ControlBinding 兼容的 trigger 名称。<br>
+     * 直接使用 Minecraft 标准的 {@link InputConstants#getKey(int, int)} 获取的 Key 名称。
+     *
+     * @param keyCode  GLFW 键盘扫描码
+     * @param scanCode GLFW 硬件扫描码
+     * @return Minecraft 标准按键名称，例如 {@code "key.keyboard.w"}
+     */
+    public static String buildTriggerName(int keyCode, int scanCode) {
+        return InputConstants.getKey(keyCode, scanCode).getName();
+    }
+
+    /**
+     * 按键捕获成功回调。<br>
+     * 由 {@code VehicleControlScreen.keyPressed()} 调用，将捕获到的按键名写入绑定数据。
+     *
+     * @param keyCode  GLFW 键盘扫描码
+     * @param scanCode GLFW 硬件扫描码
+     */
+    public static void onKeyCaptured(int keyCode, int scanCode) {
+        if (!keyCapturing || capturingBinding == null) return;
+        String keyName = buildTriggerName(keyCode, scanCode);
+        capturingBinding.trigger = keyName;
+        LOGGER.debug("[ConfigEditor] Key captured: {}", keyName);
+
+        // 更新显示元素
+        if (capturingElement != null) {
+            capturingElement.innerText = keyName;
+            capturingElement.setAttribute("class", "keybind-btn");
+        }
+
+        // 退出捕获模式
+        exitCaptureMode();
+    }
+
+    /**
+     * 取消按键捕获模式。<br>
+     * 由 {@code VehicleControlScreen.keyPressed()} 在 ESC 按下时调用，
+     * 或由点击面板其他区域触发。
+     */
+    public static void cancelKeyCapture() {
+        if (!keyCapturing) return;
+        LOGGER.debug("[ConfigEditor] Key capture cancelled");
+
+        // 恢复原始 trigger 值
+        if (capturingElement != null && capturingBinding != null) {
+            capturingBinding.trigger = preCaptureTrigger;
+            capturingElement.innerText = preCaptureTrigger.isEmpty() ? "\u2318 点击绑定按键" : preCaptureTrigger;
+            capturingElement.setAttribute("class", "keybind-btn");
+        }
+
+        exitCaptureMode();
+    }
+
+    /** 退出捕获模式，清理所有静态状态 */
+    private static void exitCaptureMode() {
+        keyCapturing = false;
+        capturingBinding = null;
+        capturingElement = null;
+        capturingDoc = null;
+        preCaptureTrigger = "";
+    }
+
     /**
      * 从子系统恢复 JSON 预设的控制组配置，并同步到服务端。<br>
      * 返回恢复后的新鲜 {@link ControlGroupSet}，调用方传入 {@code render()} 以重绘编辑器。
@@ -1020,7 +1172,7 @@ public class PanelConfigEditor {
         if (onDataChange != null) onDataChange.accept(saved);
         LOGGER.debug("[ConfigEditor] Saved config to server, groups={}, actions={}",
                 groupList.size(), actionList.size());
-        showToast(doc, "SAVED");
+        ToastManager.show("SAVED");
     }
 
     /**
@@ -1089,30 +1241,6 @@ public class PanelConfigEditor {
             result.add(cb);
         }
         return result;
-    }
-
-    /**
-     * 显示 Toast 提示消息。<br>
-     * 查找文档中的 #toast 元素，若不存在则创建一个。3 秒后自动隐藏。
-     */
-    private static void showToast(Document doc, String message) {
-        Element toast = doc.getElementById("toast");
-        if (toast == null) {
-            // 文档中无 toast 元素时动态创建并追加到 body
-            Element newToast = doc.createElement("div");
-            newToast.setAttribute("id", "toast");
-            newToast.setAttribute("class", "toast");
-            if (doc.body != null) doc.body.append(newToast);
-            toast = newToast;
-        }
-        final Element finalToast = toast; // lambda 需要 effectively final
-        finalToast.innerText = message;
-        finalToast.setAttribute("class", "toast show");
-        // 3 秒后自动隐藏
-        new Thread(() -> {
-            try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
-            finalToast.setAttribute("class", "toast");
-        }).start();
     }
 
     // ============================================================
@@ -1211,6 +1339,8 @@ public class PanelConfigEditor {
         hDragOnChange = null;
         hDragDoc = null;
         onDataChange = null; // 清除回调，避免悬挂引用
+        // 清理按键捕获状态
+        exitCaptureMode();
         LOGGER.debug("[ConfigEditor] Reset static state");
     }
 }

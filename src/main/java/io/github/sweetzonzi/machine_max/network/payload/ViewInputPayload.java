@@ -7,6 +7,7 @@ import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem;
+import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -69,6 +70,16 @@ public record ViewInputPayload(
                 if (subsystem instanceof AbstractControllableSubsystem controllable && controllable.isActive()) {
                     Vec3 aimPoint = new Vec3(payload.aimPointX(), payload.aimPointY(), payload.aimPointZ());
                     controllable.setViewInputSignal(aimPoint);
+
+                    // 座椅直发路径：清除此座椅发现的所有摄像机的 lastAimPoint，
+                    // 防止退出炮镜后摄像机残留的 ViewInputSignal 与座椅信号竞争同一频道
+                    if (controllable instanceof SeatSubsystem seat) {
+                        for (CameraSubsystem cam : seat.getDiscoveredCameras()) {
+                            if (cam.isActive() && !cam.isDestroyed()) {
+                                cam.receiveClientAimInput(null, 0f, 0f);
+                            }
+                        }
+                    }
                 } else if (subsystem instanceof CameraSubsystem cam && cam.isActive()) {
                     Vec3 aimPoint = new Vec3(payload.aimPointX(), payload.aimPointY(), payload.aimPointZ());
                     cam.receiveClientAimInput(aimPoint, payload.localPitchOffsetDeg(), payload.localYawOffsetDeg());

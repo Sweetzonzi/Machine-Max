@@ -76,7 +76,7 @@
               "locator": "gunner_sight",
               "aim_output_targets": {
                 "aim_input_p0": [
-                  "connector.machine_max.gun_turret_axis"
+                  "vehicle"
                 ]
               }
             }

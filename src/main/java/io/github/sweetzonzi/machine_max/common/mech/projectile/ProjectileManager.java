@@ -797,6 +797,7 @@ public class ProjectileManager {
 
         for (int sub = 0; sub < SUBSTEPS; sub++) {
             for (int i = 0; i < count; i++) {
+                lifetime[i]--;
                 if (!alive[i]) continue;
 
                 ProjectileType type = types[typeIndex[i]];

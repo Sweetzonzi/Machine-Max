@@ -1,7 +1,7 @@
 # AUI（ApricityUI）性能边界与能力调研
 
-**版本**: v1.1.3dev · NeoForge 1.21.1  
-**调研日期**: 2026-05-28（第二次调研，对比 v1.1.2 → v1.1.3dev 变更）  
+**版本**: v1.1.6-dev · NeoForge 1.21.1  
+**调研日期**: 2026-07-01（第三次调研，对比 v1.1.3dev → v1.1.6-dev 变更）  
 **源码路径**: [`d:\Files\Project_MinecraftMods\AUI`](file:///d:/Files/Project_MinecraftMods/AUI)  
 **目的**: 评估 AUI 作为 Machine-Max 载具控制面板渲染引擎的可行性、性能极限与限制
 
@@ -13,8 +13,20 @@ AUI 是一个使用 HTML + CSS + JS 构建 Minecraft UI 的框架。**底层渲�
 
 > **JavaScript 注意事项**：AUI 的 `<script>` 标签和 JS `eval()` 功能依赖 **KubeJS** 模组（通过 Rhino JS 引擎执行）。**本项目中未引入 KubeJS 依赖**，因此 `vehicle_control.html` 等模板中**不应使用 `<script>` 标签**。所有交互逻辑均通过 Java DOM API（`document.querySelector`/`element.addEventListener`/`element.setAttribute` 等）实现。详见 [3.5 JS / Java DOM 操作](#35-js--java-dom-操作)。
 
-**版本演进**（最近 40 次提交）：
-- **`v1.1.3dev`** — **CSS 变量 `var()` 自动解析**（`Style.resolveVarReferences()`）、`visibility` 继承修复、容器屏幕重构（`SlotDataBinder` 分离）、字体渲染深度修复、滚动抖动修复、Mask 蒙版支持物品纹理裁剪、`BodyRenderNodeProvider`、stencil buffer
+**版本演进**（最近 60 次提交）：
+- **`v1.1.6-dev`** — **补充总结**：多版本累积的 Bug 修复与增强
+- **`v1.1.3dev → v1.1.6-dev` 关键变更**：
+  - **`@keyframes` 动画曲线增强**：新增 `cubic-bezier()` 完整支持 + 标准 CSS 缓动关键字（`ease`/`ease-in`/`ease-out`/`ease-in-out`/`step-start`/`step-end`）
+  - **字体回退链系统**（`Font.planFontRuns()`）：按 codepoint 拆分文本到不同字体的 run，支持 CSS `font-family` 逗号分隔回退链 + 通用字体族映射
+  - **模糊滤镜 GPU 加速**：`blur()` 从 CPU 迁移到 GLSL 着色器（`filter.fsh`），大幅提升性能
+  - **`padding`/`margin` 多值简写支持**（`Box.parseFourSideLengths()`）：以前仅支持单值，现在支持 1-4 值 CSS 简写
+  - **`@keyframes` 支持 `from`/`to` 关键字修复**：不再因 `from`/`to` 触发 `NumberFormatException`
+  - **`Gradient` 解析增强**：`splitStop()` 使用括号级别感知，`rgba(r, g, b, a)` 带空格不再导致解析失败
+  - **CSS 属性浮点数支持**：`font-weight` 支持 1-1000 数值、`font-size`/`line-height`/`letter-spacing` 等支持浮点数
+  - **`display: flex` 失效 bug 修复**
+  - **老年代码清理**：`Style.java` 中与样式无关的方法（`isVisible()`/`isUserSelectAll()`/`getVisibility()` 等）迁移到独立的 `Interaction.java`
+  - **滚动溢出修复**：`Mask.java` + `ImageDrawer.java` 修复滚动时的溢出问题
+- `v1.1.3dev` — **CSS 变量 `var()` 自动解析**（`Style.resolveVarReferences()`）、`visibility` 继承修复、容器屏幕重构（`SlotDataBinder` 分离）、字体渲染深度修复、滚动抖动修复、Mask 蒙版支持物品纹理裁剪、`BodyRenderNodeProvider`、stencil buffer
 - `v1.1.2` — `FollowFacingWorldWindow`、`Selector.Index` 选择器索引缓存、`StyleFrameCache` 渲染阶段动画推进
 - `v1.1.1` — NeoForge 版本追更
 - `v1.1.0` — Maven 发布，WorldWindow z-fighting 修复
@@ -380,15 +392,15 @@ public void stepMotionRender() {
 
 | 类别 | 支持的属性 | 单位限制 |
 |------|-----------|---------|
-| 尺寸 | `width/height/min-max-*/box-sizing` | **仅 `px` 和 `%`**。不支持 `em/rem/vw/vh/vmin/vmax` |
-| 盒模型 | `margin/padding/border/border-radius` | 简写仅支持单值（如 `padding: 10px`），**多值简写不支持**（如 `padding: 0 10px` 或 `padding: 0 10px 4px` 均不生效，各部分会塌缩为 0）。必须用分方向属性 `padding-left/padding-right` 等 |
-| 背景 | `background-color/image/repeat/size/position` | `url()` + `linear-gradient()`。<br>**⚠️ `background` 简写不支持 `var()**`：`background: var(--x)` 不会填充背景色。<br>**必须用 `background-color: var(--x)` 替代**（v1.1.3dev 之前 `var()` 在简写中完全不被识别，见 §8.5 #12）<br>**⚠️ `linear-gradient()` 内的颜色不能包含空格**：`Gradient.parse()` 用 `split("\\s+")` 切分颜色 stop，`rgba(r, g, b, a)` 带空格会被切碎。必须用 `rgba(r,g,b,a)` 无空格格式或 `#hex`。见 §8.5 #13。 |
-| 文本 | `color/font-size/font-weight/font-family/line-height/text-align/letter-spacing/white-space/text-overflow:ellipsis/text-stroke` | 字号公式：`fontSize/16*9` |
+| 尺寸 | `width/height/min-max-*/box-sizing` | **仅 `px` 和 `%`**。不支持 `em/rem/vw/vh/vmin/vmax`。<br>✅ 支持浮点数尺寸值。 |
+| 盒模型 | `margin/padding/border/border-radius` | ✅ **v1.1.6-dev 起支持 1-4 值简写**（`padding: 10px 20px`、`margin: 0 auto` 等均生效）。<br>⚠️ `border` 简写仍需 3 值格式（`width style color`）。 |
+| 背景 | `background-color/image/repeat/size/position` | `url()` + `linear-gradient()`。<br>**⚠️ `background` 简写不支持 `var()**`：`background: var(--x)` 不会填充背景色。<br>**必须用 `background-color: var(--x)` 替代**（v1.1.3dev 之前 `var()` 在简写中完全不被识别，见 §8.5 #12）<br>✅ **v1.1.6-dev 起 `linear-gradient()` 支持含空格的 `rgba(r, g, b, a)`**（`splitStop()` 括号感知解析）。 |
+| 文本 | `color/font-size/font-weight/font-family/line-height/text-align/letter-spacing/white-space/text-overflow:ellipsis/text-stroke` | 字号公式：`fontSize/16*9`。<br>✅ `font-weight` 支持 `normal(400)`/`bold(700)`/`bolder(700)`/`lighter(300)`/`100-1000` 数字。<br>✅ `font-size`/`line-height`/`letter-spacing`/`text-indent` 均支持浮点数。 |
 | 变换 | `transform: translate/rotate/scale`（含 3D 变体） | 默认 `transform-origin` 为中心 |
-| 滤镜 | `filter: blur/brightness/grayscale/invert/hue-rotate/opacity/drop-shadow` | CPU 实现 |
+| 滤镜 | `filter: blur/brightness/grayscale/invert/hue-rotate/opacity/drop-shadow` | **`blur()` 为 GPU 加速**（GLSL 着色器 [`filter.fsh`](file:///d:/Files/Project_MinecraftMods/AUI/src/main/resources/assets/apricityui/shaders/core/filter.fsh)），其余为 CPU 实现。<br>着色器同时实现：圆角裁剪（clip-path 四角圆角）、drop-shadow 渲染。<br>⚠️ backdrop-filter 处于基础实现阶段（复制主 RT 到临时纹理后经着色器处理），`blur` 最大值限制 32px。 |
 | 阴影 | `box-shadow`（多值逗号分隔） | |
 | 光标 | `cursor: default/pointer/text/crosshair/ew-resize/ns-resize` + `url()` | 自定义光标使用伪光标渲染 |
-| 动画 | `@keyframes` + `animation-*`（duration/delay/iteration-count/direction/fill-mode/timing-function） | 只支持 `linear` 和 `steps()` 缓动。<br>**⚠️ 选择器必须用百分比**：不支持 `from`/`to` 关键字。`from { ... }` 会导致 `NumberFormatException`，必须写 `0% { ... }`。见 §8.5 #16。 |
+| 动画 | `@keyframes` + `animation-*`（duration/delay/iteration-count/direction/fill-mode/timing-function） | 缓动：`linear` / `ease` / `ease-in` / `ease-out` / `ease-in-out` / `step-start` / `step-end` / `steps(n)` / `steps(n, start|end)` / **`cubic-bezier(x1,y1,x2,y2)`**。<br>✅ 完整支持 `from`/`to` 关键字。<br>`Animation.java` 使用 Newton 二分法求解 `cubic-bezier`（12 次迭代，精度 1e-5）。<br>不支持 `infinite` + 非 keyword 的 `animation-fill-mode`（但 `infinite` 本身支持）。 |
 | 过渡 | `transition` | ⚠️ 不稳定，推荐用 class 切换替代 |
 
 ### 4.3 CSS 选择器支持
@@ -619,6 +631,24 @@ AUI 支持两种显示模式：
 - 所有字体须通过 `font-family: lxgw` 引用
 - 使用 Java AWT 字体加载（非 Minecraft 字体系统）
 - 不支持 Google Fonts（无网络请求能力）
+- **v1.1.6-dev 新增：字体回退链系统**（[`Font.java`](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/resource/Font.java)）
+
+  `Font.planFontRuns()` 实现了完整的 CSS 字体回退机制：
+
+  - 解析 `font-family: "Noto Sans", sans-serif` 逗号分隔的字体族列表
+  - 遍历回退链，按 codepoint 匹配最佳字体（`pickDisplayFont()`）
+  - 将文本按字体拆分为 `FontRun` 序列，每个 run 用对应字体渲染
+  - 内建通用字体族映射（`serif`/`sans-serif`/`monospace`/`ui-serif`/`ui-sans-serif`/`ui-monospace`/`system-ui`/`emoji`/`math`/`fangsong` 等 → AWT 逻辑字体）
+  - 默认回退兜底字体：`Microsoft YaHei`
+  - 使用 LRU 缓存加速字体解析和 run 规划
+
+  **示例**：
+  ```css
+  /* 现在可安全使用回退链 */
+  font-family: "Custom Font", "Noto Sans", "LXGW WenKai", sans-serif;
+  ```
+
+  多级缓存：`SINGLE_FAMILY_CACHE`(128) → `BASE_FONT_CHAIN_CACHE`(64) → `DERIVED_FONT_CACHE`(ConcurrentHashMap) → `RUN_PLAN_CACHE`(512)。
 
 ### 7.5 网络系统
 
@@ -661,7 +691,8 @@ AUI 支持两种显示模式：
 | **CSS 值全为 String** | 无类型化 CSS 值对象 | 每次 `Size.parse()` 做子串/正则解析，中 |
 | **无脏区域渲染** | 每帧遍历整棵 paintList | 数百元素时可能影响帧率，中 |
 | **无纹理图集** | 每张图片独立 GL 纹理 | 大量图片时上下文切换，中 |
-| **overflow:scroll 每帧计算 clip rect** | 每帧 clip | 频繁滚动时开销，低 |
+| **overflow:scroll 每帧计算 clip rect** | GPU 着色器 clip（v1.1.6-dev `filter.fsh` 内置 clip-path） | 频繁滚动时开销，低 |
+| **模糊滤镜 GPU 加速**（v1.1.6-dev） | GLSL 着色器实现 `blur()`，`ImageDrawer.flushBatch()` 批量提交 | blur 开销从 CPU 移至 GPU，大幅改善 |
 | **动画/过渡不影响 layout** | motion 只在 render 阶段推进 | 有意为之，低 |
 | **Canvas 使用 AWT Graphics2D 软件渲染** | `BufferedImage` → `NativeImage` 上传 | 适合低频绘制，高 |
 | **CSS 选择器索引仅按最后一个 component 建索引** | `Selector.Index.addRule()` 策略 | 大部分场景够用，中 |
@@ -704,10 +735,10 @@ AUI 支持两种显示模式：
 | 10 | `::before`/`::after` 伪元素 | 不可用，需额外 div 替代 |
 | 11 | `visibility:hidden` 继承 | ❌ **已修复（v1.1.3dev）**，现在正确继承到子元素，详见 §三.2.1 |
 | 12 | `background` 简写不支持 `var()` | `background: var(--x)` 中的 `var()` 不会被 `isColorToken()` 识别，`backgroundColor` 保持 `"unset"`。需改用 `background-color: var(--x)` |
-| 13 | `linear-gradient()` 内颜色不能含空格 | `Gradient.parse()` 用 `split("\\s+")` 切分 stop，`rgba(r, g, b, a)` 会被切成 `["rgba(r,", "g,", "b,", "a)"]`，`Color.parse()` 解析失败返回透明。必须在 gradient 中使用 `rgba(r,g,b,a)`（无空格）或 `#hex` / `#RRGGBBAA`（8 位 hex） |
+| 13 | `linear-gradient()` 内颜色不能含空格 | ✅ **v1.1.6-dev 已修复**。`Gradient.splitStop()` 使用括号级别感知解析，`rgba(r, g, b, a)` 带空格也能正确提取完整 color token。详见 §四. |
 | 14 | 8 位 hex `#RRGGBBAA` 的 alpha 被错误解析 | `Color.parseHex()` 对 8 位 hex 不做字节重排，直接 `Long.parseLong(hex, 16)` 原样存入 int。而内部颜色格式为 **ARGB**（alpha 在 bits 24-31，blue 在 bits 0-7）。`#FFFFFF4D` 期望白 @ 30% 透明度（A=0x4D），实际解析为完全不透明的蓝白色（A=0xFF, B=0x4D）。**必须用 `rgba(r,g,b,a)` 替代 8 位 hex 来表达半透明色**。详见 §九。 |
-| 15 | `padding`/`margin` 多值简写不生效 | `applyPaddingAll("0 10px 4px")` 将完整字符串作为单一值传给 `Size.resolveLength()`，`parseNumber()` 无法解析多值字符串，返回 `fallback = 0`，所有方向的 padding 均塌缩为 0。**必须使用分方向属性**如 `padding-left: 10px; padding-right: 10px; padding-bottom: 4px;`。同理适用于 `margin`。根因：[Box.java:50-51](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/style/Box.java#L50-L51)，`Size.resolveLength()` 只接受单数值。 |
-| 16 | `@keyframes` 不支持 `from`/`to` 关键字 | `CSS.parseAndRegisterAnimations()` 对 keyframe 选择器调用 `Double.parseDouble()`，`from`/`to` 不是合法浮点数导致 `NumberFormatException` 崩溃。**必须用百分比语法**如 `0% { ... }` / `100% { ... }`。根因：[CSS.java:151](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/resource/CSS.java#L151)。 |
+| 15 | `padding`/`margin` 多值简写不生效 | ✅ **v1.1.6-dev 已修复**。`Box.parseFourSideLengths()` 支持 1-4 值 CSS 简写（`padding: 10px 20px` × `padding-top: 10px; padding-right: 20px; padding-left: 20px; padding-bottom: 10px`）。[`Box.java:182-199`](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/style/Box.java#L182-L199) |
+| 16 | `@keyframes` 不支持 `from`/`to` 关键字 | ✅ **v1.1.6-dev 已修复**。`CSS.java` 中的 `parseKeyframePercent()` 将 `from` → `0%`，`to` → `100%`。[`CSS.java:335-338`](file:///d:/Files/Project_MinecraftMods/AUI/src/main/java/com/sighs/apricityui/resource/CSS.java#L335-L338) |
 | 17 | **父元素 class 变化不传播子元素 CSS 重匹配** | 修改父元素 class（如 `toggle.setAttribute("class", "toggle-switch on")`）后，AUI 不会自动对子元素重新执行 CSS 选择器匹配。子元素的样式依赖于父 class 的后代选择器（如 `.toggle-switch.on .knob`）将**保持旧值**。必须用内联 style 直接操作子元素。见 #18。 |
 | 18 | **`innerText` 直接赋值不触发文本重渲染** | 在某些场景（尤其是父元素 class 同时变化时），`element.innerText = "新文本"` 不会触发 AUI 的文本缓存失效。必须用 **remove() 旧元素 → createElement() 创建新元素 → append() 追加** 的三步式替换。见 `GroupStripRenderer.java`。 |
 
@@ -792,7 +823,46 @@ return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
 
 ---
 
-## 十一、关键源码文件索引
+## 十一、可验证的简单测试用例
+
+以下测试可用 AUI 已有的单元测试框架（`src/test/java/com/sighs/apricityui/webapi/`）执行，或通过手动加载 HTML 页面观察。
+
+### 11.1 CSS 变更新验证
+- **`var()` 解析**：创建 `<div style="--x: 10px; width: var(--x)">`，断言 `getComputedStyle().width` → `"10px"`
+- **`var()` 回退**：创建 `<div style="width: var(--nonexistent, 20px)">`，断言 `getComputedStyle().width` → `"20px"`
+- **`var()` 嵌套**：`<div style="--a: red; --b: var(--a); color: var(--b)">`，断言 color → red
+- **`visibility` 继承**：`<div style="visibility:hidden"><span>text</span></div>`，断言 span.isVisible → false
+
+### 11.2 盒模型简写验证
+- **padding 多值**：`<div style="padding: 10px 20px">`，断言 `Box.of(el).getPaddingLeft()` → 20, `getPaddingTop()` → 10
+- **margin 3 值**：`<div style="margin: 5px 10px 15px">`，断言 top=5, right=10, bottom=15, left=10
+- **border-radius 对角**：`<div style="border-radius: 5px 10px">`，断言 tl=5, tr=10, br=5, bl=10
+
+### 11.3 动画曲线验证
+- **cubic-bezier**：`el.style.animation = "test 1s cubic-bezier(0.42,0,0.58,1)"`，验证 animate 不抛异常且 `applyTiming(0.5, ...)` 返回值合理
+- **ease-in-out**：`animation: test 1s ease-in-out` 验证 `applyTiming(0.5, "ease-in-out")` → 0.5（对称曲线中点）
+- **from/to 关键字**：`@keyframes test { from { opacity: 0 } to { opacity: 1 } }` 验证解析不抛异常
+
+### 11.4 字体回退验证
+- **回退链**：`font-family: "NonExistentFont", sans-serif`，验证文本正常渲染（回退到 sans-serif）
+- **通用字体族**：`font-family: serif`，验证 `Font.resolveSingleFamily("serif")` 返回 AWT SERIF 字体
+- **codepoint 拆分**：中西文混排时，验证中文字符用 fallback 字体、ASCII 用首选字体
+
+### 11.5 滤镜 GPU 验证
+- **blur 着色器**：创建带 `filter: blur(4px)` 的元素，验证 `FilterRenderer.popFilter()` 触发 `drawWithShader()` 路径
+- **clip-path**: `<div style="clip-path: inset(0)">` 验证着色器 clip 生效
+
+### 11.6 Gradient 解析验证
+- **rgba 带空格**：`linear-gradient(rgba(255, 255, 255, 0.5), #000)`，验证 `Gradient.parse()` 成功且 stops 颜色正确
+- **无空格 (旧语法)**：`linear-gradient(rgba(255,255,255,0.5), #000)` 保持兼容
+
+### 11.7 浮点数解析验证
+- **font-weight 数字**：`<span style="font-weight: 350">`，断言 `Text.of(el).fontWeight` → 350
+- **float font-size**：`<span style="font-size: 14.5px">`，断言解析结果为 14.5
+
+---
+
+## 十二、关键源码文件索引
 
 | 功能 | 文件路径 | 关键行 |
 |------|---------|--------|
@@ -810,9 +880,13 @@ return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
 | Grid 布局 | `style/Grid.java` | — |
 | 尺寸解析 | `style/Size.java` | L15-81 |
 | 变换系统 | `style/Transform.java` | — |
-| 动画引擎 | `style/Animation.java` | — |
+| 动画引擎（含 cubic-bezier） | `style/Animation.java` | L13-329, L289-303 (cubicBezierAtTime) |
 | 过渡引擎 | `style/Transition.java` | — |
 | 滤镜系统 | `style/Filter.java` | — |
+| 滤镜 GPU 着色器 | `assets/.../shaders/core/filter.fsh` | L1-170 (blur/clip/shadow/hue) |
+| 交互/可见性工具 | `style/Interaction.java` (v1.1.6-dev 新增) | L1-119 (isVisible, isUserSelectAll, getVisibility, normalizeOverflow) |
+| 盒模型多值解析 | `style/Box.java` | L182-199 (parseFourSideLengths) |
+| 字体回退链系统 | `resource/Font.java` | L122-165 (planFontRuns), L242-253 (pickDisplayFont) |
 | Canvas 2D | `element/Canvas.java` | — |
 | 容器绑定 | `instance/element/Container.java` | L29-589 |
 | Slot | `instance/element/Slot.java` | L22-299 |

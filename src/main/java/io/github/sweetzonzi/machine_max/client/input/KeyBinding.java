@@ -47,6 +47,7 @@ public class KeyBinding {
     public static final String SECONDARY_WEAPON_FIRE_KEY = "key.machine_max.general.secondary_weapon_fire";
     public static final String NEXT_AMMO_TYPE_KEY = "key.machine_max.general.next_ammo_type";
     public static final String PREV_AMMO_TYPE_KEY = "key.machine_max.general.prev_ammo_type";
+    public static final String CYCLE_CONTROL_GROUP_KEY = "key.machine_max.general.cycle_control_group";
 
     /**
      * 在此注册所有按键
@@ -93,6 +94,7 @@ public class KeyBinding {
         event.register(KeyBinding.generalSecondaryWeaponFireKey);//副武器开火
         event.register(KeyBinding.generalNextAmmoTypeKey);//下一个弹种
         event.register(KeyBinding.generalPrevAmmoTypeKey);//上一个弹种
+        event.register(KeyBinding.generalCycleControlGroupKey);//轮换控制组
 
     }
 
@@ -274,6 +276,14 @@ public class KeyBinding {
             KeyCategory.GENERAL,
             InputConstants.Type.KEYSYM,
             InputConstants.UNKNOWN.getValue(),
+            KeyCategory.GENERAL.getCategory()
+    );
+
+    /** 轮换激活控制组，默认为 TAB 键 */
+    public static KeyMapping generalCycleControlGroupKey = new KeyMapping(CYCLE_CONTROL_GROUP_KEY,
+            KeyCategory.GENERAL,
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_TAB,
             KeyCategory.GENERAL.getCategory()
     );
 }

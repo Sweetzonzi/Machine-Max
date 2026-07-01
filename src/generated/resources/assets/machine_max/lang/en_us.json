@@ -127,6 +127,7 @@
   "key.machine_max.general.main_weapon_fire": "Main Weapon Fire",
   "key.machine_max.general.next_ammo_type": "Next Ammo Type",
   "key.machine_max.general.prev_ammo_type": "Previous Ammo Type",
+  "key.machine_max.general.cycle_control_group": "Cycle Control Group",
   "key.machine_max.general.secondary_weapon_fire": "Secondary Weapon Fire",
   "key.machine_max.general.toggle_light": "Toggle Light",
   "key.machine_max.general.vehicle_info": "Vehicle Info Panel",

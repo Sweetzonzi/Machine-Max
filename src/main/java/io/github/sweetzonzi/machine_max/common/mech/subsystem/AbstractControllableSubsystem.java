@@ -248,7 +248,9 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 设置视角输入信号（瞄准点世界坐标），发送到当前控制组的 viewTargets 频道。
+     * 设置视角输入信号（瞄准点世界坐标），发送到当前控制组的 viewTargets 频道。<br>
+     * 当通过座椅（非炮镜）直接发送时，两轴均视为稳定轴（位置控制），
+     * 使 WeaponController 通过 computeAimAngles 计算炮塔目标角度，实现第三人称下操控炮塔。
      *
      * @param aimPoint 玩家瞄准点的世界坐标，null 表示无有效瞄准目标
      */
@@ -256,8 +258,9 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         Map<String, List<String>> targets = controlGroupSet.getMergedViewTargets();
         if (!targets.isEmpty() && this.isActive()) {
             for (String signalKey : targets.keySet()) {
+                // 非炮镜路径：两轴均稳定（位置控制），炮塔直接跟随瞄准点
                 this.sendSignalToAllTargets(signalKey,
-                        aimPoint != null ? new ViewInputSignal(aimPoint, 0f, 0f, false, false) : EmptySignal.INSTANCE);
+                        aimPoint != null ? new ViewInputSignal(aimPoint, 0f, 0f, true, true) : EmptySignal.INSTANCE);
             }
             if (aimPoint != null) {
                 this.getOwner().getSubPart().part.assembly.activatePhysics();

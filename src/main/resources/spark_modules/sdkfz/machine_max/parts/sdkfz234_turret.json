@@ -74,19 +74,11 @@
           "connectors": {
             "connector.machine_max.turret_hull_axis": {
               "locator": "turret_hull_axis",
-              "definition": "machine_max:turret_azimuth_axis",
-              "overwrite": {}
+              "definition": "machine_max:turret_azimuth_axis"
             },
             "connector.machine_max.turret_gun_axis": {
               "locator": "turret_gun_axis",
-              "definition": "machine_max:turret_elevation_axis",
-              "signal_targets": {
-                "aim_input_p0": [
-                  "subsystem.machine_max.main_weapon",
-                  "subsystem.machine_max.secondary_weapon"
-                ]
-              },
-              "overwrite": {}
+              "definition": "machine_max:turret_elevation_axis"
             }
           },
           "subsystems": {

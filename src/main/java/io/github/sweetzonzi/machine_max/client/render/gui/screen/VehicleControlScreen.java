@@ -1,5 +1,6 @@
 package io.github.sweetzonzi.machine_max.client.render.gui.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.sighs.apricityui.init.Document;
 import com.sighs.apricityui.init.Element;
 import io.github.sweetzonzi.machine_max.client.render.gui.panel.*;
@@ -13,6 +14,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * 载具控制面板主 Screen。<br>
@@ -197,6 +199,11 @@ public class VehicleControlScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // 按键捕获模式下，点击面板任意位置取消捕获
+        if (PanelConfigEditor.isKeyCapturing()) {
+            PanelConfigEditor.cancelKeyCapture();
+            // 仍然让 AUI 处理此点击事件（用户可能想点其他元素）
+        }
         if (isInPreviewArea(mouseX, mouseY) && (activeTab == 0 || activeTab == 1)) {
             isDragging3d = true;
             return true;
@@ -205,6 +212,41 @@ public class VehicleControlScreen extends Screen {
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    /**
+     * 键盘按键事件。<br>
+     * 在按键捕获模式下（{@link PanelConfigEditor#isKeyCapturing()} 返回 true），<br>
+     * 拦截按键事件，将 keyCode/scanCode 传递给编辑器生成标准按键名称。
+     * <ul>
+     *   <li>ESC → 取消捕获，恢复原始值</li>
+     *   <li>其他按键 → 通过 {@link InputConstants#getKey(int, int)} 获取标准名称并写入 trigger</li>
+     * </ul>
+     */
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // 按键捕获模式：拦截所有键盘事件
+        if (PanelConfigEditor.isKeyCapturing()) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                PanelConfigEditor.cancelKeyCapture();
+                return true;
+            }
+            // 将 keyCode/scanCode 传递给编辑器，由编辑器内部调用 InputConstants.getKey()
+            PanelConfigEditor.onKeyCaptured(keyCode, scanCode);
+            return true;
+        }
+
+        // 默认行为：E 键关闭面板
+        if (keyCode == GLFW.GLFW_KEY_E || keyCode == GLFW.GLFW_KEY_ESCAPE) {
+            // 检查 Minecraft 的背包键是否与 E 冲突（Minecraft 默认背包键是 E）
+            if (Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode)) {
+                // E 键留给原版背包功能，不在此处处理
+                return super.keyPressed(keyCode, scanCode, modifiers);
+            }
+            onClose();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
