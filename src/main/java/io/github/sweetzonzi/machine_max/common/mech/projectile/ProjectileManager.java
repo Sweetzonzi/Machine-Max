@@ -21,6 +21,7 @@ import io.github.sweetzonzi.machine_max.common.entity.MMProjectileEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.AABB;
 import com.jme3.bullet.collision.PhysicsCollisionObject;
 import com.jme3.bullet.collision.PhysicsRayTestResult;
 import com.jme3.bullet.objects.PhysicsRigidBody;
@@ -956,6 +957,11 @@ public class ProjectileManager {
             rayFrom.set(prevX, prevY, prevZ);
             rayTo.set(posX[i], posY[i], posZ[i]);
 
+            // 射线方向分量，用于精确计算命中点（而非取方块中心）
+            float dx = rayTo.x - rayFrom.x;
+            float dy = rayTo.y - rayFrom.y;
+            float dz = rayTo.z - rayFrom.z;
+
             List<PhysicsRayTestResult> results = world.rayTest(rayFrom, rayTo);
 
             // ===== 阶段1：收集所有命中条目到统一列表 =====
@@ -981,13 +987,20 @@ public class ProjectileManager {
                 Vec3 hitNormalMc = new Vec3(hitNormalJme.x, hitNormalJme.y, hitNormalJme.z);
 
                 if (owner instanceof PhysicsChunkSection terrain) {
-                    // 地形：DDA遍历展开为逐方块条目，每个方块携带独立的hitFraction
+                    // 地形：DDA遍历展开为逐方块条目，每个方块携带独立的hitFraction和面法线
                     List<BlockHitEntry> blocks = walkBlocksAlongRay(rayFrom, rayTo, terrain);
                     for (BlockHitEntry be : blocks) {
                         PenetrationKey pk = new PenetrationKey(terrain, be.blockPos().toShortString());
-                        Vec3 bp = new Vec3(be.blockPos().getX() + 0.5, be.blockPos().getY() + 0.5, be.blockPos().getZ() + 0.5);
+                        // 通过 hitFraction 线性插值计算射线进入该方块的精确命中点
+                        float t = be.hitFraction();
+                        Vec3 bp = new Vec3(rayFrom.x + dx * t, rayFrom.y + dy * t, rayFrom.z + dz * t);
+                        // 使用DDA中射线-包围盒求交得出的精确法线
+                        Vector3f bnJme = be.hitNormal();
+                        Vec3 bn = (bnJme.x == 0 && bnJme.y == 0 && bnJme.z == 0)
+                                ? hitNormalMc  // 安全回退（理论上不会发生）
+                                : new Vec3(bnJme.x, bnJme.y, bnJme.z);
                         allHits.add(new HitEntry(be.hitFraction(), result, body, terrain,
-                                be.blockPos(), terrain, bp, hitNormalMc, pk));
+                                be.blockPos(), terrain, bp, bn, pk));
                     }
                 } else if (owner == null) {
                     // null owner：无属主命中，作为停止条目参与排序
@@ -1022,16 +1035,21 @@ public class ProjectileManager {
                 PhysicsChunkSection startSection = terrainMgr.getSectionForBlockPos(fromBP);
                 if (startSection != null && !startSection.isEmpty()) {
                     List<BlockHitEntry> ddaBlocks = walkBlocksAlongRay(rayFrom, rayTo, startSection);
-                    // 法线取射线反方向（DDA 步进面法线的近似）
+                    // 法线取射线反方向作为回退（DDA 步进面法线的近似）
                     Vec3 ddaNormal = SparkMathKt.toVec3(rayTo.subtract(rayFrom).normalize());
                     for (BlockHitEntry be : ddaBlocks) {
                         PenetrationKey pk = new PenetrationKey(startSection, be.blockPos().toShortString());
-                        Vec3 bp = new Vec3(be.blockPos().getX() + 0.5,
-                                be.blockPos().getY() + 0.5,
-                                be.blockPos().getZ() + 0.5);
+                        // 通过 hitFraction 线性插值计算射线进入该方块的精确命中点
+                        float t = be.hitFraction();
+                        Vec3 bp = new Vec3(rayFrom.x + dx * t, rayFrom.y + dy * t, rayFrom.z + dz * t);
+                        // 使用DDA中射线-包围盒求交得出的精确法线
+                        Vector3f bnJme = be.hitNormal();
+                        Vec3 bn = (bnJme.x == 0 && bnJme.y == 0 && bnJme.z == 0)
+                                ? ddaNormal  // 安全回退（理论上不会发生）
+                                : new Vec3(bnJme.x, bnJme.y, bnJme.z);
                         allHits.add(new HitEntry(be.hitFraction(), null,
                                 startSection.getPhysicsBody(), startSection,
-                                be.blockPos(), startSection, bp, ddaNormal, pk));
+                                be.blockPos(), startSection, bp, bn, pk));
                     }
                 }
             }
@@ -1370,12 +1388,88 @@ public class ProjectileManager {
     }
 
     /**
-     * DDA体素遍历产生的单一方块命中条目，携带沿射线的hitFraction用于跨命中源排序。
+     * 射线与轴对齐包围盒求交（slab法），返回命中参数t和面法线。
+     * <p>
+     * 对每个轴分别计算进入/离开参数t0/t1，取最大进入t和最小离开t。
+     * 若进入t ≤ 离开t则命中，命中面为进入t最大的轴对应的面。
      *
-     * @param hitFraction 沿全射线(rayFrom→rayTo)的参数t值 [0, 1]
-     * @param blockPos    命中的方块世界坐标
+     * @param origin 射线起点（世界坐标）
+     * @param rdx    射线方向X分量（非归一化）
+     * @param rdy    射线方向Y分量
+     * @param rdz    射线方向Z分量
+     * @param minX   包围盒最小X
+     * @param minY   包围盒最小Y
+     * @param minZ   包围盒最小Z
+     * @param maxX   包围盒最大X
+     * @param maxY   包围盒最大Y
+     * @param maxZ   包围盒最大Z
+     * @return float[]{t, nx, ny, nz}，t为命中参数，法线指向射线来源侧；未命中返回null
      */
-    private record BlockHitEntry(float hitFraction, BlockPos blockPos) {}
+    @Nullable
+    private static float[] rayAabbIntersect(Vector3f origin, float rdx, float rdy, float rdz,
+                                            float minX, float minY, float minZ,
+                                            float maxX, float maxY, float maxZ) {
+        float tEnter = 0f;
+        float tExit = 1f;
+        int normalAxis = -1;
+        float normalSign = 0;
+
+        // X轴
+        if (rdx != 0) {
+            float invD = 1.0f / rdx;
+            float t0 = (minX - origin.x) * invD;
+            float t1 = (maxX - origin.x) * invD;
+            if (t0 > t1) { float tmp = t0; t0 = t1; t1 = tmp; }
+            if (t0 > tEnter) { tEnter = t0; normalAxis = 0; normalSign = (rdx > 0) ? -1 : 1; }
+            if (t1 < tExit) tExit = t1;
+        } else if (origin.x < minX || origin.x > maxX) {
+            return null; // 射线平行于X轴且原点在slab外
+        }
+
+        // Y轴
+        if (rdy != 0) {
+            float invD = 1.0f / rdy;
+            float t0 = (minY - origin.y) * invD;
+            float t1 = (maxY - origin.y) * invD;
+            if (t0 > t1) { float tmp = t0; t0 = t1; t1 = tmp; }
+            if (t0 > tEnter) { tEnter = t0; normalAxis = 1; normalSign = (rdy > 0) ? -1 : 1; }
+            if (t1 < tExit) tExit = t1;
+        } else if (origin.y < minY || origin.y > maxY) {
+            return null;
+        }
+
+        // Z轴
+        if (rdz != 0) {
+            float invD = 1.0f / rdz;
+            float t0 = (minZ - origin.z) * invD;
+            float t1 = (maxZ - origin.z) * invD;
+            if (t0 > t1) { float tmp = t0; t0 = t1; t1 = tmp; }
+            if (t0 > tEnter) { tEnter = t0; normalAxis = 2; normalSign = (rdz > 0) ? -1 : 1; }
+            if (t1 < tExit) tExit = t1;
+        } else if (origin.z < minZ || origin.z > maxZ) {
+            return null;
+        }
+
+        if (tEnter > tExit) return null; // 未命中
+
+        float nx = 0, ny = 0, nz = 0;
+        switch (normalAxis) {
+            case 0: nx = normalSign; break;
+            case 1: ny = normalSign; break;
+            case 2: nz = normalSign; break;
+        }
+        return new float[]{tEnter, nx, ny, nz};
+    }
+
+    /**
+     * DDA体素遍历产生的单一方块命中条目，携带沿射线的hitFraction和面法线。
+     *
+     * @param hitFraction 沿全射线(rayFrom→rayTo)的参数t值 [0, 1]，由射线-方块包围盒精确求交得出
+     * @param blockPos    命中的方块世界坐标
+     * @param hitNormal   该方块命中面的法线（JME），方向指向射线来源侧，
+     *                    由射线-包围盒slab求交直接得出
+     */
+    private record BlockHitEntry(float hitFraction, BlockPos blockPos, Vector3f hitNormal) {}
 
     /**
      * 物理线程缓冲的命中同步数据，等待主线程批量广播。
@@ -1420,28 +1514,31 @@ public class ProjectileManager {
     ) {}
 
     /**
-     * 使用3D DDA（Amanatides-Woo）体素遍历算法，获取射线在指定PhysicsChunkSection内经过的所有有效方块。
+     * 使用3D DDA（Amanatides-Woo）体素遍历 + 方块包围盒精确求交，获取射线在指定
+     * PhysicsChunkSection内经过的所有有效方块的命中信息。
      * <p>
      * 解决JME Bullet rayTest对同一刚体仅返回最近命中点的问题：
-     * PhysicsChunkSection内部是CompoundCollisionShape（多子形状），但rayTest按碰撞体粒度报告，
-     * 高速投射物在一帧内穿过section内多个方块时，只会检测到最近的那个。
-     * 本方法通过纯数学的体素遍历，枚举射线路径上section内的所有方块，
-     * 并计算每个方块的hitFraction，用于与非地形rayTest结果统一排序。
+     * PhysicsChunkSection内部是CompoundCollisionShape（多子形状，且经过贪心合并优化），
+     * 但rayTest按碰撞体粒度报告，高速投射物在一帧内穿过section内多个方块时，
+     * 只会检测到最近的那个。本方法通过纯数学的体素遍历解决此问题，
+     * 并利用方块真实的VoxelShape包围盒做精确射线-AABB求交（而非用1×1×1立方体近似），
+     * 支持半砖、楼梯、栅栏等非完整碰撞体积方块。
      * <p>
      * 算法步骤：
      * <ol>
      *   <li>用slab法裁剪射线到section的AABB范围（16×16×16），得到进入/离开参数tMin/tMax</li>
      *   <li>在裁剪后的区间内执行Amanatides-Woo 3D DDA遍历</li>
-     *   <li>跟踪每个体素的进入参数t值，映射为全射线的hitFraction（tMin + minT）</li>
-     *   <li>每步检查方块是否有效（非空气、未被移除），有效则加入结果列表</li>
+     *   <li>对每个有效方块，获取其VoxelShape的包围盒列表，逐一做射线-AABB slab求交</li>
+     *   <li>仅当射线实际命中包围盒时才记录该方块，携带精确的命中t值和面法线</li>
      * </ol>
      * <p>
-     * 性能：section最大尺寸16×16×16，单条射线最多遍历~48个网格步，开销可忽略。
+     * 性能：section最大尺寸16×16×16，单条射线最多遍历~48个网格步；
+     * VoxelShape→AABB列表有静态缓存，且大部方块仅1个AABB，开销可忽略。
      *
      * @param rayFrom 射线起点（世界坐标，JME）
      * @param rayTo   射线终点（世界坐标，JME）
      * @param terrain 目标地形section
-     * @return 射线在section内经过的有效方块列表（按命中顺序，含hitFraction）
+     * @return 射线在section内实际命中的有效方块列表（按命中顺序，含精确hitFraction和面法线）
      */
     private static List<BlockHitEntry> walkBlocksAlongRay(Vector3f rayFrom, Vector3f rayTo, PhysicsChunkSection terrain) {
         List<BlockHitEntry> blocks = new ArrayList<>();
@@ -1531,21 +1628,46 @@ public class ProjectileManager {
         float tMaxY = (dy != 0) ? ((stepY > 0 ? (curY + 1) : curY) - startY) / dy : Float.MAX_VALUE;
         float tMaxZ = (dz != 0) ? ((stepZ > 0 ? (curZ + 1) : curZ) - startZ) / dz : Float.MAX_VALUE;
 
-        // 当前体素进入时的全射线参数t值。第一个体素从裁剪进入点tMin开始。
-        float currentEntryT = tMin;
-
-        // Amanatides-Woo 3D DDA主循环
+        // Amanatides-Woo 3D DDA主循环，利用方块包围盒做精确射线求交
         int maxSteps = 48; // 16+16+16 最坏情况
         for (int step = 0; step < maxSteps; step++) {
             BlockPos bp = new BlockPos(curX, curY, curZ);
-            // 仅记录有效方块（非空气、未被移除），携带其命中参数t值
+            boolean isLast = (curX == endXi && curY == endYi && curZ == endZi);
+
+            // 获取方块快照，检查有效性
             SectionSnapshot.BlockSnapshot snap = terrain.getBlockSnapshot(bp);
             if (snap != null && !terrain.isRemoved(bp)) {
-                blocks.add(new BlockHitEntry(currentEntryT, bp));
+                BlockState state = snap.getState();
+                // 从Spark-Core缓存获取该方块的碰撞包围盒列表（构建时已预缓存）
+                List<AABB> aabbs = terrain.getPhysicsLevel().getBlockShapeManager().getBlockAabbs(state);
+
+                float closestT = Float.MAX_VALUE;
+                Vector3f closestNormal = null;
+
+                // 遍历方块的所有包围盒子形状，做精确射线求交
+                for (AABB aabb : aabbs) {
+                    float[] result = rayAabbIntersect(rayFrom, dx, dy, dz,
+                            bp.getX() + (float) aabb.minX,
+                            bp.getY() + (float) aabb.minY,
+                            bp.getZ() + (float) aabb.minZ,
+                            bp.getX() + (float) aabb.maxX,
+                            bp.getY() + (float) aabb.maxY,
+                            bp.getZ() + (float) aabb.maxZ);
+                    if (result != null && result[0] < closestT) {
+                        closestT = result[0];
+                        closestNormal = new Vector3f(result[1], result[2], result[3]);
+                    }
+                }
+
+                if (closestNormal != null) {
+                    // 射线实际命中该方块的碰撞体积，使用精确的命中参数和法线
+                    blocks.add(new BlockHitEntry(closestT, bp, closestNormal));
+                }
+                // 若射线未命中实际碰撞体积（如穿过楼梯的空隙），则跳过该方块
             }
 
             // 到达终点体素则停止
-            if (curX == endXi && curY == endYi && curZ == endZi) break;
+            if (isLast) break;
 
             // 选择tMax最小的轴步进，并记录步进前的minT作为下一体素的进入t
             float minT;
@@ -1570,8 +1692,6 @@ public class ProjectileManager {
                     tMaxZ += tDeltaZ;
                 }
             }
-            // 下一体素的进入t = 裁剪起点tMin + 离开当前体素的参数偏移
-            currentEntryT = tMin + minT;
         }
 
         return blocks;
