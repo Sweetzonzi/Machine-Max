@@ -18,6 +18,7 @@
         "machine_max:motor_controller",
         "machine_max:regen_loader",
         "machine_max:seat",
+        "machine_max:sight",
         "machine_max:transmission",
         "machine_max:wheel_driver",
         "machine_max:lighting",
@@ -126,6 +127,18 @@
       },
       "then": {
         "$ref": "static/seat_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:sight"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/sight_static_attr.schema.json"
       }
     },
     {

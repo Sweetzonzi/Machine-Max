@@ -16,7 +16,9 @@
         "machine_max:item_storage",
         "machine_max:motor",
         "machine_max:motor_controller",
+        "machine_max:regen_loader",
         "machine_max:seat",
+        "machine_max:sight",
         "machine_max:transmission",
         "machine_max:wheel_driver",
         "machine_max:lighting",
@@ -131,6 +133,18 @@
       "if": {
         "properties": {
           "type": {
+            "const": "machine_max:sight"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/sight_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
             "const": "machine_max:transmission"
           }
         }
@@ -173,6 +187,18 @@
       },
       "then": {
         "$ref": "static/turret_driver_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:regen_loader"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/regen_loader_static_attr.schema.json"
       }
     },
     {

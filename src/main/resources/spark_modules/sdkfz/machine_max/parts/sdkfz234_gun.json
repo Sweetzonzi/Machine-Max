@@ -73,12 +73,7 @@
             "subsystem.machine_max.gunner_sight": {
               "type": "machine_max:sight",
               "definition": "machine_max:gunner_sight",
-              "locator": "gunner_sight",
-              "aim_output_targets": {
-                "aim_input_p0": [
-                  "vehicle"
-                ]
-              }
+              "locator": "gunner_sight"
             }
           }
         }

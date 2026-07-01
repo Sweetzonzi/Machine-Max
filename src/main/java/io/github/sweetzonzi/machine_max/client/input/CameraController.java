@@ -589,14 +589,22 @@ public class CameraController {
     private static void tickCameraMode(SeatSubsystem seat) {
         CameraSubsystem camera = activeCamera;
         if (aimPoint == null) return;
-        SubPart subPart = camera.getOwner().getSubPart();
 
         // 服务端 WeaponController 对无稳轴使用增量累加（targetAngle += rad(offset)）
+        // 稳定标志从 camera staticAttr 读取，随网络包发往服务端
+        var sa = camera.attr.staticAttribute;
+
+        // 客户端本地派发：驱动 WeaponController 播放特效（炮口焰等）
+        seat.setViewInputSignal(aimPoint,
+                pendingLocalPitchOffsetDeg, pendingLocalYawOffsetDeg,
+                sa.isVerticalStabilized(), sa.isHorizontalStabilized());
+
+        // 发包到服务端驱动实际武器逻辑
         PacketDistributor.sendToServer(new ViewInputPayload(
-                subPart.getId(), camera.getName(),
+                seat.getOwner().getSubPart().getId(), seat.getName(),
                 aimPoint.x, aimPoint.y, aimPoint.z,
-                pendingLocalPitchOffsetDeg, pendingLocalYawOffsetDeg));
-        camera.receiveClientAimInput(aimPoint, pendingLocalPitchOffsetDeg, pendingLocalYawOffsetDeg);
+                pendingLocalPitchOffsetDeg, pendingLocalYawOffsetDeg,
+                sa.isVerticalStabilized(), sa.isHorizontalStabilized()));
 
         // 清空待发送旋转量
         pendingLocalPitchOffsetDeg = 0;
@@ -629,7 +637,9 @@ public class CameraController {
         );
 
         // 向客户端本地子系统派发瞄准点信号，驱动 WeaponController 等收到信号以播放特效
-        seat.setViewInputSignal(aimPoint);
+        seat.setViewInputSignal(aimPoint,
+                0, 0,
+                true, true);
 
         if (lastSentAimPoint == null || aimPoint.distanceToSqr(lastSentAimPoint) > AIM_POINT_THRESHOLD_SQ) {
             lastSentAimPoint = aimPoint;
@@ -638,7 +648,7 @@ public class CameraController {
                     ownerSubPart.getId(),
                     seat.getName(),
                     aimPoint.x, aimPoint.y, aimPoint.z,
-                    0f, 0f));
+                    0f, 0f, true, true));
         }
     }
 
@@ -703,8 +713,8 @@ public class CameraController {
             }
         }
 
-        // 进入炮镜模式：清除客户端座椅信号，防止与炮镜信号同时存在于 WeaponController 频道
-        seat.setViewInputSignal(null);
+        // 进入炮镜模式：通知子系统当前激活的摄像机，信号由 onTick 统一发送
+        seat.setActiveCamera(activeCamera);
 
         // 初始化瞄准点：从摄像机正前方 100 米处投射
         Transform locator = activeCamera.getLerpedLocatorWorldTransform(1f);
@@ -719,9 +729,11 @@ public class CameraController {
      * 退出炮镜模式
      */
     public static void exitCameraMode() {
-        // 清除客户端摄像机残留信号，防止退出炮镜后与座椅信号竞争同一频道
-        if (activeCamera != null) {
-            activeCamera.receiveClientAimInput(null, 0f, 0f);
+        // 通知子系统退出炮镜，回到座椅直发模式
+        if (client.player != null
+                && ((IEntityMixin) client.player).machine_Max$getControllingSubsystem()
+                    instanceof AbstractControllableSubsystem controllable) {
+            controllable.setActiveCamera(null);
         }
         activeCamera = null;
         aimPoint = null;

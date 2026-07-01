@@ -11,20 +11,21 @@
         "machine_max:basic",
         "machine_max:camera",
         "machine_max:car_controller",
-        "machine_max:motorbike_controller",
         "machine_max:engine",
         "machine_max:gearbox",
         "machine_max:item_storage",
         "machine_max:motor",
         "machine_max:motor_controller",
+        "machine_max:regen_loader",
         "machine_max:seat",
+        "machine_max:sight",
         "machine_max:transmission",
         "machine_max:wheel_driver",
         "machine_max:lighting",
         "machine_max:turret_driver",
         "machine_max:weapon_controller"
       ],
-      "description": "子系统类型，决定使用哪个具体的子系统架构。"
+      "description": "Subsystem type, determines which specific subsystem schema to use."
     }
   },
   "additionalProperties": true,
@@ -54,18 +55,6 @@
       },
       "then": {
         "$ref": "static/car_controller_static_attr.schema.json"
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "type": {
-            "const": "machine_max:motorbike_controller"
-          }
-        }
-      },
-      "then": {
-        "$ref": "static/motorbike_controller_static_attr.schema.json"
       }
     },
     {
@@ -144,6 +133,18 @@
       "if": {
         "properties": {
           "type": {
+            "const": "machine_max:sight"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/sight_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
             "const": "machine_max:transmission"
           }
         }
@@ -192,6 +193,18 @@
       "if": {
         "properties": {
           "type": {
+            "const": "machine_max:regen_loader"
+          }
+        }
+      },
+      "then": {
+        "$ref": "static/regen_loader_static_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
             "const": "machine_max:weapon_controller"
           }
         }
@@ -203,14 +216,14 @@
   ],
   "examples": [
     {
-      "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+      "$schema": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json",
       "type": "machine_max:item_storage",
       "basic_durability": 100.0,
       "rows": 6,
       "columns": 9
     },
     {
-      "$schema": "../../docs/zh_cn/schemas/subsystem/subsystem_static_attr.schema.json",
+      "$schema": "../../docs/en_us/schemas/subsystem/subsystem_static_attr.schema.json",
       "type": "machine_max:engine",
       "max_power": 75000.0,
       "max_torque": 130.0,

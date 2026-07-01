@@ -48,6 +48,10 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Getter
     protected final List<CameraSubsystem> discoveredCameras = new CopyOnWriteArrayList<>();
 
+    /** 当前激活的摄像机（炮镜模式时设置），null 表示座椅直发模式 */
+    @Nullable
+    protected CameraSubsystem activeCamera = null;
+
     /**
      * 摄像机发现握手配置 {频道名 → [目标接收者名列表]}。
      * 子类（SeatSubsystem 等）在构造函数中从动态属性赋值。
@@ -149,6 +153,16 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         restoreControlGroupPreset();
         cameraDiscoveryHandshake();
         weaponControllerDiscoveryHandshake();
+    }
+
+    /**
+     * 设置当前激活的摄像机（炮镜模式切换时由 CameraController 调用）。
+     * 客户端侧用于读取稳定标志构造网络包；服务端侧暂无用途（信号由 handler 直接发送）。
+     *
+     * @param camera 激活的摄像机，null 表示退出炮镜回到座椅直发模式
+     */
+    public void setActiveCamera(@Nullable CameraSubsystem camera) {
+        this.activeCamera = camera;
     }
 
     /**
@@ -261,19 +275,25 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     }
 
     /**
-     * 设置视角输入信号（瞄准点世界坐标），发送到当前控制组的 viewTargets 频道。<br>
-     * 当通过座椅（非炮镜）直接发送时，两轴均视为稳定轴（位置控制），
-     * 使 WeaponController 通过 computeAimAngles 计算炮塔目标角度，实现第三人称下操控炮塔。
+     * 设置视角输入信号（携带无稳轴鼠标增量偏移）。<br>
+     * 炮镜模式下由 onTick 从 activeCamera volatile 字段直接读取后调用。
      *
-     * @param aimPoint 玩家瞄准点的世界坐标，null 表示无有效瞄准目标
+     * @param aimPoint         玩家瞄准点的世界坐标，null 表示无有效瞄准目标
+     * @param pitchOffsetDeg   本 tick 俯仰鼠标增量（度）
+     * @param yawOffsetDeg     本 tick 偏航鼠标增量（度）
+     * @param pitchStabilized  俯仰轴是否稳定
+     * @param yawStabilized    偏航轴是否稳定
      */
-    public void setViewInputSignal(@Nullable Vec3 aimPoint) {
+    public void setViewInputSignal(@Nullable Vec3 aimPoint,
+                                    float pitchOffsetDeg, float yawOffsetDeg,
+                                    boolean pitchStabilized, boolean yawStabilized) {
         Map<String, List<String>> targets = controlGroupSet.getMergedViewTargets();
         if (!targets.isEmpty() && this.isActive()) {
             for (String signalKey : targets.keySet()) {
-                // 非炮镜路径：两轴均稳定（位置控制），炮塔直接跟随瞄准点
                 this.sendSignalToAllTargets(signalKey,
-                        aimPoint != null ? new ViewInputSignal(aimPoint, 0f, 0f, true, true) : EmptySignal.INSTANCE);
+                        aimPoint != null
+                                ? new ViewInputSignal(aimPoint, pitchOffsetDeg, yawOffsetDeg, pitchStabilized, yawStabilized)
+                                : EmptySignal.INSTANCE);
             }
             if (aimPoint != null) {
                 this.getOwner().getSubPart().part.assembly.activatePhysics();

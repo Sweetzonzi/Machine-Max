@@ -11,11 +11,9 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
-import java.util.List;
-import java.util.Map;
-
 /**
- * 摄像机子系统动态属性：定义摄像机在载具上的挂载位置、瞄准点输出目标等实例级配置。
+ * 摄像机子系统动态属性：定义摄像机在载具上的挂载位置等实例级配置。<br>
+ * 不再包含 aimOutputTargets —— 信号发送由 AbstractControllableSubsystem 通过控制组统一处理。
  */
 @Getter
 public class CameraSubsystemAttr extends BasicSubsystemDynamicAttr {
@@ -24,27 +22,19 @@ public class CameraSubsystemAttr extends BasicSubsystemDynamicAttr {
     /** 摄像机挂载 locator 名称 */
     public final String locator;
 
-    /** 瞄准点输出频道 → 目标接收者名列表 */
-    public final Map<String, List<String>> aimOutputTargets;
-
     public static final MapCodec<CameraSubsystemAttr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("definition")
                     .forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.optionalFieldOf("locator", "")
-                    .forGetter(CameraSubsystemAttr::getLocator),
-            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC
-                    .optionalFieldOf("aim_output_targets", Map.of())
-                    .forGetter(CameraSubsystemAttr::getAimOutputTargets)
+                    .forGetter(CameraSubsystemAttr::getLocator)
     ).apply(instance, CameraSubsystemAttr::new));
 
     public CameraSubsystemAttr(
             ResourceLocation modelName,
-            String locator,
-            Map<String, List<String>> aimOutputTargets) {
+            String locator) {
         super(modelName);
         this.staticAttribute = (CameraSubsystemStaticAttr) getStaticAttr();
         this.locator = locator;
-        this.aimOutputTargets = aimOutputTargets;
     }
 
     @Override

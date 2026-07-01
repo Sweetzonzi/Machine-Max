@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://machine_max.io/schemas/subsystem/dynamic/camera_dynamic_attr.json",
   "title": "摄像机子系统动态属性",
-  "description": "摄像机动态属性，定义挂载位置和瞄准点输出目标。",
+  "description": "摄像机动态属性，定义挂载位置。信号路由由控制组统一处理。",
   "properties": {
     "type": {
       "type": "string",
@@ -17,11 +17,6 @@
       "type": "string",
       "default": "",
       "description": "摄像机挂载定位器名称，模型中的骨骼作为摄像机位置。"
-    },
-    "aim_output_targets": {
-      "$ref": "../base/signal_targets.json",
-      "default": {},
-      "description": "瞄准点输出频道及目标，向指定频道发送 ViewInputSignal。"
     }
   },
   "required": ["type", "definition"],
@@ -29,10 +24,7 @@
     {
       "type": "machine_max:camera",
       "definition": "machine_max:camera/tank_gunners_sight",
-      "locator": "optics_mount",
-      "aim_output_targets": {
-        "aim_input": ["turret_weapon_controller"]
-      }
+      "locator": "optics_mount"
     }
   ]
 }

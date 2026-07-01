@@ -9,6 +9,7 @@
       "type": "string",
       "enum": [
         "machine_max:basic",
+        "machine_max:camera",
         "machine_max:car_controller",
         "machine_max:motorbike_controller",
         "machine_max:engine",
@@ -16,6 +17,7 @@
         "machine_max:item_storage",
         "machine_max:motor",
         "machine_max:seat",
+        "machine_max:sight",
         "machine_max:transmission",
         "machine_max:wheel_driver",
         "machine_max:lighting",
@@ -30,6 +32,18 @@
     "type"
   ],
   "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:camera"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/camera_dynamic_attr.schema.json"
+      }
+    },
     {
       "if": {
         "properties": {
@@ -112,6 +126,18 @@
       },
       "then": {
         "$ref": "dynamic/seat_dynamic_attr.schema.json"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "machine_max:sight"
+          }
+        }
+      },
+      "then": {
+        "$ref": "dynamic/sight_dynamic_attr.schema.json"
       }
     },
     {

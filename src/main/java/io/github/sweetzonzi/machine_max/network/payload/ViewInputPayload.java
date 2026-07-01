@@ -6,8 +6,6 @@ import io.github.sweetzonzi.machine_max.common.mech.ObjectManager;
 import io.github.sweetzonzi.machine_max.common.mech.vehicle.SubPart;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractControllableSubsystem;
 import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.CameraSubsystem;
-import io.github.sweetzonzi.machine_max.common.mech.subsystem.SeatSubsystem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -17,9 +15,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * 视角输入数据包（客户端→服务端），携带玩家瞄准点的世界坐标 + 无稳轴的鼠标增量偏移。<p>
- * 服务端通过 SubPart 的全局 ID 直接查找目标子系统，无需逐级解析载具和部件。<br>
- * 稳定标志不通过网络包传输——服务端从 CameraSubsystem 的 staticAttribute 直接读取。
+ * 视角输入数据包（客户端→服务端），携带玩家瞄准点的世界坐标 + 无稳轴的鼠标增量偏移 + 稳定标志。<p>
+ * 服务端通过 SubPart 的全局 ID 直接定位到 AbstractControllableSubsystem，统一经控制组 viewTargets 发送。
  */
 public record ViewInputPayload(
         int subPartId,
@@ -28,7 +25,9 @@ public record ViewInputPayload(
         double aimPointY,
         double aimPointZ,
         float localPitchOffsetDeg,
-        float localYawOffsetDeg
+        float localYawOffsetDeg,
+        boolean pitchStabilized,
+        boolean yawStabilized
 ) implements CustomPacketPayload {
     public static final CustomPacketPayload.Type<ViewInputPayload> TYPE = new CustomPacketPayload.Type<>(
             ResourceLocation.fromNamespaceAndPath(MachineMax.MOD_ID, "view_input_payload"));
@@ -42,7 +41,9 @@ public record ViewInputPayload(
             double z = buf.readDouble();
             float pitchOff = buf.readFloat();
             float yawOff = buf.readFloat();
-            return new ViewInputPayload(subPartId, subSystemName, x, y, z, pitchOff, yawOff);
+            boolean pStab = buf.readBoolean();
+            boolean yStab = buf.readBoolean();
+            return new ViewInputPayload(subPartId, subSystemName, x, y, z, pitchOff, yawOff, pStab, yStab);
         }
 
         @Override
@@ -54,6 +55,8 @@ public record ViewInputPayload(
             buffer.writeDouble(payload.aimPointZ());
             buffer.writeFloat(payload.localPitchOffsetDeg());
             buffer.writeFloat(payload.localYawOffsetDeg());
+            buffer.writeBoolean(payload.pitchStabilized());
+            buffer.writeBoolean(payload.yawStabilized());
         }
     };
 
@@ -69,25 +72,16 @@ public record ViewInputPayload(
                 AbstractSubsystem subsystem = subPart.subsystems.get(payload.subSystemName());
                 if (subsystem instanceof AbstractControllableSubsystem controllable && controllable.isActive()) {
                     Vec3 aimPoint = new Vec3(payload.aimPointX(), payload.aimPointY(), payload.aimPointZ());
-                    controllable.setViewInputSignal(aimPoint);
-
-                    // 座椅直发路径：清除此座椅发现的所有摄像机的 lastAimPoint，
-                    // 防止退出炮镜后摄像机残留的 ViewInputSignal 与座椅信号竞争同一频道
-                    if (controllable instanceof SeatSubsystem seat) {
-                        for (CameraSubsystem cam : seat.getDiscoveredCameras()) {
-                            if (cam.isActive() && !cam.isDestroyed()) {
-                                cam.receiveClientAimInput(null, 0f, 0f);
-                            }
-                        }
-                    }
-                } else if (subsystem instanceof CameraSubsystem cam && cam.isActive()) {
-                    Vec3 aimPoint = new Vec3(payload.aimPointX(), payload.aimPointY(), payload.aimPointZ());
-                    cam.receiveClientAimInput(aimPoint, payload.localPitchOffsetDeg(), payload.localYawOffsetDeg());
+                    controllable.setViewInputSignal(aimPoint,
+                            payload.localPitchOffsetDeg(), payload.localYawOffsetDeg(),
+                            payload.pitchStabilized(), payload.yawStabilized());
                 } else {
-                    MachineMax.LOGGER.warn("收到视角输入数据包，但子系统 {} 不存在于 SubPart(id={})", payload.subSystemName(), payload.subPartId());
+                    MachineMax.LOGGER.warn("收到视角输入数据包，但子系统 {} 不存在于 SubPart(id={}) 或不可控",
+                            payload.subSystemName(), payload.subPartId());
                 }
             } else {
-                MachineMax.LOGGER.warn("收到视角输入数据包，但维度 {} 中不存在 SubPart(id={})", context.player().level().dimension().location(), payload.subPartId());
+                MachineMax.LOGGER.warn("收到视角输入数据包，但维度 {} 中不存在 SubPart(id={})",
+                        context.player().level().dimension().location(), payload.subPartId());
             }
         });
     }

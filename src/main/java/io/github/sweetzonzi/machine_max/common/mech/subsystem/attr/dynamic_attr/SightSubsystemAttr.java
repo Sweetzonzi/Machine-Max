@@ -11,9 +11,6 @@ import io.github.sweetzonzi.machine_max.common.mech.subsystem.AbstractSubsystem;
 import lombok.Getter;
 import net.minecraft.resources.ResourceLocation;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * 瞄准镜子系统动态属性：定义炮镜在载具上的挂载位置、瞄准点输出目标等实例级配置。
  * 目前字段与 CameraSubsystemAttr 一致。
@@ -26,17 +23,13 @@ public class SightSubsystemAttr extends CameraSubsystemAttr {
             ResourceLocation.CODEC.fieldOf("definition")
                     .forGetter(AbstractSubsystemAttr::getModelName),
             Codec.STRING.optionalFieldOf("locator", "")
-                    .forGetter(SightSubsystemAttr::getLocator),
-            AbstractSubsystemAttr.SIGNAL_TARGETS_CODEC
-                    .optionalFieldOf("aim_output_targets", Map.of())
-                    .forGetter(SightSubsystemAttr::getAimOutputTargets)
+                    .forGetter(SightSubsystemAttr::getLocator)
     ).apply(instance, SightSubsystemAttr::new));
 
     public SightSubsystemAttr(
             ResourceLocation modelName,
-            String locator,
-            Map<String, List<String>> aimOutputTargets) {
-        super(modelName, locator, aimOutputTargets);
+            String locator) {
+        super(modelName, locator);
         this.staticAttribute = (SightSubsystemStaticAttr) getStaticAttr();
     }
 
