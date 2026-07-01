@@ -27,6 +27,11 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("machine_max.type.aerial", "Aerial");
         this.add("machine_max.type.mecha", "Mecha");
 
+        // 控制组名称
+        this.add("controlGroup.machine_max.base", "Base");
+        this.add("controlGroup.machine_max.backup_fire_control", "Backup Fire Control");
+        this.add("controlGroup.machine_max.commander_override", "Commander Override");
+
         //Key categories
         this.add("key.category.machine_max.general", "Machine Max:General");
         this.add("key.category.machine_max.ground", "Machine Max:Ground");
@@ -84,6 +89,7 @@ public class MMLanguageProviderEN_US extends LanguageProvider {
         this.add("error.machine_max.part.invalid_internal_connector_connection", "Illegal internal locator connection between %2$s and %3$s in part %1$s. Only at most one \"Special\" locator is allowed");
         //Hint messages
         this.add("toast.machine_max.research_complete", "Research Complete!");
+        this.add("message.machine_max.control_group_switched", "Control Group: %s");
         this.add("message.machine_max.leaving_vehicle", "Hold [%1$s] %2$s/0.50s to leave the vehicle.");
         this.add("message.machine_max.watch_interact_box_info", "[%1$s]");
         this.add("error.machine_max.use_part_item", "An error occurred while trying to deploy %1$s：%2$s");

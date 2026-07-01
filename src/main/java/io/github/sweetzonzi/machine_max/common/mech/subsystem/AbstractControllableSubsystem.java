@@ -145,14 +145,21 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Override
     public void onAttach() {
         super.onAttach();
+        // 暂不允许自定义控制组，每次从注册表读取预设
+        restoreControlGroupPreset();
         cameraDiscoveryHandshake();
         weaponControllerDiscoveryHandshake();
     }
 
     /**
-     * 设置控制组集合，替代旧的三 Map 初始化方式。
+     * 设置控制组集合<br>
+     * 切换前先清除当前控制组的输出信号，防止高优先级信号残留。
      */
     public void setControlGroupSet(ControlGroupSet cgs) {
+        // 先清除当前控制组所有频道的信号（使用旧 controlGroupSet 的频道列表）
+        if (this.controlGroupSet != ControlGroupSet.EMPTY) {
+            clearInputSignals();
+        }
         this.controlGroupSet = cgs != null ? cgs : ControlGroupSet.EMPTY;
     }
 
@@ -209,11 +216,17 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
         weaponControllerDiscoveryHandshake();
     }
 
+    /**
+     * 清除当前控制组所有输出频道的信号，包括武器频道。<br>
+     * 切换控制组时必须调用，防止上一组的高优先级信号残留。
+     */
     public void clearInputSignals() {
         Map<String, List<String>> all = new HashMap<>();
         all.putAll(controlGroupSet.getMergedMoveTargets());
         all.putAll(controlGroupSet.getMergedRegularTargets());
         all.putAll(controlGroupSet.getMergedViewTargets());
+        all.putAll(controlGroupSet.getMergedMainWeaponTargets());
+        all.putAll(controlGroupSet.getMergedSecondaryWeaponTargets());
         for (String signalKey : all.keySet()) {
             this.sendSignalToAllTargets(signalKey, EmptySignal.INSTANCE);
         }
@@ -370,11 +383,12 @@ abstract public class AbstractControllableSubsystem extends BasicSubsystem {
     @Override
     public void loadData(CompoundTag data) {
         super.loadData(data);
-        if (data.contains("control_group_set", CompoundTag.TAG_COMPOUND)) {
-            ControlGroupSet.CODEC.parse(NbtOps.INSTANCE, data.get("control_group_set"))
-                    .resultOrPartial(e -> MachineMax.LOGGER.warn("无法加载控制组数据: {}", e))
-                    .ifPresent(cgs -> this.controlGroupSet = cgs);
-        }
+        // TODO: 暂不允许自定义控制组，禁用 NBT 加载，改为每次从注册表读取预设
+//        if (data.contains("control_group_set", CompoundTag.TAG_COMPOUND)) {
+//            ControlGroupSet.CODEC.parse(NbtOps.INSTANCE, data.get("control_group_set"))
+//                    .resultOrPartial(e -> MachineMax.LOGGER.warn("无法加载控制组数据: {}", e))
+//                    .ifPresent(cgs -> this.controlGroupSet = cgs);
+//        }
     }
 
     @Override

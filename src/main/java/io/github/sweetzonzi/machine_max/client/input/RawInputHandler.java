@@ -389,6 +389,16 @@ public class RawInputHandler {
                                 sub.name,
                                 modified
                         ));
+
+                        // 提示当前激活的控制组
+                        String activeGroupName = nextIdx >= 0
+                                ? current.groups.get(nextIdx).name
+                                : current.baseGroup.name;
+                        client.player.displayClientMessage(
+                                Component.translatable("message.machine_max.control_group_switched",
+                                        Component.translatable(activeGroupName)),
+                                true
+                        );
                     });
 
         /*

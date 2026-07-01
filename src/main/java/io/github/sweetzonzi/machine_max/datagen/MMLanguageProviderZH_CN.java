@@ -27,6 +27,11 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("machine_max.type.aerial", "空中");
         this.add("machine_max.type.mecha", "机甲");
 
+        // 控制组名称
+        this.add("controlGroup.machine_max.base", "基础");
+        this.add("controlGroup.machine_max.backup_fire_control", "备用火控");
+        this.add("controlGroup.machine_max.commander_override", "车长超控");
+
         // 按键类别
         this.add("key.category.machine_max.general", "Machine Max:通用");
         this.add("key.category.machine_max.ground", "Machine Max:地面载具");
@@ -84,6 +89,7 @@ public class MMLanguageProviderZH_CN extends LanguageProvider {
         this.add("error.machine_max.part.invalid_internal_connector_connection", "部件 %1$s 中的内部接口 %2$s 与 %3$s 的类型不匹配，至多只能有一个接口的类型为\"advanced\"");
         // 提示信息
         this.add("toast.machine_max.research_complete", "研发完成！");
+        this.add("message.machine_max.control_group_switched", "已切换控制组：%s");
         this.add("message.machine_max.leaving_vehicle", "长按[%1$s]键%2$s/0.50秒以离开载具");
         this.add("message.machine_max.watch_interact_box_info", "[%1$s]");
         this.add("error.machine_max.use_part_item", "尝试放置 %1$s 时出现错误：%2$s");

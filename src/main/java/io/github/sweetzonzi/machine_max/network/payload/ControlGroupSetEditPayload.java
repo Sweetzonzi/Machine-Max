@@ -56,8 +56,6 @@ public record ControlGroupSetEditPayload(
                 AbstractSubsystem subsystem = subPart.subsystems.get(payload.subSystemName());
                 if (subsystem instanceof AbstractControllableSubsystem controllable) {
                     controllable.setControlGroupSet(payload.controlGroupSet());
-                    MachineMax.LOGGER.info("控制组配置已保存: subPartId={}, subsystem={}",
-                            payload.subPartId(), payload.subSystemName());
                 } else {
                     MachineMax.LOGGER.warn("收到ControlGroupSetEditPayload但子系统 {} 不存在于 SubPart(id={})",
                             payload.subSystemName(), payload.subPartId());
