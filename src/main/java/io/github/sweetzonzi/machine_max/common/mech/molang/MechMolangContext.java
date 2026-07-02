@@ -79,23 +79,23 @@ public class MechMolangContext extends SparkMolangContext<IAnimatable<SubPart>> 
 
     // ======================== subpart.* 命名空间 ========================
 
-    @QueryBinding(value = "durability", namespace = "subpart")
+    @QueryBinding(value = "durability", namespace = "subpart", aliases = {"spt"})
     public double subpartDurability() { SubPart s = sp(); return s != null ? s.getDurability() : 0.0; }
 
-    @QueryBinding(value = "max_durability", namespace = "subpart")
+    @QueryBinding(value = "max_durability", namespace = "subpart", aliases = {"spt"})
     public double subpartMaxDurability() { SubPart s = sp(); return s != null ? s.getMaxDurability() : 0.0; }
 
-    @QueryBinding(value = "is_destroyed", namespace = "subpart")
+    @QueryBinding(value = "is_destroyed", namespace = "subpart", aliases = {"spt"})
     public double subpartIsDestroyed() { SubPart s = sp(); return s != null && s.isDestroyed() ? 1.0 : 0.0; }
 
-    @QueryBinding(value = "has_connector", namespace = "subpart")
+    @QueryBinding(value = "has_connector", namespace = "subpart", aliases = {"spt"})
     public double subpartHasConnector(String name) {
         SubPart s = sp(); if (s == null) return 0.0;
         AbstractConnector c = s.getConnectors().get(name);
         return c != null && c.hasPart() ? 1.0 : 0.0;
     }
 
-    @QueryBinding(value = "connector_offset", namespace = "subpart")
+    @QueryBinding(value = "connector_offset", namespace = "subpart", aliases = {"spt"})
     public double subpartConnectorOffset(String name, int axis) {
         if (axis < 0 || axis > 2) return 0.0;
         SubPart s = sp(); if (s == null) return 0.0;
@@ -103,7 +103,7 @@ public class MechMolangContext extends SparkMolangContext<IAnimatable<SubPart>> 
         return c != null ? c.getPivotOffset().get(axis) : 0.0;
     }
 
-    @QueryBinding(value = "connector_rotation", namespace = "subpart")
+    @QueryBinding(value = "connector_rotation", namespace = "subpart", aliases = {"spt"})
     public double subpartConnectorRotation(String name, int axis) {
         if (axis < 0 || axis > 2) return 0.0;
         SubPart s = sp(); if (s == null) return 0.0;
@@ -111,41 +111,41 @@ public class MechMolangContext extends SparkMolangContext<IAnimatable<SubPart>> 
         return c != null ? c.getPivotRotation().get(axis) : 0.0;
     }
 
-    @QueryBinding(value = "has_subsystem", namespace = "subpart")
+    @QueryBinding(value = "has_subsystem", namespace = "subpart", aliases = {"spt"})
     public double subpartHasSubsystem(String name) {
         SubPart s = sp(); return s != null && s.getSubsystems().containsKey(name) ? 1.0 : 0.0;
     }
 
-    @QueryBinding(value = "subsystem_durability", namespace = "subpart")
+    @QueryBinding(value = "subsystem_durability", namespace = "subpart", aliases = {"spt"})
     public double subpartSubsystemDurability(String name) {
         SubPart s = sp(); if (s == null) return 0.0;
         AbstractSubsystem sub = s.getSubsystems().get(name);
         return sub != null ? sub.getDurability() : 0.0;
     }
 
-    @QueryBinding(value = "subsystem_max_durability", namespace = "subpart")
+    @QueryBinding(value = "subsystem_max_durability", namespace = "subpart", aliases = {"spt"})
     public double subpartSubsystemMaxDurability(String name) {
         SubPart s = sp(); if (s == null) return 0.0;
         AbstractSubsystem sub = s.getSubsystems().get(name);
         return sub != null ? sub.getMaxDurability() : 0.0;
     }
 
-    @QueryBinding(value = "subsystem_active", namespace = "subpart")
+    @QueryBinding(value = "subsystem_active", namespace = "subpart", aliases = {"spt"})
     public double subpartSubsystemActive(String name) {
         SubPart s = sp(); if (s == null) return 0.0;
         AbstractSubsystem sub = s.getSubsystems().get(name);
         return sub != null && sub.isActive() ? 1.0 : 0.0;
     }
 
-    @QueryBinding(value = "subsystem_destroyed", namespace = "subpart")
+    @QueryBinding(value = "subsystem_destroyed", namespace = "subpart", aliases = {"spt"})
     public double subpartSubsystemDestroyed(String name) {
         SubPart s = sp(); if (s == null) return 0.0;
         AbstractSubsystem sub = s.getSubsystems().get(name);
         return sub != null && sub.isDestroyed() ? 1.0 : 0.0;
     }
 
-    /** subpart.get(channel) — 读取零件信号值 */
-    @QueryBinding(value = "get", namespace = "subpart")
+    /** subpart.get(channel) — 读取 SubPart 信号值 */
+    @QueryBinding(value = "get", namespace = "subpart", aliases = {"spt"})
     public double subpartGet(String channel) {
         SubPart s = sp(); if (s == null) return 0.0;
         Object val = s.signalStorage.get(channel);
@@ -153,70 +153,29 @@ public class MechMolangContext extends SparkMolangContext<IAnimatable<SubPart>> 
     }
 
     /** subpart.get_str(channel) — 字符串版本，null → ?? 兜底 */
-    @StringQueryBinding(value = "get_str", namespace = "subpart")
+    @StringQueryBinding(value = "get_str", namespace = "subpart", aliases = {"spt"})
     public String subpartGetStr(String channel) {
         SubPart s = sp(); if (s == null) return null;
         Object val = s.signalStorage.get(channel);
         return val != null ? val.toString() : null;
     }
 
-    // ======================== spt.* 别名 ========================
-
-    @QueryBinding(value = "durability", namespace = "spt")
-    public double sptDurability() { return subpartDurability(); }
-
-    @QueryBinding(value = "max_durability", namespace = "spt")
-    public double sptMaxDurability() { return subpartMaxDurability(); }
-
-    @QueryBinding(value = "is_destroyed", namespace = "spt")
-    public double sptIsDestroyed() { return subpartIsDestroyed(); }
-
-    @QueryBinding(value = "has_connector", namespace = "spt")
-    public double sptHasConnector(String name) { return subpartHasConnector(name); }
-
-    @QueryBinding(value = "connector_offset", namespace = "spt")
-    public double sptConnectorOffset(String name, int axis) { return subpartConnectorOffset(name, axis); }
-
-    @QueryBinding(value = "connector_rotation", namespace = "spt")
-    public double sptConnectorRotation(String name, int axis) { return subpartConnectorRotation(name, axis); }
-
-    @QueryBinding(value = "has_subsystem", namespace = "spt")
-    public double sptHasSubsystem(String name) { return subpartHasSubsystem(name); }
-
-    @QueryBinding(value = "subsystem_durability", namespace = "spt")
-    public double sptSubsystemDurability(String name) { return subpartSubsystemDurability(name); }
-
-    @QueryBinding(value = "subsystem_max_durability", namespace = "spt")
-    public double sptSubsystemMaxDurability(String name) { return subpartSubsystemMaxDurability(name); }
-
-    @QueryBinding(value = "subsystem_active", namespace = "spt")
-    public double sptSubsystemActive(String name) { return subpartSubsystemActive(name); }
-
-    @QueryBinding(value = "subsystem_destroyed", namespace = "spt")
-    public double sptSubsystemDestroyed(String name) { return subpartSubsystemDestroyed(name); }
-
-    @QueryBinding(value = "get", namespace = "spt")
-    public double sptGet(String channel) { return subpartGet(channel); }
-
-    @StringQueryBinding(value = "get_str", namespace = "spt")
-    public String sptGetStr(String channel) { return subpartGetStr(channel); }
-
     // ======================== vehicle.* 命名空间 ========================
 
-    @QueryBinding(value = "durability", namespace = "vehicle")
+    @QueryBinding(value = "durability", namespace = "vehicle", aliases = {"veh"})
     public double vehicleDurability() { VehicleCore v = vehicle(); return v != null ? v.getHp() : 0.0; }
 
-    @QueryBinding(value = "max_durability", namespace = "vehicle")
+    @QueryBinding(value = "max_durability", namespace = "vehicle", aliases = {"veh"})
     public double vehicleMaxDurability() { VehicleCore v = vehicle(); return v != null ? v.getMaxHp() : 0.0; }
 
-    @QueryBinding(value = "energy", namespace = "vehicle")
+    @QueryBinding(value = "energy", namespace = "vehicle", aliases = {"veh"})
     public double vehicleEnergy() {
         SubsystemController c = subsystems(); if (c == null) return 0.0;
         EnergyGrid g = c.getEnergyGrid();
         return g != null ? g.getTotalStoredEnergy() : 0.0;
     }
 
-    @QueryBinding(value = "max_energy", namespace = "vehicle")
+    @QueryBinding(value = "max_energy", namespace = "vehicle", aliases = {"veh"})
     public double vehicleMaxEnergy() {
         SubsystemController c = subsystems(); if (c == null) return 0.0;
         EnergyGrid g = c.getEnergyGrid();
@@ -224,7 +183,7 @@ public class MechMolangContext extends SparkMolangContext<IAnimatable<SubPart>> 
     }
 
     /** vehicle.get(key) — 读取装配体信号值 */
-    @QueryBinding(value = "get", namespace = "vehicle")
+    @QueryBinding(value = "get", namespace = "vehicle", aliases = {"veh"})
     public double vehicleGet(String key) {
         SubsystemController c = subsystems(); if (c == null) return 0.0;
         Object val = c.signalStorage.get(key);
@@ -232,30 +191,10 @@ public class MechMolangContext extends SparkMolangContext<IAnimatable<SubPart>> 
     }
 
     /** vehicle.get_str(key) — 字符串版本，null → ?? 兜底 */
-    @StringQueryBinding(value = "get_str", namespace = "vehicle")
+    @StringQueryBinding(value = "get_str", namespace = "vehicle", aliases = {"veh"})
     public String vehicleGetStr(String key) {
         SubsystemController c = subsystems(); if (c == null) return null;
         Object val = c.signalStorage.get(key);
         return val != null ? val.toString() : null;
     }
-
-    // ======================== veh.* 别名 ========================
-
-    @QueryBinding(value = "durability", namespace = "veh")
-    public double vehDurability() { return vehicleDurability(); }
-
-    @QueryBinding(value = "max_durability", namespace = "veh")
-    public double vehMaxDurability() { return vehicleMaxDurability(); }
-
-    @QueryBinding(value = "energy", namespace = "veh")
-    public double vehEnergy() { return vehicleEnergy(); }
-
-    @QueryBinding(value = "max_energy", namespace = "veh")
-    public double vehMaxEnergy() { return vehicleMaxEnergy(); }
-
-    @QueryBinding(value = "get", namespace = "veh")
-    public double vehGet(String key) { return vehicleGet(key); }
-
-    @StringQueryBinding(value = "get_str", namespace = "veh")
-    public String vehGetStr(String key) { return vehicleGetStr(key); }
 }
